@@ -61,19 +61,25 @@ clean:
 
 help:
 	@echo
-	@echo Makefile for oftest source munger
-	@echo     Default builds python files and installs in ${TARGET_DIR}
-	@echo     make local:  Generate files and put in src/
+	@echo "Makefile for oftest source munger"
+	@echo "    Default builds python files and installs in ${TARGET_DIR}"
+	@echo "    make local:  Generate files and put in src/"
 	@echo
-	@echo Debug info:
+	@echo "Targets:"
+	@echo "   all:    Puts generated .py in ${TARGET_DIR}"
+	@echo "   lint:   Puts error report in lint/*.log"
+	@echo "   doc:    Runs doxygen on generated files in ../../doc"
+	@echo "   clean:  Removes generated files"
 	@echo
-	@echo Files generated GEN_FILES:  ${GEN_FILES}
+	@echo "Debug info:"
 	@echo
-	@echo Dependencies for ofp.py OFP_DEP:  ${OFP_DEP}
+	@echo "Files generated GEN_FILES:  ${GEN_FILES}"
 	@echo
-	@echo Already created files OTHER_FILES:  ${OTHER_FILES}
+	@echo "Dependencies for ofp.py OFP_DEP:  ${OFP_DEP}"
 	@echo
-	@echo LINT_FILES:  ${LINT_FILES}
+	@echo "Already created files OTHER_FILES:  ${OTHER_FILES}"
+	@echo
+	@echo "LINT_FILES:  ${LINT_FILES}"
 
 
 .PHONY: all local install help doc lint clean
