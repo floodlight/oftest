@@ -21,16 +21,13 @@ ABS_OF_HEADER = ${PYLIBOF_DIR}/${OF_HEADER}
 PYTHONIZE = bin/pyopenflow-pythonize.py
 OFP_GEN_CMD = (cd ${PYLIBOF_DIR} && ${PYTHONIZE} -i ${OF_HEADER} \
 	${TARGET_DIR}/ofp.py)
+OFP_AUX_INFO = ${TARGET_DIR}/ofp_aux.py
 
 # Dependencies for ofp.py
 OFP_DEP = ${ABS_OF_HEADER} $(wildcard ${PYLIBOF_DIR}/pylib/*.py)
-OFP_DEP = $(wildcard ${PYLIBOF_DIR}/pylib/of/*.py) 
+OFP_DEP += $(wildcard ${PYLIBOF_DIR}/pylib/of/*.py) 
 
-# FIXME:  There are three types of .py files:
-#    ofp.py from pylibopenflow output
-#    %.py generated from %_gen.py
-#    of_message.py and action_list.py -- hand built, already in src dir
-
+# Generated and other files
 GEN_FILES := $(addprefix ${TARGET_DIR}/,ofp.py message.py error.py action.py)
 OTHER_FILES :=  $(addprefix ${TARGET_DIR}/,action_list.py of_message.py)
 LINT_SOURCE := ${GEN_FILES} ${OTHER_FILES}
@@ -40,13 +37,15 @@ LINT_FILES := $(subst ${TARGET_DIR}/,lint/,${LINT_FILES})
 all: ${GEN_FILES}
 	@echo "Generated files"
 
+# The core OpenFlow libraries generated from openflow.h
 ${TARGET_DIR}/ofp.py: ${OFP_DEP}
-	${OFP_GEN_CMD}
+	${OFP_GEN_CMD} > ${OFP_AUX_INFO}
 
 # General rule like src/message.py comes from scripts/message_gen.py
 ${TARGET_DIR}/%.py: scripts/%_gen.py ${TARGET_DIR}/ofp.py
 	python $< > $@
 
+# The pylint files
 lint/%.log: ${TARGET_DIR}/%.py
 	(cd ${TARGET_DIR} && pylint -e $(notdir $<)) > $@
 

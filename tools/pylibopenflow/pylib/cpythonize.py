@@ -134,6 +134,8 @@ class pythonizer:
         for name in struct_keys:
             struct = self.cheader.structs[name]
             code.append(self.pycode_struct_size(name, struct))
+        if GEN_AUX_INFO:
+            self.gen_struct_map()
 
         return code
 
@@ -274,6 +276,27 @@ class pythonizer:
                 code.append(prepend+"."+member.name+" = "+
                             str(self.rules.get_default_value(struct_in.typename, member.name)))
         return code
+
+    def gen_struct_map(self):
+        print
+        print "# Class to array member map"
+        print "class_to_members_map = {"
+        for name, struct in self.cheader.structs.items():
+            if not len(struct.members):
+                continue
+            s =  "    '" + name + "'"
+            print s + _space_to(36, s) + ": ["
+            prev = None
+            for member in struct.members:
+                if re.search('pad', member.name):
+                    continue
+                if prev:
+                    print _space_to(39, "") + "'" + prev + "',"
+                prev = member.name
+            print _space_to(39, "") + "'" + prev + "'"
+            print _space_to(38, "") + "],"
+        print "    '_ignore' : []"
+        print "}"
 
     def __structassert(self, cstruct, cstructname):
         """Return code to check for C array

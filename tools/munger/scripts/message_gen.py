@@ -80,6 +80,9 @@ stats_request, stats_reply and error.
 import re
 import string
 import sys
+sys.path.append("../../src/python/oftest/ofmsg")
+from ofp import *
+from ofp_aux import class_to_members_map
 
 message_top_matter = """
 # Python OpenFlow message wrapper classes
@@ -107,6 +110,7 @@ class ofp_template_msg:
         \"""
         self.header = ofp_header()
         # Additional base data members declared here
+
     # Normally will define pack, unpack, __len__ functions
 
 class template_msg(ofp_template_msg):
@@ -123,7 +127,11 @@ class template_msg(ofp_template_msg):
         Must set the header type value appropriately for the message
 
         \"""
+
+        ##@var header
+        # OpenFlow message header: length, version, xid, type
         ofp_template_msg.__init__(self)
+        self.header = ofp_header()
         # For a real message, will be set to an integer
         self.header.type = "TEMPLATE_MSG_VALUE"
     def pack(self):
@@ -268,21 +276,51 @@ def gen_message_wrapper(msg):
     _p1('"""')
     _p1("Wrapper class for " + msg)
     print
+    _p1("OpenFlow message header: length, version, xid, type")
+    _p1("@arg length: The total length of the message")
+    _p1("@arg version: The OpenFlow version (" + str(OFP_VERSION) + ")")
+    _p1("@arg xid: The transaction ID")
+    _p1("@arg type: The message type (" + msg_name + "=" + 
+        str(eval(msg_name)) + ")")
+    print
+    if has_core_members and parent in class_to_members_map.keys():
+        _p1("Data members inherited from " + parent + ":")
+        for var in class_to_members_map[parent]:
+            _p1("@arg " + var)
     if has_list:
         if list_type == None:
-            _p1("Has trailing variable array " + list_var);
+            _p1("@arg " + list_var + ": Variable length array of TBD")
         else:
-            _p1("Has trailing object " + list_var + " of type " + list_type);
-        print
+            _p1("@arg " + list_var + ": Object of type " + list_type);
     if has_string:
-        _p1("Has trailing string data")
-        print
+        _p1("@arg data: Binary string following message members")
+    print
     _p1('"""')
 
     print
     _p1("def __init__(self):")
     if has_core_members:
         _p2(parent + ".__init__(self)")
+    _p2("##@var header")
+    _p2("# OpenFlow message header: length, version, xid, type")
+    _p2("# @arg length: The total length of the message")
+    _p2("# @arg version: The OpenFlow version (" + str(OFP_VERSION) + ")")
+    _p2("# @arg xid: The transaction ID")
+    _p2("# @arg type: The message type (" + msg_name + "=" + 
+        str(eval(msg_name)) + ")")
+    print
+    if has_list:
+        _p2("##@var " + list_var)
+        if list_type == None:
+            _p2("# Array of objects of type TBD")
+        else:
+            _p2("# Object of type " + list_type)
+        print
+    if has_string:
+        _p2("##@var data")
+        _p2("# Binary string following message members")
+        print
+
     _p2("self.header = ofp_header()")
     _p2("self.header.type = " + msg_name)
     if has_list:

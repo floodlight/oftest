@@ -22,3 +22,8 @@ GEN_ENUM_VALUES_LIST = 0
 
 # Generate dictionary of enum strings to values
 GEN_ENUM_DICTIONARY = 1
+
+# Auxilary info:  Stuff written to stdout for additional processing
+# Currently generates a (python) map from a class to a list of
+# the data members; used for documentation
+GEN_AUX_INFO = 1

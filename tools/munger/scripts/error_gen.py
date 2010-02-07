@@ -4,6 +4,10 @@
 #
 
 import re
+import sys
+sys.path.append("../../src/python/oftest/ofmsg")
+from ofp import *
+from ofp_aux import class_to_members_map
 
 print """
 # Python OpenFlow error wrapper classes
@@ -12,7 +16,9 @@ from ofp import *
 
 # This will never happen; done to avoid lint warning
 if __name__ == '__main__':
-    def of_message_parse(msg): return None
+    def of_message_parse(msg):
+        print "ERROR: of_msg_parse in error.py called"
+        return None
 
 """
 
@@ -28,6 +34,12 @@ template = """
 class --TYPE--_error_msg(ofp_error_msg):
     \"""
     Wrapper class for --TYPE-- error message class
+
+    Data members inherited from ofp_error_msg:
+    @arg type
+    @arg code
+    @arg data: Binary string following message members
+    
     \"""
     def __init__(self):
         ofp_error_msg.__init__(self)

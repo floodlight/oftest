@@ -4,6 +4,10 @@
 #
 
 import re
+import sys
+sys.path.append("../../src/python/oftest/ofmsg")
+from ofp import *
+from ofp_aux import class_to_members_map
 
 print """
 # Python OpenFlow action wrapper classes
@@ -12,7 +16,9 @@ from ofp import *
 
 # This will never happen; done to avoid lint warning
 if __name__ == '__main__':
-    def of_message_parse(msg): return None
+    def of_message_parse(msg):
+        print "ERROR: of_msg_parse in action.py called"
+        return None
 
 """
 
@@ -69,6 +75,8 @@ template = """
 class action_--TYPE--(--PARENT_TYPE--):
     \"""
     Wrapper class for --TYPE-- action object
+
+    --DOC_INFO--
     \"""
     def __init__(self):
         --PARENT_TYPE--.__init__(self)
@@ -81,10 +89,17 @@ class action_--TYPE--(--PARENT_TYPE--):
 
 if __name__ == '__main__':
     for (t, parent) in action_class_map.items():
+        if not parent in class_to_members_map.keys():
+            doc_info = "Unknown parent action class: " + parent
+        else:
+            doc_info = "Data members inherited from " + parent + ":\n"
+            for var in class_to_members_map[parent]:
+                doc_info += "    @arg " + var + "\n"
         action_name = "OFPAT_" + t.upper()
         to_print = re.sub('--TYPE--', t, template)
         to_print = re.sub('--PARENT_TYPE--', parent, to_print)
         to_print = re.sub('--ACTION_NAME--', action_name, to_print)
+        to_print = re.sub('--DOC_INFO--', doc_info, to_print)
         print to_print
 
     # Generate a list of action classes
