@@ -14,12 +14,6 @@ print """
 
 from ofp import *
 
-# This will never happen; done to avoid lint warning
-if __name__ == '__main__':
-    def of_message_parse(msg):
-        print "ERROR: of_msg_parse in error.py called"
-        return None
-
 """
 
 ################################################################
@@ -52,11 +46,12 @@ class --TYPE--_error_msg(ofp_error_msg):
         self.header.length = self.__len__()
         packed = ofp_error_msg.pack(self)
         packed += self.data
+        return packed
 
     def unpack(self, binary_string):
         binary_string = ofp_error_msg.unpack(self, binary_string)
         self.data = binary_string
-        return []
+        return ""
 
     def __len__(self):
         return OFP_HEADER_BYTES + OFP_ERROR_MSG_BYTES + len(self.data)
@@ -64,12 +59,9 @@ class --TYPE--_error_msg(ofp_error_msg):
     def show(self, prefix=''):
         print prefix + "--TYPE--_error_msg"
         ofp_error_msg.show(self)
-        print prefix + "data is of length " + len(self.data)
-        obj = of_message_parse(self.data)
-        if obj != None:
-            obj.show()
-        else:
-            print prefix + "Unable to parse data"
+        print prefix + "data is of length " + str(len(self.data))
+        ##@todo Consider trying to parse the string
+
 """
 
 error_types = [

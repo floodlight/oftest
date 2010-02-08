@@ -90,10 +90,6 @@ message_top_matter = """
 from ofp import *
 from action_list import action_list
 
-# This will never happen; done to avoid lint warning
-if __name__ == '__main__':
-    def of_message_parse(msg): return None
-
 # Define templates for documentation
 class ofp_template_msg:
     \"""
@@ -333,10 +329,10 @@ def gen_message_wrapper(msg):
 
     print
     _p1("def pack(self):")
-    _p2("# Fixme:  Calculate length for header, etc, once __len__ fixed")
+    _p2("self.header.length = len(self)")
     _p2("packed = self.header.pack()")
     if has_core_members:
-        _p2("packed += " + parent + ".pack()")
+        _p2("packed += " + parent + ".pack(self)")
     if has_list:
         if list_type == None:
             _p2('for obj in self.' + list_var + ':')
@@ -345,6 +341,7 @@ def gen_message_wrapper(msg):
             _p2('packed += self.' + list_var + '.pack()')
     if has_string:
         _p2('packed += self.data')
+    _p2("return packed")
 
     print
     _p1("def unpack(self, binary_string):")
@@ -356,10 +353,13 @@ def gen_message_wrapper(msg):
             _p2("for obj in self." + list_var + ":")
             _p3("binary_string = obj.unpack(binary_string)")
         elif msg == "packet_out":  # Special case this
-            _p2('binary_string = self.actions.unpack(bytes=self.actions_len)')
+            _p2('binary_string = self.actions.unpack(' + 
+                'binary_string, bytes=self.actions_len)')
         elif msg == "flow_mod":  # Special case this
-            _p2("ai_len = self.header.length - OFP_FLOW_MOD_BYTES")
-            _p2("binary_string = self.actions.unpack(bytes=ai_len)")
+            _p2("ai_len = self.header.length - (OFP_FLOW_MOD_BYTES + " + 
+                "OFP_HEADER_BYTES)")
+            _p2("binary_string = self.actions.unpack(binary_string, " +
+                "bytes=ai_len)")
         else:
             _p2("binary_string = self." + list_var + ".unpack(binary_string)")
     if has_string:
@@ -371,10 +371,21 @@ def gen_message_wrapper(msg):
 
     print
     _p1("def __len__(self):")
-    _p2("# Fixme:  Do the right thing")
-    _p2("return len(self.pack())")
+    _p2("length = OFP_HEADER_BYTES")
+    if has_core_members:
+        _p2("length += " + parent + ".__len__(self)")
+    if has_list:
+        if list_type == None:
+            _p2("for obj in self." + list_var + ":")
+            _p3("length += len(obj)")
+        else:
+            _p2("length += len(self." + list_var + ")")
+    if has_string:
+        _p2("length += len(self.data)")
+    _p2("return length")
 
     print
+    _p1("##@todo Convert this to __str__")
     _p1("def show(self, prefix=''):")
     _p2("print prefix + '" + msg + " (" + msg_name + ")'")
     _p2("prefix += '  '")
@@ -391,19 +402,20 @@ def gen_message_wrapper(msg):
             _p2('self.' + list_var + ".show(prefix + '  ')")
     if has_string:
         _p2("print prefix + 'data is of length ' + str(len(self.data))")
-        _p2("if len(self.data) > 0:")
-        _p3("obj = of_message_parse(self.data)")
-        _p3("if obj != None:")
-        _p4("obj.show(prefix)")
-        _p3("else:")
-        _p4('print prefix + "Unable to parse data"')
+        _p2("##@todo Fix this circular reference")
+        _p2("# if len(self.data) > 0:")
+        _p3("# obj = of_message_parse(self.data)")
+        _p3("# if obj != None:")
+        _p4("# obj.show(prefix)")
+        _p3("# else:")
+        _p4('# print prefix + "Unable to parse data"')
 
     print
     _p1("def __eq__(self, other):")
-    _p2("if type(self) != type (other): return False")
-    _p2("if self.header.__ne__(other.header): return False")
+    _p2("if type(self) != type(other): return False")
+    _p2("if not self.header.__eq__(other.header): return False")
     if has_core_members:
-        _p2("if " + parent + ".__ne__(other." + parent + "): return False")
+        _p2("if not " + parent + ".__eq__(self, other): return False")
     if has_string:
         _p2("if self.data != other.data: return False")
     if has_list:
@@ -486,6 +498,7 @@ class --TYPE--_stats_request(ofp_stats_request, ofp_--TYPE--_stats_request):
     def pack(self, assertstruct=True):
         packed = ofp_stats_request.pack(self)
         packed += ofp_--TYPE--_stats_request.pack(self)
+        return packed
 
     def unpack(self, binary_string):
         binary_string = ofp_stats_request.unpack(self, binary_string)
@@ -537,6 +550,7 @@ class --TYPE--_stats_reply(ofp_stats_reply):
         packed = ofp_stats_reply.pack(self)
         for obj in self.stats:
             packed += obj.pack()
+        return packed
 
     def unpack(self, binary_string):
         binary_string = ofp_stats_reply.unpack(self, binary_string)
@@ -558,11 +572,12 @@ class --TYPE--_stats_reply(ofp_stats_reply):
     def show(self, prefix=''):
         print prefix + "--TYPE--_stats_reply"
         ofp_stats_reply.show(self)
+        print prefix + "Stats array of length " + str(len(self.stats))
         for obj in self.stats:
             obj.show()
 
     def __eq__(self, other):
-        if ofp_stats_reply.__ne__(self, other): return False
+        if not ofp_stats_reply.__eq__(self, other): return False
         return self.stats == other.stats
 
     def __ne__(self, other): return not self.__eq__(other)
@@ -601,16 +616,20 @@ class flow_stats_entry(ofp_flow_stats):
         self.actions = action_list()
 
     def pack(self, assertstruct=True):
-        if self.length < OFP_FLOW_STATS_BYTES:
-            print "ERROR in flow_stats_entry pack: length member is too small"
-            return None
+        self.length = len(self)
         packed = ofp_flow_stats.pack(self, assertstruct)
         packed += self.actions.pack()
+        if len(packed) != self.length:
+            print("ERROR: flow_stats_entry pack length not equal",
+                  self.length, len(packed))
         return packed
 
     def unpack(self, binary_string):
         binary_string = ofp_flow_stats.unpack(self, binary_string)
         ai_len = self.length - OFP_FLOW_STATS_BYTES
+        if ai_len < 0:
+            print("ERROR: flow_stats_entry unpack length too small",
+                  self.length)
         binary_string = self.actions.unpack(binary_string, bytes=ai_len)
         return binary_string
 

@@ -14,12 +14,6 @@ print """
 
 from ofp import *
 
-# This will never happen; done to avoid lint warning
-if __name__ == '__main__':
-    def of_message_parse(msg):
-        print "ERROR: of_msg_parse in action.py called"
-        return None
-
 """
 
 ################################################################
