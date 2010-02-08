@@ -92,10 +92,12 @@ class action_list(object):
         while bytes_done < bytes:
             hdr = ofp_action_header()
             hdr.unpack(cur_string)
+            if hdr.len < OFP_ACTION_HEADER_BYTES:
+                print "ERROR: Action too short"
+                break
             if not hdr.type in action_object_map.keys():
                 print "WARNING: Skipping unknown action ", hdr.type
             else:
-                print "DEBUG: Found action of type ", hdr.type
                 self.actions.append(action_object_map[hdr.type]())
                 self.actions[count].unpack(binary_string)
                 count += 1
@@ -117,6 +119,52 @@ class action_list(object):
             return True
         return False
 
+    def remove_type(self, type):
+        """
+        Remove the first action on the list of the given type
+
+        @param type The type of action to search
+
+        @return The object removed, if any; otherwise None
+
+        """
+        for index in xrange(len(self.actions)):
+            if self.actions[index].type == type:
+                return self.actions.pop(index)
+        return None
+
+    def find_type(self, type):
+        """
+        Find the first action on the list of the given type
+
+        @param type The type of action to search
+
+        @return The object with the matching type if any; otherwise None
+
+        """
+        for index in xrange(len(self.actions)):
+            if self.actions[index].type == type:
+                return self.actions[index]
+        return None
+
+    def extend(self, other):
+        """
+        Add the actions in other to this list
+
+        @param other An object of type action_list whose
+        entries are to be merged into this list
+
+        @return True if successful.  If not successful, the list
+        may have been modified.
+
+        @todo Check if this is proper deep copy or not
+
+        """
+        for act in other.actions:
+            if not self.add(act):
+                return False
+        return True
+        
     def __len__(self):
         length = 0
         for act in self.actions:
