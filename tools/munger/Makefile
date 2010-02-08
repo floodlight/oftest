@@ -35,7 +35,6 @@ LINT_FILES := $(subst .py,.log,${LINT_SOURCE})
 LINT_FILES := $(subst ${TARGET_DIR}/,lint/,${LINT_FILES})
 
 all: ${GEN_FILES}
-	@echo "Generated files"
 
 # The core OpenFlow libraries generated from openflow.h
 ${TARGET_DIR}/ofp.py: ${OFP_DEP}
@@ -57,6 +56,9 @@ doc: ${GEN_FILES} ${OTHER_FILES} ${DOC_DIR}/Doxyfile
 
 clean:
 	rm -rf ${GEN_FILES} ${LINT_FILES} ${DOC_DIR}/html/*
+
+test: all
+	(cd tests && python msg_test.py) > tests/msg_test.log
 
 help:
 	@echo
@@ -81,4 +83,4 @@ help:
 	@echo "LINT_FILES:  ${LINT_FILES}"
 
 
-.PHONY: all local install help doc lint clean
+.PHONY: all local install help doc lint clean test
