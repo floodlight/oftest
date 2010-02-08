@@ -428,6 +428,7 @@ class pythonizer:
             if (isinstance(member, cheader.carray) and member.size == 0):
                 if (isinstance(member.object, cheader.cstruct)):
                     code.append(self.tab*2+"for i in self."+member.name+":")
+                    # FIXME:  Is this right?  Doesn't seem to be called
                     code.append(self.tab*3+"l += i.length()")
                 else:
                     pattern="!"+self.__c2py.get_pattern(member.object)
@@ -549,8 +550,14 @@ class pythonizer:
         """
         if (primPattern != ""):
             #Clear prior primitives
-            code.append(self.tab*2+"("+str(primMemberNames).replace("'","")[1:-1]+\
-                        ") = struct.unpack_from(\""+\
-                        prefix+primPattern+"\", binaryString, "+str(offset)+")")
+            if len(primMemberNames) == 1:
+                code.append(self.tab*2 + "(" + str(primMemberNames[0]) + 
+                            ",) = struct.unpack_from(\"" + prefix+primPattern
+                            + "\", binaryString, " + str(offset) + ")")
+            else:
+                code.append(self.tab*2+"("+str(primMemberNames).replace("'","")[1:-1]+
+                            ") = struct.unpack_from(\""+
+                            prefix+primPattern+"\", binaryString, "+str(offset)+")")
+
         return ("",[], offset+struct.calcsize(prefix+primPattern))
 
