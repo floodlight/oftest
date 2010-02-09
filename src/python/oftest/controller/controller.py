@@ -19,7 +19,7 @@ Callbacks and polling support specifying the message type
 """
 
 import sys
-sys.path.append("../ofmsg")
+sys.path.append("../protocol")
 import os
 import socket
 import time
@@ -27,6 +27,8 @@ import promisc
 from threading import Thread
 from threading import Lock
 from message import *
+from parse import *
+from netutils import *
 
 class Controller(Thread):
     """
@@ -42,10 +44,10 @@ class Controller(Thread):
     byte order.
     """
 
-    def __init__(port=6633, passive=1):
+    def __init__(host=HOST_DEFAULT, port=PORT_DEFAULT, passive=1):
         if (passive):
             # FIXME: add error handling
-            self.sock = open_ctrlsocket()
+            self.sock = open_ctrlsocket(host, port)
             self.clientsock, self.clientaddr = self.sock.accept()
         else:
             print "Error in controller init: Active cxn not supported"
@@ -62,7 +64,7 @@ class Controller(Thread):
         """
         print "Controller message handler registration not supported"
 
-    def poll(self, exp_msg=None, timeout=None):
+    def poll(self, exp_msg=None, timeout=RCV_TIMEOUT_DEFAULT):
         """
         Wait for the next OF message received from the switch.
 
@@ -88,26 +90,35 @@ class Controller(Thread):
                 # FIXME: Check for error
                 return None, None
             # Convert msg to the proper OpenFlow message object
-            msg_type, msg = ofpkt.pkt_to_msg(pkt)
-            print "DEBUG: Got msg type %d of len %d" % (msg_type, len(msg))
+            hdr = of_header_parse(pkt)
+            print "DEBUG: msg in. pkt len %d. type %d. length %d" % \
+                (len(pkt), hdr.type, hdr.length)
 
             if not exp_msg or (exp_msg and (hdr.type == exp_msg)):
                 return msg_type, msg
 
-    def flow_install(self, flow):
+    def transact(self, msg, xid=None):
         """
-        Install the flow indicated through the control interface
-        TBD:  We may just use message_send below with ofp_flow_mod objects
-        @param flow The ofp_flow_mod object to install
+        Run a transaction
+
+        Send the message in msg and wait for a reply with a matching
+        transaction id.
+
+        @param msg The message to send
+        @param xid If non None, set the transaction ID of the message; 
+        otherwise use the one already present in the message's header.
+
         """
+        print "Controller transact not supported"
 
     def message_send(self, msg):
         """
         Send the message to the switch
-        @param msg An OpenFlow message object (from a SWIG generated
-        class) to be forwarded to the switch.  The data members of the
-        object must be in host endian order when pased to message_send.
+
+        @param msg An OpenFlow message object to be forwarded to the switch.  
+
         """
+        pass
 
     def kill(self):
         self.clientsock.close()
