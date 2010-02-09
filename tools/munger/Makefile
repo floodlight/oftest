@@ -46,6 +46,7 @@ ${TARGET_DIR}/%.py: scripts/%_gen.py ${TARGET_DIR}/cstruct.py
 
 # The pylint files
 lint/%.log: ${TARGET_DIR}/%.py
+	mkdir -p lint
 	(cd ${TARGET_DIR} && pylint -e $(notdir $<)) > $@
 
 lint: ${LINT_FILES}
