@@ -5,14 +5,14 @@
 
 import re
 import sys
-sys.path.append("../../src/python/oftest/ofmsg")
-from ofp import *
-from ofp_aux import class_to_members_map
+sys.path.append("../../src/python/oftest/protocol")
+from cstruct import *
+from class_maps import class_to_members_map
 
 print """
 # Python OpenFlow action wrapper classes
 
-from ofp import *
+from cstruct import *
 
 """
 

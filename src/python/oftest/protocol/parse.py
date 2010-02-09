@@ -1,4 +1,4 @@
-
+o
 from message import *
 from error import *
 from action import *
@@ -85,17 +85,17 @@ def _of_message_to_object(binary_string):
     if not hdr.type in msg_type_subclassed:
         return msg_type_to_class_map[hdr.type]()
     if hdr.type == OFPT_STATS_REQUEST:
-        st_hdr = ofp_stats_request()
-        st_hdr.unpack(binary_string)
-        return stats_request_to_class_map[st_hdr.type]()
+        sub_hdr = ofp_stats_request()
+        sub_hdr.unpack(binary_string)
+        return stats_request_to_class_map[sub_hdr.type]()
     elif hdr.type == OFPT_STATS_REPLY:
-        st_hdr = ofp_stats_reply()
-        st_hdr.unpack(binary_string)
-        return stats_reply_to_class_map[st_hdr.type]()
-    elif hdr.type == OFPT_STATS_REPLY:
-        st_hdr = ofp_error_msg()
-        st_hdr.unpack(binary_string)
-        return error_to_class_map[st_hdr.type]()
+        sub_hdr = ofp_stats_reply()
+        sub_hdr.unpack(binary_string)
+        return stats_reply_to_class_map[sub_hdr.type]()
+    elif hdr.type == OFPT_ERROR:
+        sub_hdr = ofp_error_msg()
+        sub_hdr.unpack(binary_string)
+        return error_to_class_map[sub_hdr.type]()
     else:
         print "ERROR parsing packet to object"
         return None
@@ -108,10 +108,8 @@ def of_message_parse(binary_string, raw=False):
     members fully populated.
 
     @param binary_string The packet (string) to be parsed
-
     @param raw If true, interpret the packet as an L2 packet.  Not
     yet supported.
-
     @return An object of some message class or None if fails
 
     """
@@ -124,4 +122,40 @@ def of_message_parse(binary_string, raw=False):
     if obj != None:
         obj.unpack(binary_string)
     return obj
+
+
+def of_header_parse(binary_string, raw=False):
+    """
+    Parse only the header from an OpenFlow packet
+
+    Parses the header from a raw OpenFlow packet into a
+    an ofp_header Python class.
+
+    @param binary_string The packet (string) to be parsed
+    @param raw If true, interpret the packet as an L2 packet.  Not
+    yet supported.
+    @return An ofp_header object
+
+    """
+
+    if raw:
+        print "raw packet message parsing not supported"
+        return None
+
+    hdr = ofp_header()
+    hdr.unpack(binary_string)
+
+    return hdr
+
+def packet_to_flow(packet, wildcards=None, pkt_format="L2"):
+    """
+    Create a flow that matches packet with the given wildcards
+
+    @param packet The packet to use as a flow template
+    @param wildcards Wildcards to place in the flow (ignore those 
+    fields from the packet)
+    @param pkt_format May be one string from: L2, L3,  ?  
+    Fields from unspecified layers are forced to be wildcards
+
+    """
 

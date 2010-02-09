@@ -80,14 +80,14 @@ stats_request, stats_reply and error.
 import re
 import string
 import sys
-sys.path.append("../../src/python/oftest/ofmsg")
-from ofp import *
-from ofp_aux import class_to_members_map
+sys.path.append("../../src/python/oftest/protocol")
+from cstruct import *
+from class_maps import class_to_members_map
 
 message_top_matter = """
 # Python OpenFlow message wrapper classes
 
-from ofp import *
+from cstruct import *
 from action_list import action_list
 
 # Define templates for documentation
@@ -327,10 +327,19 @@ def gen_message_wrapper(msg):
     if has_string:
         _p2('self.data = ""')
 
-    print
-    _p1("def pack(self):")
-    _p2("self.header.length = len(self)")
-    _p2("packed = self.header.pack()")
+    print """
+
+    def pack(self):
+        \"""
+        Pack object into string
+
+        @return The packed string which can go on the wire
+
+        \"""
+        self.header.length = len(self)
+        packed = self.header.pack()
+"""
+
     if has_core_members:
         _p2("packed += " + parent + ".pack(self)")
     if has_list:
@@ -343,9 +352,19 @@ def gen_message_wrapper(msg):
         _p2('packed += self.data')
     _p2("return packed")
 
-    print
-    _p1("def unpack(self, binary_string):")
-    _p2("binary_string = self.header.unpack(binary_string)")
+    print """
+    def unpack(self, binary_string):
+        \"""
+        Unpack object from a binary string
+
+        @param binary_string The wire protocol byte string holding the object
+        represented as an array of bytes.
+        @return Typically returns the remainder of binary_string that
+        was not parsed.  May give a warning if that string is non-empty
+
+        \"""
+        binary_string = self.header.unpack(binary_string)
+"""
     if has_core_members:
         _p2("binary_string = " + parent + ".unpack(self, binary_string)")
     if has_list:
@@ -369,9 +388,17 @@ def gen_message_wrapper(msg):
         _p2("# Fixme: If no self.data, add check for data remaining")
     _p2("return binary_string")
 
-    print
-    _p1("def __len__(self):")
-    _p2("length = OFP_HEADER_BYTES")
+    print """
+    def __len__(self):
+        \"""
+        Return the length of this object once packed into a string
+
+        @return An integer representing the number bytes in the packed
+        string.
+
+        \"""
+        length = OFP_HEADER_BYTES
+"""
     if has_core_members:
         _p2("length += " + parent + ".__len__(self)")
     if has_list:
@@ -384,9 +411,16 @@ def gen_message_wrapper(msg):
         _p2("length += len(self.data)")
     _p2("return length")
 
-    print
-    _p1("##@todo Convert this to __str__")
-    _p1("def show(self, prefix=''):")
+    print """
+    ##@todo Convert this to __str__
+    def show(self, prefix=''):
+        \"""
+        Display the contents of the object in a readable manner
+
+        @param prefix Printed at the beginning of each line.
+
+        \"""
+"""
     _p2("print prefix + '" + msg + " (" + msg_name + ")'")
     _p2("prefix += '  '")
     _p2("self.header.show(prefix)")
@@ -410,10 +444,17 @@ def gen_message_wrapper(msg):
         _p3("# else:")
         _p4('# print prefix + "Unable to parse data"')
 
-    print
-    _p1("def __eq__(self, other):")
-    _p2("if type(self) != type(other): return False")
-    _p2("if not self.header.__eq__(other.header): return False")
+    print """
+    def __eq__(self, other):
+        \"""
+        Return True if self and other hold the same data
+
+        @param other Other object in comparison
+
+        \"""
+        if type(self) != type(other): return False
+        if not self.header.__eq__(other.header): return False
+"""
     if has_core_members:
         _p2("if not " + parent + ".__eq__(self, other): return False")
     if has_string:
@@ -422,9 +463,16 @@ def gen_message_wrapper(msg):
         _p2("if self." + list_var + " != other." + list_var + ": return False")
     _p2("return True")
 
-    print
-    _p1("def __ne__(self, other): return not self.__eq__(other)")
+    print """
+    def __ne__(self, other):
+        \"""
+        Return True if self and other do not hold the same data
 
+        @param other Other object in comparison
+
+        \"""
+        return not self.__eq__(other)
+    """
 
 
 ################################################################

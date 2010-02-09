@@ -1,9 +1,9 @@
 import sys
-sys.path.append('../../../src/python/oftest/ofmsg')
+sys.path.append('../../../src/python/oftest/protocol')
 from message import *
 from action import *
 from error import *
-from ofp_aux import *
+from class_maps import *
 
 header_fields = ['version', 'xid']
 fixed_header_fields = ['type', 'length']
@@ -170,6 +170,21 @@ for cls in keys:
     print
 
 print "End of class pack check"
+print
+print
+
+
+print "Testing message parsing"
+print
+for cls in keys:
+    print "Creating class " + ofmsg_names[cls]
+    obj = cls()
+    print ofmsg_names[cls] + " length: " + str(len(obj))
+    obj.show("  ")
+    print
+
+print "End of class generation"
+print
 print
 
 

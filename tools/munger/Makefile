@@ -10,7 +10,7 @@ DOC_DIR = ${TOP_DIR}/doc
 
 PYLIBOF_DIR = ${TOOLS_DIR}/pylibopenflow
 
-TARGET_DIR = ${TOP_DIR}/src/python/oftest/ofmsg
+TARGET_DIR = ${TOP_DIR}/src/python/oftest/protocol
 
 # Relative to pyopenflow-pythonize exec location
 OF_HEADER = include/openflow.h
@@ -19,17 +19,17 @@ OF_HEADER = include/openflow.h
 ABS_OF_HEADER = ${PYLIBOF_DIR}/${OF_HEADER}
 
 PYTHONIZE = bin/pyopenflow-pythonize.py
-OFP_GEN_CMD = (cd ${PYLIBOF_DIR} && ${PYTHONIZE} -i ${OF_HEADER} \
-	${TARGET_DIR}/ofp.py)
-OFP_AUX_INFO = ${TARGET_DIR}/ofp_aux.py
+CSTRUCT_GEN_CMD = (cd ${PYLIBOF_DIR} && ${PYTHONIZE} -i ${OF_HEADER} \
+	${TARGET_DIR}/cstruct.py)
+CSTRUCT_AUX_INFO = ${TARGET_DIR}/class_maps.py
 
-# Dependencies for ofp.py
-OFP_DEP = ${ABS_OF_HEADER} $(wildcard ${PYLIBOF_DIR}/pylib/*.py)
-OFP_DEP += $(wildcard ${PYLIBOF_DIR}/pylib/of/*.py) 
+# Dependencies for cstruct.py
+CSTRUCT_DEP = ${ABS_OF_HEADER} $(wildcard ${PYLIBOF_DIR}/pylib/*.py)
+CSTRUCT_DEP += $(wildcard ${PYLIBOF_DIR}/pylib/of/*.py) 
 
 # Generated and other files
-GEN_FILES := $(addprefix ${TARGET_DIR}/,ofp.py message.py error.py action.py)
-OTHER_FILES :=  $(addprefix ${TARGET_DIR}/,action_list.py of_message.py)
+GEN_FILES := $(addprefix ${TARGET_DIR}/,cstruct.py message.py error.py action.py)
+OTHER_FILES :=  $(addprefix ${TARGET_DIR}/,action_list.py parse.py)
 LINT_SOURCE := ${GEN_FILES} ${OTHER_FILES}
 LINT_FILES := $(subst .py,.log,${LINT_SOURCE})
 LINT_FILES := $(subst ${TARGET_DIR}/,lint/,${LINT_FILES})
@@ -37,11 +37,11 @@ LINT_FILES := $(subst ${TARGET_DIR}/,lint/,${LINT_FILES})
 all: ${GEN_FILES}
 
 # The core OpenFlow libraries generated from openflow.h
-${TARGET_DIR}/ofp.py: ${OFP_DEP}
-	${OFP_GEN_CMD} > ${OFP_AUX_INFO}
+${TARGET_DIR}/cstruct.py: ${CSTRUCT_DEP}
+	${CSTRUCT_GEN_CMD} > ${CSTRUCT_AUX_INFO}
 
 # General rule like src/message.py comes from scripts/message_gen.py
-${TARGET_DIR}/%.py: scripts/%_gen.py ${TARGET_DIR}/ofp.py
+${TARGET_DIR}/%.py: scripts/%_gen.py ${TARGET_DIR}/cstruct.py
 	python $< > $@
 
 # The pylint files
@@ -76,7 +76,7 @@ help:
 	@echo
 	@echo "Files generated GEN_FILES:  ${GEN_FILES}"
 	@echo
-	@echo "Dependencies for ofp.py OFP_DEP:  ${OFP_DEP}"
+	@echo "Dependencies for cstruct.py CSTRUCT_DEP:  ${CSTRUCT_DEP}"
 	@echo
 	@echo "Already created files OTHER_FILES:  ${OTHER_FILES}"
 	@echo

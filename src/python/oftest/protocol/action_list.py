@@ -3,7 +3,7 @@ OpenFlow actions list class
 """
 
 from action import *
-from ofp import ofp_header
+from cstruct import ofp_header
 
 # # Map OFP action identifiers to the actual structures used on the wire
 # action_object_map = {
