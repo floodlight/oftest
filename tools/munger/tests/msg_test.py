@@ -1,143 +1,126 @@
 import sys
 sys.path.append('../../../src/python/oftest/protocol')
-from message import *
-from action import *
-from error import *
-from class_maps import *
 
-header_fields = ['version', 'xid']
-fixed_header_fields = ['type', 'length']
+from parse import of_message_parse
+from parse import of_header_parse
 
-ofmsg_class_map_to_parents = {
-    action_enqueue                     : [ofp_action_enqueue],
-    action_output                      : [ofp_action_output],
-    action_set_dl_dst                  : [ofp_action_dl_addr],
-    action_set_dl_src                  : [ofp_action_dl_addr],
-    action_set_nw_dst                  : [ofp_action_nw_addr],
-    action_set_nw_src                  : [ofp_action_nw_addr],
-    action_set_nw_tos                  : [ofp_action_nw_tos],
-    action_set_tp_dst                  : [ofp_action_tp_port],
-    action_set_tp_src                  : [ofp_action_tp_port],
-    action_set_vlan_pcp                : [ofp_action_vlan_pcp],
-    action_set_vlan_vid                : [ofp_action_vlan_vid],
-    action_strip_vlan                  : [ofp_action_header],
-    action_vendor                      : [ofp_action_vendor_header],
-    aggregate_stats_reply              : [ofp_stats_reply],
-    aggregate_stats_request            : [ofp_stats_request,
-                                          ofp_aggregate_stats_request],
-    bad_action_error_msg               : [ofp_error_msg],
-    bad_request_error_msg              : [ofp_error_msg],
-    barrier_reply                      : [],
-    barrier_request                    : [],
-    desc_stats_reply                   : [ofp_stats_reply],
-    desc_stats_request                 : [ofp_stats_request,
-                                          ofp_desc_stats_request],
-    echo_reply                         : [],
-    echo_request                       : [],
-    error                              : [ofp_error_msg],
-    features_reply                     : [ofp_switch_features],
-    features_request                   : [],
-    flow_mod                           : [ofp_flow_mod],
-    flow_mod_failed_error_msg          : [ofp_error_msg],
-    flow_removed                       : [ofp_flow_removed],
-    flow_stats_entry                   : [ofp_flow_stats],
-    flow_stats_reply                   : [ofp_stats_reply],
-    flow_stats_request                 : [ofp_stats_request,
-                                          ofp_flow_stats_request],
-    get_config_reply                   : [ofp_switch_config],
-    get_config_request                 : [],
-    hello                              : [],
-    hello_failed_error_msg             : [ofp_error_msg],
-    ofp_desc_stats_request             : [],
-    ofp_table_stats_request            : [],
-    packet_in                          : [ofp_packet_in],
-    packet_out                         : [ofp_packet_out],
-    port_mod                           : [ofp_port_mod],
-    port_mod_failed_error_msg          : [ofp_error_msg],
-    port_stats_reply                   : [ofp_stats_reply],
-    port_stats_request                 : [ofp_stats_request,
-                                          ofp_port_stats_request],
-    port_status                        : [ofp_port_status],
-    queue_get_config_reply             : [ofp_queue_get_config_reply],
-    queue_get_config_request           : [ofp_queue_get_config_request],
-    queue_op_failed_error_msg          : [ofp_error_msg],
-    queue_stats_reply                  : [ofp_stats_reply],
-    queue_stats_request                : [ofp_stats_request,
-                                          ofp_queue_stats_request],
-    set_config                         : [ofp_switch_config],
-    stats_reply                        : [ofp_stats_reply],
-    stats_request                      : [ofp_stats_request],
-    table_stats_reply                  : [ofp_stats_reply],
-    table_stats_request                : [ofp_stats_request,
-                                          ofp_table_stats_request],
-    vendor                             : [ofp_vendor_header]
-}
+from defs import *
 
-ofmsg_names = {
-    action_enqueue                     : 'action_enqueue',
-    action_output                      : 'action_output',
-    action_set_dl_dst                  : 'action_set_dl_dst',
-    action_set_dl_src                  : 'action_set_dl_src',
-    action_set_nw_dst                  : 'action_set_nw_dst',
-    action_set_nw_src                  : 'action_set_nw_src',
-    action_set_nw_tos                  : 'action_set_nw_tos',
-    action_set_tp_dst                  : 'action_set_tp_dst',
-    action_set_tp_src                  : 'action_set_tp_src',
-    action_set_vlan_pcp                : 'action_set_vlan_pcp',
-    action_set_vlan_vid                : 'action_set_vlan_vid',
-    action_strip_vlan                  : 'action_strip_vlan',
-    action_vendor                      : 'action_vendor',
-    aggregate_stats_reply              : 'aggregate_stats_reply',
-    aggregate_stats_request            : 'aggregate_stats_request',
-    bad_action_error_msg               : 'bad_action_error_msg',
-    bad_request_error_msg              : 'bad_request_error_msg',
-    barrier_reply                      : 'barrier_reply',
-    barrier_request                    : 'barrier_request',
-    desc_stats_reply                   : 'desc_stats_reply',
-    desc_stats_request                 : 'desc_stats_request',
-    echo_reply                         : 'echo_reply',
-    echo_request                       : 'echo_request',
-    error                              : 'error',
-    features_reply                     : 'features_reply',
-    features_request                   : 'features_request',
-    flow_mod                           : 'flow_mod',
-    flow_mod_failed_error_msg          : 'flow_mod_failed_error_msg',
-    flow_removed                       : 'flow_removed',
-    flow_stats_entry                   : 'flow_stats_entry',
-    flow_stats_reply                   : 'flow_stats_reply',
-    flow_stats_request                 : 'flow_stats_request',
-    get_config_reply                   : 'get_config_reply',
-    get_config_request                 : 'get_config_request',
-    hello                              : 'hello',
-    hello_failed_error_msg             : 'hello_failed_error_msg',
-    ofp_desc_stats_request             : 'ofp_desc_stats_request',
-    ofp_table_stats_request            : 'ofp_table_stats_request',
-    packet_in                          : 'packet_in',
-    packet_out                         : 'packet_out',
-    port_mod                           : 'port_mod',
-    port_mod_failed_error_msg          : 'port_mod_failed_error_msg',
-    port_stats_reply                   : 'port_stats_reply',
-    port_stats_request                 : 'port_stats_request',
-    port_status                        : 'port_status',
-    queue_get_config_reply             : 'queue_get_config_reply',
-    queue_get_config_request           : 'queue_get_config_request',
-    queue_op_failed_error_msg          : 'queue_op_failed_error_msg',
-    queue_stats_reply                  : 'queue_stats_reply',
-    queue_stats_request                : 'queue_stats_request',
-    set_config                         : 'set_config',
-    stats_reply                        : 'stats_reply',
-    stats_request                      : 'stats_request',
-    table_stats_reply                  : 'table_stats_reply',
-    table_stats_request                : 'table_stats_request',
-    vendor                             : 'vendor'
-}
+def error_out(string):
+    print >> sys.stderr, string
+    print string
 
-keys = ofmsg_class_map_to_parents.keys()
-keys.sort()
+def obj_comp(orig, new, objname, errstr=None):
+    """
+    Compare two objects
+    """
+    dump = False        
+    if not errstr:
+        errstr = "(unknown)"
+    errstr += " " + objname
+    if not new:
+        error_out("ERROR: obj comp, new is None for " + errstr)
+        dump = True
+    elif type(orig) != type(new):
+        error_out("ERROR: type mismatch for " + errstr + " ")
+        dump = True
+    elif orig != new:
+        error_out("ERROR: " + errstr + " orig != new")
+        dump = True
+    if dump:
+        print "Dump of mismatch for " + errstr
+        print "type orig " + str(type(orig))
+        print "orig length ", len(orig)
+        orig.show("  ")
+        if new:
+            print "type new" + str(type(new))
+            print "new length ", len(new)
+            new.show("  ")
+        print
+
+
+# Generate a long action list
+
+def action_list_create(n=10):
+    """
+    Create an action list
+
+    @param n The number of actions to put in the list
+
+    Cycle through the list of all actions, adding each type
+    """
+
+    al = action_list()
+    for i in range(n):
+        idx = i % len(action_class_list)
+        cls = action_class_list[idx]()
+        al.add(cls)
+    return al
+
+# Test classes with action lists
+def class_action_test():
+    """
+    Test objects that use action lists
+    """
+
+    print "Testing action lists:  flow mod, packet out, flow stats"
+    for acount in [0, 1, 5, 16, 34]:
+        print "  " + str(acount) + " actions in list"
+        obj = flow_mod()
+        obj.actions = action_list_create(acount)
+        packed = obj.pack()
+        header = of_header_parse(packed)
+        obj_check = flow_mod()
+        if obj_check.unpack(packed) != "":
+            error_out("ERROR: flow mod action list test extra " +
+                      "string on unpack")
+        obj_comp(obj, obj_check, 'flow_mod', "unpack test " + str(acount))
+        obj_check = of_message_parse(packed)
+        obj_comp(obj, obj_check, 'flow_mod', "parse test " + str(acount))
+        # obj.show()
+
+        # packet out with and without data
+        obj = packet_out()
+        obj.actions = action_list_create(acount)
+        packed = obj.pack()
+        header = of_header_parse(packed)
+        obj_check = packet_out()
+        if obj_check.unpack(packed) != "":
+            error_out("ERROR: packet out packet_out test extra " +
+                      "string on unpack")
+        obj_comp(obj, obj_check, 'packet_out', "unpack test " + str(acount))
+        obj_check = of_message_parse(packed)
+        obj_comp(obj, obj_check, 'packet_out', "parse test " + str(acount))
+        # obj.show()
+
+        obj = packet_out()
+        obj.actions = action_list_create(acount)
+        obj.data = "short test string for packet data"
+        packed = obj.pack()
+        header = of_header_parse(packed)
+        obj_check = packet_out()
+        if obj_check.unpack(packed) != "":
+            error_out("ERROR: packet out packet_out test extra " +
+                      "string on unpack")
+        obj_comp(obj, obj_check, 'packet_out', "unpack test " + str(acount))
+        obj_check = of_message_parse(packed)
+        obj_comp(obj, obj_check, 'packet_out', "parse test " + str(acount))
+        # obj.show()
+
+        # flow stats entry (not a message)
+        obj = flow_stats_entry()
+        obj.actions = action_list_create(acount)
+        packed = obj.pack()
+        obj_check = flow_stats_entry()
+        if obj_check.unpack(packed) != "":
+            error_out("ERROR: packet out flow stats test extra " +
+                      "string on unpack")
+        obj_comp(obj, obj_check, 'packet_out', "unpack test " + str(acount))
+        # obj.show()
 
 print "Generating all classes with no data init"
 print
-for cls in keys:
+for cls in all_objs:
     print "Creating class " + ofmsg_names[cls]
     obj = cls()
     print ofmsg_names[cls] + " length: " + str(len(obj))
@@ -151,23 +134,16 @@ print
 print "Generating messages, packing, showing (to verify len)"
 print "and calling self unpack"
 print
-for cls in keys:
+for cls in all_objs:
     print "Pack/unpack test for class " + ofmsg_names[cls]
     obj = cls()
     packed = obj.pack()
-    print "Packed object, length ", len(packed)
-    obj.show("  ")
     obj_check = cls()
     string = obj_check.unpack(packed)
-    print "Unpacked obj, length ", len(obj_check)
-    obj_check.show("  ")
     if string != "":
         print >> sys.stderr, "WARNING: " + ofmsg_names[cls] + \
             ", unpack returned string " + string
-    if obj != obj_check:
-        print >> sys.stderr, "ERROR: " + ofmsg_names[cls] + \
-            ", obj != obj_check"
-    print
+    obj_comp(obj, obj_check, ofmsg_names[cls], "pack/unpack")
 
 print "End of class pack check"
 print
@@ -176,17 +152,25 @@ print
 
 print "Testing message parsing"
 print
-for cls in keys:
-    print "Creating class " + ofmsg_names[cls]
+for cls in all_objs:
+    # Can only parse real messages
+    if not cls in of_messages:
+        print "Not testing " + ofmsg_names[cls]
+        continue
+    print "Parse test for class " + ofmsg_names[cls]
     obj = cls()
-    print ofmsg_names[cls] + " length: " + str(len(obj))
-    obj.show("  ")
-    print
+    packed = obj.pack()
+    header = of_header_parse(packed)
+    obj_check = of_message_parse(packed)
+    obj_comp(obj, obj_check, ofmsg_names[cls], "parse test")
 
-print "End of class generation"
+print "End of parse testing"
 print
 print
 
+class_action_test()
+print
+print
 
 #
 # TO DO
