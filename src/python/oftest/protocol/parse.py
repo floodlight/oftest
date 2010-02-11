@@ -1,9 +1,17 @@
-o
+"""
+OpenFlow message parsing functions
+"""
+
+import sys
 from message import *
 from error import *
 from action import *
 from action_list import action_list
-from ofp import *
+from cstruct import *
+try:
+    from scapy.all import *
+except:
+    sys.exit("Need to install scapy for packet parsing")
 
 """
 of_message.py
@@ -86,15 +94,23 @@ def _of_message_to_object(binary_string):
         return msg_type_to_class_map[hdr.type]()
     if hdr.type == OFPT_STATS_REQUEST:
         sub_hdr = ofp_stats_request()
-        sub_hdr.unpack(binary_string)
-        return stats_request_to_class_map[sub_hdr.type]()
+        sub_hdr.unpack(binary_string[OFP_HEADER_BYTES:])
+        try:
+            obj = stats_request_to_class_map[sub_hdr.type]()
+        except KeyError:
+            obj = None
+        return obj
     elif hdr.type == OFPT_STATS_REPLY:
         sub_hdr = ofp_stats_reply()
-        sub_hdr.unpack(binary_string)
-        return stats_reply_to_class_map[sub_hdr.type]()
+        sub_hdr.unpack(binary_string[OFP_HEADER_BYTES:])
+        try:
+            obj = stats_reply_to_class_map[sub_hdr.type]()
+        except KeyError:
+            obj = None
+        return obj
     elif hdr.type == OFPT_ERROR:
         sub_hdr = ofp_error_msg()
-        sub_hdr.unpack(binary_string)
+        sub_hdr.unpack(binary_string[OFP_HEADER_BYTES:])
         return error_to_class_map[sub_hdr.type]()
     else:
         print "ERROR parsing packet to object"
@@ -114,12 +130,13 @@ def of_message_parse(binary_string, raw=False):
 
     """
 
+    #@todo verify that object type is really a message
     if raw:
         print "raw packet message parsing not supported"
         return None
 
     obj = _of_message_to_object(binary_string)
-    if obj != None:
+    if obj:
         obj.unpack(binary_string)
     return obj
 
@@ -147,15 +164,129 @@ def of_header_parse(binary_string, raw=False):
 
     return hdr
 
-def packet_to_flow(packet, wildcards=None, pkt_format="L2"):
+map_wc_field_to_match_member = {
+    'OFPFW_DL_VLAN'                 : 'dl_vlan',
+    'OFPFW_DL_SRC'                  : 'dl_src',
+    'OFPFW_DL_DST'                  : 'dl_dst',
+    'OFPFW_DL_TYPE'                 : 'dl_type',
+    'OFPFW_NW_PROTO'                : 'nw_proto',
+    'OFPFW_TP_SRC'                  : 'tp_src',
+    'OFPFW_TP_DST'                  : 'tp_dst',
+    'OFPFW_NW_SRC_SHIFT'            : 'nw_src_shift',
+    'OFPFW_NW_SRC_BITS'             : 'nw_src_bits',
+    'OFPFW_NW_SRC_MASK'             : 'nw_src_mask',
+    'OFPFW_NW_SRC_ALL'              : 'nw_src_all',
+    'OFPFW_NW_DST_SHIFT'            : 'nw_dst_shift',
+    'OFPFW_NW_DST_BITS'             : 'nw_dst_bits',
+    'OFPFW_NW_DST_MASK'             : 'nw_dst_mask',
+    'OFPFW_NW_DST_ALL'              : 'nw_dst_all',
+    'OFPFW_DL_VLAN_PCP'             : 'dl_vlan_pcp',
+    'OFPFW_NW_TOS'                  : 'nw_tos'
+}
+
+
+def parse_mac(mac_str):
     """
-    Create a flow that matches packet with the given wildcards
+    Parse a MAC address
+
+    Parse a MAC address ':' separated string of hex digits to an
+    array of integer values.  '00:d0:05:5d:24:00' => [0, 208, 5, 93, 36, 0]
+    @param mac_str The string to convert
+    @return Array of 6 integer values
+    """
+    return map(lambda val:eval("0x" + val), mac_str.split(":"))
+
+def parse_ip(ip_str):
+    """
+    Parse an IP address
+
+    Parse an IP address '.' separated string of decimal digits to an
+    host ordered integer.  '172.24.74.77' => 
+    @param ip_str The string to convert
+    @return Integer value
+    """
+    array = map(lambda val:eval(val),ip_str.split("."))
+    val = 0
+    for a in array:
+        val <<= 8
+        val += a
+    return val
+
+def packet_type_classify(ether):
+    try:
+        dot1q = ether[Dot1Q]
+    except:
+        dot1q = None
+    try:
+        ip = ether[IP]
+    except:
+        ip = None
+    try:
+        tcp = ether[TCP]
+    except:
+        tcp = None
+    try:
+        udp = ether[UDP]
+    except:
+        udp = None
+
+    # @todo arp and icmp are not yet supported
+    icmp = arp = None
+    return (dot1q, ip, tcp, udp, icmp, arp)
+
+def packet_to_flow_match(packet, pkt_format="L2"):
+    """
+    Create a flow match that matches packet with the given wildcards
 
     @param packet The packet to use as a flow template
-    @param wildcards Wildcards to place in the flow (ignore those 
-    fields from the packet)
-    @param pkt_format May be one string from: L2, L3,  ?  
-    Fields from unspecified layers are forced to be wildcards
 
+    @return An ofp_match object if successful.  None if format is not
+    recognized.  The wildcards of the match will be cleared for the
+    values extracted from the packet.
+
+    @todo packet_to_flow: Not yet implemenated; see file packet_to_flow
     """
 
+    #@todo check min length of packet
+
+    if pkt_format.upper() != "L2":
+        print "ERROR: Only L2 packet supported for packet_to_flow"
+        return None
+
+    ether = scapy.all.Ether(packet)
+    # For now, assume ether IP packet and ignore wildcards
+    (dot1q, ip, tcp, udp, icmp, arp) = packet_type_classify(ether)
+
+    match = ofp_match()
+    match.wildcards = OFPFW_ALL
+    #@todo Check if packet is other than L2 format
+    match.dl_dst = parse_mac(ether.dst)
+    match.wildcards &= ~OFPFW_DL_DST
+    match.dl_src = parse_mac(ether.src)
+    match.wildcards &= ~OFPFW_DL_SRC
+    match.dl_type = ether.type
+    match.wildcards &= ~OFPFW_DL_TYPE
+
+    if dot1q:
+        match.dl_vlan = dot1q.vlan
+        match.wildcards &= ~OFPFW_DL_VLAN
+        match.dl_vlan_pcp = dot1q.prio
+        match.wildcards &= ~OFPFW_DL_VLAN_PCP
+
+    if ip:
+        match.nw_src = parse_ip(ip.src)
+        match.wildcards &= ~OFPFW_NW_SRC_MASK
+        match.nw_dst = parse_ip(ip.dst)
+        match.wildcards &= ~OFPFW_NW_DST_MASK
+        match.nw_tos = ip.tos
+        match.wildcards &= ~OFPFW_NW_TOS
+
+    if tcp:
+        match.tp_src = tcp.sport
+        match.wildcards &= ~OFPFW_TP_SRC
+        match.tp_dst = tcp.dport
+        match.wildcards &= ~OFPFW_TP_DST
+
+    #@todo Implement ICMP and ARP fields
+
+    return match
