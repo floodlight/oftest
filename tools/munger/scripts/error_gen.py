@@ -44,11 +44,13 @@ class --TYPE--_error_msg(ofp_error_msg):
 
     def pack(self, assertstruct=True):
         self.header.length = self.__len__()
-        packed = ofp_error_msg.pack(self)
+        packed = self.header.pack()
+        packed += ofp_error_msg.pack(self)
         packed += self.data
         return packed
 
     def unpack(self, binary_string):
+        binary_string = self.header.unpack(binary_string)
         binary_string = ofp_error_msg.unpack(self, binary_string)
         self.data = binary_string
         return ""
@@ -58,10 +60,18 @@ class --TYPE--_error_msg(ofp_error_msg):
 
     def show(self, prefix=''):
         print prefix + "--TYPE--_error_msg"
-        ofp_error_msg.show(self)
+        self.header.show(prefix + '  ')
+        ofp_error_msg.show(self, prefix + '  ')
         print prefix + "data is of length " + str(len(self.data))
         ##@todo Consider trying to parse the string
 
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        return (self.header == other.header and
+                ofp_error_msg.__eq__(self, other) and
+                self.data == other.data)
+
+    def __ne__(self, other): return not self.__eq__(other)
 """
 
 error_types = [
