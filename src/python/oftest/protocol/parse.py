@@ -239,16 +239,18 @@ def packet_to_flow_match(packet, pkt_format="L2"):
     Create a flow match that matches packet with the given wildcards
 
     @param packet The packet to use as a flow template
-
+    @param pkt_format Currently only L2 is supported.  Will indicate the 
+    overall packet type for parsing
     @return An ofp_match object if successful.  None if format is not
     recognized.  The wildcards of the match will be cleared for the
     values extracted from the packet.
 
-    @todo packet_to_flow: Not yet implemenated; see file packet_to_flow
+    @todo check min length of packet
+    @todo Check if packet is other than L2 format
+    @todo Implement ICMP and ARP fields
     """
 
     #@todo check min length of packet
-
     if pkt_format.upper() != "L2":
         print "ERROR: Only L2 packet supported for packet_to_flow"
         return None
