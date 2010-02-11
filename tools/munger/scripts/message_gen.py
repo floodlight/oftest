@@ -297,26 +297,6 @@ def gen_message_wrapper(msg):
     _p1("def __init__(self):")
     if has_core_members:
         _p2(parent + ".__init__(self)")
-    _p2("##@var header")
-    _p2("# OpenFlow message header: length, version, xid, type")
-    _p2("# @arg length: The total length of the message")
-    _p2("# @arg version: The OpenFlow version (" + str(OFP_VERSION) + ")")
-    _p2("# @arg xid: The transaction ID")
-    _p2("# @arg type: The message type (" + msg_name + "=" + 
-        str(eval(msg_name)) + ")")
-    print
-    if has_list:
-        _p2("##@var " + list_var)
-        if list_type == None:
-            _p2("# Array of objects of type TBD")
-        else:
-            _p2("# Object of type " + list_type)
-        print
-    if has_string:
-        _p2("##@var data")
-        _p2("# Binary string following message members")
-        print
-
     _p2("self.header = ofp_header()")
     _p2("self.header.type = " + msg_name)
     if has_list:
@@ -340,6 +320,9 @@ def gen_message_wrapper(msg):
         packed = self.header.pack()
 """
 
+    # Have to special case the action length calculation for pkt out
+    if msg == 'packet_out':
+        _p2('self.actions_len = len(self.actions)')
     if has_core_members:
         _p2("packed += " + parent + ".pack(self)")
     if has_list:
@@ -422,6 +405,7 @@ def gen_message_wrapper(msg):
         \"""
 """
     _p2("print prefix + '" + msg + " (" + msg_name + ")'")
+    _p2("print prefix + 'ofp header'")
     _p2("prefix += '  '")
     _p2("self.header.show(prefix)")
     if has_core_members:
@@ -500,7 +484,7 @@ class ofp_desc_stats_request:
     def __len__(self):
         return 0
     def show(self, prefix=''):
-        pass
+        print prefix + "ofp_desc_stats_request (empty)"
     def __eq__(self, other):
         return type(self) == type(other)
     def __ne__(self, other):
@@ -521,7 +505,7 @@ class ofp_table_stats_request:
     def __len__(self):
         return 0
     def show(self, prefix=''):
-        pass
+        print prefix + "ofp_table_stats_request (empty)"
     def __eq__(self, other):
         return type(self) == type(other)
     def __ne__(self, other):
@@ -544,15 +528,17 @@ class --TYPE--_stats_request(ofp_stats_request, ofp_--TYPE--_stats_request):
         self.type = --STATS_NAME--
 
     def pack(self, assertstruct=True):
-        packed = ofp_stats_request.pack(self)
+        packed = self.header.pack()
+        packed += ofp_stats_request.pack(self)
         packed += ofp_--TYPE--_stats_request.pack(self)
         return packed
 
     def unpack(self, binary_string):
+        binary_string = self.header.unpack(binary_string)
         binary_string = ofp_stats_request.unpack(self, binary_string)
         binary_string = ofp_--TYPE--_stats_request.unpack(self, binary_string)
         if len(binary_string) != 0:
-            print "Error unpacking --TYPE--: extra data"
+            print "ERROR unpacking --TYPE--: extra data"
         return binary_string
 
     def __len__(self):
@@ -561,11 +547,15 @@ class --TYPE--_stats_request(ofp_stats_request, ofp_--TYPE--_stats_request):
 
     def show(self, prefix=''):
         print prefix + "--TYPE--_stats_request"
+        print prefix + "ofp header:"
+        self.header.show(prefix + '  ')
         ofp_stats_request.show(self)
         ofp_--TYPE--_stats_request.show(self)
 
     def __eq__(self, other):
-        return (ofp_stats_request.__eq__(self, other) and
+        if type(self) != type(other): return False
+        return (self.header == other.header and
+                ofp_stats_request.__eq__(self, other) and
                 ofp_--TYPE--_stats_request.__eq__(self, other))
 
     def __ne__(self, other): return not self.__eq__(other)
@@ -595,12 +585,14 @@ class --TYPE--_stats_reply(ofp_stats_reply):
         self.stats = []
 
     def pack(self, assertstruct=True):
-        packed = ofp_stats_reply.pack(self)
+        packed = self.header.pack()
+        packed += ofp_stats_reply.pack(self)
         for obj in self.stats:
             packed += obj.pack()
         return packed
 
     def unpack(self, binary_string):
+        binary_string = self.header.unpack(binary_string)
         binary_string = ofp_stats_reply.unpack(self, binary_string)
         dummy = --TYPE--_stats_entry()
         while len(binary_string) >= len(dummy):
@@ -619,14 +611,18 @@ class --TYPE--_stats_reply(ofp_stats_reply):
 
     def show(self, prefix=''):
         print prefix + "--TYPE--_stats_reply"
+        print prefix + "ofp header:"
+        self.header.show(prefix + '  ')
         ofp_stats_reply.show(self)
         print prefix + "Stats array of length " + str(len(self.stats))
         for obj in self.stats:
             obj.show()
 
     def __eq__(self, other):
-        if not ofp_stats_reply.__eq__(self, other): return False
-        return self.stats == other.stats
+        if type(self) != type(other): return False
+        return (self.header == other.header and
+                ofp_stats_reply.__eq__(self, other) and
+                self.stats == other.stats)
 
     def __ne__(self, other): return not self.__eq__(other)
 """
@@ -690,6 +686,7 @@ class flow_stats_entry(ofp_flow_stats):
         self.actions.show(prefix + '  ')
 
     def __eq__(self, other):
+        if type(self) != type(other): return False
         return (ofp_flow_stats.__eq__(self, other) and 
                 self.actions == other.actions)
 
