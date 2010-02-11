@@ -534,7 +534,7 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT                  = "../src/python/oftest/ofmsg" \
+INPUT                  = "../src/python/oftest/protocol" \
                          "../src/python/oftest/controller" \
                          "../src/python/oftest/dataplane" \
                          "../src/python/oftest/packet" \
