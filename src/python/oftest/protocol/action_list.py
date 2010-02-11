@@ -21,7 +21,6 @@ from cstruct import ofp_header
 #     OFPAT_ENQUEUE                       : ofp_action_enqueue
 # }
 
-# For debugging
 action_object_map = {
     OFPAT_OUTPUT                        : action_output,
     OFPAT_SET_VLAN_VID                  : action_set_vlan_vid,
@@ -34,7 +33,8 @@ action_object_map = {
     OFPAT_SET_NW_TOS                    : action_set_nw_tos,
     OFPAT_SET_TP_SRC                    : action_set_tp_src,
     OFPAT_SET_TP_DST                    : action_set_tp_dst,
-    OFPAT_ENQUEUE                       : action_enqueue
+    OFPAT_ENQUEUE                       : action_enqueue,
+    OFPAT_VENDOR                        : action_vendor
 }
 
 class action_list(object):
@@ -96,10 +96,10 @@ class action_list(object):
                 print "ERROR: Action too short"
                 break
             if not hdr.type in action_object_map.keys():
-                print "WARNING: Skipping unknown action ", hdr.type
+                print "WARNING: Skipping unknown action ", hdr.type, hdr.len
             else:
                 self.actions.append(action_object_map[hdr.type]())
-                self.actions[count].unpack(binary_string)
+                self.actions[count].unpack(cur_string)
                 count += 1
             cur_string = cur_string[hdr.len:]
             bytes_done += hdr.len
@@ -184,5 +184,5 @@ class action_list(object):
         count = 0
         for obj in self.actions:
             count += 1
-            print "  Action " + str(count) + ": "
+            print prefix + "  Action " + str(count) + ": "
             obj.show(prefix + '    ')
