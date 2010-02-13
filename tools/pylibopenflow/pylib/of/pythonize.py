@@ -39,7 +39,7 @@ class rules(cpythonize.rules):
             self.enforced_maps['ofp_header'] = [ ('type','ofp_type_values') ]
         elif GEN_ENUM_DICTIONARY:
             self.enforced_maps['ofp_header'] = \
-                [ ('type','ofp_type_map.values()') ]
+                [ ('type','ofp_type_map.keys()') ]
         
 class pythonizer(cpythonize.pythonizer):
     """Class that pythonize C structures of OpenFlow messages

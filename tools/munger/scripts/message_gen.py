@@ -89,6 +89,7 @@ message_top_matter = """
 
 from cstruct import *
 from action_list import action_list
+from error import *
 
 # Define templates for documentation
 class ofp_template_msg:
@@ -342,8 +343,7 @@ def gen_message_wrapper(msg):
 
         @param binary_string The wire protocol byte string holding the object
         represented as an array of bytes.
-        @return Typically returns the remainder of binary_string that
-        was not parsed.  May give a warning if that string is non-empty
+        @return The remainder of binary_string that was not parsed.
 
         \"""
         binary_string = self.header.unpack(binary_string)
@@ -743,6 +743,48 @@ if __name__ == '__main__':
         to_print = re.sub('--STATS_NAME--', stats_name, to_print)
         print to_print
 
+    # Lastly, generate a tuple containing all the message classes
+    print """
+message_type_list = (
+    aggregate_stats_reply,
+    aggregate_stats_request,
+    bad_action_error_msg,
+    bad_request_error_msg,
+    barrier_reply,
+    barrier_request,
+    desc_stats_reply,
+    desc_stats_request,
+    echo_reply,
+    echo_request,
+    features_reply,
+    features_request,
+    flow_mod,
+    flow_mod_failed_error_msg,
+    flow_removed,
+    flow_stats_reply,
+    flow_stats_request,
+    get_config_reply,
+    get_config_request,
+    hello,
+    hello_failed_error_msg,
+    packet_in,
+    packet_out,
+    port_mod,
+    port_mod_failed_error_msg,
+    port_stats_reply,
+    port_stats_request,
+    port_status,
+    queue_get_config_reply,
+    queue_get_config_request,
+    queue_op_failed_error_msg,
+    queue_stats_reply,
+    queue_stats_request,
+    set_config,
+    table_stats_reply,
+    table_stats_request,
+    vendor
+    )
+"""
 
 #
 # OFP match variants
