@@ -60,16 +60,27 @@ for both TX and RX.
 # Function to be called to force the switch to disconnect from the
 # controller. 
 
-##@var controller_ip
-# Gives the controller IP address to use
+##@var controller_host
+# Gives the controller host address to use
 
 ##@var controller_port
 # Gives the controller port to use
 
-platform = "sw_userspace"
+# platform = "sw_userspace"
 # platform = "sw_kernelspace"
-# platform = "bcm_indigo"
+platform = "bcm_indigo"
 # platform = "stanford_lb4g"
+
+
+# These can be moved into platform specific code if needed
+
+RCV_TIMEOUT_DEFAULT = 10
+RCV_SIZE_DEFAULT = 4096
+CONTROLLER_HOST_DEFAULT = ''
+CONTROLLER_PORT_DEFAULT = 6633
+
+# Number of switch connection requests to queue
+LISTEN_QUEUE_SIZE = 1
 
 if platform == "sw_userspace":
     interface_ofport_map = {
@@ -82,10 +93,17 @@ if platform == "sw_userspace":
     switch_init = None  # TBD
     switch_connect = None  # TBD
     switch_disconnect = None  # TBD
-    controller_ip = "172.27.74.158"
+    controller_host = "172.27.74.158"
     controller_port = 7000
 
 elif platform == "bcm_indigo":
+    interface_ofport_map = {
+        1 : "eth2",
+        2 : "eth3",
+        3 : "eth4",
+        4 : "eth5"
+        }
+    # For SSH connections to switch
     switch_cxn_type = "ssh"
     switch_ip = "192.168.2.21"
     switch_username = "root"
@@ -93,5 +111,45 @@ elif platform == "bcm_indigo":
     switch_init = None  # TBD
     switch_connect = None  # TBD
     switch_disconnect = None  # TBD
-    controller_ip = "172.27.74.158"
+    controller_host = "192.168.2.2"
+#    controller_host = "172.27.74.26"
     controller_port = 7000
+
+
+# Debug levels
+DEBUG_ALL = 0
+DEBUG_VERBOSE = 1
+DEBUG_INFO = 2
+DEBUG_WARN = 3
+DEBUG_ERROR = 4
+DEBUG_CRITICAL = 5
+DEBUG_NONE = 6 # For current setting only; not for string level
+
+dbg_string = [
+    "DBG ALL  ",
+    "VERBOSE  ",
+    "INFO     ",
+    "WARN     ",
+    "ERROR    ",
+    "CRITICAL "
+    ]
+
+def debug_log(module, cur_level, level, string):
+    """
+    Log a debug message
+
+    Compare the debug level to the current level and display
+    the string if appropriate.
+    @param module String representing the module reporting the info/error
+    @param cur_level The module's current debug level
+    @param level The level of the error message
+    @param string String to report
+
+    @todo Allow file logging options, etc
+    @todo Add timestamps
+    """
+
+    if level >= cur_level:
+        #@todo Support output redirection based on debug level
+        print module + ":" + dbg_string[level] + ":" + string
+
