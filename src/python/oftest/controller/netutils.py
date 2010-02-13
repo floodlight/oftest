@@ -4,41 +4,65 @@
 Network utilities for the OpenFlow controller
 """
 
+###########################################################################
+##                                                                         ##
+## Promiscuous mode enable/disable                                         ##
+##                                                                         ##
+## Based on code from Scapy by Phillippe Biondi                            ##
+##                                                                         ##
+##                                                                         ##
+## This program is free software; you can redistribute it and/or modify it ##
+## under the terms of the GNU General Public License as published by the   ##
+## Free Software Foundation; either version 2, or (at your option) any     ##
+## later version.                                                          ##
+##                                                                         ##
+## This program is distributed in the hope that it will be useful, but     ##
+## WITHOUT ANY WARRANTY; without even the implied warranty of              ##
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU       ##
+## General Public License for more details.                                ##
+##                                                                         ##
+#############################################################################
+
 import socket
+from fcntl import ioctl
+import struct
 
-RCV_TIMEOUT_DEFAULT = 10
-HOST_DEFAULT = ''
-PORT_DEFAULT = 6633
-RCV_SIZE_DEFAULT = 4096
+# From net/if_arp.h
+ARPHDR_ETHER = 1
+ARPHDR_LOOPBACK = 772
 
-def rcv_data_from_socket(sock, timeout=RCV_TIMEOUT_DEFAULT):
-    """ 
-    Wait for data on a specified socket.
+# From bits/ioctls.h
+SIOCGIFHWADDR  = 0x8927          # Get hardware address
+SIOCGIFINDEX   = 0x8933          # name -> if_index mapping
 
-    Time out in (timeout)seconds.
+# From netpacket/packet.h
+PACKET_ADD_MEMBERSHIP  = 1
+PACKET_MR_PROMISC      = 1
 
-    @param sock control socket
-    @param timeout Timeout if data hasn't come in a specified seconds
-    @return A pair (okay, msg) okay is boolean to indicate a packet was
-    received.  msg is the message if okay is True
+# From bits/socket.h
+SOL_PACKET = 263
 
-    """
-    sock.settimeout(RCV_TIMEOUT)
-    try:
-        rcvmsg = sock.recv(RCV_SIZE)
-        return (True, rcvmsg)
-    except socket.timeout:
-        return (False, None)
+def get_if(iff,cmd):
+  s=socket.socket()
+  ifreq = ioctl(s, cmd, struct.pack("16s16x",iff))
+  s.close()
+  return ifreq
 
-def open_ctrlsocket(host=HOST_DEFAULT, port=PORT_DEFAULT):
-    """ Open a socket for a controller connection.
+def get_if_hwaddr(iff):
+  addrfamily, mac = struct.unpack("16xh6s8x",get_if(iff,SIOCGIFHWADDR))
+  if addrfamily in [ARPHDR_ETHER,ARPHDR_LOOPBACK]:
+      return str2mac(mac)
+  else:
+      raise Exception("Unsupported address family (%i)"%addrfamily)
 
-        @param host host IP address
-        @param port transport port number for the test-controller
-        @retval s socket
-    """
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.bind((host, port))
-    s.listen(1)
-    return s	
+def get_if_index(iff):
+  return int(struct.unpack("I",get_if(iff, SIOCGIFINDEX)[16:20])[0])
+
+def set_promisc(s,iff,val=1):
+  mreq = struct.pack("IHH8s", get_if_index(iff), PACKET_MR_PROMISC, 0, "")
+  if val:
+      cmd = PACKET_ADD_MEMBERSHIP
+  else:
+      cmd = PACKET_DROP_MEMBERSHIP
+  s.setsockopt(SOL_PACKET, cmd, mreq)
+
