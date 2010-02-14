@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../../../src/python/oftest/protocol')
+sys.path.append('../../../src/python/oftest')
 
 from parse import of_message_parse
 from parse import of_header_parse

@@ -1,7 +1,6 @@
-#!/usr/bin/env python
 
 """
-Network utilities for the OpenFlow controller
+Network utilities for the OpenFlow test framework
 """
 
 ###########################################################################

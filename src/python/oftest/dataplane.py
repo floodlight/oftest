@@ -18,7 +18,7 @@ import sys
 import os
 import socket
 import time
-import promisc
+import netutils
 from threading import Thread
 from threading import Lock
 

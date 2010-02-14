@@ -10,7 +10,7 @@ DOC_DIR = ${TOP_DIR}/doc
 
 PYLIBOF_DIR = ${TOOLS_DIR}/pylibopenflow
 
-TARGET_DIR = ${TOP_DIR}/src/python/oftest/protocol
+TARGET_DIR = ${TOP_DIR}/src/python/oftest
 
 # Relative to pyopenflow-pythonize exec location
 OF_HEADER = include/openflow.h
@@ -49,6 +49,7 @@ lint/%.log: ${TARGET_DIR}/%.py
 	mkdir -p lint
 	(cd ${TARGET_DIR} && pylint -e $(notdir $<)) > $@
 
+# Note that lint has issues with scapy syntax
 lint: ${LINT_FILES}
 
 # For now. just local source doc generated

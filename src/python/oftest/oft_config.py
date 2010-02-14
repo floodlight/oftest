@@ -79,6 +79,9 @@ RCV_SIZE_DEFAULT = 4096
 CONTROLLER_HOST_DEFAULT = ''
 CONTROLLER_PORT_DEFAULT = 6633
 
+# Timeout in seconds for initial connection
+INIT_CONNECT_TIMEOUT = 4
+
 # Number of switch connection requests to queue
 LISTEN_QUEUE_SIZE = 1
 
