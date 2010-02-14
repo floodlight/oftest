@@ -166,12 +166,12 @@ class pythonizer:
                 prev_v = v
                 first = 0
             else:
-                code.append(self.tab + "'%s'%s: %s," %
-                            (prev_e, _space_to(30, prev_e), prev_v))
+                code.append(self.tab + "%s%s: '%s'," %
+                            (prev_v, _space_to(32, str(prev_v)), prev_e))
                 prev_e = e
                 prev_v = v
-        code.append(self.tab + "'%s'%s: %s" %
-                            (prev_e, _space_to(30, prev_e), prev_v))
+        code.append(self.tab + "%s%s: '%s'" %
+                            (prev_v, _space_to(32, str(prev_v)), prev_e))
         code.append("}")
         return code
 
