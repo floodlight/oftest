@@ -101,10 +101,10 @@ if platform == "sw_userspace":
 
 elif platform == "bcm_indigo":
     interface_ofport_map = {
-        1 : "eth2",
-        2 : "eth3",
+#        1 : "eth2",
+#        2 : "eth3",
         3 : "eth4",
-        4 : "eth5"
+#        4 : "eth5"
         }
     # For SSH connections to switch
     switch_cxn_type = "ssh"
@@ -116,7 +116,7 @@ elif platform == "bcm_indigo":
     switch_disconnect = None  # TBD
     controller_host = "192.168.2.2"
 #    controller_host = "172.27.74.26"
-    controller_port = 7000
+    controller_port = 6634
 
 
 # Debug levels
@@ -127,6 +127,8 @@ DEBUG_WARN = 3
 DEBUG_ERROR = 4
 DEBUG_CRITICAL = 5
 DEBUG_NONE = 6 # For current setting only; not for string level
+
+debug_level_default = DEBUG_WARN
 
 dbg_string = [
     "DBG ALL  ",
