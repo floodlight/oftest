@@ -72,7 +72,7 @@ class EchoTestCase(SimpleProtocolTestCase):
         request = echo_request()
         response = self.controller.transact(request)
         self.assertEqual(response.header.type, OFPT_ECHO_REPLY,
-                         'response is not echo_request')
+                         'response is not echo_reply')
         self.assertEqual(request.header.xid, response.header.xid,
                          'response xid != request xid')
         self.assertEqual(len(response.data), 0, 'response data non-empty')
@@ -86,7 +86,7 @@ class EchoWithDataTestCase(SimpleProtocolTestCase):
         request.data = 'OpenFlow Will Rule The World'
         response = self.controller.transact(request)
         self.assertEqual(response.header.type, OFPT_ECHO_REPLY,
-                         'response is not echo_request')
+                         'response is not echo_reply')
         self.assertEqual(request.header.xid, response.header.xid,
                          'response xid != request xid')
         self.assertEqual(request.data, response.data,
