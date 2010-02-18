@@ -101,10 +101,10 @@ if platform == "sw_userspace":
 
 elif platform == "bcm_indigo":
     interface_ofport_map = {
-#        1 : "eth2",
-#        2 : "eth3",
-        3 : "eth4",
-#        4 : "eth5"
+        23 : "eth2",
+        24 : "eth3",
+        25 : "eth4",
+        26 : "eth5"
         }
     # For SSH connections to switch
     switch_cxn_type = "ssh"

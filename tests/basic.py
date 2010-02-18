@@ -14,6 +14,7 @@ from scapy.all import *
 import unittest
 
 import time
+import signal
 import sys
 sys.path.append("../src/python/oftest")
 from message import *
@@ -21,25 +22,38 @@ from dataplane import *
 from controller import *
 from oft_config import *
 
+#debug_level_default = DEBUG_VERBOSE
+dbg_lvl = debug_level_default
+
 class SimpleProtocolTestCase(unittest.TestCase):
     """
     Root class for setting up the controller
     """
 
+    def dbg(self, level, string):
+        debug_log(str(self), dbg_lvl, level, string)
+
+    def sig_handler(self):
+        print "Received interrupt signal; exiting"
+        self.controller.shutdown()
+        sys.exit(1)
+
     def setUp(self):
-        debug_log("CTTC", debug_level_default,
-                  DEBUG_INFO, "setup for " + str(self))
+        signal.signal(signal.SIGINT, self.sig_handler)
+        self.dbg(DEBUG_INFO, "Setup for " + str(self))
         self.controller = Controller()
-        self.controller.connect()
+        self.controller.start()
+        self.controller.connect(timeout=20)
+        self.dbg(DEBUG_INFO, "Connected " + str(self.controller.switch_addr))
 
     def tearDown(self):
-        debug_log("CTTC", debug_level_default, 
-                  DEBUG_INFO, "teardown for simple proto test")
+        self.dbg(DEBUG_INFO, "Teardown for simple proto test")
         self.controller.shutdown()
-        self.controller.join()
+        # self.controller.join()
 
     def runTest(self):
-        self.assertTrue(self.controller.connected, 
+        # Just a simple sanity check as illustration
+        self.assertTrue(self.controller.switch_socket is not None,
                         str(self) + 'No connection to switch')
 
 class SimpleDataPlaneTestCase(SimpleProtocolTestCase):
@@ -53,13 +67,13 @@ class SimpleDataPlaneTestCase(SimpleProtocolTestCase):
             self.dataplane.port_add(ifname, of_port)
 
     def tearDown(self):
-        debug_log("DPTC", debug_level_default,
-                  DEBUG_INFO, "teardown for simple dataplane test")
+        self.dbg(DEBUG_INFO, "Teardown for simple dataplane test")
         SimpleProtocolTestCase.tearDown(self)
         self.dataplane.kill(join_threads=False)
+        self.dbg(DEBUG_INFO, "Teardown done")
 
     def runTest(self):
-        self.assertTrue(self.controller.connected, 
+        self.assertTrue(self.controller.switch_socket is not None,
                         str(self) + 'No connection to switch')
         # self.dataplane.show()
         # Would like an assert that checks the data plane
@@ -112,7 +126,7 @@ class PacketInTestCase(SimpleDataPlaneTestCase):
         #@todo Check for unexpected messages?
         (response, raw) = self.controller.poll(OFPT_PACKET_IN)
 
-        self.assertTrue(not response is None, 'Packet in message not received')
+        self.assertTrue(response is not None, 'Packet in message not received')
         # Data has CRC on it, so take off last 4 bytes
         self.assertEqual(str(pkt), response.data[:-4], 
                          'Response packet does not match send packet')
@@ -133,22 +147,24 @@ class PacketOutTestCase(SimpleDataPlaneTestCase):
         msg = packet_out()
         msg.data = str(outpkt)
         act = action_output()
-        act.port = interface_ofport_map.keys()[0]
+        dp_port = act.port = interface_ofport_map.keys()[0]
         self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
 
-        msg.header.xid = 0x12345678
-        self.controller.message_send(msg.pack())
+        self.dbg(DEBUG_INFO, "pkt out to port " + str(dp_port))
+        rv = self.controller.message_send(msg)
+        self.assertTrue(rv == 0, "Error sending out message")
 
-        time.sleep(2) # @todo Implement poll timeout for test cases
+        time.sleep(1) # @todo Implement poll timeout for test cases
         (of_port, pkt, pkt_time) = self.dataplane.packet_get()
-        print "pkt in on of_port" + str(of_port)
-        hexdump(str(pkt))
 
-        self.assertTrue(not pkt is None, 'Packet not received')
-        # Data has CRC on it, so take off last 4 bytes
+        self.assertTrue(pkt is not None, 'Packet not received')
+        if of_port is not None:
+            self.assertEqual(of_port, dp_port, "Unexpected receive port")
         self.assertEqual(str(outpkt), str(pkt),
                          'Response packet does not match send packet')
 
 
 if __name__ == "__main__":
     unittest.main()
+#    suite = unittest.TestLoader().loadTestsFromTestCase(PacketOutTestCase)
+#    unittest.TextTestRunner(verbosity=2).run(suite) 
