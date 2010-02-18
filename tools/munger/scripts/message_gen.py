@@ -405,9 +405,9 @@ def gen_message_wrapper(msg):
         \"""
 """
     _p2("print prefix + '" + msg + " (" + msg_name + ")'")
-    _p2("print prefix + 'ofp header'")
     _p2("prefix += '  '")
-    _p2("self.header.show(prefix)")
+    _p2("print prefix + 'ofp header'")
+    _p2("self.header.show(prefix + '  ')")
     if has_core_members:
         _p2(parent + ".show(self, prefix)")
     if has_list:
