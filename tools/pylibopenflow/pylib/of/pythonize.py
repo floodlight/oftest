@@ -27,6 +27,7 @@ class rules(cpythonize.rules):
         for x in ['ofp_flow_mod','ofp_flow_expired','ofp_flow_stats']:
             self.default_values[(x,'priority')] = self.__ofmsg.get_value('OFP_DEFAULT_PRIORITY')
         #Default values for struct
+        self.default_values[('ofp_packet_out','buffer_id')] = 0xffffffff
         self.struct_default[('ofp_flow_mod',
                              'header')] = ".type = OFPT_FLOW_MOD"
 #                             'header')] = ".type = "+str(self.__ofmsg.get_value('OFPT_FLOW_MOD'))
