@@ -29,7 +29,8 @@ CSTRUCT_DEP += $(wildcard ${PYLIBOF_DIR}/pylib/of/*.py)
 
 # Generated and other files
 GEN_FILES := $(addprefix ${TARGET_DIR}/,cstruct.py message.py error.py action.py)
-OTHER_FILES :=  $(addprefix ${TARGET_DIR}/,action_list.py parse.py)
+OTHER_FILES :=  $(addprefix ${TARGET_DIR}/,action_list.py parse.py \
+	controller.py dataplane.py)
 LINT_SOURCE := ${GEN_FILES} ${OTHER_FILES}
 LINT_FILES := $(subst .py,.log,${LINT_SOURCE})
 LINT_FILES := $(subst ${TARGET_DIR}/,lint/,${LINT_FILES})

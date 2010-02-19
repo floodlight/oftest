@@ -84,7 +84,7 @@ class EchoTestCase(SimpleProtocolTestCase):
     """
     def runTest(self):
         request = echo_request()
-        response = self.controller.transact(request)
+        response, pkt = self.controller.transact(request)
         self.assertEqual(response.header.type, OFPT_ECHO_REPLY,
                          'response is not echo_reply')
         self.assertEqual(request.header.xid, response.header.xid,
@@ -98,7 +98,7 @@ class EchoWithDataTestCase(SimpleProtocolTestCase):
     def runTest(self):
         request = echo_request()
         request.data = 'OpenFlow Will Rule The World'
-        response = self.controller.transact(request)
+        response, pkt = self.controller.transact(request)
         self.assertEqual(response.header.type, OFPT_ECHO_REPLY,
                          'response is not echo_reply')
         self.assertEqual(request.header.xid, response.header.xid,
@@ -112,24 +112,23 @@ class PacketInTestCase(SimpleDataPlaneTestCase):
     """
     def runTest(self):
         # Construct packet to send to dataplane
-        # Send packet to dataplane
+        # Send packet to dataplane, once to each port
         # Poll controller with expect message type packet in
         # For now, a random packet from scapy tutorial
-        pkt=Ether()/IP(dst="www.slashdot.org")/TCP()/\
-            "GET /index.html HTTP/1.0 \n\n"
+
         for of_port in interface_ofport_map.keys():
+            self.dbg(DEBUG_INFO, "PKT IN test, port " + str(of_port))
+            pkt=Ether()/IP(dst="www.slashdot.org")/TCP()/\
+                ("GET /index.html HTTP/1.0. port" + str(of_port))
             self.dataplane.send(of_port, str(pkt))
-            # For now, just send one packet
-            break
+            #@todo Check for unexpected messages?
+            (response, raw) = self.controller.poll(OFPT_PACKET_IN, 2)
 
-        time.sleep(2) # @todo Implement poll timeout for test cases
-        #@todo Check for unexpected messages?
-        (response, raw) = self.controller.poll(OFPT_PACKET_IN)
-
-        self.assertTrue(response is not None, 'Packet in message not received')
-        # Data has CRC on it, so take off last 4 bytes
-        self.assertEqual(str(pkt), response.data[:-4], 
-                         'Response packet does not match send packet')
+            self.assertTrue(response is not None, 
+                            'Packet in message not received')
+            # Data has CRC on it, so take off last 4 bytes
+            self.assertEqual(str(pkt), response.data[:-4], 
+                             'Response packet does not match send packet')
 
 class PacketOutTestCase(SimpleDataPlaneTestCase):
     """
@@ -155,7 +154,7 @@ class PacketOutTestCase(SimpleDataPlaneTestCase):
         self.assertTrue(rv == 0, "Error sending out message")
 
         time.sleep(1) # @todo Implement poll timeout for test cases
-        (of_port, pkt, pkt_time) = self.dataplane.packet_get()
+        (of_port, pkt, pkt_time) = self.dataplane.poll()
 
         self.assertTrue(pkt is not None, 'Packet not received')
         if of_port is not None:

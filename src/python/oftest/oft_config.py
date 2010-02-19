@@ -30,6 +30,8 @@ for both TX and RX.
 
 """
 
+import sys
+
 ##@var platform
 # A string representing the platform under test.  Tested below
 # for determining other variables.
@@ -157,4 +159,20 @@ def debug_log(module, cur_level, level, string):
     if level >= cur_level:
         #@todo Support output redirection based on debug level
         print module + ":" + dbg_string[level] + ":" + string
+
+
+def oft_assert(condition, string):
+    """
+    Test framework assertion check
+
+    @param condition The boolean condition to check
+    @param string String to print if error
+
+    If condition is not true, it is considered a test framework
+    failure and exit is called
+    """
+    if not condition:
+        debug_log("OFT", debug_level_default, DEBUG_CRITICAL, 
+                  "Internal error: " + string)
+        sys.exit(1)
 
