@@ -1,0 +1,116 @@
+OpenFlow Testing Framework
+February, 2010
+
+Warning
++++++++
+
+This is still experimental and it requires root privilege to
+control the dataplane ports.  As a consequence, there are
+some serious risks to the machine on which this is running.
+Use caution.
+
+Quick Start
++++++++++++
+
+    1.  Pre-requisites:
+        * Python 2.5 (or so)
+        * oftest checked out (called <oftest> here)
+        * scapy installed:  http://www.secdev.org/projects/scapy/
+        * Doxygen and doxypy for document generation (optional)
+        * lint for source checking (optional)
+
+    2.  Build the OpenFlow Python message classes
+        * cd <oftest>/tools/munger
+        * make
+        This places files in <oftest>/src/python/oftest/src
+
+    3.  Install with setup (currently not required)
+        * TBD
+
+    4.  Edit configuration
+        Edit <oftest>/src/python/oftest/oft_config.py. The only 
+        important variables right now are:
+
+        # The platform targetted; currently ignored outside this file
+        platform = <string>
+
+        # The association of OF port number to interface name
+        interface_ofport_map = {
+            <of_port_number> : <os_interface_name>,
+            ...
+        }
+        controller_port = <port number on which to listen>
+        controller_host = <ip address on which to listen>
+        debug_level_default = <desired debug level>
+
+    5.  Start the switch to test
+        The switch must be running and actively attempting to 
+        connect to the controller at the host/port specified above.
+
+    6.  Run basic.py
+        See Warning above
+        * cd <oftest>/tests
+        * sudo python basic.py
+
+
+Overview
+++++++++
+
+    The directory structure is currently:
+
+     <oftest>
+         `
+         |-- doc
+         |-- src
+         |   `-- python
+         |       `-- oftest
+         |-- tests
+         `-- tools
+             |-- munger
+             `-- pylibopenflow
+
+    The tools directory is what processes the OpenFlow header
+    files to produce Python classes representing OpenFlow messages.
+    The results are placed in src/python/oftest and currently
+    include:
+
+        message.py:      The main API providing OF message classes
+        error.py:        Subclasses for error messages
+        action.py:       Subclasses for action specification
+        cstruct.py:      Direct representation of C structures in Python
+        class_maps.py:   Addition info about C structures
+
+    In addition, the following Python files are present in 
+    src/python/oftest:
+
+        oft_config.py:   The system configuration file
+        controller.py:   The controller representation
+        dataplane.py:    The dataplane representation
+        action_list.py:  Action list class
+        netutils.py:     e.g., set promisc on sockets
+        ofutils.py:      Utilities related to OpenFlow messages
+
+
+
+Other Info
+++++++++++
+
+    * Build doc with
+      + cd <oftest>/tools/munger
+      + make doc
+    Places the results in <oftest>/doc/html
+
+    * Run lint on sources
+      + cd <oftest>/tools/munger
+      + make lint
+    Places results in <oftest>/lint/*.log
+    The file controller.log currently has some errors indicated
+
+
+To Do
++++++
+
+    * See the Regression Test component on trac:
+      http://www.openflowswitch.org/bugs/openflow
+      http://www.openflowswitch.org/bugs/openflow/query?component=Regression+test+suite
+
