@@ -426,6 +426,7 @@ class Controller(Thread):
             return (None, None)
 
         # Careful of race condition releasing sync before message cv
+        # Also, this style is ripe for a lockup.
         self.expect_msg_cv.acquire()
         self.sync.release()
         self.expect_msg = True

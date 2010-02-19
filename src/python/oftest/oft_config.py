@@ -154,6 +154,7 @@ def debug_log(module, cur_level, level, string):
 
     @todo Allow file logging options, etc
     @todo Add timestamps
+    @todo Consider using the native Python logging module
     """
 
     if level >= cur_level:
@@ -169,7 +170,12 @@ def oft_assert(condition, string):
     @param string String to print if error
 
     If condition is not true, it is considered a test framework
-    failure and exit is called
+    failure and exit is called.
+
+    This assert is meant to represent a violation in the 
+    assumptions of how the test framework is supposed to work
+    (for example, an inconsistent packet queue state) rather than
+    a test failure.
     """
     if not condition:
         debug_log("OFT", debug_level_default, DEBUG_CRITICAL, 
