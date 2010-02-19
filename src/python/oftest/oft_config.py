@@ -36,32 +36,6 @@ import sys
 # A string representing the platform under test.  Tested below
 # for determining other variables.
 
-##@var switch_cxn_type
-# How does the test framework communicate to the switch?
-#
-# Options include:
-# @arg localhost:   Switch is running on same host as tests
-# @arg ssh:         Use paramiko to control ssh connection. Needs switch
-# IP and other params
-#
-# For ssh, additional variables include
-# @arg switch_ip = "192.168.2.21"
-# @arg switch_username = "root"
-# @arg switch_password
-
-##@var switch_init
-# A function to be called to initialize the switch.  May be None
-# to indicate no such function needs to be called.
-
-##@var switch_connect
-# Function to be called to prompt the switch to connect to the
-# controller.  The function may need to maintain connection state 
-# as it could be called multiple times between disconnects.
-
-##@var switch_disconnect
-# Function to be called to force the switch to disconnect from the
-# controller. 
-
 ##@var controller_host
 # Gives the controller host address to use
 
@@ -74,19 +48,6 @@ platform = "bcm_indigo"
 # platform = "stanford_lb4g"
 
 
-# These can be moved into platform specific code if needed
-
-RCV_TIMEOUT_DEFAULT = 10
-RCV_SIZE_DEFAULT = 4096
-CONTROLLER_HOST_DEFAULT = ''
-CONTROLLER_PORT_DEFAULT = 6633
-
-# Timeout in seconds for initial connection
-INIT_CONNECT_TIMEOUT = 4
-
-# Number of switch connection requests to queue
-LISTEN_QUEUE_SIZE = 1
-
 if platform == "sw_userspace":
     interface_ofport_map = {
         1 : "eth2",
@@ -94,10 +55,6 @@ if platform == "sw_userspace":
         3 : "eth4",
         4 : "eth5"
         }
-    switch_cxn_type = "localhost"
-    switch_init = None  # TBD
-    switch_connect = None  # TBD
-    switch_disconnect = None  # TBD
     controller_host = "172.27.74.158"
     controller_port = 7000
 
@@ -109,16 +66,10 @@ elif platform == "bcm_indigo":
         26 : "eth5"
         }
     # For SSH connections to switch
-    switch_cxn_type = "ssh"
-    switch_ip = "192.168.2.21"
-    switch_username = "root"
-    switch_password = "OpenFlow"
-    switch_init = None  # TBD
-    switch_connect = None  # TBD
-    switch_disconnect = None  # TBD
     controller_host = "192.168.2.2"
 #    controller_host = "172.27.74.26"
     controller_port = 6634
+
 
 
 # Debug levels
@@ -140,6 +91,20 @@ dbg_string = [
     "ERROR    ",
     "CRITICAL "
     ]
+
+
+# These can be moved into platform specific code if needed
+
+RCV_TIMEOUT_DEFAULT = 10
+RCV_SIZE_DEFAULT = 4096
+CONTROLLER_HOST_DEFAULT = ''
+CONTROLLER_PORT_DEFAULT = 6633
+
+# Timeout in seconds for initial connection
+INIT_CONNECT_TIMEOUT = 4
+
+# Number of switch connection requests to queue
+LISTEN_QUEUE_SIZE = 1
 
 def debug_log(module, cur_level, level, string):
     """
