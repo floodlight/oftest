@@ -50,6 +50,7 @@ class DataPlanePort(Thread):
         """
         Set up a port monitor object
         @param interface_name The name of the physical interface like eth1
+        @param port_number The port number associated with this port
         @param parent The controlling dataplane object; for pkt wait CV
         @param max_pkts Maximum number of pkts to keep in queue
         """
