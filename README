@@ -20,6 +20,11 @@ Quick Start
         * lint for source checking (optional)
 
     2.  Build the OpenFlow Python message classes
+
+        Important:  The OF version used by the controller is based on 
+        the file in <oftest>/tools/pylibopenflow/include/openflow.h
+        This is currently the 1.0 release file.
+
         * cd <oftest>/tools/munger
         * make
         This places files in <oftest>/src/python/oftest/src
@@ -113,4 +118,6 @@ To Do
     * See the Regression Test component on trac:
       http://www.openflowswitch.org/bugs/openflow
       http://www.openflowswitch.org/bugs/openflow/query?component=Regression+test+suite
+
+    * Make the framework work with OF versions other than 1.0?
 
