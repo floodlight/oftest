@@ -56,6 +56,19 @@ that the test set should implement a function test_set_init which takes
 an oft configuration dictionary and returns a unittest.TestSuite object.
 Future test sets should do the same thing.
 
+Default setup:
+
+The default setup runs locally using veth pairs.  To exercise this, 
+checkout and build an openflow userspace datapath.  Then start it on 
+the local host:
+  sudo ~/openflow/regress/bin/veth_setup.pl 
+  sudo ofdatapath -i veth0,veth2,veth4,veth6 punix:/tmp/ofd &
+  sudo ofprotocol unix:/tmp/ofd tcp:127.0.0.1 --fail=closed --max-backoff=1 &
+
+Next, run oft: 
+  sudo ./oft --debug=info
+
+Examine oft.log if things don't work.
 """
 
 import sys
