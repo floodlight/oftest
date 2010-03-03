@@ -88,13 +88,15 @@ Overview
     In addition, the following Python files are present in 
     src/python/oftest:
 
-        oft_config.py:   The system configuration file
         controller.py:   The controller representation
         dataplane.py:    The dataplane representation
         action_list.py:  Action list class
         netutils.py:     e.g., set promisc on sockets
         ofutils.py:      Utilities related to OpenFlow messages
+        oft_assert.py:   Test framework level assertion
 
+    Tests are run from the tests directory.  The file oft is the
+    top level entry point for tests.  Try ./oft --help for some more.
 
 
 Other Info
@@ -115,6 +117,8 @@ Other Info
 To Do
 +++++
 
+    * Need to have an overview of the components of the test, how they
+      connect and how they are managed by the test framework.
     * See the Regression Test component on trac:
       http://www.openflowswitch.org/bugs/openflow
       http://www.openflowswitch.org/bugs/openflow/query?component=Regression+test+suite
