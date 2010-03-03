@@ -22,13 +22,14 @@ import netutils
 from threading import Thread
 from threading import Lock
 from threading import Condition
-from oft_config import *
 import select
+import logging
+from oft_assert import oft_assert
 
-#@todo Move these identifiers into config
+##@todo Find a better home for these identifiers (dataplane)
+RCV_SIZE_DEFAULT = 4096
 ETH_P_ALL = 0x03
 RCV_TIMEOUT = 10000
-RCV_SIZE = 4096
 
 class DataPlanePort(Thread):
     """
@@ -56,20 +57,17 @@ class DataPlanePort(Thread):
         """
         Thread.__init__(self)
         self.interface_name = interface_name
-        self.debug_level = debug_level_default
         self.max_pkts = max_pkts
         self.packets_total = 0
         self.packets = []
         self.packets_discarded = 0
         self.port_number = port_number
         self.socket = self.interface_open(interface_name)
-        self.dbg(DEBUG_INFO, "Openned port monitor socket")
+        logname = "dp-" + interface_name
+        self.logger = logging.getLogger(logname)
+        self.logger.info("Openned port monitor socket")
         self.parent = parent
         self.pkt_sync = self.parent.pkt_sync
-
-    def dbg(self, level, string):
-        debug_log("DPLANE", self.debug_level, level,
-                  self.interface_name + ": " + string)
 
     def interface_open(self, interface_name):
         """
@@ -97,33 +95,30 @@ class DataPlanePort(Thread):
                     select.select(self.socs, [], [], 1)
             except:
                 print sys.exc_info()
-                self.dbg(DEBUG_ERROR, "Select error, exiting")
-                sys.exit(1)
-
-            #if not sel_err is None:
-            #    self.dbg(DEBUG_VERBOSE, "Socket error from select set")
+                self.logger.error("Select error, exiting")
+                break
 
             if not self.running:
                 break
 
-            if sel_in is None:
+            if (sel_in is None) or (len(sel_in) == 0):
                 continue
 
             try:
-                rcvmsg = self.socket.recv(RCV_SIZE)
+                rcvmsg = self.socket.recv(RCV_SIZE_DEFAULT)
             except socket.error:
                 if not error_warned:
-                    self.dbg(DEBUG_INFO, "Socket error on recv")
+                    self.logger.info("Socket error on recv")
                     error_warned = True
                 continue
 
             if len(rcvmsg) == 0:
-                self.dbg(DEBUG_INFO, "Zero len pkt rcvd")
+                self.logger.info("Zero len pkt rcvd")
                 self.kill()
                 break
 
             rcvtime = time.clock()
-            self.dbg(DEBUG_VERBOSE, "Pkt len " + str(len(rcvmsg)) +
+            self.logger.debug("Pkt len " + str(len(rcvmsg)) +
                      " in at " + str(rcvtime))
 
             # Enqueue packet
@@ -134,29 +129,29 @@ class DataPlanePort(Thread):
                 self.packets_discarded += 1
             else:
                 self.parent.packets_pending += 1
-                # Check if parent is waiting on this (or any) port
-                if self.parent.want_pkt:
-                    if (not self.parent.want_pkt_port or
+            # Check if parent is waiting on this (or any) port
+            if self.parent.want_pkt:
+                if (not self.parent.want_pkt_port or
                         self.parent.want_pkt_port == self.port_number):
-                        self.parent.got_pkt_port = self.port_number
-                        self.parent.want_pkt = False
-                        self.parent.want_pkt.notify()
+                    self.parent.got_pkt_port = self.port_number
+                    self.parent.want_pkt = False
+                    self.parent.pkt_sync.notify()
             self.packets.append((rcvmsg, rcvtime))
             self.packets_total += 1
             self.pkt_sync.release()
 
-        self.dbg(DEBUG_INFO, "Thread exit ")
+        self.logger.info("Thread exit ")
 
     def kill(self):
         """
         Terminate the running thread
         """
+        self.logger.debug("Port monitor kill")
         self.running = False
         try:
             self.socket.close()
         except:
-            self.dbg(DEBUG_INFO, "Ignoring dataplane soc shutdown error")
-        self.dbg(DEBUG_INFO, "Port monitor exiting")
+            self.logger.info("Ignoring dataplane soc shutdown error")
 
     def dequeue(self, use_lock=True):
         """
@@ -205,8 +200,6 @@ class DataPlanePort(Thread):
         @param packet The packet data to send to the port
         @retval The number of bytes sent
         """
-        self.dbg(DEBUG_VERBOSE,
-                 "port sending " + str(len(packet)) + " bytes")
         return self.socket.send(packet)
 
 
@@ -235,7 +228,6 @@ class DataPlane:
     """
     def __init__(self):
         self.port_list = {}
-        self.debug_level = debug_level_default
         # pkt_sync serves double duty as a regular top level lock and
         # as a condition variable
         self.pkt_sync = Condition()
@@ -245,9 +237,7 @@ class DataPlane:
         self.want_pkt_port = None # What port required (or None)
         self.got_pkt_port = None # On what port received?
         self.packets_pending = 0 # Total pkts in all port queues
-
-    def dbg(self, level, string):
-        debug_log("DPORT", self.debug_level, level, string)
+        self.logger = logging.getLogger("dataplane")
 
     def port_add(self, interface_name, port_number):
         """
@@ -267,12 +257,11 @@ class DataPlane:
         @param port_number The port to send the data to
         @param packet Raw packet data to send to port
         """
-        self.dbg(DEBUG_VERBOSE,
-                 "Sending %d bytes to port %d" % (len(packet), port_number))
+        self.logger.debug("Sending %d bytes to port %d" % 
+                      (len(packet), port_number))
         bytes = self.port_list[port_number].send(packet)
         if bytes != len(packet):
-            self.dbg(DEBUG_ERROR,"Unhandled send error, " +
-                     "length mismatch %d != %d" %
+            self.logger.error("Unhandled send error, length mismatch %d != %d" %
                      (bytes, len(packet)))
         return bytes
 
@@ -284,7 +273,7 @@ class DataPlane:
         for port_number in self.port_list.keys():
             bytes = self.port_list[port_number].send(packet)
             if bytes != len(packet):
-                self.dbg(DEBUG_ERROR, "Unhandled send error" +
+                self.logger.error("Unhandled send error" +
                          ", port %d, length mismatch %d != %d" %
                          (port_number, bytes, len(packet)))
 
@@ -352,15 +341,15 @@ class DataPlane:
                 self.port_list[self.got_pkt_port].dequeue(use_lock=False)
             self.pkt_sync.release()
             oft_assert(pkt, "Poll: pkt reported, but not found at " +
-                       self.got_pkt_port)
+                       str(self.got_pkt_port))
             return self.got_pkt_port, pkt, time
 
         self.pkt_sync.release()
-        self.dbg(DEBUG_VERBOSE, "Poll time out, no packet")
+        self.logger.debug("Poll time out, no packet")
 
         return None, None, None
 
-    def kill(self, join_threads=False):
+    def kill(self, join_threads=True):
         """
         Close all sockets for dataplane
         @param join_threads If True call join on each thread
@@ -368,10 +357,10 @@ class DataPlane:
         for port_number in self.port_list.keys():
             self.port_list[port_number].kill()
             if join_threads:
-                self.dbg(DEBUG_INFO, "Joining " + str(port_number))
+                self.logger.debug("Joining " + str(port_number))
                 self.port_list[port_number].join()
 
-        self.dbg(DEBUG_INFO, "DataPlane shutdown")
+        self.logger.info("DataPlane shutdown")
 
     def show(self, prefix=''):
         print prefix + "Dataplane Controller"

@@ -7,6 +7,7 @@
 TOP_DIR = ../..
 TOOLS_DIR = ..
 DOC_DIR = ${TOP_DIR}/doc
+TESTS_DIR = ${TOP_DIR}/tests
 
 PYLIBOF_DIR = ${TOOLS_DIR}/pylibopenflow
 
@@ -55,8 +56,11 @@ lint/%.log: ${TARGET_DIR}/%.py
 # Note that lint has issues with scapy syntax
 lint: ${LINT_FILES}
 
+${TESTS_DIR}/oft.py:
+	ln -s oft $@
+
 # For now. just local source doc generated
-doc: ${GEN_FILES} ${OTHER_FILES} ${DOC_DIR}/Doxyfile
+doc: ${GEN_FILES} ${OTHER_FILES} ${DOC_DIR}/Doxyfile ${TESTS_DIR}/oft.py
 	(cd ${DOC_DIR} && doxygen)
 
 clean:

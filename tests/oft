@@ -1,0 +1,251 @@
+#!/usr/bin/env python
+"""
+@package oft
+
+OpenFlow test framework top level script
+
+This script is the entry point for running OpenFlow tests
+using the OFT framework.
+
+The global configuration is passed around in a dictionary
+ygenerally called config.  The keys have the following
+significance.
+
+    platform          : String identifying the target platform
+    controller_host   : Host on which test controller is running (for sockets)
+    controller_port   : Port on which test controller listens for switch cxn
+    port_count        : (Optional) Number of ports in dataplane
+    base_of_port      : (Optional) Base OpenFlow port number in dataplane
+    base_if_index     : (Optional) Base OS network interface for dataplane
+    test_spec         : (TBD) Specification of test(s) to run
+    log_file          : Filename for test logging
+    debug             : String giving debug level (info, warning, error...)
+    dbg_level         : logging module value of debug level
+    port_map          : Map of dataplane OpenFlow port to OS interface names
+
+See config_defaults below for the default values.
+
+To add configuration to the system, first add an entry to config_default
+below.  If you want this to be a command line parameter, edit config_setup
+to add the option and default value to the parser.  Then edit config_get
+to make sure the option value gets copied into the configuration 
+structure (which then gets passed to everyone else).
+
+By convention, oft attempts to import the contents of a file by the 
+name of $platform.py into the local namespace.  
+
+IMPORTANT: That file should define a function platform_config_update which
+takes a configuration dictionary as an argument and updates it for the
+current run.  In particular, it should set up config["port_map"] with
+the proper map from OF port numbers to OF interface names.
+
+You can add your own platform, say gp104, by adding a file gp104.py
+that defines the function platform_config_update and then use the
+parameter --platform=gp104 on the command line.
+
+If platform_config_update does not set config["port_map"], an attempt
+is made to generate a default map via the function default_port_map_setup.
+This will use "local" and "remote" for platform names if available
+and generate a sequential map based on the values of base_of_port and
+base_if_index in the configuration structure.
+
+@todo Determine and implement conventions for test_spec.
+
+The current model for test sets is basic.py.  The current convention is
+that the test set should implement a function test_set_init which takes
+an oft configuration dictionary and returns a unittest.TestSuite object.
+Future test sets should do the same thing.
+
+"""
+
+import sys
+from optparse import OptionParser
+import logging
+import unittest
+
+# Import test files
+import basic
+
+##@var DEBUG_LEVELS
+# Map from strings to debugging levels
+DEBUG_LEVELS = {
+    'debug'              : logging.DEBUG,
+    'verbose'            : logging.DEBUG,
+    'info'               : logging.INFO,
+    'warning'            : logging.WARNING,
+    'warn'               : logging.WARNING,
+    'error'              : logging.ERROR,
+    'critical'           : logging.CRITICAL
+}
+
+_debug_default = "warning"
+_debug_level_default = DEBUG_LEVELS[_debug_default]
+
+##@var config_default
+# The default configuration dictionary for OFT
+config_default = {
+    "platform"           : "local",
+    "controller_host"    : "127.0.0.1",
+    "controller_port"    : 6633,
+    "port_count"         : 4,
+    "base_of_port"       : 1,
+    "base_if_index"      : 1,
+    "test_spec"          : "basic",
+    "log_file"           : "oft.log",
+    "debug"              : _debug_default,
+    "dbg_level"          : _debug_level_default,
+    "port_map"           : {}
+}
+
+# Map options to config structure
+def config_get(opts):
+    "Convert options class to OFT configuration dictionary"
+    cfg = config_default.copy()
+    cfg["platform"] = opts.platform
+    cfg["controller_host"] = opts.controller_host
+    cfg["controller_port"] = opts.controller_port
+    cfg["test_spec"] = opts.test_spec
+    cfg["log_file"] = opts.log_file
+    if opts.debug not in DEBUG_LEVELS.keys():
+        print "Warning:  Bad value specified for debug level; using default"
+        opts.debug = _debug_default
+    cfg["debug"] = opts.debug
+    cfg["dbg_level"] = DEBUG_LEVELS[cfg["debug"]]
+    cfg["base_of_port"] = opts.base_of_port
+    cfg["base_if_index"] = opts.base_if_index
+    cfg["port_count"] = opts.port_count
+    return cfg
+
+def config_setup(cfg_dflt):
+    """
+    Set up the configuration including parsing the arguments
+
+    @param cfg_dflt The default configuration dictionary
+    @return A pair (config, args) where config is an config
+    object and args is any additional arguments from the command line
+    """
+
+    parser = OptionParser(version="%prog 0.1")
+
+    # Set up default values
+    parser.set_defaults(platform=cfg_dflt["platform"])
+    parser.set_defaults(controller_host=cfg_dflt["controller_host"])
+    parser.set_defaults(controller_port=cfg_dflt["controller_port"])
+    parser.set_defaults(test_spec=cfg_dflt["test_spec"])
+    parser.set_defaults(log_file=cfg_dflt["log_file"])
+    parser.set_defaults(debug=cfg_dflt["debug"])
+    parser.set_defaults(base_of_port=cfg_dflt["base_of_port"])
+    parser.set_defaults(base_if_index=cfg_dflt["base_if_index"])
+    parser.set_defaults(port_count=cfg_dflt["port_count"])
+
+    plat_help = """Set the platform type.  Valid values include:
+        local:  User space virtual ethernet pair setup
+        remote:  Remote embedded Broadcom based switch
+        """
+    parser.add_option("-P", "--platform", help=plat_help)
+    parser.add_option("-H", "--host", dest="controller_host",
+                      help="The IP/name of the test controller host")
+    parser.add_option("-p", "--port", dest="controller_port",
+                      type="int", help="Port number of the test controller")
+    parser.add_option("--test-spec", "--test-list", 
+                      help="Indicate tests to run (TBD)")
+    parser.add_option("--log-file", 
+                      help="Name of log file, empty string to log to console")
+    parser.add_option("--debug",
+                      help="Debug lvl: debug, info, warning, error, critical")
+    parser.add_option("--port_count",
+                      help="Number of ports to use (optional)")
+    parser.add_option("--base_of_port",
+                      help="Base OpenFlow port number (optional)")
+    parser.add_option("--base_if_index",
+                      help="Base interface index number (optional)")
+    # Might need this if other parsers want command line
+    # parser.allow_interspersed_args = False
+    (options, args) = parser.parse_args()
+
+    config = config_get(options)
+
+    return (config, args)
+
+def logging_setup(config):
+    """
+    Set up logging based on config
+    """
+    _format = "%(asctime)s  %(name)-10s: %(levelname)-8s: %(message)s"
+    _datefmt = "%H:%M:%S"
+    if config["log_file"]:
+        logging.basicConfig(filename=config["log_file"],
+                            level=config["dbg_level"],
+                            format=_format, datefmt=_datefmt)
+    #@todo Handle "no log file"
+
+def default_port_map_setup(config):
+    """
+    Setup the OF port mapping based on config
+    @param config The OFT configuration structure
+    @return Port map dictionary
+    """
+    if (config["base_of_port"] is None) or not config["port_count"]:
+        return None
+    port_map = {}
+    if config["platform"] == "local":
+        # For local, use every other veth port
+        for idx in range(config["port_count"]):
+            port_map[config["base_of_port"] + idx] = "veth" + \
+                str(config["base_if_index"] + (2 * idx))
+    elif config["platform"] == "remote":
+        # For remote, use eth ports
+        for idx in range(config["port_count"]):
+            port_map[config["base_of_port"] + idx] = "eth" + \
+                str(config["base_if_index"] + idx)
+    else:
+        return None
+
+    logging.info("Built default port map")
+    return port_map
+
+#
+# Main script
+#
+
+# Get configuration, set up logging, import platform from file
+(config, args) = config_setup(config_default)
+logging_setup(config)
+logging.info("*** STARTING TEST RUN ***")
+
+of_os_port_map = None
+if config["platform"]:
+    _imp_string = "from " + config["platform"] + " import *"
+    logging.info("Importing: " + _imp_string)
+    try:
+        exec(_imp_string)
+    except:
+        logging.warn("Failed to import " + config["platform"] + " file")
+
+try:
+    platform_config_update(config)
+except:
+    logging.warn("Could not run platform host configuration")
+
+if not config["port_map"]:
+    # Try to set up default port mapping if not done by platform
+    config["port_map"] = default_port_map_setup(config)
+
+if not config["port_map"]:
+    logging.critical("Interface port map is not defined.  Exiting")
+    print("Interface port map is not defined.  Exiting")
+    sys.exit(1)
+
+logging.debug("Configuration: " + str(config))
+logging.info("OF port map: " + str(config["port_map"]))
+
+# Init the test sets
+#@todo Use test-spec from config to determine which tests to run
+basic_suite = basic.test_set_init(config)
+if config["dbg_level"] >= logging.WARNING: _verb = 1
+else: _verb = 2
+
+unittest.TextTestRunner(verbosity=_verb).run(basic_suite)
+
+logging.info("*** END OF TESTS ***")
+

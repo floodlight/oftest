@@ -16,7 +16,6 @@ poll calls.
 Callbacks and polling support specifying the message type
 
 @todo Support transaction semantics via xid
-@todo Set up reasonable logging facility
 @todo Support select and listen on an administrative socket (or
 use a timeout to support clean shutdown).
 
@@ -27,7 +26,6 @@ on an administrative socket and can shut down the socket might work.
 
 """
 
-from oft_config import *
 import os
 import socket
 import time
@@ -40,6 +38,11 @@ from ofutils import *
 # For some reason, it seems select to be last (or later).
 # Otherwise get an attribute error when calling select.select
 import select
+import logging
+
+##@todo Find a better home for these identifiers (controller)
+RCV_SIZE_DEFAULT = 4096
+LISTEN_QUEUE_SIZE = 1
 
 class Controller(Thread):
     """
@@ -71,7 +74,7 @@ class Controller(Thread):
     @var dbg_state Debug indication of state
     """
 
-    def __init__(self, max_pkts=1024):
+    def __init__(self, host='127.0.0.1', port=6633, max_pkts=1024):
         Thread.__init__(self)
         # Socket related
         self.rcv_size = RCV_SIZE_DEFAULT
@@ -101,11 +104,10 @@ class Controller(Thread):
         # Settings
         self.max_pkts = max_pkts
         self.passive = True
-        self.host = controller_host
-        self.port = controller_port
+        self.host = host
+        self.port = port
         self.dbg_state = "init"
-        self.debug_level = debug_level_default
-        # self.debug_level = DEBUG_VERBOSE
+        self.logger = logging.getLogger("controller")
 
         # Transaction and message type waiting variables 
         #   xid_cv: Condition variable (semaphore) for packet waiters
@@ -125,9 +127,6 @@ class Controller(Thread):
         self.expect_msg_type = None
         self.expect_msg_response = None
 
-    def dbg(self, level, string):
-        debug_log("CTRL", self.debug_level, level, string)
-
     def _socket_ready_handle(self, s):
         """
         Handle an input-ready socket
@@ -137,12 +136,12 @@ class Controller(Thread):
 
         if s == self.listen_socket:
             if self.switch_socket:
-                self.dbg(DEBUG_ERROR, "Multiple switch cxns not supported")
+                self.logger.error("Multiple switch cxns not supported")
                 sys.exit(1)
 
             (self.switch_socket, self.switch_addr) = \
                 self.listen_socket.accept()
-            self.dbg(DEBUG_INFO, "Got cxn to " + str(self.switch_addr))
+            self.logger.info("Got cxn to " + str(self.switch_addr))
             # Notify anyone waiting
             self.connect_cv.acquire()
             self.connect_cv.notify()
@@ -154,14 +153,14 @@ class Controller(Thread):
             try:
                 pkt = self.switch_socket.recv(self.rcv_size)
             except:
-                self.dbg(DEBUG_INFO, "error on switch read")
+                self.logger.info("Error on switch read")
                 return True
 
             if not self.active:
                 return False
 
             if len(pkt) == 0:
-                self.dbg(DEBUG_INFO, "zero-len pkt in")
+                self.logger.info("zero-len pkt in")
                 return True
 
             (handled, msg) = self._pkt_handler_check(pkt)
@@ -178,7 +177,7 @@ class Controller(Thread):
             self.packets_total += 1
             self.sync.release()
         else:
-            self.dbg(DEBUG_ERROR, "Unknown socket ready: " + str(s))
+            self.logger.error("Unknown socket ready: " + str(s))
             return True
 
         return False
@@ -201,7 +200,7 @@ class Controller(Thread):
         self.dbg_state = "starting"
 
         # Create listen socket
-        self.dbg(DEBUG_INFO, "Create/listen at " + self.host + ":" + 
+        self.logger.info("Create/listen at " + self.host + ":" + 
                  str(self.port))
         self.listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.listen_socket.setsockopt(socket.SOL_SOCKET, 
@@ -210,7 +209,7 @@ class Controller(Thread):
         self.dbg_state = "listening"
         self.listen_socket.listen(LISTEN_QUEUE_SIZE)
 
-        self.dbg(DEBUG_INFO, "Waiting for switch connection")
+        self.logger.info("Waiting for switch connection")
         self.socs = [self.listen_socket]
         self.dbg_state = "running"
         while self.active:
@@ -220,7 +219,7 @@ class Controller(Thread):
                     select.select(self.socs, [], self.socs, 1)
             except:
                 print sys.exc_info()
-                self.dbg(DEBUG_ERROR, "Select error, exiting")
+                self.logger.error("Select error, exiting")
                 sys.exit(1)
 
             if not self.active:
@@ -230,16 +229,16 @@ class Controller(Thread):
                 reset_switch_cxn = self._socket_ready_handle(s)
 
             for s in sel_err:
-                self.dbg(DEBUG_ERROR, "Got socket error on: " + str(s))
+                self.logger.error("Got socket error on: " + str(s))
                 if s == self.switch_socket:
                     reset_switch_cxn = True
                 else:
-                    self.dbg(DEBUG_ERROR, "Socket error; exiting")
+                    self.logger.error("Socket error; exiting")
                     self.active = False
                     break
 
             if self.active and reset_switch_cxn:
-                self.dbg(DEBUG_INFO, "Closing switch cxn")
+                self.logger.info("Closing switch cxn")
                 try:
                     self.switch_socket.close()
                 except:
@@ -249,7 +248,7 @@ class Controller(Thread):
 
         # End of main loop
         self.dbg_state = "closing"
-        self.dbg(DEBUG_INFO, "Exiting controller thread")
+        self.logger.info("Exiting controller thread")
         self.shutdown()
 
     def connect(self, timeout=None):
@@ -290,13 +289,13 @@ class Controller(Thread):
         try:
             self.switch_socket.shutdown(socket.SHUT_RDWR)
         except:
-            self.dbg(DEBUG_INFO, "Ignoring switch soc shutdown error")
+            self.logger.info("Ignoring switch soc shutdown error")
         self.switch_socket = None
 
         try:
             self.listen_socket.shutdown(socket.SHUT_RDWR)
         except:
-            self.dbg(DEBUG_INFO, "Ignoring listen soc shutdown error")
+            self.logger.info("Ignoring listen soc shutdown error")
         self.listen_socket = None
         self.dbg_state = "down"
 
@@ -314,18 +313,16 @@ class Controller(Thread):
         # Parse the header to get type
         hdr = of_header_parse(pkt)
         if not hdr:
-            self.dbg(DEBUG_INFO, "Could not parse header, pkt len", len(pkt))
+            self.logger.info("Could not parse header, pkt len", len(pkt))
             self.parse_errors += 1
             return (True, None)
-        # if self.debug_level <= DEBUG_VERBOSE:
-        #     hdr.show()
 
-        self.dbg(DEBUG_VERBOSE, "message: len %d. type %s. hdr.len %d" %
+        self.logger.debug("message: len %d. type %s. hdr.len %d" %
             (len(pkt), ofp_type_map[hdr.type], hdr.length))
         msg = of_message_parse(pkt)
         if not msg:
             self.parse_errors += 1
-            self.dbg(DEBUG_WARN, "Could not parse message")
+            self.logger.warn("Could not parse message")
             return (True, None)
 
         # Check if transaction is waiting
@@ -342,7 +339,7 @@ class Controller(Thread):
         # Check if anyone waiting on this type of message
         self.expect_msg_cv.acquire()
         if self.expect_msg:
-            if not self.expect_msg_type or self.expect_msg_type == hdr.type:
+            if not self.expect_msg_type or (self.expect_msg_type == hdr.type):
                 self.expect_msg_response = (msg, pkt)
                 self.expect_msg = False
                 self.expect_msg_cv.notify()
@@ -391,20 +388,24 @@ class Controller(Thread):
         Wait for the next OF message received from the switch.
 
         @param exp_msg If set, return only when this type of message 
-        is received.
+        is received (unless timeout occurs).
         @param timeout If None, do not block.  Otherwise, sleep in
-        intervals of 1 second until
+        intervals of 1 second until message is received.
 
         @retval A pair (msg, pkt) where msg is a message object and pkt
         the string representing the packet as received from the socket.
         This allows additional parsing by the receiver if necessary.
 
         The data members in the message are in host endian order.
-        If an error occurs, None is returned
+        If an error occurs, (None, None) is returned
+
+        The current queue is searched for a message of the desired type
+        before sleeping on message in events.
         """
 
         msg = pkt = None
 
+        self.logger.debug("Poll for " + ofp_type_map[exp_msg])
         # First check the current queue
         self.sync.acquire()
         if len(self.packets) > 0:
@@ -425,20 +426,24 @@ class Controller(Thread):
             self.sync.release()
             return (None, None)
 
+        msg = pkt = None
+        self.logger.debug("Entering timeout")
         # Careful of race condition releasing sync before message cv
         # Also, this style is ripe for a lockup.
         self.expect_msg_cv.acquire()
         self.sync.release()
+        self.expect_msg_response = None
         self.expect_msg = True
         self.expect_msg_type = exp_msg
         self.expect_msg_cv.wait(timeout)
         if self.expect_msg_response is not None:
             (msg, pkt) = self.expect_msg_response
-            self.expect_msg_response = None
         self.expect_msg_cv.release()
 
         if msg is None:
-            self.dbg(DEBUG_VERBOSE, "poll time out")
+            self.logger.debug("Poll time out")
+        else:
+            self.logger.debug("Got msg " + str(msg))
 
         return (msg, pkt)
 
@@ -464,8 +469,7 @@ class Controller(Thread):
         self.xid_cv.acquire()
         if self.xid:
             self.xid_cv.release()
-            self.dbg(DEBUG_ERROR, 
-                     "Can only run one transaction at a time")
+            self.logger.error("Can only run one transaction at a time")
             return None
 
         self.xid = msg.header.xid
@@ -494,7 +498,7 @@ class Controller(Thread):
 
         if not self.switch_socket:
             # Sending a string indicates the message is ready to go
-            self.dbg(DEBUG_INFO, "message_send: no socket")
+            self.logger.info("message_send: no socket")
             return -1
         #@todo If not string, try to pack
         if type(msg) != type(""):
@@ -503,17 +507,17 @@ class Controller(Thread):
                     msg.header.xid = gen_xid()
                 outpkt = msg.pack()
             except:
-                self.dbg(DEBUG_INFO, 
+                self.logger.error(
                          "message_send: not an OF message or string?")
                 return -1
         else:
             outpkt = msg
 
-        self.dbg(DEBUG_INFO, "Sending pkt of len " + str(len(outpkt)))
+        self.logger.debug("Sending pkt of len " + str(len(outpkt)))
         if self.switch_socket.sendall(outpkt) is None:
             return 0
 
-        self.dbg(DEBUG_ERROR, "Unknown error on sendall")
+        self.logger.error("Unknown error on sendall")
         return -1
 
     def __str__(self):
