@@ -30,33 +30,23 @@ Quick Start
         This places files in <oftest>/src/python/oftest/src
 
     3.  Install with setup (currently not required)
-        * TBD
+        * make install
+        This runs setuptools on the generated source.  It requires
+        that setuptools be installed and the user have sudo rights.
 
     4.  Edit configuration
-        Edit <oftest>/src/python/oftest/oft_config.py. The only 
-        important variables right now are:
-
-        # The platform targetted; currently ignored outside this file
-        platform = <string>
-
-        # The association of OF port number to interface name
-        interface_ofport_map = {
-            <of_port_number> : <os_interface_name>,
-            ...
-        }
-        controller_port = <port number on which to listen>
-        controller_host = <ip address on which to listen>
-        debug_level_default = <desired debug level>
+        Starting from remote.py as a simple example, you can add your
+        own <platform>.py file and then have it imported with
+        --platform=<platform> on the command line.
 
     5.  Start the switch to test
         The switch must be running and actively attempting to 
         connect to the controller at the host/port specified above.
 
-    6.  Run basic.py
-        See Warning above
+    6.  Run oft
+        See Warning above; requires sudo to control the dataplane
         * cd <oftest>/tests
-        * sudo python basic.py
-
+        * sudo ./oft --help
 
 Overview
 ++++++++

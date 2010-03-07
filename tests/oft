@@ -187,14 +187,20 @@ def config_setup(cfg_dflt):
     plat_help = """Set the platform type.  Valid values include:
         local:  User space virtual ethernet pair setup
         remote:  Remote embedded Broadcom based switch
+        Create a new_plat.py file and use --platform=new_plat on the command line
         """
     parser.add_option("-P", "--platform", help=plat_help)
     parser.add_option("-H", "--host", dest="controller_host",
                       help="The IP/name of the test controller host")
     parser.add_option("-p", "--port", dest="controller_port",
                       type="int", help="Port number of the test controller")
-    parser.add_option("--test-spec", "--test-list", 
-                      help="Indicate tests to run (TBD)")
+    test_list_help = """Indicate tests to run.  Valid entries are "all" (the
+        default) or a comma separated list of:
+        module            Run all tests in the named module
+        testcase          Run tests in all modules with the name testcase
+        module.testcase   Run the specific test case
+        """
+    parser.add_option("--test-spec", "--test-list", help=test_list_help)
     parser.add_option("--log-file", 
                       help="Name of log file, empty string to log to console")
     parser.add_option("--debug",
