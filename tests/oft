@@ -74,8 +74,6 @@ This will use "local" and "remote" for platform names if available
 and generate a sequential map based on the values of base_of_port and
 base_if_index in the configuration structure.
 
-@todo Determine and implement conventions for test_spec.
-
 The current model for test sets is basic.py.  The current convention is
 that the test set should implement a function test_set_init which takes
 an oft configuration dictionary and returns a unittest.TestSuite object.
@@ -227,11 +225,9 @@ def logging_setup(config):
     """
     _format = "%(asctime)s  %(name)-10s: %(levelname)-8s: %(message)s"
     _datefmt = "%H:%M:%S"
-    if config["log_file"]:
-        logging.basicConfig(filename=config["log_file"],
-                            level=config["dbg_level"],
-                            format=_format, datefmt=_datefmt)
-    #@todo Handle "no log file"
+    logging.basicConfig(filename=config["log_file"],
+                        level=config["dbg_level"],
+                        format=_format, datefmt=_datefmt)
 
 def default_port_map_setup(config):
     """
