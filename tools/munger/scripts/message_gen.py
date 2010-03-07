@@ -528,6 +528,7 @@ class --TYPE--_stats_request(ofp_stats_request, ofp_--TYPE--_stats_request):
         self.type = --STATS_NAME--
 
     def pack(self, assertstruct=True):
+        self.header.length = len(self)
         packed = self.header.pack()
         packed += ofp_stats_request.pack(self)
         packed += ofp_--TYPE--_stats_request.pack(self)
@@ -585,6 +586,7 @@ class --TYPE--_stats_reply(ofp_stats_reply):
         self.stats = []
 
     def pack(self, assertstruct=True):
+        self.header.length = len(self)
         packed = self.header.pack()
         packed += ofp_stats_reply.pack(self)
         for obj in self.stats:
