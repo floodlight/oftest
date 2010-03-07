@@ -11,21 +11,46 @@ The global configuration is passed around in a dictionary
 ygenerally called config.  The keys have the following
 significance.
 
+<pre>
     platform          : String identifying the target platform
     controller_host   : Host on which test controller is running (for sockets)
     controller_port   : Port on which test controller listens for switch cxn
     port_count        : (Optional) Number of ports in dataplane
     base_of_port      : (Optional) Base OpenFlow port number in dataplane
     base_if_index     : (Optional) Base OS network interface for dataplane
+    test_dir          : (TBD) Directory to search for test files (default .)
     test_spec         : (TBD) Specification of test(s) to run
     log_file          : Filename for test logging
+    list              : Boolean:  List all tests and exit
     debug             : String giving debug level (info, warning, error...)
-    dbg_level         : logging module value of debug level
-    port_map          : Map of dataplane OpenFlow port to OS interface names
+</pre>
 
 See config_defaults below for the default values.
 
-To add configuration to the system, first add an entry to config_default
+The following are stored in the config dictionary, but are not currently
+configurable through the command line.
+
+<pre>
+    dbg_level         : logging module value of debug level
+    port_map          : Map of dataplane OpenFlow port to OS interface names
+    test_mod_map      : Dictionary indexed by module names and whose value
+                        is the module reference
+    all_tests         : Dictionary indexed by module reference and whose
+                        value is a list of functions in that module
+</pre>
+
+To add a test to the system, either: edit an existing test case file (like
+basic.py) to add a test class which inherits from unittest.TestCase (directly
+or indirectly); or add a new file which includes a function definition 
+test_set_init(config).  Preferably the file is in the same directory as existing
+tests, though you can specify the directory on the command line.  The file
+should not be called "all" as that's reserved for the test-spec.
+
+If you add a new file, the test_set_init function should record the port
+map object from the configuration along with whatever other configuration 
+information it may need.
+
+TBD:  To add configuration to the system, first add an entry to config_default
 below.  If you want this to be a command line parameter, edit config_setup
 to add the option and default value to the parser.  Then edit config_get
 to make sure the option value gets copied into the configuration 
@@ -61,23 +86,37 @@ Default setup:
 The default setup runs locally using veth pairs.  To exercise this, 
 checkout and build an openflow userspace datapath.  Then start it on 
 the local host:
+<pre>
   sudo ~/openflow/regress/bin/veth_setup.pl 
   sudo ofdatapath -i veth0,veth2,veth4,veth6 punix:/tmp/ofd &
   sudo ofprotocol unix:/tmp/ofd tcp:127.0.0.1 --fail=closed --max-backoff=1 &
 
 Next, run oft: 
   sudo ./oft --debug=info
+</pre>
 
 Examine oft.log if things don't work.
+
+@todo Generate test catalog; support list, selection and grouping
+
+Proposed test case setup:
+    Files in this or sub directories (or later, directory specified on 
+command line) that contain a function test_set_init are considered test
+files.
+    The function test_set_init examines the test_spec config variable
+and generates a suite of tests.
+    Support a command line option --test_mod so that all tests in that
+module will be run.
+    Support all to specify all tests from the module.
+
 """
 
 import sys
 from optparse import OptionParser
+from subprocess import Popen,PIPE
 import logging
 import unittest
-
-# Import test files
-import basic
+import time
 
 ##@var DEBUG_LEVELS
 # Map from strings to debugging levels
@@ -96,6 +135,7 @@ _debug_level_default = DEBUG_LEVELS[_debug_default]
 
 ##@var config_default
 # The default configuration dictionary for OFT
+#@todo Set up a dict of config params so easier to manage
 config_default = {
     "platform"           : "local",
     "controller_host"    : "127.0.0.1",
@@ -103,8 +143,10 @@ config_default = {
     "port_count"         : 4,
     "base_of_port"       : 1,
     "base_if_index"      : 1,
-    "test_spec"          : "basic",
+    "test_spec"          : "all",
+    "test_dir"           : ".",
     "log_file"           : "oft.log",
+    "list"               : False,
     "debug"              : _debug_default,
     "dbg_level"          : _debug_level_default,
     "port_map"           : {}
@@ -114,19 +156,15 @@ config_default = {
 def config_get(opts):
     "Convert options class to OFT configuration dictionary"
     cfg = config_default.copy()
-    cfg["platform"] = opts.platform
-    cfg["controller_host"] = opts.controller_host
-    cfg["controller_port"] = opts.controller_port
-    cfg["test_spec"] = opts.test_spec
-    cfg["log_file"] = opts.log_file
+    for key in cfg.keys():
+        cfg[key] = eval("opts." + key)
+
+    # Special case checks
     if opts.debug not in DEBUG_LEVELS.keys():
         print "Warning:  Bad value specified for debug level; using default"
         opts.debug = _debug_default
-    cfg["debug"] = opts.debug
     cfg["dbg_level"] = DEBUG_LEVELS[cfg["debug"]]
-    cfg["base_of_port"] = opts.base_of_port
-    cfg["base_if_index"] = opts.base_if_index
-    cfg["port_count"] = opts.port_count
+
     return cfg
 
 def config_setup(cfg_dflt):
@@ -140,17 +178,12 @@ def config_setup(cfg_dflt):
 
     parser = OptionParser(version="%prog 0.1")
 
+    #@todo parse port map as option?
     # Set up default values
-    parser.set_defaults(platform=cfg_dflt["platform"])
-    parser.set_defaults(controller_host=cfg_dflt["controller_host"])
-    parser.set_defaults(controller_port=cfg_dflt["controller_port"])
-    parser.set_defaults(test_spec=cfg_dflt["test_spec"])
-    parser.set_defaults(log_file=cfg_dflt["log_file"])
-    parser.set_defaults(debug=cfg_dflt["debug"])
-    parser.set_defaults(base_of_port=cfg_dflt["base_of_port"])
-    parser.set_defaults(base_if_index=cfg_dflt["base_if_index"])
-    parser.set_defaults(port_count=cfg_dflt["port_count"])
+    for key in cfg_dflt.keys():
+        eval("parser.set_defaults("+key+"=cfg_dflt['"+key+"'])")
 
+    #@todo Add options via dictionary
     plat_help = """Set the platform type.  Valid values include:
         local:  User space virtual ethernet pair setup
         remote:  Remote embedded Broadcom based switch
@@ -166,11 +199,13 @@ def config_setup(cfg_dflt):
                       help="Name of log file, empty string to log to console")
     parser.add_option("--debug",
                       help="Debug lvl: debug, info, warning, error, critical")
-    parser.add_option("--port_count",
+    parser.add_option("--port-count",
                       help="Number of ports to use (optional)")
-    parser.add_option("--base_of_port",
+    parser.add_option("--base-of-port",
                       help="Base OpenFlow port number (optional)")
-    parser.add_option("--base_if_index",
+    parser.add_option("--base-if-index",
+                      help="Base interface index number (optional)")
+    parser.add_option("--list", action="store_true",
                       help="Base interface index number (optional)")
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
@@ -217,19 +252,122 @@ def default_port_map_setup(config):
     logging.info("Built default port map")
     return port_map
 
+def test_list_generate(config):
+    """Generate the list of all known tests indexed by module name
+
+    Conventions:  Test files must implement the function test_set_init
+
+    Test cases are classes that implement testRun
+
+    @param config The oft configuration dictionary
+    @returns An array of triples (mod-name, module, [tests]) where 
+    mod-name is the string (filename) of the module, module is the
+    value returned from __import__'ing the module and [tests] is an
+    array of strings giving the test cases from the module.  
+    """
+
+    # Find and import test files
+    p1 = Popen(["find", config["test_dir"], "-type","f"], stdout = PIPE)
+    p2 = Popen(["xargs", "grep", "-l", "-e", "^def test_set_init"], 
+                stdin=p1.stdout, stdout=PIPE)
+
+    all_tests = {}
+    mod_name_map = {}
+    # There's an extra empty entry at the end of the list 
+    filelist = p2.communicate()[0].split("\n")[:-1]
+    for file in filelist:
+        modfile = file.lstrip('./')[:-3]
+
+        try:
+            mod = __import__(modfile)
+        except:
+            logging.warning("Could not import file " + file)
+            continue
+        mod_name_map[modfile] = mod
+        added_fn = False
+        for fn in dir(mod):
+            if 'runTest' in dir(eval("mod." + fn)):
+                if not added_fn:
+                    mod_name_map[modfile] = mod
+                    all_tests[mod] = []
+                    added_fn = True
+                all_tests[mod].append(fn)
+    config["all_tests"] = all_tests
+    config["mod_name_map"] = mod_name_map
+
+def die(msg, exit_val=1):
+    print msg
+    logging.critical(msg)
+    sys.exit(exit_val)
+
+def add_test(suite, mod, name):
+    logging.info("Adding test " + mod.__name__ + "." + name)
+    suite.addTest(eval("mod." + name)())
+
 #
 # Main script
 #
 
 # Get configuration, set up logging, import platform from file
 (config, args) = config_setup(config_default)
-logging_setup(config)
-logging.info("*** STARTING TEST RUN ***")
 
-of_os_port_map = None
+test_list_generate(config)
+
+# Check if test list is requested; display and exit if so
+if config["list"]:
+    print "\nTest List:"
+    for mod in config["all_tests"].keys():
+        print "    Module: " + mod.__name__
+        for test in config["all_tests"][mod]:
+            print "        " + test
+    sys.exit(0)
+
+logging_setup(config)
+logging.info("++++++++ " + time.asctime() + " ++++++++")
+
+# Generate the test suite
+#@todo Decide if multiple suites are ever needed
+suite = unittest.TestSuite()
+
+if config["test_spec"] == "all":
+    for mod in config["all_tests"].keys(): 
+       for test in config["all_tests"][mod]:
+           add_test(suite, mod, test)
+
+else:
+    for ts_entry in config["test_spec"].split(","):
+        parts = ts_entry.split(".")
+
+        if len(parts) == 1: # Either a module or test name
+            if ts_entry in config["mod_name_map"].keys():
+                mod = config["mod_name_map"][ts_entry]
+                for test in config["all_tests"][mod]:
+                    add_test(suite, mod, test)
+            else: # Search for matching tests
+                test_found = False
+                for mod in config["all_tests"].keys():
+                    if ts_entry in config["all_tests"][mod]:
+                        add_test(suite, mod, ts_entry)
+                        test_found = True
+                if not test_found:
+                    die("Could not find module or test: " + ts_entry)
+
+        elif len(parts) == 2: # module.test
+            if parts[0] not in config["mod_name_map"]:
+                die("Unknown module in test spec: " + ts_entry)
+            mod = config["mod_name_map"][parts[0]]
+            if parts[1] in config["all_tests"][mod]:
+                add_test(suite, mod, parts[1])
+            else:
+                die("No known test matches: " + ts_entry)
+
+        else:
+            die("Bad test spec: " + ts_entry)
+
+# Check if platform specified
 if config["platform"]:
     _imp_string = "from " + config["platform"] + " import *"
-    logging.info("Importing: " + _imp_string)
+    logging.info("Importing platform: " + _imp_string)
     try:
         exec(_imp_string)
     except:
@@ -245,20 +383,26 @@ if not config["port_map"]:
     config["port_map"] = default_port_map_setup(config)
 
 if not config["port_map"]:
-    logging.critical("Interface port map is not defined.  Exiting")
-    print("Interface port map is not defined.  Exiting")
-    sys.exit(1)
+    die("Interface port map is not defined.  Exiting")
 
 logging.debug("Configuration: " + str(config))
 logging.info("OF port map: " + str(config["port_map"]))
 
 # Init the test sets
-#@todo Use test-spec from config to determine which tests to run
-basic_suite = basic.test_set_init(config)
-if config["dbg_level"] >= logging.WARNING: _verb = 1
-else: _verb = 2
+for (modname,mod) in config["mod_name_map"].items():
+    try:
+        mod.test_set_init(config)
+    except:
+        logging.warning("Could not run test_set_init for " + modname)
 
-unittest.TextTestRunner(verbosity=_verb).run(basic_suite)
+if config["dbg_level"] == logging.CRITICAL:
+    _verb = 0
+elif config["dbg_level"] >= logging.WARNING:
+    _verb = 1
+else:
+    _verb = 2
 
-logging.info("*** END OF TESTS ***")
+logging.info("*** TEST RUN START: " + time.asctime())
+unittest.TextTestRunner(verbosity=_verb).run(suite)
+logging.info("*** TEST RUN END  : " + time.asctime())
 

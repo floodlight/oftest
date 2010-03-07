@@ -15,18 +15,19 @@ indicated oin oft_config
 
 """
 
-from scapy.all import *
-import unittest
-
 import time
 import signal
 import sys
-##@todo Use setup to place OFT modules in path
-sys.path.append("../src/python/oftest")
-from message import *
-from dataplane import *
-from controller import *
 import logging
+
+import scapy.all as scapy
+import unittest
+
+import oftest.controller as controller
+import oftest.cstruct as ofp
+import oftest.message as message
+import oftest.dataplane as dataplane
+import oftest.action as action
 
 basic_port_map = None
 basic_logger = None
@@ -48,9 +49,9 @@ def test_set_init(config):
     basic_logger.info("Initializing test set")
     basic_port_map = config["port_map"]
     basic_config = config
-    return suite()
 
-def suite():
+# No longer used
+def suite(test_spec):
     suite = unittest.TestSuite()
     suite.addTest(SimpleProtocolTestCase())
     suite.addTest(SimpleDataPlaneTestCase())
@@ -68,14 +69,18 @@ class SimpleProtocolTestCase(unittest.TestCase):
     def sig_handler(self):
         basic_logger.critical("Received interrupt signal; exiting")
         print "Received interrupt signal; exiting"
-        self.controller.shutdown()
+        self.clean_shutdown = False
+        self.tearDown()
         sys.exit(1)
 
     def setUp(self):
         signal.signal(signal.SIGINT, self.sig_handler)
         basic_logger.info("Setup for " + str(self))
-        self.controller = Controller(host=basic_config["controller_host"],
-                                     port=basic_config["controller_port"])
+        self.controller = controller.Controller(
+            host=basic_config["controller_host"],
+            port=basic_config["controller_port"])
+        # clean_shutdown is set to False to force quit app
+        self.clean_shutdown = True
         self.controller.start()
         self.controller.connect(timeout=20)
         basic_logger.info("Connected " + str(self.controller.switch_addr))
@@ -83,7 +88,9 @@ class SimpleProtocolTestCase(unittest.TestCase):
     def tearDown(self):
         basic_logger.info("Teardown for simple proto test")
         self.controller.shutdown()
-        # self.controller.join()
+        #@todo Review if join should be done on clean_shutdown
+        # if self.clean_shutdown:
+        #     self.controller.join()
 
     def runTest(self):
         # Just a simple sanity check as illustration
@@ -97,14 +104,14 @@ class SimpleDataPlaneTestCase(SimpleProtocolTestCase):
     """
     def setUp(self):
         SimpleProtocolTestCase.setUp(self)
-        self.dataplane = DataPlane()
+        self.dataplane = dataplane.DataPlane()
         for of_port, ifname in basic_port_map.items():
             self.dataplane.port_add(ifname, of_port)
 
     def tearDown(self):
         basic_logger.info("Teardown for simple dataplane test")
         SimpleProtocolTestCase.tearDown(self)
-        self.dataplane.kill(join_threads=True)
+        self.dataplane.kill(join_threads=self.clean_shutdown)
         basic_logger.info("Teardown done")
 
     def runTest(self):
@@ -118,9 +125,9 @@ class EchoTestCase(SimpleProtocolTestCase):
     Test echo response with no data
     """
     def runTest(self):
-        request = echo_request()
+        request = message.echo_request()
         response, pkt = self.controller.transact(request)
-        self.assertEqual(response.header.type, OFPT_ECHO_REPLY,
+        self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,
                          'response is not echo_reply')
         self.assertEqual(request.header.xid, response.header.xid,
                          'response xid != request xid')
@@ -131,10 +138,10 @@ class EchoWithDataTestCase(SimpleProtocolTestCase):
     Test echo response with short string data
     """
     def runTest(self):
-        request = echo_request()
+        request = message.echo_request()
         request.data = 'OpenFlow Will Rule The World'
         response, pkt = self.controller.transact(request)
-        self.assertEqual(response.header.type, OFPT_ECHO_REPLY,
+        self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,
                          'response is not echo_reply')
         self.assertEqual(request.header.xid, response.header.xid,
                          'response xid != request xid')
@@ -153,11 +160,11 @@ class PacketInTestCase(SimpleDataPlaneTestCase):
 
         for of_port in basic_port_map.keys():
             basic_logger.info("PKT IN test, port " + str(of_port))
-            pkt=Ether()/IP(dst="www.slashdot.org")/TCP()/\
+            pkt = scapy.Ether()/scapy.IP(dst="www.slashdot.org")/scapy.TCP()/\
                 ("GET /index.html HTTP/1.0. port" + str(of_port))
             self.dataplane.send(of_port, str(pkt))
             #@todo Check for unexpected messages?
-            (response, raw) = self.controller.poll(OFPT_PACKET_IN, 2)
+            (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
 
             self.assertTrue(response is not None, 
                             'Packet in message not received')
@@ -179,14 +186,14 @@ class PacketOutTestCase(SimpleDataPlaneTestCase):
         # For now, a random packet from scapy tutorial
 
         # These will get put into function
-        outpkt=Ether()/IP(dst="www.slashdot.org")/TCP()/\
+        outpkt = scapy.Ether()/scapy.IP(dst="www.slashdot.org")/scapy.TCP()/\
             "GET /index.html HTTP/1.0 \n\n"
         of_ports = basic_port_map.keys()
         of_ports.sort()
         for dp_port in of_ports:
-            msg = packet_out()
+            msg = message.packet_out()
             msg.data = str(outpkt)
-            act = action_output()
+            act = action.action_output()
             act.port = dp_port
             self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
 
@@ -203,8 +210,25 @@ class PacketOutTestCase(SimpleDataPlaneTestCase):
             self.assertEqual(str(outpkt), str(pkt),
                              'Response packet does not match send packet')
 
+#class StatsGetTestCase(SimpleProtocolTestCase):
+#    """
+#    Get stats 
+#    """
+#    def runTest(self):
+#        request = message.flow_stats_request()
+#        request.out_port = ofp.OFPP_NONE
+#        request.match.wildcards = ofp.OFPFW_ALL
+#        response, pkt = self.controller.transact(request)
+#        response.show()
+
 if __name__ == "__main__":
-    unittest.main()
+    print "Please run through oft script:  ./oft --test_spec=basic"
+
+#@todo Set up direct execution as script
+#if __name__ == "__main__":
+# TODO set up some config struct
+#    test_set_init(config)
+#    unittest.main()
 
 #    suite = unittest.TestLoader().loadTestsFromTestCase(PacketOutTestCase)
 #    unittest.TextTestRunner(verbosity=2).run(suite) 
