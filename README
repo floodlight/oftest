@@ -9,10 +9,24 @@ control the dataplane ports.  As a consequence, there are
 some serious risks to the machine on which this is running.
 Use caution.
 
+This is still preliminary work and there are bugs in the 
+framework that need to be ironed out.  Please report any issues
+to dtalayco@stanford.edu.
+
 Quick Start
 +++++++++++
+    # cd <oftest>/tools/munger
+    # make install
+    # cd <oftest>/tests
+    # ./oft --list
+    # ./oft
+    # ./oft --test-spec=<mod> --debug=info --platform=remote --host=...
+
+Longer Start
+++++++++++++
 
     1.  Pre-requisites:
+        * Root privilege on host
         * Python 2.5 (or so)
         * oftest checked out (called <oftest> here)
         * scapy installed:  http://www.secdev.org/projects/scapy/
@@ -26,24 +40,24 @@ Quick Start
         This is currently the 1.0 release file.
 
         * cd <oftest>/tools/munger
-        * make
-        This places files in <oftest>/src/python/oftest/src
-
-    3.  Install with setup (currently not required)
         * make install
-        This runs setuptools on the generated source.  It requires
-        that setuptools be installed and the user have sudo rights.
+        This places files in <oftest>/src/python/oftest/src and then
+        calls setuptools to install on the local host
 
-    4.  Edit configuration
+    3.  Edit configuration if necessary
+        Local platforms work with veth interface pairs and default to
+        four ports.  You can adjust this a bit with the command line
+        parameters port_count, base_of_port and base_if_index.
+
         Starting from remote.py as a simple example, you can add your
         own <platform>.py file and then have it imported with
         --platform=<platform> on the command line.
 
-    5.  Start the switch to test
+    4.  Start the switch to test
         The switch must be running and actively attempting to 
         connect to the controller at the host/port specified above.
 
-    6.  Run oft
+    5.  Run oft
         See Warning above; requires sudo to control the dataplane
         * cd <oftest>/tests
         * sudo ./oft --help
@@ -60,6 +74,7 @@ Overview
          |   `-- python
          |       `-- oftest
          |-- tests
+         |   `-- oft and files with test cases
          `-- tools
              |-- munger
              `-- pylibopenflow
@@ -88,6 +103,36 @@ Overview
     Tests are run from the tests directory.  The file oft is the
     top level entry point for tests.  Try ./oft --help for some more.
 
+Important Notes
++++++++++++++++
+
+    1.  If you edit any of the files in src/python/oftest or any of the
+    scripts in tools/munger/scripts, you MUST re-run make install.  This
+    is easy to forget.
+
+    2.  If your running into issues with transactions, and it appears that
+    OpenFlow messages aren't quite right, start by looking at any length
+    fields in the packets.  With the local platform, you can use wireshark
+    on the loopback interface as well as the dataplane veth interfaces.
+
+Adding Your Own Test Cases
+++++++++++++++++++++++++++
+
+    You can:
+
+        * Add cases to an existing file
+        * Add a new file
+
+    If you add cases to an existing file, each case should be its own
+    class.  It must inherit from unittest.TestCase or one of its 
+    derivatives and define runTest (that's how test cases are discovered).
+
+    If you add a new file, it must implement a top level function called
+    test_set_init which takes a configuration dictionary.  See basic.py
+    for an example.  The main point of this is to pass the port map 
+    object to the test cases.  But you can access any configuration
+    parameters this way.  Each test case in the new file must derive
+    from unittest.TestCase.
 
 Other Info
 ++++++++++
