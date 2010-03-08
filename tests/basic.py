@@ -29,8 +29,14 @@ import oftest.message as message
 import oftest.dataplane as dataplane
 import oftest.action as action
 
+from testutils import *
+
+#@var basic_port_map Local copy of the configuration map from OF port
+# numbers to OS interfaces
 basic_port_map = None
+#@var basic_logger Local logger object
 basic_logger = None
+#@var basic_config Local copy of global configuration data
 basic_config = None
 
 def test_set_init(config):
@@ -50,18 +56,7 @@ def test_set_init(config):
     basic_port_map = config["port_map"]
     basic_config = config
 
-# No longer used
-def suite(test_spec):
-    suite = unittest.TestSuite()
-    suite.addTest(SimpleProtocolTestCase())
-    suite.addTest(SimpleDataPlaneTestCase())
-    suite.addTest(EchoTestCase())
-    suite.addTest(EchoWithDataTestCase())
-    suite.addTest(PacketInTestCase())
-    suite.addTest(PacketOutTestCase())
-    return suite
-
-class SimpleProtocolTestCase(unittest.TestCase):
+class SimpleProtocol(unittest.TestCase):
     """
     Root class for setting up the controller
     """
@@ -98,19 +93,19 @@ class SimpleProtocolTestCase(unittest.TestCase):
         self.assertTrue(self.controller.switch_socket is not None,
                         str(self) + 'No connection to switch')
 
-class SimpleDataPlaneTestCase(SimpleProtocolTestCase):
+class SimpleDataPlane(SimpleProtocol):
     """
     Root class that sets up the controller and dataplane
     """
     def setUp(self):
-        SimpleProtocolTestCase.setUp(self)
+        SimpleProtocol.setUp(self)
         self.dataplane = dataplane.DataPlane()
         for of_port, ifname in basic_port_map.items():
             self.dataplane.port_add(ifname, of_port)
 
     def tearDown(self):
         basic_logger.info("Teardown for simple dataplane test")
-        SimpleProtocolTestCase.tearDown(self)
+        SimpleProtocol.tearDown(self)
         self.dataplane.kill(join_threads=self.clean_shutdown)
         basic_logger.info("Teardown done")
 
@@ -120,7 +115,7 @@ class SimpleDataPlaneTestCase(SimpleProtocolTestCase):
         # self.dataplane.show()
         # Would like an assert that checks the data plane
 
-class EchoTestCase(SimpleProtocolTestCase):
+class Echo(SimpleProtocol):
     """
     Test echo response with no data
     """
@@ -133,7 +128,7 @@ class EchoTestCase(SimpleProtocolTestCase):
                          'response xid != request xid')
         self.assertEqual(len(response.data), 0, 'response data non-empty')
 
-class EchoWithDataTestCase(SimpleProtocolTestCase):
+class EchoWithData(SimpleProtocol):
     """
     Test echo response with short string data
     """
@@ -148,15 +143,21 @@ class EchoWithDataTestCase(SimpleProtocolTestCase):
         self.assertEqual(request.data, response.data,
                          'response data does not match request')
 
-class PacketInTestCase(SimpleDataPlaneTestCase):
+class PacketIn(SimpleDataPlane):
     """
     Test packet in function
+
+    Send a packet to each dataplane port and verify that a packet
+    in message is received from the controller for each
     """
     def runTest(self):
         # Construct packet to send to dataplane
         # Send packet to dataplane, once to each port
         # Poll controller with expect message type packet in
         # For now, a random packet from scapy tutorial
+
+        rc = delete_all_flows(self.controller, basic_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
 
         for of_port in basic_port_map.keys():
             basic_logger.info("PKT IN test, port " + str(of_port))
@@ -167,17 +168,22 @@ class PacketInTestCase(SimpleDataPlaneTestCase):
             (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
 
             self.assertTrue(response is not None, 
-                            'Packet in message not received')
+                            'Packet in message not received on port ' + 
+                            str(of_port))
             if str(pkt) != response.data:
                 basic_logger.debug("pkt: "+str(pkt)+"  resp: " +
                                    str(response))
 
             self.assertEqual(str(pkt), response.data,
-                             'Response packet does not match send packet')
+                             'Response packet does not match send packet' +
+                             ' for port ' + str(of_port))
 
-class PacketOutTestCase(SimpleDataPlaneTestCase):
+class PacketOut(SimpleDataPlane):
     """
     Test packet out function
+
+    Send packet out message to controller for each dataplane port and
+    verify the packet appears on the appropriate dataplane port
     """
     def runTest(self):
         # Construct packet to send to dataplane
@@ -210,25 +216,37 @@ class PacketOutTestCase(SimpleDataPlaneTestCase):
             self.assertEqual(str(outpkt), str(pkt),
                              'Response packet does not match send packet')
 
-#class StatsGetTestCase(SimpleProtocolTestCase):
-#    """
-#    Get stats 
-#    """
-#    def runTest(self):
-#        request = message.flow_stats_request()
-#        request.out_port = ofp.OFPP_NONE
-#        request.match.wildcards = ofp.OFPFW_ALL
-#        response, pkt = self.controller.transact(request)
-#        response.show()
+class FlowStatsGet(SimpleProtocol):
+    """
+    Get stats 
 
+    Simply verify stats get transaction
+    """
+    def runTest(self):
+        basic_logger.info("Running StatsGet")
+        request = message.flow_stats_request()
+        request.out_port = ofp.OFPP_NONE
+        request.match.wildcards = ofp.OFPFW_ALL
+        response, pkt = self.controller.transact(request, timeout=2)
+        self.assertTrue(response is not None, "Did not get response")
+
+class FlowMod(SimpleProtocol):
+    """
+    Insert a flow
+
+    Simple verification of a flow mod transaction
+    """
+
+    def runTest(self):
+        basic_logger.info("Running " + str(self))
+        request = message.flow_mod()
+        of_ports = basic_port_map.keys()
+        of_ports.sort()
+        request.out_port = of_ports[0]
+        request.match.wildcards = ofp.OFPFW_ALL
+        request.buffer_id = 0xffffffff
+        rv = self.controller.message_send(request)
+        self.assertTrue(rv != -1, "Did not get response")
+    
 if __name__ == "__main__":
     print "Please run through oft script:  ./oft --test_spec=basic"
-
-#@todo Set up direct execution as script
-#if __name__ == "__main__":
-# TODO set up some config struct
-#    test_set_init(config)
-#    unittest.main()
-
-#    suite = unittest.TestLoader().loadTestsFromTestCase(PacketOutTestCase)
-#    unittest.TextTestRunner(verbosity=2).run(suite) 
