@@ -513,9 +513,9 @@ class Controller(Thread):
         """
         Send the message to the switch
 
-        @param msg A string or OpenFlow message object to be forwarded to 
-        the switch.  
-        @param zero_xid If msg is an OpenFlow object (not a string) and if 
+        @param msg A string or OpenFlow message object to be forwarded to
+        the switch.
+        @param zero_xid If msg is an OpenFlow object (not a string) and if
         the XID in the header is 0, then an XID will be generated
         for the message.  Set xero_xid to override this behavior (and keep an
         existing 0 xid)

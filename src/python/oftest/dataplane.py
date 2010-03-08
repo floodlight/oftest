@@ -247,7 +247,7 @@ class DataPlane:
         @param port_number The port number used to refer to the port
         """
 
-        self.port_list[port_number] = DataPlanePort(interface_name, 
+        self.port_list[port_number] = DataPlanePort(interface_name,
                                                     port_number, self)
         self.port_list[port_number].start()
 
@@ -257,8 +257,8 @@ class DataPlane:
         @param port_number The port to send the data to
         @param packet Raw packet data to send to port
         """
-        self.logger.debug("Sending %d bytes to port %d" % 
-                      (len(packet), port_number))
+        self.logger.debug("Sending %d bytes to port %d" %
+                          (len(packet), port_number))
         bytes = self.port_list[port_number].send(packet)
         if bytes != len(packet):
             self.logger.error("Unhandled send error, length mismatch %d != %d" %
@@ -299,7 +299,7 @@ class DataPlane:
         Otherwise, find the port with the oldest packet and return
         that packet.
         @param port_number If set, get packet from this port
-        @param timeout If positive and no packet is available, block 
+        @param timeout If positive and no packet is available, block
         until a packet is received or for this many seconds
         @return The triple port_number, packet, pkt_time where packet
         is received from port_number at time pkt_time.  If a timeout
@@ -312,7 +312,7 @@ class DataPlane:
         if port_number and len(self.port_list[port_number].packets) != 0:
             pkt, time = self.port_list[port_number].dequeue(use_lock=False)
             self.pkt_sync.release()
-            oft_assert(pkt, "Poll: packet not found on port " + 
+            oft_assert(pkt, "Poll: packet not found on port " +
                        str(port_number))
             return port_number, pkt, time
 
