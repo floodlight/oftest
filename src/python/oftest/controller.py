@@ -63,9 +63,11 @@ class Controller(Thread):
     @var rcv_size The receive size to use for receive calls
     @var max_pkts The max size of the receive queue
     @var keep_alive If true, listen for echo requests and respond w/
+    @var keep_alive If true, listen for echo requests and respond w/
     echo replies
     @var initial_hello If true, will send a hello message immediately
     upon connecting to the switch
+    @var exit_on_reset If true, terminate controller on connection reset
     @var host The host to use for connect
     @var port The port to connect on 
     @var packets_total Total number of packets received
@@ -100,6 +102,7 @@ class Controller(Thread):
         self.keep_alive = False
         self.active = True
         self.initial_hello = True
+        self.exit_on_reset = True
 
         # Settings
         self.max_pkts = max_pkts
@@ -127,6 +130,98 @@ class Controller(Thread):
         self.expect_msg_type = None
         self.expect_msg_response = None
 
+    def _pkt_handle(self, pkt):
+        """
+        Check for all packet handling conditions
+
+        Parse and verify message 
+        Check if XID matches something waiting
+        Check if message is being expected for a poll operation
+        Check if keep alive is on and message is an echo request
+        Check if any registered handler wants the packet
+        Enqueue if none of those conditions is met
+
+        an echo request in case keep_alive is true, followed by
+        registered message handlers.
+        @param pkt The raw packet (string)
+        """
+        # Parse the header to get type
+        hdr = of_header_parse(pkt)
+        if not hdr:
+            self.logger.info("Could not parse header, pkt len", len(pkt))
+            self.parse_errors += 1
+            return
+
+        self.logger.debug("Msg in: len %d. type %s. hdr.len %d" %
+            (len(pkt), ofp_type_map[hdr.type], hdr.length))
+        msg = of_message_parse(pkt)
+        if not msg:
+            self.parse_errors += 1
+            self.logger.warn("Could not parse message")
+            return
+
+        self.sync.acquire()
+
+        # Check if transaction is waiting
+        self.xid_cv.acquire()
+        if self.xid:
+            if hdr.xid == self.xid:
+                self.logger.debug("Matched expected XID " + str(hdr.xid))
+                self.xid_response = (msg, pkt)
+                self.xid = None
+                self.xid_cv.notify()
+                self.xid_cv.release()
+                self.sync.release()
+                return
+        self.xid_cv.release()
+
+        # PREVENT QUEUE ACCESS AT THIS POINT?
+        # Check if anyone waiting on this type of message
+        self.expect_msg_cv.acquire()
+        if self.expect_msg:
+            if not self.expect_msg_type or (self.expect_msg_type == hdr.type):
+                self.logger.debug("Matched expected msg type "
+                                   + ofp_type_map[hdr.type])
+                self.expect_msg_response = (msg, pkt)
+                self.expect_msg = False
+                self.expect_msg_cv.notify()
+                self.expect_msg_cv.release()
+                self.sync.release()
+                return
+        self.expect_msg_cv.release()
+
+        # Check if keep alive is set; if so, respond to echo requests
+        if self.keep_alive:
+            if hdr.type == OFPT_ECHO_REQUEST:
+                self.sync.release()
+                self.logger.debug("Responding to echo request")
+                rep = echo_reply()
+                rep.header.xid = hdr.xid
+                # Ignoring additional data
+                self.message_send(rep.pack(), zero_xid=True)
+                return
+
+        # Now check for message handlers; preference is given to
+        # handlers for a specific packet
+        handled = False
+        if hdr.type in self.handlers.keys():
+            handled = self.handlers[hdr.type](self, msg, pkt)
+        if not handled and ("all" in self.handlers.keys()):
+            handled = self.handlers["all"](self, msg, pkt)
+
+        if not handled: # Not handled, enqueue
+            self.logger.debug("Enqueuing pkt type " + ofp_type_map[hdr.type])
+            if len(self.packets) >= self.max_pkts:
+                self.packets.pop(0)
+                self.packets_expired += 1
+            self.packets.append((msg, pkt))
+            self.packets_total += 1
+        else:
+            self.packets_handled += 1
+            self.logger.debug("Message handled by callback")
+
+        self.sync.release()
+
     def _socket_ready_handle(self, s):
         """
         Handle an input-ready socket
@@ -153,7 +248,7 @@ class Controller(Thread):
             try:
                 pkt = self.switch_socket.recv(self.rcv_size)
             except:
-                self.logger.info("Error on switch read")
+                self.logger.warning("Error on switch read")
                 return True
 
             if not self.active:
@@ -163,19 +258,7 @@ class Controller(Thread):
                 self.logger.info("zero-len pkt in")
                 return True
 
-            (handled, msg) = self._pkt_handler_check(pkt)
-            if handled:
-                self.packets_handled += 1
-                return False
-
-            # Not handled, enqueue
-            self.sync.acquire()
-            if len(self.packets) >= self.max_pkts:
-                self.packets.pop(0)
-                self.packets_expired += 1
-            self.packets.append((msg, pkt))
-            self.packets_total += 1
-            self.sync.release()
+            self._pkt_handle(pkt)
         else:
             self.logger.error("Unknown socket ready: " + str(s))
             return True
@@ -238,13 +321,16 @@ class Controller(Thread):
                     break
 
             if self.active and reset_switch_cxn:
-                self.logger.info("Closing switch cxn")
-                try:
-                    self.switch_socket.close()
-                except:
-                    pass
-                self.switch_socket = None
-                self.socs = self.socs[0:1]
+                if self.exit_on_reset:
+                    self.kill()
+                else:
+                    self.logger.warning("Closing switch cxn")
+                    try:
+                        self.switch_socket.close()
+                    except:
+                        pass
+                    self.switch_socket = None
+                    self.socs = self.socs[0:1]
 
         # End of main loop
         self.dbg_state = "closing"
@@ -299,78 +385,15 @@ class Controller(Thread):
         self.listen_socket = None
         self.dbg_state = "down"
 
-    def _pkt_handler_check(self, pkt):
-        """
-        Check for packet handling before being enqueued
-
-        This includes checking for an ongoing transaction (see transact())
-        an echo request in case keep_alive is true, followed by
-        registered message handlers.
-        @param pkt The raw packet (string)
-        @return (handled, msg) where handled is a boolean indicating
-        the message was handled; msg if None is the parsed message
-        """
-        # Parse the header to get type
-        hdr = of_header_parse(pkt)
-        if not hdr:
-            self.logger.info("Could not parse header, pkt len", len(pkt))
-            self.parse_errors += 1
-            return (True, None)
-
-        self.logger.debug("message: len %d. type %s. hdr.len %d" %
-            (len(pkt), ofp_type_map[hdr.type], hdr.length))
-        msg = of_message_parse(pkt)
-        if not msg:
-            self.parse_errors += 1
-            self.logger.warn("Could not parse message")
-            return (True, None)
-
-        # Check if transaction is waiting
-        self.xid_cv.acquire()
-        if self.xid:
-            if hdr.xid == self.xid:
-                self.xid_response = (msg, pkt)
-                self.xid = None
-                self.xid_cv.notify()
-                self.xid_cv.release()
-                return (True, None)
-        self.xid_cv.release()
-
-        # Check if anyone waiting on this type of message
-        self.expect_msg_cv.acquire()
-        if self.expect_msg:
-            if not self.expect_msg_type or (self.expect_msg_type == hdr.type):
-                self.expect_msg_response = (msg, pkt)
-                self.expect_msg = False
-                self.expect_msg_cv.notify()
-                self.expect_msg_cv.release()
-                return (True, None)
-        self.expect_msg_cv.release()
-
-        # Check if keep alive is set; if so, respond to echo requests
-        if self.keep_alive:
-            if hdr.type == OFPT_ECHO_REQUEST:
-                rep = echo_reply()
-                rep.header.xid = hdr.xid
-                # Ignoring additional data
-                self.message_send(rep.pack(), zero_xid=True)
-                return (True, None)
-
-        # Now check for message handlers; preference is given to
-        # handlers for a specific packet
-        handled = False
-        if hdr.type in self.handlers.keys():
-            handled = self.handlers[hdr.type](self, msg, pkt)
-        if not handled and ("all" in self.handlers.keys()):
-            handled = self.handlers["all"](self, msg, pkt)
-
-        return (handled, msg)
-
     def register(self, msg_type, handler):
         """
         Register a callback to receive a specific message type.
 
         Only one handler may be registered for a given message type.
+
+        WARNING:  A lock is held during the handler call back, so 
+        the handler should not make any blocking calls
+
         @param msg_type The type of message to receive.  May be DEFAULT 
         for all non-handled packets.  The special type, the string "all"
         will send all packets to the handler.
@@ -476,9 +499,14 @@ class Controller(Thread):
         self.xid_response = None
         self.message_send(msg.pack())
         self.xid_cv.wait(timeout)
-        (msg, pkt) = self.xid_response
-        self.xid_response = None
+        if self.xid_response:
+            (msg, pkt) = self.xid_response
+            self.xid_response = None
+        else:
+            (msg, pkt) = (None, None)
         self.xid_cv.release()
+        if msg is None:
+            self.logger.warning("No response for xid " + str(msg.header.xid))
         return (msg, pkt)
 
     def message_send(self, msg, zero_xid=False):
