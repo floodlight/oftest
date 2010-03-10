@@ -162,9 +162,10 @@ class template_msg(ofp_template_msg):
         pass
     def show(self, prefix=''):
         \"""
-        Display the contents of the object in a readable manner
+        Generate a string (with multiple lines) describing the contents
+        of the object in a readable manner
 
-        @param prefix Printed at the beginning of each line.
+        @param prefix Pre-pended at the beginning of each line.
 
         \"""
         pass
@@ -398,35 +399,37 @@ def gen_message_wrapper(msg):
     ##@todo Convert this to __str__
     def show(self, prefix=''):
         \"""
-        Display the contents of the object in a readable manner
+        Generate a string (with multiple lines) describing the contents
+        of the object in a readable manner
 
-        @param prefix Printed at the beginning of each line.
+        @param prefix Pre-pended at the beginning of each line.
 
         \"""
 """
-    _p2("print prefix + '" + msg + " (" + msg_name + ")'")
+    _p2("outstr = prefix + '" + msg + " (" + msg_name + ")\\n'")
     _p2("prefix += '  '")
-    _p2("print prefix + 'ofp header'")
-    _p2("self.header.show(prefix + '  ')")
+    _p2("outstr += prefix + 'ofp header\\n'")
+    _p2("outstr += self.header.show(prefix + '  ')")
     if has_core_members:
-        _p2(parent + ".show(self, prefix)")
+        _p2("outstr += " + parent + ".show(self, prefix)")
     if has_list:
         if list_type == None:
-            _p2('print prefix + "Array ' + list_var + '"')
+            _p2('outstr += prefix + "Array ' + list_var + '\\n"')
             _p2('for obj in self.' + list_var +':')
-            _p3("obj.show(prefix + '  ')")
+            _p3("outstr += obj.show(prefix + '  ')")
         else:
-            _p2('print prefix + "List ' + list_var + '"')
-            _p2('self.' + list_var + ".show(prefix + '  ')")
+            _p2('outstr += prefix + "List ' + list_var + '\\n"')
+            _p2('outstr += self.' + list_var + ".show(prefix + '  ')")
     if has_string:
-        _p2("print prefix + 'data is of length ' + str(len(self.data))")
+        _p2("outstr += prefix + 'data is of length ' + str(len(self.data)) + '\\n'")
         _p2("##@todo Fix this circular reference")
         _p2("# if len(self.data) > 0:")
         _p3("# obj = of_message_parse(self.data)")
         _p3("# if obj != None:")
-        _p4("# obj.show(prefix)")
+        _p4("# outstr += obj.show(prefix)")
         _p3("# else:")
-        _p4('# print prefix + "Unable to parse data"')
+        _p4('# outstr += prefix + "Unable to parse data\\n"')
+    _p2('return outstr')
 
     print """
     def __eq__(self, other):
@@ -484,7 +487,7 @@ class ofp_desc_stats_request:
     def __len__(self):
         return 0
     def show(self, prefix=''):
-        print prefix + "ofp_desc_stats_request (empty)"
+        return prefix + "ofp_desc_stats_request (empty)\\n"
     def __eq__(self, other):
         return type(self) == type(other)
     def __ne__(self, other):
@@ -505,7 +508,7 @@ class ofp_table_stats_request:
     def __len__(self):
         return 0
     def show(self, prefix=''):
-        print prefix + "ofp_table_stats_request (empty)"
+        return prefix + "ofp_table_stats_request (empty)\\n"
     def __eq__(self, other):
         return type(self) == type(other)
     def __ne__(self, other):
@@ -547,11 +550,12 @@ class --TYPE--_stats_request(ofp_stats_request, ofp_--TYPE--_stats_request):
                OFP_--TYPE_UPPER--_STATS_REQUEST_BYTES
 
     def show(self, prefix=''):
-        print prefix + "--TYPE--_stats_request"
-        print prefix + "ofp header:"
-        self.header.show(prefix + '  ')
-        ofp_stats_request.show(self)
-        ofp_--TYPE--_stats_request.show(self)
+        outstr = prefix + "--TYPE--_stats_request\\n"
+        outstr += prefix + "ofp header:\\n"
+        outstr += self.header.show(prefix + '  ')
+        outstr += ofp_stats_request.show(self)
+        outstr += ofp_--TYPE--_stats_request.show(self)
+        return outstr
 
     def __eq__(self, other):
         if type(self) != type(other): return False
@@ -612,13 +616,14 @@ class --TYPE--_stats_reply(ofp_stats_reply):
         return length
 
     def show(self, prefix=''):
-        print prefix + "--TYPE--_stats_reply"
-        print prefix + "ofp header:"
-        self.header.show(prefix + '  ')
-        ofp_stats_reply.show(self)
-        print prefix + "Stats array of length " + str(len(self.stats))
+        outstr = prefix + "--TYPE--_stats_reply\\n"
+        outstr += prefix + "ofp header:\\n"
+        outstr += self.header.show(prefix + '  ')
+        outstr += ofp_stats_reply.show(self)
+        outstr += prefix + "Stats array of length " + str(len(self.stats)) + '\\n'
         for obj in self.stats:
-            obj.show()
+            outstr += obj.show()
+        return outstr
 
     def __eq__(self, other):
         if type(self) != type(other): return False
@@ -683,9 +688,10 @@ class flow_stats_entry(ofp_flow_stats):
         return OFP_FLOW_STATS_BYTES + len(self.actions)
 
     def show(self, prefix=''):
-        print prefix + "flow_stats_entry"
-        ofp_flow_stats.show(self, prefix + '  ')
-        self.actions.show(prefix + '  ')
+        outstr = prefix + "flow_stats_entry\\n"
+        outstr += ofp_flow_stats.show(self, prefix + '  ')
+        outstr += self.actions.show(prefix + '  ')
+        return outstr
 
     def __eq__(self, other):
         if type(self) != type(other): return False

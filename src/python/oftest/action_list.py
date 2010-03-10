@@ -179,10 +179,11 @@ class action_list(object):
     def __ne__(self, other): return not self.__eq__(other)
         
     def show(self, prefix=''):
-        print prefix + "Action List with " + str(len(self.actions)) + \
-            " actions"
+        outstr = prefix + "Action List with " + str(len(self.actions)) + \
+            " actions\n"
         count = 0
         for obj in self.actions:
             count += 1
-            print prefix + "  Action " + str(count) + ": "
-            obj.show(prefix + '    ')
+            outstr += prefix + "  Action " + str(count) + ": \n"
+            outstr += obj.show(prefix + '    ')
+        return outstr

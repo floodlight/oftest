@@ -59,11 +59,12 @@ class --TYPE--_error_msg(ofp_error_msg):
         return OFP_HEADER_BYTES + OFP_ERROR_MSG_BYTES + len(self.data)
 
     def show(self, prefix=''):
-        print prefix + "--TYPE--_error_msg"
-        self.header.show(prefix + '  ')
-        ofp_error_msg.show(self, prefix + '  ')
-        print prefix + "data is of length " + str(len(self.data))
+        outstr = prefix + "--TYPE--_error_msg\\m"
+        outstr += self.header.show(prefix + '  ')
+        outstr += ofp_error_msg.show(self, prefix + '  ')
+        outstr += prefix + "data is of length " + str(len(self.data)) + '\\n'
         ##@todo Consider trying to parse the string
+        return outstr
 
     def __eq__(self, other):
         if type(self) != type(other): return False
