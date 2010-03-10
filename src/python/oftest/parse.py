@@ -11,7 +11,10 @@ from cstruct import *
 try:
     from scapy.all import *
 except:
-    sys.exit("Need to install scapy for packet parsing")
+    try:
+        import scapy as scapy
+    except:
+        sys.exit("Need to install scapy for packet parsing")
 
 """
 of_message.py

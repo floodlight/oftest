@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.5
+#!/usr/bin/env python
 """This script fakes as n OpenFlow switch and
 load the controller with k packets per second.
 

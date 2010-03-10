@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.5
+#!/usr/bin/env python
 """This script fakes as an OpenFlow switch to the controller
 
 (C) Copyright Stanford University

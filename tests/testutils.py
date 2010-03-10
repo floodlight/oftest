@@ -1,5 +1,13 @@
 
-import scapy.all as scapy
+import sys
+
+try:
+    import scapy.all as scapy
+except:
+    try:
+        import scapy as scapy
+    except:
+        sys.exit("Need to install scapy for packet parsing")
 
 import oftest.controller as controller
 import oftest.cstruct as ofp

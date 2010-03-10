@@ -27,7 +27,8 @@ Longer Start
 
     1.  Pre-requisites:
         * Root privilege on host
-        * Python 2.5 (or so)
+        * Python 2.5.  You can run platforms using eth interfaces with
+          Python 2.4.
         * oftest checked out (called <oftest> here)
         * scapy installed:  http://www.secdev.org/projects/scapy/
         * Doxygen and doxypy for document generation (optional)
@@ -133,6 +134,31 @@ Adding Your Own Test Cases
     object to the test cases.  But you can access any configuration
     parameters this way.  Each test case in the new file must derive
     from unittest.TestCase.
+
+
+Using CentOS/RHEL
++++++++++++++++++
+
+    CentOS/RHEL have two challenges:  they are very tied to Python 2.4
+    (and Scapy requires Python 2.5 for its latest version) and they
+    require a kernel upgrade to use veth pairs for local platform
+    testing.  
+
+    If you only need to control eth interfaces for a remote platform,
+    you can use CentOS/RHEL.  The key is to download scapy-1.2 from
+    the following link:
+
+    wget http://hg.secdev.org/scapy/raw-file/v1.2.0.2/scapy.py
+
+    See: http://www.dirk-loss.de/scapy-doc/installation.html#installing-scapy-v1-2
+    for more info.
+
+    Copy scapy.py to /usr/lib/python2.4/site-packages
+
+    If you hit an error related to importing scapy.all, you just need
+    to change the import to refer to scapy (not scapy.all).  See
+    examples in parse.py for example.
+
 
 Other Info
 ++++++++++

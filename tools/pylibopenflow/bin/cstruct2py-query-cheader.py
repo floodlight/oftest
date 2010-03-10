@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.5
+#!/usr/bin/env python
 """This script reads C/C++ header file and output query
 
 Author ykk

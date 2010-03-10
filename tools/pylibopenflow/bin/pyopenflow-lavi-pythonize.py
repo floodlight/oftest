@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.5
+#!/usr/bin/env python
 """This script generate class files for messenger and lavi in NOX, 
 specifically it creates a Python class for each data structure.
 
