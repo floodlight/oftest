@@ -62,9 +62,13 @@ class DataPlanePort(Thread):
         self.packets = []
         self.packets_discarded = 0
         self.port_number = port_number
-        self.socket = self.interface_open(interface_name)
         logname = "dp-" + interface_name
         self.logger = logging.getLogger(logname)
+        try:
+            self.socket = self.interface_open(interface_name)
+        except:
+            self.logger.info("Could not open socket")
+            sys.exit(1)
         self.logger.info("Openned port monitor socket")
         self.parent = parent
         self.pkt_sync = self.parent.pkt_sync
