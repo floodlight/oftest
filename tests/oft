@@ -281,6 +281,8 @@ def test_list_generate(config):
     # There's an extra empty entry at the end of the list 
     filelist = p2.communicate()[0].split("\n")[:-1]
     for file in filelist:
+        if file[-1:] == '~':
+            continue
         modfile = file.lstrip('./')[:-3]
 
         try:
