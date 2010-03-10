@@ -7,6 +7,7 @@ Author ykk
 Date December 2009
 """
 import sys
+#@todo Fix this include path mechanism
 sys.path.append('./bin')
 sys.path.append('./pylib')
 import getopt

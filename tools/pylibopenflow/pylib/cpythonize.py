@@ -3,6 +3,7 @@
 Date January 2010
 Created by ykk
 """
+import sys
 import cheader
 import c2py
 import datetime
@@ -277,15 +278,17 @@ class pythonizer:
                             str(self.rules.get_default_value(struct_in.typename, member.name)))
         return code
 
-    def gen_struct_map(self):
-        print
-        print "# Class to array member map"
-        print "class_to_members_map = {"
+    def gen_struct_map(self, file=None):
+        if not file:
+            file = sys.stdout
+        print >> file
+        print >> file, "# Class to array member map"
+        print >> file, "class_to_members_map = {"
         for name, struct in self.cheader.structs.items():
             if not len(struct.members):
                 continue
             s =  "    '" + name + "'"
-            print s + _space_to(36, s) + ": ["
+            print >> file, s + _space_to(36, s) + ": ["
             prev = None
             for member in struct.members:
                 if re.search('pad', member.name):
@@ -293,10 +296,10 @@ class pythonizer:
                 if prev:
                     print _space_to(39, "") + "'" + prev + "',"
                 prev = member.name
-            print _space_to(39, "") + "'" + prev + "'"
-            print _space_to(38, "") + "],"
-        print "    '_ignore' : []"
-        print "}"
+            print >> file, _space_to(39, "") + "'" + prev + "'"
+            print >> file, _space_to(38, "") + "],"
+        print >> file, "    '_ignore' : []"
+        print >> file, "}"
 
     def __structassert(self, cstruct, cstructname):
         """Return code to check for C array
@@ -458,25 +461,27 @@ class pythonizer:
         """
         code = []
         code.append(self.tab+"def show(self, prefix=''):")
-        code.append(self.tab*2+"\"\"\"" + "Print basic members of structure")
+        code.append(self.tab*2+"\"\"\"" + "Generate string showing basic members of structure")
         code.append(self.tab*2+"\"\"\"")
+        code.append(self.tab*2+"outstr = ''")
         for member in struct_in.members:
             if re.search('pad', member.name):
                 continue
             elif (isinstance(member, cheader.cstruct)):
-                code.append(self.tab*2 + "print prefix + '" + 
-                            member.name + ": ' ")
+                code.append(self.tab*2 + "outstr += prefix + '" + 
+                            member.name + ": \\n' ")
                 code.append(self.tab*2 + "self." + member.name + 
                             ".show(prefix + '  ')")
             elif (isinstance(member, cheader.carray) and
                   not isinstance(member.object, cheader.cprimitive)):
-                code.append(self.tab*2 + "print prefix + '" + member.name +
-                            ": ' ")
+                code.append(self.tab*2 + "outstr += prefix + '" + member.name +
+                            ": \\n' ")
                 code.append(self.tab*2 + "for obj in self." + member.name + ":")
-                code.append(self.tab*3 + "obj.show(prefix + '  ')")
+                code.append(self.tab*3 + "outstr += obj.show(prefix + '  ')")
             else:
-                code.append(self.tab*2 + "print prefix + '" + member.name +
-                            ": ' + str(self." + member.name + ")")
+                code.append(self.tab*2 + "outstr += prefix + '" + member.name +
+                            ": ' + str(self." + member.name + ") + '\\n'")
+        code.append(self.tab*2+"return outstr")
         return code
 
     def codeunpack(self, struct_in, prefix="!"):
