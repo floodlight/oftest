@@ -7,11 +7,11 @@ similar identifiers.
 
 Current Assumptions:
 
-  The oftest framework source is in ../src/python/oftest
-  Configuration of the platform and system is stored in oft_config in that dir
+  The function test_set_init is called with a complete configuration
+dictionary prior to the invocation of any tests from this file.
+
   The switch is actively attempting to contact the controller at the address
 indicated oin oft_config
-
 
 """
 
@@ -20,7 +20,6 @@ import signal
 import sys
 import logging
 
-import scapy.all as scapy
 import unittest
 
 import oftest.controller as controller
@@ -44,7 +43,6 @@ def test_set_init(config):
     Set up function for basic test classes
 
     @param config The configuration dictionary; see oft
-    @return TestSuite object for the class; may depend on config
     """
 
     global basic_port_map
@@ -154,15 +152,13 @@ class PacketIn(SimpleDataPlane):
         # Construct packet to send to dataplane
         # Send packet to dataplane, once to each port
         # Poll controller with expect message type packet in
-        # For now, a random packet from scapy tutorial
 
         rc = delete_all_flows(self.controller, basic_logger)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         for of_port in basic_port_map.keys():
             basic_logger.info("PKT IN test, port " + str(of_port))
-            pkt = scapy.Ether()/scapy.IP(dst="www.slashdot.org")/scapy.TCP()/\
-                ("GET /index.html HTTP/1.0. port" + str(of_port))
+            pkt = simple_tcp_packet()
             self.dataplane.send(of_port, str(pkt))
             #@todo Check for unexpected messages?
             (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
@@ -189,11 +185,12 @@ class PacketOut(SimpleDataPlane):
         # Construct packet to send to dataplane
         # Send packet to dataplane
         # Poll controller with expect message type packet in
-        # For now, a random packet from scapy tutorial
+
+        rc = delete_all_flows(self.controller, basic_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
 
         # These will get put into function
-        outpkt = scapy.Ether()/scapy.IP(dst="www.slashdot.org")/scapy.TCP()/\
-            "GET /index.html HTTP/1.0 \n\n"
+        outpkt = simple_tcp_packet()
         of_ports = basic_port_map.keys()
         of_ports.sort()
         for dp_port in of_ports:
@@ -224,11 +221,21 @@ class FlowStatsGet(SimpleProtocol):
     """
     def runTest(self):
         basic_logger.info("Running StatsGet")
+        basic_logger.info("Inserting trial flow")
+        request = message.flow_mod()
+        request.match.wildcards = ofp.OFPFW_ALL
+        request.buffer_id = 0xffffffff
+        rv = self.controller.message_send(request)
+        self.assertTrue(rv != -1, "Failed to insert test flow")
+        
+        basic_logger.info("Sending flow request")
         request = message.flow_stats_request()
         request.out_port = ofp.OFPP_NONE
-        request.match.wildcards = ofp.OFPFW_ALL
+        request.table_id = 0xff
+        request.match.wildcards = 0 # ofp.OFPFW_ALL
         response, pkt = self.controller.transact(request, timeout=2)
         self.assertTrue(response is not None, "Did not get response")
+        basic_logger.info(response.show())
 
 class FlowMod(SimpleProtocol):
     """
@@ -240,13 +247,10 @@ class FlowMod(SimpleProtocol):
     def runTest(self):
         basic_logger.info("Running " + str(self))
         request = message.flow_mod()
-        of_ports = basic_port_map.keys()
-        of_ports.sort()
-        request.out_port = of_ports[0]
         request.match.wildcards = ofp.OFPFW_ALL
         request.buffer_id = 0xffffffff
         rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Did not get response")
-    
+        self.assertTrue(rv != -1, "Error installing flow mod")
+
 if __name__ == "__main__":
     print "Please run through oft script:  ./oft --test_spec=basic"
