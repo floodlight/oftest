@@ -261,9 +261,17 @@ def packet_to_flow_match(packet, pkt_format="L2"):
         parse_logger.error("Only L2 supported for packet_to_flow")
         return None
 
-    ether = scapy.all.Ether(packet)
+    if type(packet) == type(""):
+        ether = scapy.all.Ether(packet)
+    else:
+        ether = packet
+
     # For now, assume ether IP packet and ignore wildcards
-    (dot1q, ip, tcp, udp, icmp, arp) = packet_type_classify(ether)
+    try:
+        (dot1q, ip, tcp, udp, icmp, arp) = packet_type_classify(ether)
+    except:
+        parse_logger.error("packet_to_flow_match: Classify error")
+        return None
 
     match = ofp_match()
     match.wildcards = OFPFW_ALL
