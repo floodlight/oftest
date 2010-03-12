@@ -27,6 +27,5 @@ OpenFlow test framework package.
       install_requires=[
         'setuptools',
         'doxypy',
-        'pylint',
-        'scapy'  # ?
+        'pylint'
       ])
