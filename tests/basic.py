@@ -1,5 +1,5 @@
 """
-Basic test cases for the oftest OpenFlow test framework
+Basic protocol and dataplane test cases
 
 It is recommended that these definitions be kept in their own
 namespace as different groups of tests will likely define 

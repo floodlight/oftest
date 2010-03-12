@@ -1,5 +1,5 @@
 OpenFlow Testing Framework
-February, 2010
+March, 2010
 
 Warning
 +++++++
@@ -134,6 +134,12 @@ Adding Your Own Test Cases
     object to the test cases.  But you can access any configuration
     parameters this way.  Each test case in the new file must derive
     from unittest.TestCase.
+
+    CONVENTIONS:
+
+    The first line of the doc string for a file and for a test class is 
+    displayed in the list command.  Please keep it clear and under 50
+    characters.
 
 
 Using CentOS/RHEL

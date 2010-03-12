@@ -311,6 +311,16 @@ def add_test(suite, mod, name):
     logging.info("Adding test " + mod.__name__ + "." + name)
     suite.addTest(eval("mod." + name)())
 
+def _space_to(n, str):
+    """
+    Generate a string of spaces to achieve width n given string str
+    If length of str >= n, return one space
+    """
+    spaces = n - len(str)
+    if spaces > 0:
+        return " " * spaces
+    return " "
+
 #
 # Main script
 #
@@ -322,11 +332,25 @@ test_list_generate(config)
 
 # Check if test list is requested; display and exit if so
 if config["list"]:
+    did_print = False
     print "\nTest List:"
     for mod in config["all_tests"].keys():
-        print "    Module: " + mod.__name__
+        if config["test_spec"] != "all" and \
+                config["test_spec"] != mod.__name__:
+            continue
+        did_print = True
+        desc = mod.__doc__.strip()
+        desc = desc.split('\n')[0]
+        start_str = "  Module " + mod.__name__ + ": "
+        print start_str + _space_to(22, start_str) + desc
         for test in config["all_tests"][mod]:
-            print "        " + test
+            desc = eval('mod.' + test + '.__doc__.strip()')
+            desc = desc.split('\n')[0]
+            start_str = "    " + test + ":"
+            print start_str + _space_to(22, start_str) + desc
+        print
+    if not did_print:
+        print "No tests found for " + config["test_spec"]
     sys.exit(0)
 
 logging_setup(config)
