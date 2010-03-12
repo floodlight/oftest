@@ -530,9 +530,11 @@ class pythonizer:
                         for x in range(0, member.size):
                             expandedarr += "self."+member.name+"["+\
                                            str(x).strip()+"], "
-                        code.append(self.tab*2+"("+expandedarr[:-2]+") = struct.unpack_from(\""+\
-                                    prefix+arrpattern+\
-                                    "\", binaryString, "+str(offset)+")")
+                        code.append(self.tab*2 + "fmt = '" + prefix+arrpattern + "'")
+                        code.append(self.tab*2 + "start = " + str(offset))
+                        code.append(self.tab*2 + "end = start + struct.calcsize(fmt)")
+                        code.append(self.tab*2 + "("+expandedarr[:-2] + 
+                                    ") = struct.unpack(fmt, binaryString[start:end])")
                         offset += struct.calcsize(prefix + arrpattern)
                 elif (isinstance(member, cheader.carray) and \
                       isinstance(member.object, cheader.cstruct)):
@@ -555,14 +557,15 @@ class pythonizer:
         """
         if (primPattern != ""):
             #Clear prior primitives
+            code.append(self.tab*2 + "fmt = '" + prefix + primPattern + "'")
+            code.append(self.tab*2 + "start = " + str(offset))
+            code.append(self.tab*2 + "end = start + struct.calcsize(fmt)")
             if len(primMemberNames) == 1:
                 code.append(self.tab*2 + "(" + str(primMemberNames[0]) + 
-                            ",) = struct.unpack_from(\"" + prefix+primPattern
-                            + "\", binaryString, " + str(offset) + ")")
+                            ",) = struct.unpack(fmt, binaryString[start:end])")
             else:
                 code.append(self.tab*2+"("+str(primMemberNames).replace("'","")[1:-1]+
-                            ") = struct.unpack_from(\""+
-                            prefix+primPattern+"\", binaryString, "+str(offset)+")")
+                            ") = struct.unpack(fmt,  binaryString[start:end])")
 
         return ("",[], offset+struct.calcsize(prefix+primPattern))
 
