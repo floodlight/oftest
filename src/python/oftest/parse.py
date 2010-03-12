@@ -13,7 +13,7 @@ try:
     from scapy.all import *
 except:
     try:
-        import scapy as scapy
+        from scapy import *
     except:
         sys.exit("Need to install scapy for packet parsing")
 
