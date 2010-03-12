@@ -77,7 +77,7 @@ class action_--TYPE--(--PARENT_TYPE--):
         self.type = --ACTION_NAME--
         self.len = self.__len__()
     def show(self, prefix=''):
-        outstr += prefix + "action_--TYPE--\\n"
+        outstr = prefix + "action_--TYPE--\\n"
         outstr += --PARENT_TYPE--.show(self, prefix)
         return outstr
 """
