@@ -151,8 +151,8 @@ Using CentOS/RHEL
     testing.  
 
     If you only need to control eth interfaces for a remote platform,
-    you can use CentOS/RHEL.  The key is to download scapy-1.2 from
-    the following link:
+    you can use CentOS/RHEL without major disruption.  The key is to 
+    download scapy-1.2 from the following link:
 
     wget http://hg.secdev.org/scapy/raw-file/v1.2.0.2/scapy.py
 
