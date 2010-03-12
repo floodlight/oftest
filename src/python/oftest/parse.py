@@ -3,6 +3,7 @@ OpenFlow message parsing functions
 """
 
 import sys
+import logging
 from message import *
 from error import *
 from action import *
