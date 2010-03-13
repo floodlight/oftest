@@ -72,7 +72,7 @@ class SimpleProtocol(unittest.TestCase):
         self.controller = controller.Controller(
             host=basic_config["controller_host"],
             port=basic_config["controller_port"])
-        # clean_shutdown is set to False to force quit app
+        # clean_shutdown should be set to False to force quit app
         self.clean_shutdown = True
         self.controller.start()
         self.controller.connect(timeout=20)
@@ -82,8 +82,8 @@ class SimpleProtocol(unittest.TestCase):
         basic_logger.info("Teardown for simple proto test")
         self.controller.shutdown()
         #@todo Review if join should be done on clean_shutdown
-        # if self.clean_shutdown:
-        #     self.controller.join()
+        if self.clean_shutdown:
+            self.controller.join()
 
     def runTest(self):
         # Just a simple sanity check as illustration
