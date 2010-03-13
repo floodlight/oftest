@@ -10,10 +10,10 @@ from action import *
 from action_list import action_list
 from cstruct import *
 try:
-    from scapy.all import *
+    import scapy.all as scapy
 except:
     try:
-        from scapy import *
+        import scapy as scapy
     except:
         sys.exit("Need to install scapy for packet parsing")
 
@@ -221,22 +221,22 @@ def parse_ip(ip_str):
 
 def packet_type_classify(ether):
     try:
-        dot1q = ether[Dot1Q]
+        dot1q = ether[scapy.Dot1Q]
     except:
         dot1q = None
 
     try:
-        ip = ether[IP]
+        ip = ether[scapy.IP]
     except:
         ip = None
 
     try:
-        tcp = ether[TCP]
+        tcp = ether[scapy.TCP]
     except:
         tcp = None
 
     try:
-        udp = ether[UDP]
+        udp = ether[scapy.UDP]
     except:
         udp = None
 
@@ -266,7 +266,7 @@ def packet_to_flow_match(packet, pkt_format="L2"):
         return None
 
     if type(packet) == type(""):
-        ether = scapy.all.Ether(packet)
+        ether = scapy.Ether(packet)
     else:
         ether = packet
 
