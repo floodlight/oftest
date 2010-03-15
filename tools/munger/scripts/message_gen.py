@@ -396,7 +396,6 @@ def gen_message_wrapper(msg):
     _p2("return length")
 
     print """
-    ##@todo Convert this to __str__
     def show(self, prefix=''):
         \"""
         Generate a string (with multiple lines) describing the contents
