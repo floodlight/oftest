@@ -74,6 +74,7 @@ class DirectPacket(basic.SimpleDataPlane):
 
         pkt = simple_tcp_packet()
         match = parse.packet_to_flow_match(pkt)
+        match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
         act = action.action_output()
