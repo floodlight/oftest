@@ -213,7 +213,7 @@ def config_setup(cfg_dflt):
     parser.add_option("--base-if-index",
                       help="Base interface index number (optional)")
     parser.add_option("--list", action="store_true",
-                      help="Base interface index number (optional)")
+                      help="List all tests and exit")
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
     (options, args) = parser.parse_args()
