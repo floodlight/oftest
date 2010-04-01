@@ -116,6 +116,7 @@ from subprocess import Popen,PIPE
 import logging
 import unittest
 import time
+import os
 
 ##@var DEBUG_LEVELS
 # Map from strings to debugging levels
@@ -432,6 +433,11 @@ elif config["dbg_level"] >= logging.WARNING:
     _verb = 1
 else:
     _verb = 2
+
+if os.getuid() != 0:
+    print "ERROR: Super-user privileges required. Please re-run with " \
+          "sudo or as root."
+    exit(1)
 
 logging.info("*** TEST RUN START: " + time.asctime())
 unittest.TextTestRunner(verbosity=_verb).run(suite)
