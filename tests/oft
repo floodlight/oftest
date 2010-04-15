@@ -118,6 +118,14 @@ import unittest
 import time
 import os
 
+try:
+    import scapy.all as scapy
+except:
+    try:
+        import scapy as scapy
+    except:
+        sys.exit("Need to install scapy for packet parsing")
+
 ##@var DEBUG_LEVELS
 # Map from strings to debugging levels
 DEBUG_LEVELS = {
@@ -165,6 +173,8 @@ def config_get(opts):
     if opts.debug not in DEBUG_LEVELS.keys():
         print "Warning:  Bad value specified for debug level; using default"
         opts.debug = _debug_default
+    if opts.verbose:
+        cfg["debug"] = "verbose"
     cfg["dbg_level"] = DEBUG_LEVELS[cfg["debug"]]
 
     return cfg
@@ -207,14 +217,16 @@ def config_setup(cfg_dflt):
                       help="Name of log file, empty string to log to console")
     parser.add_option("--debug",
                       help="Debug lvl: debug, info, warning, error, critical")
-    parser.add_option("--port-count",
+    parser.add_option("--port-count", type="int",
                       help="Number of ports to use (optional)")
-    parser.add_option("--base-of-port",
+    parser.add_option("--base-of-port", type="int",
                       help="Base OpenFlow port number (optional)")
-    parser.add_option("--base-if-index",
+    parser.add_option("--base-if-index", type="int",
                       help="Base interface index number (optional)")
     parser.add_option("--list", action="store_true",
                       help="List all tests and exit")
+    parser.add_option("--verbose", action="store_true",
+                      help="Short cut for --debug=verbose")
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
     (options, args) = parser.parse_args()
