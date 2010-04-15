@@ -8,7 +8,7 @@ This script is the entry point for running OpenFlow tests
 using the OFT framework.
 
 The global configuration is passed around in a dictionary
-ygenerally called config.  The keys have the following
+generally called config.  The keys have the following
 significance.
 
 <pre>
@@ -116,6 +116,7 @@ from subprocess import Popen,PIPE
 import logging
 import unittest
 import time
+import os
 
 ##@var DEBUG_LEVELS
 # Map from strings to debugging levels
@@ -213,7 +214,7 @@ def config_setup(cfg_dflt):
     parser.add_option("--base-if-index",
                       help="Base interface index number (optional)")
     parser.add_option("--list", action="store_true",
-                      help="Base interface index number (optional)")
+                      help="List all tests and exit")
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
     (options, args) = parser.parse_args()
@@ -432,6 +433,11 @@ elif config["dbg_level"] >= logging.WARNING:
     _verb = 1
 else:
     _verb = 2
+
+if os.getuid() != 0:
+    print "ERROR: Super-user privileges required. Please re-run with " \
+          "sudo or as root."
+    exit(1)
 
 logging.info("*** TEST RUN START: " + time.asctime())
 unittest.TextTestRunner(verbosity=_verb).run(suite)
