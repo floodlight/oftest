@@ -15,22 +15,35 @@ to dtalayco@stanford.edu.
 
 Quick Start
 +++++++++++
-    # cd <oftest>/tools/munger
-    # make install
-    # cd <oftest>/tests
-    # ./oft --list
-    # ./oft
-    # ./oft --test-spec=<mod> --debug=info --platform=remote --host=...
+
+    Make sure your switch is running and trying to connect to a
+    controller on the machine where you're running oft (normally port
+    6633). (We plan to add a script for the simple case of the SW
+    switch running on the same host.)
+
+    Currently, switches must be running version 1.0 of OpenFlow. 
+
+    git clone yuba:/usr/local/git/openflow-projects/oftest
+    cd <oftest>/tools/munger
+    make install
+    cd ../../tests
+    <start your OF switch to test>
+    ./oft --list
+    sudo ./oft --verbose --log-file=""
+    sudo ./oft --test-spec=<mod> --debug=info --platform=remote --host=...
 
 Longer Start
 ++++++++++++
 
     1.  Pre-requisites:
+        * An OF switch instance to test (see 4 below)
         * Root privilege on host
         * Python 2.5.  You can run platforms using eth interfaces with
           Python 2.4.
-        * oftest checked out (called <oftest> here)
+        * oftest checked out (to a directory called <oftest> here)
         * scapy installed:  http://www.secdev.org/projects/scapy/
+        * tcpdump installed (optional, but scapy will complain if it's
+          not there)
         * Doxygen and doxypy for document generation (optional)
         * lint for source checking (optional)
 
@@ -40,8 +53,8 @@ Longer Start
         the file in <oftest>/tools/pylibopenflow/include/openflow.h
         This is currently the 1.0 release file.
 
-        * cd <oftest>/tools/munger
-        * make install
+        cd <oftest>/tools/munger
+        make install
         This places files in <oftest>/src/python/oftest/src and then
         calls setuptools to install on the local host
 
@@ -58,10 +71,46 @@ Longer Start
         The switch must be running and actively attempting to 
         connect to the controller at the host/port specified above.
 
+        If you're new to the test environment and want to check its 
+        sanity, you can do the following.  This requires that
+        your host kernel supports virtual ethernet interfaces.  This
+        is best done in a window separate from where you will run oft.
+
+        4A. Check out openflow (preferably at the same level as oftest):
+            git clone git://openflowswitch.org/openflow.git
+        4B. cd openflow; ./boot.sh; ./configure; make
+        4C. cd ../oftest/tests
+        4D. Run the switch startup script:
+            sudo ./run_switch.py; Now you can run oft (see below).
+        4F. Use --help to see command line switches.  Make sure you
+            use the same port for the switch as for oft.
+        4E. Use control-C to terminate the switch daemons.
+        4F. To clean up the virtual ethernet interfaces, use
+            sudo rmmod veth
+
     5.  Run oft
         See Warning above; requires sudo to control the dataplane
-        * cd <oftest>/tests
-        * sudo ./oft --help
+        cd <oftest>/tests
+        sudo ./oft --help
+
+OFT Command Line Options
+++++++++++++++++++++++++
+
+    Here is a summary of the oft command line options.  Use --help to see
+    the long and short command option names.
+
+    platform          : String identifying the target platform
+    controller_host   : Host on which test controller is running (for sockets)
+    controller_port   : Port on which test controller listens for switch cxn
+    port_count        : Number of ports in dataplane
+    base_of_port      : Base OpenFlow port number in dataplane
+    base_if_index     : Base OS network interface for dataplane
+    test_dir          : Directory to search for test files (default .)
+    test_spec         : Specification of test(s) to run
+    log_file          : Filename for test logging
+    list              : Boolean:  List all tests and exit
+    debug             : String giving debug level (info, warning, error...)
+    verbose           : Same as debug=verbose
 
 Overview
 ++++++++
