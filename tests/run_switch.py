@@ -4,6 +4,7 @@
 #
 
 import os
+import time
 from subprocess import Popen,PIPE,call,check_call
 from optparse import OptionParser
 
@@ -16,6 +17,8 @@ parser.add_option("-n", "--port_count", type="int",
 parser.add_option("-o", "--of_dir", help="OpenFlow root directory for host")
 parser.add_option("-p", "--port", type="int",
                   help="Port for OFP to listen on")
+parser.add_option("-N", "--no_wait", action="store_true",
+                  help="Do not wait 2 seconds to start daemons")
 (options, args) = parser.parse_args()
 
 call(["/sbin/modprobe", "veth"])
@@ -51,10 +54,15 @@ except:
     print "Could not find protocol daemon: " + ofp
     os.exit(1)
 
+if not options.no_wait:
+    print "Starting ofprotocol in 2 seconds; ^C to quit"
+    time.sleep(2)
+else:
+    print "Starting ofprotocol; ^C to quit"
+
 ofd_op = Popen([ofd, "-i", veths, "punix:/tmp/ofd"])
 print "Started ofdatapath on IFs " + veths + " with pid " + str(ofd_op.pid)
 
-print "Starting ofprotocol; ^C to quit"
 call([ofp, "unix:/tmp/ofd", "tcp:127.0.0.1:" + str(options.port),
       "--fail=closed", "--max-backoff=1"])
 
