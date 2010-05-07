@@ -349,7 +349,7 @@ class DataPlane:
             return self.got_pkt_port, pkt, time
 
         self.pkt_sync.release()
-        self.logger.debug("Poll time out, no packet")
+        self.logger.debug("Poll time out, no packet from " + str(port_number))
 
         return None, None, None
 
