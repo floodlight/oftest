@@ -154,6 +154,15 @@ class Controller(Thread):
 
         self.logger.debug("Msg in: len %d. type %s. hdr.len %d" %
             (len(pkt), ofp_type_map[hdr.type], hdr.length))
+        if hdr.version != OFP_VERSION:
+            self.logger.error("Version %d does not match OFTest version %d"
+                              % (hdr.version, OFP_VERSION))
+            print "Version %d does not match OFTest version %d" % \
+                (hdr.version, OFP_VERSION)
+            self.active = False
+            self.switch_socket = None
+            self.kill()
+            
         msg = of_message_parse(pkt)
         if not msg:
             self.parse_errors += 1
