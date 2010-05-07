@@ -59,7 +59,7 @@ class SimpleProtocol(unittest.TestCase):
     Root class for setting up the controller
     """
 
-    def sig_handler(self):
+    def sig_handler(self, v1, v2):
         basic_logger.critical("Received interrupt signal; exiting")
         print "Received interrupt signal; exiting"
         self.clean_shutdown = False
@@ -75,7 +75,12 @@ class SimpleProtocol(unittest.TestCase):
         # clean_shutdown should be set to False to force quit app
         self.clean_shutdown = True
         self.controller.start()
+        #@todo Add an option to wait for a pkt transaction to ensure version
+        # compatibilty?
         self.controller.connect(timeout=20)
+        if not self.controller.active:
+            print "Controller startup failed; exiting"
+            sys.exit(1)
         basic_logger.info("Connected " + str(self.controller.switch_addr))
 
     def tearDown(self):
@@ -167,8 +172,11 @@ class PacketIn(SimpleDataPlane):
                             'Packet in message not received on port ' + 
                             str(of_port))
             if str(pkt) != response.data:
-                basic_logger.debug("pkt: "+str(pkt)+"  resp: " +
-                                   str(response))
+                basic_logger.debug("pkt  len " + str(len(str(pkt))) +
+                                   ": " + str(pkt))
+                basic_logger.debug("resp len " + 
+                                   str(len(str(response.data))) + 
+                                   ": " + str(response.data))
 
             self.assertEqual(str(pkt), response.data,
                              'Response packet does not match send packet' +
