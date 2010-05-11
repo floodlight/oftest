@@ -4,6 +4,7 @@ OpenFlow actions list class
 
 from action import *
 from cstruct import ofp_header
+import copy
 
 # # Map OFP action identifiers to the actual structures used on the wire
 # action_object_map = {
@@ -115,7 +116,8 @@ class action_list(object):
 
         """
         if isinstance(action, action_class_list):
-            self.actions.append(action)
+            tmp = copy.deepcopy(action)
+            self.actions.append(tmp)
             return True
         return False
 
