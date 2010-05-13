@@ -352,7 +352,13 @@ def gen_message_wrapper(msg):
     if has_core_members:
         _p2("binary_string = " + parent + ".unpack(self, binary_string)")
     if has_list:
-        if list_type == None:
+        if msg == "features_reply":  # Special case port parsing
+            # For now, cheat and assume the rest of the message is port list
+            _p2("while len(binary_string) >= OFP_PHY_PORT_BYTES:")
+            _p3("new_port = ofp_phy_port()")
+            _p3("binary_string = new_port.unpack(binary_string)")
+            _p3("self.ports.append(new_port)")
+        elif list_type == None:
             _p2("for obj in self." + list_var + ":")
             _p3("binary_string = obj.unpack(binary_string)")
         elif msg == "packet_out":  # Special case this
