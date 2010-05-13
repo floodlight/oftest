@@ -243,7 +243,7 @@ class FlowStatsGet(SimpleProtocol):
         request.match.wildcards = 0 # ofp.OFPFW_ALL
         response, pkt = self.controller.transact(request, timeout=2)
         self.assertTrue(response is not None, "Did not get response")
-        basic_logger.info(response.show())
+        basic_logger.debug(response.show())
 
 class FlowMod(SimpleProtocol):
     """
@@ -259,6 +259,51 @@ class FlowMod(SimpleProtocol):
         request.buffer_id = 0xffffffff
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Error installing flow mod")
+
+class PortConfigMod(SimpleProtocol):
+    """
+    Modify a bit in port config and verify changed
+
+    Get the switch configuration, modify the port configuration
+    and write it back; get the config again and verify changed.
+    Then set it back to the way it was.
+    """
+
+    def runTest(self):
+        basic_logger.info("Running " + str(self))
+        request = message.features_request()
+        reply, pkt = self.controller.transact(request, timeout=2)
+        self.assertTrue(reply is not None, "Did not get response to ftr req")
+        basic_logger.info("Reply has " + str(len(reply.ports)) + " ports")
+        #basic_logger.debug(reply.show())
+        tport = reply.ports[0]
+        basic_logger.info("No flood bit port 0 is now " + 
+                          str(reply.ports[0].config ^ ofp.OFPPC_NO_FLOOD))
+
+        mod = message.port_mod()
+        mod.port_no = tport.port_no
+        mod.hw_addr = tport.hw_addr
+        mod.config = tport.config ^ ofp.OFPPC_NO_FLOOD
+        mod.mask = ofp.OFPPC_NO_FLOOD
+        mod.advertise = tport.advertised
+        #basic_logger.debug(mod.show())
+        rv = self.controller.message_send(mod)
+        self.assertTrue(rv != -1, "Error sending port mod")
+
+        # Verify change took place with same feature request
+        request.header.xid = 0 # Force new XID
+        reply2, pkt = self.controller.transact(request, timeout=2)
+        self.assertTrue(reply2 is not None, "Did not get response ftr req2")
+        #basic_logger.debug(reply2.show())
+        self.assertTrue(reply2.ports[0].port_no == tport.port_no,
+                   "Feature reply port order changed; unhandled")
+        self.assertTrue(reply2.ports[0].config & ofp.OFPPC_NO_FLOOD !=
+                   tport.config & ofp.OFPPC_NO_FLOOD, 
+                   "Bit change did not take")
+        # Set it back
+        mod.config ^= ofp.OFPPC_NO_FLOOD
+        rv = self.controller.message_send(mod)
+        self.assertTrue(rv != -1, "Error sending port mod2")
 
 if __name__ == "__main__":
     print "Please run through oft script:  ./oft --test_spec=basic"
