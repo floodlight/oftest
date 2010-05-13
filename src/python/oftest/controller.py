@@ -509,14 +509,14 @@ class Controller(Thread):
         self.message_send(msg.pack())
         self.xid_cv.wait(timeout)
         if self.xid_response:
-            (msg, pkt) = self.xid_response
+            (resp, pkt) = self.xid_response
             self.xid_response = None
         else:
-            (msg, pkt) = (None, None)
+            (resp, pkt) = (None, None)
         self.xid_cv.release()
-        if msg is None:
-            self.logger.warning("No response for xid " + str(msg.header.xid))
-        return (msg, pkt)
+        if resp is None:
+            self.logger.warning("No response for xid " + str(self.xid))
+        return (resp, pkt)
 
     def message_send(self, msg, zero_xid=False):
         """
