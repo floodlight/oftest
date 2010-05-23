@@ -575,3 +575,158 @@ class AllPlusIngress(basic.SimpleDataPlane):
                 self.assertEqual(str(pkt), str(rcv_pkt),
                              'Response packet does not match send packet ' +
                                  "on port " + str(ofport))
+
+class SimpleExactMatch(basic.SimpleDataPlane):
+    """
+    Exercise exact matching for all ports
+
+    Generate a packet
+    Generate and install a matching flow without wildcard mask
+    Add action to forward to a port
+    Send the packet to the port
+    Verify the packet is received at all other ports (one port at a time)
+    Verify flow_expiration message is correct
+    """
+    def runTest(self):
+        self.flowMatchTest()
+
+    def flowMatchTest(self, wildcards=0):
+        global pa_port_map
+        of_ports = pa_port_map.keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+
+        pkt = simple_tcp_packet()
+        match = parse.packet_to_flow_match(pkt)
+        self.assertTrue(match is not None,
+                        "Could not generate flow match from pkt")
+        match.dl_vlan = 0xffff
+        match.nw_proto = 6
+        match.wildcards = wildcards
+
+        act = action.action_output()
+
+        for idx in range(len(of_ports)):
+            rc = delete_all_flows(self.controller, pa_logger)
+            self.assertEqual(rc, 0, "Failed to delete all flows")
+
+            ingress_port = of_ports[idx]
+            pa_logger.info("Ingress " + str(ingress_port) + " to all the other ports")
+
+            match.in_port = ingress_port
+
+            request = message.flow_mod()
+            request.match = match
+            request.flags |= ofp.OFPFF_SEND_FLOW_REM
+            request.hard_timeout = 1
+            request.buffer_id = 0xffffffff
+
+            for egr_idx in range(len(of_ports)):
+                if egr_idx == idx:
+                    continue
+                act.port = of_ports[egr_idx]
+                self.assertTrue(request.actions.add(act),
+                                "Could not add output action")
+                pa_logger.info(request.show())
+
+                pa_logger.info("Inserting flow")
+                rv = self.controller.message_send(request)
+                self.assertTrue(rv != -1, "Error installing flow mod")
+                do_barrier(self.controller)
+
+                pa_logger.info("Sending packet to dp port " +str(ingress_port))
+                self.dataplane.send(ingress_port, str(pkt))
+
+                ofport = of_ports[egr_idx]
+                (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(
+                port_number=ofport, timeout=1)
+                self.assertTrue(rcv_pkt is not None,
+                            "Did not receive packet port " + str(ofport))
+                pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on "
+                            + str(rcv_port))
+
+                self.assertEqual(str(pkt), str(rcv_pkt),
+                    'Response packet does not match send packet ' +
+                    "on port " + str(ofport))
+
+                #@todo Check for unexpected messages?
+                (response, raw) = self.controller.poll(ofp.OFPT_FLOW_REMOVED, 2)
+
+                req_match = request.match
+                res_match = response.match
+
+                self.assertTrue(response is not None,
+                                'Flow removed message not received')
+
+                self.verifMatchField(req_match, res_match)
+
+                self.assertEqual(request.cookie, response.cookie,
+                    self.matchErrStr('cookie'))
+                if (wildcards != 0):
+                    self.assertEqual(request.priority, response.priority,
+                        self.matchErrStr('priority'))
+                self.assertEqual(response.reason, ofp.OFPRR_HARD_TIMEOUT,
+                    'Reason is not HARD TIMEOUT')
+                self.assertEqual(response.packet_count, 1,
+                    'Packet count is not correct')
+                self.assertEqual(response.byte_count, len(pkt),
+                    'Packet length is not correct')
+
+    def verifMatchField(self, req_match, res_match):
+        self.assertEqual(str(req_match.wildcards), str(res_match.wildcards),
+            self.matchErrStr('wildcards'))
+        self.assertEqual(str(req_match.in_port), str(res_match.in_port),
+            self.matchErrStr('in_port'))
+        self.assertEqual(str(req_match.dl_src), str(res_match.dl_src),
+            self.matchErrStr('dl_src'))
+        self.assertEqual(str(req_match.dl_dst), str(res_match.dl_dst),
+            self.matchErrStr('dl_dst'))
+        self.assertEqual(str(req_match.dl_vlan), str(res_match.dl_vlan),
+            self.matchErrStr('dl_vlan'))
+        self.assertEqual(str(req_match.dl_vlan_pcp), str(res_match.dl_vlan_pcp),
+            self.matchErrStr('dl_vlan_pcp'))
+        self.assertEqual(str(req_match.dl_type), str(res_match.dl_type),
+            self.matchErrStr('dl_type'))
+        self.assertEqual(str(req_match.nw_tos), str(res_match.nw_tos),
+            self.matchErrStr('nw_tos'))
+        self.assertEqual(str(req_match.nw_proto), str(res_match.nw_proto),
+            self.matchErrStr('nw_proto'))
+        self.assertEqual(str(req_match.nw_src), str(res_match.nw_src),
+            self.matchErrStr('nw_src'))
+        self.assertEqual(str(req_match.nw_dst), str(res_match.nw_dst),
+            self.matchErrStr('nw_dst'))
+        self.assertEqual(str(req_match.tp_src), str(res_match.tp_src),
+            self.matchErrStr('tp_src'))
+        self.assertEqual(str(req_match.tp_dst), str(res_match.tp_dst),
+            self.matchErrStr('tp_dst'))
+
+    def matchErrStr(self, field):
+        return ('Response Match_' + field + ' does not match send message')
+
+class SingleWildcardMatch(SimpleExactMatch):
+    """
+    Exercise wildcard matching for all ports
+
+    Generate a packet
+    Generate and install a matching flow with wildcard mask
+    Add action to forward to a port
+    Send the packet to the port
+    Verify the packet is received at all other ports (one port at a time)
+    Verify flow_expiration message is correct
+    """
+    def runTest(self):
+        wildcards = [ofp.OFPFW_IN_PORT,
+                     ofp.OFPFW_DL_VLAN,
+                     ofp.OFPFW_DL_SRC,
+                     ofp.OFPFW_DL_DST,
+                     ofp.OFPFW_DL_TYPE,
+                     ofp.OFPFW_NW_PROTO,
+                     ofp.OFPFW_TP_SRC,
+                     ofp.OFPFW_TP_DST,
+                     ofp.OFPFW_NW_SRC_ALL,
+                     ofp.OFPFW_NW_DST_ALL,
+                     ofp.OFPFW_DL_VLAN_PCP,
+                     ofp.OFPFW_NW_TOS]
+
+        for exec_wildcard in range(len(wildcards)):
+            self.flowMatchTest(exec_wildcard)
