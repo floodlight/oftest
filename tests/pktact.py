@@ -585,12 +585,16 @@ class SimpleExactMatch(basic.SimpleDataPlane):
     Add action to forward to a port
     Send the packet to the port
     Verify the packet is received at all other ports (one port at a time)
-    Verify flow_expiration message is correct
+    Verify flow_expiration message is correct when command option is set
     """
+    IP_ETHTYPE = 0x800
+    TCP_PROTOCOL = 0x6
+    UDP_PROTOCOL = 0x11
+
     def runTest(self):
         self.flowMatchTest()
 
-    def flowMatchTest(self, wildcards=0):
+    def flowMatchTest(self, wildcards=0, check_expire=False):
         global pa_port_map
         of_ports = pa_port_map.keys()
         of_ports.sort()
@@ -600,8 +604,8 @@ class SimpleExactMatch(basic.SimpleDataPlane):
         match = parse.packet_to_flow_match(pkt)
         self.assertTrue(match is not None,
                         "Could not generate flow match from pkt")
-        match.dl_vlan = 0xffff
-        match.nw_proto = 6
+        match.dl_vlan = ofp.OFP_VLAN_NONE
+        match.nw_proto = self.TCP_PROTOCOL
         match.wildcards = wildcards
 
         act = action.action_output()
@@ -617,9 +621,11 @@ class SimpleExactMatch(basic.SimpleDataPlane):
 
             request = message.flow_mod()
             request.match = match
-            request.flags |= ofp.OFPFF_SEND_FLOW_REM
-            request.hard_timeout = 1
             request.buffer_id = 0xffffffff
+            #@todo Need UI to setup FLAGS parameter for flow_mod
+            if(check_expire):
+                request.flags |= ofp.OFPFF_SEND_FLOW_REM
+                request.hard_timeout = 1
 
             for egr_idx in range(len(of_ports)):
                 if egr_idx == idx:
@@ -649,28 +655,29 @@ class SimpleExactMatch(basic.SimpleDataPlane):
                     'Response packet does not match send packet ' +
                     "on port " + str(ofport))
 
-                #@todo Check for unexpected messages?
-                (response, raw) = self.controller.poll(ofp.OFPT_FLOW_REMOVED, 2)
+                #@todo Need UI for enabling response-verification
+                if(check_expire):
+                    (response, raw) \
+                        = self.controller.poll(ofp.OFPT_FLOW_REMOVED, 2)
+                    self.assertTrue(response is not None,
+                                    'Flow removed message not received')
 
-                req_match = request.match
-                res_match = response.match
+                    req_match = request.match
+                    res_match = response.match
+                    if(req_match != res_match):
+                        self.verifMatchField(req_match, res_match)
 
-                self.assertTrue(response is not None,
-                                'Flow removed message not received')
-
-                self.verifMatchField(req_match, res_match)
-
-                self.assertEqual(request.cookie, response.cookie,
-                    self.matchErrStr('cookie'))
-                if (wildcards != 0):
-                    self.assertEqual(request.priority, response.priority,
-                        self.matchErrStr('priority'))
-                self.assertEqual(response.reason, ofp.OFPRR_HARD_TIMEOUT,
-                    'Reason is not HARD TIMEOUT')
-                self.assertEqual(response.packet_count, 1,
-                    'Packet count is not correct')
-                self.assertEqual(response.byte_count, len(pkt),
-                    'Packet length is not correct')
+                    self.assertEqual(request.cookie, response.cookie,
+                        self.matchErrStr('cookie'))
+                    if (wildcards != 0):
+                        self.assertEqual(request.priority, response.priority,
+                            self.matchErrStr('priority'))
+                    self.assertEqual(response.reason, ofp.OFPRR_HARD_TIMEOUT,
+                        'Reason is not HARD TIMEOUT')
+                    self.assertEqual(response.packet_count, 1,
+                        'Packet count is not correct')
+                    self.assertEqual(response.byte_count, len(pkt),
+                        'Packet length is not correct')
 
     def verifMatchField(self, req_match, res_match):
         self.assertEqual(str(req_match.wildcards), str(res_match.wildcards),
@@ -687,18 +694,23 @@ class SimpleExactMatch(basic.SimpleDataPlane):
             self.matchErrStr('dl_vlan_pcp'))
         self.assertEqual(str(req_match.dl_type), str(res_match.dl_type),
             self.matchErrStr('dl_type'))
-        self.assertEqual(str(req_match.nw_tos), str(res_match.nw_tos),
-            self.matchErrStr('nw_tos'))
-        self.assertEqual(str(req_match.nw_proto), str(res_match.nw_proto),
-            self.matchErrStr('nw_proto'))
-        self.assertEqual(str(req_match.nw_src), str(res_match.nw_src),
-            self.matchErrStr('nw_src'))
-        self.assertEqual(str(req_match.nw_dst), str(res_match.nw_dst),
-            self.matchErrStr('nw_dst'))
-        self.assertEqual(str(req_match.tp_src), str(res_match.tp_src),
-            self.matchErrStr('tp_src'))
-        self.assertEqual(str(req_match.tp_dst), str(res_match.tp_dst),
-            self.matchErrStr('tp_dst'))
+        if(not(req_match.wildcards & ofp.OFPFW_DL_TYPE)
+           and (req_match.dl_type == self.IP_ETHERTYPE)):
+            self.assertEqual(str(req_match.nw_tos), str(res_match.nw_tos),
+                self.matchErrStr('nw_tos'))
+            self.assertEqual(str(req_match.nw_proto), str(res_match.nw_proto),
+                self.matchErrStr('nw_proto'))
+            self.assertEqual(str(req_match.nw_src), str(res_match.nw_src),
+                self.matchErrStr('nw_src'))
+            self.assertEqual(str(req_match.nw_dst), str(res_match.nw_dst),
+                self.matchErrStr('nw_dst'))
+            if(not(req_match.wildcards & ofp.OFPFW_NW_PROTO)
+               and ((req_match.nw_proto == self.TCP_PROTOCOL)
+                    or (req_match.nw_proto == self.UDP_PROTOCOL))):
+                self.assertEqual(str(req_match.tp_src), str(res_match.tp_src),
+                    self.matchErrStr('tp_src'))
+                self.assertEqual(str(req_match.tp_dst), str(res_match.tp_dst),
+                    self.matchErrStr('tp_dst'))
 
     def matchErrStr(self, field):
         return ('Response Match_' + field + ' does not match send message')
@@ -712,21 +724,23 @@ class SingleWildcardMatch(SimpleExactMatch):
     Add action to forward to a port
     Send the packet to the port
     Verify the packet is received at all other ports (one port at a time)
-    Verify flow_expiration message is correct
+    Verify flow_expiration message is correct when command option is set
     """
-    def runTest(self):
-        wildcards = [ofp.OFPFW_IN_PORT,
-                     ofp.OFPFW_DL_VLAN,
-                     ofp.OFPFW_DL_SRC,
-                     ofp.OFPFW_DL_DST,
-                     ofp.OFPFW_DL_TYPE,
-                     ofp.OFPFW_NW_PROTO,
-                     ofp.OFPFW_TP_SRC,
-                     ofp.OFPFW_TP_DST,
-                     ofp.OFPFW_NW_SRC_ALL,
-                     ofp.OFPFW_NW_DST_ALL,
-                     ofp.OFPFW_DL_VLAN_PCP,
-                     ofp.OFPFW_NW_TOS]
+    def __init__(self):
+        SimpleExactMatch.__init__(self)
+        self.wildcards = [ofp.OFPFW_IN_PORT,
+                          ofp.OFPFW_DL_VLAN,
+                          ofp.OFPFW_DL_SRC,
+                          ofp.OFPFW_DL_DST,
+                          ofp.OFPFW_DL_TYPE,
+                          ofp.OFPFW_NW_PROTO,
+                          ofp.OFPFW_TP_SRC,
+                          ofp.OFPFW_TP_DST,
+                          0x3F << ofp.OFPFW_NW_SRC_SHIFT,
+                          0x3F << ofp.OFPFW_NW_DST_SHIFT,
+                          ofp.OFPFW_DL_VLAN_PCP,
+                          ofp.OFPFW_NW_TOS]
 
-        for exec_wildcard in range(len(wildcards)):
+    def runTest(self):
+        for exec_wildcard in range(len(self.wildcards)):
             self.flowMatchTest(exec_wildcard)
