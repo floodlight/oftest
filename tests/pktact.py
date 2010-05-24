@@ -744,3 +744,19 @@ class SingleWildcardMatch(SimpleExactMatch):
     def runTest(self):
         for exec_wildcard in range(len(self.wildcards)):
             self.flowMatchTest(exec_wildcard)
+
+class AllExceptOneWildcardMatch(SingleWildcardMatch):
+    """
+    Create All-execpt-one-field wildcard and exercise for all ports
+
+    Generate a packet
+    Generate and install a matching flow with wildcard all except one filed
+    Add action to forward to a port
+    Send the packet to the port
+    Verify the packet is received at all other ports (one port at a time)
+    Verify flow_expiration message is correct when command option is set
+    """
+    def runTest(self):
+        for exec_wildcard in range(len(self.wildcards)):
+            all_exp_one_wildcard = ofp.OFPFW_ALL ^ self.wildcards[exec_wildcard]
+            self.flowMatchTest(all_exp_one_wildcard)
