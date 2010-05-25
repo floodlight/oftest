@@ -608,28 +608,28 @@ class SimpleExactMatch(basic.SimpleDataPlane):
         match.nw_proto = self.TCP_PROTOCOL
         match.wildcards = wildcards
 
-        act = action.action_output()
-
         for idx in range(len(of_ports)):
-            rc = delete_all_flows(self.controller, pa_logger)
-            self.assertEqual(rc, 0, "Failed to delete all flows")
-
             ingress_port = of_ports[idx]
             pa_logger.info("Ingress " + str(ingress_port) + " to all the other ports")
-
             match.in_port = ingress_port
-
-            request = message.flow_mod()
-            request.match = match
-            request.buffer_id = 0xffffffff
-            #@todo Need UI to setup FLAGS parameter for flow_mod
-            if(check_expire):
-                request.flags |= ofp.OFPFF_SEND_FLOW_REM
-                request.hard_timeout = 1
 
             for egr_idx in range(len(of_ports)):
                 if egr_idx == idx:
                     continue
+
+                rc = delete_all_flows(self.controller, pa_logger)
+                self.assertEqual(rc, 0, "Failed to delete all flows")
+                do_barrier(self.controller)
+
+                request = message.flow_mod()
+                request.match = match
+                request.buffer_id = 0xffffffff
+                #@todo Need UI to setup FLAGS parameter for flow_mod
+                if(check_expire):
+                    request.flags |= ofp.OFPFF_SEND_FLOW_REM
+                    request.hard_timeout = 1
+
+                act = action.action_output()
                 act.port = of_ports[egr_idx]
                 self.assertTrue(request.actions.add(act),
                                 "Could not add output action")
@@ -644,40 +644,45 @@ class SimpleExactMatch(basic.SimpleDataPlane):
                 self.dataplane.send(ingress_port, str(pkt))
 
                 ofport = of_ports[egr_idx]
-                (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(
-                port_number=ofport, timeout=1)
-                self.assertTrue(rcv_pkt is not None,
-                            "Did not receive packet port " + str(ofport))
-                pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on "
-                            + str(rcv_port))
-
-                self.assertEqual(str(pkt), str(rcv_pkt),
-                    'Response packet does not match send packet ' +
-                    "on port " + str(ofport))
+                self.verifPkt(ofport, pkt)
 
                 #@todo Need UI for enabling response-verification
                 if(check_expire):
-                    (response, raw) \
-                        = self.controller.poll(ofp.OFPT_FLOW_REMOVED, 2)
-                    self.assertTrue(response is not None,
-                                    'Flow removed message not received')
+                    self.verifFlowRemoved(request)
 
-                    req_match = request.match
-                    res_match = response.match
-                    if(req_match != res_match):
-                        self.verifMatchField(req_match, res_match)
+    def verifPkt(self, ofport, exp_pkt):
+        (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(
+                    port_number=ofport, timeout=1)
+        self.assertTrue(rcv_pkt is not None,
+                    "Did not receive packet port " + str(ofport))
+        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on "
+                    + str(rcv_port))
 
-                    self.assertEqual(request.cookie, response.cookie,
-                        self.matchErrStr('cookie'))
-                    if (wildcards != 0):
-                        self.assertEqual(request.priority, response.priority,
-                            self.matchErrStr('priority'))
-                    self.assertEqual(response.reason, ofp.OFPRR_HARD_TIMEOUT,
-                        'Reason is not HARD TIMEOUT')
-                    self.assertEqual(response.packet_count, 1,
-                        'Packet count is not correct')
-                    self.assertEqual(response.byte_count, len(pkt),
-                        'Packet length is not correct')
+        self.assertEqual(str(exp_pkt), str(rcv_pkt),
+            'Response packet does not match send packet ' +
+            "on port " + str(ofport))
+
+    def verifFlowRemoved(self, request):
+        (response, raw) = self.controller.poll(ofp.OFPT_FLOW_REMOVED, 2)
+        self.assertTrue(response is not None,
+            'Flow removed message not received')
+
+        req_match = request.match
+        res_match = response.match
+        if(req_match != res_match):
+            self.verifMatchField(req_match, res_match)
+
+        self.assertEqual(request.cookie, response.cookie,
+            self.matchErrStr('cookie'))
+        if (req_match.wildcards != 0):
+            self.assertEqual(request.priority, response.priority,
+                self.matchErrStr('priority'))
+            self.assertEqual(response.reason, ofp.OFPRR_HARD_TIMEOUT,
+                'Reason is not HARD TIMEOUT')
+            self.assertEqual(response.packet_count, 1,
+                'Packet count is not correct')
+            self.assertEqual(response.byte_count, len(pkt),
+                'Packet length is not correct')
 
     def verifMatchField(self, req_match, res_match):
         self.assertEqual(str(req_match.wildcards), str(res_match.wildcards),
