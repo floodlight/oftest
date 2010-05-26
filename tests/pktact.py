@@ -825,6 +825,11 @@ class ExactModifyAction(SimpleExactMatch):
         mod_tcp_sport = 4321
         mod_tcp_dport = 8765
 
+        request = message.features_request()
+        (reply, pkt) = self.controller.transact(request, timeout=2)
+        self.assertTrue(reply is not None, "Did not get response to ftr req")
+        supported_act = reply.actions
+
         for idx in range(len(of_ports)):
             ingress_port = of_ports[idx]
             pa_logger.info("Ingress " + str(ingress_port) + " to all the other ports")
@@ -880,45 +885,65 @@ class ExactModifyAction(SimpleExactMatch):
 
                     exec_act = self.modify_act[exec_mod]
                     if exec_act == ofp.OFPAT_SET_VLAN_VID:
+                        if not(supported_act & 1<<ofp.OFPAT_SET_VLAN_VID):
+                            continue
                         pkt_len = pkt_len + 4
                         dl_vlan_enable = True
                         dl_vlan = mod_dl_vlan
                         mod_act = action.action_set_vlan_vid()
                         mod_act.vlan_vid = mod_dl_vlan
                     elif exec_act == ofp.OFPAT_SET_VLAN_PCP:
+                        if not(supported_act & 1<<ofp.OFPAT_SET_VLAN_PCP):
+                            continue
                         pkt_len = pkt_len + 4
                         dl_vlan_enable = True
                         dl_vlan_pcp = mod_dl_vlan_pcp
                         mod_act = action.action_set_vlan_pcp()
                         mod_act.vlan_pcp = mod_dl_vlan_pcp
                     elif exec_act == ofp.OFPAT_STRIP_VLAN:
+                        if not(supported_act & 1<<ofp.OFPAT_STRIP_VLAN):
+                            continue
                         dl_vlan_enable = False
                         mod_act = action.action_strip_vlan()
                     elif exec_act == ofp.OFPAT_SET_DL_SRC:
+                        if not(supported_act & 1<<ofp.OFPAT_SET_DL_SRC):
+                            continue
                         dl_src = mod_dl_src
                         mod_act = action.action_set_dl_src()
                         mod_act.dl_addr = parse.parse_mac(mod_dl_src)
                     elif exec_act == ofp.OFPAT_SET_DL_DST:
+                        if not(supported_act & 1<<ofp.OFPAT_SET_DL_DST):
+                            continue
                         dl_dst = mod_dl_dst
                         mod_act = action.action_set_dl_dst()
                         mod_act.dl_addr = parse.parse_mac(mod_dl_dst)
                     elif exec_act == ofp.OFPAT_SET_NW_SRC:
+                        if not(supported_act & 1<<ofp.OFPAT_SET_NW_SRC):
+                            continue
                         ip_src = mod_ip_src
                         mod_act = action.action_set_nw_src()
                         mod_act.nw_addr = parse.parse_ip(mod_ip_src)
                     elif exec_act == ofp.OFPAT_SET_NW_DST:
+                        if not(supported_act & 1<<ofp.OFPAT_SET_NW_DST):
+                            continue
                         ip_dst = mod_ip_dst
                         mod_act = action.action_set_nw_dst()
                         mod_act.nw_addr = parse.parse_ip(mod_ip_dst)
                     elif exec_act == ofp.OFPAT_SET_NW_TOS:
+                        if not(supported_act & 1<<ofp.OFPAT_SET_NW_TOS):
+                            continue
                         ip_tos = mod_ip_tos
                         mod_act = action.action_set_nw_tos()
                         mod_act.nw_tos = mod_ip_tos
                     elif exec_act == ofp.OFPAT_SET_TP_SRC:
+                        if not(supported_act & 1<<ofp.OFPAT_SET_TP_SRC):
+                            continue
                         tcp_sport = mod_tcp_sport
                         mod_act = action.action_set_tp_src()
                         mod_act.tp_port = mod_tcp_sport
                     elif exec_act == ofp.OFPAT_SET_TP_DST:
+                        if not(supported_act & 1<<ofp.OFPAT_SET_TP_DST):
+                            continue
                         tcp_dport = mod_tcp_dport
                         mod_act = action.action_set_tp_dst()
                         mod_act.tp_port = mod_tcp_dport
