@@ -779,3 +779,183 @@ class AllWildcardMatch(SingleWildcardMatch):
     """
     def runTest(self):
         self.flowMatchTest(ofp.OFPFW_ALL)
+
+class ExactModifyAction(SimpleExactMatch):
+    """
+    Perform Modify action with exact matching for all ports
+
+    Generate a packet for transmit
+    Generate the expected packet
+    Generate and install a matching flow with a modify action and
+    an output action without wildcard mask
+    Send the packet to the port
+    Verify the expected packet is received at all other ports
+    (one port at a time)
+    Verify flow_expiration message is correct when command option is set
+    """
+    def __init__(self):
+        SimpleExactMatch.__init__(self)
+        self.modify_act = [ofp.OFPAT_SET_VLAN_VID,
+                           ofp.OFPAT_SET_VLAN_PCP,
+                           ofp.OFPAT_STRIP_VLAN,
+                           ofp.OFPAT_SET_DL_SRC,
+                           ofp.OFPAT_SET_DL_DST,
+                           ofp.OFPAT_SET_NW_SRC,
+                           ofp.OFPAT_SET_NW_DST,
+                           ofp.OFPAT_SET_NW_TOS,
+                           ofp.OFPAT_SET_TP_SRC,
+                           ofp.OFPAT_SET_TP_DST]
+
+    def runTest(self):
+        self.flowMatchModTest()
+
+    def flowMatchModTest(self, wildcards=0, check_expire=False):
+        global pa_port_map
+        of_ports = pa_port_map.keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+
+        mod_dl_dst = '43:21:0F:ED:CB:A9'
+        mod_dl_src = '7F:ED:CB:A9:87:65'
+        mod_dl_vlan = 4094
+        mod_dl_vlan_pcp = 7
+        mod_ip_src = '10.20.30.40'
+        mod_ip_dst = '50.60.70.80'
+        mod_ip_tos = 0xf0
+        mod_tcp_sport = 4321
+        mod_tcp_dport = 8765
+
+        for idx in range(len(of_ports)):
+            ingress_port = of_ports[idx]
+            pa_logger.info("Ingress " + str(ingress_port) + " to all the other ports")
+
+            for egr_idx in range(len(of_ports)):
+                if egr_idx == idx:
+                    continue
+
+                for exec_mod in range(len(self.modify_act)):
+                    pkt_len = 100
+                    dl_dst = '0C:DE:F0:12:34:56'
+                    dl_src = '01:23:45:67:89:AB'
+                    dl_vlan_enable = False
+                    dl_vlan = 0
+                    dl_vlan_pcp = 0
+                    ip_src = '192.168.0.1'
+                    ip_dst = '192.168.0.2'
+                    ip_tos = 0
+                    tcp_sport = 1234
+                    tcp_dport = 80
+
+                    rc = delete_all_flows(self.controller, pa_logger)
+                    self.assertEqual(rc, 0, "Failed to delete all flows")
+                    do_barrier(self.controller)
+
+                    pkt = simple_tcp_packet(pktlen=pkt_len,
+                        dl_dst=dl_dst,
+                        dl_src=dl_src,
+                        dl_vlan_enable=dl_vlan_enable,
+                        dl_vlan=dl_vlan,
+                        dl_vlan_pcp=dl_vlan_pcp,
+                        ip_src=ip_src,
+                        ip_dst=ip_dst,
+                        ip_tos=ip_tos,
+                        tcp_sport=tcp_sport,
+                        tcp_dport=tcp_dport)
+
+                    match = parse.packet_to_flow_match(pkt)
+                    self.assertTrue(match is not None,
+                        "Could not generate flow match from pkt")
+                    match.in_port = ingress_port
+                    match.dl_vlan = ofp.OFP_VLAN_NONE
+                    match.nw_proto = self.TCP_PROTOCOL
+                    match.wildcards = wildcards
+
+                    request = message.flow_mod()
+                    request.match = match
+                    request.buffer_id = 0xffffffff
+                    #@todo Need UI to setup FLAGS parameter for flow_mod
+                    if(check_expire):
+                        request.flags |= ofp.OFPFF_SEND_FLOW_REM
+                        request.hard_timeout = 1
+
+                    exec_act = self.modify_act[exec_mod]
+                    if exec_act == ofp.OFPAT_SET_VLAN_VID:
+                        pkt_len = pkt_len + 4
+                        dl_vlan_enable = True
+                        dl_vlan = mod_dl_vlan
+                        mod_act = action.action_set_vlan_vid()
+                        mod_act.vlan_vid = mod_dl_vlan
+                    if exec_act == ofp.OFPAT_SET_VLAN_PCP:
+                        pkt_len = pkt_len + 4
+                        dl_vlan_enable = True
+                        dl_vlan_pcp = mod_dl_vlan_pcp
+                        mod_act = action.action_set_vlan_pcp()
+                        mod_act.vlan_pcp = mod_dl_vlan_pcp
+                    if exec_act == ofp.OFPAT_STRIP_VLAN:
+                        dl_vlan_enable = False
+                        mod_act = action.action_strip_vlan()
+                    if exec_act == ofp.OFPAT_SET_DL_SRC:
+                        dl_src = mod_dl_src
+                        mod_act = action.action_set_dl_src()
+                        mod_act.dl_addr = parse.parse_mac(mod_dl_src)
+                    if exec_act == ofp.OFPAT_SET_DL_DST:
+                        dl_dst = mod_dl_dst
+                        mod_act = action.action_set_dl_dst()
+                        mod_act.dl_addr = parse.parse_mac(mod_dl_dst)
+                    if exec_act == ofp.OFPAT_SET_NW_SRC:
+                        ip_src = mod_ip_src
+                        mod_act = action.action_set_nw_src()
+                        mod_act.nw_addr = parse.parse_ip(mod_ip_src)
+                    if exec_act == ofp.OFPAT_SET_NW_DST:
+                        ip_dst = mod_ip_dst
+                        mod_act = action.action_set_nw_dst()
+                        mod_act.nw_addr = parse.parse_ip(mod_ip_dst)
+                    if exec_act == ofp.OFPAT_SET_NW_TOS:
+                        ip_tos = mod_ip_tos
+                        mod_act = action.action_set_nw_tos()
+                        mod_act.nw_tos = mod_ip_tos
+                    if exec_act == ofp.OFPAT_SET_TP_SRC:
+                        tcp_sport = mod_tcp_sport
+                        mod_act = action.action_set_tp_src()
+                        mod_act.tp_port = mod_tcp_sport
+                    if exec_act == ofp.OFPAT_SET_TP_DST:
+                        tcp_dport = mod_tcp_dport
+                        mod_act = action.action_set_tp_dst()
+                        mod_act.tp_port = mod_tcp_dport
+
+                    self.assertTrue(request.actions.add(mod_act),
+                            "Could not add output action")
+                    pa_logger.info(request.show())
+
+                    exp_pkt = simple_tcp_packet(pktlen=pkt_len,
+                        dl_dst=dl_dst,
+                        dl_src=dl_src,
+                        dl_vlan_enable=dl_vlan_enable,
+                        dl_vlan=dl_vlan,
+                        dl_vlan_pcp=dl_vlan_pcp,
+                        ip_src=ip_src,
+                        ip_dst=ip_dst,
+                        ip_tos=ip_tos,
+                        tcp_sport=tcp_sport,
+                        tcp_dport=tcp_dport)
+
+                    act = action.action_output()
+                    act.port = of_ports[egr_idx]
+                    self.assertTrue(request.actions.add(act),
+                                    "Could not add output action")
+                    pa_logger.info(request.show())
+
+                    pa_logger.info("Inserting flow")
+                    rv = self.controller.message_send(request)
+                    self.assertTrue(rv != -1, "Error installing flow mod")
+                    do_barrier(self.controller)
+
+                    pa_logger.info("Sending packet to dp port " +str(ingress_port))
+                    self.dataplane.send(ingress_port, str(pkt))
+
+                    ofport = of_ports[egr_idx]
+                    self.verifPkt(ofport, exp_pkt)
+
+                    #@todo Need UI for enabling response-verification
+                    if(check_expire):
+                        self.verifFlowRemoved(request)
