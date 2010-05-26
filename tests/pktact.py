@@ -885,43 +885,45 @@ class ExactModifyAction(SimpleExactMatch):
                         dl_vlan = mod_dl_vlan
                         mod_act = action.action_set_vlan_vid()
                         mod_act.vlan_vid = mod_dl_vlan
-                    if exec_act == ofp.OFPAT_SET_VLAN_PCP:
+                    elif exec_act == ofp.OFPAT_SET_VLAN_PCP:
                         pkt_len = pkt_len + 4
                         dl_vlan_enable = True
                         dl_vlan_pcp = mod_dl_vlan_pcp
                         mod_act = action.action_set_vlan_pcp()
                         mod_act.vlan_pcp = mod_dl_vlan_pcp
-                    if exec_act == ofp.OFPAT_STRIP_VLAN:
+                    elif exec_act == ofp.OFPAT_STRIP_VLAN:
                         dl_vlan_enable = False
                         mod_act = action.action_strip_vlan()
-                    if exec_act == ofp.OFPAT_SET_DL_SRC:
+                    elif exec_act == ofp.OFPAT_SET_DL_SRC:
                         dl_src = mod_dl_src
                         mod_act = action.action_set_dl_src()
                         mod_act.dl_addr = parse.parse_mac(mod_dl_src)
-                    if exec_act == ofp.OFPAT_SET_DL_DST:
+                    elif exec_act == ofp.OFPAT_SET_DL_DST:
                         dl_dst = mod_dl_dst
                         mod_act = action.action_set_dl_dst()
                         mod_act.dl_addr = parse.parse_mac(mod_dl_dst)
-                    if exec_act == ofp.OFPAT_SET_NW_SRC:
+                    elif exec_act == ofp.OFPAT_SET_NW_SRC:
                         ip_src = mod_ip_src
                         mod_act = action.action_set_nw_src()
                         mod_act.nw_addr = parse.parse_ip(mod_ip_src)
-                    if exec_act == ofp.OFPAT_SET_NW_DST:
+                    elif exec_act == ofp.OFPAT_SET_NW_DST:
                         ip_dst = mod_ip_dst
                         mod_act = action.action_set_nw_dst()
                         mod_act.nw_addr = parse.parse_ip(mod_ip_dst)
-                    if exec_act == ofp.OFPAT_SET_NW_TOS:
+                    elif exec_act == ofp.OFPAT_SET_NW_TOS:
                         ip_tos = mod_ip_tos
                         mod_act = action.action_set_nw_tos()
                         mod_act.nw_tos = mod_ip_tos
-                    if exec_act == ofp.OFPAT_SET_TP_SRC:
+                    elif exec_act == ofp.OFPAT_SET_TP_SRC:
                         tcp_sport = mod_tcp_sport
                         mod_act = action.action_set_tp_src()
                         mod_act.tp_port = mod_tcp_sport
-                    if exec_act == ofp.OFPAT_SET_TP_DST:
+                    elif exec_act == ofp.OFPAT_SET_TP_DST:
                         tcp_dport = mod_tcp_dport
                         mod_act = action.action_set_tp_dst()
                         mod_act.tp_port = mod_tcp_dport
+                    else:
+                        continue
 
                     self.assertTrue(request.actions.add(mod_act),
                             "Could not add output action")
