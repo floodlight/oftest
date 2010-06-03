@@ -15,6 +15,8 @@ indicated oin oft_config
 
 """
 
+import copy
+
 import logging
 
 import unittest
@@ -77,8 +79,8 @@ class DirectPacket(basic.SimpleDataPlane):
         act = action.action_output()
 
         for idx in range(len(of_ports)):
-            rc = delete_all_flows(self.controller, pa_logger)
-            self.assertEqual(rc, 0, "Failed to delete all flows")
+            rv = delete_all_flows(self.controller, pa_logger)
+            self.assertEqual(rv, 0, "Failed to delete all flows")
 
             ingress_port = of_ports[idx]
             egress_port = of_ports[(idx + 1) % len(of_ports)]
@@ -135,8 +137,8 @@ class DirectTwoPorts(basic.SimpleDataPlane):
         act = action.action_output()
 
         for idx in range(len(of_ports)):
-            rc = delete_all_flows(self.controller, pa_logger)
-            self.assertEqual(rc, 0, "Failed to delete all flows")
+            rv = delete_all_flows(self.controller, pa_logger)
+            self.assertEqual(rv, 0, "Failed to delete all flows")
 
             ingress_port = of_ports[idx]
             egress_port1 = of_ports[(idx + 1) % len(of_ports)]
@@ -164,27 +166,11 @@ class DirectTwoPorts(basic.SimpleDataPlane):
             pa_logger.info("Sending packet to dp port " + 
                            str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
-            (rcv_port1, rcv_pkt1, pkt_time1) = self.dataplane.poll(timeout=1)
-            (rcv_port2, rcv_pkt2, pkt_time2) = self.dataplane.poll(timeout=1)
-            self.assertTrue(rcv_pkt1 is not None, "Did not receive packet 1")
-            self.assertTrue(rcv_pkt2 is not None, "Did not receive packet 2")
-            pa_logger.debug("Packet len " + str(len(rcv_pkt1)) + " in on " + 
-                         str(rcv_port1))
-            pa_logger.debug("Packet len " + str(len(rcv_pkt2)) + " in on " + 
-                         str(rcv_port2))
+            yes_ports = set([egress_port1, egress_port2])
+            no_ports = set(of_ports).difference(yes_ports)
 
-            # Check if ports swapped
-            if (rcv_port1 == egress_port2 and rcv_port2 == egress_port1):
-                (rcv_port2, rcv_port1) = (rcv_port1, rcv_port2)
-                (rcv_pkt2, rcv_pkt1) = (rcv_pkt1, rcv_pkt2)
-            self.assertEqual(rcv_port1, egress_port1,
-                             "Unexpected receive port 1")
-            self.assertEqual(rcv_port2, egress_port2,
-                             "Unexpected receive port 2")
-            self.assertEqual(str(pkt), str(rcv_pkt1),
-                             'Response packet does not match send packet 1')
-            self.assertEqual(str(pkt), str(rcv_pkt2),
-                             'Response packet does not match send packet 2')
+            receive_pkt_check(self.dataplane, pkt, yes_ports, no_ports,
+                              self, pa_logger)
 
 class DirectMCNonIngress(basic.SimpleDataPlane):
     """
@@ -211,50 +197,36 @@ class DirectMCNonIngress(basic.SimpleDataPlane):
                         "Could not generate flow match from pkt")
         act = action.action_output()
 
-        for idx in range(len(of_ports)):
-            rc = delete_all_flows(self.controller, pa_logger)
-            self.assertEqual(rc, 0, "Failed to delete all flows")
+        for ingress_port in of_ports:
+            rv = delete_all_flows(self.controller, pa_logger)
+            self.assertEqual(rv, 0, "Failed to delete all flows")
 
-            ingress_port = of_ports[idx]
             pa_logger.info("Ingress " + str(ingress_port) + 
                            " all non-ingress ports")
-
             match.in_port = ingress_port
 
             request = message.flow_mod()
             request.match = match
             request.buffer_id = 0xffffffff
-            for egr_idx in range(len(of_ports)):
-                if egr_idx == idx:
+            for egress_port in of_ports:
+                if egress_port == ingress_port:
                     continue
-                egress_port = of_ports[egr_idx]
                 act.port = egress_port
                 self.assertTrue(request.actions.add(act), 
                                 "Could not add output to " + str(egress_port))
-            pa_logger.info(request.show())
+            pa_logger.debug(request.show())
 
             pa_logger.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
             do_barrier(self.controller)
 
-            pa_logger.info("Sending packet to dp port " + 
-                           str(ingress_port))
+            pa_logger.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
-            for egr_idx in range(len(of_ports)):
-                if egr_idx == idx:
-                    continue
-                ofport = of_ports[egr_idx]
-                (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(
-                    port_number=ofport, timeout=1)
-                self.assertTrue(rcv_pkt is not None, 
-                                "Did not receive packet port " + str(ofport))
-                pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on "
-                                + str(rcv_port))
+            yes_ports = set(of_ports).difference([ingress_port])
+            receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
+                              self, pa_logger)
 
-                self.assertEqual(str(pkt), str(rcv_pkt),
-                             'Response packet does not match send packet ' +
-                                 "on port " + str(ofport))
 
 class DirectMC(basic.SimpleDataPlane):
     """
@@ -281,21 +253,18 @@ class DirectMC(basic.SimpleDataPlane):
                         "Could not generate flow match from pkt")
         act = action.action_output()
 
-        for idx in range(len(of_ports)):
-            rc = delete_all_flows(self.controller, pa_logger)
-            self.assertEqual(rc, 0, "Failed to delete all flows")
+        for ingress_port in of_ports:
+            rv = delete_all_flows(self.controller, pa_logger)
+            self.assertEqual(rv, 0, "Failed to delete all flows")
 
-            ingress_port = of_ports[idx]
             pa_logger.info("Ingress " + str(ingress_port) + " to all ports")
-
             match.in_port = ingress_port
 
             request = message.flow_mod()
             request.match = match
             request.buffer_id = 0xffffffff
-            for egr_idx in range(len(of_ports)):
-                egress_port = of_ports[egr_idx]
-                if egr_idx == idx:
+            for egress_port in of_ports:
+                if egress_port == ingress_port:
                     act.port = ofp.OFPP_IN_PORT
                 else:
                     act.port = egress_port
@@ -310,18 +279,8 @@ class DirectMC(basic.SimpleDataPlane):
 
             pa_logger.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
-            for egr_idx in range(len(of_ports)):
-                ofport = of_ports[egr_idx]
-                (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(
-                    port_number=ofport, timeout=1)
-                self.assertTrue(rcv_pkt is not None, 
-                                "Did not receive packet port " + str(ofport))
-                pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on "
-                                + str(rcv_port))
-
-                self.assertEqual(str(pkt), str(rcv_pkt),
-                             'Response packet does not match send packet ' +
-                                 "on port " + str(ofport))
+            receive_pkt_check(self.dataplane, pkt, of_ports, [], self,
+                              pa_logger)
 
 class Flood(basic.SimpleDataPlane):
     """
@@ -346,13 +305,11 @@ class Flood(basic.SimpleDataPlane):
                         "Could not generate flow match from pkt")
         act = action.action_output()
 
-        for idx in range(len(of_ports)):
-            rc = delete_all_flows(self.controller, pa_logger)
-            self.assertEqual(rc, 0, "Failed to delete all flows")
+        for ingress_port in of_ports:
+            rv = delete_all_flows(self.controller, pa_logger)
+            self.assertEqual(rv, 0, "Failed to delete all flows")
 
-            ingress_port = of_ports[idx]
             pa_logger.info("Ingress " + str(ingress_port) + " to all ports")
-
             match.in_port = ingress_port
 
             request = message.flow_mod()
@@ -370,20 +327,9 @@ class Flood(basic.SimpleDataPlane):
 
             pa_logger.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
-            for egr_idx in range(len(of_ports)):
-                if egr_idx == idx:
-                    continue
-                ofport = of_ports[egr_idx]
-                (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(
-                    port_number=ofport, timeout=1)
-                self.assertTrue(rcv_pkt is not None, 
-                                "Did not receive packet port " + str(ofport))
-                pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on "
-                                + str(rcv_port))
-
-                self.assertEqual(str(pkt), str(rcv_pkt),
-                             'Response packet does not match send packet ' +
-                                 "on port " + str(ofport))
+            yes_ports = set(of_ports).difference([ingress_port])
+            receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
+                              self, pa_logger)
 
 
 class FloodPlusIngress(basic.SimpleDataPlane):
@@ -410,13 +356,11 @@ class FloodPlusIngress(basic.SimpleDataPlane):
                         "Could not generate flow match from pkt")
         act = action.action_output()
 
-        for idx in range(len(of_ports)):
-            rc = delete_all_flows(self.controller, pa_logger)
-            self.assertEqual(rc, 0, "Failed to delete all flows")
+        for ingress_port in of_ports:
+            rv = delete_all_flows(self.controller, pa_logger)
+            self.assertEqual(rv, 0, "Failed to delete all flows")
 
-            ingress_port = of_ports[idx]
             pa_logger.info("Ingress " + str(ingress_port) + " to all ports")
-
             match.in_port = ingress_port
 
             request = message.flow_mod()
@@ -437,18 +381,8 @@ class FloodPlusIngress(basic.SimpleDataPlane):
 
             pa_logger.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
-            for egr_idx in range(len(of_ports)):
-                ofport = of_ports[egr_idx]
-                (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(
-                    port_number=ofport, timeout=1)
-                self.assertTrue(rcv_pkt is not None, 
-                                "Did not receive packet port " + str(ofport))
-                pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on "
-                                + str(rcv_port))
-
-                self.assertEqual(str(pkt), str(rcv_pkt),
-                             'Response packet does not match send packet ' +
-                                 "on port " + str(ofport))
+            receive_pkt_check(self.dataplane, pkt, of_ports, [], self,
+                              pa_logger)
 
 class All(basic.SimpleDataPlane):
     """
@@ -473,13 +407,11 @@ class All(basic.SimpleDataPlane):
                         "Could not generate flow match from pkt")
         act = action.action_output()
 
-        for idx in range(len(of_ports)):
-            rc = delete_all_flows(self.controller, pa_logger)
-            self.assertEqual(rc, 0, "Failed to delete all flows")
+        for ingress_port in of_ports:
+            rv = delete_all_flows(self.controller, pa_logger)
+            self.assertEqual(rv, 0, "Failed to delete all flows")
 
-            ingress_port = of_ports[idx]
             pa_logger.info("Ingress " + str(ingress_port) + " to all ports")
-
             match.in_port = ingress_port
 
             request = message.flow_mod()
@@ -497,20 +429,9 @@ class All(basic.SimpleDataPlane):
 
             pa_logger.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
-            for egr_idx in range(len(of_ports)):
-                if egr_idx == idx:
-                    continue
-                ofport = of_ports[egr_idx]
-                (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(
-                    port_number=ofport, timeout=1)
-                self.assertTrue(rcv_pkt is not None, 
-                                "Did not receive packet port " + str(ofport))
-                pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on "
-                                + str(rcv_port))
-
-                self.assertEqual(str(pkt), str(rcv_pkt),
-                             'Response packet does not match send packet ' +
-                                 "on port " + str(ofport))
+            yes_ports = set(of_ports).difference([ingress_port])
+            receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
+                              self, pa_logger)
 
 class AllPlusIngress(basic.SimpleDataPlane):
     """
@@ -536,13 +457,11 @@ class AllPlusIngress(basic.SimpleDataPlane):
                         "Could not generate flow match from pkt")
         act = action.action_output()
 
-        for idx in range(len(of_ports)):
-            rc = delete_all_flows(self.controller, pa_logger)
-            self.assertEqual(rc, 0, "Failed to delete all flows")
+        for ingress_port in of_ports:
+            rv = delete_all_flows(self.controller, pa_logger)
+            self.assertEqual(rv, 0, "Failed to delete all flows")
 
-            ingress_port = of_ports[idx]
             pa_logger.info("Ingress " + str(ingress_port) + " to all ports")
-
             match.in_port = ingress_port
 
             request = message.flow_mod()
@@ -563,15 +482,76 @@ class AllPlusIngress(basic.SimpleDataPlane):
 
             pa_logger.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
-            for egr_idx in range(len(of_ports)):
-                ofport = of_ports[egr_idx]
-                (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(
-                    port_number=ofport, timeout=1)
-                self.assertTrue(rcv_pkt is not None, 
-                                "Did not receive packet port " + str(ofport))
-                pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on "
-                                + str(rcv_port))
+            receive_pkt_check(self.dataplane, pkt, of_ports, [], self,
+                              pa_logger)
+            
 
-                self.assertEqual(str(pkt), str(rcv_pkt),
-                             'Response packet does not match send packet ' +
-                                 "on port " + str(ofport))
+class FloodMinusPort(basic.SimpleDataPlane):
+    """
+    Config port with No_Flood and test Flood action
+
+    Generate a packet
+    Generate a matching flow
+    Add action to forward to OFPP_ALL
+    Set port to no-flood
+    Send the packet to ingress dataplane port
+    Verify the packet is received at all other ports except
+    the ingress port and the no_flood port
+    """
+    def runTest(self):
+        global pa_port_map
+        of_ports = pa_port_map.keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
+
+        pkt = simple_tcp_packet()
+        match = parse.packet_to_flow_match(pkt)
+        match.wildcards &= ~ofp.OFPFW_IN_PORT
+        self.assertTrue(match is not None, 
+                        "Could not generate flow match from pkt")
+        act = action.action_output()
+
+        for idx in range(len(of_ports)):
+            rv = delete_all_flows(self.controller, pa_logger)
+            self.assertEqual(rv, 0, "Failed to delete all flows")
+
+            ingress_port = of_ports[idx]
+            no_flood_idx = (idx + 1) % len(of_ports)
+            no_flood_port = of_ports[no_flood_idx]
+            rv = port_config_set(self.controller, no_flood_port,
+                                 ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD,
+                                 pa_logger)
+            self.assertEqual(rv, 0, "Failed to set port config")
+
+            match.in_port = ingress_port
+
+            request = message.flow_mod()
+            request.match = match
+            request.buffer_id = 0xffffffff
+            act.port = ofp.OFPP_FLOOD
+            self.assertTrue(request.actions.add(act), 
+                            "Could not add flood port action")
+            pa_logger.info(request.show())
+
+            pa_logger.info("Inserting flow")
+            rv = self.controller.message_send(request)
+            self.assertTrue(rv != -1, "Error installing flow mod")
+            do_barrier(self.controller)
+
+            pa_logger.info("Sending packet to dp port " + str(ingress_port))
+            pa_logger.info("No flood port is " + str(no_flood_port))
+            self.dataplane.send(ingress_port, str(pkt))
+            no_ports = set([ingress_port, no_flood_port])
+            yes_ports = set(of_ports).difference(no_ports)
+            receive_pkt_check(self.dataplane, pkt, yes_ports, no_ports, self,
+                              pa_logger)
+
+            # Turn no flood off again
+            rv = port_config_set(self.controller, no_flood_port,
+                                 0, ofp.OFPPC_NO_FLOOD, pa_logger)
+            self.assertEqual(rv, 0, "Failed to reset port config")
+
+            #@todo Should check no other packets received
+
+if __name__ == "__main__":
+    print "Please run through oft script:  ./oft --test_spec=basic"

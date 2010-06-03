@@ -68,7 +68,7 @@ class SimpleProtocol(unittest.TestCase):
 
     def setUp(self):
         signal.signal(signal.SIGINT, self.sig_handler)
-        basic_logger.info("Setup for " + str(self))
+        basic_logger.info("** START TEST CASE " + str(self))
         self.controller = controller.Controller(
             host=basic_config["controller_host"],
             port=basic_config["controller_port"])
@@ -84,7 +84,7 @@ class SimpleProtocol(unittest.TestCase):
         basic_logger.info("Connected " + str(self.controller.switch_addr))
 
     def tearDown(self):
-        basic_logger.info("Teardown for simple proto test")
+        basic_logger.info("** END TEST CASE " + str(self))
         self.controller.shutdown()
         #@todo Review if join should be done on clean_shutdown
         if self.clean_shutdown:
@@ -95,6 +95,11 @@ class SimpleProtocol(unittest.TestCase):
         basic_logger.info("Running simple proto test")
         self.assertTrue(self.controller.switch_socket is not None,
                         str(self) + 'No connection to switch')
+
+    def assertTrue(self, cond, msg):
+        if not cond:
+            basic_logger.error("** FAILED ASSERTION: " + msg)
+        unittest.TestCase.assertTrue(self, cond, msg)
 
 class SimpleDataPlane(SimpleProtocol):
     """
@@ -271,39 +276,34 @@ class PortConfigMod(SimpleProtocol):
 
     def runTest(self):
         basic_logger.info("Running " + str(self))
-        request = message.features_request()
-        reply, pkt = self.controller.transact(request, timeout=2)
-        self.assertTrue(reply is not None, "Did not get response to ftr req")
-        basic_logger.info("Reply has " + str(len(reply.ports)) + " ports")
-        #basic_logger.debug(reply.show())
-        tport = reply.ports[0]
-        basic_logger.info("No flood bit port 0 is now " + 
-                          str(reply.ports[0].config ^ ofp.OFPPC_NO_FLOOD))
+        for of_port, ifname in basic_port_map.items(): # Grab first port
+            break
 
-        mod = message.port_mod()
-        mod.port_no = tport.port_no
-        mod.hw_addr = tport.hw_addr
-        mod.config = tport.config ^ ofp.OFPPC_NO_FLOOD
-        mod.mask = ofp.OFPPC_NO_FLOOD
-        mod.advertise = tport.advertised
-        #basic_logger.debug(mod.show())
-        rv = self.controller.message_send(mod)
+        (hw_addr, config, advert) = \
+            port_config_get(self.controller, of_port, basic_logger)
+        self.assertTrue(config is not None, "Did not get port config")
+
+        basic_logger.debug("No flood bit port " + str(of_port) + " is now " + 
+                           str(config & ofp.OFPPC_NO_FLOOD))
+
+        rv = port_config_set(self.controller, of_port,
+                             config ^ ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD,
+                             basic_logger)
         self.assertTrue(rv != -1, "Error sending port mod")
 
         # Verify change took place with same feature request
-        request.header.xid = 0 # Force new XID
-        reply2, pkt = self.controller.transact(request, timeout=2)
-        self.assertTrue(reply2 is not None, "Did not get response ftr req2")
-        #basic_logger.debug(reply2.show())
-        self.assertTrue(reply2.ports[0].port_no == tport.port_no,
-                   "Feature reply port order changed; unhandled")
-        self.assertTrue(reply2.ports[0].config & ofp.OFPPC_NO_FLOOD !=
-                   tport.config & ofp.OFPPC_NO_FLOOD, 
-                   "Bit change did not take")
+        (hw_addr, config2, advert) = \
+            port_config_get(self.controller, of_port, basic_logger)
+        basic_logger.debug("No flood bit port " + str(of_port) + " is now " + 
+                           str(config2 & ofp.OFPPC_NO_FLOOD))
+        self.assertTrue(config2 is not None, "Did not get port config2")
+        self.assertTrue(config2 & ofp.OFPPC_NO_FLOOD !=
+                        config & ofp.OFPPC_NO_FLOOD,
+                        "Bit change did not take")
         # Set it back
-        mod.config ^= ofp.OFPPC_NO_FLOOD
-        rv = self.controller.message_send(mod)
-        self.assertTrue(rv != -1, "Error sending port mod2")
+        rv = port_config_set(self.controller, of_port, config, 
+                             ofp.OFPPC_NO_FLOOD, basic_logger)
+        self.assertTrue(rv != -1, "Error sending port mod")
 
 if __name__ == "__main__":
     print "Please run through oft script:  ./oft --test_spec=basic"
