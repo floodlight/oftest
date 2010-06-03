@@ -1,5 +1,6 @@
 
 import sys
+import copy
 
 try:
     import scapy.all as scapy
@@ -66,3 +67,81 @@ def simple_tcp_packet(pktlen=100,
 def do_barrier(ctrl):
     b = message.barrier_request()
     ctrl.transact(b)
+
+
+def port_config_get(controller, port_no, logger):
+    """
+    Get a port's configuration
+
+    Gets the switch feature configuration and grabs one port's
+    configuration
+
+    @returns (hwaddr, config, advert) The hwaddress, configuration and
+    advertised values
+    """
+    request = message.features_request()
+    reply, pkt = controller.transact(request, timeout=2)
+    logger.debug(reply.show())
+    if reply is None:
+        logger.warn("Get feature request failed")
+        return None, None, None
+    for idx in range(len(reply.ports)):
+        if reply.ports[idx].port_no == port_no:
+            return (reply.ports[idx].hw_addr, reply.ports[idx].config,
+                    reply.ports[idx].advertised)
+    
+    logger.warn("Did not find port number for port config")
+    return None, None, None
+
+def port_config_set(controller, port_no, config, mask, logger):
+    """
+    Set the port configuration according the given parameters
+
+    Gets the switch feature configuration and updates one port's
+    configuration value according to config and mask
+    """
+    logger.info("Setting port " + str(port_no) + " to config " + str(config))
+    request = message.features_request()
+    reply, pkt = controller.transact(request, timeout=2)
+    if reply is None:
+        return -1
+    logger.debug(reply.show())
+    for idx in range(len(reply.ports)):
+        if reply.ports[idx].port_no == port_no:
+            break
+    if idx >= len(reply.ports):
+        return -1
+    mod = message.port_mod()
+    mod.port_no = port_no
+    mod.hw_addr = reply.ports[idx].hw_addr
+    mod.config = config
+    mod.mask = mask
+    mod.advertise = reply.ports[idx].advertised
+    rv = controller.message_send(mod)
+    return rv
+
+def receive_pkt_check(dataplane, pkt, yes_ports, no_ports, assert_if, logger):
+    """
+    Check for proper receive packets across all ports
+    @param dataplane The dataplane object
+    @param pkt Expected packet; may be None if yes_ports is empty
+    @param yes_ports Set or list of ports that should recieve packet
+    @param no_ports Set or list of ports that should not receive packet
+    @param assert_if Object that implements assertXXX
+    """
+    for ofport in yes_ports:
+        logger.debug("Checking for pkt on port " + str(ofport))
+        (rcv_port, rcv_pkt, pkt_time) = dataplane.poll(
+            port_number=ofport, timeout=1)
+        assert_if.assertTrue(rcv_pkt is not None, 
+                             "Did not receive pkt on " + str(ofport))
+        assert_if.assertEqual(str(pkt), str(rcv_pkt),
+                              "Response packet does not match send packet " +
+                              "on port " + str(ofport))
+
+    for ofport in no_ports:
+        logger.debug("Negative check for pkt on port " + str(ofport))
+        (rcv_port, rcv_pkt, pkt_time) = dataplane.poll(
+            port_number=ofport, timeout=1)
+        assert_if.assertTrue(rcv_pkt is None, 
+                             "Unexpected pkt on port " + str(ofport))
