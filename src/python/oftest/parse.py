@@ -302,6 +302,14 @@ def packet_to_flow_match(packet, pkt_format="L2"):
         match.wildcards &= ~OFPFW_NW_TOS
 
     if tcp:
+        match.nw_proto = 6
+        match.wildcards &= ~OFPFW_NW_PROTO
+    elif not tcp and udp:
+        tcp = udp
+        match.nw_proto = 17
+        match.wildcards &= ~OFPFW_NW_PROTO
+
+    if tcp:
         match.tp_src = tcp.sport
         match.wildcards &= ~OFPFW_TP_SRC
         match.tp_dst = tcp.dport
