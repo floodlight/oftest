@@ -470,7 +470,7 @@ class pythonizer:
             elif (isinstance(member, cheader.cstruct)):
                 code.append(self.tab*2 + "outstr += prefix + '" + 
                             member.name + ": \\n' ")
-                code.append(self.tab*2 + "self." + member.name + 
+                code.append(self.tab*2 + "outstr += self." + member.name + 
                             ".show(prefix + '  ')")
             elif (isinstance(member, cheader.carray) and
                   not isinstance(member.object, cheader.cprimitive)):
