@@ -20,3 +20,4 @@ def platform_config_update(config):
 
     global remote_port_map
     config["port_map"] = remote_port_map.copy()
+    config["caps_table_idx"] = 0
