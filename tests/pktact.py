@@ -64,12 +64,19 @@ class DirectPacket(basic.SimpleDataPlane):
     Verify the packet is received at the egress port only
     """
     def runTest(self):
+        self.handleFlow()
+
+    def handleFlow(self, pkttype='TCP'):
+
         global pa_port_map
         of_ports = pa_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
-        pkt = simple_tcp_packet()
+        if (pkttype == 'ICMP'):
+            pkt = simple_icmp_packet()
+        else:
+            pkt = simple_tcp_packet()
         match = parse.packet_to_flow_match(pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
@@ -108,8 +115,21 @@ class DirectPacket(basic.SimpleDataPlane):
             self.assertEqual(rcv_port, egress_port, "Unexpected receive port")
             self.assertEqual(str(pkt), str(rcv_pkt),
                              'Response packet does not match send packet')
-            
-        
+
+class DirectPacketICMP(DirectPacket):
+    """
+    Send ICMP packet to single egress port
+
+    Generate a ICMP packet
+    Generate and install a matching flow
+    Add action to direct the packet to an egress port
+    Send the packet to ingress dataplane port
+    Verify the packet is received at the egress port only
+    Difference from DirectPacket test is that sent packet is ICMP
+    """
+    def runTest(self):
+        self.handleFlow(pkttype='ICMP')
+
 
 class DirectTwoPorts(basic.SimpleDataPlane):
     """
