@@ -240,8 +240,13 @@ def packet_type_classify(ether):
     except:
         udp = None
 
-    # @todo arp and icmp are not yet supported
-    icmp = arp = None
+    try:
+        icmp = ether[scapy.ICMP]
+    except:
+        icmp = None
+
+    # @todo arp is not yet supported
+    arp = None
     return (dot1q, ip, tcp, udp, icmp, arp)
 
 def packet_to_flow_match(packet, pkt_format="L2"):
@@ -289,9 +294,12 @@ def packet_to_flow_match(packet, pkt_format="L2"):
 
     if dot1q:
         match.dl_vlan = dot1q.vlan
-        match.wildcards &= ~OFPFW_DL_VLAN
         match.dl_vlan_pcp = dot1q.prio
-        match.wildcards &= ~OFPFW_DL_VLAN_PCP
+    else:
+        match.dl_vlan = OFP_VLAN_NONE
+        match.dl_vlan_pcp = 0
+    match.wildcards &= ~OFPFW_DL_VLAN
+    match.wildcards &= ~OFPFW_DL_VLAN_PCP
 
     if ip:
         match.nw_src = parse_ip(ip.src)
@@ -315,6 +323,11 @@ def packet_to_flow_match(packet, pkt_format="L2"):
         match.tp_dst = tcp.dport
         match.wildcards &= ~OFPFW_TP_DST
 
-    #@todo Implement ICMP and ARP fields
+    if icmp:
+        match.nw_proto = 1
+        match.tp_src = icmp.type
+        match.tp_dst = icmp.code
+
+    #@todo Implement ARP fields
 
     return match
