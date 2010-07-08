@@ -41,7 +41,7 @@ import select
 import logging
 
 ##@todo Find a better home for these identifiers (controller)
-RCV_SIZE_DEFAULT = 4096
+RCV_SIZE_DEFAULT = 32768
 LISTEN_QUEUE_SIZE = 1
 
 class Controller(Thread):
