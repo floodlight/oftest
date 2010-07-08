@@ -38,6 +38,8 @@ basic_logger = None
 #@var basic_config Local copy of global configuration data
 basic_config = None
 
+test_prio = {}
+
 def test_set_init(config):
     """
     Set up function for basic test classes
@@ -100,6 +102,8 @@ class SimpleProtocol(unittest.TestCase):
         if not cond:
             basic_logger.error("** FAILED ASSERTION: " + msg)
         unittest.TestCase.assertTrue(self, cond, msg)
+
+test_prio["SimpleProtocol"] = 1
 
 class SimpleDataPlane(SimpleProtocol):
     """

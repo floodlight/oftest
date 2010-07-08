@@ -39,6 +39,12 @@ configurable through the command line.
                         value is a list of functions in that module
 </pre>
 
+Each test may be assigned a priority by setting test_prio["TestName"] in 
+the respective module.  For now, the only use of this is to avoid 
+automatic inclusion of tests into the default list.  This is done by
+setting the test_prio value less than 0.  Eventually we may add ordering
+of test execution by test priority.
+
 To add a test to the system, either: edit an existing test case file (like
 basic.py) to add a test class which inherits from unittest.TestCase (directly
 or indirectly); or add a new file which includes a function definition 
@@ -158,6 +164,9 @@ config_default = {
     "dbg_level"          : _debug_level_default,
     "port_map"           : {}
 }
+
+# Default test priority
+TEST_PRIO_DEFAULT=100
 
 #@todo Set up a dict of config params so easier to manage:
 # <param> <cmdline flags> <default value> <help> <optional parser>
@@ -334,6 +343,17 @@ def _space_to(n, str):
         return " " * spaces
     return " "
 
+def test_prio_get(mod, test):
+    """
+    Return the priority of a test
+    If set in the test_prio variable for the module, return
+    that value.  Otherwise return 100 (default)
+    """
+    if 'test_prio' in dir(mod):
+        if test in mod.test_prio.keys():
+            return mod.test_prio[test]
+    return TEST_PRIO_DEFAULT
+
 #
 # Main script
 #
@@ -359,11 +379,16 @@ if config["list"]:
         for test in config["all_tests"][mod]:
             desc = eval('mod.' + test + '.__doc__.strip()')
             desc = desc.split('\n')[0]
-            start_str = "    " + test + ":"
+            if test_prio_get(mod, test) < 0:
+                start_str = "  * " + test + ":"
+            else:
+                start_str = "    " + test + ":"
             print start_str + _space_to(22, start_str) + desc
         print
     if not did_print:
         print "No tests found for " + config["test_spec"]
+    else:
+        print "Tests marked * are not run by default"
     sys.exit(0)
 
 logging_setup(config)
@@ -373,10 +398,13 @@ logging.info("++++++++ " + time.asctime() + " ++++++++")
 #@todo Decide if multiple suites are ever needed
 suite = unittest.TestSuite()
 
+#@todo Allow specification of priority to override prio check
 if config["test_spec"] == "all":
     for mod in config["all_tests"].keys(): 
        for test in config["all_tests"][mod]:
-           add_test(suite, mod, test)
+           # For now, a way to avoid tests
+           if test_prio_get(mod, test) >= 0:
+               add_test(suite, mod, test)
 
 else:
     for ts_entry in config["test_spec"].split(","):

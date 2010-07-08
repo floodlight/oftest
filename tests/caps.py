@@ -25,6 +25,9 @@ caps_logger = None
 #@var caps_config Local copy of global configuration data
 caps_config = None
 
+# For test priority
+test_prio = {}
+
 def test_set_init(config):
     """
     Set up function for caps test classes
@@ -93,7 +96,7 @@ def flow_caps_common(obj, is_exact=True):
     while True:
         request.match.nw_src += 1
         rv = obj.controller.message_send(request)
-        do_barrier(obj.controller)
+#        do_barrier(obj.controller)
         flow_count += 1
         if flow_count % count_check == 0:
             response, pkt = obj.controller.transact(tstats, timeout=2)
@@ -133,6 +136,7 @@ class FillTableExact(basic.SimpleProtocol):
         caps_logger.info("Running " + str(self))
         flow_caps_common(self)
 
+test_prio["FillTableExact"] = -1
 
 class FillTableWC(basic.SimpleProtocol):
     """
