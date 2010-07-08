@@ -69,8 +69,8 @@ class FlowStats(basic.SimpleDataPlane):
                         "Could not generate flow match from pkt")
         act = action.action_output()
 
-        ingress_port = pa_config["base_of_port"]
-        egress_port  = (pa_config["base_of_port"] + 1) % len(of_ports)
+        ingress_port = of_ports[0];
+        egress_port = of_ports[1];
         pa_logger.info("Ingress " + str(ingress_port) + 
                        " to egress " + str(egress_port))
         
