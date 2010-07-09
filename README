@@ -4,13 +4,72 @@ March, 2010
 Copyright (c) 2010 The Board of Trustees of The Leland Stanford 
 Junior University
 
+
+
+=Warning=
+
+==Risks== 
+This is still '''experimental''' and it requires root privilege to
+control the dataplane ports.  As a consequence, there may be
+'''risks''' to the machine on which this is running.
+Use caution.
+
+==Recovering From Problems==
+
+If the test script, oft, becomes unresponsive, you may find that ^C does not
+break out of the script.  In this case you have two options:  
+
+* Use ^Z to interrupt the script and return to the shell prompt.
+* Start another terminal window to the same machine.
+
+In either case, you then need to kill the process that is hung.  Use the
+following commands:
+
+ me@host> ps aux | grep oft
+ root         4  0.0  0.0      0     0 ?        S<   Jul07   0:00 [ksoftirqd/0]
+ ...
+ root     14066  3.2  0.6 149888 25344 pts/4    Tl   09:27   0:00 python ./oft ...
+ me       14074  0.0  0.0   7452   876 pts/4    R+   09:28   0:00 grep oft
+ 
+ me@host> sudo kill -9 14066
+
+where 14066 is the process ID of the hung process.  (Replace it with the PID for your process.)
+
+==Preliminary Work==
+
+This is still preliminary work and there are bugs in the 
+framework that need to be ironed out.  Please report any issues
+to dtalayco@stanford.edu.
+
 Warning
 +++++++
 
 This is still experimental and it requires root privilege to
-control the dataplane ports.  As a consequence, there are
-some serious risks to the machine on which this is running.
-Use caution.
+control the dataplane ports.  As a consequence, there may be
+risks to the machine on which this is running.  Use caution.
+
+Recovering From Problems
+++++++++++++++++++++++++
+
+If the test script, oft, becomes unresponsive, you may find that ^C 
+does not break out of the script.  In this case you have two options:  
+
+* Use ^Z to interrupt the script and return to the shell prompt.
+* Start another terminal window to the same machine.
+
+In either case, you then need to kill the process that is hung.  Use 
+the following commands:
+
+    me@host> ps aux | grep oft
+    root         4  0.0      S<   Jul07   0:00 [ksoftirqd/0]
+    ...
+    root     14066  3.2      Tl   09:27   0:00 python ./oft ...
+    me       14074  0.0      R+   09:28   0:00 grep oft
+    
+    me@host> sudo kill -9 14066
+
+where 14066 is the process ID of the hung process.  (Replace it with 
+the PID for your process.)
 
 This is still preliminary work and there are bugs in the 
 framework that need to be ironed out.  Please report any issues
@@ -36,6 +95,9 @@ Introduction
 Quick Start
 +++++++++++
 
+    You need to have Python setup tools and Scapy installed on your
+    system.  See 'Pre-requisites' below.
+
     Make sure your switch is running and trying to connect to a
     controller on the machine where you're running oft (normally port
     6633).  See below regarding run_switch.py for a script that starts 
@@ -47,7 +109,8 @@ Quick Start
       # cd oftest/tools/munger
       # make install
       # cd ../../tests
-         Make sure the switch you want to test is running
+         Make sure the switch you want to test is running --
+         see (4) below for the reference switch example.
       # ./oft --list
       # sudo ./oft
       # sudo ./oft --verbose --log-file=""    
