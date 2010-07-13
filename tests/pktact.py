@@ -799,11 +799,15 @@ class ExactModifyAction(SimpleExactMatch):
                            ofp.OFPAT_SET_NW_TOS,
                            ofp.OFPAT_SET_TP_SRC,
                            ofp.OFPAT_SET_TP_DST]
+        self.act_bitmap = 0
+        for val in self.modify_act:
+            self.act_bitmap = self.act_bitmap | (1 << val)
 
     def runTest(self):
         self.flowMatchModTest()
 
     def flowMatchModTest(self, wildcards=0, check_expire=False):
+        #@todo Refactor this routine to be separate functions for each action
         global pa_port_map
         of_ports = pa_port_map.keys()
         of_ports.sort()
@@ -823,10 +827,15 @@ class ExactModifyAction(SimpleExactMatch):
         (reply, pkt) = self.controller.transact(request, timeout=2)
         self.assertTrue(reply is not None, "Did not get response to ftr req")
         supported_act = reply.actions
+        pa_logger.info("Supported actions: " + hex(supported_act))
+        if (supported_act & self.act_bitmap) == 0:
+            pa_logger.info("No modification actions supported");
+            return
 
         for idx in range(len(of_ports)):
             ingress_port = of_ports[idx]
-            pa_logger.info("Ingress " + str(ingress_port) + " to all the other ports")
+            pa_logger.info("Ingress " + str(ingress_port) +
+                           " to all the other ports")
 
             for egr_idx in range(len(of_ports)):
                 if egr_idx == idx:
@@ -844,10 +853,6 @@ class ExactModifyAction(SimpleExactMatch):
                     ip_tos = 0
                     tcp_sport = 1234
                     tcp_dport = 80
-
-                    rc = delete_all_flows(self.controller, pa_logger)
-                    self.assertEqual(rc, 0, "Failed to delete all flows")
-                    do_barrier(self.controller)
 
                     pkt = simple_tcp_packet(pktlen=pkt_len,
                         dl_dst=dl_dst,
@@ -873,13 +878,15 @@ class ExactModifyAction(SimpleExactMatch):
                     request.match = match
                     request.buffer_id = 0xffffffff
                     #@todo Need UI to setup FLAGS parameter for flow_mod
-                    if(check_expire):
+                    if (check_expire):
                         request.flags |= ofp.OFPFF_SEND_FLOW_REM
                         request.hard_timeout = 1
 
                     exec_act = self.modify_act[exec_mod]
                     if exec_act == ofp.OFPAT_SET_VLAN_VID:
                         if not(supported_act & 1<<ofp.OFPAT_SET_VLAN_VID):
+                            pa_logger.debug("Skipping action " + 
+                                    ofp.ofp_action_type_map[exec_act])
                             continue
                         pkt_len = pkt_len + 4
                         dl_vlan_enable = True
@@ -888,6 +895,8 @@ class ExactModifyAction(SimpleExactMatch):
                         mod_act.vlan_vid = mod_dl_vlan
                     elif exec_act == ofp.OFPAT_SET_VLAN_PCP:
                         if not(supported_act & 1<<ofp.OFPAT_SET_VLAN_PCP):
+                            pa_logger.debug("Skipping action " + 
+                                    ofp.ofp_action_type_map[exec_act])
                             continue
                         pkt_len = pkt_len + 4
                         dl_vlan_enable = True
@@ -896,57 +905,81 @@ class ExactModifyAction(SimpleExactMatch):
                         mod_act.vlan_pcp = mod_dl_vlan_pcp
                     elif exec_act == ofp.OFPAT_STRIP_VLAN:
                         if not(supported_act & 1<<ofp.OFPAT_STRIP_VLAN):
+                            pa_logger.debug("Skipping action " + 
+                                    ofp.ofp_action_type_map[exec_act])
                             continue
                         dl_vlan_enable = False
                         mod_act = action.action_strip_vlan()
                     elif exec_act == ofp.OFPAT_SET_DL_SRC:
                         if not(supported_act & 1<<ofp.OFPAT_SET_DL_SRC):
+                            pa_logger.debug("Skipping action " + 
+                                    ofp.ofp_action_type_map[exec_act])
                             continue
                         dl_src = mod_dl_src
                         mod_act = action.action_set_dl_src()
                         mod_act.dl_addr = parse.parse_mac(mod_dl_src)
                     elif exec_act == ofp.OFPAT_SET_DL_DST:
                         if not(supported_act & 1<<ofp.OFPAT_SET_DL_DST):
+                            pa_logger.debug("Skipping action " + 
+                                    ofp.ofp_action_type_map[exec_act])
                             continue
                         dl_dst = mod_dl_dst
                         mod_act = action.action_set_dl_dst()
                         mod_act.dl_addr = parse.parse_mac(mod_dl_dst)
                     elif exec_act == ofp.OFPAT_SET_NW_SRC:
                         if not(supported_act & 1<<ofp.OFPAT_SET_NW_SRC):
+                            pa_logger.debug("Skipping action " + 
+                                    ofp.ofp_action_type_map[exec_act])
                             continue
                         ip_src = mod_ip_src
                         mod_act = action.action_set_nw_src()
                         mod_act.nw_addr = parse.parse_ip(mod_ip_src)
                     elif exec_act == ofp.OFPAT_SET_NW_DST:
                         if not(supported_act & 1<<ofp.OFPAT_SET_NW_DST):
+                            pa_logger.debug("Skipping action " + 
+                                    ofp.ofp_action_type_map[exec_act])
                             continue
                         ip_dst = mod_ip_dst
                         mod_act = action.action_set_nw_dst()
                         mod_act.nw_addr = parse.parse_ip(mod_ip_dst)
                     elif exec_act == ofp.OFPAT_SET_NW_TOS:
                         if not(supported_act & 1<<ofp.OFPAT_SET_NW_TOS):
+                            pa_logger.debug("Skipping action " + 
+                                    ofp.ofp_action_type_map[exec_act])
                             continue
                         ip_tos = mod_ip_tos
                         mod_act = action.action_set_nw_tos()
                         mod_act.nw_tos = mod_ip_tos
                     elif exec_act == ofp.OFPAT_SET_TP_SRC:
                         if not(supported_act & 1<<ofp.OFPAT_SET_TP_SRC):
+                            pa_logger.debug("Skipping action " + 
+                                    ofp.ofp_action_type_map[exec_act])
                             continue
                         tcp_sport = mod_tcp_sport
                         mod_act = action.action_set_tp_src()
                         mod_act.tp_port = mod_tcp_sport
                     elif exec_act == ofp.OFPAT_SET_TP_DST:
                         if not(supported_act & 1<<ofp.OFPAT_SET_TP_DST):
+                            pa_logger.debug("Skipping action " + 
+                                    ofp.ofp_action_type_map[exec_act])
                             continue
                         tcp_dport = mod_tcp_dport
                         mod_act = action.action_set_tp_dst()
                         mod_act.tp_port = mod_tcp_dport
                     else:
+                        pa_logger.debug("Unknown action " + str(exec_act))
                         continue
 
                     self.assertTrue(request.actions.add(mod_act),
-                            "Could not add output action")
+                                    "Could not add output action: " +
+                                    ofp.ofp_action_type_map[exec_act])
+                    pa_logger.info("Testing action " + 
+                                      ofp.ofp_action_type_map[exec_act])
                     pa_logger.info(request.show())
+
+                    rc = delete_all_flows(self.controller, pa_logger)
+                    self.assertEqual(rc, 0, "Failed to delete all flows")
+                    do_barrier(self.controller)
 
                     exp_pkt = simple_tcp_packet(pktlen=pkt_len,
                         dl_dst=dl_dst,
@@ -963,7 +996,8 @@ class ExactModifyAction(SimpleExactMatch):
                     act = action.action_output()
                     act.port = of_ports[egr_idx]
                     self.assertTrue(request.actions.add(act),
-                                    "Could not add output action")
+                                    "Could not add output action for port "
+                                    + str(act.port))
                     pa_logger.info(request.show())
 
                     pa_logger.info("Inserting flow")
