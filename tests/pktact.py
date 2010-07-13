@@ -746,7 +746,7 @@ class SingleWildcardMatch(SimpleExactMatch):
 
 class AllExceptOneWildcardMatch(SingleWildcardMatch):
     """
-    Create All-execpt-one-field wildcard and exercise for all ports
+    Match exactly one field
 
     Generate a packet
     Generate and install a matching flow with wildcard all except one filed
