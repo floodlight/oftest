@@ -150,6 +150,7 @@ _debug_level_default = DEBUG_LEVELS[_debug_default]
 ##@var config_default
 # The default configuration dictionary for OFT
 config_default = {
+    "param"              : None,
     "platform"           : "local",
     "controller_host"    : "127.0.0.1",
     "controller_port"    : 6633,
@@ -236,6 +237,8 @@ def config_setup(cfg_dflt):
                       help="List all tests and exit")
     parser.add_option("--verbose", action="store_true",
                       help="Short cut for --debug=verbose")
+    parser.add_option("--param", type="int",
+                      help="Parameter sent to test (for debugging)")
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
     (options, args) = parser.parse_args()
@@ -377,12 +380,17 @@ if config["list"]:
         start_str = "  Module " + mod.__name__ + ": "
         print start_str + _space_to(22, start_str) + desc
         for test in config["all_tests"][mod]:
-            desc = eval('mod.' + test + '.__doc__.strip()')
-            desc = desc.split('\n')[0]
+            try:
+                desc = eval('mod.' + test + '.__doc__.strip()')
+                desc = desc.split('\n')[0]
+            except:
+                desc = "No description"
             if test_prio_get(mod, test) < 0:
                 start_str = "  * " + test + ":"
             else:
                 start_str = "    " + test + ":"
+            if len(start_str) > 22:
+                desc = "\n" + _space_to(22, "") + desc
             print start_str + _space_to(22, start_str) + desc
         print
     if not did_print:

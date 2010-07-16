@@ -39,6 +39,37 @@ pa_logger = None
 #@var pa_config Local copy of global configuration data
 pa_config = None
 
+# For test priority
+#@var test_prio Set test priority for local tests
+test_prio = {}
+
+WILDCARD_VALUES = [ofp.OFPFW_IN_PORT,
+                   ofp.OFPFW_DL_VLAN,
+                   ofp.OFPFW_DL_SRC,
+                   ofp.OFPFW_DL_DST,
+                   ofp.OFPFW_DL_TYPE,
+                   ofp.OFPFW_NW_PROTO,
+                   ofp.OFPFW_TP_SRC,
+                   ofp.OFPFW_TP_DST,
+                   0x3F << ofp.OFPFW_NW_SRC_SHIFT,
+                   0x3F << ofp.OFPFW_NW_DST_SHIFT,
+                   ofp.OFPFW_DL_VLAN_PCP,
+                   ofp.OFPFW_NW_TOS]
+
+MODIFY_ACTION_VALUES =  [ofp.OFPAT_SET_VLAN_VID,
+                         ofp.OFPAT_SET_VLAN_PCP,
+                         ofp.OFPAT_STRIP_VLAN,
+                         ofp.OFPAT_SET_DL_SRC,
+                         ofp.OFPAT_SET_DL_DST,
+                         ofp.OFPAT_SET_NW_SRC,
+                         ofp.OFPAT_SET_NW_DST,
+                         ofp.OFPAT_SET_NW_TOS,
+                         ofp.OFPAT_SET_TP_SRC,
+                         ofp.OFPAT_SET_TP_DST]
+
+# Cache supported features to avoid transaction overhead
+cached_supported_actions = None
+
 def test_set_init(config):
     """
     Set up function for packet action test classes
@@ -69,8 +100,6 @@ class DirectPacket(basic.SimpleDataPlane):
         self.handleFlow()
 
     def handleFlow(self, pkttype='TCP'):
-
-        global pa_port_map
         of_ports = pa_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
@@ -92,7 +121,7 @@ class DirectPacket(basic.SimpleDataPlane):
             ingress_port = of_ports[idx]
             egress_port = of_ports[(idx + 1) % len(of_ports)]
             pa_logger.info("Ingress " + str(ingress_port) + 
-                        " to egress " + str(egress_port))
+                             " to egress " + str(egress_port))
 
             match.in_port = ingress_port
 
@@ -143,7 +172,6 @@ class DirectTwoPorts(basic.SimpleDataPlane):
     Verify the packet is received at the two egress ports
     """
     def runTest(self):
-        global pa_port_map
         of_ports = pa_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
@@ -204,7 +232,6 @@ class DirectMCNonIngress(basic.SimpleDataPlane):
     Does not use the flood action
     """
     def runTest(self):
-        global pa_port_map
         of_ports = pa_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
@@ -260,7 +287,6 @@ class DirectMC(basic.SimpleDataPlane):
     Does not use the flood action
     """
     def runTest(self):
-        global pa_port_map
         of_ports = pa_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
@@ -312,7 +338,6 @@ class Flood(basic.SimpleDataPlane):
     Verify the packet is received at all other ports
     """
     def runTest(self):
-        global pa_port_map
         of_ports = pa_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
@@ -362,7 +387,6 @@ class FloodPlusIngress(basic.SimpleDataPlane):
     Verify the packet is received at all other ports
     """
     def runTest(self):
-        global pa_port_map
         of_ports = pa_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
@@ -413,7 +437,6 @@ class All(basic.SimpleDataPlane):
     Verify the packet is received at all other ports
     """
     def runTest(self):
-        global pa_port_map
         of_ports = pa_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
@@ -463,7 +486,6 @@ class AllPlusIngress(basic.SimpleDataPlane):
     Verify the packet is received at all other ports
     """
     def runTest(self):
-        global pa_port_map
         of_ports = pa_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
@@ -516,7 +538,6 @@ class FloodMinusPort(basic.SimpleDataPlane):
     the ingress port and the no_flood port
     """
     def runTest(self):
-        global pa_port_map
         of_ports = pa_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
@@ -570,151 +591,54 @@ class FloodMinusPort(basic.SimpleDataPlane):
 
             #@todo Should check no other packets received
 
-class SimpleExactMatch(basic.SimpleDataPlane):
+################################################################
+
+class BaseMatchCase(basic.SimpleDataPlane):
+    def setUp(self):
+        basic.SimpleDataPlane.setUp(self)
+        self.logger = pa_logger
+    def runTest(self):
+        self.logger.info("BaseMatchCase")
+
+class ExactMatch(BaseMatchCase):
     """
-    Exercise exact matching for all ports
+    Exercise exact matching for all port pairs
 
     Generate a packet
     Generate and install a matching flow without wildcard mask
     Add action to forward to a port
     Send the packet to the port
     Verify the packet is received at all other ports (one port at a time)
-    Verify flow_expiration message is correct when command option is set
     """
-    IP_ETHTYPE = 0x800
-    TCP_PROTOCOL = 0x6
-    UDP_PROTOCOL = 0x11
 
     def runTest(self):
-        self.flowMatchTest()
+        flow_match_test(self, pa_port_map)
 
-    def flowMatchTest(self, wildcards=0, check_expire=False):
-        global pa_port_map
-        of_ports = pa_port_map.keys()
-        of_ports.sort()
-        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+class ExactMatchTagged(BaseMatchCase):
+    """
+    Exact match for all port pairs with tagged pkts
+    """
 
-        pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
-        self.assertTrue(match is not None,
-                        "Could not generate flow match from pkt")
-        match.dl_vlan = ofp.OFP_VLAN_NONE
-        match.nw_proto = self.TCP_PROTOCOL
-        match.wildcards = wildcards
+    def runTest(self):
+        flow_match_test(self, pa_port_map, dl_vlan=1)
 
-        for idx in range(len(of_ports)):
-            ingress_port = of_ports[idx]
-            pa_logger.info("Ingress " + str(ingress_port) + " to all the other ports")
-            match.in_port = ingress_port
+class ExactMatchTaggedMany(BaseMatchCase):
+    """
+    ExactMatchTagged with many VLANS
+    """
 
-            for egr_idx in range(len(of_ports)):
-                if egr_idx == idx:
-                    continue
+    def runTest(self):
+        for vid in range(1,100,10):
+            flow_match_test(self, pa_port_map, dl_vlan=vid, max_test=5)
+        for vid in range(100,4000,389):
+            flow_match_test(self, pa_port_map, dl_vlan=vid, max_test=5)
+        flow_match_test(self, pa_port_map, dl_vlan=4094, max_test=5)
 
-                rc = delete_all_flows(self.controller, pa_logger)
-                self.assertEqual(rc, 0, "Failed to delete all flows")
-                do_barrier(self.controller)
+# Don't run by default
+test_prio["ExactMatchTaggedMany"] = -1
 
-                request = message.flow_mod()
-                request.match = match
-                request.buffer_id = 0xffffffff
-                #@todo Need UI to setup FLAGS parameter for flow_mod
-                if(check_expire):
-                    request.flags |= ofp.OFPFF_SEND_FLOW_REM
-                    request.hard_timeout = 1
 
-                act = action.action_output()
-                act.port = of_ports[egr_idx]
-                self.assertTrue(request.actions.add(act),
-                                "Could not add output action")
-                pa_logger.info(request.show())
-
-                pa_logger.info("Inserting flow")
-                rv = self.controller.message_send(request)
-                self.assertTrue(rv != -1, "Error installing flow mod")
-                do_barrier(self.controller)
-
-                pa_logger.info("Sending packet to dp port " +str(ingress_port))
-                self.dataplane.send(ingress_port, str(pkt))
-
-                ofport = of_ports[egr_idx]
-                self.verifPkt(ofport, pkt)
-
-                #@todo Need UI for enabling response-verification
-                if(check_expire):
-                    self.verifFlowRemoved(request)
-
-    def verifPkt(self, ofport, exp_pkt):
-        (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(
-                    port_number=ofport, timeout=1)
-        self.assertTrue(rcv_pkt is not None,
-                    "Did not receive packet port " + str(ofport))
-        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on "
-                    + str(rcv_port))
-
-        self.assertEqual(str(exp_pkt), str(rcv_pkt),
-            'Response packet does not match send packet ' +
-            "on port " + str(ofport))
-
-    def verifFlowRemoved(self, request):
-        (response, raw) = self.controller.poll(ofp.OFPT_FLOW_REMOVED, 2)
-        self.assertTrue(response is not None,
-            'Flow removed message not received')
-
-        req_match = request.match
-        res_match = response.match
-        if(req_match != res_match):
-            self.verifMatchField(req_match, res_match)
-
-        self.assertEqual(request.cookie, response.cookie,
-            self.matchErrStr('cookie'))
-        if (req_match.wildcards != 0):
-            self.assertEqual(request.priority, response.priority,
-                self.matchErrStr('priority'))
-            self.assertEqual(response.reason, ofp.OFPRR_HARD_TIMEOUT,
-                'Reason is not HARD TIMEOUT')
-            self.assertEqual(response.packet_count, 1,
-                'Packet count is not correct')
-            self.assertEqual(response.byte_count, len(pkt),
-                'Packet length is not correct')
-
-    def verifMatchField(self, req_match, res_match):
-        self.assertEqual(str(req_match.wildcards), str(res_match.wildcards),
-            self.matchErrStr('wildcards'))
-        self.assertEqual(str(req_match.in_port), str(res_match.in_port),
-            self.matchErrStr('in_port'))
-        self.assertEqual(str(req_match.dl_src), str(res_match.dl_src),
-            self.matchErrStr('dl_src'))
-        self.assertEqual(str(req_match.dl_dst), str(res_match.dl_dst),
-            self.matchErrStr('dl_dst'))
-        self.assertEqual(str(req_match.dl_vlan), str(res_match.dl_vlan),
-            self.matchErrStr('dl_vlan'))
-        self.assertEqual(str(req_match.dl_vlan_pcp), str(res_match.dl_vlan_pcp),
-            self.matchErrStr('dl_vlan_pcp'))
-        self.assertEqual(str(req_match.dl_type), str(res_match.dl_type),
-            self.matchErrStr('dl_type'))
-        if(not(req_match.wildcards & ofp.OFPFW_DL_TYPE)
-           and (req_match.dl_type == self.IP_ETHERTYPE)):
-            self.assertEqual(str(req_match.nw_tos), str(res_match.nw_tos),
-                self.matchErrStr('nw_tos'))
-            self.assertEqual(str(req_match.nw_proto), str(res_match.nw_proto),
-                self.matchErrStr('nw_proto'))
-            self.assertEqual(str(req_match.nw_src), str(res_match.nw_src),
-                self.matchErrStr('nw_src'))
-            self.assertEqual(str(req_match.nw_dst), str(res_match.nw_dst),
-                self.matchErrStr('nw_dst'))
-            if(not(req_match.wildcards & ofp.OFPFW_NW_PROTO)
-               and ((req_match.nw_proto == self.TCP_PROTOCOL)
-                    or (req_match.nw_proto == self.UDP_PROTOCOL))):
-                self.assertEqual(str(req_match.tp_src), str(res_match.tp_src),
-                    self.matchErrStr('tp_src'))
-                self.assertEqual(str(req_match.tp_dst), str(res_match.tp_dst),
-                    self.matchErrStr('tp_dst'))
-
-    def matchErrStr(self, field):
-        return ('Response Match_' + field + ' does not match send message')
-
-class SingleWildcardMatch(SimpleExactMatch):
+class SingleWildcardMatch(BaseMatchCase):
     """
     Exercise wildcard matching for all ports
 
@@ -725,26 +649,20 @@ class SingleWildcardMatch(SimpleExactMatch):
     Verify the packet is received at all other ports (one port at a time)
     Verify flow_expiration message is correct when command option is set
     """
-    def __init__(self):
-        SimpleExactMatch.__init__(self)
-        self.wildcards = [ofp.OFPFW_IN_PORT,
-                          ofp.OFPFW_DL_VLAN,
-                          ofp.OFPFW_DL_SRC,
-                          ofp.OFPFW_DL_DST,
-                          ofp.OFPFW_DL_TYPE,
-                          ofp.OFPFW_NW_PROTO,
-                          ofp.OFPFW_TP_SRC,
-                          ofp.OFPFW_TP_DST,
-                          0x3F << ofp.OFPFW_NW_SRC_SHIFT,
-                          0x3F << ofp.OFPFW_NW_DST_SHIFT,
-                          ofp.OFPFW_DL_VLAN_PCP,
-                          ofp.OFPFW_NW_TOS]
-
     def runTest(self):
-        for exec_wildcard in range(len(self.wildcards)):
-            self.flowMatchTest(exec_wildcard)
+        for wc in WILDCARD_VALUES:
+            flow_match_test(self, pa_port_map, wildcard=wc, max_test=10)
 
-class AllExceptOneWildcardMatch(SingleWildcardMatch):
+class SingleWildcardMatchTagged(BaseMatchCase):
+    """
+    SingleWildcardMatch with tagged packets
+    """
+    def runTest(self):
+        for wc in WILDCARD_VALUES:
+            flow_match_test(self, pa_port_map, wildcard=wc, dl_vlan=1, 
+                            max_test=10)
+
+class AllExceptOneWildcardMatch(BaseMatchCase):
     """
     Match exactly one field
 
@@ -756,11 +674,21 @@ class AllExceptOneWildcardMatch(SingleWildcardMatch):
     Verify flow_expiration message is correct when command option is set
     """
     def runTest(self):
-        for exec_wildcard in range(len(self.wildcards)):
-            all_exp_one_wildcard = ofp.OFPFW_ALL ^ self.wildcards[exec_wildcard]
-            self.flowMatchTest(all_exp_one_wildcard)
+        for wc in WILDCARD_VALUES:
+            all_exp_one_wildcard = ofp.OFPFW_ALL ^ wc
+            flow_match_test(self, pa_port_map, wildcard=all_exp_one_wildcard)
 
-class AllWildcardMatch(SingleWildcardMatch):
+class AllExceptOneWildcardMatchTagged(BaseMatchCase):
+    """
+    Match one field with tagged packets
+    """
+    def runTest(self):
+        for wc in WILDCARD_VALUES:
+            all_exp_one_wildcard = ofp.OFPFW_ALL ^ wc
+            flow_match_test(self, pa_port_map, wildcard=all_exp_one_wildcard,
+                            dl_vlan=1)
+
+class AllWildcardMatch(BaseMatchCase):
     """
     Create Wildcard-all flow and exercise for all ports
 
@@ -772,248 +700,155 @@ class AllWildcardMatch(SingleWildcardMatch):
     Verify flow_expiration message is correct when command option is set
     """
     def runTest(self):
-        self.flowMatchTest(ofp.OFPFW_ALL)
+        flow_match_test(self, pa_port_map, wildcard=ofp.OFPFW_ALL)
 
-class ExactModifyAction(SimpleExactMatch):
+class AllWildcardMatchTagged(BaseMatchCase):
     """
-    Perform Modify action with exact matching for all ports
-
-    Generate a packet for transmit
-    Generate the expected packet
-    Generate and install a matching flow with a modify action and
-    an output action without wildcard mask
-    Send the packet to the port
-    Verify the expected packet is received at all other ports
-    (one port at a time)
-    Verify flow_expiration message is correct when command option is set
+    AllWildcardMatch with tagged packets
     """
-    def __init__(self):
-        SimpleExactMatch.__init__(self)
-        self.modify_act = [ofp.OFPAT_SET_VLAN_VID,
-                           ofp.OFPAT_SET_VLAN_PCP,
-                           ofp.OFPAT_STRIP_VLAN,
-                           ofp.OFPAT_SET_DL_SRC,
-                           ofp.OFPAT_SET_DL_DST,
-                           ofp.OFPAT_SET_NW_SRC,
-                           ofp.OFPAT_SET_NW_DST,
-                           ofp.OFPAT_SET_NW_TOS,
-                           ofp.OFPAT_SET_TP_SRC,
-                           ofp.OFPAT_SET_TP_DST]
-        self.act_bitmap = 0
-        for val in self.modify_act:
-            self.act_bitmap = self.act_bitmap | (1 << val)
-
     def runTest(self):
-        self.flowMatchModTest()
+        flow_match_test(self, pa_port_map, wildcard=ofp.OFPFW_ALL, dl_vlan=1)
 
-    def flowMatchModTest(self, wildcards=0, check_expire=False):
-        #@todo Refactor this routine to be separate functions for each action
-        global pa_port_map
-        of_ports = pa_port_map.keys()
-        of_ports.sort()
-        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
-
-        mod_dl_dst = '43:21:0F:ED:CB:A9'
-        mod_dl_src = '7F:ED:CB:A9:87:65'
-        mod_dl_vlan = 4094
-        mod_dl_vlan_pcp = 7
-        mod_ip_src = '10.20.30.40'
-        mod_ip_dst = '50.60.70.80'
-        mod_ip_tos = 0xf0
-        mod_tcp_sport = 4321
-        mod_tcp_dport = 8765
-
-        request = message.features_request()
-        (reply, pkt) = self.controller.transact(request, timeout=2)
-        self.assertTrue(reply is not None, "Did not get response to ftr req")
-        supported_act = reply.actions
-        pa_logger.info("Supported actions: " + hex(supported_act))
-        if (supported_act & self.act_bitmap) == 0:
-            pa_logger.info("No modification actions supported");
+class AddVLANTag(BaseMatchCase):
+    """
+    Add a VLAN tag to an untagged packet
+    """
+    def runTest(self):
+        new_vid = 2
+        sup_acts = supported_actions_get(self)
+        if not(sup_acts & 1<<ofp.OFPAT_SET_VLAN_VID):
+            pa_logger.info("Skipping add VLAN tag test")
             return
 
-        for idx in range(len(of_ports)):
-            ingress_port = of_ports[idx]
-            pa_logger.info("Ingress " + str(ingress_port) +
-                           " to all the other ports")
+        len = 100
+        len_w_vid = 104
+        pkt = simple_tcp_packet(pktlen=len)
+        exp_pkt = simple_tcp_packet(pktlen=len_w_vid, dl_vlan_enable=True, 
+                                    dl_vlan=new_vid)
+        vid_act = action.action_set_vlan_vid()
+        vid_act.vlan_vid = new_vid
 
-            for egr_idx in range(len(of_ports)):
-                if egr_idx == idx:
-                    continue
+        flow_match_test(self, pa_port_map, pkt=pkt, 
+                        exp_pkt=exp_pkt, action_list=[vid_act])
 
-                for exec_mod in range(len(self.modify_act)):
-                    pkt_len = 100
-                    dl_dst = '0C:DE:F0:12:34:56'
-                    dl_src = '01:23:45:67:89:AB'
-                    dl_vlan_enable = False
-                    dl_vlan = 0
-                    dl_vlan_pcp = 0
-                    ip_src = '192.168.0.1'
-                    ip_dst = '192.168.0.2'
-                    ip_tos = 0
-                    tcp_sport = 1234
-                    tcp_dport = 80
+class PacketOnly(basic.DataPlaneOnly):
+    """
+    Just send a packet thru the switch
+    """
+    def runTest(self):
+        pkt = simple_tcp_packet()
+        of_ports = pa_port_map.keys()
+        of_ports.sort()
+        ing_port = of_ports[0]
+        pa_logger.info("Sending packet to " + str(ing_port))
+        pa_logger.debug("Data: " + str(pkt).encode('hex'))
+        self.dataplane.send(ing_port, str(pkt))
 
-                    pkt = simple_tcp_packet(pktlen=pkt_len,
-                        dl_dst=dl_dst,
-                        dl_src=dl_src,
-                        dl_vlan_enable=dl_vlan_enable,
-                        dl_vlan=dl_vlan,
-                        dl_vlan_pcp=dl_vlan_pcp,
-                        ip_src=ip_src,
-                        ip_dst=ip_dst,
-                        ip_tos=ip_tos,
-                        tcp_sport=tcp_sport,
-                        tcp_dport=tcp_dport)
+class PacketOnlyTagged(basic.DataPlaneOnly):
+    """
+    Just send a packet thru the switch
+    """
+    def runTest(self):
+        vid = 2
+        if pa_config["param"] is not None:
+            vid = pa_config["param"]
+        print "Param is " + str(pa_config["param"])
+        pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vid)
+        of_ports = pa_port_map.keys()
+        of_ports.sort()
+        ing_port = of_ports[0]
+        pa_logger.info("Sending packet to " + str(ing_port))
+        pa_logger.debug("Data: " + str(pkt).encode('hex'))
+        self.dataplane.send(ing_port, str(pkt))
 
-                    match = parse.packet_to_flow_match(pkt)
-                    self.assertTrue(match is not None,
-                        "Could not generate flow match from pkt")
-                    match.in_port = ingress_port
-                    match.dl_vlan = ofp.OFP_VLAN_NONE
-                    match.nw_proto = self.TCP_PROTOCOL
-                    match.wildcards = wildcards
+test_prio["PacketOnly"] = -1
+test_prio["PacketOnlyTagged"] = -1
 
-                    request = message.flow_mod()
-                    request.match = match
-                    request.buffer_id = 0xffffffff
-                    #@todo Need UI to setup FLAGS parameter for flow_mod
-                    if (check_expire):
-                        request.flags |= ofp.OFPFF_SEND_FLOW_REM
-                        request.hard_timeout = 1
+class ModifyVID(BaseMatchCase):
+    def runTest(self):
+        old_vid = 2
+        new_vid = 3
+        sup_acts = supported_actions_get(self)
+        if not(sup_acts & 1<<ofp.OFPAT_SET_VLAN_VID):
+            pa_logger.info("Skipping modify VLAN tag test")
+            return
 
-                    exec_act = self.modify_act[exec_mod]
-                    if exec_act == ofp.OFPAT_SET_VLAN_VID:
-                        if not(supported_act & 1<<ofp.OFPAT_SET_VLAN_VID):
-                            pa_logger.debug("Skipping action " + 
-                                    ofp.ofp_action_type_map[exec_act])
-                            continue
-                        pkt_len = pkt_len + 4
-                        dl_vlan_enable = True
-                        dl_vlan = mod_dl_vlan
-                        mod_act = action.action_set_vlan_vid()
-                        mod_act.vlan_vid = mod_dl_vlan
-                    elif exec_act == ofp.OFPAT_SET_VLAN_PCP:
-                        if not(supported_act & 1<<ofp.OFPAT_SET_VLAN_PCP):
-                            pa_logger.debug("Skipping action " + 
-                                    ofp.ofp_action_type_map[exec_act])
-                            continue
-                        pkt_len = pkt_len + 4
-                        dl_vlan_enable = True
-                        dl_vlan_pcp = mod_dl_vlan_pcp
-                        mod_act = action.action_set_vlan_pcp()
-                        mod_act.vlan_pcp = mod_dl_vlan_pcp
-                    elif exec_act == ofp.OFPAT_STRIP_VLAN:
-                        if not(supported_act & 1<<ofp.OFPAT_STRIP_VLAN):
-                            pa_logger.debug("Skipping action " + 
-                                    ofp.ofp_action_type_map[exec_act])
-                            continue
-                        dl_vlan_enable = False
-                        mod_act = action.action_strip_vlan()
-                    elif exec_act == ofp.OFPAT_SET_DL_SRC:
-                        if not(supported_act & 1<<ofp.OFPAT_SET_DL_SRC):
-                            pa_logger.debug("Skipping action " + 
-                                    ofp.ofp_action_type_map[exec_act])
-                            continue
-                        dl_src = mod_dl_src
-                        mod_act = action.action_set_dl_src()
-                        mod_act.dl_addr = parse.parse_mac(mod_dl_src)
-                    elif exec_act == ofp.OFPAT_SET_DL_DST:
-                        if not(supported_act & 1<<ofp.OFPAT_SET_DL_DST):
-                            pa_logger.debug("Skipping action " + 
-                                    ofp.ofp_action_type_map[exec_act])
-                            continue
-                        dl_dst = mod_dl_dst
-                        mod_act = action.action_set_dl_dst()
-                        mod_act.dl_addr = parse.parse_mac(mod_dl_dst)
-                    elif exec_act == ofp.OFPAT_SET_NW_SRC:
-                        if not(supported_act & 1<<ofp.OFPAT_SET_NW_SRC):
-                            pa_logger.debug("Skipping action " + 
-                                    ofp.ofp_action_type_map[exec_act])
-                            continue
-                        ip_src = mod_ip_src
-                        mod_act = action.action_set_nw_src()
-                        mod_act.nw_addr = parse.parse_ip(mod_ip_src)
-                    elif exec_act == ofp.OFPAT_SET_NW_DST:
-                        if not(supported_act & 1<<ofp.OFPAT_SET_NW_DST):
-                            pa_logger.debug("Skipping action " + 
-                                    ofp.ofp_action_type_map[exec_act])
-                            continue
-                        ip_dst = mod_ip_dst
-                        mod_act = action.action_set_nw_dst()
-                        mod_act.nw_addr = parse.parse_ip(mod_ip_dst)
-                    elif exec_act == ofp.OFPAT_SET_NW_TOS:
-                        if not(supported_act & 1<<ofp.OFPAT_SET_NW_TOS):
-                            pa_logger.debug("Skipping action " + 
-                                    ofp.ofp_action_type_map[exec_act])
-                            continue
-                        ip_tos = mod_ip_tos
-                        mod_act = action.action_set_nw_tos()
-                        mod_act.nw_tos = mod_ip_tos
-                    elif exec_act == ofp.OFPAT_SET_TP_SRC:
-                        if not(supported_act & 1<<ofp.OFPAT_SET_TP_SRC):
-                            pa_logger.debug("Skipping action " + 
-                                    ofp.ofp_action_type_map[exec_act])
-                            continue
-                        tcp_sport = mod_tcp_sport
-                        mod_act = action.action_set_tp_src()
-                        mod_act.tp_port = mod_tcp_sport
-                    elif exec_act == ofp.OFPAT_SET_TP_DST:
-                        if not(supported_act & 1<<ofp.OFPAT_SET_TP_DST):
-                            pa_logger.debug("Skipping action " + 
-                                    ofp.ofp_action_type_map[exec_act])
-                            continue
-                        tcp_dport = mod_tcp_dport
-                        mod_act = action.action_set_tp_dst()
-                        mod_act.tp_port = mod_tcp_dport
-                    else:
-                        pa_logger.debug("Unknown action " + str(exec_act))
-                        continue
+        pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=old_vid)
+        exp_pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=new_vid)
+        vid_act = action.action_set_vlan_vid()
+        vid_act.vlan_vid = new_vid
 
-                    self.assertTrue(request.actions.add(mod_act),
-                                    "Could not add output action: " +
-                                    ofp.ofp_action_type_map[exec_act])
-                    pa_logger.info("Testing action " + 
-                                      ofp.ofp_action_type_map[exec_act])
-                    pa_logger.info(request.show())
+        flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt,
+                        action_list=[vid_act])
 
-                    rc = delete_all_flows(self.controller, pa_logger)
-                    self.assertEqual(rc, 0, "Failed to delete all flows")
-                    do_barrier(self.controller)
+class StripVLANTag(BaseMatchCase):
+    def runTest(self):
+        old_vid = 2
+        sup_acts = supported_actions_get(self)
+        if not(sup_acts & 1<<ofp.OFPAT_STRIP_VLAN):
+            pa_logger.info("Skipping strip VLAN tag test")
+            return
 
-                    exp_pkt = simple_tcp_packet(pktlen=pkt_len,
-                        dl_dst=dl_dst,
-                        dl_src=dl_src,
-                        dl_vlan_enable=dl_vlan_enable,
-                        dl_vlan=dl_vlan,
-                        dl_vlan_pcp=dl_vlan_pcp,
-                        ip_src=ip_src,
-                        ip_dst=ip_dst,
-                        ip_tos=ip_tos,
-                        tcp_sport=tcp_sport,
-                        tcp_dport=tcp_dport)
+        len_w_vid = 104
+        len = 100
+        pkt = simple_tcp_packet(pktlen=len_w_vid, dl_vlan_enable=True, 
+                                dl_vlan=old_vid)
+        exp_pkt = simple_tcp_packet(pktlen=len)
+        vid_act = action.action_strip_vlan()
 
-                    act = action.action_output()
-                    act.port = of_ports[egr_idx]
-                    self.assertTrue(request.actions.add(act),
-                                    "Could not add output action for port "
-                                    + str(act.port))
-                    pa_logger.info(request.show())
+        flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt,
+                        action_list=[vid_act])
 
-                    pa_logger.info("Inserting flow")
-                    rv = self.controller.message_send(request)
-                    self.assertTrue(rv != -1, "Error installing flow mod")
-                    do_barrier(self.controller)
+class ModifyL2Src(BaseMatchCase):
+    def runTest(self):
+        pa_logger("To be implemented")
 
-                    pa_logger.info("Sending packet to dp port " +str(ingress_port))
-                    self.dataplane.send(ingress_port, str(pkt))
+class ModifyL2Dst(BaseMatchCase):
+    def runTest(self):
+        pa_logger("To be implemented")
 
-                    ofport = of_ports[egr_idx]
-                    self.verifPkt(ofport, exp_pkt)
+class ModifyL3Src(BaseMatchCase):
+    def runTest(self):
+        pa_logger("To be implemented")
 
-                    #@todo Need UI for enabling response-verification
-                    if(check_expire):
-                        self.verifFlowRemoved(request)
+class ModifyL3Dst(BaseMatchCase):
+    def runTest(self):
+        pa_logger("To be implemented")
+
+class ModifyL4Src(BaseMatchCase):
+    def runTest(self):
+        pa_logger("To be implemented")
+
+class ModifyL4Dst(BaseMatchCase):
+    def runTest(self):
+        pa_logger("To be implemented")
+
+class ModifyTOS(BaseMatchCase):
+    def runTest(self):
+        pa_logger("To be implemented")
+
+test_prio["ModifyL2Src"] = -1
+test_prio["ModifyL2Dst"] = -1
+test_prio["ModifyL3Src"] = -1
+test_prio["ModifyL3Dst"] = -1
+test_prio["ModifyL4Src"] = -1
+test_prio["ModifyL4Dst"] = -1
+test_prio["ModifyTOS"] = -1
+
+def supported_actions_get(parent, use_cache=True):
+    """
+    Get the bitmap of supported actions from the switch
+    If use_cache is false, the cached value will be updated
+    """
+    global cached_supported_actions
+    if cached_supported_actions is None or not use_cache:
+        request = message.features_request()
+        (reply, pkt) = parent.controller.transact(request, timeout=2)
+        parent.assertTrue(reply is not None, "Did not get response to ftr req")
+        cached_supported_actions = reply.actions
+        pa_logger.info("Supported actions: " + hex(cached_supported_actions))
+
+    return cached_supported_actions
 
 if __name__ == "__main__":
     print "Please run through oft script:  ./oft --test_spec=basic"

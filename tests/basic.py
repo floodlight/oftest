@@ -69,6 +69,7 @@ class SimpleProtocol(unittest.TestCase):
         sys.exit(1)
 
     def setUp(self):
+        self.logger = basic_logger
         signal.signal(signal.SIGINT, self.sig_handler)
         basic_logger.info("** START TEST CASE " + str(self))
         self.controller = controller.Controller(
@@ -125,6 +126,36 @@ class SimpleDataPlane(SimpleProtocol):
         self.assertTrue(self.controller.switch_socket is not None,
                         str(self) + 'No connection to switch')
         # self.dataplane.show()
+        # Would like an assert that checks the data plane
+
+class DataPlaneOnly(unittest.TestCase):
+    """
+    Root class that sets up only the dataplane
+    """
+
+    def sig_handler(self, v1, v2):
+        basic_logger.critical("Received interrupt signal; exiting")
+        print "Received interrupt signal; exiting"
+        self.clean_shutdown = False
+        self.tearDown()
+        sys.exit(1)
+
+    def setUp(self):
+        self.clean_shutdown = False
+        self.logger = basic_logger
+        signal.signal(signal.SIGINT, self.sig_handler)
+        basic_logger.info("** START DataPlaneOnly CASE " + str(self))
+        self.dataplane = dataplane.DataPlane()
+        for of_port, ifname in basic_port_map.items():
+            self.dataplane.port_add(ifname, of_port)
+
+    def tearDown(self):
+        basic_logger.info("Teardown for simple dataplane test")
+        self.dataplane.kill(join_threads=self.clean_shutdown)
+        basic_logger.info("Teardown done")
+
+    def runTest(self):
+        self.dataplane.show()
         # Would like an assert that checks the data plane
 
 class Echo(SimpleProtocol):
