@@ -23,6 +23,17 @@ IP_ETHERTYPE = 0x800
 TCP_PROTOCOL = 0x6
 UDP_PROTOCOL = 0x11
 
+def clear_switch(parent, port_list, logger):
+    """
+    Clear the switch configuration
+
+    @param parent Object implementing controller and assert equal
+    @param logger Logging object
+    """
+    for port in port_list:
+        clear_port_config(parent, port, logger)
+    delete_all_flows(parent.controller, logger)
+
 def delete_all_flows(ctrl, logger):
     """
     Delete all flows on the switch
@@ -37,6 +48,17 @@ def delete_all_flows(ctrl, logger):
     msg.command = ofp.OFPFC_DELETE
     msg.buffer_id = 0xffffffff
     return ctrl.message_send(msg)
+
+def clear_port_config(parent, port, logger):
+    """
+    Clear the port configuration (currently only no flood setting)
+
+    @param parent Object implementing controller and assert equal
+    @param logger Logging object
+    """
+    rv = port_config_set(parent.controller, port,
+                         0, ofp.OFPPC_NO_FLOOD, logger)
+    self.assertEqual(rv, 0, "Failed to reset port config")
 
 def simple_tcp_packet(pktlen=100, 
                       dl_dst='00:01:02:03:04:05',
@@ -416,7 +438,7 @@ def flow_match_test_port_pair(parent, ing_port, egr_port, wildcards=0,
 
     parent.logger.info("Pkt match test: " + str(ing_port) + " to " + str(egr_port))
     parent.logger.debug("  WC: " + hex(wildcards) + " vlan: " + str(dl_vlan) +
-                    " exp: " + str(check_expire))
+                    " expire: " + str(check_expire))
     if pkt is None:
         pkt = simple_tcp_packet(dl_vlan_enable=(dl_vlan >= 0), dl_vlan=dl_vlan)
 
@@ -465,8 +487,9 @@ def flow_match_test(parent, port_map, wildcards=0, dl_vlan=-1, pkt=None,
                 continue
             egress_port = of_ports[egr_idx]
             flow_match_test_port_pair(parent, ingress_port, egress_port, 
-                                      dl_vlan=dl_vlan, pkt=pkt, 
-                                      exp_pkt=exp_pkt, action_list=action_list,
+                                      wildcards=wildcards, dl_vlan=dl_vlan, 
+                                      pkt=pkt, exp_pkt=exp_pkt,
+                                      action_list=action_list,
                                       check_expire=check_expire)
             test_count += 1
             if (max_test > 0) and (test_count > max_test):
