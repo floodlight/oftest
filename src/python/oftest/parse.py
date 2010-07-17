@@ -295,6 +295,7 @@ def packet_to_flow_match(packet, pkt_format="L2"):
     if dot1q:
         match.dl_vlan = dot1q.vlan
         match.dl_vlan_pcp = dot1q.prio
+        match.dl_type = dot1q.type
     else:
         match.dl_vlan = OFP_VLAN_NONE
         match.dl_vlan_pcp = 0
