@@ -70,6 +70,8 @@ MODIFY_ACTION_VALUES =  [ofp.OFPAT_SET_VLAN_VID,
 # Cache supported features to avoid transaction overhead
 cached_supported_actions = None
 
+TEST_VID_DEFAULT = 2
+
 def test_set_init(config):
     """
     Set up function for packet action test classes
@@ -591,6 +593,8 @@ class FloodMinusPort(basic.SimpleDataPlane):
 
             #@todo Should check no other packets received
 
+
+
 ################################################################
 
 class BaseMatchCase(basic.SimpleDataPlane):
@@ -620,7 +624,10 @@ class ExactMatchTagged(BaseMatchCase):
     """
 
     def runTest(self):
-        flow_match_test(self, pa_port_map, dl_vlan=1)
+        vid = TEST_VID_DEFAULT
+        if pa_config["param"] is not None:
+            vid = pa_config["param"]
+        flow_match_test(self, pa_port_map, dl_vlan=vid)
 
 class ExactMatchTaggedMany(BaseMatchCase):
     """
@@ -628,7 +635,7 @@ class ExactMatchTaggedMany(BaseMatchCase):
     """
 
     def runTest(self):
-        for vid in range(1,100,10):
+        for vid in range(2,100,10):
             flow_match_test(self, pa_port_map, dl_vlan=vid, max_test=5)
         for vid in range(100,4000,389):
             flow_match_test(self, pa_port_map, dl_vlan=vid, max_test=5)
@@ -651,15 +658,18 @@ class SingleWildcardMatch(BaseMatchCase):
     """
     def runTest(self):
         for wc in WILDCARD_VALUES:
-            flow_match_test(self, pa_port_map, wildcard=wc, max_test=10)
+            flow_match_test(self, pa_port_map, wildcards=wc, max_test=10)
 
 class SingleWildcardMatchTagged(BaseMatchCase):
     """
     SingleWildcardMatch with tagged packets
     """
     def runTest(self):
+        vid = TEST_VID_DEFAULT
+        if pa_config["param"] is not None:
+            vid = pa_config["param"]
         for wc in WILDCARD_VALUES:
-            flow_match_test(self, pa_port_map, wildcard=wc, dl_vlan=1, 
+            flow_match_test(self, pa_port_map, wildcards=wc, dl_vlan=vid,
                             max_test=10)
 
 class AllExceptOneWildcardMatch(BaseMatchCase):
@@ -676,17 +686,20 @@ class AllExceptOneWildcardMatch(BaseMatchCase):
     def runTest(self):
         for wc in WILDCARD_VALUES:
             all_exp_one_wildcard = ofp.OFPFW_ALL ^ wc
-            flow_match_test(self, pa_port_map, wildcard=all_exp_one_wildcard)
+            flow_match_test(self, pa_port_map, wildcards=all_exp_one_wildcard)
 
 class AllExceptOneWildcardMatchTagged(BaseMatchCase):
     """
     Match one field with tagged packets
     """
     def runTest(self):
+        vid = TEST_VID_DEFAULT
+        if pa_config["param"] is not None:
+            vid = pa_config["param"]
         for wc in WILDCARD_VALUES:
             all_exp_one_wildcard = ofp.OFPFW_ALL ^ wc
-            flow_match_test(self, pa_port_map, wildcard=all_exp_one_wildcard,
-                            dl_vlan=1)
+            flow_match_test(self, pa_port_map, wildcards=all_exp_one_wildcard,
+                            dl_vlan=vid)
 
 class AllWildcardMatch(BaseMatchCase):
     """
@@ -700,14 +713,18 @@ class AllWildcardMatch(BaseMatchCase):
     Verify flow_expiration message is correct when command option is set
     """
     def runTest(self):
-        flow_match_test(self, pa_port_map, wildcard=ofp.OFPFW_ALL)
+        flow_match_test(self, pa_port_map, wildcards=ofp.OFPFW_ALL)
 
 class AllWildcardMatchTagged(BaseMatchCase):
     """
     AllWildcardMatch with tagged packets
     """
     def runTest(self):
-        flow_match_test(self, pa_port_map, wildcard=ofp.OFPFW_ALL, dl_vlan=1)
+        vid = TEST_VID_DEFAULT
+        if pa_config["param"] is not None:
+            vid = pa_config["param"]
+        flow_match_test(self, pa_port_map, wildcards=ofp.OFPFW_ALL, 
+                        dl_vlan=vid)
 
 class AddVLANTag(BaseMatchCase):
     """
@@ -749,7 +766,7 @@ class PacketOnlyTagged(basic.DataPlaneOnly):
     Just send a packet thru the switch
     """
     def runTest(self):
-        vid = 2
+        vid = TEST_VID_DEFAULT
         if pa_config["param"] is not None:
             vid = pa_config["param"]
         print "Param is " + str(pa_config["param"])
