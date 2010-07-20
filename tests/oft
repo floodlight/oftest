@@ -163,7 +163,8 @@ config_default = {
     "list"               : False,
     "debug"              : _debug_default,
     "dbg_level"          : _debug_level_default,
-    "port_map"           : {}
+    "port_map"           : {},
+    "test_params"        : "None"
 }
 
 # Default test priority
@@ -239,6 +240,8 @@ def config_setup(cfg_dflt):
                       help="Short cut for --debug=verbose")
     parser.add_option("--param", type="int",
                       help="Parameter sent to test (for debugging)")
+    parser.add_option("-t", "--test-params",
+                      help="Set test parameters: key=val;... See --list")
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
     (options, args) = parser.parse_args()
@@ -306,7 +309,7 @@ def test_list_generate(config):
     # There's an extra empty entry at the end of the list 
     filelist = p2.communicate()[0].split("\n")[:-1]
     for file in filelist:
-        if file[-1:] == '~':
+        if file[-1:] == '~' or file[0] == '#':
             continue
         modfile = file.lstrip('./')[:-3]
 
@@ -397,6 +400,8 @@ if config["list"]:
         print "No tests found for " + config["test_spec"]
     else:
         print "Tests marked * are not run by default"
+    print "Test marked (TP1) take --test-params including:"
+    print "    'vid=N;strip_vlan=bool;add_vlan=bool'"
     sys.exit(0)
 
 logging_setup(config)
@@ -487,7 +492,9 @@ if os.getuid() != 0:
           "sudo or as root."
     exit(1)
 
-logging.info("*** TEST RUN START: " + time.asctime())
-unittest.TextTestRunner(verbosity=_verb).run(suite)
-logging.info("*** TEST RUN END  : " + time.asctime())
+
+if __name__ == "__main__":
+    logging.info("*** TEST RUN START: " + time.asctime())
+    unittest.TextTestRunner(verbosity=_verb).run(suite)
+    logging.info("*** TEST RUN END  : " + time.asctime())
 
