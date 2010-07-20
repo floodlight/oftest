@@ -117,7 +117,7 @@ def flow_caps_common(obj, is_exact=True):
 
 class FillTableExact(basic.SimpleProtocol):
     """
-    Fill the flow table with exact matches
+    Fill the flow table with exact matches; can take a while
 
     Fill table until no more flows can be added.  Report result.
     Increment the source IP address.  Assume the flow table will
