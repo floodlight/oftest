@@ -399,8 +399,8 @@ if config["list"]:
     if not did_print:
         print "No tests found for " + config["test_spec"]
     else:
-        print "Tests marked * are not run by default"
-    print "Test marked (TP1) take --test-params including:"
+        print "Tests preceded by * are not run by default"
+    print "Tests marked (TP1) after name take --test-params including:"
     print "    'vid=N;strip_vlan=bool;add_vlan=bool'"
     sys.exit(0)
 
