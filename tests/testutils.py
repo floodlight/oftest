@@ -17,6 +17,7 @@ import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.parse as parse
 import logging
+import types
 
 # Some useful defines
 IP_ETHERTYPE = 0x800
@@ -496,3 +497,171 @@ def flow_match_test(parent, port_map, wildcards=0, dl_vlan=-1, pkt=None,
                 parent.logger.info("Ran " + str(test_count) + " tests; exiting")
                 return
 
+def test_param_get(config, key, default=None):
+    """
+    Return value passed via test-params if present
+
+    @param config The configuration structure for OFTest
+    @param key The lookup key
+    @param default Default value to use if not found
+
+    If the pair 'key=val' appeared in the string passed to --test-params
+    on the command line, return val (as interpreted by exec).  Otherwise
+    return default value.
+    """
+    try:
+        exec config["test_params"]
+    except:
+        return default
+
+    s = "val = " + str(key)
+    try:
+        exec s
+        return val
+    except:
+        return default
+
+def action_generate(parent, field_to_mod, mod_field_vals):
+    """
+    Create an action to modify the field indicated in field_to_mod
+
+    @param parent Must implement, assertTrue
+    @param field_to_mod The field to modify as a string name
+    @param mod_field_vals Hash of values to use for modified values
+    """
+
+    act = None
+
+    if field_to_mod in ['pktlen']:
+        return None
+
+    if field_to_mod == 'dl_dst':
+        act = action.action_set_dl_dst()
+        act.dl_addr = parse.parse_mac(mod_field_vals['dl_dst'])
+    elif field_to_mod == 'dl_src':
+        act = action.action_set_dl_src()
+        act.dl_addr = parse.parse_mac(mod_field_vals['dl_src'])
+    elif field_to_mod == 'dl_vlan_enable':
+        if not mod_field_vals['dl_vlan_enable']: # Strip VLAN tag
+            act = action.action_strip_vlan()
+        # Add VLAN tag is handled by dl_vlan field
+        # Will return None in this case
+    elif field_to_mod == 'dl_vlan':
+        act = action.action_set_vlan_vid()
+        act.vlan_vid = mod_field_vals['dl_vlan']
+    elif field_to_mod == 'dl_vlan_pcp':
+        act = action.action_set_vlan_pcp()
+        act.vlan_pcp = mod_field_vals['dl_vlan_pcp']
+    elif field_to_mod == 'ip_src':
+        act = action.action_set_nw_src()
+        act.nw_addr = parse.parse_ip(mod_field_vals['ip_src'])
+    elif field_to_mod == 'ip_dst':
+        act = action.action_set_nw_dst()
+        act.nw_addr = parse.parse_ip(mod_field_vals['ip_dst'])
+    elif field_to_mod == 'ip_tos':
+        act = action.action_set_nw_tos()
+        act.nw_tos = mod_field_vals['ip_tos']
+    elif field_to_mod == 'tcp_sport':
+        act = action.action_set_tp_src()
+        act.tp_port = mod_field_vals['tcp_sport']
+    elif field_to_mod == 'tcp_dport':
+        act = action.action_set_tp_dst()
+        act.tp_port = mod_field_vals['tcp_dport']
+    else:
+        parent.assertTrue(0, "Unknown field to modify: " + str(field_to_mod))
+
+    return act
+
+def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={}, 
+                     mod_fields={}, check_test_params=False):
+    """
+    Set up the ingress and expected packet and action list for a test
+
+    @param parent Must implement, assertTrue, config hash and logger
+    @param start_field_values Field values to use for ingress packet (optional)
+    @param mod_field_values Field values to use for modified packet (optional)
+    @param mod_fields The list of fields to be modified by the switch in the test.
+    @params check_test_params If True, will check the parameters vid, add_vlan
+    and strip_vlan from the command line.
+
+    Returns a triple:  pkt-to-send, expected-pkt, action-list
+    """
+
+    new_actions = []
+
+
+    base_pkt_params = {}
+    base_pkt_params['pktlen'] = 100
+    base_pkt_params['dl_dst'] = '00:DE:F0:12:34:56'
+    base_pkt_params['dl_src'] = '00:23:45:67:89:AB'
+    base_pkt_params['dl_vlan_enable'] = False
+    base_pkt_params['dl_vlan'] = 2
+    base_pkt_params['dl_vlan_pcp'] = 0
+    base_pkt_params['ip_src'] = '192.168.0.1'
+    base_pkt_params['ip_dst'] = '192.168.0.2'
+    base_pkt_params['ip_tos'] = 0
+    base_pkt_params['tcp_sport'] = 1234
+    base_pkt_params['tcp_dport'] = 80
+    for keyname in start_field_vals.keys():
+        base_pkt_params[keyname] = start_field_vals[keyname]
+
+    mod_pkt_params = {}
+    mod_pkt_params['pktlen'] = 100
+    mod_pkt_params['dl_dst'] = '00:21:0F:ED:CB:A9'
+    mod_pkt_params['dl_src'] = '00:ED:CB:A9:87:65'
+    mod_pkt_params['dl_vlan_enable'] = False
+    mod_pkt_params['dl_vlan'] = 3
+    mod_pkt_params['dl_vlan_pcp'] = 7
+    mod_pkt_params['ip_src'] = '10.20.30.40'
+    mod_pkt_params['ip_dst'] = '50.60.70.80'
+    mod_pkt_params['ip_tos'] = 0xf0
+    mod_pkt_params['tcp_sport'] = 4321
+    mod_pkt_params['tcp_dport'] = 8765
+    for keyname in mod_field_vals.keys():
+        mod_pkt_params[keyname] = mod_field_vals[keyname]
+
+    # Check for test param modifications
+    strip = False
+    if check_test_params:
+        add_vlan = test_param_get(parent.config, 'add_vlan')
+        strip_vlan = test_param_get(parent.config, 'strip_vlan')
+        vid = test_param_get(parent.config, 'vid')
+
+        if add_vlan and strip_vlan:
+            parent.assertTrue(0, "Add and strip VLAN both specified")
+
+        if vid:
+            base_pkt_params['dl_vlan_enable'] = True
+            base_pkt_params['dl_vlan'] = vid
+            if 'dl_vlan' in mod_fields:
+                mod_pkt_params['dl_vlan'] = vid + 1
+
+        if add_vlan:
+            base_pkt_params['dl_vlan_enable'] = False
+            mod_pkt_params['dl_vlan_enable'] = True
+            mod_pkt_params['pktlen'] = base_pkt_params['pktlen'] + 4
+            mod_fields.append('pktlen')
+            mod_fields.append('dl_vlan_enable')
+            if 'dl_vlan' not in mod_fields:
+                mod_fields.append('dl_vlan')
+        elif strip_vlan:
+            base_pkt_params['dl_vlan_enable'] = True
+            mod_pkt_params['dl_vlan_enable'] = False
+            mod_pkt_params['pktlen'] = base_pkt_params['pktlen'] - 4
+            mod_fields.append('dl_vlan_enable')
+            mod_fields.append('pktlen')
+
+    # Build the ingress packet
+    ingress_pkt = simple_tcp_packet(**base_pkt_params)
+
+    # Build the expected packet, modifying the indicated fields
+    for item in mod_fields:
+        base_pkt_params[item] = mod_pkt_params[item]
+        act = action_generate(parent, item, mod_pkt_params)
+        if act:
+            new_actions.append(act)
+
+    expected_pkt = simple_tcp_packet(**base_pkt_params)
+
+    return (ingress_pkt, expected_pkt, new_actions)
+        
