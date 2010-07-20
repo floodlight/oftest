@@ -70,6 +70,7 @@ class SimpleProtocol(unittest.TestCase):
 
     def setUp(self):
         self.logger = basic_logger
+        self.config = basic_config
         signal.signal(signal.SIGINT, self.sig_handler)
         basic_logger.info("** START TEST CASE " + str(self))
         self.controller = controller.Controller(
@@ -143,6 +144,7 @@ class DataPlaneOnly(unittest.TestCase):
     def setUp(self):
         self.clean_shutdown = False
         self.logger = basic_logger
+        self.config = basic_config
         signal.signal(signal.SIGINT, self.sig_handler)
         basic_logger.info("** START DataPlaneOnly CASE " + str(self))
         self.dataplane = dataplane.DataPlane()
@@ -155,7 +157,8 @@ class DataPlaneOnly(unittest.TestCase):
         basic_logger.info("Teardown done")
 
     def runTest(self):
-        self.dataplane.show()
+        print "DataPlaneOnly"
+        # self.dataplane.show()
         # Would like an assert that checks the data plane
 
 class Echo(SimpleProtocol):
