@@ -1,5 +1,5 @@
 OpenFlow Testing Framework
-March, 2010
+July, 2010
 
 Copyright (c) 2010 The Board of Trustees of The Leland Stanford 
 Junior University
@@ -7,23 +7,30 @@ Junior University
 Warning
 +++++++
 
-This is still experimental and it requires root privilege to
-control the dataplane ports.  As a consequence, there may be
-risks to the machine on which this is running.  Use caution.
+    This is still experimental and it requires root privilege to
+    control the dataplane ports.  As a consequence, there may be
+    risks to the machine on which this is running.  Use caution.
 
-Please see Helpful Notes below.
+    Please see Helpful Notes below.
 
 License
 +++++++
 
-The software included with this distribution is subject to the
-OpenFlow Switching License as given in the included file LICENSE.
-Details are also available at:
+    The software included with this distribution is subject to the
+    OpenFlow Switching License as given in the included file LICENSE.
+    Details are also available at:
 
     http://www.openflow.org/wp/legal
 
-Other software referenced in this distribution is subject to its
-respective license.
+    Other software referenced in this distribution is subject to its
+    respective license.
+
+Getting OFTest
+++++++++++++++
+
+    You can check out OFTest with git with the following command:
+
+    git clone git://openflow.org/oftest
 
 Introduction
 ++++++++++++
@@ -140,43 +147,45 @@ Longer Start
 Helpful Note: Rebuilding
 ++++++++++++++++++++++++
 
-If you ever make a change to the code in src/oftest/python...
-you must rebuild and reinstall the source code.  See Step (2)
-in the Longer Start above.
+    If you ever make a change to the code in src/oftest/python...
+    you must rebuild and reinstall the source code.  See Step (2)
+    in the Longer Start above.
 
-If you see
+    If you see
 
-    WARNING:..:Could not import file ...
+        WARNING:..:Could not import file ...
 
-There is likely a Python error in the file.  Try invoking the
-Python cli directly and importing the file to get more information.
+    There is likely a Python error in the file.  Try invoking the
+    Python cli directly and importing the file to get more
+    information.
 
 Helpful Note: Recovering From Crash
 +++++++++++++++++++++++++++++++++++
 
-If the test script, oft, becomes unresponsive, you may find that ^C 
-does not break out of the script.  In this case you have two options:  
+    If the test script, oft, becomes unresponsive, you may find that
+    ^C does not break out of the script.  In this case you have two
+    options:
 
-* Use ^Z to interrupt the script and return to the shell prompt.
-* Start another terminal window to the same machine.
+    * Use ^Z to interrupt the script and return to the shell prompt.
+    * Start another terminal window to the same machine.
 
-In either case, you then need to kill the process that is hung.  Use 
-the following commands:
+    In either case, you then need to kill the process that is hung.
+    Use the following commands:
 
-    me@host> ps aux | grep oft
-    root         4  0.0      S<   Jul07   0:00 [ksoftirqd/0]
-    ...
-    root     14066  3.2      Tl   09:27   0:00 python ./oft ...
-    me       14074  0.0      R+   09:28   0:00 grep oft
-    
-    me@host> sudo kill -9 14066
+        me@host> ps aux | grep oft
+        root         4  0.0      S<   Jul07   0:00 [ksoftirqd/0]
+        ...
+        root     14066  3.2      Tl   09:27   0:00 python ./oft ...
+        me       14074  0.0      R+   09:28   0:00 grep oft
 
-where 14066 is the process ID of the hung process.  (Replace it with 
-the PID for your process.)
+        me@host> sudo kill -9 14066
 
-This is still preliminary work and there are bugs in the 
-framework that need to be ironed out.  Please report any issues
-to dtalayco@stanford.edu.
+    where 14066 is the process ID of the hung process.  (Replace it
+    with the PID for your process.)
+
+    This is still preliminary work and there are bugs in the framework
+    that need to be ironed out.  Please report any issues to
+    dtalayco@stanford.edu.
 
 
 OFT Command Line Options
@@ -308,6 +317,8 @@ Other Info
       + cd <oftest>/tools/munger
       + make doc
     Places the results in <oftest>/doc/html
+    If you have problems, check the install location doxypy.py and
+    that it is set correctly in <oftest>/doc/Doxyfile
 
     * Run lint on sources
       + cd <oftest>/tools/munger
