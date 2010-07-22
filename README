@@ -263,6 +263,9 @@ Important Notes
 Adding Your Own Test Cases
 ++++++++++++++++++++++++++
 
+    Check the online tutorial:  
+        http://openflow.org/wk/index.php/OFTestTutorial
+
     You can:
 
         * Add cases to an existing file
