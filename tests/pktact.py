@@ -718,6 +718,7 @@ class AllWildcardMatchTagged(BaseMatchCase):
         flow_match_test(self, pa_port_map, wildcards=ofp.OFPFW_ALL, 
                         dl_vlan=vid)
 
+    
 class AddVLANTag(BaseMatchCase):
     """
     Add a VLAN tag to an untagged packet
@@ -726,7 +727,7 @@ class AddVLANTag(BaseMatchCase):
         new_vid = 2
         sup_acts = supported_actions_get(self)
         if not(sup_acts & 1<<ofp.OFPAT_SET_VLAN_VID):
-            pa_logger.info("Skipping add VLAN tag test")
+            skip_message_emit(self, "Add VLAN tag test")
             return
 
         len = 100
@@ -779,7 +780,7 @@ class ModifyVID(BaseMatchCase):
         new_vid = 3
         sup_acts = supported_actions_get(self)
         if not (sup_acts & 1 << ofp.OFPAT_SET_VLAN_VID):
-            pa_logger.info("Skipping modify VLAN tag test")
+            skip_message_emit(self, "Modify VLAN tag test")
             return
 
         pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=old_vid)
@@ -798,7 +799,7 @@ class StripVLANTag(BaseMatchCase):
         old_vid = 2
         sup_acts = supported_actions_get(self)
         if not (sup_acts & 1 << ofp.OFPAT_STRIP_VLAN):
-            pa_logger.info("Skipping strip VLAN tag test")
+            skip_message_emit(self, "Strip VLAN tag test")
             return
 
         len_w_vid = 104
@@ -835,7 +836,7 @@ class ModifyL2Src(BaseMatchCase):
     def runTest(self):
         sup_acts = supported_actions_get(self)
         if not (sup_acts & 1 << ofp.OFPAT_SET_DL_SRC):
-            pa_logger.info("Skipping ModifyL2Src test")
+            skip_message_emit(self, "ModifyL2Src test")
             return
 
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_src'],
@@ -850,7 +851,7 @@ class ModifyL2Dst(BaseMatchCase):
     def runTest(self):
         sup_acts = supported_actions_get(self)
         if not (sup_acts & 1 << ofp.OFPAT_SET_DL_DST):
-            pa_logger.info("Skipping ModifyL2Dst test")
+            skip_message_emit(self, "ModifyL2dst test")
             return
 
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_dst'],
@@ -865,7 +866,7 @@ class ModifyL3Src(BaseMatchCase):
     def runTest(self):
         sup_acts = supported_actions_get(self)
         if not (sup_acts & 1 << ofp.OFPAT_SET_NW_SRC):
-            pa_logger.info("Skipping ModifyL3Src test")
+            skip_message_emit(self, "ModifyL3Src test")
             return
 
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['ip_src'],
@@ -880,7 +881,7 @@ class ModifyL3Dst(BaseMatchCase):
     def runTest(self):
         sup_acts = supported_actions_get(self)
         if not (sup_acts & 1 << ofp.OFPAT_SET_NW_DST):
-            pa_logger.info("Skipping ModifyL3Dst test")
+            skip_message_emit(self, "ModifyL3Dst test")
             return
 
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['ip_dst'],
@@ -895,7 +896,7 @@ class ModifyL4Src(BaseMatchCase):
     def runTest(self):
         sup_acts = supported_actions_get(self)
         if not (sup_acts & 1 << ofp.OFPAT_SET_TP_SRC):
-            pa_logger.info("Skipping ModifyL4Src test")
+            skip_message_emit(self, "ModifyL4Src test")
             return
 
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['tcp_sport'],
@@ -910,7 +911,7 @@ class ModifyL4Dst(BaseMatchCase):
     def runTest(self):
         sup_acts = supported_actions_get(self)
         if not (sup_acts & 1 << ofp.OFPAT_SET_TP_DST):
-            pa_logger.info("Skipping ModifyL4Dst test")
+            skip_message_emit(self, "ModifyL4Dst test")
             return
 
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['tcp_dport'],
@@ -925,7 +926,7 @@ class ModifyTOS(BaseMatchCase):
     def runTest(self):
         sup_acts = supported_actions_get(self)
         if not (sup_acts & 1 << ofp.OFPAT_SET_NW_TOS):
-            pa_logger.info("Skipping ModifyTOS test")
+            skip_message_emit(self, "ModifyTOS test")
             return
 
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['ip_tos'],

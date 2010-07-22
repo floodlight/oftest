@@ -19,6 +19,9 @@ import oftest.parse as parse
 import logging
 import types
 
+global skipped_test_count
+skipped_test_count = 0
+
 # Some useful defines
 IP_ETHERTYPE = 0x800
 TCP_PROTOCOL = 0x6
@@ -665,3 +668,19 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
 
     return (ingress_pkt, expected_pkt, new_actions)
         
+
+def skip_message_emit(parent, s):
+    """
+    Print out a 'skipped' message to stderr
+
+    @param s The string to print out to the log file
+    @param parent Must implement config and logger objects
+    """
+    global skipped_test_count
+
+    skipped_test_count += 1
+    parent.logger.info("Skipping: " + s)
+    if parent.config["dbg_level"] < logging.WARNING:
+        sys.stderr.write("(skipped) ")
+    else:
+        sys.stderr.write("(S)")
