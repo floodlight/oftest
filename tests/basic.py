@@ -157,7 +157,7 @@ class DataPlaneOnly(unittest.TestCase):
         basic_logger.info("Teardown done")
 
     def runTest(self):
-        print "DataPlaneOnly"
+        basic_logger.info("DataPlaneOnly")
         # self.dataplane.show()
         # Would like an assert that checks the data plane
 
