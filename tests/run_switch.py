@@ -4,6 +4,7 @@
 #
 
 import os
+import os.path
 import sys
 import time
 import signal
@@ -50,26 +51,25 @@ class OFReferenceSwitch(OFSwitch):
     def __init__(self,interfaces,config):
         super(OFReferenceSwitch, self).__init__(interfaces, config)
         if config.of_dir:
-            self.of_dir = config.of_dir
+            self.of_dir = os.path.normpath(config.of_dir)
         else:
-            self.of_dir = "../../openflow"
-        self.ofd = self.of_dir + "/udatapath/ofdatapath"
-        self.ofp = self.of_dir + "/secchan/ofprotocol"
+            self.of_dir = os.path.normpath("../../openflow")
+        self.ofd = os.path.normpath(self.of_dir + "/udatapath/ofdatapath")
+        self.ofp = os.path.normpath(self.of_dir + "/secchan/ofprotocol")
         self.ofd_op = None
 
     def test(self):
         if not OFSwitch.test(self):
             return False
-        try:
-            subprocess.check_call(["ls", self.ofd])
-        except:
+
+        if not os.path.exists(self.ofd):
             print "Could not find datapath daemon: " + self.ofd
             return False
-        try:
-            subprocess.check_call(["ls", self.ofp])
-        except:
+
+        if not os.path.exists(self.ofp):
             print "Could not find protocol daemon: " + self.ofp
             return False
+
         return True
 
     def start(self):
@@ -95,19 +95,19 @@ class OFPS(OFSwitch):
     def __init__(self,interfaces,config):
         super(OFPS, self).__init__(interfaces, config)
         if config.of_dir:
-            self.of_dir=config.of_dir
+            self.of_dir = os.path.normpath(config.of_dir)
         else:
-            self.of_dir = "../src/python/ofps"
-        self.ofps = self.of_dir + "/ofps.py"
+            self.of_dir = os.path.normpath("../src/python/ofps")
+        self.ofps = os.path.normpath(self.of_dir + "/ofps.py")
         
     def test(self):
         if not OFSwitch.test(self):
             return False
-        try:
-            subprocess.check_call(["ls", self.ofps])
-        except:
+
+        if not os.path.exists(self.ofps):
             print "Could not find datapath daemon: " + self.ofd
             return False
+
         return True
 
     def start(self):
