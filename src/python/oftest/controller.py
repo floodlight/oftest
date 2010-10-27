@@ -218,6 +218,7 @@ class Controller(Thread):
                     rep.header.xid = hdr.xid
                     # Ignoring additional data
                     self.message_send(rep.pack(), zero_xid=True)
+                    offset += hdr.length
                     continue
 
             # Now check for message handlers; preference is given to
