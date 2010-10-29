@@ -23,20 +23,20 @@ from cstruct import *
 ################################################################
 
 action_structs = [
-    'output',
+    'set_output_port',
     'vlan_vid',
     'vlan_pcp',
     'dl_addr',
     'nw_addr',
     'tp_port',
     'nw_tos',
-    'vendor_header']
+    'experimenter_header']
+# FIXME:  ADD ACTION STRUCTURES
 
 action_types = [
-    'output',
+    'set_output_port',
     'set_vlan_vid',
     'set_vlan_pcp',
-    'strip_vlan',
     'set_dl_src',
     'set_dl_dst',
     'set_nw_src',
@@ -44,16 +44,15 @@ action_types = [
     'set_nw_tos',
     'set_tp_src',
     'set_tp_dst',
-    'enqueue',
-    'vendor'
+    'experimenter'
 ]
 action_types.sort()
+# FIXME:  ADD ACTION TYPES
 
 action_class_map = {
-    'output' : 'ofp_action_output',
+    'set_output_port' : 'ofp_action_set_output_port',
     'set_vlan_vid' : 'ofp_action_vlan_vid',
     'set_vlan_pcp' : 'ofp_action_vlan_pcp',
-    'strip_vlan' : 'ofp_action_header',
     'set_dl_src' : 'ofp_action_dl_addr',
     'set_dl_dst' : 'ofp_action_dl_addr',
     'set_nw_src' : 'ofp_action_nw_addr',
@@ -61,8 +60,7 @@ action_class_map = {
     'set_nw_tos' : 'ofp_action_nw_tos',
     'set_tp_src' : 'ofp_action_tp_port',
     'set_tp_dst' : 'ofp_action_tp_port',
-    'enqueue' : 'ofp_action_enqueue',
-    'vendor' : 'ofp_action_vendor_header'
+    'experimenter' : 'ofp_action_experimenter_header'
 }
 
 template = """

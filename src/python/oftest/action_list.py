@@ -8,7 +8,7 @@ import copy
 
 # # Map OFP action identifiers to the actual structures used on the wire
 # action_object_map = {
-#     OFPAT_OUTPUT                        : ofp_action_output,
+#     OFPAT_SET_OUTPUT_PORT               : ofp_action_set_output_port,
 #     OFPAT_SET_VLAN_VID                  : ofp_action_vlan_vid,
 #     OFPAT_SET_VLAN_PCP                  : ofp_action_vlan_pcp,
 #     OFPAT_STRIP_VLAN                    : ofp_action_header,
@@ -19,14 +19,13 @@ import copy
 #     OFPAT_SET_NW_TOS                    : ofp_action_nw_tos,
 #     OFPAT_SET_TP_SRC                    : ofp_action_tp_port,
 #     OFPAT_SET_TP_DST                    : ofp_action_tp_port,
-#     OFPAT_ENQUEUE                       : ofp_action_enqueue
 # }
 
+# FIXME:  NEEDS UPDATE FOR 1.1
 action_object_map = {
-    OFPAT_OUTPUT                        : action_output,
+    OFPAT_SET_OUTPUT_PORT               : action_set_output_port,
     OFPAT_SET_VLAN_VID                  : action_set_vlan_vid,
     OFPAT_SET_VLAN_PCP                  : action_set_vlan_pcp,
-    OFPAT_STRIP_VLAN                    : action_strip_vlan,
     OFPAT_SET_DL_SRC                    : action_set_dl_src,
     OFPAT_SET_DL_DST                    : action_set_dl_dst,
     OFPAT_SET_NW_SRC                    : action_set_nw_src,
@@ -34,8 +33,7 @@ action_object_map = {
     OFPAT_SET_NW_TOS                    : action_set_nw_tos,
     OFPAT_SET_TP_SRC                    : action_set_tp_src,
     OFPAT_SET_TP_DST                    : action_set_tp_dst,
-    OFPAT_ENQUEUE                       : action_enqueue,
-    OFPAT_VENDOR                        : action_vendor
+    OFPAT_EXPERIMENTER                  : action_experimenter
 }
 
 class action_list(object):

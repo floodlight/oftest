@@ -194,7 +194,7 @@ message_class_map = {
     "error"                         : "ofp_error_msg",
     "echo_request"                  : "ofp_header",
     "echo_reply"                    : "ofp_header",
-    "vendor"                        : "ofp_vendor_header",
+    "experimenter"                  : "ofp_experimenter_header",
     "features_request"              : "ofp_header",
     "features_reply"                : "ofp_switch_features",
     "get_config_request"            : "ofp_header",
@@ -205,7 +205,9 @@ message_class_map = {
     "port_status"                   : "ofp_port_status",
     "packet_out"                    : "ofp_packet_out",
     "flow_mod"                      : "ofp_flow_mod",
+    "group_mod"                     : "ofp_group_mod",
     "port_mod"                      : "ofp_port_mod",
+    "table_mod"                     : "ofp_table_mod",
     "stats_request"                 : "ofp_stats_request",
     "stats_reply"                   : "ofp_stats_reply",
     "barrier_request"               : "ofp_header",
@@ -220,7 +222,7 @@ string_members = [
     "error",
     "echo_request",
     "echo_reply",
-    "vendor",
+    "experimenter",
     "packet_in",
     "packet_out"
 ]
@@ -470,7 +472,7 @@ def gen_message_wrapper(msg):
 ################################################################
 #
 # Stats request subclasses
-# description_request, flow, aggregate, table, port, vendor
+# description_request, flow, aggregate, table, port, experimenter
 #
 ################################################################
 
@@ -769,6 +771,7 @@ message_type_list = (
     desc_stats_request,
     echo_reply,
     echo_request,
+    experimenter,
     features_reply,
     features_request,
     flow_mod,
@@ -778,6 +781,8 @@ message_type_list = (
     flow_stats_request,
     get_config_reply,
     get_config_request,
+    group_mod,
+    group_mod_failed_error_msg,
     hello,
     hello_failed_error_msg,
     packet_in,
@@ -793,9 +798,11 @@ message_type_list = (
     queue_stats_reply,
     queue_stats_request,
     set_config,
+    switch_config_failed_error_msg,
+    table_mod,
+    table_mod_failed_error_msg,
     table_stats_reply,
     table_stats_request,
-    vendor
     )
 """
 

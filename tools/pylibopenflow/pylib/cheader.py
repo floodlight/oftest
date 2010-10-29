@@ -370,9 +370,8 @@ class cheaderfile(textfile):
         for amatch in attrmatches:
             fileStr=fileStr.replace(" __attribute__ (("+amatch+"));",";")
         #Find all structs
-        pattern = re.compile("struct[\w\s]*?{.*?};", re.MULTILINE)
+        pattern = re.compile("struct\s[\w\s]*?{.*?};", re.MULTILINE)
         matches = pattern.findall(fileStr)
-        #Process each struct
         namepattern = re.compile("struct(.+?)[ {]", re.MULTILINE)
         pattern = re.compile("{(.+?)};", re.MULTILINE)
         for match in matches:
@@ -398,9 +397,11 @@ class cheaderfile(textfile):
         matches = pattern.findall(fileStr)
         #Process each enumeration
         namepattern = re.compile("enum(.+?){", re.MULTILINE)
+        
         pattern = re.compile("{(.+?)}", re.MULTILINE)
         for match in matches:
             values = pattern.findall(match)[0].strip().split(",")
+            
             #Process each value in enumeration
             enumList = []
             value = 0

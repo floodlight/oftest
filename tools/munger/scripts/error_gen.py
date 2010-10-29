@@ -80,8 +80,11 @@ error_types = [
     'bad_request',
     'bad_action',
     'flow_mod_failed',
+    'group_mod_failed',
     'port_mod_failed',
-    'queue_op_failed']
+    'table_mod_failed',
+    'queue_op_failed',
+    'switch_config_failed']
 
 for t in error_types:
     error_name = "OFPET_" + t.upper()

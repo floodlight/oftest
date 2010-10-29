@@ -68,7 +68,7 @@ msg_type_to_class_map = {
     OFPT_ERROR                      : error,
     OFPT_ECHO_REQUEST               : echo_request,
     OFPT_ECHO_REPLY                 : echo_reply,
-    OFPT_VENDOR                     : vendor,
+    OFPT_EXPERIMENTER               : experimenter,
     OFPT_FEATURES_REQUEST           : features_request,
     OFPT_FEATURES_REPLY             : features_reply,
     OFPT_GET_CONFIG_REQUEST         : get_config_request,
