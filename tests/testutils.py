@@ -474,7 +474,7 @@ def flow_match_test(parent, port_map, wildcards=0, dl_vlan=-1, pkt=None,
     and logger
     @param pkt If not None, use this packet for ingress
     @param wildcards For flow match entry
-    @param dl_vlan If not -1, and pkt is not None, create a pkt w/ VLAN tag
+    @param dl_vlan If not -1, and pkt is None, create a pkt w/ VLAN tag
     @param exp_pkt If not None, use this as the expected output pkt; els use pkt
     @param action_list Additional actions to add to flow mod
     @param check_expire Check for flow expiration message
