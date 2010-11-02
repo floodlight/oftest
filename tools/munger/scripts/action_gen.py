@@ -22,48 +22,6 @@ from cstruct import *
 #
 ################################################################
 
-action_structs = [
-    'set_output_port',
-    'vlan_vid',
-    'vlan_pcp',
-    'dl_addr',
-    'nw_addr',
-    'tp_port',
-    'nw_tos',
-    'experimenter_header']
-# FIXME:  ADD ACTION STRUCTURES
-
-action_types = [
-    'set_output_port',
-    'set_vlan_vid',
-    'set_vlan_pcp',
-    'set_dl_src',
-    'set_dl_dst',
-    'set_nw_src',
-    'set_nw_dst',
-    'set_nw_tos',
-    'set_nw_ecn',
-    'set_tp_src',
-    'set_tp_dst',
-    'copy_ttl_out',
-    'copy_ttl_in',
-    'set_mpls_label',
-    'set_mpls_tc',
-    'set_mpls_ttl',
-    'dec_mpls_ttl',
-    'push_vlan',
-    'pop_vlan',
-    'push_mpls',
-    'pop_mpls',
-    'set_queue',
-    'group',
-    'set_nw_ttl',
-    'dec_nw_ttl',
-    'experimenter'
-]
-action_types.sort()
-# FIXME:  ADD ACTION TYPES
-
 action_class_map = {
     'set_output_port' : 'ofp_action_set_output_port',
     'set_vlan_vid' : 'ofp_action_vlan_vid',
@@ -94,42 +52,82 @@ action_class_map = {
 }
 
 template = """
-class action_--TYPE--(--PARENT_TYPE--):
+class --OBJ_TYPE--_--TYPE--(--PARENT_TYPE--):
     \"""
-    Wrapper class for --TYPE-- action object
+    Wrapper class for --TYPE-- --OBJ_TYPE-- object
 
     --DOC_INFO--
     \"""
     def __init__(self):
         --PARENT_TYPE--.__init__(self)
-        self.type = --ACTION_NAME--
+        self.type = --ACT_INST_NAME--
         self.len = self.__len__()
     def show(self, prefix=''):
-        outstr = prefix + "action_--TYPE--\\n"
+        outstr = prefix + "--OBJ_TYPE--_--TYPE--\\n"
         outstr += --PARENT_TYPE--.show(self, prefix)
         return outstr
 """
 
+################################################################
+#
+# Instruction subclasses
+#
+################################################################
+
+instruction_class_map = {
+    'goto_table' : 'ofp_instruction_goto_table',
+    'write_metadata' : 'ofp_instruction_write_metadata',
+    'write_actions' : 'ofp_instruction_actions',
+    'apply_actions' : 'ofp_instruction_actions',
+    'clear_actions' : 'ofp_instruction',
+    'experimenter' : 'ofp_instruction_experimenter'
+}
+
+def gen_class(t, parent, obj_type):
+    if not parent in class_to_members_map.keys():
+        doc_info = "Unknown parent action/instruction class: " + parent
+    else:
+        doc_info = "Data members inherited from " + parent + ":\n"
+    for var in class_to_members_map[parent]:
+        doc_info += "    @arg " + var + "\n"
+    if obj_type == "action":
+        name = "OFPAT_" + t.upper()
+    else:
+        name = "OFPIT_" + t.upper()
+    to_print = re.sub('--TYPE--', t, template)
+    to_print = re.sub('--OBJ_TYPE--', obj_type, to_print)
+    to_print = re.sub('--PARENT_TYPE--', parent, to_print)
+    to_print = re.sub('--ACT_INST_NAME--', name, to_print)
+    to_print = re.sub('--DOC_INFO--', doc_info, to_print)
+    print to_print
+    
 if __name__ == '__main__':
     for (t, parent) in action_class_map.items():
-        if not parent in class_to_members_map.keys():
-            doc_info = "Unknown parent action class: " + parent
-        else:
-            doc_info = "Data members inherited from " + parent + ":\n"
-            for var in class_to_members_map[parent]:
-                doc_info += "    @arg " + var + "\n"
-        action_name = "OFPAT_" + t.upper()
-        to_print = re.sub('--TYPE--', t, template)
-        to_print = re.sub('--PARENT_TYPE--', parent, to_print)
-        to_print = re.sub('--ACTION_NAME--', action_name, to_print)
-        to_print = re.sub('--DOC_INFO--', doc_info, to_print)
-        print to_print
+        gen_class(t, parent, "action")
+    for (t, parent) in instruction_class_map.items():
+        gen_class(t, parent, "instruction")
 
     # Generate a list of action classes
+    action_list = action_class_map.keys()
+    action_list.sort()
     print "action_class_list = ("
     prev = None
-    for (t, parent) in action_class_map.items():
+    for t in action_list:
         if prev:
             print "    action_" + prev + ","
         prev = t
-    print "    action_" + prev + ")"
+    print "    action_" + prev + ")\n"
+
+    # Generate a list of instruction classes
+    inst_list = instruction_class_map.keys()
+    inst_list.sort()
+    print "instruction_class_list = ("
+    prev = None
+    for t in inst_list:
+        if prev:
+            print "    instruction_" + prev + ","
+        prev = t
+    print "    instruction_" + prev + ")"
+
+
+# @todo Add action list to instruction_action_list class
