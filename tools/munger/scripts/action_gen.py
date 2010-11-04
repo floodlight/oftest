@@ -51,7 +51,7 @@ action_class_map = {
     'experimenter' : 'ofp_action_experimenter_header'
 }
 
-template = """
+template_no_list = """
 class --OBJ_TYPE--_--TYPE--(--PARENT_TYPE--):
     \"""
     Wrapper class for --TYPE-- --OBJ_TYPE-- object
@@ -68,6 +68,67 @@ class --OBJ_TYPE--_--TYPE--(--PARENT_TYPE--):
         return outstr
 """
 
+# Template for classes with an action list
+template_action_list = """
+class --OBJ_TYPE--_--TYPE--(--PARENT_TYPE--):
+    \"""
+    Wrapper class for --TYPE-- --OBJ_TYPE-- object
+
+    --DOC_INFO--
+    \"""
+    def __init__(self):
+        --PARENT_TYPE--.__init__(self)
+        self.type = --ACT_INST_NAME--
+        self.len = self.__len__()
+        self.actions = action_list()
+    def show(self, prefix=''):
+        outstr = prefix + "--OBJ_TYPE--_--TYPE--\\n"
+        outstr += --PARENT_TYPE--.show(self, prefix)
+        return outstr
+    def unpack(self, binary_string):
+        binary_string = --PARENT_TYPE--.unpack(self, binary_string)
+        self.actions = action_list()
+        return self.actions.unpack(binary_string)
+    def pack(self):
+        self.len = len(self)
+        packed = ""
+        packed += --PARENT_TYPE--.pack(self)
+        packed += self.actions.pack()
+        return packed
+    def __len__(self):
+        return --PARENT_TYPE--.__len__(self) + self.actions.__len__()
+"""
+
+# Template for classes with an action list
+bucket_class_template = """
+class bucket(--PARENT_TYPE--):
+    \"""
+    Wrapper class for bucket object
+
+    --DOC_INFO--
+    \"""
+    def __init__(self):
+        --PARENT_TYPE--.__init__(self)
+        self.len = self.__len__()
+        self.actions = action_list()
+    def show(self, prefix=''):
+        outstr = prefix + "bucket\\n"
+        outstr += --PARENT_TYPE--.show(self, prefix)
+        return outstr
+    def unpack(self, binary_string):
+        binary_string = --PARENT_TYPE--.unpack(self, binary_string)
+        self.actions = action_list()
+        return self.actions.unpack(binary_string)
+    def pack(self):
+        self.len = len(self)
+        packed = ""
+        packed += --PARENT_TYPE--.pack(self)
+        packed += self.actions.pack()
+        return packed
+    def __len__(self):
+        return --PARENT_TYPE--.__len__(self) + self.actions.__len__()
+"""
+
 ################################################################
 #
 # Instruction subclasses
@@ -75,15 +136,18 @@ class --OBJ_TYPE--_--TYPE--(--PARENT_TYPE--):
 ################################################################
 
 instruction_class_map = {
-    'goto_table' : 'ofp_instruction_goto_table',
-    'write_metadata' : 'ofp_instruction_write_metadata',
-    'write_actions' : 'ofp_instruction_actions',
-    'apply_actions' : 'ofp_instruction_actions',
-    'clear_actions' : 'ofp_instruction',
-    'experimenter' : 'ofp_instruction_experimenter'
+    'goto_table'         : 'ofp_instruction_goto_table',
+    'write_metadata'     : 'ofp_instruction_write_metadata',
+    'write_actions'      : 'ofp_instruction_actions',
+    'apply_actions'      : 'ofp_instruction_actions',
+    'clear_actions'      : 'ofp_instruction',
+    'experimenter'       : 'ofp_instruction_experimenter'
 }
 
-def gen_class(t, parent, obj_type):
+# These require an action list
+action_list_classes = ['write_actions', 'apply_actions']
+
+def gen_class(t, parent, obj_type, template=None):
     if not parent in class_to_members_map.keys():
         doc_info = "Unknown parent action/instruction class: " + parent
     else:
@@ -94,6 +158,10 @@ def gen_class(t, parent, obj_type):
         name = "OFPAT_" + t.upper()
     else:
         name = "OFPIT_" + t.upper()
+    if template is None:
+        template = template_no_list
+    if t in action_list_classes:
+        template = template_action_list
     to_print = re.sub('--TYPE--', t, template)
     to_print = re.sub('--OBJ_TYPE--', obj_type, to_print)
     to_print = re.sub('--PARENT_TYPE--', parent, to_print)
@@ -106,7 +174,7 @@ if __name__ == '__main__':
         gen_class(t, parent, "action")
     for (t, parent) in instruction_class_map.items():
         gen_class(t, parent, "instruction")
-
+    gen_class('bucket', 'ofp_bucket', "bucket", template=bucket_class_template)
     # Generate a list of action classes
     action_list = action_class_map.keys()
     action_list.sort()
@@ -131,3 +199,6 @@ if __name__ == '__main__':
 
 
 # @todo Add action list to instruction_action_list class
+
+# @todo Add bucket class declaration; need to add action list to ofp_bucket
+

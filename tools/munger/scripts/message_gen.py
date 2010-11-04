@@ -88,7 +88,7 @@ message_top_matter = """
 # Python OpenFlow message wrapper classes
 
 from cstruct import *
-from action_list import action_list
+from action_list import action_list, instruction_list
 from error import *
 
 # Define templates for documentation
@@ -232,7 +232,7 @@ string_members = [
 list_members = {
     "features_reply"                : ('ports', None),
     "packet_out"                    : ('actions', 'action_list'),
-    "flow_mod"                      : ('actions', 'action_list'),
+    "flow_mod"                      : ('instructions', 'instruction_list'),
     "queue_get_config_reply"        : ('queues', None)
 }
 
@@ -356,7 +356,7 @@ def gen_message_wrapper(msg):
     if has_list:
         if msg == "features_reply":  # Special case port parsing
             # For now, cheat and assume the rest of the message is port list
-            _p2("while len(binary_string) >= OFP_PHY_PORT_BYTES:")
+            _p2("while len(binary_string) >= OFP_PORT_BYTES:")
             _p3("new_port = ofp_phy_port()")
             _p3("binary_string = new_port.unpack(binary_string)")
             _p3("self.ports.append(new_port)")
@@ -369,7 +369,7 @@ def gen_message_wrapper(msg):
         elif msg == "flow_mod":  # Special case this
             _p2("ai_len = self.header.length - (OFP_FLOW_MOD_BYTES + " + 
                 "OFP_HEADER_BYTES)")
-            _p2("binary_string = self.actions.unpack(binary_string, " +
+            _p2("binary_string = self.instructions.unpack(binary_string, " +
                 "bytes=ai_len)")
         else:
             _p2("binary_string = self." + list_var + ".unpack(binary_string)")
@@ -523,6 +523,27 @@ class ofp_table_stats_request:
 
 OFP_TABLE_STATS_REQUEST_BYTES = 0
 
+class ofp_group_desc_stats_request:
+    \"""
+    Forced definition of ofp_group_desc_stats_request (empty class)
+    \"""
+    def __init__(self):
+        pass
+    def pack(self, assertstruct=True):
+        return ""
+    def unpack(self, binary_string):
+        return binary_string
+    def __len__(self):
+        return 0
+    def show(self, prefix=''):
+        return prefix + "ofp_group_desc_stats_request (empty)\\n"
+    def __eq__(self, other):
+        return type(self) == type(other)
+    def __ne__(self, other):
+        return type(self) != type(other)
+
+OFP_GROUP_DESC_STATS_REQUEST_BYTES = 0
+
 """
 
 stats_request_template = """
@@ -655,6 +676,8 @@ desc_stats_entry = ofp_desc_stats
 port_stats_entry = ofp_port_stats
 queue_stats_entry = ofp_queue_stats
 table_stats_entry = ofp_table_stats
+group_stats_entry = ofp_group_stats
+group_desc_stats_entry = ofp_group_desc_stats
 """
 
 # Special case flow_stats to handle actions_list
@@ -714,6 +737,8 @@ stats_types = [
     'flow',
     'port',
     'queue',
+    'group',
+    'group_desc',
     'table']
 
 if __name__ == '__main__':
@@ -760,6 +785,7 @@ if __name__ == '__main__':
 
     # Lastly, generate a tuple containing all the message classes
     print """
+# @todo Add buckets to group and group_desc stats obejcts"
 message_type_list = (
     aggregate_stats_reply,
     aggregate_stats_request,
@@ -771,6 +797,7 @@ message_type_list = (
     desc_stats_request,
     echo_reply,
     echo_request,
+    error,
     experimenter,
     features_reply,
     features_request,
@@ -781,6 +808,10 @@ message_type_list = (
     flow_stats_request,
     get_config_reply,
     get_config_request,
+    group_desc_stats_request,
+    group_desc_stats_reply,
+    group_stats_request,
+    group_stats_reply,
     group_mod,
     group_mod_failed_error_msg,
     hello,
