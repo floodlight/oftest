@@ -186,7 +186,7 @@ f = flow_stats_reply()
 ent = flow_stats_entry()
 
 
-act = action_strip_vlan()
+act = action_pop_vlan()
 alist = action_list()
 alist.add(act)
 
@@ -194,7 +194,9 @@ act = action_set_tp_dst()
 act.tp_port = 17
 
 m = ofp_match()
-m.wildcards = OFPFW_IN_PORT + OFPFW_DL_VLAN + OFPFW_DL_SRC
+m.wildcards = OFPFW_IN_PORT + OFPFW_DL_VLAN
+for idx in range(len(m.dl_src_mask)):
+    m.dl_src_mask[idx] = 0xff
 
 #
 # Need: Easy reference from action to data members
@@ -213,3 +215,6 @@ m.tp_dst = 2
 
 m.show()
 
+#
+# Need to write tests for instruction list manipulation
+#

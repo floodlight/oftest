@@ -6,8 +6,23 @@ from error import *
 from class_maps import *
 
 ofmsg_class_map_to_parents = {
-    action_enqueue                     : [ofp_action_enqueue],
-    action_output                      : [ofp_action_output],
+    action_copy_ttl_in                 : [ofp_action_header],
+    action_copy_ttl_out                : [ofp_action_header],
+    action_dec_mpls_ttl                : [ofp_action_header],
+    action_dec_nw_ttl                  : [ofp_action_header],
+    action_experimenter                : [ofp_action_experimenter_header],
+    action_group                       : [ofp_action_group],
+    action_pop_mpls                    : [ofp_action_header],
+    action_pop_vlan                    : [ofp_action_header],
+    action_push_mpls                   : [ofp_action_header],
+    action_push_vlan                   : [ofp_action_header],
+    action_set_mpls_label              : [ofp_action_mpls_label],
+    action_set_mpls_tc                 : [ofp_action_mpls_tc],
+    action_set_mpls_ttl                : [ofp_action_mpls_ttl],
+    action_set_nw_ecn                  : [ofp_action_nw_ecn],
+    action_set_nw_ttl                  : [ofp_action_nw_ttl],
+    action_set_output_port             : [ofp_action_set_output_port],
+    action_set_queue                   : [ofp_action_set_queue],
     action_set_dl_dst                  : [ofp_action_dl_addr],
     action_set_dl_src                  : [ofp_action_dl_addr],
     action_set_nw_dst                  : [ofp_action_nw_addr],
@@ -17,8 +32,6 @@ ofmsg_class_map_to_parents = {
     action_set_tp_src                  : [ofp_action_tp_port],
     action_set_vlan_pcp                : [ofp_action_vlan_pcp],
     action_set_vlan_vid                : [ofp_action_vlan_vid],
-    action_strip_vlan                  : [ofp_action_header],
-    action_vendor                      : [ofp_action_vendor_header],
     aggregate_stats_entry              : [],
     aggregate_stats_reply              : [ofp_stats_reply],
     aggregate_stats_request            : [ofp_stats_request,
@@ -69,24 +82,38 @@ ofmsg_class_map_to_parents = {
     table_stats_entry                  : [],
     table_stats_reply                  : [ofp_stats_reply],
     table_stats_request                : [ofp_stats_request,
-                                          ofp_table_stats_request],
-    vendor                             : [ofp_vendor_header]
+                                          ofp_table_stats_request]
 }
 
+# @todo Add buckets to group and group_desc stats obejcts"
+
 ofmsg_names = {
-    action_enqueue                     : 'action_enqueue',
-    action_output                      : 'action_output',
+    action_copy_ttl_in                 : 'action_copy_ttl_in',
+    action_copy_ttl_out                : 'action_copy_ttl_out',
+    action_dec_mpls_ttl                : 'action_dec_mpls_ttl',
+    action_dec_nw_ttl                  : 'action_dec_nw_ttl',
+    action_experimenter                : 'action_experimenter',
+    action_group                       : 'action_group',
+    action_pop_mpls                    : 'action_pop_mpls',
+    action_pop_vlan                    : 'action_pop_vlan',
+    action_push_mpls                   : 'action_push_mpls',
+    action_push_vlan                   : 'action_push_vlan',
     action_set_dl_dst                  : 'action_set_dl_dst',
     action_set_dl_src                  : 'action_set_dl_src',
+    action_set_mpls_label              : 'action_set_mpls_label',
+    action_set_mpls_tc                 : 'action_set_mpls_tc',
+    action_set_mpls_ttl                : 'action_set_mpls_ttl',
     action_set_nw_dst                  : 'action_set_nw_dst',
+    action_set_nw_ecn                  : 'action_set_nw_ecn',
     action_set_nw_src                  : 'action_set_nw_src',
     action_set_nw_tos                  : 'action_set_nw_tos',
+    action_set_nw_ttl                  : 'action_set_nw_ttl',
+    action_set_output_port             : 'action_set_output_port',
+    action_set_queue                   : 'action_set_queue',
     action_set_tp_dst                  : 'action_set_tp_dst',
     action_set_tp_src                  : 'action_set_tp_src',
     action_set_vlan_pcp                : 'action_set_vlan_pcp',
     action_set_vlan_vid                : 'action_set_vlan_vid',
-    action_strip_vlan                  : 'action_strip_vlan',
-    action_vendor                      : 'action_vendor',
     aggregate_stats_entry              : 'aggregate_stats_entry',
     aggregate_stats_reply              : 'aggregate_stats_reply',
     aggregate_stats_request            : 'aggregate_stats_request',
@@ -112,8 +139,6 @@ ofmsg_names = {
     get_config_request                 : 'get_config_request',
     hello                              : 'hello',
     hello_failed_error_msg             : 'hello_failed_error_msg',
-    ofp_desc_stats_request             : 'ofp_desc_stats_request',
-    ofp_table_stats_request            : 'ofp_table_stats_request',
     packet_in                          : 'packet_in',
     packet_out                         : 'packet_out',
     port_mod                           : 'port_mod',
@@ -133,8 +158,7 @@ ofmsg_names = {
     stats_request                      : 'stats_request',
     table_stats_entry                  : 'table_stats_entry',
     table_stats_reply                  : 'table_stats_reply',
-    table_stats_request                : 'table_stats_request',
-    vendor                             : 'vendor'
+    table_stats_request                : 'table_stats_request'
 }
 
 stats_entry_types = [
@@ -157,6 +181,8 @@ of_messages = [
     desc_stats_request,
     echo_reply,
     echo_request,
+    error,
+    experimenter,
     features_reply,
     features_request,
     flow_mod,
@@ -166,6 +192,12 @@ of_messages = [
     flow_stats_request,
     get_config_reply,
     get_config_request,
+    group_desc_stats_request,
+    group_desc_stats_reply,
+    group_stats_request,
+    group_stats_reply,
+    group_mod,
+    group_mod_failed_error_msg,
     hello,
     hello_failed_error_msg,
     packet_in,
@@ -181,9 +213,11 @@ of_messages = [
     queue_stats_reply,
     queue_stats_request,
     set_config,
+    switch_config_failed_error_msg,
+    table_mod,
+    table_mod_failed_error_msg,
     table_stats_reply,
-    table_stats_request,
-    vendor
+    table_stats_request
 ]
 
 # header_fields = ['version', 'xid']
