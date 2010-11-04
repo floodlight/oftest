@@ -39,7 +39,7 @@ Base components are the base data classes which are fixed
 length structures including:
     ofp_header
     Each ofp_action structure
-    ofp_phy_port
+    ofp_port
     The array elements of all the stats reply messages
 The base components are to be imported from a file of_header.py.
 
@@ -88,7 +88,9 @@ message_top_matter = """
 # Python OpenFlow message wrapper classes
 
 from cstruct import *
-from action_list import action_list, instruction_list
+from action_list import action_list
+from instruction_list import instruction_list
+from bucket_list import bucket_list
 from error import *
 
 # Define templates for documentation
@@ -357,7 +359,7 @@ def gen_message_wrapper(msg):
         if msg == "features_reply":  # Special case port parsing
             # For now, cheat and assume the rest of the message is port list
             _p2("while len(binary_string) >= OFP_PORT_BYTES:")
-            _p3("new_port = ofp_phy_port()")
+            _p3("new_port = ofp_port()")
             _p3("binary_string = new_port.unpack(binary_string)")
             _p3("self.ports.append(new_port)")
         elif list_type == None:

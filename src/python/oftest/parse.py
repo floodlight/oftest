@@ -285,10 +285,9 @@ def packet_to_flow_match(packet, pkt_format="L2"):
     match = ofp_match()
     match.wildcards = OFPFW_ALL
     #@todo Check if packet is other than L2 format
+    #@todo NEEDS UPDATE FOR 1.1
     match.dl_dst = parse_mac(ether.dst)
-    match.wildcards &= ~OFPFW_DL_DST
     match.dl_src = parse_mac(ether.src)
-    match.wildcards &= ~OFPFW_DL_SRC
     match.dl_type = ether.type
     match.wildcards &= ~OFPFW_DL_TYPE
 
@@ -304,9 +303,7 @@ def packet_to_flow_match(packet, pkt_format="L2"):
 
     if ip:
         match.nw_src = parse_ip(ip.src)
-        match.wildcards &= ~OFPFW_NW_SRC_MASK
         match.nw_dst = parse_ip(ip.dst)
-        match.wildcards &= ~OFPFW_NW_DST_MASK
         match.nw_tos = ip.tos
         match.wildcards &= ~OFPFW_NW_TOS
 

@@ -2,6 +2,7 @@ import sys
 sys.path.append('../../../src/python/oftest/protocol')
 from message import *
 from action import *
+from instruction import *
 from error import *
 from class_maps import *
 

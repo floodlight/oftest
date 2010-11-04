@@ -48,7 +48,7 @@ def delete_all_flows(ctrl, logger):
     logger.info("Deleting all flows")
     msg = message.flow_mod()
     msg.match.wildcards = ofp.OFPFW_ALL
-    msg.out_port = ofp.OFPP_NONE
+    msg.out_port = ofp.OFPP_ANY  # @todo CHECKME 
     msg.command = ofp.OFPFC_DELETE
     msg.buffer_id = 0xffffffff
     return ctrl.message_send(msg)
