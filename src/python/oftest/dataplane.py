@@ -72,6 +72,7 @@ class DataPlanePort(Thread):
         self.logger.info("Openned port monitor socket")
         self.parent = parent
         self.pkt_sync = self.parent.pkt_sync
+        self.pkt_handler = None
 
     def interface_open(self, interface_name):
         """
@@ -207,16 +208,14 @@ class DataPlanePort(Thread):
         return self.socket.send(packet)
 
 
-    def register(self, handler):
+    def register(self, pkt_handler):
         """
         Register a callback function to receive packets from this
         port.  The callback will be passed the packet, the
         interface name and the port number (if set) on which the
         packet was received.
-
-        To be implemented
         """
-        pass
+        self.pkt_handler = pkt_handler
 
     def show(self, prefix=''):
         print prefix + "Name:          " + self.interface_name
@@ -242,6 +241,7 @@ class DataPlane:
         self.got_pkt_port = None # On what port received?
         self.packets_pending = 0 # Total pkts in all port queues
         self.logger = logging.getLogger("dataplane")
+        self.pkt_handler = None
 
     def port_add(self, interface_name, port_number):
         """
@@ -254,13 +254,24 @@ class DataPlane:
         self.port_list[port_number] = DataPlanePort(interface_name,
                                                     port_number, self)
         self.port_list[port_number].start()
+        if self.pkt_handler is not None:
+            self.port_list[port_number].register(pkt_handler)
 
+    def register(self, pkt_handler):
+        """
+        Register pkt_handler for all ports
+        """
+        self.pkt_handler = pkt_handler
+        for port_number in self.port_list.keys():
+            self.port_list[port_number].register(pkt_handler)
+        
     def send(self, port_number, packet):
         """
         Send a packet to the given port
         @param port_number The port to send the data to
         @param packet Raw packet data to send to port
         """
+        #@todo Verify port_number is in keys of port_list
         self.logger.debug("Sending %d bytes to port %d" %
                           (len(packet), port_number))
         bytes = self.port_list[port_number].send(packet)
