@@ -1,4 +1,4 @@
-class Packet:
+class Packet(object):
     """
     Packet abstraction for packet object while in the switch
     """

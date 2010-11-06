@@ -29,7 +29,7 @@ class ControllerInterface(Thread):
     """
 
     def __init__(self, host='127.0.0.1', port=6633):
-        Thread.__init__(self)
+        super(ControllerInterface, self).__init__()
 
         self.ctrl_socket = None
         self.rcv_size = RCV_SIZE_DEFAULT

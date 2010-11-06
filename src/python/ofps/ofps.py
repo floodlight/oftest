@@ -22,7 +22,7 @@ from threading import Lock
 from ofps_act import *
 from ofps_pkt import Packet
 
-class OFSwitchConfig:
+class OFSwitchConfig(object):
     """
     Class to document normal configuration parameters
     """
@@ -59,7 +59,7 @@ def execute_actions(packet, actions, groups, dataplane, ctrl_if,
 
     if packet.output_port is not None:
         dataplane.send(packet.output_port, packet.data)
-        pass
+
         
 class OFSwitch(Thread):
     """
@@ -79,7 +79,7 @@ class OFSwitch(Thread):
         """
         Constructor for base class
         """
-        Thread.__init__(self)
+        super(OFSwitch, self).__init__()
         self.flow_table = FlowTable()
         self.ctrl_if = ctrl_if.ControllerInterface()
         self.dataplane = dataplane.DataPlane()
@@ -116,7 +116,7 @@ class OFSwitch(Thread):
         # Kick off the controller interface
         # Register to receive packets 
 
-class FlowEntry:
+class FlowEntry(object):
     """
     Structure to track a flow table entry
     """
@@ -247,7 +247,7 @@ def prio_sort(x, y):
                 
 class FlowTable(Thread):
     def __init__(self, table_id=0):
-        Thread.__init__(self)
+        super(FlowTable, self).__init__()
         self.flow_entries = []
         self.table_id = table_id
         self.flow_sync = Condition()
@@ -306,6 +306,7 @@ class FlowPipeline(Thread):
         """
         Constructor for base class
         """
+        super(FlowPipeline, self).__init__()
         self.controller = None
         self.tables = []
         self.n_tables = n_tables
@@ -385,7 +386,7 @@ class FlowPipeline(Thread):
 
         # Execute action set
         
-class GroupTable:
+class GroupTable(object):
     """
     Class to implement a group table object
     """
