@@ -45,20 +45,13 @@ test_prio = {}
 
 WILDCARD_VALUES = [ofp.OFPFW_IN_PORT,
                    ofp.OFPFW_DL_VLAN,
-                   ofp.OFPFW_DL_SRC,
-                   ofp.OFPFW_DL_DST,
                    ofp.OFPFW_DL_TYPE,
                    ofp.OFPFW_NW_PROTO,
-                   ofp.OFPFW_TP_SRC,
-                   ofp.OFPFW_TP_DST,
-                   0x3F << ofp.OFPFW_NW_SRC_SHIFT,
-                   0x3F << ofp.OFPFW_NW_DST_SHIFT,
                    ofp.OFPFW_DL_VLAN_PCP,
                    ofp.OFPFW_NW_TOS]
 
 MODIFY_ACTION_VALUES =  [ofp.OFPAT_SET_VLAN_VID,
                          ofp.OFPAT_SET_VLAN_PCP,
-                         ofp.OFPAT_STRIP_VLAN,
                          ofp.OFPAT_SET_DL_SRC,
                          ofp.OFPAT_SET_DL_DST,
                          ofp.OFPAT_SET_NW_SRC,
