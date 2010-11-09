@@ -497,7 +497,7 @@ OFP_ASSERT(sizeof(struct ofp_action_mpls_ttl) == 8);
 struct ofp_action_push {
     uint16_t type;                  /* OFPAT_PUSH_VLAN/MPLS. */
     uint16_t len;                   /* Length is 8. */
-    uint8_t ethertype;              /* Ethertype */
+    uint16_t ethertype;              /* Ethertype */
     uint8_t pad[2];
 };
 OFP_ASSERT(sizeof(struct ofp_action_push) == 8);
@@ -506,7 +506,7 @@ OFP_ASSERT(sizeof(struct ofp_action_push) == 8);
 struct ofp_action_pop_mpls {
     uint16_t type;                  /* OFPAT_POP_MPLS. */
     uint16_t len;                   /* Length is 8. */
-    uint8_t ethertype;              /* Ethertype */
+    uint16_t ethertype;              /* Ethertype */
     uint8_t pad[2];
 };
 OFP_ASSERT(sizeof(struct ofp_action_pop_mpls) == 8);
@@ -785,11 +785,11 @@ struct ofp_flow_mod {
                                      output group.  A value of OFPG_ANY
                                      indicates no restriction. */
     uint16_t flags;               /* One of OFPFF_*. */
-    uint8_t pad[6];
+    uint8_t pad[2];
     struct ofp_match match;       /* Fields to match */
     struct ofp_instruction instructions[0]; /* Instruction set */
 };
-OFP_ASSERT(sizeof(struct ofp_flow_mod) == 144);
+OFP_ASSERT(sizeof(struct ofp_flow_mod) == 136);
 
 /* Group numbering. Groups can use any number up to OFPG_MAX. */
 enum ofp_group {
