@@ -1178,7 +1178,7 @@ OFP_ASSERT(sizeof(struct ofp_aggregate_stats_reply) == 24);
 struct ofp_table_stats {
     uint8_t table_id;        /* Identifier of table.  Lower numbered tables
                                 are consulted first. */
-    uint8_t pad[3];          /* Align to 32-bits. */
+    uint8_t pad[7];          /* Align to 32-bits. */
     char name[OFP_MAX_TABLE_NAME_LEN];
     uint32_t wildcards;      /* Bitmap of OFPFW_* wildcards that are
                                 supported by the table. */
