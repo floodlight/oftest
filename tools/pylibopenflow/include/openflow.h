@@ -401,9 +401,9 @@ struct ofp_action_set_output_port {
     uint16_t len;                   /* Length is 16. */
     uint32_t port;                  /* Output port. */
     uint16_t max_len;               /* Max length to send to controller. */
-    uint8_t pad[2];                 /* Pad to 32 bits. */
+    uint8_t pad[6];                 /* Pad to 64 bits. */
 };
-OFP_ASSERT(sizeof(struct ofp_action_set_output_port) == 12);
+OFP_ASSERT(sizeof(struct ofp_action_set_output_port) == 16);
 
 /* Action structure for OFPAT_SET_VLAN_VID. */
 struct ofp_action_vlan_vid {
@@ -714,8 +714,9 @@ enum ofp_instruction_type {
 struct ofp_instruction {
     uint16_t type;                /* Instruction type */
     uint16_t len;                 /* Length of this struct in bytes. */
+    uint8_t pad[4];               /* Align to 64-bits */
 };
-OFP_ASSERT(sizeof(struct ofp_instruction) == 4);
+OFP_ASSERT(sizeof(struct ofp_instruction) == 8);
 
 /* Instruction structure for OFPIT_GOTO_TABLE */
 struct ofp_instruction_goto_table {
@@ -740,18 +741,24 @@ OFP_ASSERT(sizeof(struct ofp_instruction_write_metadata) == 24);
 struct ofp_instruction_actions {
     uint16_t type;              /* One of OFPIT_*_ACTIONS */
     uint16_t len;               /* Length of this struct in bytes. */
+    uint8_t pad[4];               /* Align to 64-bits */
     struct ofp_action_header actions[0];  /* Actions associated with
                                              OFPIT_WRITE_ACTIONS and
                                              OFPIT_APPLY_ACTIONS */
 };
-OFP_ASSERT(sizeof(struct ofp_instruction_actions) == 4);
+OFP_ASSERT(sizeof(struct ofp_instruction_actions) == 8);
 
 /* Instruction structure for experimental instructions */
 struct ofp_instruction_experimenter {
     uint16_t type;		/* OFPIT_EXPERIMENTER */
     uint16_t len;               /* Length of this struct in bytes */
+    uint32_t experimenter;      /* Experimenter ID:
+                                 * - MSB 0: low-order bytes are IEEE OUI.
+                                 * - MSB != 0: defined by OpenFlow
+                                 *   consortium. */
+    /* Experimenter-defined arbitrary additional data. */
 };
-OFP_ASSERT(sizeof(struct ofp_instruction_experimenter) == 4);
+OFP_ASSERT(sizeof(struct ofp_instruction_experimenter) == 8);
 
 enum ofp_flow_mod_flags {
     OFPFF_SEND_FLOW_REM = 1 << 0,  /* Send flow removed message when flow
