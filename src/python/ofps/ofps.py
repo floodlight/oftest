@@ -14,7 +14,7 @@ import oftest.cstruct as ofp
 import oftest.dataplane as dataplane
 import oftest.message as message
 import oftest.action as action
-from ctrl_if import *
+from ctrl_if import ControllerInterface
 import copy
 from threading import Condition
 from threading import Thread
@@ -22,18 +22,18 @@ from threading import Lock
 from ofps_act import *
 from ofps_pkt import Packet
 
-class OFSwitchConfig:
+class OFSwitchConfig(object):
     """
     Class to document normal configuration parameters
     """
     def __init__(self):
-        self.controller_ip = None
-        self.controller_port = None
+        self.controller_ip = "127.0.0.1"
+        self.controller_port = 6633
         self.passive_listen_port = None
         self.port_map = {}
         self.env = {}  # Extensible array
 
-def execute_actions(packet, actions, groups, dataplane, ctrl_if, 
+def execute_actions(packet, actions, groups, dataplane, controller, 
                     output_now=False):
     """
     Execute the list of actions on the packet
@@ -41,7 +41,7 @@ def execute_actions(packet, actions, groups, dataplane, ctrl_if,
     @param actions The list of actions to be applied to the packet
     @param groups The GroupTable object for the switch
     @param dataplane The DataPlane object for the switch
-    @param ctrl_if The controller interface for the switch
+    @param controller The controller interface for the switch
     @param output_immediate If an set-output-port action is seen,
     execute it immediately and do not update the output-port metadata
 
@@ -50,7 +50,7 @@ def execute_actions(packet, actions, groups, dataplane, ctrl_if,
     """
     for action in actions:
         exec_str = "do_" + action.__name__ + \
-            "(packet, action, groups, dataplane, ctrl_if, output_now)"
+            "(packet, action, groups, dataplane, controller, output_now)"
         try:
             exec(exec_str)
         except:  #@todo: Add constraint
@@ -80,11 +80,9 @@ class OFSwitch(Thread):
         Constructor for base class
         """
         Thread.__init__(self)
-        self.flow_table = FlowTable()
-        self.ctrl_if = ctrl_if.ControllerInterface()
-        self.dataplane = dataplane.DataPlane()
         self.config = OFSwitchConfig()
-        
+        self.pkt_sem = Condition()
+        self.sync = Lock()
 
     def config_set(self, config):
         """
@@ -102,19 +100,29 @@ class OFSwitch(Thread):
         Packet handler registered with datapath
         Enqueue packets for main thread to process
         """
-        pass
+        print("Pkt of len " + str(len(data)) + " from port " + 
+              str(port_number))
 
     def run(self):
         """
         Main execute function for running the switch
         """
+        self.controller = ControllerInterface(host=self.config.controller_ip,
+                                              port=self.config.controller_port)
+        self.dataplane = dataplane.DataPlane()
         self.pipeline = FlowPipeline(n_tables=config.n_tables)
+        self.pipeline.controller_set(self.controller)
+        self.controller.run()
         for of_port, ifname in config.port_map.items():
             self.dataplane.port_add(ifname, of_port)
         self.dataplane.register(self.dp_pkt_handler)
-        # Kick off the dataplane and add ports to it
-        # Kick off the controller interface
-        # Register to receive packets 
+        self.pipeline.run()
+        while True:
+            self.pkt_sem.acquire()
+            self.pkt_sem.wait()
+            self.pkt_sem.release()
+            # Grab the packet queue
+            
 
 class FlowEntry:
     """
@@ -237,7 +245,8 @@ class FlowEntry:
 
 def prio_sort(x, y):
     """
-    Sort flow entries by priority
+    Sort flow entries x and y by priority
+    return -1 if x.prio < y.prio, etc.
     """
     if x.flow_mod.priority > y.flow_mod.priority:
         return 1
@@ -245,9 +254,8 @@ def prio_sort(x, y):
         return -1
     return 0
                 
-class FlowTable(Thread):
+class FlowTable(object):
     def __init__(self, table_id=0):
-        Thread.__init__(self)
         self.flow_entries = []
         self.table_id = table_id
         self.flow_sync = Condition()
@@ -320,7 +328,7 @@ class FlowPipeline(Thread):
         while 1:
             time.sleep(1)
             for idx in range(self.n_tables):
-                expired_flows = self.tables[idx].expire
+                expired_flows = self.tables[idx].expire()
                 for flow in expired_flows:
                     # @todo  Send flow expiration report
                     print "Need to expire " + str(flow)

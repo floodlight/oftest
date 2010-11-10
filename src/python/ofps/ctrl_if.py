@@ -22,7 +22,6 @@ import logging
 ##@todo Find a better home for these identifiers (controller)
 RCV_SIZE_DEFAULT = 32768
 
-
 class ControllerInterface(Thread):
     """
     Class abstracting the interface to the controller.
@@ -130,7 +129,7 @@ class ControllerInterface(Thread):
     def _socket_ready(self):
         try:
             pkt = self.ctrl_socket.recv(self.rcv_size)
-        except:
+        except: # @todo bare except
             self.logger.warning("Error on switch read")
             return
 
@@ -138,6 +137,7 @@ class ControllerInterface(Thread):
             self.logger.info("zero-len pkt in")
             return
 
+        # @todo Handle case of incomplete packet
         self._pkt_handle(pkt)
 
     def run(self):
@@ -189,10 +189,10 @@ class ControllerInterface(Thread):
         """
 
         if not self.switch_socket:
-            # Sending a string indicates the message is ready to go
             self.logger.info("message_send: no socket")
             return -1
-        #@todo If not string, try to pack
+        # Sending a string indicates the message is ready to go
+        # Otherwise, try to pack the message into a string
         if type(msg) != type(""):
             try:
                 if msg.header.xid == 0:
