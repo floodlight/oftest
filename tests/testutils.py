@@ -14,6 +14,7 @@ import oftest.controller as controller
 import oftest.cstruct as ofp
 import oftest.message as message
 import oftest.dataplane as dataplane
+import oftest.instruction as instruction
 import oftest.action as action
 import oftest.parse as parse
 import logging
@@ -371,16 +372,21 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
                                str(byte_count))
 
 def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=0,
+               match=None,
                egr_port=None, egr_queue=None, check_expire=False):
     """
     Create a flow message
 
+    One write_actions instruction with output ports is supported
     Match on packet with given wildcards.  
     See flow_match_test for other parameter descriptoins
     @param egr_queue if not None, make the output an enqueue action
     """
-    match = parse.packet_to_flow_match(pkt)
-    parent.assertTrue(match is not None, "Flow match from pkt failed")
+
+    if match is None:
+        match = parse.packet_to_flow_match(pkt)
+        parent.assertTrue(match is not None, "Flow match from pkt failed")
+
     match.wildcards = wildcards
     match.in_port = ing_port
 
@@ -391,26 +397,35 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=0,
         request.flags |= ofp.OFPFF_SEND_FLOW_REM
         request.hard_timeout = 1
 
+    inst_item = instruction.instruction_write_actions()
+    inst_item.type = ofp.OFPIT_WRITE_ACTIONS
     if action_list is not None:
         for act in action_list:
             parent.logger.debug("Adding action " + act.show())
-            rv = request.actions.add(act)
+            rv = inst_item.actions.add(act)
             parent.assertTrue(rv, "Could not add action" + act.show())
 
     # Set up output/enqueue action if directed
     if egr_queue is not None:
         parent.assertTrue(egr_port is not None, "Egress port not set")
-        act = action.action_enqueue()
+        act = action.action_set_queue()
         act.port = egr_port
         act.queue_id = egr_queue
-        rv = request.actions.add(act)
+        rv = inst_item.actions.add(act)
         parent.assertTrue(rv, "Could not add enqueue action " + 
                           str(egr_port) + " Q: " + str(egr_queue))
     elif egr_port is not None:
-        act = action.action_output()
+        act = action.action_set_output_port()
         act.port = egr_port
-        rv = request.actions.add(act)
+        rv = inst_item.actions.add(act)
         parent.assertTrue(rv, "Could not add output action " + str(egr_port))
+
+    inst_list = [inst_item]
+    if inst_list is not None:
+        for inst in inst_list:
+            parent.logger.debug("Adding instruction " + inst.show())
+            rv = request.instructions.add(inst)
+            parent.assertTrue(rv, "Could not add instruction" + inst.show())
 
     parent.logger.debug(request.show())
 
@@ -436,6 +451,7 @@ def flow_msg_install(parent, request, clear_table=True):
     do_barrier(parent.controller)
 
 def flow_match_test_port_pair(parent, ing_port, egr_port, wildcards=0, 
+                              mask=None,
                               dl_vlan=-1, pkt=None, exp_pkt=None,
                               action_list=None, check_expire=False):
     """
@@ -451,8 +467,24 @@ def flow_match_test_port_pair(parent, ing_port, egr_port, wildcards=0,
     if pkt is None:
         pkt = simple_tcp_packet(dl_vlan_enable=(dl_vlan >= 0), dl_vlan=dl_vlan)
 
+    match = parse.packet_to_flow_match(pkt)
+    parent.assertTrue(match is not None, "Flow match from pkt failed")
+
+    if mask is not None:
+        match.dl_src_mask = mask['dl_src']
+        match.dl_dst_mask = mask['dl_dst']
+        match.nw_src_mask = mask['nw_src']
+        match.nw_dst_mask = mask['nw_dst']
+        #Set unmatching values on corresponding match fields
+        for i in range(ofp.OFP_ETH_ALEN):
+            match.dl_src[i] = match.dl_src[i] ^ match.dl_src_mask[i]
+            match.dl_dst[i] = match.dl_dst[i] ^ match.dl_dst_mask[i]
+        match.nw_src = match.nw_src ^ match.nw_src_mask
+        match.nw_dst = match.nw_dst ^ match.nw_dst_mask
+
     request = flow_msg_create(parent, pkt, ing_port=ing_port, 
                               wildcards=wildcards, egr_port=egr_port,
+                              match=match,
                               action_list=action_list)
 
     flow_msg_install(parent, request)
@@ -468,8 +500,9 @@ def flow_match_test_port_pair(parent, ing_port, egr_port, wildcards=0,
         #@todo Not all HW supports both pkt and byte counters
         flow_removed_verify(parent, request, pkt_count=1, byte_count=len(pkt))
 
-def flow_match_test(parent, port_map, wildcards=0, dl_vlan=-1, pkt=None, 
-                    exp_pkt=None, action_list=None, check_expire=False, 
+def flow_match_test(parent, port_map, wildcards=0,
+                    mask=None, dl_vlan=-1, pkt=None,
+                    exp_pkt=None, action_list=None, check_expire=False,
                     max_test=0):
     """
     Run flow_match_test_port_pair on all port pairs
@@ -479,7 +512,9 @@ def flow_match_test(parent, port_map, wildcards=0, dl_vlan=-1, pkt=None,
     and logger
     @param pkt If not None, use this packet for ingress
     @param wildcards For flow match entry
-    @param dl_vlan If not -1, and pkt is not None, create a pkt w/ VLAN tag
+    @param mask DL/NW address bit masks as a dictionary. If set, it is tested
+    against the corresponding match fields with the opposite values
+    @param dl_vlan If not -1, and pkt is None, create a pkt w/ VLAN tag
     @param exp_pkt If not None, use this as the expected output pkt; els use pkt
     @param action_list Additional actions to add to flow mod
     @param check_expire Check for flow expiration message
@@ -496,7 +531,8 @@ def flow_match_test(parent, port_map, wildcards=0, dl_vlan=-1, pkt=None,
                 continue
             egress_port = of_ports[egr_idx]
             flow_match_test_port_pair(parent, ingress_port, egress_port, 
-                                      wildcards=wildcards, dl_vlan=dl_vlan, 
+                                      wildcards=wildcards, mask=mask,
+                                      dl_vlan=dl_vlan,
                                       pkt=pkt, exp_pkt=exp_pkt,
                                       action_list=action_list,
                                       check_expire=check_expire)
@@ -689,3 +725,249 @@ def skip_message_emit(parent, s):
         sys.stderr.write("(skipped) ")
     else:
         sys.stderr.write("(S)")
+
+
+def simple_tcp_packet_w_multi_vlan(pktlen=100,
+                      dl_dst='00:01:02:03:04:05',
+                      dl_src='00:06:07:08:09:0a',
+                      dl_vlan_enable=False,
+                      dl_vlan=0,
+                      dl_vlan_pcp=0,
+                      dl_vlan_cfi=0,
+                      dl_vlan_2nd=-1,
+                      dl_vlan_pcp_2nd=0,
+                      dl_vlan_cfi_2nd=0,
+                      ip_src='192.168.0.1',
+                      ip_dst='192.168.0.2',
+                      ip_tos=0,
+                      tcp_sport=1234,
+                      tcp_dport=80
+                      ):
+    """
+    Return a simple dataplane TCP packet with up to 2 vlan tags if specified
+
+    Supports a few parameters:
+    @param pktlen Length of packet in bytes w/o CRC
+    @param dl_dst Destinatino MAC
+    @param dl_src Source MAC
+    @param dl_vlan_enable True if the packet is with vlan, False otherwise
+    @param dl_vlan VLAN ID
+    @param dl_vlan_pcp VLAN priority
+    @param dl_vlan_2nd Inner (2nd) VLAN ID
+    @param dl_vlan_pcp_2nd Inner (2nd) VLAN priority
+    @param ip_src IP source
+    @param ip_dst IP destination
+    @param ip_tos IP ToS
+    @param tcp_dport TCP destination port
+    @param tcp_sport TCP source port
+
+    Generates a simple TCP request.  Users
+    shouldn't assume anything about this packet other than that
+    it is a valid ethernet/IP/TCP frame.
+    """
+    # Note Dot1Q.id is really CFI
+    if (dl_vlan_enable):
+        if (dl_vlan_2nd >=0):
+            pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+                scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi,
+                            vlan=dl_vlan, type=0x8100)/ \
+                scapy.Dot1Q(prio=dl_vlan_pcp_2nd, id=dl_vlan_cfi_2nd,
+                            vlan=dl_vlan_2nd)/ \
+                scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+        else:
+            pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+                scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi, vlan=dl_vlan)/ \
+                scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+    else:
+        pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+            scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+
+    pkt = pkt/("D" * (pktlen - len(pkt)))
+
+    return pkt
+
+def error_verify(parent, exp_type, exp_code):
+    """
+    Receive an error msg and verify if it is as expected
+
+    @param parent Must implement controller, assertEqual
+    @param exp_type Expected error type
+    @param exp_code Expected error code
+    """
+    (response, raw) = parent.controller.poll(ofp.OFPT_ERROR, 2)
+    parent.assertTrue(response is not None, 'No error message received')
+
+    if (exp_type is None) or (exp_code is None):
+        parent.logger.debug("Parametrs are not sufficient")
+        return
+
+    parent.assertEqual(exp_type, response.type,
+                       'Error message type mismatch: ' +
+                       str(exp_type) + " != " +
+                       str(response.type))
+    parent.assertEqual(exp_code, response.code,
+                       'Error message code mismatch: ' +
+                       str(exp_code) + " != " +
+                       str(response.code))
+
+def flow_match_test_port_pair_vlan(parent, ing_port, egr_port, wildcards=0,
+                                   dl_vlan=-1, dl_vlan_pcp=0,
+                                   dl_vlan_2nd=-1, dl_vlan_pcp_2nd=0,
+                                   vid_match=ofp.OFP_VLAN_NONE, pcp_match=0,
+                                   exp_vid=-1, exp_pcp=0,
+                                   match_exp=True,
+                                   exp_msg=ofp.OFPT_FLOW_REMOVED,
+                                   exp_msg_type=0, exp_msg_code=0,
+                                   pkt=None, exp_pkt=None,
+                                   action_list=None, check_expire=False):
+    """
+    Flow match test for various vlan matching patterns on single TCP packet
+
+    Run test with packet through switch from ing_port to egr_port
+    See flow_match_test for parameter descriptions
+    """
+
+    parent.logger.info("Pkt match test: " + str(ing_port) + " to " + str(egr_port))
+    parent.logger.debug("  WC: " + hex(wildcards) + " vlan: " + str(dl_vlan) +
+                    " expire: " + str(check_expire))
+    len = 100
+    len_w_vid = len + 4
+    len_w_2vid = len_w_vid + 4
+    if pkt is None:
+        if dl_vlan >= 0:
+            if dl_vlan_2nd >= 0:
+                pktlen=len_w_2vid
+            else:
+                pktlen=len_w_vid
+            dl_vlan_enable=1
+        else:
+            pktlen=len
+            dl_vlan_enable=0
+        pkt = simple_tcp_packet_w_multi_vlan(pktlen=pktlen,
+                                dl_vlan_enable=dl_vlan_enable,
+                                dl_vlan=dl_vlan,
+                                dl_vlan_pcp=dl_vlan_pcp,
+                                dl_vlan_2nd=dl_vlan_2nd,
+                                dl_vlan_pcp_2nd=dl_vlan_pcp_2nd)
+    if exp_pkt is None:
+        if exp_vid >= 0:
+            # Inner vlan tag value shouldn't be changed
+            if dl_vlan_2nd >= 0:
+                exp_pktlen=len_w_2vid
+            else:
+                exp_pktlen=len_w_vid
+            exp_dl_vlan_enable=1
+        else:
+            exp_pktlen=len
+            exp_dl_vlan_enable=0
+        exp_pkt = simple_tcp_packet_w_multi_vlan(pktlen=exp_pktlen,
+                                    dl_vlan_enable=exp_dl_vlan_enable,
+                                    dl_vlan=exp_vid, dl_vlan_pcp=exp_pcp,
+                                    dl_vlan_2nd=dl_vlan_2nd,
+                                    dl_vlan_pcp_2nd=dl_vlan_pcp_2nd)
+
+    match = parse.packet_to_flow_match(pkt)
+    parent.assertTrue(match is not None, "Flow match from pkt failed")
+
+    match.dl_vlan = vid_match
+    match.dl_vlan_pcp = pcp_match
+    match.wildcards = wildcards
+
+    request = flow_msg_create(parent, pkt, ing_port=ing_port,
+                              wildcards=wildcards,
+                              match=match,
+                              egr_port=egr_port,
+                              action_list=action_list)
+
+    flow_msg_install(parent, request)
+
+    parent.logger.debug("Send packet: " + str(ing_port) + " to " + str(egr_port))
+    parent.dataplane.send(ing_port, str(pkt))
+
+    if match_exp:
+        if exp_pkt is None:
+            exp_pkt = pkt
+        receive_pkt_verify(parent, egr_port, exp_pkt)
+        if check_expire:
+            #@todo Not all HW supports both pkt and byte counters
+            flow_removed_verify(parent, request, pkt_count=1, byte_count=len(pkt))
+    else:
+        if exp_msg is ofp.OFPT_FLOW_REMOVED:
+            if check_expire:
+                flow_removed_verify(parent, request, pkt_count=0, byte_count=0)
+        elif exp_msg is ofp.OFPT_ERROR:
+            error_verify(parent, exp_type, exp_code)
+        else:
+            parent.assertTrue(0, "Rcv: Unexpected Message: " + str(exp_msg))
+
+def flow_match_test_vlan(parent, port_map, wildcards=0,
+                         dl_vlan=-1, dl_vlan_pcp=0,
+                         dl_vlan_2nd=-1, dl_vlan_pcp_2nd=0,
+                         vid_match=ofp.OFP_VLAN_NONE, pcp_match=0,
+                         exp_vid=-1, exp_pcp=0,
+                         match_exp=True,
+                         exp_msg=ofp.OFPT_FLOW_REMOVED,
+                         exp_msg_type=0, exp_msg_code=0,
+                         pkt=None, exp_pkt=None,
+                         action_list=None,
+                         check_expire=False,
+                         max_test=0):
+    """
+    Run flow_match_test_port_pair on all port pairs
+
+    @param max_test If > 0 no more than this number of tests are executed.
+    @param parent Must implement controller, dataplane, assertTrue, assertEqual
+    and logger
+    @param wildcards For flow match entry
+    @param dl_vlan If not -1, and pkt is not None, create a pkt w/ VLAN tag
+    @param dl_vlan_pcp VLAN PCP associated with dl_vlan
+    @param dl_vlan_2nd If not -1, create pkt w/ Inner Vlan tag
+    @param dl_vlan_pcp_2nd VLAN PCP associated with dl_vlan_2nd
+    @param vid_match Matching value for VLAN VID field
+    @param pcp_match Matching value for VLAN PCP field
+    @param exp_vid Expected VLAN VID value. If -1, no VLAN expected
+    @param exp_pcp Expected VLAN PCP value
+    @param match_exp Set whether packet is expected to receive
+    @param exp_msg Expected message
+    @param exp_msg_type Expected message type associated with the message
+    @param exp_msg_code Expected message code associated with the msg_type
+    @param pkt If not None, use this packet for ingress
+    @param exp_pkt If not None, use this as the expected output pkt
+    @param action_list Additional actions to add to flow mod
+    @param check_expire Check for flow expiration message
+    """
+    of_ports = port_map.keys()
+    of_ports.sort()
+    parent.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+    test_count = 0
+
+    for ing_idx in range(len(of_ports)):
+        ingress_port = of_ports[ing_idx]
+        for egr_idx in range(len(of_ports)):
+            if egr_idx == ing_idx:
+                continue
+            egress_port = of_ports[egr_idx]
+            flow_match_test_port_pair_vlan(parent, ingress_port, egress_port,
+                                           wildcards=wildcards,
+                                           dl_vlan=dl_vlan,
+                                           dl_vlan_pcp=dl_vlan_pcp,
+                                           dl_vlan_2nd=dl_vlan_2nd,
+                                           dl_vlan_pcp_2nd=dl_vlan_pcp_2nd,
+                                           vid_match=vid_match,
+                                           pcp_match=pcp_match,
+                                           exp_vid=exp_vid,
+                                           exp_pcp=exp_pcp,
+                                           exp_msg=exp_msg,
+                                           exp_msg_type=exp_msg_type,
+                                           exp_msg_code=exp_msg_code,
+                                           match_exp=match_exp,
+                                           pkt=pkt, exp_pkt=exp_pkt,
+                                           action_list=action_list,
+                                           check_expire=check_expire)
+            test_count += 1
+            if (max_test > 0) and (test_count > max_test):
+                parent.logger.info("Ran " + str(test_count) + " tests; exiting")
+                return
