@@ -20,7 +20,11 @@ from threading import Condition
 from threading import Thread
 from threading import Lock
 from ofps_act import *
+from ctrl_msg import *
 from ofps_pkt import Packet
+
+#@todo
+DEFAULT_TABLE_COUNT=1
 
 class OFSwitchConfig(object):
     """
@@ -30,37 +34,14 @@ class OFSwitchConfig(object):
         self.controller_ip = "127.0.0.1"
         self.controller_port = 6633
         self.passive_listen_port = None
-        self.port_map = {}
+        self.port_map = {"veth0" : 1,
+                         "veth2" : 2,
+                         "veth4" : 3,
+                         "veth6" : 4}
+        self.n_tables = DEFAULT_TABLE_COUNT
         self.env = {}  # Extensible array
 
-def execute_actions(packet, actions, groups, dataplane, controller, 
-                    output_now=False):
-    """
-    Execute the list of actions on the packet
-    @param packet The ingress packet on which to execute the actions
-    @param actions The list of actions to be applied to the packet
-    @param groups The GroupTable object for the switch
-    @param dataplane The DataPlane object for the switch
-    @param controller The controller interface for the switch
-    @param output_immediate If an set-output-port action is seen,
-    execute it immediately and do not update the output-port metadata
 
-    Actions are executed in whatever order they are passed without
-    checking the integrity of this ordering.
-    """
-    for action in actions:
-        exec_str = "do_" + action.__name__ + \
-            "(packet, action, groups, dataplane, controller, output_now)"
-        try:
-            exec(exec_str)
-        except:  #@todo: Add constraint
-            #@todo Define logging module
-            print("Could not execute " + str(action))
-
-    if packet.output_port is not None:
-        dataplane.send(packet.output_port, packet.data)
-        pass
-        
 class OFSwitch(Thread):
     """
     Top level class for the ofps implementation
@@ -74,6 +55,7 @@ class OFSwitch(Thread):
        Processing the controller messages
     The main thread processes dataplane packets and control packets
     """
+
     # @todo Support fail open/closed
     def __init__(self):
         """
@@ -81,7 +63,7 @@ class OFSwitch(Thread):
         """
         Thread.__init__(self)
         self.config = OFSwitchConfig()
-        self.pkt_sem = Condition()
+        self.event_sem = Condition()
         self.sync = Lock()
 
     def config_set(self, config):
@@ -94,14 +76,22 @@ class OFSwitch(Thread):
             Number of tables to support
         """
         self.config = config
+        
+    def ctrl_pkt_handler(self, cookie, msg, rawmsg):
+        """
+        Handle a message from the controller
+        @todo Use a queue so messages can be processed in the main thread
+        """
+        
+        exec_str = "self.ctrl_msg_" + msg.__name__ + \
+            "(msg, rawmsg)"
+        try:
+            exec(exec_str)
+        except:  #@todo: Add constraint
+            #@todo Define logging module
+            print("Could not execute controller fn " + str(action))
 
-    def dp_pkt_handler(self, port_number, data):
-        """
-        Packet handler registered with datapath
-        Enqueue packets for main thread to process
-        """
-        print("Pkt of len " + str(len(data)) + " from port " + 
-              str(port_number))
+        return True
 
     def run(self):
         """
@@ -110,19 +100,24 @@ class OFSwitch(Thread):
         self.controller = ControllerInterface(host=self.config.controller_ip,
                                               port=self.config.controller_port)
         self.dataplane = dataplane.DataPlane()
-        self.pipeline = FlowPipeline(n_tables=config.n_tables)
+        self.pipeline = FlowPipeline(n_tables=self.config.n_tables)
         self.pipeline.controller_set(self.controller)
+        # Register to receive all controller packets
+        self.controller.register("all", ctrl_pkt_handler, calling_obj=self)
         self.controller.run()
-        for of_port, ifname in config.port_map.items():
+        for of_port, ifname in self.config.port_map.items():
             self.dataplane.port_add(ifname, of_port)
         self.dataplane.register(self.dp_pkt_handler)
         self.pipeline.run()
+
+        # Process packets when they arrive
         while True:
-            self.pkt_sem.acquire()
-            self.pkt_sem.wait()
-            self.pkt_sem.release()
-            # Grab the packet queue
-            
+            (in_port, data, recv_time) = self.dataplane.poll(timeout=60)
+            if data is None:
+                log("No packet for 60 seconds\n")
+                continue
+            packet = Packet(in_port=in_port, data=data)
+            self.pipeline.apply_pipeline(packet)
 
 class FlowEntry:
     """
@@ -158,19 +153,21 @@ class FlowEntry:
             return False
 
         return True
-        
-    def is_match(self, fields, bytes, match_only=False):
+
+    def is_match(self, pkt_fields, bytes):
         """
         Return boolean indicating if this flow entry matches "match"
         which is generated from a packet.  If so, update counters unless
         match_only is true (indicating we're searching for a flow entry)
         Otherwise return None.
-        @fields An ofp_match object typically generated from a packet
-        @bytes Number of bytes in the packet for statistics
+        @pkt_fields An ofp_match structure to search for
+        @bytes to use if update required; 0 if no udpate required
         @match_only If True, do not update state of flow, just return T/F.
         """
         # Initial lazy approach
         # Should probably generate list of identifiers from non-wildcards
+
+        pkt_fields = packet.match
 
         # @todo Support "type" field for ofp_match
         entry_fields = self.flow_mod.match
@@ -217,7 +214,7 @@ class FlowEntry:
                 return False
 
         # Okay, if we get here, we have a match.
-        if not match_only:
+        if bytes != 0:  # Update counters
             self.last_hit = time.time()
             self.packets += 1
             self.bytes += bytes
@@ -273,37 +270,40 @@ class FlowTable(object):
         self.flow_sync.release()
         return expired_flows
 
-    def flow_mod_add(self, flow_mod):
+    def flow_mod_add(self, operation, flow_mod):
+        """
+        Update the flow table according to the operation
+        """
+        found = False
         self.flow_sync.acquire()
         for flow in self.flow_entries:
             if flow.flow_match(flow_mod, match_only=True):
                 flow.update(flow_mod)
-                self.flow_sync.release()
-                return
-        new_flow = FlowEntry()
-        new_flow.flow_mod_set(flow_mod)
-        # @todo Is there a sorted list insert operation?
-        self.flow_entries.insert(new_flow)
-        self.flow_entries.sort(prio_sort)
+                found = True
+                break
+        if not found:
+            new_flow = FlowEntry()
+            new_flow.flow_mod_set(flow_mod)
+            # @todo Is there a sorted list insert operation?
+            self.flow_entries.insert(new_flow)
+            self.flow_entries.sort(prio_sort)
+
         self.flow_sync.release()
         # @todo Check for priority conflict?
 
-    def match_packet(self, match, bytes):
+    def match_packet(self, packet):
         """
         Return a flow object if a match is found for the match structure
-        @match Match structure derived from a packet
-        @bytes The number of bytes in the packet for statistics
+        @packet An OFPS packet structure, already parsed
         """
+        found = None
         self.flow_sync.acquire()
         for flow in self.flow_entries:
-            if flow.is_match(match, bytes):
-                self.flow_sync.release()
-                return flow
+            if flow.is_match(packet.match, packet.bytes):
+                found = flow
+                break
         self.flow_sync.release()
         return None
-
-#@todo
-DEFAULT_TABLE_COUNT=1
 
 class FlowPipeline(Thread):
     """
@@ -340,14 +340,15 @@ class FlowPipeline(Thread):
         """
         self.controller = controller
 
-    def flow_mod_add(self, flow_mod):
+    def flow_mod_add(self, operation, flow_mod):
         """
         Update the table according to the flow mod message 
+        @param operation The flow operation add, mod delete
         @param flow_mod The flow mod message to process
         """
         if flow_mod.table_id > self.n_tables:
             return -1
-        return self.tables[flow_mod.table_id].flow_mod_add(flow_moe)
+        return self.tables[flow_mod.table_id].flow_mod_add(operation, flow_mod)
 
     def table_caps_get(self, table_id=0):
         """
@@ -379,14 +380,16 @@ class FlowPipeline(Thread):
         """
         return None
 
-    def apply_pipeline(self, match, bytes):
+    def apply_pipeline(self, packet):
         """
         Run the pipeline on the packet and execute any actions indicated
+        @param packet An OFPS packet object, already parsed
         """
+        # Generate a match structure from the packet
         table_id = 0
         action_set = {}
         while 1:
-            flow = self.tables[table_id].match_packet(match, bytes)
+            flow = self.tables[table_id].match_packet(packet)
             if flow is not None:
                 # Check instruction set and execute it updating action_set
                 pass

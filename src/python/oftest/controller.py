@@ -223,6 +223,8 @@ class Controller(Thread):
 
             # Now check for message handlers; preference is given to
             # handlers for a specific packet
+            # @todo FIXME handler should be called with ptr to 
+            #   registering object, not 'self'
             handled = False
             if hdr.type in self.handlers.keys():
                 handled = self.handlers[hdr.type](self, msg, rawmsg)

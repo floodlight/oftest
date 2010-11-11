@@ -1,33 +1,42 @@
+
+from oftest.cstruct import ofp_match
+
 class Packet:
     """
     Packet abstraction for packet object while in the switch
     """
 
-    def __init__(self):
+    def __init__(in_port=None, data=""):
+        # Use entries in match when possible.
+        self.in_port = in_port
+        self.data = data
+        self.bytes = len(data)
         self.output_port = None
-        self.metadata = None
         self.queue = None
-        self.data = ""
         self.ip_header_offset = None
         self.tcp_header_offset = None
         self.mpls_tag_offset = None
         self.vlan_tag_offset = None
+        self.match = ofp_match()
+        if data != "":
+            self.parse()
 
     def length(self):
         return len(self.data)
 
     def parse(self):
+        self.bytes = len(data)
+        #@todo Parse structure into self.match (ofp_match object)
         #@todo determine mpls_tag_offset
         #@todo determine vlan_tag_offset
         #@todo determine ip_addr_offset
         #@todo determine tcp_addr_offset
-        pass
 
     def set_output_port(self, port):
         self.output_port = port
 
     def set_metadata(self, data, mask):
-        self.metadata = (self.metadata & ~mask) | (data & mask)
+        self.match.metadata = (self.match.metadata & ~mask) | (data & mask)
 
     def set_queue(self, queue):
         self.queue = queue
@@ -93,10 +102,10 @@ class Packet:
     def set_tp_dst(self, tp_dst):
         pass
 
-    def copy_ttl_out(packet):
+    def copy_ttl_out(self, packet):
         pass
 
-    def copy_ttl_in(packet):
+    def copy_ttl_in(self, packet):
         pass
 
     def set_mpls_label(self, mpls_label):
@@ -108,25 +117,25 @@ class Packet:
     def set_mpls_ttl(self, mpls_ttl):
         pass
 
-    def dec_mpls_ttl(packet):
+    def dec_mpls_ttl(self, packet):
         pass
 
-    def push_vlan(packet):
+    def push_vlan(self, packet):
         pass
 
-    def pop_vlan(packet):
+    def pop_vlan(self, packet):
         pass
 
-    def push_mpls(packet):
+    def push_mpls(self, packet):
         pass
 
-    def pop_mpls(packet):
+    def pop_mpls(self, packet):
         pass
 
     def set_nw_ttl(self, nw_ttl):
         pass
 
-    def dec_nw_ttl(packet):
+    def dec_nw_ttl(self, packet):
         pass
 
 

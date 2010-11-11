@@ -52,6 +52,8 @@ class ControllerInterface(Thread):
         self.port = port
         self.dbg_state = "init"
         self.logger = logging.getLogger("controller")
+        self.no_version_check = False
+        self.version_checked = False
 
     def _pkt_handle(self, pkt):
         """
@@ -84,13 +86,16 @@ class ControllerInterface(Thread):
             self.logger.debug("Msg in: len %d. offset %d. type %s. hdr.len %d" %
                 (len(pkt), offset, ofp_type_map[hdr.type], hdr.length))
             if hdr.version != OFP_VERSION:
-                self.logger.error("Version %d does not match my version %d"
-                                  % (hdr.version, OFP_VERSION))
-                print "Version %d does not match my version %d" % \
-                    (hdr.version, OFP_VERSION)
-                self.active = False
-                self.switch_socket = None
-                self.kill()
+                if self.version_checked is None:
+                    self.version_checked = 1
+                    self.logger.error("Version %d does not match my version %d"
+                                      % (hdr.version, OFP_VERSION))
+                    print "Version %d does not match my version %d" % \
+                        (hdr.version, OFP_VERSION)
+                if not self.no_version_check:
+                    self.active = False
+                    self.switch_socket = None
+                    self.kill()
 
             msg = of_message_parse(rawmsg)
             if not msg:
@@ -99,8 +104,8 @@ class ControllerInterface(Thread):
                 continue
 
             # Check if keep alive is set; if so, respond to echo requests
-            if self.keep_alive:
-                if hdr.type == OFPT_ECHO_REQUEST:
+            if hdr.type == OFPT_ECHO_REQUEST:
+                if self.keep_alive:
                     self.logger.debug("Responding to echo request")
                     rep = echo_reply()
                     rep.header.xid = hdr.xid
@@ -113,9 +118,15 @@ class ControllerInterface(Thread):
             # handlers for a specific packet
             handled = False
             if hdr.type in self.handlers.keys():
-                handled = self.handlers[hdr.type](self, msg, rawmsg)
+                fn = self.handlers[hdr.type]["fn"]
+                obj = self.handlers[hdr.type]["obj"]
+                cookie = self.handlers[hdr.type]["cookie"]
+                handled = fn(obj, cookie, msg, rawmsg)
             if not handled and ("all" in self.handlers.keys()):
-                handled = self.handlers["all"](self, msg, rawmsg)
+                fn = self.handlers["all"]["fn"]
+                obj = self.handlers["all"]["obj"]
+                cookie = self.handlers["all"]["cookie"]
+                handled = fn(obj, cookie, msg, rawmsg)
 
             if not handled: # Not handled, enqueue
                 self.packets_discarded += 1
@@ -212,7 +223,7 @@ class ControllerInterface(Thread):
         self.logger.error("Unknown error on sendall")
         return -1
 
-    def register(self, msg_type, handler):
+    def register(self, msg_type, handler, calling_obj=None, cookie=None):
         """
         Register a callback to receive a specific message type.
 
@@ -231,7 +242,9 @@ class ControllerInterface(Thread):
         if not handler and msg_type in self.handlers.keys():
             del self.handlers[msg_type]
             return
-        self.handlers[msg_type] = handler
+        self.handlers[msg_type] = {"fn" : handler, 
+                                   "obj" : calling_obj, 
+                                   "cookie" : cookie}
 
     def __str__(self):
         string = "Controller Interface:\n"

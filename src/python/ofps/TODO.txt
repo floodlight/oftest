@@ -1,0 +1,15 @@
+1.  Implement packet actions in ofps_pkt.py
+2.  Implement parsing to find offsets and set in packet structure
+3.  Implement checksum calculation
+4.  Call parsing if push/pop is done
+5.  Implement handlers for each controller message
+6.  Implement instruction handling
+7.  Send flow expiration messages
+
+High Level
+1.  Get OFTest to talk to ofps.  (Write run_ofps.py in test directory).
+2.  Update plumbing to allow non-privileged interface uses:
+    UDP or TCP or Unix sockets for framing?
+3.  Figure out proper flow table access synchronization
+4.  Design and implement logging infrastructure
+
