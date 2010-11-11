@@ -899,7 +899,7 @@ def flow_match_test_port_pair_vlan(parent, ing_port, egr_port, wildcards=0,
             if check_expire:
                 flow_removed_verify(parent, request, pkt_count=0, byte_count=0)
         elif exp_msg is ofp.OFPT_ERROR:
-            error_verify(parent, exp_type, exp_code)
+            error_verify(parent, exp_msg_type, exp_msg_code)
         else:
             parent.assertTrue(0, "Rcv: Unexpected Message: " + str(exp_msg))
 
