@@ -48,9 +48,14 @@ def delete_all_flows(ctrl, logger):
     logger.info("Deleting all flows")
     msg = message.flow_mod()
     msg.match.wildcards = ofp.OFPFW_ALL
+    msg.match.dl_src_mask= [255,255,255,255,255,255]
+    msg.match.dl_dst_mask= [255,255,255,255,255,255]
+    msg.match.nw_src_mask = 0xffffffff
+    msg.match.nw_dst_mask = 0xffffffff
     msg.out_port = ofp.OFPP_ANY  # @todo CHECKME 
     msg.command = ofp.OFPFC_DELETE
     msg.buffer_id = 0xffffffff
+    logger.debug(msg.show())
     return ctrl.message_send(msg)
 
 def clear_port_config(parent, port, logger):

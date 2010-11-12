@@ -45,20 +45,13 @@ test_prio = {}
 
 WILDCARD_VALUES = [ofp.OFPFW_IN_PORT,
                    ofp.OFPFW_DL_VLAN,
-                   ofp.OFPFW_DL_SRC,
-                   ofp.OFPFW_DL_DST,
                    ofp.OFPFW_DL_TYPE,
                    ofp.OFPFW_NW_PROTO,
-                   ofp.OFPFW_TP_SRC,
-                   ofp.OFPFW_TP_DST,
-                   0x3F << ofp.OFPFW_NW_SRC_SHIFT,
-                   0x3F << ofp.OFPFW_NW_DST_SHIFT,
                    ofp.OFPFW_DL_VLAN_PCP,
                    ofp.OFPFW_NW_TOS]
 
 MODIFY_ACTION_VALUES =  [ofp.OFPAT_SET_VLAN_VID,
                          ofp.OFPAT_SET_VLAN_PCP,
-                         ofp.OFPAT_STRIP_VLAN,
                          ofp.OFPAT_SET_DL_SRC,
                          ofp.OFPAT_SET_DL_DST,
                          ofp.OFPAT_SET_NW_SRC,
@@ -972,10 +965,10 @@ def supported_actions_get(parent, use_cache=True):
     """
     global cached_supported_actions
     if cached_supported_actions is None or not use_cache:
-        request = message.features_request()
+        request = message.table_stats_request()
         (reply, pkt) = parent.controller.transact(request, timeout=2)
-        parent.assertTrue(reply is not None, "Did not get response to ftr req")
-        cached_supported_actions = reply.actions
+        parent.assertTrue(reply is not None, "Did not get response to tbl stats req")
+        cached_supported_actions = reply.stats[0].apply_actions
         pa_logger.info("Supported actions: " + hex(cached_supported_actions))
 
     return cached_supported_actions

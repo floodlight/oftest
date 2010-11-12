@@ -401,9 +401,9 @@ struct ofp_action_set_output_port {
     uint16_t len;                   /* Length is 16. */
     uint32_t port;                  /* Output port. */
     uint16_t max_len;               /* Max length to send to controller. */
-    uint8_t pad[2];                 /* Pad to 32 bits. */
+    uint8_t pad[6];                 /* Pad to 64 bits. */
 };
-OFP_ASSERT(sizeof(struct ofp_action_set_output_port) == 12);
+OFP_ASSERT(sizeof(struct ofp_action_set_output_port) == 16);
 
 /* Action structure for OFPAT_SET_VLAN_VID. */
 struct ofp_action_vlan_vid {
@@ -497,7 +497,7 @@ OFP_ASSERT(sizeof(struct ofp_action_mpls_ttl) == 8);
 struct ofp_action_push {
     uint16_t type;                  /* OFPAT_PUSH_VLAN/MPLS. */
     uint16_t len;                   /* Length is 8. */
-    uint8_t ethertype;              /* Ethertype */
+    uint16_t ethertype;              /* Ethertype */
     uint8_t pad[2];
 };
 OFP_ASSERT(sizeof(struct ofp_action_push) == 8);
@@ -506,7 +506,7 @@ OFP_ASSERT(sizeof(struct ofp_action_push) == 8);
 struct ofp_action_pop_mpls {
     uint16_t type;                  /* OFPAT_POP_MPLS. */
     uint16_t len;                   /* Length is 8. */
-    uint8_t ethertype;              /* Ethertype */
+    uint16_t ethertype;              /* Ethertype */
     uint8_t pad[2];
 };
 OFP_ASSERT(sizeof(struct ofp_action_pop_mpls) == 8);
@@ -714,8 +714,9 @@ enum ofp_instruction_type {
 struct ofp_instruction {
     uint16_t type;                /* Instruction type */
     uint16_t len;                 /* Length of this struct in bytes. */
+    uint8_t pad[4];               /* Align to 64-bits */
 };
-OFP_ASSERT(sizeof(struct ofp_instruction) == 4);
+OFP_ASSERT(sizeof(struct ofp_instruction) == 8);
 
 /* Instruction structure for OFPIT_GOTO_TABLE */
 struct ofp_instruction_goto_table {
@@ -740,18 +741,24 @@ OFP_ASSERT(sizeof(struct ofp_instruction_write_metadata) == 24);
 struct ofp_instruction_actions {
     uint16_t type;              /* One of OFPIT_*_ACTIONS */
     uint16_t len;               /* Length of this struct in bytes. */
+    uint8_t pad[4];               /* Align to 64-bits */
     struct ofp_action_header actions[0];  /* Actions associated with
                                              OFPIT_WRITE_ACTIONS and
                                              OFPIT_APPLY_ACTIONS */
 };
-OFP_ASSERT(sizeof(struct ofp_instruction_actions) == 4);
+OFP_ASSERT(sizeof(struct ofp_instruction_actions) == 8);
 
 /* Instruction structure for experimental instructions */
 struct ofp_instruction_experimenter {
     uint16_t type;		/* OFPIT_EXPERIMENTER */
     uint16_t len;               /* Length of this struct in bytes */
+    uint32_t experimenter;      /* Experimenter ID:
+                                 * - MSB 0: low-order bytes are IEEE OUI.
+                                 * - MSB != 0: defined by OpenFlow
+                                 *   consortium. */
+    /* Experimenter-defined arbitrary additional data. */
 };
-OFP_ASSERT(sizeof(struct ofp_instruction_experimenter) == 4);
+OFP_ASSERT(sizeof(struct ofp_instruction_experimenter) == 8);
 
 enum ofp_flow_mod_flags {
     OFPFF_SEND_FLOW_REM = 1 << 0,  /* Send flow removed message when flow
@@ -785,11 +792,11 @@ struct ofp_flow_mod {
                                      output group.  A value of OFPG_ANY
                                      indicates no restriction. */
     uint16_t flags;               /* One of OFPFF_*. */
-    uint8_t pad[6];
+    uint8_t pad[2];
     struct ofp_match match;       /* Fields to match */
     struct ofp_instruction instructions[0]; /* Instruction set */
 };
-OFP_ASSERT(sizeof(struct ofp_flow_mod) == 144);
+OFP_ASSERT(sizeof(struct ofp_flow_mod) == 136);
 
 /* Group numbering. Groups can use any number up to OFPG_MAX. */
 enum ofp_group {
@@ -1178,7 +1185,7 @@ OFP_ASSERT(sizeof(struct ofp_aggregate_stats_reply) == 24);
 struct ofp_table_stats {
     uint8_t table_id;        /* Identifier of table.  Lower numbered tables
                                 are consulted first. */
-    uint8_t pad[3];          /* Align to 32-bits. */
+    uint8_t pad[7];          /* Align to 32-bits. */
     char name[OFP_MAX_TABLE_NAME_LEN];
     uint32_t wildcards;      /* Bitmap of OFPFW_* wildcards that are
                                 supported by the table. */
