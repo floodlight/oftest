@@ -1,0 +1,104 @@
+######################################################################
+#
+# All files associated with the OpenFlow Python Switch (ofps) are
+# made available for public use and benefit with the expectation
+# that others will use, modify and enhance the Software and contribute
+# those enhancements back to the community. However, since we would
+# like to make the Software available for broadest use, with as few
+# restrictions as possible permission is hereby granted, free of
+# charge, to any person obtaining a copy of this Software to deal in
+# the Software under the copyrights without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+# BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+# ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# 
+######################################################################
+
+"""
+The FlowTable class definition
+"""
+
+import logging
+from flow import FlowEntry
+from threading import Lock
+
+def prio_sort(x, y):
+    """
+    Sort flow entries x and y by priority
+    return -1 if x.prio < y.prio, etc.
+    """
+    if x.flow_mod.priority > y.flow_mod.priority:
+        return 1
+    if x.flow_mod.priority < y.flow_mod.priority:
+        return -1
+    return 0
+                
+class FlowTable:
+    def __init__(self, table_id=0):
+        self.flow_entries = []
+        self.table_id = table_id
+        self.flow_sync = Lock()
+        self.logger = logging.getLogger("flowtable")
+
+    def expire(self):
+        expired_flows = []
+        # @todo May be a better approach to syncing
+        self.flow_sync.acquire()
+        for flow in self.flow_entries:
+            if flow.expire():
+                # remove flow from self.flows
+                # add flow to expired_flows
+                self.flow_entries.remove(flow)
+                expired_flows.append(flow)
+        self.flow_sync.release()
+        return expired_flows
+
+    def flow_mod_add(self, operation, flow_mod):
+        """
+        Update the flow table according to the operation
+        @param operation add/mod/delete operation (OFPFC_ value)
+        @param flow_mod
+        """
+        found = False
+        # @todo Handle delete; differentiate mod and add
+        self.flow_sync.acquire()
+        for flow in self.flow_entries:
+            if flow.flow_match(flow_mod.match, 0, operation=operation,
+                               flow_mod=flow_mod):
+                self.logger.verbose("Matched in table " + str(self.table_id))
+                flow.update(flow_mod)
+                found = True
+                break
+        if not found:
+            new_flow = FlowEntry()
+            new_flow.flow_mod_set(flow_mod)
+            # @todo Is there a sorted list insert operation?
+            self.flow_entries.insert(new_flow)
+            self.flow_entries.sort(prio_sort)
+
+        self.flow_sync.release()
+        # @todo Check for priority conflict?
+
+    def match_packet(self, packet):
+        """
+        Return a flow object if a match is found for the match structure
+        @packet An OFPS packet structure, already parsed
+        """
+        found = None
+        self.flow_sync.acquire()
+        for flow in self.flow_entries:
+            if flow.is_match(packet.match, packet.bytes):
+                found = flow
+                break
+        self.flow_sync.release()
+        return found
