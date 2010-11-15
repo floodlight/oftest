@@ -104,7 +104,7 @@ def _of_message_to_object(binary_string):
         sub_hdr.unpack(binary_string[OFP_HEADER_BYTES:])
         try:
             obj = stats_request_to_class_map[sub_hdr.type]()
-        except KeyError:
+        except LookupError:
             obj = None
         return obj
     elif hdr.type == OFPT_STATS_REPLY:
@@ -112,7 +112,7 @@ def _of_message_to_object(binary_string):
         sub_hdr.unpack(binary_string[OFP_HEADER_BYTES:])
         try:
             obj = stats_reply_to_class_map[sub_hdr.type]()
-        except KeyError:
+        except LookupError:
             obj = None
         return obj
     elif hdr.type == OFPT_ERROR:
@@ -222,27 +222,27 @@ def parse_ip(ip_str):
 def packet_type_classify(ether):
     try:
         dot1q = ether[scapy.Dot1Q]
-    except:
+    except LookupError:
         dot1q = None
 
     try:
         ip = ether[scapy.IP]
-    except:
+    except LookupError:
         ip = None
 
     try:
         tcp = ether[scapy.TCP]
-    except:
+    except LookupError:
         tcp = None
 
     try:
         udp = ether[scapy.UDP]
-    except:
+    except LookupError:
         udp = None
 
     try:
         icmp = ether[scapy.ICMP]
-    except:
+    except LookupError:
         icmp = None
 
     # @todo arp is not yet supported
@@ -278,7 +278,7 @@ def packet_to_flow_match(packet, pkt_format="L2"):
     # For now, assume ether IP packet and ignore wildcards
     try:
         (dot1q, ip, tcp, udp, icmp, arp) = packet_type_classify(ether)
-    except:
+    except StandardError:
         parse_logger.error("packet_to_flow_match: Classify error")
         return None
 

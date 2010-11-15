@@ -66,7 +66,7 @@ class DataPlanePort(Thread):
         self.logger = logging.getLogger(logname)
         try:
             self.socket = self.interface_open(interface_name)
-        except:
+        except StandardError:
             self.logger.info("Could not open socket")
             sys.exit(1)
         self.logger.info("Openned port monitor socket")
@@ -98,7 +98,7 @@ class DataPlanePort(Thread):
             try:
                 sel_in, sel_out, sel_err = \
                     select.select(self.socs, [], [], 1)
-            except:
+            except StandardError:
                 print sys.exc_info()
                 self.logger.error("Select error, exiting")
                 break
@@ -111,7 +111,7 @@ class DataPlanePort(Thread):
 
             try:
                 rcvmsg = self.socket.recv(RCV_SIZE_DEFAULT)
-            except socket.error:
+            except StandardError:
                 if not error_warned:
                     self.logger.info("Socket error on recv")
                     error_warned = True
@@ -155,7 +155,7 @@ class DataPlanePort(Thread):
         self.running = False
         try:
             self.socket.close()
-        except:
+        except StandardError:
             self.logger.info("Ignoring dataplane soc shutdown error")
 
     def dequeue(self, use_lock=True):
@@ -183,7 +183,7 @@ class DataPlanePort(Thread):
         rv = None
         try:
             rv = self.packets[0][1]
-        except:
+        except StandardError:
             rv = None
         return rv
 

@@ -270,8 +270,9 @@ class Controller(Thread):
         elif s == self.switch_socket:
             try:
                 pkt = self.switch_socket.recv(self.rcv_size)
-            except:
+            except StandardError:
                 self.logger.warning("Error on switch read")
+                raise
                 return True
 
             if not self.active:
@@ -323,7 +324,7 @@ class Controller(Thread):
             try:
                 sel_in, sel_out, sel_err = \
                     select.select(self.socs, [], self.socs, 1)
-            except:
+            except StandardError:
                 print sys.exc_info()
                 self.logger.error("Select error, exiting")
                 sys.exit(1)
@@ -350,7 +351,7 @@ class Controller(Thread):
                     self.logger.warning("Closing switch cxn")
                     try:
                         self.switch_socket.close()
-                    except:
+                    except StandardError:
                         pass
                     self.switch_socket = None
                     self.socs = self.socs[0:1]
@@ -397,13 +398,13 @@ class Controller(Thread):
         self.active = False
         try:
             self.switch_socket.shutdown(socket.SHUT_RDWR)
-        except:
+        except StandardError:
             self.logger.info("Ignoring switch soc shutdown error")
         self.switch_socket = None
 
         try:
             self.listen_socket.shutdown(socket.SHUT_RDWR)
-        except:
+        except StandardError:
             self.logger.info("Ignoring listen soc shutdown error")
         self.listen_socket = None
         self.dbg_state = "down"
@@ -493,7 +494,7 @@ class Controller(Thread):
 
         return (msg, pkt)
 
-    def transact(self, msg, timeout=None, zero_xid=False):
+    def transact(self, msg, timeout=5, zero_xid=False):
         """
         Run a message transaction with the switch
 
@@ -557,7 +558,7 @@ class Controller(Thread):
                 if msg.header.xid == 0 and not zero_xid:
                     msg.header.xid = gen_xid()
                 outpkt = msg.pack()
-            except:
+            except StandardError:
                 self.logger.error(
                          "message_send: not an OF message or string?")
                 return -1
