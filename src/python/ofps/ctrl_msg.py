@@ -1,3 +1,29 @@
+######################################################################
+#
+# All files associated with the OpenFlow Python Switch (ofps) are
+# made available for public use and benefit with the expectation
+# that others will use, modify and enhance the Software and contribute
+# those enhancements back to the community. However, since we would
+# like to make the Software available for broadest use, with as few
+# restrictions as possible permission is hereby granted, free of
+# charge, to any person obtaining a copy of this Software to deal in
+# the Software under the copyrights without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+# BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+# ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# 
+######################################################################
+
 """
 Functions to handle specific controller messages
 
@@ -8,6 +34,9 @@ ctrl_msg_features_request.
 @todo Implement these functions
 """
 
+from ofps_act import execute_actions
+from ofps_pkt import Packet
+
 def ctrl_msg_aggregate_stats_reply(switch, msg, rawmsg):
     """
     Process an aggregate_stats_reply message from the controller
@@ -15,7 +44,7 @@ def ctrl_msg_aggregate_stats_reply(switch, msg, rawmsg):
     @param msg The parsed message object of type aggregate_stats_reply
     @param rawmsg The actual packet received as a string
     """
-    print "Received aggregate_stats_reply from controller"
+    switch.logger.debug("Received aggregate_stats_reply from controller")
 
 def ctrl_msg_aggregate_stats_request(switch, msg, rawmsg):
     """
@@ -24,7 +53,7 @@ def ctrl_msg_aggregate_stats_request(switch, msg, rawmsg):
     @param msg The parsed message object of type aggregate_stats_request
     @param rawmsg The actual packet received as a string
     """
-    print "Received aggregate_stats_request from controller"
+    switch.logger.debug("Received aggregate_stats_request from controller")
 
 def ctrl_msg_bad_action_error_msg(switch, msg, rawmsg):
     """
@@ -33,7 +62,7 @@ def ctrl_msg_bad_action_error_msg(switch, msg, rawmsg):
     @param msg The parsed message object of type bad_action_error_msg
     @param rawmsg The actual packet received as a string
     """
-    print "Received bad_action_error_msg from controller"
+    switch.logger.debug("Received bad_action_error_msg from controller")
 
 def ctrl_msg_bad_request_error_msg(switch, msg, rawmsg):
     """
@@ -42,7 +71,7 @@ def ctrl_msg_bad_request_error_msg(switch, msg, rawmsg):
     @param msg The parsed message object of type bad_request_error_msg
     @param rawmsg The actual packet received as a string
     """
-    print "Received bad_request_error_msg from controller"
+    switch.logger.debug("Received bad_request_error_msg from controller")
 
 def ctrl_msg_barrier_reply(switch, msg, rawmsg):
     """
@@ -51,7 +80,7 @@ def ctrl_msg_barrier_reply(switch, msg, rawmsg):
     @param msg The parsed message object of type barrier_reply
     @param rawmsg The actual packet received as a string
     """
-    print "Received barrier_reply from controller"
+    switch.logger.debug("Received barrier_reply from controller")
 
 def ctrl_msg_barrier_request(switch, msg, rawmsg):
     """
@@ -60,7 +89,7 @@ def ctrl_msg_barrier_request(switch, msg, rawmsg):
     @param msg The parsed message object of type barrier_request
     @param rawmsg The actual packet received as a string
     """
-    print "Received barrier_request from controller"
+    switch.logger.debug("Received barrier_request from controller")
 
 def ctrl_msg_desc_stats_reply(switch, msg, rawmsg):
     """
@@ -69,7 +98,7 @@ def ctrl_msg_desc_stats_reply(switch, msg, rawmsg):
     @param msg The parsed message object of type desc_stats_reply
     @param rawmsg The actual packet received as a string
     """
-    print "Received desc_stats_reply from controller"
+    switch.logger.debug("Received desc_stats_reply from controller")
 
 def ctrl_msg_desc_stats_request(switch, msg, rawmsg):
     """
@@ -78,7 +107,7 @@ def ctrl_msg_desc_stats_request(switch, msg, rawmsg):
     @param msg The parsed message object of type desc_stats_request
     @param rawmsg The actual packet received as a string
     """
-    print "Received desc_stats_request from controller"
+    switch.logger.debug("Received desc_stats_request from controller")
 
 def ctrl_msg_echo_reply(switch, msg, rawmsg):
     """
@@ -87,7 +116,7 @@ def ctrl_msg_echo_reply(switch, msg, rawmsg):
     @param msg The parsed message object of type echo_reply
     @param rawmsg The actual packet received as a string
     """
-    print "Received echo_reply from controller"
+    switch.logger.debug("Received echo_reply from controller")
 
 def ctrl_msg_echo_request(switch, msg, rawmsg):
     """
@@ -96,7 +125,7 @@ def ctrl_msg_echo_request(switch, msg, rawmsg):
     @param msg The parsed message object of type echo_request
     @param rawmsg The actual packet received as a string
     """
-    print "Received echo_request from controller"
+    switch.logger.debug("Received echo_request from controller")
 
 def ctrl_msg_error(switch, msg, rawmsg):
     """
@@ -105,7 +134,7 @@ def ctrl_msg_error(switch, msg, rawmsg):
     @param msg The parsed message object of type error
     @param rawmsg The actual packet received as a string
     """
-    print "Received error from controller"
+    switch.logger.debug("Received error from controller")
 
 def ctrl_msg_experimenter(switch, msg, rawmsg):
     """
@@ -114,7 +143,7 @@ def ctrl_msg_experimenter(switch, msg, rawmsg):
     @param msg The parsed message object of type experimenter
     @param rawmsg The actual packet received as a string
     """
-    print "Received experimenter from controller"
+    switch.logger.debug("Received experimenter from controller")
 
 def ctrl_msg_features_reply(switch, msg, rawmsg):
     """
@@ -123,7 +152,7 @@ def ctrl_msg_features_reply(switch, msg, rawmsg):
     @param msg The parsed message object of type features_reply
     @param rawmsg The actual packet received as a string
     """
-    print "Received features_reply from controller"
+    switch.logger.debug("Received features_reply from controller")
 
 def ctrl_msg_features_request(switch, msg, rawmsg):
     """
@@ -132,7 +161,7 @@ def ctrl_msg_features_request(switch, msg, rawmsg):
     @param msg The parsed message object of type features_request
     @param rawmsg The actual packet received as a string
     """
-    print "Received features_request from controller"
+    switch.logger.debug("Received features_request from controller")
 
 def ctrl_msg_flow_mod(switch, msg, rawmsg):
     """
@@ -142,7 +171,7 @@ def ctrl_msg_flow_mod(switch, msg, rawmsg):
     @param rawmsg The actual packet received as a string
     """
     
-    print "Received flow_mod from controller"
+    switch.logger.debug("Received flow_mod from controller")
 
 def ctrl_msg_flow_mod_failed_error_msg(switch, msg, rawmsg):
     """
@@ -151,7 +180,7 @@ def ctrl_msg_flow_mod_failed_error_msg(switch, msg, rawmsg):
     @param msg The parsed message object of type flow_mod_failed_error_msg
     @param rawmsg The actual packet received as a string
     """
-    print "Received flow_mod_failed_error_msg from controller"
+    switch.logger.debug("Received flow_mod_failed_error_msg from controller")
 
 def ctrl_msg_flow_removed(switch, msg, rawmsg):
     """
@@ -160,7 +189,7 @@ def ctrl_msg_flow_removed(switch, msg, rawmsg):
     @param msg The parsed message object of type flow_removed
     @param rawmsg The actual packet received as a string
     """
-    print "Received flow_removed from controller"
+    switch.logger.debug("Received flow_removed from controller")
 
 def ctrl_msg_flow_stats_reply(switch, msg, rawmsg):
     """
@@ -169,7 +198,7 @@ def ctrl_msg_flow_stats_reply(switch, msg, rawmsg):
     @param msg The parsed message object of type flow_stats_reply
     @param rawmsg The actual packet received as a string
     """
-    print "Received flow_stats_reply from controller"
+    switch.logger.debug("Received flow_stats_reply from controller")
 
 def ctrl_msg_flow_stats_request(switch, msg, rawmsg):
     """
@@ -178,7 +207,7 @@ def ctrl_msg_flow_stats_request(switch, msg, rawmsg):
     @param msg The parsed message object of type flow_stats_request
     @param rawmsg The actual packet received as a string
     """
-    print "Received flow_stats_request from controller"
+    switch.logger.debug("Received flow_stats_request from controller")
 
 def ctrl_msg_get_config_reply(switch, msg, rawmsg):
     """
@@ -187,7 +216,7 @@ def ctrl_msg_get_config_reply(switch, msg, rawmsg):
     @param msg The parsed message object of type get_config_reply
     @param rawmsg The actual packet received as a string
     """
-    print "Received get_config_reply from controller"
+    switch.logger.debug("Received get_config_reply from controller")
 
 def ctrl_msg_get_config_request(switch, msg, rawmsg):
     """
@@ -196,7 +225,7 @@ def ctrl_msg_get_config_request(switch, msg, rawmsg):
     @param msg The parsed message object of type get_config_request
     @param rawmsg The actual packet received as a string
     """
-    print "Received get_config_request from controller"
+    switch.logger.debug("Received get_config_request from controller")
 
 def ctrl_msg_group_desc_stats_request(switch, msg, rawmsg):
     """
@@ -205,7 +234,7 @@ def ctrl_msg_group_desc_stats_request(switch, msg, rawmsg):
     @param msg The parsed message object of type group_desc_stats_request
     @param rawmsg The actual packet received as a string
     """
-    print "Received group_desc_stats_request from controller"
+    switch.logger.debug("Received group_desc_stats_request from controller")
 
 def ctrl_msg_group_desc_stats_reply(switch, msg, rawmsg):
     """
@@ -214,7 +243,7 @@ def ctrl_msg_group_desc_stats_reply(switch, msg, rawmsg):
     @param msg The parsed message object of type group_desc_stats_reply
     @param rawmsg The actual packet received as a string
     """
-    print "Received group_desc_stats_reply from controller"
+    switch.logger.debug("Received group_desc_stats_reply from controller")
 
 def ctrl_msg_group_stats_request(switch, msg, rawmsg):
     """
@@ -223,7 +252,7 @@ def ctrl_msg_group_stats_request(switch, msg, rawmsg):
     @param msg The parsed message object of type group_stats_request
     @param rawmsg The actual packet received as a string
     """
-    print "Received group_stats_request from controller"
+    switch.logger.debug("Received group_stats_request from controller")
 
 def ctrl_msg_group_stats_reply(switch, msg, rawmsg):
     """
@@ -232,7 +261,7 @@ def ctrl_msg_group_stats_reply(switch, msg, rawmsg):
     @param msg The parsed message object of type group_stats_reply
     @param rawmsg The actual packet received as a string
     """
-    print "Received group_stats_reply from controller"
+    switch.logger.debug("Received group_stats_reply from controller")
 
 def ctrl_msg_group_mod(switch, msg, rawmsg):
     """
@@ -241,7 +270,7 @@ def ctrl_msg_group_mod(switch, msg, rawmsg):
     @param msg The parsed message object of type group_mod
     @param rawmsg The actual packet received as a string
     """
-    print "Received group_mod from controller"
+    switch.logger.debug("Received group_mod from controller")
 
 def ctrl_msg_group_mod_failed_error_msg(switch, msg, rawmsg):
     """
@@ -250,7 +279,7 @@ def ctrl_msg_group_mod_failed_error_msg(switch, msg, rawmsg):
     @param msg The parsed message object of type group_mod_failed_error_msg
     @param rawmsg The actual packet received as a string
     """
-    print "Received group_mod_failed_error_msg from controller"
+    switch.logger.debug("Received group_mod_failed_error_msg from controller")
 
 def ctrl_msg_hello(switch, msg, rawmsg):
     """
@@ -259,7 +288,7 @@ def ctrl_msg_hello(switch, msg, rawmsg):
     @param msg The parsed message object of type hello
     @param rawmsg The actual packet received as a string
     """
-    print "Received hello from controller"
+    switch.logger.debug("Received hello from controller")
 
 def ctrl_msg_hello_failed_error_msg(switch, msg, rawmsg):
     """
@@ -268,7 +297,7 @@ def ctrl_msg_hello_failed_error_msg(switch, msg, rawmsg):
     @param msg The parsed message object of type hello_failed_error_msg
     @param rawmsg The actual packet received as a string
     """
-    print "Received hello_failed_error_msg from controller"
+    switch.logger.debug("Received hello_failed_error_msg from controller")
 
 def ctrl_msg_packet_in(switch, msg, rawmsg):
     """
@@ -277,7 +306,7 @@ def ctrl_msg_packet_in(switch, msg, rawmsg):
     @param msg The parsed message object of type packet_in
     @param rawmsg The actual packet received as a string
     """
-    print "Received packet_in from controller"
+    switch.logger.debug("Received packet_in from controller")
 
 def ctrl_msg_packet_out(switch, msg, rawmsg):
     """
@@ -286,7 +315,14 @@ def ctrl_msg_packet_out(switch, msg, rawmsg):
     @param msg The parsed message object of type packet_out
     @param rawmsg The actual packet received as a string
     """
-    print "Received packet_out from controller"
+    switch.logger.debug("Received packet_out from controller")
+    packet = Packet(in_port=msg.in_port, data=msg.data)
+    switch.logger.debug("Executing action list")
+    print msg.actions.show()
+    execute_actions(switch, packet, msg.actions, output_now=True)
+    # @todo fully implement action list execution
+    # For now run through list looking for set output port
+
 
 def ctrl_msg_port_mod(switch, msg, rawmsg):
     """
@@ -295,7 +331,7 @@ def ctrl_msg_port_mod(switch, msg, rawmsg):
     @param msg The parsed message object of type port_mod
     @param rawmsg The actual packet received as a string
     """
-    print "Received port_mod from controller"
+    switch.logger.debug("Received port_mod from controller")
 
 def ctrl_msg_port_mod_failed_error_msg(switch, msg, rawmsg):
     """
@@ -304,7 +340,7 @@ def ctrl_msg_port_mod_failed_error_msg(switch, msg, rawmsg):
     @param msg The parsed message object of type port_mod_failed_error_msg
     @param rawmsg The actual packet received as a string
     """
-    print "Received port_mod_failed_error_msg from controller"
+    switch.logger.debug("Received port_mod_failed_error_msg from controller")
 
 def ctrl_msg_port_stats_reply(switch, msg, rawmsg):
     """
@@ -313,7 +349,7 @@ def ctrl_msg_port_stats_reply(switch, msg, rawmsg):
     @param msg The parsed message object of type port_stats_reply
     @param rawmsg The actual packet received as a string
     """
-    print "Received port_stats_reply from controller"
+    switch.logger.debug("Received port_stats_reply from controller")
 
 def ctrl_msg_port_stats_request(switch, msg, rawmsg):
     """
@@ -322,7 +358,7 @@ def ctrl_msg_port_stats_request(switch, msg, rawmsg):
     @param msg The parsed message object of type port_stats_request
     @param rawmsg The actual packet received as a string
     """
-    print "Received port_stats_request from controller"
+    switch.logger.debug("Received port_stats_request from controller")
 
 def ctrl_msg_port_status(switch, msg, rawmsg):
     """
@@ -331,7 +367,7 @@ def ctrl_msg_port_status(switch, msg, rawmsg):
     @param msg The parsed message object of type port_status
     @param rawmsg The actual packet received as a string
     """
-    print "Received port_status from controller"
+    switch.logger.debug("Received port_status from controller")
 
 def ctrl_msg_queue_get_config_reply(switch, msg, rawmsg):
     """
@@ -340,7 +376,7 @@ def ctrl_msg_queue_get_config_reply(switch, msg, rawmsg):
     @param msg The parsed message object of type queue_get_config_reply
     @param rawmsg The actual packet received as a string
     """
-    print "Received queue_get_config_reply from controller"
+    switch.logger.debug("Received queue_get_config_reply from controller")
 
 def ctrl_msg_queue_get_config_request(switch, msg, rawmsg):
     """
@@ -349,7 +385,7 @@ def ctrl_msg_queue_get_config_request(switch, msg, rawmsg):
     @param msg The parsed message object of type queue_get_config_request
     @param rawmsg The actual packet received as a string
     """
-    print "Received queue_get_config_request from controller"
+    switch.logger.debug("Received queue_get_config_request from controller")
 
 def ctrl_msg_queue_op_failed_error_msg(switch, msg, rawmsg):
     """
@@ -358,7 +394,7 @@ def ctrl_msg_queue_op_failed_error_msg(switch, msg, rawmsg):
     @param msg The parsed message object of type queue_op_failed_error_msg
     @param rawmsg The actual packet received as a string
     """
-    print "Received queue_op_failed_error_msg from controller"
+    switch.logger.debug("Received queue_op_failed_error_msg from controller")
 
 def ctrl_msg_queue_stats_reply(switch, msg, rawmsg):
     """
@@ -367,7 +403,7 @@ def ctrl_msg_queue_stats_reply(switch, msg, rawmsg):
     @param msg The parsed message object of type queue_stats_reply
     @param rawmsg The actual packet received as a string
     """
-    print "Received queue_stats_reply from controller"
+    switch.logger.debug("Received queue_stats_reply from controller")
 
 def ctrl_msg_queue_stats_request(switch, msg, rawmsg):
     """
@@ -376,7 +412,7 @@ def ctrl_msg_queue_stats_request(switch, msg, rawmsg):
     @param msg The parsed message object of type queue_stats_request
     @param rawmsg The actual packet received as a string
     """
-    print "Received queue_stats_request from controller"
+    switch.logger.debug("Received queue_stats_request from controller")
 
 def ctrl_msg_set_config(switch, msg, rawmsg):
     """
@@ -385,7 +421,7 @@ def ctrl_msg_set_config(switch, msg, rawmsg):
     @param msg The parsed message object of type set_config
     @param rawmsg The actual packet received as a string
     """
-    print "Received set_config from controller"
+    switch.logger.debug("Received set_config from controller")
 
 def ctrl_msg_switch_config_failed_error_msg(switch, msg, rawmsg):
     """
@@ -394,7 +430,7 @@ def ctrl_msg_switch_config_failed_error_msg(switch, msg, rawmsg):
     @param msg The parsed message object of type switch_config_failed_error_msg
     @param rawmsg The actual packet received as a string
     """
-    print "Received switch_config_failed_error_msg from controller"
+    switch.logger.debug("Received switch_config_failed_error_msg from controller")
 
 def ctrl_msg_table_mod(switch, msg, rawmsg):
     """
@@ -403,7 +439,7 @@ def ctrl_msg_table_mod(switch, msg, rawmsg):
     @param msg The parsed message object of type table_mod
     @param rawmsg The actual packet received as a string
     """
-    print "Received table_mod from controller"
+    switch.logger.debug("Received table_mod from controller")
 
 def ctrl_msg_table_mod_failed_error_msg(switch, msg, rawmsg):
     """
@@ -412,7 +448,7 @@ def ctrl_msg_table_mod_failed_error_msg(switch, msg, rawmsg):
     @param msg The parsed message object of type table_mod_failed_error_msg
     @param rawmsg The actual packet received as a string
     """
-    print "Received table_mod_failed_error_msg from controller"
+    switch.logger.debug("Received table_mod_failed_error_msg from controller")
 
 def ctrl_msg_table_stats_reply(switch, msg, rawmsg):
     """
@@ -421,7 +457,7 @@ def ctrl_msg_table_stats_reply(switch, msg, rawmsg):
     @param msg The parsed message object of type table_stats_reply
     @param rawmsg The actual packet received as a string
     """
-    print "Received table_stats_reply from controller"
+    switch.logger.debug("Received table_stats_reply from controller")
 
 def ctrl_msg_table_stats_request(switch, msg, rawmsg):
     """
@@ -430,4 +466,4 @@ def ctrl_msg_table_stats_request(switch, msg, rawmsg):
     @param msg The parsed message object of type table_stats_request
     @param rawmsg The actual packet received as a string
     """
-    print "Received table_stats_request from controller"
+    switch.logger.debug("Received table_stats_request from controller")

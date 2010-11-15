@@ -1,3 +1,7 @@
+MOVED
+
+Now on pivotaltracker.com/projects/144113
+
 1.  Implement packet actions in ofps_pkt.py
 2.  Implement parsing to find offsets and set in packet structure
 3.  Implement checksum calculation
@@ -5,6 +9,7 @@
 5.  Implement handlers for each controller message
 6.  Implement instruction handling
 7.  Send flow expiration messages
+8.  Determine and support command line parameters
 
 High Level
 1.  Get OFTest to talk to ofps.  (Write run_ofps.py in test directory).

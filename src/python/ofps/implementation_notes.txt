@@ -1,0 +1,25 @@
+Now on pivotaltracker.com/projects/144113
+
+Notes on implementation
+
+Threads
+
+  Each dataplane port is a thread.  It might make more sense to have
+the dataplane class be a thread and do a select on all the interfaces
+it maintains for ports. Not sure it would make a lot of difference.
+
+  The controller interface is a thread
+
+Synchronization
+
+  The main resource, access to which must synchronized, is the
+flow table.  This is managed by the Lock member, flow_sync, in the
+FlowTable class.
+
+
+DataPlane
+
+  Currently "real" (OS) interfaces are required for communicating.  This
+may be relaxed in the future to allow communication over UDP.  This
+would simplify the setup a lot.
+

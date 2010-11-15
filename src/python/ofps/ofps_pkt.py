@@ -1,3 +1,37 @@
+######################################################################
+#
+# All files associated with the OpenFlow Python Switch (ofps) are
+# made available for public use and benefit with the expectation
+# that others will use, modify and enhance the Software and contribute
+# those enhancements back to the community. However, since we would
+# like to make the Software available for broadest use, with as few
+# restrictions as possible permission is hereby granted, free of
+# charge, to any person obtaining a copy of this Software to deal in
+# the Software under the copyrights without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+# BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+# ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# 
+######################################################################
+
+"""
+OFPS packet class
+
+This class implements the basic abstraction of a packet for OFPS.  It
+includes parsing functionality and OpenFlow actions related to 
+packet modifications.
+
+"""
 
 from oftest.cstruct import ofp_match
 
@@ -6,7 +40,7 @@ class Packet:
     Packet abstraction for packet object while in the switch
     """
 
-    def __init__(in_port=None, data=""):
+    def __init__(self, in_port=None, data=""):
         # Use entries in match when possible.
         self.in_port = in_port
         self.data = data
@@ -18,14 +52,14 @@ class Packet:
         self.mpls_tag_offset = None
         self.vlan_tag_offset = None
         self.match = ofp_match()
-        if data != "":
+        if self.data != "":
             self.parse()
 
     def length(self):
         return len(self.data)
 
     def parse(self):
-        self.bytes = len(data)
+        self.bytes = len(self.data)
         #@todo Parse structure into self.match (ofp_match object)
         #@todo determine mpls_tag_offset
         #@todo determine vlan_tag_offset
@@ -35,8 +69,9 @@ class Packet:
     def set_output_port(self, port):
         self.output_port = port
 
-    def set_metadata(self, data, mask):
-        self.match.metadata = (self.match.metadata & ~mask) | (data & mask)
+    def set_metadata(self, value, mask):
+        self.match.metadata = (self.match.metadata & ~mask) | \
+            (value & mask)
 
     def set_queue(self, queue):
         self.queue = queue

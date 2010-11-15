@@ -1,3 +1,29 @@
+######################################################################
+#
+# All files associated with the OpenFlow Python Switch (ofps) are
+# made available for public use and benefit with the expectation
+# that others will use, modify and enhance the Software and contribute
+# those enhancements back to the community. However, since we would
+# like to make the Software available for broadest use, with as few
+# restrictions as possible permission is hereby granted, free of
+# charge, to any person obtaining a copy of this Software to deal in
+# the Software under the copyrights without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+# BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+# ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# 
+######################################################################
+
 """
 OFPS:  OpenFlow Python Switch
 
@@ -10,34 +36,35 @@ structures, flow table entries with status and actions resulting
 from a match.
 """
 
+import sys
+import logging
+import signal
 import oftest.cstruct as ofp
 import oftest.dataplane as dataplane
 import oftest.message as message
 import oftest.action as action
 from ctrl_if import ControllerInterface
 import copy
-from threading import Condition
 from threading import Thread
-from threading import Lock
 from ofps_act import *
 from ctrl_msg import *
 from ofps_pkt import Packet
+from pipeline import FlowPipeline
 
-#@todo
 DEFAULT_TABLE_COUNT=1
 
-class OFSwitchConfig(object):
+class OFSwitchConfig:
     """
     Class to document normal configuration parameters
     """
     def __init__(self):
         self.controller_ip = "127.0.0.1"
-        self.controller_port = 6633
+        self.controller_port = 8833
         self.passive_listen_port = None
-        self.port_map = {"veth0" : 1,
-                         "veth2" : 2,
-                         "veth4" : 3,
-                         "veth6" : 4}
+        self.port_map = {1 : "veth0",
+                         2 : "veth2",
+                         3 : "veth4",
+                         4 : "veth6"}
         self.n_tables = DEFAULT_TABLE_COUNT
         self.env = {}  # Extensible array
 
@@ -63,8 +90,7 @@ class OFSwitch(Thread):
         """
         Thread.__init__(self)
         self.config = OFSwitchConfig()
-        self.event_sem = Condition()
-        self.sync = Lock()
+        self.logger = logging.getLogger("switch")
 
     def config_set(self, config):
         """
@@ -82,14 +108,13 @@ class OFSwitch(Thread):
         Handle a message from the controller
         @todo Use a queue so messages can be processed in the main thread
         """
-        
-        exec_str = "self.ctrl_msg_" + msg.__name__ + \
-            "(msg, rawmsg)"
+        exec_str = "ctrl_msg_" + msg.__class__.__name__ + "(self, msg, rawmsg)"
+        self.logger.debug("Running " + exec_str)
         try:
             exec(exec_str)
-        except:  #@todo: Add constraint
-            #@todo Define logging module
-            print("Could not execute controller fn " + str(action))
+        except StandardError:
+            self.logger.error("Could not execute controller fn " + str(action))
+            sys.exit(1)
 
         return True
 
@@ -97,305 +122,50 @@ class OFSwitch(Thread):
         """
         Main execute function for running the switch
         """
+        logging.basicConfig(filename="", level=logging.DEBUG)
+        self.logger.info("Switch thread running")
         self.controller = ControllerInterface(host=self.config.controller_ip,
                                               port=self.config.controller_port)
         self.dataplane = dataplane.DataPlane()
-        self.pipeline = FlowPipeline(n_tables=self.config.n_tables)
+        self.logger.info("Dataplane started")
+        self.pipeline = FlowPipeline(self.config.n_tables)
         self.pipeline.controller_set(self.controller)
-        # Register to receive all controller packets
-        self.controller.register("all", ctrl_pkt_handler, calling_obj=self)
-        self.controller.run()
+        self.pipeline.start()
+        self.logger.info("Pipeline started")
         for of_port, ifname in self.config.port_map.items():
+            self.logger.info("Adding port " + str(of_port) + " " + ifname)
             self.dataplane.port_add(ifname, of_port)
-        self.dataplane.register(self.dp_pkt_handler)
-        self.pipeline.run()
+        # Register to receive all controller packets
+        self.controller.register("all", self.ctrl_pkt_handler, calling_obj=self)
+        self.controller.start()
+        self.logger.info("Controller started")
 
         # Process packets when they arrive
+        self.logger.info("Entering packet processing loop")
         while True:
-            (in_port, data, recv_time) = self.dataplane.poll(timeout=60)
+            (of_port, data, recv_time) = self.dataplane.poll(timeout=5)
+            if not self.controller.isAlive():
+                # @todo Implement fail open/closed
+                self.logger.error("Controller dead\n")
+                break
+            if not self.pipeline.isAlive():
+                # @todo Implement fail open/closed
+                self.logger.error("Pipeline dead\n")
+                break
             if data is None:
-                log("No packet for 60 seconds\n")
+                self.logger.debug("No packet for 5 seconds\n")
                 continue
-            packet = Packet(in_port=in_port, data=data)
-            self.pipeline.apply_pipeline(packet)
+            self.logger.debug("Packet len " + str(len(data)) +
+                              " in on port " + str(of_port))
+            packet = Packet(in_port=of_port, data=data)
+            self.pipeline.apply_pipeline(self, packet)
 
-class FlowEntry:
-    """
-    Structure to track a flow table entry
-    """
-    def __init__(self):
-        self.flow_mod = message.flow_mod()
-        self.last_hit = None
-        self.packets = 0
-        self.bytes = 0
-        self.insert_time = None
+        self.logger.error("Exiting OFSwitch thread")
+        self.pipeline.kill()
+        self.dataplane.kill()
+        self.pipeline.join()
+        self.controller.join()
 
-    def flow_mod_set(flow_mod):
-        self.flow_mod = copy.deepcopy(flow_mod)
-        self.last_hit = None
-        self.packets = 0
-        self.bytes = 0
-        self.insert_time = time.time()
-
-    def _check_ip_fields(entry_fields, fields):
-        if not (wc & ofp.OFPFW_NW_TOS):
-            if entry_fields.nw_tos != fields.nw_tos:
-                return False
-        if not (wc & ofp.OFPFW_NW_PROTO):
-            if entry_fields.nw_proto != fields.nw_proto:
-                return False
-        #@todo COMPLETE THIS
-        mask = ~entry_fields.nw_src_mask
-        if entry_fields.nw_src & mask != pkt_fields.nw_src & mask:
-            return False
-        mask = ~entry_fields.nw_dst_mask
-        if entry_fields.nw_dst & mask != pkt_fields.nw_dst & mask:
-            return False
-
-        return True
-
-    def is_match(self, pkt_fields, bytes):
-        """
-        Return boolean indicating if this flow entry matches "match"
-        which is generated from a packet.  If so, update counters unless
-        match_only is true (indicating we're searching for a flow entry)
-        Otherwise return None.
-        @pkt_fields An ofp_match structure to search for
-        @bytes to use if update required; 0 if no udpate required
-        @match_only If True, do not update state of flow, just return T/F.
-        """
-        # Initial lazy approach
-        # Should probably generate list of identifiers from non-wildcards
-
-        pkt_fields = packet.match
-
-        # @todo Support "type" field for ofp_match
-        entry_fields = self.flow_mod.match
-        wc = entry_fields.wildcards
-        if not (wc & ofp.OFPFW_IN_PORT):
-            # @todo logical port match?
-            if entry_fields.in_port != fields.in_port:
-                return False
-
-        # Addresses and metadata:  
-        # @todo Check masks are negated correctly
-        for byte in entry_fields.dl_src_mask:
-            byte = ~byte
-            if entry_fields.dl_src & byte != pkt_fields.dl_src & byte:
-                return False
-        for byte in entry_fields.dl_dst_mask:
-            byte = ~byte
-            if entry_fields.dl_dst & byte != pkt_fields.dl_dst & byte:
-                return False
-        mask = ~entry_fields.metadata_mask
-        if entry_fields.metadata & mask != pkt_fields.metadata & mask:
-            return False
-
-        # @todo  Check untagged logic
-        if not (wc & ofp.OFPFW_DL_VLAN):
-            if entry_fields.dl_vlan != fields.dl_vlan:
-                return False
-        if not (wc & ofp.OFPFW_DL_VLAN_PCP):
-            if entry_fields.dl_vlan_pcp != fields.dl_vlan_pcp:
-                return False
-        if not (wc & ofp.OFPFW_DL_TYPE):
-            if entry_fields.dl_type != fields.dl_type:
-                return False
-
-        # @todo  Switch on DL type; handle ARP cases, etc
-        if entry_fields.dl_type == 0x800:
-            if not _check_ip_fields(entry_fields, fields):
-                return False
-        if not (wc & ofp.OFPFW_MPLS_LABEL):
-            if entry_fields.mpls_label != fields.mpls_lablel:
-                return False
-        if not (wc & ofp.OFPFW_MPLS_TC):
-            if entry_fields.mpls_tc != fields.mpls_tc:
-                return False
-
-        # Okay, if we get here, we have a match.
-        if bytes != 0:  # Update counters
-            self.last_hit = time.time()
-            self.packets += 1
-            self.bytes += bytes
-
-        return True
-
-    def expire(self):
-        """
-        Check if this entry should be expired.  
-        Returns True if so, False otherwise
-        """
-        now = time.time()
-        if self.flow_mod.hard_timeout:
-            delta = now - self.insert_time
-            if delta > self.flow_mod.hard_timeout:
-                return True
-        if self.flow_mod.idle_timeout:
-            if self.last_hit is None:
-                delta = now - self.insert_time
-            else:
-                delta = now - self.last_hit
-            if delta > self.flow_mod.idle_timeout:
-                return True
-        return False
-
-def prio_sort(x, y):
-    """
-    Sort flow entries x and y by priority
-    return -1 if x.prio < y.prio, etc.
-    """
-    if x.flow_mod.priority > y.flow_mod.priority:
-        return 1
-    if x.flow_mod.priority < y.flow_mod.priority:
-        return -1
-    return 0
-                
-class FlowTable(object):
-    def __init__(self, table_id=0):
-        self.flow_entries = []
-        self.table_id = table_id
-        self.flow_sync = Condition()
-
-    def expire(self):
-        expired_flows = []
-        # @todo May be a better approach to syncing
-        self.flow_sync.acquire()
-        for flow in self.flow_entries:
-            if flow.expire():
-                # remove flow from self.flows
-                # add flow to expired_flows
-                self.flow_entries.remove(flow)
-                expired_flows.append(flow)
-        self.flow_sync.release()
-        return expired_flows
-
-    def flow_mod_add(self, operation, flow_mod):
-        """
-        Update the flow table according to the operation
-        """
-        found = False
-        self.flow_sync.acquire()
-        for flow in self.flow_entries:
-            if flow.flow_match(flow_mod, match_only=True):
-                flow.update(flow_mod)
-                found = True
-                break
-        if not found:
-            new_flow = FlowEntry()
-            new_flow.flow_mod_set(flow_mod)
-            # @todo Is there a sorted list insert operation?
-            self.flow_entries.insert(new_flow)
-            self.flow_entries.sort(prio_sort)
-
-        self.flow_sync.release()
-        # @todo Check for priority conflict?
-
-    def match_packet(self, packet):
-        """
-        Return a flow object if a match is found for the match structure
-        @packet An OFPS packet structure, already parsed
-        """
-        found = None
-        self.flow_sync.acquire()
-        for flow in self.flow_entries:
-            if flow.is_match(packet.match, packet.bytes):
-                found = flow
-                break
-        self.flow_sync.release()
-        return None
-
-class FlowPipeline(Thread):
-    """
-    Class to implement a pipeline of flow tables
-    The thread interface is to allow flow expiration operations
-    """
-    def __init__(self, n_tables=DEFAULT_TABLE_COUNT):
-        """
-        Constructor for base class
-        """
-        self.controller = None
-        self.tables = []
-        self.n_tables = n_tables
-        # Instantiate table instances
-        for idx in range(n_tables):
-            self.tables.append(FlowTable(table_id=idx))
-
-    def run(self):
-        """
-        Thread to run expiration checks
-        """
-        while 1:
-            time.sleep(1)
-            for idx in range(self.n_tables):
-                expired_flows = self.tables[idx].expire()
-                for flow in expired_flows:
-                    # @todo  Send flow expiration report
-                    print "Need to expire " + str(flow)
-                
-    def controller_set(self, controller):
-        """
-        Set the controller connection object for transmits to controller
-        For example, the flow table may generate flow expired messages
-        """
-        self.controller = controller
-
-    def flow_mod_add(self, operation, flow_mod):
-        """
-        Update the table according to the flow mod message 
-        @param operation The flow operation add, mod delete
-        @param flow_mod The flow mod message to process
-        """
-        if flow_mod.table_id > self.n_tables:
-            return -1
-        return self.tables[flow_mod.table_id].flow_mod_add(operation, flow_mod)
-
-    def table_caps_get(self, table_id=0):
-        """
-        Return the capabilities supported by this implementation
-        """
-        return 0
-
-    def n_tables_get(self):
-        """
-        Return the number of tables supported by this implementation
-        """
-        return self.n_tables
-
-    def stats_get(self):
-        """
-        Return an ofp_table_stats object
-        """
-        return None
-
-    def flow_stats_get(self, flow_stats_request):
-        """
-        Return an ofp_flow_stats object based on the flow stats request
-        """
-        return None
-
-    def aggregate_stats_get(self, aggregate_stats_request):
-        """
-        Return an ofp_aggregate_stats_reply object based on the request
-        """
-        return None
-
-    def apply_pipeline(self, packet):
-        """
-        Run the pipeline on the packet and execute any actions indicated
-        @param packet An OFPS packet object, already parsed
-        """
-        # Generate a match structure from the packet
-        table_id = 0
-        action_set = {}
-        while 1:
-            flow = self.tables[table_id].match_packet(packet)
-            if flow is not None:
-                # Check instruction set and execute it updating action_set
-                pass
-
-        # Execute action set
-        
 class GroupTable:
     """
     Class to implement a group table object
