@@ -71,7 +71,7 @@ class SimpleProtocol(unittest.TestCase):
     def setUp(self):
         self.logger = basic_logger
         self.config = basic_config
-        signal.signal(signal.SIGINT, self.sig_handler)
+        #signal.signal(signal.SIGINT, self.sig_handler)
         basic_logger.info("** START TEST CASE " + str(self))
         self.controller = controller.Controller(
             host=basic_config["controller_host"],
@@ -145,7 +145,7 @@ class DataPlaneOnly(unittest.TestCase):
         self.clean_shutdown = False
         self.logger = basic_logger
         self.config = basic_config
-        signal.signal(signal.SIGINT, self.sig_handler)
+        #signal.signal(signal.SIGINT, self.sig_handler)
         basic_logger.info("** START DataPlaneOnly CASE " + str(self))
         self.dataplane = dataplane.DataPlane()
         for of_port, ifname in basic_port_map.items():
@@ -247,7 +247,7 @@ class PacketOut(SimpleDataPlane):
         for dp_port in of_ports:
             msg = message.packet_out()
             msg.data = str(outpkt)
-            act = action.action_output()
+            act = action.action_set_output_port()
             act.port = dp_port
             self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
 
