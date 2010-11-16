@@ -730,13 +730,18 @@ def skip_message_emit(parent, s):
 def simple_tcp_packet_w_multi_vlan(pktlen=100,
                       dl_dst='00:01:02:03:04:05',
                       dl_src='00:06:07:08:09:0a',
-                      dl_vlan_enable=False,
-                      dl_vlan=0,
+                      dl_vlan=-1,
                       dl_vlan_pcp=0,
+                      dl_vlan_type=0x8100,
                       dl_vlan_cfi=0,
-                      dl_vlan_2nd=-1,
-                      dl_vlan_pcp_2nd=0,
-                      dl_vlan_cfi_2nd=0,
+                      dl_vlan_int=-1,
+                      dl_vlan_pcp_int=0,
+                      dl_vlan_type_int=0x8100,
+                      dl_vlan_cfi_int=0,
+                      dl_vlan_ext=-1,
+                      dl_vlan_pcp_ext=0,
+                      dl_vlan_type_ext=0x8100,
+                      dl_vlan_cfi_ext=0,
                       ip_src='192.168.0.1',
                       ip_dst='192.168.0.2',
                       ip_tos=0,
@@ -744,17 +749,23 @@ def simple_tcp_packet_w_multi_vlan(pktlen=100,
                       tcp_dport=80
                       ):
     """
-    Return a simple dataplane TCP packet with up to 2 vlan tags if specified
+    Return a simple dataplane TCP packet with up to 3 vlan tags if specified
 
     Supports a few parameters:
     @param pktlen Length of packet in bytes w/o CRC
     @param dl_dst Destinatino MAC
     @param dl_src Source MAC
-    @param dl_vlan_enable True if the packet is with vlan, False otherwise
     @param dl_vlan VLAN ID
     @param dl_vlan_pcp VLAN priority
-    @param dl_vlan_2nd Inner (2nd) VLAN ID
-    @param dl_vlan_pcp_2nd Inner (2nd) VLAN priority
+    @param dl_vlan_type VLAN ethtype
+    @param dl_vlan_int Inner VLAN ID if available(not -1). The tag will be
+    added inide of dl_vlan tag
+    @param dl_vlan_pcp_int Inner VLAN priority
+    @param dl_vlan_type_int Inner VLAN ethtype
+    @param dl_vlan_ext External VLAN ID if available(not -1). The tag will be
+    added outside of dl_vlan tag
+    @param dl_vlan_pcp_ext External VLAN priority
+    @param dl_vlan_type_ext External VLAN ethtype
     @param ip_src IP source
     @param ip_dst IP destination
     @param ip_tos IP ToS
@@ -766,24 +777,57 @@ def simple_tcp_packet_w_multi_vlan(pktlen=100,
     it is a valid ethernet/IP/TCP frame.
     """
     # Note Dot1Q.id is really CFI
-    if (dl_vlan_enable):
-        if (dl_vlan_2nd >=0):
-            pkt = scapy.Ether(dst=dl_dst, src=dl_src, type=0x88a8)/ \
-                scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi,
-                            vlan=dl_vlan)/ \
-                scapy.Dot1Q(prio=dl_vlan_pcp_2nd, id=dl_vlan_cfi_2nd,
-                            vlan=dl_vlan_2nd)/ \
-                scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
-                scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+    if dl_vlan_ext >= 0:
+        if dl_vlan >= 0:
+            if dl_vlan_int >= 0:
+                pkt = scapy.Ether(dst=dl_dst, src=dl_src,
+                                  type=dl_vlan_type_ext)/ \
+                    scapy.Dot1Q(prio=dl_vlan_pcp_ext, id=dl_vlan_cfi_ext,
+                                type=dl_vlan_type, vlan=dl_vlan_ext)/ \
+                    scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi,
+                                type=dl_vlan_type_int, vlan=dl_vlan)/ \
+                    scapy.Dot1Q(prio=dl_vlan_pcp_int, id=dl_vlan_cfi_int,
+                                vlan=dl_vlan_int)/ \
+                    scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                    scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+            else:
+                pkt = scapy.Ether(dst=dl_dst, src=dl_src,
+                                  type=dl_vlan_type_ext)/ \
+                    scapy.Dot1Q(prio=dl_vlan_pcp_ext, id=dl_vlan_cfi_ext,
+                                type=dl_vlan_type, vlan=dl_vlan_ext)/ \
+                    scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi,
+                                vlan=dl_vlan)/ \
+                    scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                    scapy.TCP(sport=tcp_sport, dport=tcp_dport)
         else:
-            pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-                scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi, vlan=dl_vlan)/ \
+            pkt = scapy.Ether(dst=dl_dst, src=dl_src,
+                              type=dl_vlan_type_ext)/ \
+                scapy.Dot1Q(prio=dl_vlan_pcp_ext, id=dl_vlan_cfi_ext,
+                            type=dl_vlan_type, vlan=dl_vlan_ext)/ \
                 scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
                 scapy.TCP(sport=tcp_sport, dport=tcp_dport)
     else:
-        pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
-            scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+        if (dl_vlan >= 0):
+            if (dl_vlan_int >= 0):
+                pkt = scapy.Ether(dst=dl_dst, src=dl_src,
+                                  type=dl_vlan_type)/ \
+                    scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi,
+                                type=dl_vlan_type_int, vlan=dl_vlan)/ \
+                    scapy.Dot1Q(prio=dl_vlan_pcp_int, id=dl_vlan_cfi_int,
+                                vlan=dl_vlan_int)/ \
+                    scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                    scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+            else:
+                pkt = scapy.Ether(dst=dl_dst, src=dl_src,
+                                  type=dl_vlan_type)/ \
+                    scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi,
+                                vlan=dl_vlan)/ \
+                    scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                    scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+        else:
+            pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+                scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                scapy.TCP(sport=tcp_sport, dport=tcp_dport)
 
     pkt = pkt/("D" * (pktlen - len(pkt)))
 
@@ -815,10 +859,13 @@ def error_verify(parent, exp_type, exp_code):
 
 def flow_match_test_port_pair_vlan(parent, ing_port, egr_port, wildcards=0,
                                    dl_vlan=-1, dl_vlan_pcp=0,
-                                   dl_vlan_2nd=-1, dl_vlan_pcp_2nd=0,
+                                   dl_vlan_type=0x8100,
+                                   dl_vlan_int=-1, dl_vlan_pcp_int=0,
                                    vid_match=ofp.OFPVID_NONE, pcp_match=0,
                                    exp_vid=-1, exp_pcp=0,
+                                   exp_vlan_type=0x8100,
                                    match_exp=True,
+                                   add_tag_exp=False,
                                    exp_msg=ofp.OFPT_FLOW_REMOVED,
                                    exp_msg_type=0, exp_msg_code=0,
                                    pkt=None, exp_pkt=None,
@@ -836,38 +883,56 @@ def flow_match_test_port_pair_vlan(parent, ing_port, egr_port, wildcards=0,
     len = 100
     len_w_vid = len + 4
     len_w_2vid = len_w_vid + 4
+    len_w_3vid = len_w_2vid + 4
     if pkt is None:
         if dl_vlan >= 0:
-            if dl_vlan_2nd >= 0:
+            if dl_vlan_int >= 0:
                 pktlen=len_w_2vid
             else:
                 pktlen=len_w_vid
-            dl_vlan_enable=1
         else:
             pktlen=len
-            dl_vlan_enable=0
         pkt = simple_tcp_packet_w_multi_vlan(pktlen=pktlen,
-                                dl_vlan_enable=dl_vlan_enable,
                                 dl_vlan=dl_vlan,
                                 dl_vlan_pcp=dl_vlan_pcp,
-                                dl_vlan_2nd=dl_vlan_2nd,
-                                dl_vlan_pcp_2nd=dl_vlan_pcp_2nd)
+                                dl_vlan_type=dl_vlan_type,
+                                dl_vlan_int=dl_vlan_int,
+                                dl_vlan_pcp_int=dl_vlan_pcp_int)
+
     if exp_pkt is None:
         if exp_vid >= 0:
-            # Inner vlan tag value shouldn't be changed
-            if dl_vlan_2nd >= 0:
-                exp_pktlen=len_w_2vid
+            if add_tag_exp:
+                if dl_vlan >= 0:
+                    if dl_vlan_int >= 0:
+                        exp_pktlen=len_w_3vid
+                    else:
+                        exp_pktlen=len_w_2vid
+                else:
+                    exp_pktlen=len_w_vid
             else:
-                exp_pktlen=len_w_vid
-            exp_dl_vlan_enable=1
+                if dl_vlan_int >= 0:
+                    exp_pktlen=len_w_2vid
+                else:
+                    exp_pktlen=len_w_vid
         else:
             exp_pktlen=len
-            exp_dl_vlan_enable=0
-        exp_pkt = simple_tcp_packet_w_multi_vlan(pktlen=exp_pktlen,
-                                    dl_vlan_enable=exp_dl_vlan_enable,
+
+        if add_tag_exp:
+            exp_pkt = simple_tcp_packet_w_multi_vlan(pktlen=exp_pktlen,
+                                    dl_vlan_ext=exp_vid,
+                                    dl_vlan_pcp_ext=exp_pcp,
+                                    dl_vlan_type_ext=exp_vlan_type,
+                                    dl_vlan=dl_vlan,
+                                    dl_vlan_pcp=dl_vlan_pcp,
+                                    dl_vlan_type=dl_vlan_type,
+                                    dl_vlan_int=dl_vlan_int,
+                                    dl_vlan_pcp_int=dl_vlan_pcp_int)
+        else:
+            exp_pkt = simple_tcp_packet_w_multi_vlan(pktlen=exp_pktlen,
                                     dl_vlan=exp_vid, dl_vlan_pcp=exp_pcp,
-                                    dl_vlan_2nd=dl_vlan_2nd,
-                                    dl_vlan_pcp_2nd=dl_vlan_pcp_2nd)
+                                    dl_vlan_type=exp_vlan_type,
+                                    dl_vlan_int=dl_vlan_int,
+                                    dl_vlan_pcp_int=dl_vlan_pcp_int)
 
     match = parse.packet_to_flow_match(pkt)
     parent.assertTrue(match is not None, "Flow match from pkt failed")
@@ -888,8 +953,6 @@ def flow_match_test_port_pair_vlan(parent, ing_port, egr_port, wildcards=0,
     parent.dataplane.send(ing_port, str(pkt))
 
     if match_exp:
-        if exp_pkt is None:
-            exp_pkt = pkt
         receive_pkt_verify(parent, egr_port, exp_pkt)
         if check_expire:
             #@todo Not all HW supports both pkt and byte counters
@@ -904,11 +967,13 @@ def flow_match_test_port_pair_vlan(parent, ing_port, egr_port, wildcards=0,
             parent.assertTrue(0, "Rcv: Unexpected Message: " + str(exp_msg))
 
 def flow_match_test_vlan(parent, port_map, wildcards=0,
-                         dl_vlan=-1, dl_vlan_pcp=0,
-                         dl_vlan_2nd=-1, dl_vlan_pcp_2nd=0,
+                         dl_vlan=-1, dl_vlan_pcp=0, dl_vlan_type=0x8100,
+                         dl_vlan_int=-1, dl_vlan_pcp_int=0,
                          vid_match=ofp.OFPVID_NONE, pcp_match=0,
                          exp_vid=-1, exp_pcp=0,
+                         exp_vlan_type=0x8100,
                          match_exp=True,
+                         add_tag_exp=False,
                          exp_msg=ofp.OFPT_FLOW_REMOVED,
                          exp_msg_type=0, exp_msg_code=0,
                          pkt=None, exp_pkt=None,
@@ -924,13 +989,17 @@ def flow_match_test_vlan(parent, port_map, wildcards=0,
     @param wildcards For flow match entry
     @param dl_vlan If not -1, and pkt is not None, create a pkt w/ VLAN tag
     @param dl_vlan_pcp VLAN PCP associated with dl_vlan
-    @param dl_vlan_2nd If not -1, create pkt w/ Inner Vlan tag
-    @param dl_vlan_pcp_2nd VLAN PCP associated with dl_vlan_2nd
+    @param dl_vlan_type VLAN ether type associated with dl_vlan
+    @param dl_vlan_int If not -1, create pkt w/ Inner Vlan tag
+    @param dl_vlan_pcp_int VLAN PCP associated with dl_vlan_2nd
     @param vid_match Matching value for VLAN VID field
     @param pcp_match Matching value for VLAN PCP field
     @param exp_vid Expected VLAN VID value. If -1, no VLAN expected
+    @param exp_vlan_type Expected VLAN ether type
     @param exp_pcp Expected VLAN PCP value
     @param match_exp Set whether packet is expected to receive
+    @param add_tag_exp If True, expected_packet has an additional vlan tag,
+    If not, expected_packet's vlan tag is replaced as specified
     @param exp_msg Expected message
     @param exp_msg_type Expected message type associated with the message
     @param exp_msg_code Expected message code associated with the msg_type
@@ -954,16 +1023,19 @@ def flow_match_test_vlan(parent, port_map, wildcards=0,
                                            wildcards=wildcards,
                                            dl_vlan=dl_vlan,
                                            dl_vlan_pcp=dl_vlan_pcp,
-                                           dl_vlan_2nd=dl_vlan_2nd,
-                                           dl_vlan_pcp_2nd=dl_vlan_pcp_2nd,
+                                           dl_vlan_type=dl_vlan_type,
+                                           dl_vlan_int=dl_vlan_int,
+                                           dl_vlan_pcp_int=dl_vlan_pcp_int,
                                            vid_match=vid_match,
                                            pcp_match=pcp_match,
                                            exp_vid=exp_vid,
                                            exp_pcp=exp_pcp,
+                                           exp_vlan_type=exp_vlan_type,
                                            exp_msg=exp_msg,
                                            exp_msg_type=exp_msg_type,
                                            exp_msg_code=exp_msg_code,
                                            match_exp=match_exp,
+                                           add_tag_exp=add_tag_exp,
                                            pkt=pkt, exp_pkt=exp_pkt,
                                            action_list=action_list,
                                            check_expire=check_expire)

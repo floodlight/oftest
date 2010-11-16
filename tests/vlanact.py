@@ -91,13 +91,14 @@ class VlanActNonTag(pktact.BaseMatchCase):
     """
     Vlan action test with untagged pkts
     Excercise various test_conditions
-    Test on one pair of ports to focus on taggig feature evaluation
+    Test on one pair of ports
     """
     def __init__(self):
         pktact.BaseMatchCase.__init__(self)
         self.num_tags = 0
         self.vid = -1
         self.pcp = 0
+        self.vlan_type = 0x8100
         self.vid_2nd = -1
         self.pcp_2nd = 0
         self.vid_match = ofp.OFPVID_NONE
@@ -114,7 +115,7 @@ class VlanActOneTag(VlanActNonTag):
     """
     Vlan action test with tagged pkts
     Excercise various test_conditions
-    Test on one pair of ports to focus on taggig feature evaluation
+    Test on one pair of ports
     """
     def runTest(self):
         self.num_tags = 1
@@ -133,12 +134,13 @@ class VlanActTwoTag(pktact.BaseMatchCase):
     """
     Vlan action test with two-tagged pkts
     Excercise various test_conditions
-    Test on one pair of ports to focus on taggig feature evaluation
+    Test on one pair of ports
     """
     def runTest(self):
         self.num_tags = 2
         self.vid = random.randint(0,4093)
         self.pcp = random.randint(0,5)
+        self.vlan_type = 0x88a8
         self.vid_2nd = self.vid + 1
         self.pcp_2nd = self.pcp + 1
         self.vid_match = self.vid
@@ -192,6 +194,7 @@ def vlan_pop_act_tests(parent):
         return
 
     act = action.action_pop_vlan()
+    exp_vlan_type = 0x8100
 
     if parent.num_tags == 0:
         match_exp = False
@@ -223,15 +226,17 @@ def vlan_pop_act_tests(parent):
     action_list=[act]
 
     flow_match_test_vlan(parent, pa_port_map,
+                    wildcards=0,
                     dl_vlan=parent.vid,
                     dl_vlan_pcp=parent.pcp,
-                    dl_vlan_2nd=parent.vid_2nd,
-                    dl_vlan_pcp_2nd=parent.pcp_2nd,
+                    dl_vlan_type=parent.vlan_type,
+                    dl_vlan_int=parent.vid_2nd,
+                    dl_vlan_pcp_int=parent.pcp_2nd,
                     vid_match=parent.vid_match,
                     pcp_match=parent.pcp_match,
                     exp_vid=exp_vid,
                     exp_pcp=exp_pcp,
-                    wildcards=0,
+                    exp_vlan_type=exp_vlan_type,
                     match_exp=match_exp,
                     exp_msg=exp_msg,
                     exp_msg_type=exp_msg_type,
@@ -264,6 +269,8 @@ def vlan_set_act_tests(parent):
         skip_message_emit(parent,
             "Vlan set action test. SET VLAN PCP not supported")
         return
+
+    exp_vlan_type = parent.vlan_type
 
     for test_condition in range(4):
         if test_condition == 0:
@@ -325,15 +332,17 @@ def vlan_set_act_tests(parent):
         action_list=[act]
 
         flow_match_test_vlan(parent, pa_port_map,
+                        wildcards=0,
                         dl_vlan=parent.vid,
                         dl_vlan_pcp=parent.pcp,
-                        dl_vlan_2nd=parent.vid_2nd,
-                        dl_vlan_pcp_2nd=parent.pcp_2nd,
+                        dl_vlan_type=parent.vlan_type,
+                        dl_vlan_int=parent.vid_2nd,
+                        dl_vlan_pcp_int=parent.pcp_2nd,
                         vid_match=parent.vid_match,
                         pcp_match=parent.pcp_match,
                         exp_vid=exp_vid,
                         exp_pcp=exp_pcp,
-                        wildcards=0,
+                        exp_vlan_type=exp_vlan_type,
                         match_exp=match_exp,
                         exp_msg=exp_msg,
                         exp_msg_type=exp_msg_type,
@@ -365,6 +374,7 @@ def vlan_singlepush_act_tests(parent):
             act = action.action_push_vlan()
             act.ethertype = 0x8100
             match_exp = True
+            add_tag_exp = True
             if parent.num_tags == 0:
                 exp_vid = 0
                 exp_pcp = 0
@@ -375,11 +385,11 @@ def vlan_singlepush_act_tests(parent):
             exp_msg_type = 0 #NOT_EXPECTED
             exp_msg_code = 0 #NOT_EXPECTED
 
-        #@todo How to create expected packet with 0x88aa??
         elif test_condition == 1:
             act = action.action_push_vlan()
-            act.ethertype = 0x88aa
+            act.ethertype = 0x88a8
             match_exp = True
+            add_tag_exp = True
             if parent.num_tags == 0:
                 exp_vid = 0
                 exp_pcp = 0
@@ -394,6 +404,7 @@ def vlan_singlepush_act_tests(parent):
             act = action.action_push_vlan()
             act.ethertype = 0xaaa  #Other than 0x8100 and 0x88aa
             match_exp = False
+            add_tag_exp = False
             exp_vid = 0
             exp_pcp = 0
             exp_msg = ofp.OFPT_ERROR
@@ -403,16 +414,19 @@ def vlan_singlepush_act_tests(parent):
         action_list=[act]
 
         flow_match_test_vlan(parent, pa_port_map,
+                        wildcards=0,
                         dl_vlan=parent.vid,
                         dl_vlan_pcp=parent.pcp,
-                        dl_vlan_2nd=parent.vid_2nd,
-                        dl_vlan_pcp_2nd=parent.pcp_2nd,
+                        dl_vlan_type=parent.vlan_type,
+                        dl_vlan_int=parent.vid_2nd,
+                        dl_vlan_pcp_int=parent.pcp_2nd,
                         vid_match=parent.vid_match,
                         pcp_match=parent.pcp_match,
                         exp_vid=exp_vid,
                         exp_pcp=exp_pcp,
-                        wildcards=0,
+                        exp_vlan_type=act.ethertype,
                         match_exp=match_exp,
+                        add_tag_exp=add_tag_exp,
                         exp_msg=exp_msg,
                         exp_msg_type=exp_msg_type,
                         exp_msg_code=exp_msg_code,
@@ -461,7 +475,9 @@ def vlan_multipush_act_tests(parent):
         if test_condition == 0:
             act2 = action.action_set_vlan_vid()
             act2.vlan_vid = new_vid
+            add_tag_exp = True
             exp_vid = new_vid
+            exp_vlan_type = act.ethertype
             if parent.num_tags == 0:
                 exp_pcp = 0
             else:
@@ -470,7 +486,9 @@ def vlan_multipush_act_tests(parent):
         elif test_condition == 1:
             act2 = action.action_set_vlan_pcp()
             act2.vlan_pcp = new_pcp
+            add_tag_exp = True
             exp_pcp = new_pcp
+            exp_vlan_type = act.ethertype
             if parent.num_tags == 0:
                 exp_vid = 0
             else:
@@ -481,13 +499,17 @@ def vlan_multipush_act_tests(parent):
             act2.vlan_vid = new_vid
             act3 = action.action_set_vlan_pcp()
             act3.vlan_pcp = new_pcp
+            add_tag_exp = True
             exp_vid = new_vid
             exp_pcp = new_pcp
+            exp_vlan_type = act.ethertype
 
         elif test_condition == 3:
             act2 = action.action_pop_vlan()
-            exp_vid = -1
-            exp_pcp = 0
+            add_tag_exp = False
+            exp_vid = parent.vid
+            exp_pcp = parent.pcp
+            exp_vlan_type = parent.vlan_type
 
         match_exp = True
         exp_msg = ofp.OFPT_FLOW_REMOVED
@@ -499,16 +521,19 @@ def vlan_multipush_act_tests(parent):
             action_list.append(act3)
 
         flow_match_test_vlan(parent, pa_port_map,
+                        wildcards=0,
                         dl_vlan=parent.vid,
                         dl_vlan_pcp=parent.pcp,
-                        dl_vlan_2nd=parent.vid_2nd,
-                        dl_vlan_pcp_2nd=parent.pcp_2nd,
+                        dl_vlan_type=parent.vlan_type,
+                        dl_vlan_int=parent.vid_2nd,
+                        dl_vlan_pcp_int=parent.pcp_2nd,
                         vid_match=parent.vid_match,
                         pcp_match=parent.pcp_match,
                         exp_vid=exp_vid,
                         exp_pcp=exp_pcp,
-                        wildcards=0,
+                        exp_vlan_type=exp_vlan_type,
                         match_exp=match_exp,
+                        add_tag_exp=add_tag_exp,
                         exp_msg=exp_msg,
                         exp_msg_type=exp_msg_type,
                         exp_msg_code=exp_msg_code,
@@ -517,7 +542,7 @@ def vlan_multipush_act_tests(parent):
 
 def vlan_illegal_act_tests(parent):
     """
-    Test with two same actions and see if the error messages are expected
+    Test with two same actions and see if the error messages are as expected
 
     @param parent Must implement controller, dataplane, assertTrue, assertEqual
     and logger
@@ -572,15 +597,15 @@ def vlan_illegal_act_tests(parent):
         action_list=[act, act2]
 
         flow_match_test_vlan(parent, pa_port_map,
+                        wildcards=0,
                         dl_vlan=parent.vid,
                         dl_vlan_pcp=parent.pcp,
-                        dl_vlan_2nd=parent.vid_2nd,
-                        dl_vlan_pcp_2nd=parent.pcp_2nd,
+                        dl_vlan_int=parent.vid_2nd,
+                        dl_vlan_pcp_int=parent.pcp_2nd,
                         vid_match=parent.vid_match,
                         pcp_match=parent.pcp_match,
                         exp_vid=exp_vid,
                         exp_pcp=exp_pcp,
-                        wildcards=0,
                         match_exp=match_exp,
                         exp_msg=exp_msg,
                         exp_msg_type=exp_msg_type,
