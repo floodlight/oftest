@@ -236,9 +236,9 @@ def vlan_any_tests(parent, vlan_id_mask=False, vlan_pcp_mask=False):
             vid = random.randint(0, 4095)
             pcp_match = 7 - pcp # unmatching value
             if vlan_id_mask == True:
-                match_exp = False
-            else:
                 match_exp = True
+            else:
+                match_exp = False
 
         if match_exp == True:
             exp_vid = vid
@@ -304,7 +304,7 @@ def vlan_specific_tests(parent, vlan_id_mask=False, vlan_pcp_mask=False):
         elif test_condition == 2:
             vid = vid_match
             pcp = pcp_match + 1
-            if vlan_pcp_mask == True:
+            if (vlan_vid_mask == True) or (vlan_pcp_mask == True):
                 match_exp = True
             else:
                 match_exp = False
@@ -327,7 +327,7 @@ def vlan_specific_tests(parent, vlan_id_mask=False, vlan_pcp_mask=False):
         elif test_condition == 5:
             vid = vid_match + 1
             pcp = pcp_match + 1
-            if (vlan_id_mask == True) and (vlan_pcp_mask == True):
+            if vlan_id_mask == True:
                 match_exp = True
             else:
                 match_exp = False
