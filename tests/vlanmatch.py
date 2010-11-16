@@ -286,10 +286,12 @@ def vlan_specific_tests(parent, vlan_id_mask=False, vlan_pcp_mask=False):
     exp_msg_code = 0 #NOT_EXPECTED
 
     for test_condition in range(6):
+        vid_2nd = -1
+        pcp_2nd = 0
         if test_condition == 0:
             vid = -1
             pcp = 0
-            if (vlan_id_mask == True) and (vlan_pcp_mask == True):
+            if vlan_id_mask == True:
                 match_exp = True
             else:
                 match_exp = False
@@ -340,8 +342,8 @@ def vlan_specific_tests(parent, vlan_id_mask=False, vlan_pcp_mask=False):
         flow_match_test_vlan(parent, pa_port_map,
                     dl_vlan=vid,
                     dl_vlan_pcp=pcp,
-                    dl_vlan_2nd=-1,
-                    dl_vlan_pcp_2nd=0,
+                    dl_vlan_2nd=vid_2nd,
+                    dl_vlan_pcp_2nd=pcp_2nd,
                     vid_match=vid_match,
                     pcp_match=pcp_match,
                     exp_vid=exp_vid,

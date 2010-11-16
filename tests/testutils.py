@@ -768,9 +768,9 @@ def simple_tcp_packet_w_multi_vlan(pktlen=100,
     # Note Dot1Q.id is really CFI
     if (dl_vlan_enable):
         if (dl_vlan_2nd >=0):
-            pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            pkt = scapy.Ether(dst=dl_dst, src=dl_src, type=0x88a8)/ \
                 scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi,
-                            vlan=dl_vlan, type=0x8100)/ \
+                            vlan=dl_vlan)/ \
                 scapy.Dot1Q(prio=dl_vlan_pcp_2nd, id=dl_vlan_cfi_2nd,
                             vlan=dl_vlan_2nd)/ \
                 scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
@@ -816,7 +816,7 @@ def error_verify(parent, exp_type, exp_code):
 def flow_match_test_port_pair_vlan(parent, ing_port, egr_port, wildcards=0,
                                    dl_vlan=-1, dl_vlan_pcp=0,
                                    dl_vlan_2nd=-1, dl_vlan_pcp_2nd=0,
-                                   vid_match=ofp.OFP_VLAN_NONE, pcp_match=0,
+                                   vid_match=ofp.OFPVID_NONE, pcp_match=0,
                                    exp_vid=-1, exp_pcp=0,
                                    match_exp=True,
                                    exp_msg=ofp.OFPT_FLOW_REMOVED,
@@ -906,7 +906,7 @@ def flow_match_test_port_pair_vlan(parent, ing_port, egr_port, wildcards=0,
 def flow_match_test_vlan(parent, port_map, wildcards=0,
                          dl_vlan=-1, dl_vlan_pcp=0,
                          dl_vlan_2nd=-1, dl_vlan_pcp_2nd=0,
-                         vid_match=ofp.OFP_VLAN_NONE, pcp_match=0,
+                         vid_match=ofp.OFPVID_NONE, pcp_match=0,
                          exp_vid=-1, exp_pcp=0,
                          match_exp=True,
                          exp_msg=ofp.OFPT_FLOW_REMOVED,
