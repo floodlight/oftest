@@ -16,14 +16,24 @@ class OFSwitch:
     Not sure if this is useful; putting it here preemptively
     """
     Name="none"
-    def __init__(self,interfaces,port):
+    def __init__(self,interfaces,config):
         self.interfaces = interfaces
-        self.port = port
-    def start(self):    
+        self.port = config.port
+    def start(self):
+        ''' 
+        Start up all the various parts of a switch:
+            should block 
+        '''    
         pass
     def test(self):
+        ''' 
+        Run a self test to make sure the switch is runnable
+        '''
         return True
     def stop(self):
+        '''
+        Stop any parts of the switch that could be still running
+        '''
         pass
    
 class OFReferenceSwitch(OFSwitch):
@@ -31,9 +41,12 @@ class OFReferenceSwitch(OFSwitch):
     Start up an OpenFlow reference switch
     """
     Name="reference"
-    def __init__(self,interfaces,port,of_dir):
-        OFSwitch.__init__(self,interfaces,port)
-        self.of_dir=of_dir
+    def __init__(self,interfaces,config):
+        OFSwitch.__init__(self,interfaces,config)
+        if config.of_dir:
+            self.of_dir=config.of_dir
+        else:
+            self.of_dir = "../../openflow"
         self.ofd = self.of_dir + "/udatapath/ofdatapath"
         self.ofp = self.of_dir + "/secchan/ofprotocol"
         self.ofd_op = None
@@ -58,11 +71,44 @@ class OFReferenceSwitch(OFSwitch):
         print "Started ofdatapath on IFs " + ints + " with pid " + str(self.ofd_op.pid)        
         call([self.ofp, "unix:/tmp/ofd", "tcp:127.0.0.1:" + str(options.port),
               "--fail=closed", "--max-backoff=1"])
-    def kill(self):
+    def stop(self):
         if self.ofd_op:
             print "Killing ofdatapath on pid: %d" % (self.ofd_op.pid)
             os.kill(self.ofd_op.pid,signal.SIGTERM)
             #self.ofd_op.kill()   ### apparently Popen.kill() requires python 2.6
+
+class OFPS(OFSwitch):
+    """
+    Start up an OpenFlow reference switch
+    """
+    Name="ofps"
+    def __init__(self,interfaces,config):
+        OFSwitch.__init__(self,interfaces,config)
+        if config.of_dir:
+            self.of_dir=config.of_dir
+        else:
+            self.of_dir = "../src/python/ofps"
+        self.ofps = self.of_dir + "/ofps.py"
+        
+    def test(self):
+        if not OFSwitch.test(self):
+            return False
+        try:
+            check_call(["ls", self.ofps])
+        except:
+            print "Could not find datapath daemon: " + self.ofd
+            return False
+        return True
+
+    def start(self):
+        ints = ','.join(self.interfaces)
+        cmd =[self.ofps, "-c", "127.0.0.1", '-i', ints, '-p', str(options.port),
+              ] 
+        call(cmd)
+        print "Started %s" % (' '.join(cmd))
+        
+    def stop(self):
+        pass
 
 def setup_veths(options):
     print "Setting up %d virtual ethernet pairs" % (options.port_count)
@@ -93,7 +139,7 @@ def teardown_veths(options):
 parser = OptionParser(version="%prog 0.1")
 parser.set_defaults(switch="reference")
 parser.set_defaults(port_count=4)
-parser.set_defaults(of_dir="../../openflow")
+parser.set_defaults(of_dir=None)
 parser.set_defaults(port=6633)
 parser.add_option("-n", "--port_count", type="int",
                   help="Number of veth pairs to create")
@@ -113,7 +159,9 @@ try:
     veths = setup_veths(options)
     
     if options.switch == OFReferenceSwitch.Name :
-        switch = OFReferenceSwitch(veths, options.port, options.of_dir)
+        switch = OFReferenceSwitch(veths, options)
+    elif options.switch == OFPS.Name :
+        switch = OFPS(veths, options)
     #########
     ### Add more switch types here
     #########
@@ -139,7 +187,7 @@ try:
 finally:
     teardown_veths(options)
     if switch:
-        switch.kill()
+        switch.stop()
 
 
 
