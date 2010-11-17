@@ -37,14 +37,14 @@ def is_delete_cmd(command):
     """
     Return boolean indicating if this flow mod operation is delete
     """
-    return (command == ofp.OFPFC_DELETE || 
+    return (command == ofp.OFPFC_DELETE or 
             command == ofp.OFPFC_DELETE_STRICT)
 
 def is_strict_cmd(command):
     """
     Return boolean indicating if this flow mod operation is delete
     """
-    return (command == ofp.OFPFC_MODIFY_STRICT || 
+    return (command == ofp.OFPFC_MODIFY_STRICT or 
             command == ofp.OFPFC_DELETE_STRICT)
 
 def meta_match(match_a, match_b):
