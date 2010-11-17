@@ -33,6 +33,138 @@ table.
 
 import oftest.cstruct as ofp
 
+def is_delete_cmd(command):
+    """
+    Return boolean indicating if this flow mod operation is delete
+    """
+    return (command == ofp.OFPFC_DELETE || 
+            command == ofp.OFPFC_DELETE_STRICT)
+
+def is_strict_cmd(command):
+    """
+    Return boolean indicating if this flow mod operation is delete
+    """
+    return (command == ofp.OFPFC_MODIFY_STRICT || 
+            command == ofp.OFPFC_DELETE_STRICT)
+
+def meta_match(match_a, match_b):
+    """
+    Compare non-packet data in_port and metadata
+    @params match_a Used for wildcards and masks
+    @params match_b Other fields for match
+    """
+    wc = match_a.wildcards
+    if not (wc & ofp.OFPFW_IN_PORT):
+        # @todo logical port match?
+        if match_a.in_port != match_b.in_port:
+            return False
+
+    #@todo Does this 64 bit stuff work in Python?
+    if (match_a.metadata_mask & match_a.metadata !=
+        match_a.metadata_mask & match_b.metadata):
+        return False
+
+    return True
+
+
+def l2_match(match_a, match_b):
+    """
+    Compare in_port, L2 fields and VLAN and MPLS tags for two flows
+    @params match_a Used for wildcards and masks
+    @params match_b Other fields for match
+    """
+    wc = match_a.wildcards
+
+    # Addresses and metadata:  
+    # @todo Check masks are negated correctly
+    for byte in match_a.dl_src_mask:
+        byte = ~byte
+        if match_a.dl_src & byte != match_b.dl_src & byte:
+            return False
+    for byte in match_a.dl_dst_mask:
+        byte = ~byte
+        if match_a.dl_dst & byte != match_b.dl_dst & byte:
+            return False
+    mask = ~match_a.metadata_mask
+    if match_a.metadata & mask != match_b.metadata & mask:
+        return False
+
+    # @todo  Check untagged logic
+    if not (wc & ofp.OFPFW_DL_VLAN):
+        if match_a.dl_vlan != match_b.dl_vlan:
+            return False
+    if not (wc & ofp.OFPFW_DL_VLAN_PCP):
+        if match_a.dl_vlan_pcp != match_b.dl_vlan_pcp:
+            return False
+    if not (wc & ofp.OFPFW_DL_TYPE):
+        if match_a.dl_type != match_b.dl_type:
+            return False
+
+    if not (wc & ofp.OFPFW_MPLS_LABEL):
+        if match_a.mpls_label != match_b.mpls_lablel:
+            return False
+    if not (wc & ofp.OFPFW_MPLS_TC):
+        if match_a.mpls_tc != match_b.mpls_tc:
+            return False
+
+def l3_match(match_a, match_b):
+    """
+    Check IP fields for match, not strict
+    @params match_a Used for wildcards and masks
+    @params match_b Other fields for match
+    """
+
+    wc = match_a.wildcards
+    if not (wc & ofp.OFPFW_NW_TOS):
+        if match_a.nw_tos != match_b.nw_tos:
+            return False
+    if not (wc & ofp.OFPFW_NW_PROTO):
+        if match_a.nw_proto != match_b.nw_proto:
+            return False
+        #@todo COMPLETE THIS
+    mask = ~match_a.nw_src_mask
+    if match_a.nw_src & mask != match_b.nw_src & mask:
+        return False
+    mask = ~match_a.nw_dst_mask
+    if match_a.nw_dst & mask != match_b.nw_dst & mask:
+        return False
+
+    return True
+
+def flow_match_strict(flow_a, flow_b):
+    """
+    Check if flows match strictly
+    @param flow_a Primary key for cookie mask, etc
+    @param flow_b Other key to match
+    """
+    wc_a = flow_a.match.wildcards
+    wc_b = flow_b.match.wildcards
+    if (wc_a != wc_b):
+        return False
+    if (flow_a.priority != flow_b.priority):
+        return False
+    if (flow_a.cookie_mask & flow_a.cookie != 
+        flow_a.cookie & flow_b.cookie):
+        return False
+    if is_delete_cmd(flow_a.command):
+        if (flow_a.out_port != ofp.OFPP_ANY):
+            if (flow_a.out_port != flow_b.out_port):
+                return False
+        if (flow_a.out_group != ofp.OFPG_ANY):
+            if (flow_a.out_group != flow_b.out_group):
+                return False
+
+    if not l2_match(match_a, match_b):
+        return False
+
+    # @todo  Switch on DL type; handle ARP cases, etc
+    # @todo  What if DL_TYPE is wildcarded?
+    if match_a.dl_type == 0x800:
+        if not l3_match(match_a, match_b):
+            return False
+
+    return True
+
 class FlowEntry:
     """
     Structure to track a flow table entry
@@ -51,88 +183,48 @@ class FlowEntry:
         self.bytes = 0
         self.insert_time = time.time()
 
-    def _check_ip_fields(entry_fields, fields):
-        if not (wc & ofp.OFPFW_NW_TOS):
-            if entry_fields.nw_tos != fields.nw_tos:
-                return False
-        if not (wc & ofp.OFPFW_NW_PROTO):
-            if entry_fields.nw_proto != fields.nw_proto:
-                return False
-        #@todo COMPLETE THIS
-        mask = ~entry_fields.nw_src_mask
-        if entry_fields.nw_src & mask != pkt_fields.nw_src & mask:
+    def match_flow_mod(self, new_flow):
+        """
+        Return boolean indicating whether new_flow matches this flow
+        This is used for add/modify/delete operations
+        @param new_flow The flow_mod object to match.
+        """
+        if (flow_a.flags & ofp.OFPFF_CHECK_OVERLAP):
+            print("Check overlap set but not implemented")
+            #@todo implement
+
+        if is_strict_cmd(new_flow.command):
+            return flow_match_strict(new_flow, self.flow_mod)
+        
+        # This just looks like a packet match from here.
+        if not meta_match(new_flow.match, self.flow_mod.match):
             return False
-        mask = ~entry_fields.nw_dst_mask
-        if entry_fields.nw_dst & mask != pkt_fields.nw_dst & mask:
+        if not l2_match(new_flow.match, self.flow_mod.match):
             return False
+        if flow_mod.match.dl_type == 0x800:
+            if not l3_match(new_flow.match, self.flow_mod.match):
+                return False
 
         return True
 
-    def is_match(self, pkt_fields, bytes, operation=None, flow_mod=None):
+    def match_packet(self, packet):
         """
-        Return boolean indicating if this flow entry matches "match"
-        which is generated from a packet.  If so, update counters unless
-        match_only is true (indicating we're searching for a flow entry)
-        Otherwise return None.
-        @param pkt_fields An ofp_match structure to search for
-        @param bytes to use if update required; 0 if no udpate required
-        @param operation Check of add/delete strict matching; OFPFC_ value.
-        @param flow_mod If not None, and bytes == 0, use for strict checks
+        Return boolean indicating packet matches this flow entry
+        Updates flow's counters if match occurs
+        @param packet The packet object to match.  Assumes parse is up to date
         """
-        # Initial lazy approach
-        # Should probably generate list of identifiers from non-wildcards
 
-        pkt_fields = packet.match
-
-        # @todo Support "type" field for ofp_match
-        entry_fields = self.flow_mod.match
-        wc = entry_fields.wildcards
-        if not (wc & ofp.OFPFW_IN_PORT):
-            # @todo logical port match?
-            if entry_fields.in_port != fields.in_port:
-                return False
-
-        # Addresses and metadata:  
-        # @todo Check masks are negated correctly
-        for byte in entry_fields.dl_src_mask:
-            byte = ~byte
-            if entry_fields.dl_src & byte != pkt_fields.dl_src & byte:
-                return False
-        for byte in entry_fields.dl_dst_mask:
-            byte = ~byte
-            if entry_fields.dl_dst & byte != pkt_fields.dl_dst & byte:
-                return False
-        mask = ~entry_fields.metadata_mask
-        if entry_fields.metadata & mask != pkt_fields.metadata & mask:
+        if not meta_match(self.flow_mod.match, packet.match):
+            return False
+        if not l2_match(self.flow_mod.match, packet.match):
+            return False
+        if not l3_match(self.flow_mod.match, packet.match):
             return False
 
-        # @todo  Check untagged logic
-        if not (wc & ofp.OFPFW_DL_VLAN):
-            if entry_fields.dl_vlan != fields.dl_vlan:
-                return False
-        if not (wc & ofp.OFPFW_DL_VLAN_PCP):
-            if entry_fields.dl_vlan_pcp != fields.dl_vlan_pcp:
-                return False
-        if not (wc & ofp.OFPFW_DL_TYPE):
-            if entry_fields.dl_type != fields.dl_type:
-                return False
-
-        # @todo  Switch on DL type; handle ARP cases, etc
-        if entry_fields.dl_type == 0x800:
-            if not _check_ip_fields(entry_fields, fields):
-                return False
-        if not (wc & ofp.OFPFW_MPLS_LABEL):
-            if entry_fields.mpls_label != fields.mpls_lablel:
-                return False
-        if not (wc & ofp.OFPFW_MPLS_TC):
-            if entry_fields.mpls_tc != fields.mpls_tc:
-                return False
-
         # Okay, if we get here, we have a match.
-        if bytes != 0:  # Update counters
-            self.last_hit = time.time()
-            self.packets += 1
-            self.bytes += bytes
+        self.last_hit = time.time()
+        self.packets += 1
+        self.bytes += packet.bytes
 
         return True
 

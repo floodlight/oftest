@@ -79,15 +79,32 @@ class FlowPipeline(Thread):
         """
         self.controller = controller
 
-    def flow_mod_add(self, operation, flow_mod):
+    def flow_mod(self, flow_mod):
         """
         Update the table according to the flow mod message 
         @param operation The flow operation add, mod delete
         @param flow_mod The flow mod message to process
         """
-        if flow_mod.table_id > self.n_tables:
-            return -1
-        return self.tables[flow_mod.table_id].flow_mod_add(operation, flow_mod)
+        if flow_mod.table_id >= self.n_tables:
+            self.logger.debug("bad table id " + str(flow_mod.table_id))
+            return (-1, OFPFMFC_BAD_TABLE_ID)
+        if flow_mod.command == ofp.OFPFC_ADD:
+            self.logger.debug("flow mod add")
+            return self.tables[flow_mod.table_id].flow_mod_add(operation, 
+                                                               flow_mod)
+        elif flow_mod.command == ofp.OFPFC_MODIFY:
+            self.logger.debug("flow mod modify")
+            pass
+        elif flow_mod.command == ofp.OFPFC_MODIFY_STRICT:
+            self.logger.debug("flow mod modify strict")
+            pass
+        elif flow_mod.command == ofp.OFPFC_DELETE:
+            self.logger.debug("flow mod delete")
+            pass
+        elif flow_mod.command == ofp.OFPFC_DELETE_STRICT:
+            self.logger.debug("flow mod delete strict")
+            pass
+
 
     def table_caps_get(self, table_id=0):
         """

@@ -63,17 +63,22 @@ class FlowTable:
         self.flow_sync.release()
         return expired_flows
 
-    def flow_mod_add(self, operation, flow_mod):
+    def do_flow_mod(self, flow_mod):
         """
         Update the flow table according to the operation
         @param operation add/mod/delete operation (OFPFC_ value)
         @param flow_mod
         """
+        # First, generate a list of flows matching the flow mod
+        
+
+        # Then based on the operation, do things to those flows
+
         found = False
         # @todo Handle delete; differentiate mod and add
         self.flow_sync.acquire()
         for flow in self.flow_entries:
-            if flow.flow_match(flow_mod.match, 0, operation=operation,
+            if flow.flow_match(flow_mod.match, 0, command=command,
                                flow_mod=flow_mod):
                 self.logger.verbose("Matched in table " + str(self.table_id))
                 flow.update(flow_mod)
@@ -85,6 +90,22 @@ class FlowTable:
             # @todo Is there a sorted list insert operation?
             self.flow_entries.insert(new_flow)
             self.flow_entries.sort(prio_sort)
+
+
+        elif flow_mod.command == ofp.OFPFC_MODIFY:
+            self.logger.debug("flow mod modify")
+            pass
+        elif flow_mod.command == ofp.OFPFC_MODIFY_STRICT:
+            self.logger.debug("flow mod modify strict")
+            pass
+        elif flow_mod.command == ofp.OFPFC_DELETE:
+            self.logger.debug("flow mod delete")
+            pass
+        elif flow_mod.command == ofp.OFPFC_DELETE_STRICT:
+            self.logger.debug("flow mod delete strict")
+            pass
+
+
 
         self.flow_sync.release()
         # @todo Check for priority conflict?
