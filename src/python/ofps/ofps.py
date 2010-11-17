@@ -1,3 +1,4 @@
+#!/usr/bin/python
 ######################################################################
 #
 # All files associated with the OpenFlow Python Switch (ofps) are
@@ -50,25 +51,59 @@ from ofps_act import *
 from ctrl_msg import *
 from ofps_pkt import Packet
 from pipeline import FlowPipeline
+from optparse import OptionParser
+import pdb
 
 DEFAULT_TABLE_COUNT=1
 
 class OFSwitchConfig:
     """
-    Class to document normal configuration parameters
+    Class to hold normal configuration parameters
+    
+       extended to do arg parsing
     """
-    def __init__(self):
-        self.controller_ip = "127.0.0.1"
-        self.controller_port = 8833
-        self.passive_listen_port = None
-        self.port_map = {1 : "veth0",
-                         2 : "veth2",
-                         3 : "veth4",
-                         4 : "veth6"}
-        self.n_tables = DEFAULT_TABLE_COUNT
+    def __init__(self):         
+        self.controller_ip = None
+        self.controller_port = None
+        self.n_tables = None
+        self.passive_listen_port=None 
+        self.port_map = {}
         self.env = {}  # Extensible array
 
-
+        parser = OptionParser(version="%prog 0.1")
+        parser.set_defaults(controller_ip="127.0.0.1")
+        parser.set_defaults(controller_port=6633)
+        parser.set_defaults(n_tables=DEFAULT_TABLE_COUNT)
+        parser.set_defaults(interfaces="veth0,veth2,veth4,veth6")
+        
+        parser.add_option('-i','--interfaces',type='string',
+                          help="Comma separated list of interfaces: e.g., \"veth0,veth2,veth4,veth6\"")
+        parser.add_option('-c', '--controller', type="string", dest="controller_ip",
+                           help="OpenFlow Controller Hostname or IP")
+        parser.add_option('-p', '--port', type='int', dest="controller_port",
+                           help="OpenFlow Controller Port")
+        parser.add_option('-t','--tables',type='int', dest="n_tables",
+                          help="Number of tables to create in the pipeline")
+        self.parser=parser
+        
+    def parse_args(self):
+        (self.options, self.args) = self.parser.parse_args()
+        ### Should be a better way to do this
+        self.controller_ip = self.options.controller_ip
+        self.controller_port = self.options.controller_port
+        self.n_tables = self.options.n_tables
+        for intr in self.options.interfaces.split(','):
+            self.addInterface(intr)
+      
+    def generateDefault(self):
+        addInterface(self,"veth0")
+        addInterface(self,"veth2")
+        addInterface(self,"veth4")
+        addInterface(self,"veth6")
+        
+    def addInterface(self, intr):
+        self.port_map[len(self.port_map.items())] = intr
+ 
 class OFSwitch(Thread):
     """
     Top level class for the ofps implementation
@@ -186,4 +221,15 @@ class GroupTable:
         Return an ofp_group_stats object for the group_id
         """
         return None
-
+#####
+# If we're actually executing this file, then run this
+if __name__ == '__main__':
+    #pdb.set_trace()
+    config = OFSwitchConfig()
+    config.parse_args()
+    ofps = OFSwitch()
+    ofps.config_set(config)
+    for port,intr in config.port_map.iteritems():
+        print "Adding interface #%d :: %s" % (port,intr)
+    ofps.start()
+    ofps.join()
