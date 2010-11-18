@@ -35,7 +35,7 @@ packet modifications.
 
 from oftest.cstruct import ofp_match
 
-class Packet:
+class Packet(object):
     """
     Packet abstraction for packet object while in the switch
     """

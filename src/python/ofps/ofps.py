@@ -56,7 +56,7 @@ import pdb
 
 DEFAULT_TABLE_COUNT=1
 
-class OFSwitchConfig:
+class OFSwitchConfig(object):
     """
     Class to hold normal configuration parameters
     
@@ -201,7 +201,7 @@ class OFSwitch(Thread):
         self.pipeline.join()
         self.controller.join()
 
-class GroupTable:
+class GroupTable(object):
     """
     Class to implement a group table object
     """

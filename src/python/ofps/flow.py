@@ -165,7 +165,7 @@ def flow_match_strict(flow_a, flow_b):
 
     return True
 
-class FlowEntry:
+class FlowEntry(object):
     """
     Structure to track a flow table entry
     """

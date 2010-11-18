@@ -43,7 +43,7 @@ def prio_sort(x, y):
         return -1
     return 0
                 
-class FlowTable:
+class FlowTable(object):
     def __init__(self, table_id=0):
         self.flow_entries = []
         self.table_id = table_id
