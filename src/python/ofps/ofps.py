@@ -103,7 +103,7 @@ class OFSwitchConfig(object):
         addInterface(self,"veth6")
         
     def addInterface(self, intr):
-        self.port_map[ len( self.port_map.items()) + 1 ] = intr
+        self.port_map[len(self.port_map) + 1] = intr
  
 class OFSwitch(Thread):
     """
