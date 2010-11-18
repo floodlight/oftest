@@ -164,6 +164,10 @@ if __name__ == '__main__':
     switch = None
 
     try:
+        if os.name != 'posix' or os.uname()[0] != 'Linux':
+          sys.stdout.write("OFTest is not supported on this platform (%s)\n" % os.uname()[0])
+          sys.exit()
+
         veths = setup_veths(options)
         
         if options.switch == OFReferenceSwitch.Name :
@@ -193,7 +197,8 @@ if __name__ == '__main__':
         switch.start()   #### This should block until killed externally
 
     finally:
-        teardown_veths(options)
-        if switch:
-            switch.stop()
+        if os.name == 'posix' and os.uname()[0] == 'Linux':
+            teardown_veths(options)
+            if switch:
+                switch.stop()
 
