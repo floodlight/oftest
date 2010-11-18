@@ -235,5 +235,7 @@ if __name__ == '__main__':
     ofps.config_set(config)
     for port,intr in config.port_map.iteritems():
         print "Adding interface #%d :: %s" % (port,intr)
+    print 'OFPS Starting...'
     ofps.start()
     ofps.join()
+    print 'OFPS Exiting'
