@@ -15,7 +15,7 @@ import Managers
 
 def parse_args():
     parser = OptionParser(version="%prog 0.1")
-    parser.set_defaults(switch="reference")
+    parser.set_defaults(switch="ofps")
     parser.set_defaults(port_count=4)
     parser.set_defaults(of_dir=None)
     parser.set_defaults(port=6633)
