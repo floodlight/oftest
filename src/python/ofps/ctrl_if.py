@@ -227,6 +227,7 @@ class ControllerInterface(Thread):
                         if not self._process_socket():
                             self.logger.error("Error reading packet from controller")
                             self.active = False
+                self.ctrl_socket.close()
             except (socket.error), e :
                 sleep_time = min(sleep_time * 2, 5)
                 print "Got error '%s': sleeping %d seconds and trying again" % (str(e), sleep_time)
@@ -235,7 +236,7 @@ class ControllerInterface(Thread):
 
     def message_send(self, msg, zero_xid=False):
         """
-        Send the message to the switch
+        Send the message to the controller
 
         @param msg A string or OpenFlow message object to be forwarded to
         the switch.
