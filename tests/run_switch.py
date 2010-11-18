@@ -48,7 +48,7 @@ class OFReferenceSwitch(OFSwitch):
     Name="reference"
 
     def __init__(self,interfaces,config):
-        super(OFReferenceSwitch, self).__init__(self, interfaces, config)
+        super(OFReferenceSwitch, self).__init__(interfaces, config)
         if config.of_dir:
             self.of_dir = config.of_dir
         else:
@@ -93,7 +93,7 @@ class OFPS(OFSwitch):
     Name="ofps"
 
     def __init__(self,interfaces,config):
-        super(OFPS, self).__init__(self, interfaces, config)
+        super(OFPS, self).__init__(interfaces, config)
         if config.of_dir:
             self.of_dir=config.of_dir
         else:
