@@ -161,7 +161,7 @@ class ControllerInterface(Thread):
 
             offset += hdr.length
 
-    def _socket_ready(self):
+    def _process_socket(self):
         """
         Return False if error reading socket
         Otherwise handle packet
@@ -188,36 +188,49 @@ class ControllerInterface(Thread):
         Listens on socket for messages until an error (or zero len pkt)
         occurs.
 
+        Loop until we get a connection with exponential back-off
+
         When there is a message on the socket, check for handlers; queue the
         packet if no one handles the packet.
         """
 
         self.dbg_state = "starting"
 
-        # Create listen socket
-        self.logger.info("Create at " + self.host + ":" + 
-                 str(self.port))
-        self.ctrl_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        self.logger.info("Connecting")
+        sleep_time = 1
         self.dbg_state = "connecting"
-        self.ctrl_socket.connect((self.host, self.port))
-        self.logger.info("Connected to " + self.host + " on " + 
-                         str(self.port))
-        self.dbg_state = "connected"
-        self.socs = [self.ctrl_socket]
-        while self.active:
+        while self.dbg_state == "connecting" or self.dbg_state == "connected":
             try:
-                sel_in, sel_out, sel_err = \
-                    select.select(self.socs, [], self.socs, 1)
-            except StandardError:
-                print sys.exc_info()
-                self.logger.error("Select error, exiting")
-                sys.exit(1)
-            if self.ctrl_socket in sel_in:
-                if not self._socket_ready():
-                    self.logger.error("Error reading packet from controller")
-                    self.active = False
+                self.active = False
+                # Create socket
+                self.logger.info("Create at " + self.host + ":" +
+                         str(self.port))
+                self.ctrl_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+                self.logger.info("Connecting")
+                self.dbg_state = "connecting"
+                self.ctrl_socket.connect((self.host, self.port))
+                self.logger.info("Connected to " + self.host + " on " +
+                                 str(self.port))
+                self.dbg_state = "connected"
+                sleep_time = 1      # reset connection back-off timer
+                self.socs = [self.ctrl_socket]
+                while self.active:
+                    try:
+                        sel_in, sel_out, sel_err = \
+                            select.select(self.socs, [], self.socs, 1)
+                    except StandardError:
+                        print sys.exc_info()
+                        self.logger.error("Select error, exiting")
+                        sys.exit(1)
+                    if self.ctrl_socket in sel_in:
+                        if not self._process_socket():
+                            self.logger.error("Error reading packet from controller")
+                            self.active = False
+            except (socket.error), e :
+                sleep_time = min(sleep_time * 2, 5)
+                print "Got error '%s': sleeping %d seconds and trying again" % (str(e), sleep_time)
+            time.sleep(sleep_time)
         self.logger.error("Exiting controller thread");
 
     def message_send(self, msg, zero_xid=False):
