@@ -103,7 +103,7 @@ class OFPS(OFSwitch):
 
     def start(self):
         ints = ','.join(self.interfaces)
-        cmd =[self.ofps, "-c", "127.0.0.1", '-i', ints, '-p', str(options.port),
+        cmd =[self.ofps, "-c", "127.0.0.1", '-i', ints, '-p', str(self.port),
               ] 
         subprocess.call(cmd)
         print "Started %s" % (' '.join(cmd))
