@@ -40,19 +40,20 @@ from a match.
 import sys
 import logging
 import signal
+import copy
+from threading import Thread
+from optparse import OptionParser
+import pdb
+
 import oftest.cstruct as ofp
 import oftest.dataplane as dataplane
 import oftest.message as message
 import oftest.action as action
 from ctrl_if import ControllerInterface
-import copy
-from threading import Thread
 from ofps_act import *
-from ctrl_msg import *
 from ofps_pkt import Packet
 from pipeline import FlowPipeline
-from optparse import OptionParser
-import pdb
+import ctrl_msg
 
 DEFAULT_TABLE_COUNT=1
 
@@ -143,12 +144,13 @@ class OFSwitch(Thread):
         Handle a message from the controller
         @todo Use a queue so messages can be processed in the main thread
         """
-        exec_str = "ctrl_msg_" + msg.__class__.__name__ + "(self, msg, rawmsg)"
-        self.logger.debug("Running " + exec_str)
         try:
-            exec(exec_str)
-        except StandardError:
-            self.logger.error("Could not execute controller fn " + str(action))
+            callable = getattr(ctrl_msg, msg.__class__.__name__)
+            self.logger.debug("Calling ctrl_msg.%s" % msg.__class__.__name__)
+            callable(self, msg, rawmsg)
+        except KeyError:
+            self.logger.error("Could not execute controller fn (%s)" %
+                                str(msg.__class__.__name__))
             sys.exit(1)
 
         return True

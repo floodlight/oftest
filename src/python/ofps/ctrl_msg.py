@@ -27,9 +27,9 @@
 """
 Functions to handle specific controller messages
 
-The function name must match ctrl_msg_<message_name> where
+The function name must match <message_name> where
 message_name is from the oftest message list.  For example, 
-ctrl_msg_features_request.
+features_request.
 
 @todo Implement these functions
 """
@@ -37,7 +37,7 @@ ctrl_msg_features_request.
 from ofps_act import execute_actions
 from ofps_pkt import Packet
 
-def ctrl_msg_aggregate_stats_reply(switch, msg, rawmsg):
+def aggregate_stats_reply(switch, msg, rawmsg):
     """
     Process an aggregate_stats_reply message from the controller
     @param switch The main switch object
@@ -46,7 +46,7 @@ def ctrl_msg_aggregate_stats_reply(switch, msg, rawmsg):
     """
     switch.logger.debug("Received aggregate_stats_reply from controller")
 
-def ctrl_msg_aggregate_stats_request(switch, msg, rawmsg):
+def aggregate_stats_request(switch, msg, rawmsg):
     """
     Process an aggregate_stats_request message from the controller
     @param switch The main switch object
@@ -55,7 +55,7 @@ def ctrl_msg_aggregate_stats_request(switch, msg, rawmsg):
     """
     switch.logger.debug("Received aggregate_stats_request from controller")
 
-def ctrl_msg_bad_action_error_msg(switch, msg, rawmsg):
+def bad_action_error_msg(switch, msg, rawmsg):
     """
     Process a bad_action_error_msg message from the controller
     @param switch The main switch object
@@ -64,7 +64,7 @@ def ctrl_msg_bad_action_error_msg(switch, msg, rawmsg):
     """
     switch.logger.debug("Received bad_action_error_msg from controller")
 
-def ctrl_msg_bad_request_error_msg(switch, msg, rawmsg):
+def bad_request_error_msg(switch, msg, rawmsg):
     """
     Process a bad_request_error_msg message from the controller
     @param switch The main switch object
@@ -73,7 +73,7 @@ def ctrl_msg_bad_request_error_msg(switch, msg, rawmsg):
     """
     switch.logger.debug("Received bad_request_error_msg from controller")
 
-def ctrl_msg_barrier_reply(switch, msg, rawmsg):
+def barrier_reply(switch, msg, rawmsg):
     """
     Process a barrier_reply message from the controller
     @param switch The main switch object
@@ -82,7 +82,7 @@ def ctrl_msg_barrier_reply(switch, msg, rawmsg):
     """
     switch.logger.debug("Received barrier_reply from controller")
 
-def ctrl_msg_barrier_request(switch, msg, rawmsg):
+def barrier_request(switch, msg, rawmsg):
     """
     Process a barrier_request message from the controller
     @param switch The main switch object
@@ -91,7 +91,7 @@ def ctrl_msg_barrier_request(switch, msg, rawmsg):
     """
     switch.logger.debug("Received barrier_request from controller")
 
-def ctrl_msg_desc_stats_reply(switch, msg, rawmsg):
+def desc_stats_reply(switch, msg, rawmsg):
     """
     Process a desc_stats_reply message from the controller
     @param switch The main switch object
@@ -100,7 +100,7 @@ def ctrl_msg_desc_stats_reply(switch, msg, rawmsg):
     """
     switch.logger.debug("Received desc_stats_reply from controller")
 
-def ctrl_msg_desc_stats_request(switch, msg, rawmsg):
+def desc_stats_request(switch, msg, rawmsg):
     """
     Process a desc_stats_request message from the controller
     @param switch The main switch object
@@ -109,7 +109,7 @@ def ctrl_msg_desc_stats_request(switch, msg, rawmsg):
     """
     switch.logger.debug("Received desc_stats_request from controller")
 
-def ctrl_msg_echo_reply(switch, msg, rawmsg):
+def echo_reply(switch, msg, rawmsg):
     """
     Process an echo_reply message from the controller
     @param switch The main switch object
@@ -118,7 +118,7 @@ def ctrl_msg_echo_reply(switch, msg, rawmsg):
     """
     switch.logger.debug("Received echo_reply from controller")
 
-def ctrl_msg_echo_request(switch, msg, rawmsg):
+def echo_request(switch, msg, rawmsg):
     """
     Process an echo_request message from the controller
     @param switch The main switch object
@@ -127,7 +127,7 @@ def ctrl_msg_echo_request(switch, msg, rawmsg):
     """
     switch.logger.debug("Received echo_request from controller")
 
-def ctrl_msg_error(switch, msg, rawmsg):
+def error(switch, msg, rawmsg):
     """
     Process an error message from the controller
     @param switch The main switch object
@@ -136,7 +136,7 @@ def ctrl_msg_error(switch, msg, rawmsg):
     """
     switch.logger.debug("Received error from controller")
 
-def ctrl_msg_experimenter(switch, msg, rawmsg):
+def experimenter(switch, msg, rawmsg):
     """
     Process an experimenter message from the controller
     @param switch The main switch object
@@ -145,7 +145,7 @@ def ctrl_msg_experimenter(switch, msg, rawmsg):
     """
     switch.logger.debug("Received experimenter from controller")
 
-def ctrl_msg_features_reply(switch, msg, rawmsg):
+def features_reply(switch, msg, rawmsg):
     """
     Process a features_reply message from the controller
     @param switch The main switch object
@@ -154,7 +154,7 @@ def ctrl_msg_features_reply(switch, msg, rawmsg):
     """
     switch.logger.debug("Received features_reply from controller")
 
-def ctrl_msg_features_request(switch, msg, rawmsg):
+def features_request(switch, msg, rawmsg):
     """
     Process a features_request message from the controller
     @param switch The main switch object
@@ -163,7 +163,7 @@ def ctrl_msg_features_request(switch, msg, rawmsg):
     """
     switch.logger.debug("Received features_request from controller")
 
-def ctrl_msg_flow_mod(switch, msg, rawmsg):
+def flow_mod(switch, msg, rawmsg):
     """
     Process a flow_mod message from the controller
     @param switch The main switch object
@@ -176,7 +176,7 @@ def ctrl_msg_flow_mod(switch, msg, rawmsg):
         #@todo Send error message with error code
         pass
 
-def ctrl_msg_flow_mod_failed_error_msg(switch, msg, rawmsg):
+def flow_mod_failed_error_msg(switch, msg, rawmsg):
     """
     Process a flow_mod_failed_error_msg message from the controller
     @param switch The main switch object
@@ -185,7 +185,7 @@ def ctrl_msg_flow_mod_failed_error_msg(switch, msg, rawmsg):
     """
     switch.logger.debug("Received flow_mod_failed_error_msg from controller")
 
-def ctrl_msg_flow_removed(switch, msg, rawmsg):
+def flow_removed(switch, msg, rawmsg):
     """
     Process a flow_removed message from the controller
     @param switch The main switch object
@@ -194,7 +194,7 @@ def ctrl_msg_flow_removed(switch, msg, rawmsg):
     """
     switch.logger.debug("Received flow_removed from controller")
 
-def ctrl_msg_flow_stats_reply(switch, msg, rawmsg):
+def flow_stats_reply(switch, msg, rawmsg):
     """
     Process a flow_stats_reply message from the controller
     @param switch The main switch object
@@ -203,7 +203,7 @@ def ctrl_msg_flow_stats_reply(switch, msg, rawmsg):
     """
     switch.logger.debug("Received flow_stats_reply from controller")
 
-def ctrl_msg_flow_stats_request(switch, msg, rawmsg):
+def flow_stats_request(switch, msg, rawmsg):
     """
     Process a flow_stats_request message from the controller
     @param switch The main switch object
@@ -212,7 +212,7 @@ def ctrl_msg_flow_stats_request(switch, msg, rawmsg):
     """
     switch.logger.debug("Received flow_stats_request from controller")
 
-def ctrl_msg_get_config_reply(switch, msg, rawmsg):
+def get_config_reply(switch, msg, rawmsg):
     """
     Process a get_config_reply message from the controller
     @param switch The main switch object
@@ -221,7 +221,7 @@ def ctrl_msg_get_config_reply(switch, msg, rawmsg):
     """
     switch.logger.debug("Received get_config_reply from controller")
 
-def ctrl_msg_get_config_request(switch, msg, rawmsg):
+def get_config_request(switch, msg, rawmsg):
     """
     Process a get_config_request message from the controller
     @param switch The main switch object
@@ -230,7 +230,7 @@ def ctrl_msg_get_config_request(switch, msg, rawmsg):
     """
     switch.logger.debug("Received get_config_request from controller")
 
-def ctrl_msg_group_desc_stats_request(switch, msg, rawmsg):
+def group_desc_stats_request(switch, msg, rawmsg):
     """
     Process a group_desc_stats_request message from the controller
     @param switch The main switch object
@@ -239,7 +239,7 @@ def ctrl_msg_group_desc_stats_request(switch, msg, rawmsg):
     """
     switch.logger.debug("Received group_desc_stats_request from controller")
 
-def ctrl_msg_group_desc_stats_reply(switch, msg, rawmsg):
+def group_desc_stats_reply(switch, msg, rawmsg):
     """
     Process a group_desc_stats_reply message from the controller
     @param switch The main switch object
@@ -248,7 +248,7 @@ def ctrl_msg_group_desc_stats_reply(switch, msg, rawmsg):
     """
     switch.logger.debug("Received group_desc_stats_reply from controller")
 
-def ctrl_msg_group_stats_request(switch, msg, rawmsg):
+def group_stats_request(switch, msg, rawmsg):
     """
     Process a group_stats_request message from the controller
     @param switch The main switch object
@@ -257,7 +257,7 @@ def ctrl_msg_group_stats_request(switch, msg, rawmsg):
     """
     switch.logger.debug("Received group_stats_request from controller")
 
-def ctrl_msg_group_stats_reply(switch, msg, rawmsg):
+def group_stats_reply(switch, msg, rawmsg):
     """
     Process a group_stats_reply message from the controller
     @param switch The main switch object
@@ -266,7 +266,7 @@ def ctrl_msg_group_stats_reply(switch, msg, rawmsg):
     """
     switch.logger.debug("Received group_stats_reply from controller")
 
-def ctrl_msg_group_mod(switch, msg, rawmsg):
+def group_mod(switch, msg, rawmsg):
     """
     Process a group_mod message from the controller
     @param switch The main switch object
@@ -275,7 +275,7 @@ def ctrl_msg_group_mod(switch, msg, rawmsg):
     """
     switch.logger.debug("Received group_mod from controller")
 
-def ctrl_msg_group_mod_failed_error_msg(switch, msg, rawmsg):
+def group_mod_failed_error_msg(switch, msg, rawmsg):
     """
     Process a group_mod_failed_error_msg message from the controller
     @param switch The main switch object
@@ -284,7 +284,7 @@ def ctrl_msg_group_mod_failed_error_msg(switch, msg, rawmsg):
     """
     switch.logger.debug("Received group_mod_failed_error_msg from controller")
 
-def ctrl_msg_hello(switch, msg, rawmsg):
+def hello(switch, msg, rawmsg):
     """
     Process a hello message from the controller
     @param switch The main switch object
@@ -293,7 +293,7 @@ def ctrl_msg_hello(switch, msg, rawmsg):
     """
     switch.logger.debug("Received hello from controller")
 
-def ctrl_msg_hello_failed_error_msg(switch, msg, rawmsg):
+def hello_failed_error_msg(switch, msg, rawmsg):
     """
     Process a hello_failed_error_msg message from the controller
     @param switch The main switch object
@@ -302,7 +302,7 @@ def ctrl_msg_hello_failed_error_msg(switch, msg, rawmsg):
     """
     switch.logger.debug("Received hello_failed_error_msg from controller")
 
-def ctrl_msg_packet_in(switch, msg, rawmsg):
+def packet_in(switch, msg, rawmsg):
     """
     Process a packet_in message from the controller
     @param switch The main switch object
@@ -311,7 +311,7 @@ def ctrl_msg_packet_in(switch, msg, rawmsg):
     """
     switch.logger.debug("Received packet_in from controller")
 
-def ctrl_msg_packet_out(switch, msg, rawmsg):
+def packet_out(switch, msg, rawmsg):
     """
     Process a packet_out message from the controller
     @param switch The main switch object
@@ -327,7 +327,7 @@ def ctrl_msg_packet_out(switch, msg, rawmsg):
     # For now run through list looking for set output port
 
 
-def ctrl_msg_port_mod(switch, msg, rawmsg):
+def port_mod(switch, msg, rawmsg):
     """
     Process a port_mod message from the controller
     @param switch The main switch object
@@ -336,7 +336,7 @@ def ctrl_msg_port_mod(switch, msg, rawmsg):
     """
     switch.logger.debug("Received port_mod from controller")
 
-def ctrl_msg_port_mod_failed_error_msg(switch, msg, rawmsg):
+def port_mod_failed_error_msg(switch, msg, rawmsg):
     """
     Process a port_mod_failed_error_msg message from the controller
     @param switch The main switch object
@@ -345,7 +345,7 @@ def ctrl_msg_port_mod_failed_error_msg(switch, msg, rawmsg):
     """
     switch.logger.debug("Received port_mod_failed_error_msg from controller")
 
-def ctrl_msg_port_stats_reply(switch, msg, rawmsg):
+def port_stats_reply(switch, msg, rawmsg):
     """
     Process a port_stats_reply message from the controller
     @param switch The main switch object
@@ -354,7 +354,7 @@ def ctrl_msg_port_stats_reply(switch, msg, rawmsg):
     """
     switch.logger.debug("Received port_stats_reply from controller")
 
-def ctrl_msg_port_stats_request(switch, msg, rawmsg):
+def port_stats_request(switch, msg, rawmsg):
     """
     Process a port_stats_request message from the controller
     @param switch The main switch object
@@ -363,7 +363,7 @@ def ctrl_msg_port_stats_request(switch, msg, rawmsg):
     """
     switch.logger.debug("Received port_stats_request from controller")
 
-def ctrl_msg_port_status(switch, msg, rawmsg):
+def port_status(switch, msg, rawmsg):
     """
     Process a port_status message from the controller
     @param switch The main switch object
@@ -372,7 +372,7 @@ def ctrl_msg_port_status(switch, msg, rawmsg):
     """
     switch.logger.debug("Received port_status from controller")
 
-def ctrl_msg_queue_get_config_reply(switch, msg, rawmsg):
+def queue_get_config_reply(switch, msg, rawmsg):
     """
     Process a queue_get_config_reply message from the controller
     @param switch The main switch object
@@ -381,7 +381,7 @@ def ctrl_msg_queue_get_config_reply(switch, msg, rawmsg):
     """
     switch.logger.debug("Received queue_get_config_reply from controller")
 
-def ctrl_msg_queue_get_config_request(switch, msg, rawmsg):
+def queue_get_config_request(switch, msg, rawmsg):
     """
     Process a queue_get_config_request message from the controller
     @param switch The main switch object
@@ -390,7 +390,7 @@ def ctrl_msg_queue_get_config_request(switch, msg, rawmsg):
     """
     switch.logger.debug("Received queue_get_config_request from controller")
 
-def ctrl_msg_queue_op_failed_error_msg(switch, msg, rawmsg):
+def queue_op_failed_error_msg(switch, msg, rawmsg):
     """
     Process a queue_op_failed_error_msg message from the controller
     @param switch The main switch object
@@ -399,7 +399,7 @@ def ctrl_msg_queue_op_failed_error_msg(switch, msg, rawmsg):
     """
     switch.logger.debug("Received queue_op_failed_error_msg from controller")
 
-def ctrl_msg_queue_stats_reply(switch, msg, rawmsg):
+def queue_stats_reply(switch, msg, rawmsg):
     """
     Process a queue_stats_reply message from the controller
     @param switch The main switch object
@@ -408,7 +408,7 @@ def ctrl_msg_queue_stats_reply(switch, msg, rawmsg):
     """
     switch.logger.debug("Received queue_stats_reply from controller")
 
-def ctrl_msg_queue_stats_request(switch, msg, rawmsg):
+def queue_stats_request(switch, msg, rawmsg):
     """
     Process a queue_stats_request message from the controller
     @param switch The main switch object
@@ -417,7 +417,7 @@ def ctrl_msg_queue_stats_request(switch, msg, rawmsg):
     """
     switch.logger.debug("Received queue_stats_request from controller")
 
-def ctrl_msg_set_config(switch, msg, rawmsg):
+def set_config(switch, msg, rawmsg):
     """
     Process a set_config message from the controller
     @param switch The main switch object
@@ -426,7 +426,7 @@ def ctrl_msg_set_config(switch, msg, rawmsg):
     """
     switch.logger.debug("Received set_config from controller")
 
-def ctrl_msg_switch_config_failed_error_msg(switch, msg, rawmsg):
+def switch_config_failed_error_msg(switch, msg, rawmsg):
     """
     Process a switch_config_failed_error_msg message from the controller
     @param switch The main switch object
@@ -435,7 +435,7 @@ def ctrl_msg_switch_config_failed_error_msg(switch, msg, rawmsg):
     """
     switch.logger.debug("Received switch_config_failed_error_msg from controller")
 
-def ctrl_msg_table_mod(switch, msg, rawmsg):
+def table_mod(switch, msg, rawmsg):
     """
     Process a table_mod message from the controller
     @param switch The main switch object
@@ -444,7 +444,7 @@ def ctrl_msg_table_mod(switch, msg, rawmsg):
     """
     switch.logger.debug("Received table_mod from controller")
 
-def ctrl_msg_table_mod_failed_error_msg(switch, msg, rawmsg):
+def table_mod_failed_error_msg(switch, msg, rawmsg):
     """
     Process a table_mod_failed_error_msg message from the controller
     @param switch The main switch object
@@ -453,7 +453,7 @@ def ctrl_msg_table_mod_failed_error_msg(switch, msg, rawmsg):
     """
     switch.logger.debug("Received table_mod_failed_error_msg from controller")
 
-def ctrl_msg_table_stats_reply(switch, msg, rawmsg):
+def table_stats_reply(switch, msg, rawmsg):
     """
     Process a table_stats_reply message from the controller
     @param switch The main switch object
@@ -462,7 +462,7 @@ def ctrl_msg_table_stats_reply(switch, msg, rawmsg):
     """
     switch.logger.debug("Received table_stats_reply from controller")
 
-def ctrl_msg_table_stats_request(switch, msg, rawmsg):
+def table_stats_request(switch, msg, rawmsg):
     """
     Process a table_stats_request message from the controller
     @param switch The main switch object
