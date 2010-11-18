@@ -124,7 +124,7 @@ class OFSwitch(Thread):
         """
         Constructor for base class
         """
-        Thread.__init__(self)
+        super(OFSwitch, self).__init__()
         self.config = OFSwitchConfig()
         self.logger = logging.getLogger("switch")
 
@@ -217,12 +217,14 @@ class GroupTable(object):
         """
         Execute the group_mod operation on the table
         """
+        pass
         
     def group_stats_get(self, group_id):
         """
         Return an ofp_group_stats object for the group_id
         """
         return None
+
 #####
 # If we're actually executing this file, then run this
 if __name__ == '__main__':

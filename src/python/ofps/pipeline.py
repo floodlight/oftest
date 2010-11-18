@@ -43,7 +43,7 @@ class FlowPipeline(Thread):
         """
         Constructor for base class
         """
-        Thread.__init__(self)
+        super(FlowPipeline, self).__init__()
         self.controller = None
         self.tables = []
         self.n_tables = n_tables
@@ -94,16 +94,12 @@ class FlowPipeline(Thread):
                                                                flow_mod)
         elif flow_mod.command == ofp.OFPFC_MODIFY:
             self.logger.debug("flow mod modify")
-            pass
         elif flow_mod.command == ofp.OFPFC_MODIFY_STRICT:
             self.logger.debug("flow mod modify strict")
-            pass
         elif flow_mod.command == ofp.OFPFC_DELETE:
             self.logger.debug("flow mod delete")
-            pass
         elif flow_mod.command == ofp.OFPFC_DELETE_STRICT:
             self.logger.debug("flow mod delete strict")
-            pass
 
 
     def table_caps_get(self, table_id=0):
