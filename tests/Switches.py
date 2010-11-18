@@ -102,11 +102,10 @@ class OFPS(OFSwitch):
         return True
 
     def start(self):
-        ints = ','.join(self.interfaces)
-        cmd =[self.ofps, "-c", "127.0.0.1", '-i', ints, '-p', str(self.port),
-              ] 
-        subprocess.call(cmd)
-        print "Started %s" % (' '.join(cmd))
+        intfs = ','.join(self.interfaces)
+        cmd = "%s -c 127.0.0.01 -i %s -p %d" % (self.ofps, intfs, self.port)
+        print "Running '%s'" % (cmd)
+        subprocess.call(cmd, shell=True)
         
     def stop(self):
         pass
