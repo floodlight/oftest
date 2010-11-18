@@ -67,7 +67,7 @@ class OFReferenceSwitch(OFSwitch):
         ints = ','.join(self.interfaces)
         self.ofd_op = subprocess.Popen([self.ofd, "-i", ints, "punix:/tmp/ofd"])
         print "Started ofdatapath on IFs " + ints + " with pid " + str(self.ofd_op.pid)        
-        subprocess.call([self.ofp, "unix:/tmp/ofd", "tcp:127.0.0.1:" + str(options.port),
+        subprocess.call([self.ofp, "unix:/tmp/ofd", "tcp:127.0.0.1:" + str(self.port),
               "--fail=closed", "--max-backoff=1"])
 
     def stop(self):
