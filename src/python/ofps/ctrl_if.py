@@ -37,7 +37,7 @@ import socket
 import time
 import sys
 from threading import Thread
-from oftest.message import *
+import oftest.message
 from oftest.parse import *
 from oftest.ofutils import *
 # For some reason, it seems select to be last (or later).
@@ -161,6 +161,13 @@ class ControllerInterface(Thread):
 
             offset += hdr.length
 
+    def _send_hand_shake(self):
+        """
+        This is send only; All of the negotiation happens elsewhere, e.g., 
+            if the remote side speaks a different protocol version
+        """
+        self.message_send(oftest.message.hello())
+
     def _process_socket(self):
         """
         Return False if error reading socket
@@ -215,6 +222,7 @@ class ControllerInterface(Thread):
                 self.dbg_state = "connected"
                 sleep_time = 1      # reset connection back-off timer
                 self.socs = [self.ctrl_socket]
+                self._send_hand_shake()
                 while self.active:
                     try:
                         sel_in, sel_out, sel_err = \
