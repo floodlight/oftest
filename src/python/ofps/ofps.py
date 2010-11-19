@@ -41,6 +41,7 @@ import sys
 import logging
 import signal
 import copy
+import struct
 from threading import Thread
 from optparse import OptionParser
 import pdb
@@ -76,6 +77,7 @@ class OFSwitchConfig(object):
         parser.set_defaults(controller_port=6633)
         parser.set_defaults(n_tables=DEFAULT_TABLE_COUNT)
         parser.set_defaults(interfaces="veth0,veth2,veth4,veth6")
+        parser.set_defaults(datapath_id=self.devine_datapath_id())
         
         parser.add_option('-i','--interfaces',type='string',
                           help="Comma separated list of interfaces: e.g., \"veth0,veth2,veth4,veth6\"")
@@ -85,7 +87,22 @@ class OFSwitchConfig(object):
                            help="OpenFlow Controller Port")
         parser.add_option('-t','--tables',type='int', dest="n_tables",
                           help="Number of tables to create in the pipeline")
+        parser.add_option('-d','--datapath-id',dest='datapath_id', type='long',help="DatapathID for switch")
         self.parser=parser
+    
+    def devine_datapath_id(self):
+        """
+        Come up with a unique dpid from our environment
+        """
+        #@todo Query one of our interfaces to find a good dpid
+        return 0xcafebabedeadbeef
+    def datapath_id2str(self,dpid):
+        '''
+        Convert 8 byte long to "xx:xx:xx:..." string
+        @TODO Move this else where
+        '''
+        return "0x%lx" % (dpid) 
+        
         
     def parse_args(self):
         (self.options, self.args) = self.parser.parse_args()
@@ -95,6 +112,8 @@ class OFSwitchConfig(object):
         self.n_tables = self.options.n_tables
         for intr in self.options.interfaces.split(','):
             self.addInterface(intr)
+    def getConfig(self,config):
+        return getattr(self.options,config)
       
     def generateDefault(self):
         addInterface(self,"veth0")
@@ -154,6 +173,13 @@ class OFSwitch(Thread):
             sys.exit(1)
 
         return True
+    
+    def getConfig(self,element):
+        """ 
+        Return the element from the config 
+        @param  element:  a string
+        """
+        return self.config.getConfig(element)
 
     def run(self):
         """
@@ -202,6 +228,13 @@ class OFSwitch(Thread):
         self.dataplane.kill()
         self.pipeline.join()
         self.controller.join()
+    
+    def __str__(self):
+        str  = "OFPS:: OpenFlow Python Switch\n"
+        str += "    datapath_id = %s\n" % (self.config.datapath_id2str(self.config.getConfig('datapath_id')))
+        for k,v in self.config.port_map.iteritems():
+            str += "    interface %d = %s\n" % (k,v)
+        return str 
 
 class GroupTable(object):
     """
@@ -233,8 +266,7 @@ if __name__ == '__main__':
     config.parse_args()
     ofps = OFSwitch()
     ofps.config_set(config)
-    for port,intr in config.port_map.iteritems():
-        print "Adding interface #%d :: %s" % (port,intr)
+    print ofps
     print 'OFPS Starting...'
     ofps.start()
     ofps.join()
