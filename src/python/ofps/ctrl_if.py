@@ -37,7 +37,7 @@ import socket
 import time
 import sys
 from threading import Thread
-import oftest.message
+from oftest.message import *
 from oftest.parse import *
 from oftest.ofutils import *
 # For some reason, it seems select to be last (or later).
