@@ -29,12 +29,14 @@ on an administrative socket and can shut down the socket might work.
 import os
 import socket
 import time
+import sys
 from threading import Thread
 from threading import Lock
 from threading import Condition
 from message import *
 from parse import *
 from ofutils import *
+from oftest.message import *
 # For some reason, it seems select to be last (or later).
 # Otherwise get an attribute error when calling select.select
 import select
@@ -252,6 +254,7 @@ class Controller(Thread):
         @retval True, reset the switch connection
         """
 
+        self.logger.debug("handling a read socket connection")
         if s == self.listen_socket:
             if self.switch_socket:
                 self.logger.error("Multiple switch cxns not supported")

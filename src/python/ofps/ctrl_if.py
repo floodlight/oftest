@@ -166,7 +166,10 @@ class ControllerInterface(Thread):
         This is send only; All of the negotiation happens elsewhere, e.g., 
             if the remote side speaks a different protocol version
         """
-        self.message_send(oftest.message.hello())
+        self.logger.debug("Sending initial HELLO")
+        ret = self.message_send(hello())
+        if ret != 0 :
+            self.logger.error("Got %d when sending initial HELL0" % (ret))
 
     def _process_socket(self):
         """
@@ -223,6 +226,7 @@ class ControllerInterface(Thread):
                 sleep_time = 1      # reset connection back-off timer
                 self.socs = [self.ctrl_socket]
                 self._send_hand_shake()
+                self.active = True
                 while self.active:
                     try:
                         sel_in, sel_out, sel_err = \
@@ -238,7 +242,8 @@ class ControllerInterface(Thread):
                 self.ctrl_socket.close()
             except (socket.error), e :
                 sleep_time = min(sleep_time * 2, 5)
-                print "Got error '%s': sleeping %d seconds and trying again" % (str(e), sleep_time)
+                self.logger.error("Got error '%s': sleeping %d seconds and trying again" % (str(e), sleep_time))
+            self.logger.error('Trying connection again...')   
             time.sleep(sleep_time)
         self.logger.error("Exiting controller thread");
 
