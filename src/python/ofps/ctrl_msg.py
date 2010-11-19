@@ -37,6 +37,9 @@ features_request.
 from ofps_act import execute_actions
 from ofps_pkt import Packet
 
+#import oftest.message as ofp
+import oftest.cstruct as cstruct
+
 def aggregate_stats_reply(switch, msg, rawmsg):
     """
     Process an aggregate_stats_reply message from the controller
@@ -126,6 +129,9 @@ def echo_request(switch, msg, rawmsg):
     @param rawmsg The actual packet received as a string
     """
     switch.logger.debug("Received echo_request from controller")
+    msg.header.type=cstruct.OFPT_ECHO_REPLY
+    switch.controller.message_send(msg, zero_xid=True)
+  
 
 def error(switch, msg, rawmsg):
     """

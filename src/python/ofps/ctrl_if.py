@@ -129,17 +129,6 @@ class ControllerInterface(Thread):
                 self.logger.warn("Could not parse message")
                 continue
 
-            # Check if keep alive is set; if so, respond to echo requests
-            if hdr.type == OFPT_ECHO_REQUEST:
-                if self.keep_alive:
-                    self.logger.debug("Responding to echo request")
-                    rep = echo_reply()
-                    rep.header.xid = hdr.xid
-                    # Ignoring additional data
-                    self.message_send(rep.pack(), zero_xid=True)
-                    offset += hdr.length
-                    continue
-
             # Now check for message handlers; preference is given to
             # handlers for a specific packet
             handled = False

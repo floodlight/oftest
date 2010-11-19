@@ -32,6 +32,8 @@ from threading import Thread
 from ofps_act import execute_actions
 from ofps_act import packet_in_to_controller
 
+import oftest.message as ofp 
+
 DEFAULT_TABLE_COUNT=1
 
 class FlowPipeline(Thread):

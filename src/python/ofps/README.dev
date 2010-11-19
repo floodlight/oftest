@@ -24,3 +24,8 @@ done
 for i in 0 1 2 3 4 5 6 7 ; do
     sudo ifconfig veth$i 192.168.10$i.1 netmask 255.255.255.0
 done
+
+
+KNOWN WORKING TEST INVOCAITON:
+
+sudo ./oft --verbose --test-spec=Echo,EchoWithData
