@@ -144,6 +144,7 @@ class OFSwitch(Thread):
         Constructor for base class
         """
         super(OFSwitch, self).__init__()
+        self.setDaemon(True)
         self.config = OFSwitchConfig()
         self.logger = logging.getLogger("switch")
 
