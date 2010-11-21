@@ -36,7 +36,9 @@ import os
 import socket
 import time
 import sys
-from threading import Thread
+import errno
+import threading
+
 from oftest.message import *
 from oftest.parse import *
 from oftest.ofutils import *
@@ -48,7 +50,7 @@ import logging
 ##@todo Find a better home for these identifiers (controller)
 RCV_SIZE_DEFAULT = 32768
 
-class ControllerInterface(Thread):
+class ControllerInterface(threading.Thread):
     """
     Class abstracting the interface to the controller.
     """
@@ -265,8 +267,15 @@ class ControllerInterface(Thread):
             outpkt = msg
 
         self.logger.debug("Sending pkt of len " + str(len(outpkt)))
-        if self.ctrl_socket.sendall(outpkt) is None:
-            return 0
+        try:
+            if self.ctrl_socket.sendall(outpkt) is None:
+                return 0
+        except socket.error, e:
+            if isinstance(e.args, tuple):
+                print "errno is %d" % (e[0])
+                if e[0] == errno.EPIPE:
+                    # Remote hangup
+                    return 0
 
         self.logger.error("Unknown error on sendall")
         return -1
