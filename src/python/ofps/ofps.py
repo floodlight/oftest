@@ -259,16 +259,27 @@ class GroupTable(object):
         """
         return None
 
+def sigint_handler(signum, frame):
+    sys.exit()
+
 #####
 # If we're actually executing this file, then run this
 if __name__ == '__main__':
+    signal.signal(signal.SIGINT, sigint_handler)
+
     #pdb.set_trace()
     config = OFSwitchConfig()
     config.parse_args()
+    threads = []
+
     ofps = OFSwitch()
+    threads.append(ofps)
+
     ofps.config_set(config)
-    print ofps
     print 'OFPS Starting...'
     ofps.start()
-    ofps.join()
+
+    while True:
+        threads = [t.join(2) for t in threads if t is not None and t.isAlive()]
+
     print 'OFPS Exiting'
