@@ -94,7 +94,7 @@ from bucket_list import bucket_list
 from error import *
 
 # Define templates for documentation
-class ofp_template_msg:
+class ofp_template_msg(object):
     \"""
     Sample base class for template_msg; normally auto generated
     This class should live in the of_header name space and provides the
@@ -274,7 +274,7 @@ def gen_message_wrapper(msg):
     if has_core_members:
         print "class " + msg + "(" + parent + "):"
     else:
-        print "class " + msg + ":"
+        print "class " + msg + "(object):"
     _p1('"""')
     _p1("Wrapper class for " + msg)
     print
@@ -483,7 +483,7 @@ extra_ofp_stats_req_defs = """
 # Stats request bodies for desc and table stats are not defined in the
 # OpenFlow header;  We define them here.  They are empty classes, really
 
-class ofp_desc_stats_request:
+class ofp_desc_stats_request(object):
     \"""
     Forced definition of ofp_desc_stats_request (empty class)
     \"""
@@ -504,7 +504,7 @@ class ofp_desc_stats_request:
 
 OFP_DESC_STATS_REQUEST_BYTES = 0
 
-class ofp_table_stats_request:
+class ofp_table_stats_request(object):
     \"""
     Forced definition of ofp_table_stats_request (empty class)
     \"""
@@ -525,7 +525,7 @@ class ofp_table_stats_request:
 
 OFP_TABLE_STATS_REQUEST_BYTES = 0
 
-class ofp_group_desc_stats_request:
+class ofp_group_desc_stats_request(object):
     \"""
     Forced definition of ofp_group_desc_stats_request (empty class)
     \"""
