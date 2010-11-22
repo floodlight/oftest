@@ -112,15 +112,10 @@ class OFSwitchConfig(object):
         self.n_tables = self.options.n_tables
         for intr in self.options.interfaces.split(','):
             self.addInterface(intr)
+ 
     def getConfig(self,config):
         return getattr(self.options,config)
-      
-    def generateDefault(self):
-        addInterface(self,"veth0")
-        addInterface(self,"veth2")
-        addInterface(self,"veth4")
-        addInterface(self,"veth6")
-        
+
     def addInterface(self, intr):
         self.port_map[len(self.port_map) + 1] = intr
  
