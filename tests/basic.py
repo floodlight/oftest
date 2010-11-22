@@ -189,6 +189,19 @@ class EchoWithData(SimpleProtocol):
         self.assertEqual(request.data, response.data,
                          'response data does not match request')
 
+class FeaturesRequest(SimpleProtocol):
+    """
+    Test features_request to make sure we get a response
+    
+    Does NOT test the contents; just that we get a response
+    """
+    def runTest(self):
+        request = message.features_request()
+        response,_ = self.controller.transact(request)
+        self.assertEqual(response.header.type, ofp.OFPT_FEATURES_REPLY,
+                         'response is not echo_reply')
+        self.assertTrue(len(response) >= 32, "features_reply too short: %d < 32 " % len(response))
+       
 class PacketIn(SimpleDataPlane):
     """
     Test packet in function

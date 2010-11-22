@@ -23,7 +23,9 @@
 # SOFTWARE.
 # 
 ######################################################################
+from oftest.cstruct import OFPC_FLOW_STATS, OFPC_PORT_STATS, OFPC_TABLE_STATS
 
+import oftest.message as message
 """
 Functions to handle specific controller messages
 
@@ -167,6 +169,22 @@ def features_request(switch, msg, rawmsg):
     @param rawmsg The actual packet received as a string
     """
     switch.logger.debug("Received features_request from controller")
+    rep = message.features_reply()
+    rep.header.xid = msg.header.xid
+    rep.datapath_id = switch.config.getConfig('datapath_id')
+    rep.n_buffers = 10000 #@todo figure out real number of buffers
+    rep.n_tables = switch.config.n_tables
+    # for now, list some simple things that we will likely (but don't yet) support
+    rep.capabilities = OFPC_FLOW_STATS | OFPC_PORT_STATS | OFPC_TABLE_STATS 
+    ports = []
+    for key, val in switch.config.port_map.iteritems():
+        port = cstruct.ofp_port()
+        port.port_no = key
+        port.name = val
+        #@todo fill in rest of port configs and stuff
+        ports.append(port)
+    rep.ports = ports
+    switch.controller.message_send(rep)
 
 def flow_mod(switch, msg, rawmsg):
     """
