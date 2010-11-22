@@ -26,6 +26,7 @@
 from oftest.cstruct import OFPC_FLOW_STATS, OFPC_PORT_STATS, OFPC_TABLE_STATS
 
 import oftest.message as message
+from oftest import netutils
 """
 Functions to handle specific controller messages
 
@@ -181,6 +182,11 @@ def features_request(switch, msg, rawmsg):
         port = cstruct.ofp_port()
         port.port_no = key
         port.name = val
+        port.max_speed = 9999999
+        port.curr_speed = 0
+        mac = netutils.get_if_hwaddr(port.name)
+        switch.logger.debug("Building features_reply: Found port %s (ind=%d) with mac %x:%x:%x:%x:%x:%x" % ((val, key) + mac))
+        port.hw_addr = list(mac)    # stupid frickin' python; need to convert a tuple to a list
         #@todo fill in rest of port configs and stuff
         ports.append(port)
     rep.ports = ports
