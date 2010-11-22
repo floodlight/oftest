@@ -79,11 +79,13 @@ def l2_match(match_a, match_b):
     wildcards = match_a.wildcards
 
     # Addresses and metadata:  
-    # @todo Check masks are negated correctly
+    # @todo Check masks are negated ecorrectly
+    idx = 0
     for byte in match_a.dl_src_mask:
         byte = ~byte
-        if match_a.dl_src & byte != match_b.dl_src & byte:
+        if match_a.dl_src[idx] & byte != match_b.dl_src[idx] & byte:
             return False
+        idx += 1
     for byte in match_a.dl_dst_mask:
         byte = ~byte
         if match_a.dl_dst & byte != match_b.dl_dst & byte:
