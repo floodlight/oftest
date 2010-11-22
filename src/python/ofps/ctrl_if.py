@@ -32,7 +32,6 @@ roughly based on the controller object from OFTest.  It is
 threaded.
 """
 
-import os
 import socket
 import time
 import sys
@@ -77,6 +76,7 @@ class ControllerInterface(threading.Thread):
         self.connected = False  # Connected to switch
         self.initial_hello = True
         self.exit_on_reset = True
+        self.sending_lock = threading.Lock()
 
         # Settings
         self.host = host
@@ -101,7 +101,7 @@ class ControllerInterface(threading.Thread):
         try: # Create socket
             self.ctrl_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         except (socket.error), e:
-            self.logger.error("Could not create socket.  Exiting")
+            self.logger.error("Could not create socket.  Exiting:: " + str(e))
             self.active = False
             return
 
@@ -109,8 +109,8 @@ class ControllerInterface(threading.Thread):
         try:
             self.ctrl_socket.connect((self.host, self.port))
         except (socket.error), e:
-            self.logger.error("Could not connect to %s at %d" % 
-                              (self.host, self.port))
+            self.logger.error("Could not connect to %s at %d:: %s" % 
+                              (self.host, self.port, str(e)))
             return
             
         self.connected = True
@@ -294,7 +294,9 @@ class ControllerInterface(threading.Thread):
 
         self.logger.debug("Sending pkt of len " + str(len(outpkt)))
         try:
+            self.sending_lock.acquire()  # stop multiple threads from writing at the same time
             if self.ctrl_socket.sendall(outpkt) is None:
+                ## self.sending_lock.release()  # the 'finally' definition makes this redundant
                 return 0
         except socket.error, e:
             if isinstance(e.args, tuple):
@@ -302,6 +304,8 @@ class ControllerInterface(threading.Thread):
                 if e[0] == errno.EPIPE:
                     # Remote hangup
                     return 0
+        finally:
+            self.sending_lock.release()
 
         self.logger.error("Unknown error on sendall")
         return -1
