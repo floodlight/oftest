@@ -226,7 +226,7 @@ class pythonizer:
         """Return Python code for header
         """
         code=[]
-        code.append("class "+struct_in.typename+":")
+        code.append("class "+struct_in.typename+"(object):")
         code.append(self.tab+"\"\"\"Automatically generated Python class for "+struct_in.typename)
         code.append("")
         code.append(self.tab+"Date "+str(datetime.date.today()))
