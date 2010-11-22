@@ -31,19 +31,24 @@ The FlowTable class definition
 import logging
 from flow import FlowEntry
 from threading import Lock
+import oftest.cstruct as ofp
 
-def prio_sort(x, y):
+def prio_sort(entry_x, entry_y):
     """
     Sort flow entries x and y by priority
     return -1 if x.prio < y.prio, etc.
     """
-    if x.flow_mod.priority > y.flow_mod.priority:
+    if entry_x.flow_mod.priority > entry_y.flow_mod.priority:
         return 1
-    if x.flow_mod.priority < y.flow_mod.priority:
+    if entry_x.flow_mod.priority < entry_y.flow_mod.priority:
         return -1
     return 0
                 
 class FlowTable(object):
+    """
+    The flow table class
+    """
+
     def __init__(self, table_id=0):
         self.flow_entries = []
         self.table_id = table_id
@@ -51,6 +56,12 @@ class FlowTable(object):
         self.logger = logging.getLogger("flowtable")
 
     def expire(self):
+        """
+        Run the expiration process on this table
+        Run through all flows in the table and call the expire
+        method.  Build a list of expired flows.
+        @return The list of expired flows
+        """
         expired_flows = []
         # @todo May be a better approach to syncing
         self.flow_sync.acquire()
@@ -63,7 +74,7 @@ class FlowTable(object):
         self.flow_sync.release()
         return expired_flows
 
-    def do_flow_mod(self, flow_mod):
+    def flow_mod_process(self, flow_mod):
         """
         Update the flow table according to the operation
         @param operation add/mod/delete operation (OFPFC_ value)
@@ -78,37 +89,33 @@ class FlowTable(object):
         # @todo Handle delete; differentiate mod and add
         self.flow_sync.acquire()
         for flow in self.flow_entries:
-            if flow.flow_match(flow_mod.match, 0, command=command,
-                               flow_mod=flow_mod):
-                self.logger.verbose("Matched in table " + str(self.table_id))
+            if flow.match_flow_mod(flow_mod):
+                self.logger.debug("Matched in table " + str(self.table_id))
                 flow.update(flow_mod)
                 found = True
                 break
         if not found:
-            new_flow = FlowEntry()
-            new_flow.flow_mod_set(flow_mod)
-            # @todo Is there a sorted list insert operation?
-            self.flow_entries.insert(new_flow)
-            self.flow_entries.sort(prio_sort)
+            if flow_mod.command == ofp.OFPFC_ADD:
+                # @todo Do this for modify/strict too, right?
+                new_flow = FlowEntry()
+                new_flow.flow_mod_set(flow_mod)
+                # @todo Is there a sorted list insert operation?
+                self.flow_entries.append(new_flow)
+                self.flow_entries.sort(prio_sort)
 
-
+        #@todo Implement other flow mod operations
         elif flow_mod.command == ofp.OFPFC_MODIFY:
             self.logger.debug("flow mod modify")
-            pass
         elif flow_mod.command == ofp.OFPFC_MODIFY_STRICT:
             self.logger.debug("flow mod modify strict")
-            pass
         elif flow_mod.command == ofp.OFPFC_DELETE:
             self.logger.debug("flow mod delete")
-            pass
         elif flow_mod.command == ofp.OFPFC_DELETE_STRICT:
             self.logger.debug("flow mod delete strict")
-            pass
-
-
 
         self.flow_sync.release()
         # @todo Check for priority conflict?
+        return (0, None)
 
     def match_packet(self, packet):
         """

@@ -131,7 +131,6 @@ def echo_request(switch, msg, rawmsg):
     switch.logger.debug("Received echo_request from controller")
     msg.header.type=cstruct.OFPT_ECHO_REPLY
     switch.controller.message_send(msg, zero_xid=True)
-  
 
 def error(switch, msg, rawmsg):
     """
@@ -176,7 +175,7 @@ def flow_mod(switch, msg, rawmsg):
     @param msg The parsed message object of type flow_mod
     @param rawmsg The actual packet received as a string
     """
-    (rv, code) = switch.pipeline.flow_mod(msg)
+    (rv, code) = switch.pipeline.flow_mod_process(msg)
     switch.logger.debug("Handled flow_mod, result: " + str(rv))
     if rv < 0:
         #@todo Send error message with error code
@@ -331,7 +330,6 @@ def packet_out(switch, msg, rawmsg):
     execute_actions(switch, packet, msg.actions, output_now=True)
     # @todo fully implement action list execution
     # For now run through list looking for set output port
-
 
 def port_mod(switch, msg, rawmsg):
     """

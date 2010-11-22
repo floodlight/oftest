@@ -39,9 +39,11 @@ import sys
 import errno
 import threading
 
-from oftest.message import *
-from oftest.parse import *
-from oftest.ofutils import *
+import oftest.message as message
+import oftest.parse as parse
+import oftest.cstruct as ofp
+import oftest.ofutils as ofutils
+
 # For some reason, it seems select to be last (or later).
 # Otherwise get an attribute error when calling select.select
 import select
@@ -71,18 +73,51 @@ class ControllerInterface(threading.Thread):
         # State
         self.handlers = {}
         self.keep_alive = True
-        self.active = True
+        self.active = True  # Means we're alive and connecting
+        self.connected = False  # Connected to switch
         self.initial_hello = True
         self.exit_on_reset = True
 
         # Settings
         self.host = host
         self.port = port
-        self.dbg_state = "init"
         self.logger = logging.getLogger("controller")
         self.no_version_check = False
         self.version_checked = False
 
+    def _socket_connect(self):
+        """
+        Reset socket and attempt to create and connect
+        Sets self.ctrl_socket
+        If fatal error, clears self.active
+        Sets self.connected to reflect success of connection
+        """
+        self.connected = False
+        if self.ctrl_socket is not None:
+            self.ctrl_socket.close()
+            self.ctrl_socket = None
+
+        self.logger.info("Creating socket")
+        try: # Create socket
+            self.ctrl_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        except (socket.error), e:
+            self.logger.error("Could not create socket.  Exiting")
+            self.active = False
+            return
+
+        self.logger.info("Control socket connecting.")
+        try:
+            self.ctrl_socket.connect((self.host, self.port))
+        except (socket.error), e:
+            self.logger.error("Could not connect to %s at %d" % 
+                              (self.host, self.port))
+            return
+            
+        self.connected = True
+        self.logger.info("Connected to " + self.host + " on " +
+                         str(self.port))
+        self._send_hand_shake()
+        
     def _pkt_handle(self, pkt):
         """
         Check for all packet handling conditions
@@ -98,7 +133,7 @@ class ControllerInterface(threading.Thread):
         offset = 0
         while offset < len(pkt):
             # Parse the header to get type
-            hdr = of_header_parse(pkt[offset:])
+            hdr = parse.of_header_parse(pkt[offset:])
             if not hdr:
                 self.logger.info("Could not parse header, pkt len", len(pkt))
                 self.parse_errors += 1
@@ -112,20 +147,20 @@ class ControllerInterface(threading.Thread):
             rawmsg = pkt[offset : offset + hdr.length]
 
             self.logger.debug("Msg in: len %d. offset %d. type %s. hdr.len %d" %
-                (len(pkt), offset, ofp_type_map[hdr.type], hdr.length))
-            if hdr.version != OFP_VERSION:
+                (len(pkt), offset, ofp.ofp_type_map[hdr.type], hdr.length))
+            if hdr.version != ofp.OFP_VERSION:
                 if self.version_checked is None:
                     self.version_checked = 1
                     self.logger.error("Version %d does not match my version %d"
-                                      % (hdr.version, OFP_VERSION))
+                                      % (hdr.version, ofp.OFP_VERSION))
                     print "Version %d does not match my version %d" % \
-                        (hdr.version, OFP_VERSION)
+                        (hdr.version, ofp.OFP_VERSION)
                 if not self.no_version_check:
                     self.active = False
                     self.ctrl_socket = None
                     self.kill()
 
-            msg = of_message_parse(rawmsg)
+            msg = parse.of_message_parse(rawmsg)
             if not msg:
                 self.parse_errors += 1
                 self.logger.warn("Could not parse message")
@@ -158,7 +193,7 @@ class ControllerInterface(threading.Thread):
             if the remote side speaks a different protocol version
         """
         self.logger.debug("Sending initial HELLO")
-        ret = self.message_send(hello())
+        ret = self.message_send(message.hello())
         if ret != 0 :
             self.logger.error("Got %d when sending initial HELL0" % (ret))
 
@@ -194,48 +229,39 @@ class ControllerInterface(threading.Thread):
         When there is a message on the socket, check for handlers; queue the
         packet if no one handles the packet.
         """
-
-        self.dbg_state = "starting"
-
-
         sleep_time = 1
-        self.dbg_state = "connecting"
-        while self.dbg_state == "connecting" or self.dbg_state == "connected":
-            try:
-                self.active = False
-                # Create socket
-                self.logger.info("Create at " + self.host + ":" +
-                         str(self.port))
-                self.ctrl_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        while self.active:
+            if not self.connected:
+                self._socket_connect()
+            if not self.active:
+                break
+            if not self.connected:
+                # Sleep and try again
+                self.logger.debug("Sleeping before reconnect attempt")
+                time.sleep(sleep_time)
+                continue
 
-                self.logger.info("Connecting")
-                self.dbg_state = "connecting"
-                self.ctrl_socket.connect((self.host, self.port))
-                self.logger.info("Connected to " + self.host + " on " +
-                                 str(self.port))
-                self.dbg_state = "connected"
-                sleep_time = 1      # reset connection back-off timer
-                self.socs = [self.ctrl_socket]
-                self._send_hand_shake()
-                self.active = True
-                while self.active:
-                    try:
-                        sel_in, sel_out, sel_err = \
-                            select.select(self.socs, [], self.socs, 1)
-                    except StandardError:
-                        print sys.exc_info()
-                        self.logger.error("Select error, exiting")
-                        sys.exit(1)
-                    if self.ctrl_socket in sel_in:
-                        if not self._process_socket():
-                            self.logger.error("Error reading packet from controller")
-                            self.active = False
-                self.ctrl_socket.close()
-            except (socket.error), e :
-                sleep_time = min(sleep_time * 2, 5)
-                self.logger.error("Got error '%s': sleeping %d seconds and trying again" % (str(e), sleep_time))
-            self.logger.error('Trying connection again...')   
-            time.sleep(sleep_time)
+            self.socs = [self.ctrl_socket]
+            try:
+                sel_in, sel_out, sel_err = \
+                    select.select(self.socs, [], self.socs, 1)
+            except StandardError:
+                print sys.exc_info()
+                self.logger.error("Select error, disconnecting")
+                self.connected = False
+                continue
+
+            if self.ctrl_socket in sel_in:
+                if not self._process_socket():
+                    self.logger.error("Error reading packet from controller")
+                    self.connected = False
+                    continue
+
+            if self.ctrl_socket in sel_err:
+                self.logger.error("Error on control socket, resetting")
+                self.connected = False
+                continue
+
         self.logger.error("Exiting controller thread");
 
     def message_send(self, msg, zero_xid=False):
@@ -257,7 +283,7 @@ class ControllerInterface(threading.Thread):
         if type(msg) != type(""):
             try:
                 if msg.header.xid == 0 and not zero_xid:
-                    msg.header.xid = gen_xid()
+                    msg.header.xid = ofutils.gen_xid()
                 outpkt = msg.pack()
             except StandardError:
                 self.logger.error(
@@ -304,7 +330,6 @@ class ControllerInterface(threading.Thread):
 
     def __str__(self):
         string = "Controller Interface:\n"
-        string += "  state           " + self.dbg_state + "\n"
         string += "  total pkts      " + str(self.packets_total) + "\n"
         string += "  handled pkts    " + str(self.packets_handled) + "\n"
         string += "  discarded pkts  " + str(self.packets_discarded) + "\n"

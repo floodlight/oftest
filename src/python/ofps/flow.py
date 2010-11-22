@@ -32,6 +32,9 @@ table.
 """
 
 import oftest.cstruct as ofp
+import oftest.message as message
+import copy
+import time
 
 def is_delete_cmd(command):
     """
@@ -53,8 +56,8 @@ def meta_match(match_a, match_b):
     @params match_a Used for wildcards and masks
     @params match_b Other fields for match
     """
-    wc = match_a.wildcards
-    if not (wc & ofp.OFPFW_IN_PORT):
+    wildcards = match_a.wildcards
+    if not (wildcards & ofp.OFPFW_IN_PORT):
         # @todo logical port match?
         if match_a.in_port != match_b.in_port:
             return False
@@ -73,7 +76,7 @@ def l2_match(match_a, match_b):
     @params match_a Used for wildcards and masks
     @params match_b Other fields for match
     """
-    wc = match_a.wildcards
+    wildcards = match_a.wildcards
 
     # Addresses and metadata:  
     # @todo Check masks are negated correctly
@@ -90,20 +93,20 @@ def l2_match(match_a, match_b):
         return False
 
     # @todo  Check untagged logic
-    if not (wc & ofp.OFPFW_DL_VLAN):
+    if not (wildcards & ofp.OFPFW_DL_VLAN):
         if match_a.dl_vlan != match_b.dl_vlan:
             return False
-    if not (wc & ofp.OFPFW_DL_VLAN_PCP):
+    if not (wildcards & ofp.OFPFW_DL_VLAN_PCP):
         if match_a.dl_vlan_pcp != match_b.dl_vlan_pcp:
             return False
-    if not (wc & ofp.OFPFW_DL_TYPE):
+    if not (wildcards & ofp.OFPFW_DL_TYPE):
         if match_a.dl_type != match_b.dl_type:
             return False
 
-    if not (wc & ofp.OFPFW_MPLS_LABEL):
+    if not (wildcards & ofp.OFPFW_MPLS_LABEL):
         if match_a.mpls_label != match_b.mpls_lablel:
             return False
-    if not (wc & ofp.OFPFW_MPLS_TC):
+    if not (wildcards & ofp.OFPFW_MPLS_TC):
         if match_a.mpls_tc != match_b.mpls_tc:
             return False
 
@@ -114,11 +117,11 @@ def l3_match(match_a, match_b):
     @params match_b Other fields for match
     """
 
-    wc = match_a.wildcards
-    if not (wc & ofp.OFPFW_NW_TOS):
+    wildcards = match_a.wildcards
+    if not (wildcards & ofp.OFPFW_NW_TOS):
         if match_a.nw_tos != match_b.nw_tos:
             return False
-    if not (wc & ofp.OFPFW_NW_PROTO):
+    if not (wildcards & ofp.OFPFW_NW_PROTO):
         if match_a.nw_proto != match_b.nw_proto:
             return False
         #@todo COMPLETE THIS
@@ -137,9 +140,9 @@ def flow_match_strict(flow_a, flow_b):
     @param flow_a Primary key for cookie mask, etc
     @param flow_b Other key to match
     """
-    wc_a = flow_a.match.wildcards
-    wc_b = flow_b.match.wildcards
-    if (wc_a != wc_b):
+    wildcards_a = flow_a.match.wildcards
+    wildcards_b = flow_b.match.wildcards
+    if (wildcards_a != wildcards_b):
         return False
     if (flow_a.priority != flow_b.priority):
         return False
@@ -154,13 +157,13 @@ def flow_match_strict(flow_a, flow_b):
             if (flow_a.out_group != flow_b.out_group):
                 return False
 
-    if not l2_match(match_a, match_b):
+    if not l2_match(flow_a.match, flow_b.match):
         return False
 
     # @todo  Switch on DL type; handle ARP cases, etc
     # @todo  What if DL_TYPE is wildcarded?
-    if match_a.dl_type == 0x800:
-        if not l3_match(match_a, match_b):
+    if flow_a.match.dl_type == 0x800:
+        if not l3_match(flow_a.match, flow_b.match):
             return False
 
     return True
@@ -176,7 +179,10 @@ class FlowEntry(object):
         self.bytes = 0
         self.insert_time = None
 
-    def flow_mod_set(flow_mod):
+    def flow_mod_set(self, flow_mod):
+        """
+        Set this flow entry's core flow_mod message
+        """
         self.flow_mod = copy.deepcopy(flow_mod)
         self.last_hit = None
         self.packets = 0
@@ -189,7 +195,7 @@ class FlowEntry(object):
         This is used for add/modify/delete operations
         @param new_flow The flow_mod object to match.
         """
-        if (flow_a.flags & ofp.OFPFF_CHECK_OVERLAP):
+        if (new_flow.flags & ofp.OFPFF_CHECK_OVERLAP):
             print("Check overlap set but not implemented")
             #@todo implement
 
@@ -201,7 +207,7 @@ class FlowEntry(object):
             return False
         if not l2_match(new_flow.match, self.flow_mod.match):
             return False
-        if flow_mod.match.dl_type == 0x800:
+        if new_flow.match.dl_type == 0x800:
             if not l3_match(new_flow.match, self.flow_mod.match):
                 return False
 

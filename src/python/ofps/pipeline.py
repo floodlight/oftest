@@ -31,8 +31,8 @@ from flowtable import FlowTable
 from threading import Thread
 from ofps_act import execute_actions
 from ofps_act import packet_in_to_controller
-
-import oftest.message as ofp 
+import oftest.cstruct as ofp
+import oftest.message as message 
 
 DEFAULT_TABLE_COUNT=1
 
@@ -81,7 +81,7 @@ class FlowPipeline(Thread):
         """
         self.controller = controller
 
-    def flow_mod(self, flow_mod):
+    def flow_mod_process(self, flow_mod):
         """
         Update the table according to the flow mod message 
         @param operation The flow operation add, mod delete
@@ -89,19 +89,9 @@ class FlowPipeline(Thread):
         """
         if flow_mod.table_id >= self.n_tables:
             self.logger.debug("bad table id " + str(flow_mod.table_id))
-            return (-1, OFPFMFC_BAD_TABLE_ID)
-        if flow_mod.command == ofp.OFPFC_ADD:
-            self.logger.debug("flow mod add")
-            return self.tables[flow_mod.table_id].flow_mod_add(operation, 
-                                                               flow_mod)
-        elif flow_mod.command == ofp.OFPFC_MODIFY:
-            self.logger.debug("flow mod modify")
-        elif flow_mod.command == ofp.OFPFC_MODIFY_STRICT:
-            self.logger.debug("flow mod modify strict")
-        elif flow_mod.command == ofp.OFPFC_DELETE:
-            self.logger.debug("flow mod delete")
-        elif flow_mod.command == ofp.OFPFC_DELETE_STRICT:
-            self.logger.debug("flow mod delete strict")
+            return (-1, ofp.OFPFMFC_BAD_TABLE_ID)
+
+        return self.tables[flow_mod.table_id].flow_mod_process(flow_mod)
 
 
     def table_caps_get(self, table_id=0):
