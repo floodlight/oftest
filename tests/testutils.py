@@ -180,10 +180,10 @@ def port_config_get(controller, port_no, logger):
     """
     request = message.features_request()
     reply, pkt = controller.transact(request, timeout=2)
-    logger.debug(reply.show())
     if reply is None:
         logger.warn("Get feature request failed")
         return None, None, None
+    logger.debug(reply.show())
     for idx in range(len(reply.ports)):
         if reply.ports[idx].port_no == port_no:
             return (reply.ports[idx].hw_addr, reply.ports[idx].config,
