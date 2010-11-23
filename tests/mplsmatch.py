@@ -85,52 +85,148 @@ def test_set_init(config):
 
 ###########################################################################
 
-class MplsExact(pktact.BaseMatchCase):
+class MplsExactNone(pktact.BaseMatchCase):
     """
     Exact match with MPLS tagged/untagged pkts
-    Excercise various test_conditions
+    Excercise various test_conditions when OFPML_NONE is set
     Test on one pair of ports
     """
     def runTest(self):
         mpls_none_tests(self, mpls_label_mask = False, mpls_tc_mask=False)
+
+class MplsExactAny(pktact.BaseMatchCase):
+    """
+    Exact match with MPLS tagged/untagged pkts
+    Excercise various test_conditions when OFPML_ANY is set
+    Test on one pair of ports
+    """
+    def runTest(self):
         mpls_any_tests(self, mpls_label_mask = False, mpls_tc_mask=False)
+
+class MplsExactSpecific(pktact.BaseMatchCase):
+    """
+    Exact match with MPLS tagged/untagged pkts
+    Excercise various test_conditions when specific LABEL/TC are set
+    Test on one pair of ports
+    """
+    def runTest(self):
         mpls_specific_tests(self, mpls_label_mask = False, mpls_tc_mask=False)
+
+class MplsExactOutrange(pktact.BaseMatchCase):
+    """
+    Exact match with MPLS tagged/untagged pkts
+    Excercise various test_conditions when the specified value is out of range
+    Test on one pair of ports
+    """
+    def runTest(self):
         mpls_outrange_tests(self, mpls_label_mask = False, mpls_tc_mask=False)
 
-class MplsWildLabelExactTc(pktact.BaseMatchCase):
+class MplsWildLabelExactTcNone(pktact.BaseMatchCase):
     """
     Wildcard LABEL and Exact TCP match with MPLS tagged/untagged pkts
-    Excercise various test_conditions
+    Excercise various test_conditions when OFPML_NONE is set
     Test on one pair of ports
     """
     def runTest(self):
         mpls_none_tests(self, mpls_label_mask = True, mpls_tc_mask=False)
+
+class MplsWildLabelExactTcAny(pktact.BaseMatchCase):
+    """
+    Wildcard LABEL and Exact TCP match with MPLS tagged/untagged pkts
+    Excercise various test_conditions when OFPML_ANY is set
+    Test on one pair of ports
+    """
+    def runTest(self):
         mpls_any_tests(self, mpls_label_mask = True, mpls_tc_mask=False)
+
+class MplsWildLabelExactTcSpecific(pktact.BaseMatchCase):
+    """
+    Wildcard LABEL and Exact TCP match with MPLS tagged/untagged pkts
+    Excercise various test_conditions when specific LABEL/TC are set
+    Test on one pair of ports
+    """
+    def runTest(self):
         mpls_specific_tests(self, mpls_label_mask = True, mpls_tc_mask=False)
+
+class MplsWildLabelExactTcOutrange(pktact.BaseMatchCase):
+    """
+    Wildcard LABEL and Exact TCP match with MPLS tagged/untagged pkts
+    Excercise various test_conditions when the specified value is out of range
+    Test on one pair of ports
+    """
+    def runTest(self):
         mpls_outrange_tests(self, mpls_label_mask = True, mpls_tc_mask=False)
 
-class MplsExactLabelWildTc(pktact.BaseMatchCase):
+class MplsExactLabelWildTcNone(pktact.BaseMatchCase):
     """
     Exact LABEL and Wildcard TC match with MPLS tagged/untagged pkts
-    Excercise various test_conditions
+    Excercise various test_conditions when OFPML_NONE is set
     Test on one pair of ports
     """
     def runTest(self):
         mpls_none_tests(self, mpls_label_mask = False, mpls_tc_mask=True)
+
+class MplsExactLabelWildTcAny(pktact.BaseMatchCase):
+    """
+    Exact LABEL and Wildcard TC match with MPLS tagged/untagged pkts
+    Excercise various test_conditions when OFPML_ANY is set
+    Test on one pair of ports
+    """
+    def runTest(self):
         mpls_any_tests(self, mpls_label_mask = False, mpls_tc_mask=True)
+
+class MplsExactLabelWildTcSpecific(pktact.BaseMatchCase):
+    """
+    Exact LABEL and Wildcard TC match with MPLS tagged/untagged pkts
+    Excercise various test_conditions when specific LABEL/TC are set
+    Test on one pair of ports
+    """
+    def runTest(self):
         mpls_specific_tests(self, mpls_label_mask = False, mpls_tc_mask=True)
+
+class MplsExactLabelWildTcOutrange(pktact.BaseMatchCase):
+    """
+    Exact LABEL and Wildcard TC match with MPLS tagged/untagged pkts
+    Excercise various test_conditions when the specified value is out of range
+    Test on one pair of ports
+    """
+    def runTest(self):
         mpls_outrange_tests(self, mpls_label_mask = False, mpls_tc_mask=True)
 
-class MplsWildAll(pktact.BaseMatchCase):
+class MplsWildNone(pktact.BaseMatchCase):
     """
     Wildcard LABEL and Exact TC match with MPLS tagged/untagged pkts
-    Excercise various test_conditions
+    Excercise various test_conditions when OFPML_NONE is set
     Test on one pair of ports
     """
     def runTest(self):
         mpls_none_tests(self, mpls_label_mask = True, mpls_tc_mask=True)
+
+class MplsWildAny(pktact.BaseMatchCase):
+    """
+    Wildcard LABEL and Exact TC match with MPLS tagged/untagged pkts
+    Excercise various test_conditions when OFPML_ANY is set
+    Test on one pair of ports
+    """
+    def runTest(self):
         mpls_any_tests(self, mpls_label_mask = True, mpls_tc_mask=True)
+
+class MplsWildSpecific(pktact.BaseMatchCase):
+    """
+    Wildcard LABEL and Exact TC match with MPLS tagged/untagged pkts
+    Excercise various test_conditions when specific LABEL/TC are set
+    Test on one pair of ports
+    """
+    def runTest(self):
         mpls_specific_tests(self, mpls_label_mask = True, mpls_tc_mask=True)
+
+class MplsWildOutrange(pktact.BaseMatchCase):
+    """
+    Wildcard LABEL and Exact TC match with MPLS tagged/untagged pkts
+    Excercise various test_conditions when the specified value is out of range
+    Test on one pair of ports
+    """
+    def runTest(self):
         mpls_outrange_tests(self, mpls_label_mask = True, mpls_tc_mask=True)
 
 
