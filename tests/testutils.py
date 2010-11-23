@@ -397,8 +397,7 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=0,
         request.flags |= ofp.OFPFF_SEND_FLOW_REM
         request.hard_timeout = 1
 
-    inst_item = instruction.instruction_write_actions()
-    inst_item.type = ofp.OFPIT_WRITE_ACTIONS
+    inst_item = instruction.instruction_apply_actions()
     if action_list is not None:
         for act in action_list:
             parent.logger.debug("Adding action " + act.show())
@@ -1047,13 +1046,16 @@ def flow_match_test_vlan(parent, port_map, wildcards=0,
 def simple_tcp_packet_w_mpls(pktlen=100,
                       dl_dst='00:01:02:03:04:05',
                       dl_src='00:06:07:08:09:0a',
-                      mpls_enable=False,
+                      mpls_type=0x8847,
+                      mpls_label=-1,
+                      mpls_tc=0,
+                      mpls_ttl=64,
+                      mpls_label_int=-1,
+                      mpls_tc_int=0,
+                      mpls_ttl_int=32,
                       mpls_label_ext=-1,
                       mpls_tc_ext=0,
-                      mpls_ttl_ext=64,
-                      mpls_label_btm=16,
-                      mpls_tc_btm=0,
-                      mpls_ttl_btm=128,
+                      mpls_ttl_ext=128,
                       ip_src='192.168.0.1',
                       ip_dst='192.168.0.2',
                       ip_tos=0,
@@ -1067,56 +1069,95 @@ def simple_tcp_packet_w_mpls(pktlen=100,
     @param len Length of packet in bytes w/o CRC
     @param dl_dst Destinatino MAC
     @param dl_src Source MAC
-    @param mpls_enable True if the packet is with MPLS tag, False otherwise
-    @param mpls_label_ext Outer(external) MPLS LABEL if not -1
-    @param mpls_tc_ext Outer(external) MPLS TC
-    @param mpls_ttl_ext Outer(external) MPLS TTL
-    @param mpls_label_btm  MPLS LABEL if mpls_enable is True
-    @param mpls_tc_btm MPLS TC
-    @param mpls_ttl_btm MPLS TTL
+    @param mpls_type MPLS type as ether type
+    @param mpls_label MPLS LABEL if not -1
+    @param mpls_tc MPLS TC
+    @param mpls_ttl MPLS TTL
+    @param mpls_label_int Inner MPLS LABEL if not -1. The shim will be added
+    inside of mpls_label shim.
+    @param mpls_tc_int Inner MPLS TC
+    @param mpls_ttl_int Inner MPLS TTL
+    @param mpls_label_ext External MPLS LABEL if not -1. The shim will be
+    added outside of mpls_label shim
+    @param mpls_tc_ext External MPLS TC
+    @param mpls_ttl_ext External MPLS TTL
     @param ip_src IP source
     @param ip_dst IP destination
     @param ip_tos IP ToS
     @param tcp_dport TCP destination port
     @param ip_sport TCP source port
 
-    Generates a simple TCP request.  Users
+    Generates a simple MPLS/IP/TCP request.  Users
     shouldn't assume anything about this packet other than that
     it is a valid ethernet/IP/TCP frame.
     """
-    if mpls_enable:
-        if (mpls_label_ext >= 0):
-            pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-                  scapy.MPLS(label=mpls_label_ext, tc=mpls_tc_ext,
-                             ttl=mpls_ttl_ext, s=0)/ \
-                  scapy.MPLS(label=mpls_label_btm, tc=mpls_tc_btm,
-                      ttl=mpls_ttl_btm)/ \
-                  scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
-                  scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+    if mpls_label_ext >= 0:
+        if mpls_label >= 0:
+            if mpls_label_int >= 0:
+                pkt = scapy.Ether(dst=dl_dst, src=dl_src,
+                                  type=mpls_type)/ \
+                      scapy.MPLS(label=mpls_label_ext, tc=mpls_tc_ext,
+                                 ttl=mpls_ttl_ext, s=0)/ \
+                      scapy.MPLS(label=mpls_label, tc=mpls_tc,
+                                 ttl=mpls_ttl, s=0)/ \
+                      scapy.MPLS(label=mpls_label_int, tc=mpls_tc_int,
+                                 ttl=mpls_ttl_int)/ \
+                      scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                      scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+            else:
+                pkt = scapy.Ether(dst=dl_dst, src=dl_src,
+                                  type=mpls_type)/ \
+                      scapy.MPLS(label=mpls_label_ext, tc=mpls_tc_ext,
+                                 ttl=mpls_ttl_ext, s=0)/ \
+                      scapy.MPLS(label=mpls_label, tc=mpls_tc,
+                                 ttl=mpls_ttl)/ \
+                      scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                      scapy.TCP(sport=tcp_sport, dport=tcp_dport)
         else:
-            pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-                  scapy.MPLS(label=mpls_label_btm, tc=mpls_tc_btm,
-                             ttl=mpls_ttl_btm)/ \
+            pkt = scapy.Ether(dst=dl_dst, src=dl_src,
+                              type=mpls_type)/ \
+                  scapy.MPLS(label=mpls_label_ext, tc=mpls_tc_ext,
+                             ttl=mpls_ttl_ext)/ \
                   scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
                   scapy.TCP(sport=tcp_sport, dport=tcp_dport)
     else:
-        pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-              scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
-              scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+        if mpls_label >= 0:
+            if mpls_label_int >= 0:
+                pkt = scapy.Ether(dst=dl_dst, src=dl_src,
+                                  type=mpls_type)/ \
+                      scapy.MPLS(label=mpls_label, tc=mpls_tc,
+                                 ttl=mpls_ttl, s=0)/ \
+                      scapy.MPLS(label=mpls_label_int, tc=mpls_tc_int,
+                                 ttl=mpls_ttl_int)/ \
+                      scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                      scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+            else:
+                pkt = scapy.Ether(dst=dl_dst, src=dl_src,
+                                  type=mpls_type)/ \
+                      scapy.MPLS(label=mpls_label, tc=mpls_tc,
+                                 ttl=mpls_ttl)/ \
+                      scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                      scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+        else:
+            pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+                  scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                  scapy.TCP(sport=tcp_sport, dport=tcp_dport)
 
     pkt = pkt/("D" * (pktlen - len(pkt)))
 
     return pkt
 
 def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
-                                   mpls_label_ext=-1, mpls_tc_ext=0,
-                                   mpls_ttl_ext=64,
-                                   mpls_label_btm=-1, mpls_tc_btm=0,
-                                   mpls_ttl_btm=128,
+                                   mpls_type=0x8847,
+                                   mpls_label=-1, mpls_tc=0,mpls_ttl=64,
+                                   mpls_label_int=-1, mpls_tc_int=0,
+                                   mpls_ttl_int=32,
+                                   exp_mpls_type=0x8847,
                                    exp_mpls_label=-1, exp_mpls_tc=0,
-                                   exp_mpls_ttl=128,
-                                   label_match=-1, tc_match=0,
+                                   exp_mpls_ttl=64,
+                                   label_match=ofp.OFPML_NONE, tc_match=0,
                                    match_exp=True,
+                                   add_tag_exp=False,
                                    exp_msg=ofp.OFPT_FLOW_REMOVED,
                                    exp_msg_type=0, exp_msg_code=0,
                                    pkt=None,
@@ -1130,47 +1171,75 @@ def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
     """
     parent.logger.info("Pkt match test: " + str(ing_port) + " to " + str(egr_port))
     parent.logger.debug("  WC: " + hex(wildcards) + " MPLS: " +
-                    str(mpls_label_btm) + " expire: " + str(check_expire))
+                    str(mpls_label) + " expire: " + str(check_expire))
     len = 100
     len_w_shim = len + 4
     len_w_2shim = len_w_shim + 4
+    len_w_3shim = len_w_2shim + 4
     if pkt is None:
-        if mpls_label_btm >= 0:
-            if mpls_label_ext >= 0:
+        if mpls_label >= 0:
+            if mpls_label_int >= 0:
                 pktlen=len_w_2shim
             else:
                 pktlen=len_w_shim
-            mpls_enable=1
         else:
             pktlen=len
-            mpls_enable=0
         pkt = simple_tcp_packet_w_mpls(pktlen=pktlen,
-                                       mpls_enable=mpls_enable,
-                                       mpls_label_ext=mpls_label_ext,
-                                       mpls_tc_ext=mpls_tc_ext,
-                                       mpls_ttl_ext=mpls_ttl_ext,
-                                       mpls_label_btm=mpls_label_btm,
-                                       mpls_tc_btm=mpls_tc_btm,
-                                       mpls_ttl_btm=mpls_ttl_btm)
+                                       mpls_type=mpls_type,
+                                       mpls_label=mpls_label,
+                                       mpls_tc=mpls_tc,
+                                       mpls_ttl=mpls_ttl,
+                                       mpls_label_int=mpls_label_int,
+                                       mpls_tc_int=mpls_tc_int,
+                                       mpls_ttl_int=mpls_ttl_int)
+
     if exp_pkt is None:
         if exp_mpls_label >= 0:
-            if mpls_label_ext >= 0:
-                exp_pktlen=len_w_2shim
+            if add_tag_exp:
+                if mpls_label_int >= 0:
+                    exp_pktlen=len_w_3shim
+                else:
+                    exp_pktlen=len_w_2shim
             else:
-                exp_pktlen=len_w_shim
-            exp_mpls_enable=1
+                if mpls_label_int >= 0:
+                    exp_pktlen=len_w_2shim
+                else:
+                    exp_pktlen=len_w_shim
         else:
-            exp_pktlen=len
-            exp_mpls_enable=0
+            #subtract action
+            if mpls_label_int >= 0:
+                exp_pktlen=len_w_shim
+            else:
+                exp_pktlen=len
 
-        exp_pkt = simple_tcp_packet_w_mpls(pktlen=exp_pktlen,
-                                           mpls_enable=exp_mpls_enable,
-                                           mpls_label_ext=mpls_label_ext,
-                                           mpls_tc_ext=mpls_tc_ext,
-                                           mpls_ttl_ext=mpls_ttl_ext,
-                                           mpls_label_btm=exp_mpls_label,
-                                           mpls_tc_btm=exp_mpls_tc,
-                                           mpls_ttl_btm=exp_mpls_ttl)
+        if add_tag_exp:
+            exp_pkt = simple_tcp_packet_w_mpls(pktlen=exp_pktlen,
+                                           mpls_type=exp_mpls_type,
+                                           mpls_label_ext=exp_mpls_label,
+                                           mpls_tc_ext=exp_mpls_tc,
+                                           mpls_ttl_ext=exp_mpls_ttl,
+                                           mpls_label=mpls_label,
+                                           mpls_tc=mpls_tc,
+                                           mpls_ttl=mpls_ttl,
+                                           mpls_label_int=mpls_label_int,
+                                           mpls_tc_int=mpls_tc_int,
+                                           mpls_ttl_int=mpls_ttl_int)
+        else:
+            if (exp_mpls_label < 0) and (mpls_label_int >= 0):
+                exp_pkt = simple_tcp_packet_w_mpls(pktlen=exp_pktlen,
+                                           mpls_type=mpls_type,
+                                           mpls_label=mpls_label_int,
+                                           mpls_tc=mpls_tc_int,
+                                           mpls_ttl=mpls_ttl_int)
+            else:
+                exp_pkt = simple_tcp_packet_w_mpls(pktlen=exp_pktlen,
+                                           mpls_type=exp_mpls_type,
+                                           mpls_label=exp_mpls_label,
+                                           mpls_tc=exp_mpls_tc,
+                                           mpls_ttl=exp_mpls_ttl,
+                                           mpls_label_int=mpls_label_int,
+                                           mpls_tc_int=mpls_tc_int,
+                                           mpls_ttl_int=mpls_ttl_int)
 
     match = parse.packet_to_flow_match(pkt)
     parent.assertTrue(match is not None, "Flow match from pkt failed")
@@ -1196,19 +1265,23 @@ def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
             #@todo Not all HW supports both pkt and byte counters
             flow_removed_verify(parent, request, pkt_count=1, byte_count=len(pkt))
     else:
-        if check_expire:
+        if exp_msg == ofp.OFPT_FLOW_REMOVED:
+            if check_expire:
                 flow_removed_verify(parent, request, pkt_count=0, byte_count=0)
-        elif exp_msg is ofp.OFPT_ERROR:
+        elif exp_msg == ofp.OFPT_ERROR:
             error_verify(parent, exp_msg_type, exp_msg_code)
         else:
             parent.assertTrue(0, "Rcv: Unexpected Message: " + str(exp_msg))
 
 def flow_match_test_mpls(parent, port_map, wildcards=0,
-                         mpls_label_ext=-1, mpls_tc_ext=0, mpls_ttl_ext=64,
-                         mpls_label_btm=-1, mpls_tc_btm=0, mpls_ttl_btm=128,
-                         label_match=-1, tc_match=0,
-                         exp_mpls_label=-1, exp_mpls_tc=0, exp_mpls_ttl=128,
+                         mpls_type=0x8847,
+                         mpls_label=-1, mpls_tc=0, mpls_ttl=64,
+                         mpls_label_int=-1, mpls_tc_int=0, mpls_ttl_int=32,
+                         label_match=ofp.OFPML_NONE, tc_match=0,
+                         exp_mpls_type=0x8847,
+                         exp_mpls_label=-1, exp_mpls_tc=0, exp_mpls_ttl=64,
                          match_exp=True,
+                         add_tag_exp=False,
                          exp_msg=ofp.OFPT_FLOW_REMOVED,
                          exp_msg_type=0, exp_msg_code=0,
                          pkt=None,
@@ -1221,16 +1294,21 @@ def flow_match_test_mpls(parent, port_map, wildcards=0,
     @param parent Must implement controller, dataplane, assertTrue, assertEqual
     and logger
     @param wildcards For flow match entry
-    @param mpls_label_ext If not -1 create a pkt w/ outer(external) MPLS tag
-    @param mpls_tc_ext MPLS TC associated with outer MPLS label
-    @param mpls_label_btm If not -1 and pkt is not None, create a pkt w/ MPLS
-    tag
-    @param mpls_tc_btm MPLS TC associated with MPLS label
+    @param mpls_type MPLS type
+    @param mpls_label If not -1 create a pkt w/ MPLS tag
+    @param mpls_tc MPLS TC associated with MPLS label
+    @param mpls_ttl MPLS TTL associated with MPLS label
+    @param mpls_label_int If not -1 create a pkt w/ Inner MPLS tag
+    @param mpls_tc_int MPLS TC associated with Inner MPLS label
+    @param mpls_ttl_int MPLS TTL associated with Inner MPLS label
     @param label_match Matching value for MPLS LABEL field
     @param tc_match Matching value for MPLS TC field
     @param exp_mpls_label Expected MPLS LABEL value. If -1, no MPLS expected
     @param exp_mpls_tc Expected MPLS TC value
+    @param exp_ttl Expected MPLS TTL value
     @param match_exp Set whether packet is expected to receive
+    @param add_tag_exp If True, expected_packet has an additional MPLS shim,
+    If not expected_packet's MPLS shim is replaced as specified
     @param exp_msg Expected message
     @param exp_msg_type Expected message type associated with the message
     @param exp_msg_code Expected message code associated with the msg_type
@@ -1252,25 +1330,28 @@ def flow_match_test_mpls(parent, port_map, wildcards=0,
             egress_port = of_ports[egr_idx]
             flow_match_test_port_pair_mpls(parent, ingress_port, egress_port,
                                       wildcards=wildcards,
-                                      mpls_label_ext=mpls_label_ext,
-                                      mpls_tc_ext=mpls_tc_ext,
-                                      mpls_ttl_ext=mpls_ttl_ext,
-                                      mpls_label_btm=mpls_label_btm,
-                                      mpls_tc_btm=mpls_tc_btm,
-                                      mpls_ttl_btm=mpls_ttl_btm,
+                                      mpls_type=mpls_type,
+                                      mpls_label=mpls_label,
+                                      mpls_tc=mpls_tc,
+                                      mpls_ttl=mpls_ttl,
+                                      mpls_label_int=mpls_label_int,
+                                      mpls_tc_int=mpls_tc_int,
+                                      mpls_ttl_int=mpls_ttl_int,
+                                      label_match=label_match,
+                                      tc_match=tc_match,
+                                      exp_mpls_type=exp_mpls_type,
                                       exp_mpls_label=exp_mpls_label,
                                       exp_mpls_tc=exp_mpls_tc,
                                       exp_mpls_ttl=exp_mpls_ttl,
-                                      label_match=label_match,
-                                      tc_match=tc_match,
                                       match_exp=match_exp,
                                       exp_msg=exp_msg,
                                       exp_msg_type=exp_msg_type,
                                       exp_msg_code=exp_msg_code,
+                                      add_tag_exp=add_tag_exp,
                                       pkt=pkt, exp_pkt=exp_pkt,
                                       action_list=action_list,
                                       check_expire=check_expire)
             test_count += 1
-            if (max_test > 0) and (test_count > max_test):
+            if (max_test > 0) and (test_count >= max_test):
                 parent.logger.info("Ran " + str(test_count) + " tests; exiting")
                 return

@@ -182,22 +182,24 @@ def mpls_none_tests(parent, mpls_label_mask=False, mpls_tc_mask=False):
         if match_exp == True:
             exp_label = label
             exp_tc = tc
+            exp_ttl = ttl
         else:
             exp_label = 0 #NOT_EXPECTED
             exp_tc = 0 #NOT_EXPECTED
+            exp_ttl = 0 #NOT_EXPECTED
 
         flow_match_test_mpls(parent, pa_port_map,
-                    mpls_label_btm=label,
-                    mpls_tc_btm=tc,
-                    mpls_ttl_btm=ttl,
-                    mpls_label_ext=-1,
-                    mpls_tc_ext=0,
+                    wildcards=wildcards,
+                    mpls_label=label,
+                    mpls_tc=tc,
+                    mpls_ttl=ttl,
+                    mpls_label_int=-1,
+                    mpls_tc_int=0,
                     label_match=label_match,
                     tc_match=tc_match,
-                    wildcards=wildcards,
                     exp_mpls_label=exp_label,
                     exp_mpls_tc=exp_tc,
-                    exp_mpls_ttl=ttl,
+                    exp_mpls_ttl=exp_ttl,
                     match_exp=match_exp,
                     exp_msg=exp_msg,
                     exp_msg_type=exp_msg_type,
@@ -239,7 +241,7 @@ def mpls_any_tests(parent, mpls_label_mask=False, mpls_tc_mask=False):
         elif test_condition == 1:
             label = random.randint(16, 1048575)
             tc_match = 7 - tc # unmatching value
-            if mpls_label_mask == True:
+            if (mpls_label_mask == True) or (mpls_tc_mask == True):
                 match_exp = True
             else:
                 match_exp = False
@@ -247,22 +249,24 @@ def mpls_any_tests(parent, mpls_label_mask=False, mpls_tc_mask=False):
         if match_exp == True:
             exp_label = label
             exp_tc = tc
+            exp_ttl = ttl
         else:
             exp_label = 0 #NOT_EXPECTED
             exp_tc = 0 #NOT_EXPECTED
+            exp_ttl = 0 #NOT_EXPECTED
 
         flow_match_test_mpls(parent, pa_port_map,
-                    mpls_label_btm=label,
-                    mpls_tc_btm=tc,
-                    mpls_ttl_btm=ttl,
-                    mpls_label_ext=-1,
-                    mpls_tc_ext=0,
+                    wildcards=wildcards,
+                    mpls_label=label,
+                    mpls_tc=tc,
+                    mpls_ttl=ttl,
+                    mpls_label_int=-1,
+                    mpls_tc_int=0,
                     label_match=label_match,
                     tc_match=tc_match,
-                    wildcards=wildcards,
                     exp_mpls_label=exp_label,
                     exp_mpls_tc=exp_tc,
-                    exp_mpls_ttl=ttl,
+                    exp_mpls_ttl=exp_ttl,
                     match_exp=match_exp,
                     exp_msg=exp_msg,
                     exp_msg_type=exp_msg_type,
@@ -293,8 +297,9 @@ def mpls_specific_tests(parent, mpls_label_mask=False, mpls_tc_mask=False):
     exp_msg_code = 0 #NOT_EXPECTED
 
     for test_condition in range(6):
-        label_2nd = -1
-        tc_2nd = 0
+        label_int = -1
+        tc_int = 0
+        ttl_int = 0
         if test_condition == 0:
             label = -1
             tc = 0
@@ -327,8 +332,9 @@ def mpls_specific_tests(parent, mpls_label_mask=False, mpls_tc_mask=False):
         elif test_condition == 4:
             label = label_match
             tc = tc_match
-            label_2nd = label_match + 1
-            tc_2nd = tc_match + 1
+            label_int = label_match + 1
+            tc_int = tc_match + 1
+            ttl_int = ttl + 1
             match_exp = True
 
         elif test_condition == 5:
@@ -342,22 +348,25 @@ def mpls_specific_tests(parent, mpls_label_mask=False, mpls_tc_mask=False):
         if match_exp == True:
             exp_label = label
             exp_tc = tc
+            exp_ttl = ttl
         else:
             exp_label = 0 #NOT_EXPECTED
             exp_tc = 0 #NOT_EXPECTED
+            exp_ttl = 0 #NOT_EXPECTED
 
         flow_match_test_mpls(parent, pa_port_map,
-                    mpls_label_btm=label,
-                    mpls_tc_btm=tc,
-                    mpls_ttl_btm=ttl,
-                    mpls_label_ext=label_2nd,
-                    mpls_tc_ext=tc_2nd,
+                    wildcards=wildcards,
+                    mpls_label=label,
+                    mpls_tc=tc,
+                    mpls_ttl=ttl,
+                    mpls_label_int=label_int,
+                    mpls_tc_int=tc_int,
+                    mpls_ttl_int=ttl_int,
                     label_match=label_match,
                     tc_match=tc_match,
-                    wildcards=wildcards,
                     exp_mpls_label=exp_label,
                     exp_mpls_tc=exp_tc,
-                    exp_mpls_ttl=ttl,
+                    exp_mpls_ttl=exp_ttl,
                     match_exp=match_exp,
                     exp_msg=exp_msg,
                     exp_msg_type=exp_msg_type,
@@ -382,46 +391,96 @@ def mpls_outrange_tests(parent, mpls_label_mask=False, mpls_tc_mask=False):
     label = random.randint(16, 1048575)
     tc = random.randint(0, 7)
     ttl = 128
-    exp_label = 0 #NOT_EXPECTED
-    exp_tc = 0 #NOT_EXPECTED
-    match_exp = False
-    exp_msg = ofp.OFPT_ERROR
-    exp_msg_type = ofp.OFPET_FLOW_MOD_FAILED
-    exp_msg_code = ofp.OFPFMFC_BAD_MATCH
 
     for test_condition in range(5):
         if test_condition == 0:
             label_match = ofp.OFPML_NONE
             tc_match = tc + 8  #out of range
+            if mpls_label_mask == True:
+                match_exp = True
+            else:
+                match_exp = False
+            exp_msg = ofp.OFPT_FLOW_REMOVED
+            exp_msg_type = 0 #NOT EXPECTED
+            exp_msg_code = 0 #NOT EXPECTED
 
         elif test_condition == 1:
             label_match = ofp.OFPML_ANY
             tc_match = tc + 8  #out of range
+            if (mpls_label_mask == True) or (mpls_tc_mask == True):
+                match_exp = True
+                exp_msg = ofp.OFPT_FLOW_REMOVED
+                exp_msg_type = 0 #NOT EXPECTED
+                exp_msg_code = 0 #NOT EXPECTED
+            else:
+                match_exp = False
+                exp_msg = ofp.OFPT_ERROR
+                exp_msg_type = ofp.OFPET_FLOW_MOD_FAILED
+                exp_msg_code = ofp.OFPFMFC_BAD_MATCH
 
         elif test_condition == 2:
             label_match = label + 1048576  #out of range
             tc_match = tc
+            if mpls_label_mask == True:
+                match_exp = True
+                exp_msg = ofp.OFPT_FLOW_REMOVED
+                exp_msg_type = 0 #NOT EXPECTED
+                exp_msg_code = 0 #NOT EXPECTED
+            else:
+                match_exp = False
+                exp_msg = ofp.OFPT_ERROR
+                exp_msg_type = ofp.OFPET_FLOW_MOD_FAILED
+                exp_msg_code = ofp.OFPFMFC_BAD_MATCH
 
         elif test_condition == 3:
             label_match = label
             tc_match = tc + 8  #out of range
+            if (mpls_label_mask == True) or (mpls_tc_mask == True):
+                match_exp = True
+                exp_msg = ofp.OFPT_FLOW_REMOVED
+                exp_msg_type = 0 #NOT EXPECTED
+                exp_msg_code = 0 #NOT EXPECTED
+            else:
+                match_exp = False
+                exp_msg = ofp.OFPT_ERROR
+                exp_msg_type = ofp.OFPET_FLOW_MOD_FAILED
+                exp_msg_code = ofp.OFPFMFC_BAD_MATCH
 
         elif test_condition == 4:
             label_match = label + 1048576  #out of range
             tc_match = tc + 8  #out of range
+            if mpls_label_mask == True:
+                match_exp = True
+                exp_msg = ofp.OFPT_FLOW_REMOVED
+                exp_msg_type = 0 #NOT EXPECTED
+                exp_msg_code = 0 #NOT EXPECTED
+            else:
+                match_exp = False
+                exp_msg = ofp.OFPT_ERROR
+                exp_msg_type = ofp.OFPET_FLOW_MOD_FAILED
+                exp_msg_code = ofp.OFPFMFC_BAD_MATCH
+
+        if match_exp == True:
+            exp_label = label
+            exp_tc = tc
+            exp_ttl = ttl
+        else:
+            exp_label = 0 #NOT EXPECTED
+            exp_tc = 0 #NOT EXPECTED
+            exp_ttl = 0 #NOT EXPECTED
 
         flow_match_test_mpls(parent, pa_port_map,
-                    mpls_label_btm=label,
-                    mpls_tc_btm=tc,
-                    mpls_ttl_btm=ttl,
-                    mpls_label_ext=-1,
-                    mpls_tc_ext=0,
+                    wildcards=wildcards,
+                    mpls_label=label,
+                    mpls_tc=tc,
+                    mpls_ttl=ttl,
+                    mpls_label_int=-1,
+                    mpls_tc_int=0,
                     label_match=label_match,
                     tc_match=tc_match,
-                    wildcards=wildcards,
                     exp_mpls_label=exp_label,
                     exp_mpls_tc=exp_tc,
-                    exp_mpls_ttl=ttl,
+                    exp_mpls_ttl=exp_ttl,
                     match_exp=match_exp,
                     exp_msg=exp_msg,
                     exp_msg_type=exp_msg_type,
