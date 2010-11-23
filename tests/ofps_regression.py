@@ -8,7 +8,8 @@ import unittest
 
 class OFPSTest(unittest.TestCase):
     
-    Tests = ['Echo', 'EchoWithData', 'PacketIn', 'PacketOut', 'FeaturesRequest']
+    Tests = ['Echo', 'EchoWithData', 'PacketIn', 'PacketOut', 'FeaturesRequest',
+                'FlowStatsGet']
     TestDir='.'
 
     def setUp(self):
