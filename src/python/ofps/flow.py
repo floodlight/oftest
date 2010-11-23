@@ -23,7 +23,6 @@
 # SOFTWARE.
 # 
 ######################################################################
-from oftest.action import action_set_output_port
 
 """
 FlowEntry class definition

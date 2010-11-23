@@ -149,14 +149,12 @@ class FlowTable(object):
         #fake_flow_mod.flags = ofp.OFPFF_CHECK_OVERLAP
         for flow in self.flow_entries:
             # match the out_port
-            if not flow.match_port(flow_stats_request.out_port):
-                continue
-            if not flow.match_cookie(flow_stats_request.cookie):
-                continue  
-            if not flow.match_flow_mod(fake_flow_mod):
-                continue
-            # found a valid match, now fill in the stats
-            stat = flow.flow_stat_get()
-            stat.table_id = self.table_id
-            stats.append(stat)
+            if flow.match_port(flow_stats_request.out_port) and \
+                    flow.match_cookie(flow_stats_request.cookie) and \
+                    flow.match_flow_mod(fake_flow_mod):
+                # found a valid match, now fill in the stats
+                stat = flow.flow_stat_get()
+                stat.table_id = self.table_id
+                stats.append(stat)
+        self.flow_sync.release()
         return stats

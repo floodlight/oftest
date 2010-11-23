@@ -298,8 +298,9 @@ class FlowStatsGet(SimpleProtocol):
         request.out_port = ofp.OFPP_ANY
         request.table_id = 0xff
         request.match.wildcards = 0 # ofp.OFPFW_ALL
-        response, pkt = self.controller.transact(request, timeout=2)
+        response, _ = self.controller.transact(request, timeout=2)
         self.assertTrue(response is not None, "Did not get response")
+        self.assertTrue(isinstance(response,message.flow_stats_reply),"Not a flow_stats_reply")
         basic_logger.debug(response.show())
 
 class TableStatsGet(SimpleProtocol):
