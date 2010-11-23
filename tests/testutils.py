@@ -1248,6 +1248,16 @@ def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
     match.mpls_tc = tc_match
     match.wildcards = wildcards
 
+    match.dl_type = 0
+    match.nw_tos = 0
+    match.nw_proto = 0
+    match.nw_src = 0
+    match.nw_src_mask = 0
+    match.nw_dst = 0
+    match.nw_dst_mask = 0
+    match.tp_src = 0
+    match.tp_dst = 0
+
     request = flow_msg_create(parent, pkt, ing_port=ing_port,
                               wildcards=wildcards,
                               match=match,
