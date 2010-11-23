@@ -1059,6 +1059,7 @@ def simple_tcp_packet_w_mpls(pktlen=100,
                       ip_src='192.168.0.1',
                       ip_dst='192.168.0.2',
                       ip_tos=0,
+                      ip_ttl=192,
                       tcp_sport=1234,
                       tcp_dport=80
                       ):
@@ -1102,7 +1103,8 @@ def simple_tcp_packet_w_mpls(pktlen=100,
                                  ttl=mpls_ttl, s=0)/ \
                       scapy.MPLS(label=mpls_label_int, tc=mpls_tc_int,
                                  ttl=mpls_ttl_int)/ \
-                      scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                      scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos,
+                               ttl=ip_ttl)/ \
                       scapy.TCP(sport=tcp_sport, dport=tcp_dport)
             else:
                 pkt = scapy.Ether(dst=dl_dst, src=dl_src,
@@ -1111,14 +1113,16 @@ def simple_tcp_packet_w_mpls(pktlen=100,
                                  ttl=mpls_ttl_ext, s=0)/ \
                       scapy.MPLS(label=mpls_label, tc=mpls_tc,
                                  ttl=mpls_ttl)/ \
-                      scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                      scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos,
+                               ttl=ip_ttl)/ \
                       scapy.TCP(sport=tcp_sport, dport=tcp_dport)
         else:
             pkt = scapy.Ether(dst=dl_dst, src=dl_src,
                               type=mpls_type)/ \
                   scapy.MPLS(label=mpls_label_ext, tc=mpls_tc_ext,
                              ttl=mpls_ttl_ext)/ \
-                  scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                  scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos,
+                           ttl=ip_ttl)/ \
                   scapy.TCP(sport=tcp_sport, dport=tcp_dport)
     else:
         if mpls_label >= 0:
@@ -1129,18 +1133,21 @@ def simple_tcp_packet_w_mpls(pktlen=100,
                                  ttl=mpls_ttl, s=0)/ \
                       scapy.MPLS(label=mpls_label_int, tc=mpls_tc_int,
                                  ttl=mpls_ttl_int)/ \
-                      scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                      scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos,
+                               ttl=ip_ttl)/ \
                       scapy.TCP(sport=tcp_sport, dport=tcp_dport)
             else:
                 pkt = scapy.Ether(dst=dl_dst, src=dl_src,
                                   type=mpls_type)/ \
                       scapy.MPLS(label=mpls_label, tc=mpls_tc,
                                  ttl=mpls_ttl)/ \
-                      scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                      scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos,
+                               ttl=ip_ttl)/ \
                       scapy.TCP(sport=tcp_sport, dport=tcp_dport)
         else:
             pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-                  scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                  scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos,
+                           ttl=ip_ttl)/ \
                   scapy.TCP(sport=tcp_sport, dport=tcp_dport)
 
     pkt = pkt/("D" * (pktlen - len(pkt)))
@@ -1152,9 +1159,11 @@ def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
                                    mpls_label=-1, mpls_tc=0,mpls_ttl=64,
                                    mpls_label_int=-1, mpls_tc_int=0,
                                    mpls_ttl_int=32,
+                                   ip_ttl=192,
                                    exp_mpls_type=0x8847,
                                    exp_mpls_label=-1, exp_mpls_tc=0,
                                    exp_mpls_ttl=64,
+                                   exp_ip_ttl=192,
                                    label_match=ofp.OFPML_NONE, tc_match=0,
                                    match_exp=True,
                                    add_tag_exp=False,
@@ -1191,7 +1200,8 @@ def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
                                        mpls_ttl=mpls_ttl,
                                        mpls_label_int=mpls_label_int,
                                        mpls_tc_int=mpls_tc_int,
-                                       mpls_ttl_int=mpls_ttl_int)
+                                       mpls_ttl_int=mpls_ttl_int,
+                                       ip_ttl=ip_ttl)
 
     if exp_pkt is None:
         if exp_mpls_label >= 0:
@@ -1223,14 +1233,16 @@ def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
                                            mpls_ttl=mpls_ttl,
                                            mpls_label_int=mpls_label_int,
                                            mpls_tc_int=mpls_tc_int,
-                                           mpls_ttl_int=mpls_ttl_int)
+                                           mpls_ttl_int=mpls_ttl_int,
+                                           ip_ttl=exp_ip_ttl)
         else:
             if (exp_mpls_label < 0) and (mpls_label_int >= 0):
                 exp_pkt = simple_tcp_packet_w_mpls(pktlen=exp_pktlen,
                                            mpls_type=mpls_type,
                                            mpls_label=mpls_label_int,
                                            mpls_tc=mpls_tc_int,
-                                           mpls_ttl=mpls_ttl_int)
+                                           mpls_ttl=mpls_ttl_int,
+                                           ip_ttl=exp_ip_ttl)
             else:
                 exp_pkt = simple_tcp_packet_w_mpls(pktlen=exp_pktlen,
                                            mpls_type=exp_mpls_type,
@@ -1239,7 +1251,8 @@ def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
                                            mpls_ttl=exp_mpls_ttl,
                                            mpls_label_int=mpls_label_int,
                                            mpls_tc_int=mpls_tc_int,
-                                           mpls_ttl_int=mpls_ttl_int)
+                                           mpls_ttl_int=mpls_ttl_int,
+                                           ip_ttl=exp_ip_ttl)
 
     match = parse.packet_to_flow_match(pkt)
     parent.assertTrue(match is not None, "Flow match from pkt failed")
@@ -1287,9 +1300,11 @@ def flow_match_test_mpls(parent, port_map, wildcards=0,
                          mpls_type=0x8847,
                          mpls_label=-1, mpls_tc=0, mpls_ttl=64,
                          mpls_label_int=-1, mpls_tc_int=0, mpls_ttl_int=32,
+                         ip_ttl = 192,
                          label_match=ofp.OFPML_NONE, tc_match=0,
                          exp_mpls_type=0x8847,
                          exp_mpls_label=-1, exp_mpls_tc=0, exp_mpls_ttl=64,
+                         exp_ip_ttl=192,
                          match_exp=True,
                          add_tag_exp=False,
                          exp_msg=ofp.OFPT_FLOW_REMOVED,
@@ -1311,11 +1326,13 @@ def flow_match_test_mpls(parent, port_map, wildcards=0,
     @param mpls_label_int If not -1 create a pkt w/ Inner MPLS tag
     @param mpls_tc_int MPLS TC associated with Inner MPLS label
     @param mpls_ttl_int MPLS TTL associated with Inner MPLS label
+    @param ip_ttl IP TTL
     @param label_match Matching value for MPLS LABEL field
     @param tc_match Matching value for MPLS TC field
     @param exp_mpls_label Expected MPLS LABEL value. If -1, no MPLS expected
     @param exp_mpls_tc Expected MPLS TC value
-    @param exp_ttl Expected MPLS TTL value
+    @param exp_mpls_ttl Expected MPLS TTL value
+    @param ip_ttl Expected IP TTL
     @param match_exp Set whether packet is expected to receive
     @param add_tag_exp If True, expected_packet has an additional MPLS shim,
     If not expected_packet's MPLS shim is replaced as specified
@@ -1347,12 +1364,14 @@ def flow_match_test_mpls(parent, port_map, wildcards=0,
                                       mpls_label_int=mpls_label_int,
                                       mpls_tc_int=mpls_tc_int,
                                       mpls_ttl_int=mpls_ttl_int,
+                                      ip_ttl=ip_ttl,
                                       label_match=label_match,
                                       tc_match=tc_match,
                                       exp_mpls_type=exp_mpls_type,
                                       exp_mpls_label=exp_mpls_label,
                                       exp_mpls_tc=exp_mpls_tc,
                                       exp_mpls_ttl=exp_mpls_ttl,
+                                      exp_ip_ttl=exp_ip_ttl,
                                       match_exp=match_exp,
                                       exp_msg=exp_msg,
                                       exp_msg_type=exp_msg_type,
