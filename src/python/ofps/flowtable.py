@@ -32,6 +32,7 @@ import logging
 from flow import FlowEntry
 from threading import Lock
 import oftest.cstruct as ofp
+import oftest.message as message
 
 def prio_sort(entry_x, entry_y):
     """
@@ -130,3 +131,32 @@ class FlowTable(object):
                 break
         self.flow_sync.release()
         return found
+    
+    def flow_stats_get(self, flow_stats_request):
+        """ 
+        Takes an OFMatch structure as parameter and returns a list of the flow_mods
+        that match that structure (implicitly including their stats)
+        
+        Used by pipeline to collect stats on each flow table
+        
+        @todo Decide if we really need to lock the flow_table before processing
+        """
+        self.flow_sync.acquire()
+        stats = []
+        fake_flow_mod = message.flow_mod()
+        fake_flow_mod.match = flow_stats_request.match
+        #@todo decide if flow_stats are 'strict' or not; if yes, then uncomment next line
+        #fake_flow_mod.flags = ofp.OFPFF_CHECK_OVERLAP
+        for flow in self.flow_entries:
+            # match the out_port
+            if not flow.match_port(flow_stats_request.out_port):
+                continue
+            if not flow.match_cookie(flow_stats_request.cookie):
+                continue  
+            if not flow.match_flow_mod(fake_flow_mod):
+                continue
+            # found a valid match, now fill in the stats
+            stat = flow.flow_stat_get()
+            stat.table_id = self.table_id
+            stats.append(stat)
+        return stats

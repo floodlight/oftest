@@ -23,6 +23,7 @@
 # SOFTWARE.
 # 
 ######################################################################
+from oftest.action import action_set_output_port
 
 """
 FlowEntry class definition
@@ -86,10 +87,12 @@ def l2_match(match_a, match_b):
         if match_a.dl_src[idx] & byte != match_b.dl_src[idx] & byte:
             return False
         idx += 1
+    idx = 0
     for byte in match_a.dl_dst_mask:
         byte = ~byte
-        if match_a.dl_dst & byte != match_b.dl_dst & byte:
+        if match_a.dl_dst[idx] & byte != match_b.dl_dst[idx] & byte:
             return False
+        idx += 1
     mask = ~match_a.metadata_mask
     if match_a.metadata & mask != match_b.metadata & mask:
         return False
@@ -106,7 +109,7 @@ def l2_match(match_a, match_b):
             return False
 
     if not (wildcards & ofp.OFPFW_MPLS_LABEL):
-        if match_a.mpls_label != match_b.mpls_lablel:
+        if match_a.mpls_label != match_b.mpls_label:
             return False
     if not (wildcards & ofp.OFPFW_MPLS_TC):
         if match_a.mpls_tc != match_b.mpls_tc:
@@ -215,6 +218,35 @@ class FlowEntry(object):
 
         return True
 
+    def match_port(self, port):
+        """
+        Takes an integer as parameter and returns true if any of the actions in this flow
+        go to the corresponding port
+        
+        @todo Currently only looks for action_output == port ; needs to recurse on group tables etc.
+        """
+        if port == ofp.OFPP_ANY:    # shortcut a response if they want any port
+            #@todo figure out of this should include OFPP_ALL (not clear) 
+            return True
+        for instr in self.flow_mod.instructions:
+            if instr.isinstance(ofp.ofp_action_set_output_port):
+                return instr.port == port
+            if instr.isinstance(ofp.ofp_action_group):
+                raise "UNSUPPORTED::  FIXME!!!"
+
+    def match_cookie(self,cookie):
+        """
+        Takes a openflow cookie (as in flow_mod.cookie) as parameter and returns true if
+        this flow entry matches that cookie
+        
+        cookie == 0 implies match all cookies
+        """
+        #@todo Think about implementing Dave Erikson's flexible cookie matching here
+        if cookie == 0 or cookie == self.flow_mod.cookie:
+            return True
+        else: 
+            return False
+        
     def match_packet(self, packet):
         """
         Return boolean indicating packet matches this flow entry
@@ -254,3 +286,23 @@ class FlowEntry(object):
             if delta > self.flow_mod.idle_timeout:
                 return True
         return False
+    
+    def flow_stat_get(self):
+        """
+        Create a single flow_stat object representing this flow entry
+        
+        NOTE: the table_id is left blank and needs to be filled in by calling function
+        (FlowEntries have no idea which table they're in)
+        """
+        stat = message.flow_stats_request
+        stat.duration_sec = self.duration_sec
+        stat.duration_nsec = self.duration_nsec
+        stat.priority = self.priority
+        stat.idle_timeout = self.idle_timeout
+        stat.hard_timeout = self.hard_timeout
+        stat.cookie = self.flow_mod.cookie
+        stat.packet_count = self.packet_count
+        stat.byte_count = self.byte_count
+        stat.match = self.flow_mod.match
+        stat.instructions = self.flow_mod.instructions
+        return stat 

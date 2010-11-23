@@ -295,7 +295,7 @@ class FlowStatsGet(SimpleProtocol):
         
         basic_logger.info("Sending flow request")
         request = message.flow_stats_request()
-        request.out_port = ofp.OFPP_NONE
+        request.out_port = ofp.OFPP_ANY
         request.table_id = 0xff
         request.match.wildcards = 0 # ofp.OFPFW_ALL
         response, pkt = self.controller.transact(request, timeout=2)

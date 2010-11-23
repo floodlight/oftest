@@ -116,7 +116,25 @@ class FlowPipeline(Thread):
         """
         Return an ofp_flow_stats object based on the flow stats request
         """
-        return None
+        replies = []
+        if flow_stats_request.table_id == 0xff:     # do they want all tables?
+            for table in self.tables:
+                replies += table.flow_stats_get(flow_stats_request)
+        else:
+            if flow_stats_request.table_id < len(self.tables): # else specific table
+                replies += self.tables[flow_stats_request.table_id].flow_stats_get(flow_stats_request)
+            else:
+                #@todo find/create an error message library and replace this with it
+                err = message.bad_request_error_msg()
+                err.header.xid = flow_stats_request.header.xid
+                err.data = flow_stats_request
+                err.type = ofp.OFPET_BAD_REQUEST
+                err.code = ofp.OFPBRC_BAD_TABLE_ID                
+                return err
+        reply = message.flow_stats_reply()
+        reply.header.xid = flow_stats_request.header.xid
+        reply.stats = replies
+        return reply
 
     def aggregate_stats_get(self, aggregate_stats_request):
         """
