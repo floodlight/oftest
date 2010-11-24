@@ -75,44 +75,51 @@ class FlowTable(object):
         self.flow_sync.release()
         return expired_flows
 
-    def flow_mod_process(self, flow_mod):
+    def flow_mod_process(self, flow_mod, groups):
         """
         Update the flow table according to the operation
         @param operation add/mod/delete operation (OFPFC_ value)
         @param flow_mod
         """
-        # First, generate a list of flows matching the flow mod
-        
-
-        # Then based on the operation, do things to those flows
-
-        found = False
-        # @todo Handle delete; differentiate mod and add
+        # @todo Need to check overlap flags
         self.flow_sync.acquire()
+        matched = False
+
+        # @todo Verify this will iterate in sorted order by priority
         for flow in self.flow_entries:
-            if flow.match_flow_mod(flow_mod):
+            if flow.match_flow_mod(flow_mod, groups):
                 self.logger.debug("Matched in table " + str(self.table_id))
-                flow.update(flow_mod)
-                found = True
-                break
-        if not found:
+                matched = True
+                if flow_mod.command == ofp.
+
+
+                match_list.append(flow)
+
+        if len(match_list) == 0:  # No match
+            self.logger.debug("No match in table " + str(self.table_id))
             if flow_mod.command == ofp.OFPFC_ADD:
+                self.logger.debug("Installing flow into table " + str(cookie))
                 # @todo Do this for modify/strict too, right?
                 new_flow = FlowEntry()
                 new_flow.flow_mod_set(flow_mod)
                 # @todo Is there a sorted list insert operation?
                 self.flow_entries.append(new_flow)
                 self.flow_entries.sort(prio_sort)
+        elif flow_mod.command == ofp.OFPFC_ADD:
+            
 
-        #@todo Implement other flow mod operations
-        elif flow_mod.command == ofp.OFPFC_MODIFY:
-            self.logger.debug("flow mod modify")
-        elif flow_mod.command == ofp.OFPFC_MODIFY_STRICT:
-            self.logger.debug("flow mod modify strict")
-        elif flow_mod.command == ofp.OFPFC_DELETE:
-            self.logger.debug("flow mod delete")
-        elif flow_mod.command == ofp.OFPFC_DELETE_STRICT:
-            self.logger.debug("flow mod delete strict")
+
+        for flow in match_list:
+            #@todo Implement other flow mod operations
+            if flow_mod.command in [ofp.OFPFC_MODIFY, 
+                                    ofp.OFPFC_MODIFY_STRICT]:
+                self.logger.debug("Updating flow " + str(flow.cookie))
+                flow.update(flow_mod)
+            elif flow_mod.command in [ofp.OFPFC_DELETE, 
+                                      ofp.OFPFC_DELETE_STRICT]:
+                # @todo Generate flow_removed message
+                self.logger.debug("flow mod delete" + str(flow.cookie))
+                
 
         self.flow_sync.release()
         # @todo Check for priority conflict?

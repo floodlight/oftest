@@ -235,6 +235,7 @@ list_members = {
     "features_reply"                : ('ports', None),
     "packet_out"                    : ('actions', 'action_list'),
     "flow_mod"                      : ('instructions', 'instruction_list'),
+    "group_mod"                     : ('buckets', 'bucket_list'),
     "queue_get_config_reply"        : ('queues', None)
 }
 

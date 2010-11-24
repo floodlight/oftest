@@ -41,6 +41,38 @@ packet modifications.
 
 """
 
+
+# ordered_action_list:  This determines the order in which
+# actions in the packet's action set should be executed
+# @todo Verify the ordering in this list
+ordered_action_list = [
+    action_pop_mpls,
+    action_pop_vlan,
+    action_push_mpls,
+    action_push_vlan,
+    action_dec_mpls_ttl,
+    action_dec_nw_ttl,
+    action_copy_ttl_in,
+    action_copy_ttl_out,
+    action_set_dl_dst,
+    action_set_dl_src,
+    action_set_mpls_label,
+    action_set_mpls_tc,
+    action_set_mpls_ttl,
+    action_set_nw_dst,
+    action_set_nw_ecn,
+    action_set_nw_src,
+    action_set_nw_tos,
+    action_set_nw_ttl,
+    action_set_queue,
+    action_set_tp_dst,
+    action_set_tp_src,
+    action_set_vlan_pcp,
+    action_set_vlan_vid.
+    action_group,
+    action_experimenter,
+    action_set_output_port]
+
 from oftest.cstruct import ofp_match
 
 ETHERTYPE_IP = 0x0800
@@ -61,9 +93,7 @@ class Packet(object):
         self.in_port = in_port
         self.data = data
         self.bytes = len(data)
-        self.queue = None
         self.match = ofp_match()
-        self.output_port = None
         self.logger = logging.getLogger("packet")  
         self.instructions = []
         # parsable tags
@@ -71,12 +101,16 @@ class Packet(object):
         self.tcp_header_offset = None
         self.mpls_tag_offset = None
         self.vlan_tag_offset = None       
+        self.action_set = {}
 
         if self.data != "":
             self.parse()
-            
+
     def length(self):
         return len(self.data)
+
+    def clear_actions(self):
+        self.action_set = {}
 
     def parse(self):
         """ Update the headers in self.match based on self.data 
@@ -170,18 +204,26 @@ class Packet(object):
         # yes, type and code get stored into tp_dst and tp_src...
         (self.match.tp_src, self.match.tp_dst) = struct.unpack("!BB", self.data[idx:idx+2])
 
-            
-    def set_output_port(self, port):
-        self.output_port = port
+
+    def write_action(self, action):
+        """
+        Write the action into the packet's action set
+        """
+        self.logger.verbose("Setting action " + action.show())
+        self.action_set{action.__class__} = action
 
     def set_metadata(self, value, mask):
         self.match.metadata = (self.match.metadata & ~mask) | \
             (value & mask)
+        
+    def action_set_output_port(self, action, switch):
+        #@todo Does packet need to be repacked?
+        switch.dataplane.send(action.port, self.data)        
 
-    def set_queue(self, queue):
+    def action_set_queue(self, queue):
         self.queue = queue
 
-    def set_vlan_vid(self, vid):
+    def action_set_vlan_vid(self, action):
         # @todo Verify proper location of VLAN id
         if self.vlan_tag_offset is None:
             return
@@ -191,7 +233,7 @@ class Packet(object):
         self.data[offset] = first
         self.data[offset + 1] = vid & 0xff
 
-    def set_vlan_pcp(self, pcp):
+    def action_set_vlan_pcp(self, pcp):
         # @todo Verify proper location of VLAN pcp
         if self.vlan_tag_offset is None:
             return
@@ -200,17 +242,17 @@ class Packet(object):
         first = (first & 0x1f) | (pcp << 5)
         self.data[offset] = first
 
-    def set_dl_src(self, dl_src):
+    def action_set_dl_src(self, dl_src):
         # @todo Do as a slice
         for idx in range(len(dl_src)):
             self.data[6+idx] = dl_src[idx]
 
-    def set_dl_dst(self, dl_dst):
+    def action_set_dl_dst(self, dl_dst):
         # @todo Do as a slice
         for idx in range(len(dl_dst)):
             self.data[idx] = dl_dst[idx]
 
-    def set_nw_src(self, nw_src):
+    def action_set_nw_src(self, nw_src):
         # @todo Verify byte order
         if self.ip_header_offset is None:
             return
@@ -220,7 +262,7 @@ class Packet(object):
         self.data[offset + 2] = (nw_src >> 8) & 0xff
         self.data[offset + 3] = nw_src & 0xff
 
-    def set_nw_dst(self, nw_dst):
+    def action_set_nw_dst(self, nw_dst):
         # @todo Verify byte order
         if self.ip_header_offset is None:
             return
@@ -230,54 +272,71 @@ class Packet(object):
         self.data[offset + 2] = (nw_dst >> 8) & 0xff
         self.data[offset + 3] = nw_dst & 0xff
 
-    def set_nw_tos(self, nw_tos):
+    def action_set_nw_tos(self, nw_tos):
         pass
 
-    def set_nw_ecn(self, nw_ecn):
+    def action_set_nw_ecn(self, nw_ecn):
         pass
 
-    def set_tp_src(self, tp_src):
+    def action_set_tp_src(self, tp_src):
         pass
 
-    def set_tp_dst(self, tp_dst):
+    def action_set_tp_dst(self, tp_dst):
         pass
 
-    def copy_ttl_out(self, packet):
+    def action_copy_ttl_out(self):
         pass
 
-    def copy_ttl_in(self, packet):
+    def action_copy_ttl_in(self):
         pass
 
-    def set_mpls_label(self, mpls_label):
+    def action_set_mpls_label(self, mpls_label):
         pass
 
-    def set_mpls_tc(self, mpls_tc):
+    def action_set_mpls_tc(self, mpls_tc):
         pass
 
-    def set_mpls_ttl(self, mpls_ttl):
+    def action_set_mpls_ttl(self, mpls_ttl):
         pass
 
-    def dec_mpls_ttl(self, packet):
+    def action_dec_mpls_ttl(self):
         pass
 
-    def push_vlan(self, packet):
+    def action_push_vlan(self):
         pass
 
-    def pop_vlan(self, packet):
+    def action_pop_vlan(self):
         pass
 
-    def push_mpls(self, packet):
+    def action_push_mpls(self):
         pass
 
-    def pop_mpls(self, packet):
+    def action_pop_mpls(self):
         pass
 
-    def set_nw_ttl(self, nw_ttl):
+    def action_set_nw_ttl(self, nw_ttl):
         pass
 
-    def dec_nw_ttl(self, packet):
+    def action_dec_nw_ttl(self):
         pass
 
+    def action_group(self, switch):
+        pass
+
+    def execute_action_set(self, switch):
+        """
+        Execute the actions in the action set for the packet
+        according to the order given in ordered_action_list.
+        """
+        for action in ordered_action_list:
+            if action.__class__ in self.action_set.keys():
+                try:
+                    callable = getattr(self, action.__class__.__name__)
+                    self.logger.debug("Pkt exec " + action.__class__.__name__)
+                    callable(self, self.action_set{action.__class__}, switch)
+                except KeyError:
+                    self.logger.error("Could not execute pkt action fn (%s)" %
+                                      msg.__class__.__name__)
 
 class parse_error(Exception):
     """ Thrown internally if there is an error in parsing
@@ -342,3 +401,4 @@ class l4_parsing_test(packet_test):
         self.assertEqual(match.tp_src,59581)
 if __name__ == '__main__':
     unittest.main()
+

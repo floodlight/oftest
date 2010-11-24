@@ -51,12 +51,11 @@ import oftest.dataplane as dataplane
 import oftest.message as message
 import oftest.action as action
 from ctrl_if import ControllerInterface
-from ofps_act import *
 from ofps_pkt import Packet
 from pipeline import FlowPipeline
 import ctrl_msg
 
-DEFAULT_TABLE_COUNT=1
+DEFAULT_TABLE_COUNT = 1
 
 class OFSwitchConfig(object):
     """
@@ -68,7 +67,7 @@ class OFSwitchConfig(object):
         self.controller_ip = None
         self.controller_port = None
         self.n_tables = None
-        self.passive_listen_port=None 
+        self.passive_listen_port = None 
         self.port_map = {}
         self.env = {}  # Extensible array
 
@@ -79,16 +78,17 @@ class OFSwitchConfig(object):
         parser.set_defaults(interfaces="veth0,veth2,veth4,veth6")
         parser.set_defaults(datapath_id=self.devine_datapath_id())
         
-        parser.add_option('-i','--interfaces',type='string',
+        parser.add_option('-i', '--interfaces', type='string',
                           help="Comma separated list of interfaces: e.g., \"veth0,veth2,veth4,veth6\"")
         parser.add_option('-c', '--controller', type="string", dest="controller_ip",
                            help="OpenFlow Controller Hostname or IP")
         parser.add_option('-p', '--port', type='int', dest="controller_port",
                            help="OpenFlow Controller Port")
-        parser.add_option('-t','--tables',type='int', dest="n_tables",
+        parser.add_option('-t', '--tables', type='int', dest="n_tables",
                           help="Number of tables to create in the pipeline")
-        parser.add_option('-d','--datapath-id',dest='datapath_id', type='long',help="DatapathID for switch")
-        self.parser=parser
+        parser.add_option('-d', '--datapath-id', dest='datapath_id', type='long'
+                          ,help="DatapathID for switch")
+        self.parser = parser
     
     def devine_datapath_id(self):
         """
@@ -96,7 +96,7 @@ class OFSwitchConfig(object):
         """
         #@todo Query one of our interfaces to find a good dpid
         return 0xcafebabedeadbeef
-    def datapath_id2str(self,dpid):
+    def datapath_id2str(self, dpid):
         '''
         Convert 8 byte long to "xx:xx:xx:..." string
         @TODO Move this else where
@@ -113,8 +113,8 @@ class OFSwitchConfig(object):
         for intr in self.options.interfaces.split(','):
             self.addInterface(intr)
  
-    def getConfig(self,config):
-        return getattr(self.options,config)
+    def getConfig(self, config):
+        return getattr(self.options, config)
 
     def addInterface(self, intr):
         self.port_map[len(self.port_map) + 1] = intr
@@ -142,6 +142,7 @@ class OFSwitch(Thread):
         self.setDaemon(True)
         self.config = OFSwitchConfig()
         self.logger = logging.getLogger("switch")
+        self.groups = GroupTable()
 
     def config_set(self, config):
         """
@@ -227,9 +228,10 @@ class OFSwitch(Thread):
     
     def __str__(self):
         str  = "OFPS:: OpenFlow Python Switch\n"
-        str += "    datapath_id = %s\n" % (self.config.datapath_id2str(self.config.getConfig('datapath_id')))
-        for k,v in self.config.port_map.iteritems():
-            str += "    interface %d = %s\n" % (k,v)
+        str += "    datapath_id = %s\n" % (self.config.datapath_id2str(
+                self.config.getConfig('datapath_id')))
+        for key, val in self.config.port_map.iteritems():
+            str += "    interface %d = %s\n" % (key, val)
         return str 
 
 class GroupTable(object):
@@ -239,15 +241,23 @@ class GroupTable(object):
     def __init__(self):
         """
         Constructor for base class
+        Groups is a dict indexed by group_id with values group_mod messages
         """
-        self.groups = []
+        self.groups = {}
 
     def update(self, group_mod):
         """
         Execute the group_mod operation on the table
         """
-        pass
-        
+        # @todo Error checking, etc; should this be copy?
+        self.groups[group_mod.group_id] = group_mod
+
+    def group_get(self, group_id):
+        if group_id in self.groups.keys():
+            return groups[group_id]
+        else:
+            return None
+
     def group_stats_get(self, group_id):
         """
         Return an ofp_group_stats object for the group_id

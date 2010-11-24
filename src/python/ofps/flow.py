@@ -33,6 +33,7 @@ table.
 
 import oftest.cstruct as ofp
 import oftest.message as message
+import oftest.instruction as instruction
 import copy
 import time
 
@@ -46,9 +47,76 @@ def is_delete_cmd(command):
 def is_strict_cmd(command):
     """
     Return boolean indicating if this flow mod operation is delete
+    We indicate ADD as a strict operation for matching.
     """
     return (command == ofp.OFPFC_MODIFY_STRICT or 
-            command == ofp.OFPFC_DELETE_STRICT)
+            command == ofp.OFPFC_DELETE_STRICT or
+            command == ofp.OFPFC_ADD)
+
+def action_list_has_out_port(action_list, port, groups):
+    """
+    Return boolean indicating if the flow has a set output port
+    action for the given port.  Assumes port is not OFPP_ANY.
+    Called recursively on bucket action lists (so someone had
+    better check for loops in group lists elsewhere).
+    """
+    for action in action_list:
+        if action.__class__ == action.set_output_port:
+            if action.port == port:
+                return True
+        if action.__class__ == action.action_group:
+            group = groups.group_get(action.group_id)
+            for bucket in group.buckets:
+                # @todo Do we need to take into account bucket type?
+                if action_list_has_out_port(bucket.actions, port, groups):
+                    return True
+    return False
+
+def flow_has_out_port(flow, port, groups):
+    """
+    Return boolean indicating if the flow has a set output port
+    action for the given port.  Assumes port is not OFPP_ANY.
+
+    NOTE: All groups and all group buckets are searched, not just
+    active buckets.
+    """
+    if port == ofp.OFPP_ANY:
+        return True
+
+    for inst in flow.instructions:
+        if inst.__class__ == instruction.instruction_write_actions or \
+                inst.__class__ == instruction.instruction_apply_actions:
+            if action_list_has_out_port(inst.actions, port, groups):
+                return True
+
+    return False
+
+def action_list_has_out_group(action_list, group_id, groups):
+    """
+    Return boolean indicating if the action list has a group action
+    action for the given port.  Assumes group is not OFPG_ANY.
+    """
+    for action in action_list:
+        if action.__class__ == action.set_group:
+            if action.group_id == group_id:
+                return True
+            group = groups.group_get(action.group_id)
+            for bucket in group.buckets:
+                # @todo Do we need to take into account bucket type?
+                if action_list_has_out_group(bucket.actions, group_id, groups):
+                    return True
+    return False
+
+def flow_has_out_group(flow, group_id, groups):
+    """
+    Return boolean indicating if the flow has a group action
+    action for the given port.  Assumes group is not OFPG_ANY.
+    """
+    for inst in flow.instructions:
+        if inst.__class__ == instruction.instruction_write_actions or \
+                inst.__class__ == instruction.instruction_apply_actions:
+            if action_list_has_out_group(inst.actions, group_id, groups):
+                return True
 
 def meta_match(match_a, match_b):
     """
@@ -68,7 +136,6 @@ def meta_match(match_a, match_b):
         return False
 
     return True
-
 
 def l2_match(match_a, match_b):
     """
@@ -138,7 +205,7 @@ def l3_match(match_a, match_b):
 
     return True
 
-def flow_match_strict(flow_a, flow_b):
+def flow_match_strict(flow_a, flow_b, groups):
     """
     Check if flows match strictly
     @param flow_a Primary key for cookie mask, etc
@@ -155,10 +222,10 @@ def flow_match_strict(flow_a, flow_b):
         return False
     if is_delete_cmd(flow_a.command):
         if (flow_a.out_port != ofp.OFPP_ANY):
-            if (flow_a.out_port != flow_b.out_port):
+            if not flow_has_out_port(flow_b, flow_a.out_port, groups):
                 return False
         if (flow_a.out_group != ofp.OFPG_ANY):
-            if (flow_a.out_group != flow_b.out_group):
+            if not flow_has_out_group(flow_b, flow_a.out_group, groups):
                 return False
 
     if not l2_match(flow_a.match, flow_b.match):
@@ -193,7 +260,7 @@ class FlowEntry(object):
         self.bytes = 0
         self.insert_time = time.time()
 
-    def match_flow_mod(self, new_flow):
+    def match_flow_mod(self, new_flow, groups):
         """
         Return boolean indicating whether new_flow matches this flow
         This is used for add/modify/delete operations
@@ -204,7 +271,7 @@ class FlowEntry(object):
             #@todo implement
 
         if is_strict_cmd(new_flow.command):
-            return flow_match_strict(new_flow, self.flow_mod)
+            return flow_match_strict(new_flow, self.flow_mod, groups)
         
         # This just looks like a packet match from here.
         if not meta_match(new_flow.match, self.flow_mod.match):
@@ -216,35 +283,6 @@ class FlowEntry(object):
                 return False
 
         return True
-
-    def match_port(self, port):
-        """
-        Takes an integer as parameter and returns true if any of the actions in this flow
-        go to the corresponding port
-        
-        @todo Currently only looks for action_output == port ; needs to recurse on group tables etc.
-        """
-        if port == ofp.OFPP_ANY:    # shortcut a response if they want any port
-            #@todo figure out of this should include OFPP_ALL (not clear) 
-            return True
-        for instr in self.flow_mod.instructions:
-            if instr.isinstance(ofp.ofp_action_set_output_port):
-                return instr.port == port
-            if instr.isinstance(ofp.ofp_action_group):
-                raise "UNSUPPORTED::  FIXME!!!"
-
-    def match_cookie(self,cookie):
-        """
-        Takes a openflow cookie (as in flow_mod.cookie) as parameter and returns true if
-        this flow entry matches that cookie
-        
-        cookie == 0 implies match all cookies
-        """
-        #@todo Think about implementing Dave Erikson's flexible cookie matching here
-        if cookie == 0 or cookie == self.flow_mod.cookie:
-            return True
-        else: 
-            return False
         
     def match_packet(self, packet):
         """
@@ -292,16 +330,36 @@ class FlowEntry(object):
         
         NOTE: the table_id is left blank and needs to be filled in by calling function
         (FlowEntries have no idea which table they're in)
+
+        @todo Check if things like match and instructions should be copies
         """
-        stat = message.flow_stats_request
-        stat.duration_sec = self.duration_sec
-        stat.duration_nsec = self.duration_nsec
-        stat.priority = self.priority
-        stat.idle_timeout = self.idle_timeout
-        stat.hard_timeout = self.hard_timeout
+        stat = message.flow_stats_request()
+        stat.duration_sec = self.flow_mod.duration_sec
+        stat.duration_nsec = self.flow_mod.duration_nsec
+        stat.priority = self.flow_mod.priority
+        stat.idle_timeout = self.flow_mod.idle_timeout
+        stat.hard_timeout = self.flow_mod.hard_timeout
         stat.cookie = self.flow_mod.cookie
-        stat.packet_count = self.packet_count
-        stat.byte_count = self.byte_count
+        stat.packet_count = self.packets
+        stat.byte_count = self.bytes
         stat.match = self.flow_mod.match
         stat.instructions = self.flow_mod.instructions
         return stat 
+
+
+    def show(self, prefix=''):
+        """
+        Generate a string (with multiple lines) describing the contents
+        of the object in a readable manner
+
+        @param prefix Pre-pended at the beginning of each line.
+
+        """
+        outstr = prefix + 'flow_entry\n'
+        prefix += '  '
+        outstr += self.flow_mod.show(prefix)
+        outstr += prefix + 'packets:   ' + str(self.packets)
+        outstr += prefix + 'bytes:     ' + str(self.bytes)
+        outstr += prefix + 'in time:   ' + str(self.insert_time)
+        outstr += prefix + 'last hit:  ' + str(self.last_hit)
+        return outstr

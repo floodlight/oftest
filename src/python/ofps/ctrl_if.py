@@ -262,7 +262,7 @@ class ControllerInterface(threading.Thread):
                 self.connected = False
                 continue
 
-        self.logger.error("Exiting controller thread");
+        self.logger.error("Exiting controller thread")
 
     def message_send(self, msg, zero_xid=False):
         """

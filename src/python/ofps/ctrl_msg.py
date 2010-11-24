@@ -23,10 +23,10 @@
 # SOFTWARE.
 # 
 ######################################################################
-from oftest.cstruct import OFPC_FLOW_STATS, OFPC_PORT_STATS, OFPC_TABLE_STATS
-
+import oftest.cstruct as ofp
 import oftest.message as message
-from oftest import netutils
+import netutils
+
 """
 Functions to handle specific controller messages
 
@@ -37,11 +37,8 @@ features_request.
 @todo Implement these functions
 """
 
-from ofps_act import execute_actions
+from exec_actions import execute_actions
 from ofps_pkt import Packet
-
-#import oftest.message as ofp
-import oftest.cstruct as cstruct
 
 def aggregate_stats_reply(switch, msg, rawmsg):
     """
@@ -132,7 +129,7 @@ def echo_request(switch, msg, rawmsg):
     @param rawmsg The actual packet received as a string
     """
     switch.logger.debug("Received echo_request from controller")
-    msg.header.type=cstruct.OFPT_ECHO_REPLY
+    msg.header.type = ofp.OFPT_ECHO_REPLY
     switch.controller.message_send(msg, zero_xid=True)
 
 def error(switch, msg, rawmsg):
@@ -176,10 +173,11 @@ def features_request(switch, msg, rawmsg):
     rep.n_buffers = 10000 #@todo figure out real number of buffers
     rep.n_tables = switch.config.n_tables
     # for now, list some simple things that we will likely (but don't yet) support
-    rep.capabilities = OFPC_FLOW_STATS | OFPC_PORT_STATS | OFPC_TABLE_STATS 
+    rep.capabilities = ofp.OFPC_FLOW_STATS | ofp.OFPC_PORT_STATS | \
+        ofp.OFPC_TABLE_STATS 
     ports = []
     for key, val in switch.config.port_map.iteritems():
-        port = cstruct.ofp_port()
+        port = ofp.ofp_port()
         port.port_no = key
         port.name = val
         port.max_speed = 9999999
@@ -199,7 +197,7 @@ def flow_mod(switch, msg, rawmsg):
     @param msg The parsed message object of type flow_mod
     @param rawmsg The actual packet received as a string
     """
-    (rv, code) = switch.pipeline.flow_mod_process(msg)
+    (rv, code) = switch.pipeline.flow_mod_process(msg, switch.groups)
     switch.logger.debug("Handled flow_mod, result: " + str(rv))
     if rv < 0:
         #@todo Send error message with error code
@@ -309,6 +307,7 @@ def group_mod(switch, msg, rawmsg):
     @param rawmsg The actual packet received as a string
     """
     switch.logger.debug("Received group_mod from controller")
+    switch.groups.update(msg)
 
 def group_mod_failed_error_msg(switch, msg, rawmsg):
     """
@@ -357,9 +356,7 @@ def packet_out(switch, msg, rawmsg):
     packet = Packet(in_port=msg.in_port, data=msg.data)
     switch.logger.debug("Executing action list")
     print msg.actions.show()
-    execute_actions(switch, packet, msg.actions, output_now=True)
-    # @todo fully implement action list execution
-    # For now run through list looking for set output port
+    execute_actions(switch, packet, msg.actions)
 
 def port_mod(switch, msg, rawmsg):
     """

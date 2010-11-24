@@ -29,12 +29,10 @@ import time
 import logging
 from flowtable import FlowTable
 from threading import Thread
-from ofps_act import execute_actions
-from ofps_act import packet_in_to_controller
+from exec_actions import execute_actions
+from exec_actions import packet_in_to_controller
 import oftest.cstruct as ofp
 import oftest.message as message 
-
-DEFAULT_TABLE_COUNT=1
 
 class FlowPipeline(Thread):
     """
@@ -81,7 +79,7 @@ class FlowPipeline(Thread):
         """
         self.controller = controller
 
-    def flow_mod_process(self, flow_mod):
+    def flow_mod_process(self, flow_mod, groups):
         """
         Update the table according to the flow mod message 
         @param operation The flow operation add, mod delete
@@ -91,7 +89,8 @@ class FlowPipeline(Thread):
             self.logger.debug("bad table id " + str(flow_mod.table_id))
             return (-1, ofp.OFPFMFC_BAD_TABLE_ID)
 
-        return self.tables[flow_mod.table_id].flow_mod_process(flow_mod)
+        return self.tables[flow_mod.table_id].flow_mod_process(flow_mod,
+                                                               groups)
 
 
     def table_caps_get(self, table_id=0):
@@ -156,6 +155,27 @@ class FlowPipeline(Thread):
             if flow is not None:
                 matched = True
                 # Check instruction set and execute it updating action_set
+                for inst in flow.instructions.instructions:
+                    if inst.__class__ == instruction_goto_table:
+                        table_id = inst.table_id
+                        if table_id >= self.n_tables:
+                            self.logger.error("Bad goto table %d" % table_id)
+                            break
+                    elif inst.__class__ == instruction_write_actions:
+                        for action in inst.actions.actions:
+                            packet.write_action(action)
+                    elif inst.__class__ == instruction_apply_actions:
+                        execute_actions(switch, packet, inst.actions)
+                    elif inst.__class__ == instruction_experimenter:
+                        self.logger.error("Got experimenter instruction")
+                    elif inst.__class__ == instruction_write_metadata:
+                        packet.set_metadata(inst.metadata, inst.metadata_mask)
+                    elif inst.__class__ == instruction_clear_actions:
+                        packet.clear_actions()
+                    else:
+                        self.logger.error("Bad instruction")
+                        
+                        
                 self.logger.debug("Matched packet in table " + str(table_id))
                 # FIXME
                 break
@@ -164,6 +184,10 @@ class FlowPipeline(Thread):
                 break
         if matched:
             execute_actions(switch, packet, action_set)
+
+            # @todo This needs clarification.
+            if packet.output_port is not None:
+                switch.dataplane.send(packet.output_port, packet.data)
         else:
             #@todo for now, just forward to controller; this should be cfgable
             packet_in_to_controller(switch, packet)

@@ -5,15 +5,14 @@
 
 import sys
 sys.path.append("../../src/python/oftest")
-from cstruct import *
 from class_maps import class_to_members_map
 from common_gen import *
 
 print """
 # Python OpenFlow bucket wrapper class
 
-from cstruct import *
-from action_list import action_list
+from oftest.cstruct import ofp_bucket
+from oftest.action_list import action_list
 
 """
 
@@ -26,11 +25,12 @@ class bucket(--PARENT_TYPE--):
     \"""
     def __init__(self):
         --PARENT_TYPE--.__init__(self)
-        self.len = self.__len__()
         self.actions = action_list()
+        self.len = self.__len__()
     def show(self, prefix=''):
         outstr = prefix + "bucket\\n"
         outstr += --PARENT_TYPE--.show(self, prefix)
+        outstr += self.actions.show()
         return outstr
     def unpack(self, binary_string):
         binary_string = --PARENT_TYPE--.unpack(self, binary_string)
