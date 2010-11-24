@@ -1,11 +1,11 @@
 
-import copy
-
 """
 Base list class for inheritance.
 Most of the list stuff is common; unpacking is the only thing that
 is left pure virtual.
 """
+
+import copy
 
 class ofp_base_list(object):
     """
@@ -13,7 +13,7 @@ class ofp_base_list(object):
 
     Data members:
     @arg items An array of objects
-    @arg class_list A list of classes that may be added to the list;
+    @arg class_list A tuple of classes that may be added to the list;
          If None, no checking is done
     @arg name The name to use when displaying the list
 
@@ -68,39 +68,42 @@ class ofp_base_list(object):
         @return True if successful, False if not proper type object
 
         """
+
+        # Note that the second arg of isinstance can be a list which
+        # checks that the type of item is in the list
         if (self.class_list is not None) and \
-                not isinstance(item, self.class_list):
+                not isinstance(item, tuple(self.class_list)):
             return False
 
         tmp = copy.deepcopy(item)
         self.items.append(tmp)
         return True
 
-    def remove_type(self, type):
+    def remove_type(self, target):
         """
         Remove the first item on the list of the given type
 
-        @param type The type of item to search
+        @param target The type of item to search
 
         @return The object removed, if any; otherwise None
 
         """
         for index in xrange(len(self.items)):
-            if self.items[index].type == type:
+            if self.items[index].type == target:
                 return self.items.pop(index)
         return None
 
-    def find_type(self, type):
+    def find_type(self, target):
         """
         Find the first item on the list of the given type
 
-        @param type The type of item to search
+        @param target The type of item to search
 
         @return The object with the matching type if any; otherwise None
 
         """
         for index in xrange(len(self.items)):
-            if self.items[index].type == type:
+            if self.items[index].type == target:
                 return self.items[index]
         return None
 
@@ -129,8 +132,10 @@ class ofp_base_list(object):
         return length
 
     def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.items != other.items: return False
+        if type(self) != type(other):
+            return False
+        if self.items != other.items:
+            return False
         return True
 
     def __ne__(self, other): return not self.__eq__(other)

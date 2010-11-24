@@ -26,6 +26,7 @@ class bucket(--PARENT_TYPE--):
     def __init__(self):
         --PARENT_TYPE--.__init__(self)
         self.actions = action_list()
+        self.type = None
         self.len = self.__len__()
     def show(self, prefix=''):
         outstr = prefix + "bucket\\n"
