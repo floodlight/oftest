@@ -30,6 +30,7 @@ class bucket(--PARENT_TYPE--):
     def show(self, prefix=''):
         outstr = prefix + "bucket\\n"
         outstr += --PARENT_TYPE--.show(self, prefix)
+        outstr += self.actions.show()
         return outstr
     def unpack(self, binary_string):
         binary_string = --PARENT_TYPE--.unpack(self, binary_string)
