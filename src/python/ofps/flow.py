@@ -91,6 +91,16 @@ def flow_has_out_port(flow, port, groups):
 
     return False
 
+def flow_has_cookie(flow, cookie):
+    """ Check if this flow matches this cookie
+    
+    #@todo extend to include Dave's extenisble cookie thinger
+    """
+    
+    if cookie == 0 or flow.flow_mod.cookie == cookie:
+        return True
+    return False
+        
 def action_list_has_out_group(action_list, group_id, groups):
     """
     Return boolean indicating if the action list has a group action

@@ -111,17 +111,17 @@ class FlowPipeline(Thread):
         """
         return None
 
-    def flow_stats_get(self, flow_stats_request):
+    def flow_stats_get(self, flow_stats_request, groups):
         """
         Return an ofp_flow_stats object based on the flow stats request
         """
         replies = []
         if flow_stats_request.table_id == 0xff:     # do they want all tables?
             for table in self.tables:
-                replies += table.flow_stats_get(flow_stats_request)
+                replies += table.flow_stats_get(flow_stats_request, groups)
         else:
             if flow_stats_request.table_id < len(self.tables): # else specific table
-                replies += self.tables[flow_stats_request.table_id].flow_stats_get(flow_stats_request)
+                replies += self.tables[flow_stats_request.table_id].flow_stats_get(flow_stats_request,groups)
             else:
                 #@todo find/create an error message library and replace this with it
                 err = message.bad_request_error_msg()

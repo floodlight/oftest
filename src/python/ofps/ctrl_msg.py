@@ -238,7 +238,7 @@ def flow_stats_request(switch, msg, rawmsg):
     @param rawmsg The actual packet received as a string
     """
     switch.logger.debug("Received flow_stats_request from controller")
-    reply = switch.pipeline.flow_stats_get(msg)
+    reply = switch.pipeline.flow_stats_get(msg,switch.groups)
     if not reply : 
         switch.logger.error("Got None reply from switch.pipeline.flow_stats_get(); dropping request")
     else:

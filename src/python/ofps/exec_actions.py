@@ -23,6 +23,10 @@
 # SOFTWARE.
 # 
 ######################################################################
+import logging
+
+import oftest.cstruct as ofp
+import oftest.message as message
 
 """
 Action execution functions

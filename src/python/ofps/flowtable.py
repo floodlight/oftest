@@ -29,7 +29,7 @@ The FlowTable class definition
 """
 
 import logging
-from flow import FlowEntry
+import flow as ofps_flow
 from threading import Lock
 import oftest.cstruct as ofp
 import oftest.message as message
@@ -154,9 +154,11 @@ class FlowTable(object):
         #fake_flow_mod.flags = ofp.OFPFF_CHECK_OVERLAP
         for flow in self.flow_entries:
             # match the out_port
-            if flow.match_port(flow_stats_request.out_port) and \
-                    flow.match_cookie(flow_stats_request.cookie) and \
-                    flow.match_flow_mod(fake_flow_mod):
+            if ofps_flow.flow_has_out_port(flow, 
+                                           flow_stats_request.out_port, groups) and \
+                    ofps_flow.flow_has_cookie(flow, 
+                                              flow_stats_request.cookie) and \
+                    flow.match_flow_mod(fake_flow_mod, groups):
                 # found a valid match, now fill in the stats
                 stat = flow.flow_stat_get()
                 stat.table_id = self.table_id

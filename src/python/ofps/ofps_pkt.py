@@ -41,36 +41,6 @@ packet modifications.
 """
 
 
-# ordered_action_list:  This determines the order in which
-# actions in the packet's action set should be executed
-# @todo Verify the ordering in this list
-ordered_action_list = [
-    action_pop_mpls,
-    action_pop_vlan,
-    action_push_mpls,
-    action_push_vlan,
-    action_dec_mpls_ttl,
-    action_dec_nw_ttl,
-    action_copy_ttl_in,
-    action_copy_ttl_out,
-    action_set_dl_dst,
-    action_set_dl_src,
-    action_set_mpls_label,
-    action_set_mpls_tc,
-    action_set_mpls_ttl,
-    action_set_nw_dst,
-    action_set_nw_ecn,
-    action_set_nw_src,
-    action_set_nw_tos,
-    action_set_nw_ttl,
-    action_set_queue,
-    action_set_tp_dst,
-    action_set_tp_src,
-    action_set_vlan_pcp,
-    action_set_vlan_vid.
-    action_group,
-    action_experimenter,
-    action_set_output_port]
 
 from oftest.cstruct import ofp_match
 
@@ -86,6 +56,9 @@ class Packet(object):
     """
     Packet abstraction for packet object while in the switch
     """
+# ordered_action_list:  This determines the order in which
+# actions in the packet's action set should be executed
+# @todo Verify the ordering in this list
 
     def __init__(self, in_port=None, data=""):
         # Use entries in match when possible.
@@ -209,7 +182,7 @@ class Packet(object):
         Write the action into the packet's action set
         """
         self.logger.verbose("Setting action " + action.show())
-        self.action_set{action.__class__} = action
+        self.action_set[action.__class__] = action
 
     def set_metadata(self, value, mask):
         self.match.metadata = (self.match.metadata & ~mask) | \
@@ -228,9 +201,9 @@ class Packet(object):
             return
         offset = self.vlan_tag_offset
         first = self.data[offset]
-        first = (first & 0xf0) | ((vid & 0xf00) >> 8)
+        first = (first & 0xf0) | ((action.vid & 0xf00) >> 8)
         self.data[offset] = first
-        self.data[offset + 1] = vid & 0xff
+        self.data[offset + 1] = action.vid & 0xff
 
     def action_set_vlan_pcp(self, pcp):
         # @todo Verify proper location of VLAN pcp
@@ -311,6 +284,9 @@ class Packet(object):
         pass
 
     def action_pop_mpls(self):
+        pass
+    
+    def action_experimenter(self):
         pass
 
     def action_set_nw_ttl(self, nw_ttl):
