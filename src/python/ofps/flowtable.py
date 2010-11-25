@@ -83,30 +83,28 @@ class FlowTable(object):
         """
         # @todo Need to check overlap flags
         self.flow_sync.acquire()
-        matched = False
 
+        match_list = []
         # @todo Verify this will iterate in sorted order by priority
         for flow in self.flow_entries:
             if flow.match_flow_mod(flow_mod, groups):
                 self.logger.debug("Matched in table " + str(self.table_id))
-                matched = True
-                if flow_mod.command == ofp.
-
-
-                match_list.append(flow)
+                if flow_mod.command == ofp.OFPPR_ADD:
+                    match_list.append(flow)
 
         if len(match_list) == 0:  # No match
             self.logger.debug("No match in table " + str(self.table_id))
             if flow_mod.command == ofp.OFPFC_ADD:
-                self.logger.debug("Installing flow into table " + str(cookie))
+                self.logger.debug("Installing flow into table " + str(flow_mod.cookie))
                 # @todo Do this for modify/strict too, right?
-                new_flow = FlowEntry()
+                new_flow = ofps_flow.FlowEntry()
                 new_flow.flow_mod_set(flow_mod)
                 # @todo Is there a sorted list insert operation?
                 self.flow_entries.append(new_flow)
                 self.flow_entries.sort(prio_sort)
         elif flow_mod.command == ofp.OFPFC_ADD:
-            
+            self.flow_entries.append(new_flow)
+            self.flow_entries.sort(prio_sort)
 
 
         for flow in match_list:
@@ -133,13 +131,13 @@ class FlowTable(object):
         found = None
         self.flow_sync.acquire()
         for flow in self.flow_entries:
-            if flow.is_match(packet.match, packet.bytes):
+            if flow.match_packet(packet):
                 found = flow
                 break
         self.flow_sync.release()
         return found
     
-    def flow_stats_get(self, flow_stats_request):
+    def flow_stats_get(self, flow_stats_request, groups):
         """ 
         Takes an OFMatch structure as parameter and returns a list of the flow_mods
         that match that structure (implicitly including their stats)

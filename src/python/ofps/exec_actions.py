@@ -41,14 +41,15 @@ def execute_actions(switch, packet, actions):
     The handler function for an action must have the name
     do_action_<name>; for example do_action_set_dl_dst.
     """
-    for action in actions:
+    log = logging.getLogger('execute_actions')
+    for action in actions.actions:
         try:
             callable = getattr(packet, action.__class__.__name__)
-            packet.logger.debug("Exec action %s" % msg.__class__.__name__)
-            callable(packet, action, switch)
-        except KeyError:
-            self.logger.error("Could not execute packet action %s" %
-                                str(msg.__class__.__name__))
+            packet.logger.debug("Exec action %s" % action.__class__.__name__)
+            callable(action, switch)
+        except (KeyError),e:
+            log.logger.error("Could not execute packet action %s" %
+                                str(e.__class__.__name__))
 
 
 def packet_in_to_controller(switch, packet, reason=ofp.OFPR_NO_MATCH,

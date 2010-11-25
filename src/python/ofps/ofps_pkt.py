@@ -30,7 +30,6 @@ import oftest.cstruct as ofp
 import unittest
 import binascii
 import string
-import pdb
 
 """
 OFPS packet class
@@ -328,15 +327,43 @@ class Packet(object):
         Execute the actions in the action set for the packet
         according to the order given in ordered_action_list.
         """
-        for action in ordered_action_list:
+        for action in Packet.ordered_action_list:
             if action.__class__ in self.action_set.keys():
                 try:
                     callable = getattr(self, action.__class__.__name__)
                     self.logger.debug("Pkt exec " + action.__class__.__name__)
-                    callable(self, self.action_set{action.__class__}, switch)
-                except KeyError:
+                    callable(self, self.action_set[action.__class__], switch)
+                except (KeyError),e:
                     self.logger.error("Could not execute pkt action fn (%s)" %
-                                      msg.__class__.__name__)
+                                      e.__class__.__name__)
+    ordered_action_list = [
+        action_pop_mpls,
+        action_pop_vlan,
+        action_push_mpls,
+        action_push_vlan,
+        action_dec_mpls_ttl,
+        action_dec_nw_ttl,
+        action_copy_ttl_in,
+        action_copy_ttl_out,
+        action_set_dl_dst,
+        action_set_dl_src,
+        action_set_mpls_label,
+        action_set_mpls_tc,
+        action_set_mpls_ttl,
+        action_set_nw_dst,
+        action_set_nw_ecn,
+        action_set_nw_src,
+        action_set_nw_tos,
+        action_set_nw_ttl,
+        action_set_queue,
+        action_set_tp_dst,
+        action_set_tp_src,
+        action_set_vlan_pcp,
+        action_set_vlan_vid,
+        action_group,
+        action_experimenter,
+        action_set_output_port]
+
 
 class parse_error(Exception):
     """ Thrown internally if there is an error in parsing

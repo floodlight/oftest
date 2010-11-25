@@ -25,7 +25,7 @@
 ######################################################################
 import oftest.cstruct as ofp
 import oftest.message as message
-import netutils
+import oftest.netutils as netutils
 
 """
 Functions to handle specific controller messages
@@ -197,7 +197,7 @@ def flow_mod(switch, msg, rawmsg):
     @param msg The parsed message object of type flow_mod
     @param rawmsg The actual packet received as a string
     """
-    (rv, code) = switch.pipeline.flow_mod_process(msg, switch.groups)
+    (rv, _) = switch.pipeline.flow_mod_process(msg, switch.groups)
     switch.logger.debug("Handled flow_mod, result: " + str(rv))
     if rv < 0:
         #@todo Send error message with error code

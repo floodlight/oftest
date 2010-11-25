@@ -346,7 +346,6 @@ class FlowEntry(object):
         stat.instructions = self.flow_mod.instructions
         return stat 
 
-
     def show(self, prefix=''):
         """
         Generate a string (with multiple lines) describing the contents
