@@ -207,6 +207,7 @@ enum ofp_capabilities {
     OFPC_FLOW_STATS     = 1 << 0,  /* Flow statistics. */
     OFPC_TABLE_STATS    = 1 << 1,  /* Table statistics. */
     OFPC_PORT_STATS     = 1 << 2,  /* Port statistics. */
+    OFPC_GROUP_STATS    = 1 << 3,  /* Group statistics. */
     OFPC_IP_REASM       = 1 << 5,  /* Can reassemble IP fragments. */
     OFPC_QUEUE_STATS    = 1 << 6,  /* Queue statistics. */
     OFPC_ARP_MATCH_IP   = 1 << 7   /* Match IP addresses in ARP pkts. */
@@ -497,7 +498,7 @@ OFP_ASSERT(sizeof(struct ofp_action_mpls_ttl) == 8);
 struct ofp_action_push {
     uint16_t type;                  /* OFPAT_PUSH_VLAN/MPLS. */
     uint16_t len;                   /* Length is 8. */
-    uint16_t ethertype;              /* Ethertype */
+    uint16_t ethertype;             /* Ethertype */
     uint8_t pad[2];
 };
 OFP_ASSERT(sizeof(struct ofp_action_push) == 8);
@@ -506,7 +507,7 @@ OFP_ASSERT(sizeof(struct ofp_action_push) == 8);
 struct ofp_action_pop_mpls {
     uint16_t type;                  /* OFPAT_POP_MPLS. */
     uint16_t len;                   /* Length is 8. */
-    uint16_t ethertype;              /* Ethertype */
+    uint16_t ethertype;             /* Ethertype */
     uint8_t pad[2];
 };
 OFP_ASSERT(sizeof(struct ofp_action_pop_mpls) == 8);
@@ -741,7 +742,7 @@ OFP_ASSERT(sizeof(struct ofp_instruction_write_metadata) == 24);
 struct ofp_instruction_actions {
     uint16_t type;              /* One of OFPIT_*_ACTIONS */
     uint16_t len;               /* Length of this struct in bytes. */
-    uint8_t pad[4];               /* Align to 64-bits */
+    uint8_t pad[4];             /* Align to 64-bits */
     struct ofp_action_header actions[0];  /* Actions associated with
                                              OFPIT_WRITE_ACTIONS and
                                              OFPIT_APPLY_ACTIONS */
@@ -818,18 +819,19 @@ struct ofp_bucket {
                                        this header and any padding to make it
                                        64-bit aligned. */
     uint16_t weight;                /* Relative weight of bucket.  Only
-                                       defined for multipath groups. */
+                                       defined for select groups. */
     uint32_t watch_port;            /* Port whose state affects whether this
                                        bucket is live.  Only required for fast
                                        failover groups. */
     uint32_t watch_group;           /* Group whose state affects whether this
                                        bucket is live.  Only required for fast
                                        failover groups. */
+    uint8_t pad[4];
     struct ofp_action_header actions[0]; /* The action length is inferred
                                            from the length field in the
                                            header. */
 };
-OFP_ASSERT(sizeof(struct ofp_action_header) == 8);
+OFP_ASSERT(sizeof(struct ofp_bucket) == 16);
 
 /* Group setup and teardown (controller -> datapath). */
 struct ofp_group_mod {
@@ -856,7 +858,8 @@ enum ofp_group_type {
 enum ofp_flow_removed_reason {
     OFPRR_IDLE_TIMEOUT,         /* Flow idle time exceeded idle_timeout. */
     OFPRR_HARD_TIMEOUT,         /* Time exceeded hard_timeout. */
-    OFPRR_DELETE                /* Evicted by a DELETE flow mod. */
+    OFPRR_DELETE,               /* Evicted by a DELETE flow mod. */
+    OFPRR_GROUP_DELETE          /* Group was removed. */
 };
 
 /* Flow removed (datapath -> controller). */
@@ -1181,15 +1184,35 @@ struct ofp_aggregate_stats_reply {
 };
 OFP_ASSERT(sizeof(struct ofp_aggregate_stats_reply) == 24);
 
+/* Flow match fields. */
+enum ofp_flow_match_fields {
+    OFPFMF_IN_PORT     = 1 << 0,  /* Switch input port. */
+    OFPFMF_DL_VLAN     = 1 << 1,  /* VLAN id. */
+    OFPFMF_DL_VLAN_PCP = 1 << 2,  /* VLAN priority. */
+    OFPFMF_DL_TYPE     = 1 << 3,  /* Ethernet frame type. */
+    OFPFMF_NW_TOS      = 1 << 4,  /* IP ToS (DSCP field, 6 bits). */
+    OFPFMF_NW_PROTO    = 1 << 5,  /* IP protocol. */
+    OFPFMF_TP_SRC      = 1 << 6,  /* TCP/UDP/SCTP source port. */
+    OFPFMF_TP_DST      = 1 << 7,  /* TCP/UDP/SCTP destination port. */
+    OFPFMF_MPLS_LABEL  = 1 << 8,  /* MPLS label. */
+    OFPFMF_MPLS_TC     = 1 << 9,  /* MPLS TC. */
+    OFPFMF_TYPE        = 1 << 10, /* Match type. */
+    OFPFMF_DL_SRC      = 1 << 11, /* Ethernet source address. */
+    OFPFMF_DL_DST      = 1 << 12, /* Ethernet destination address. */
+    OFPFMF_NW_SRC      = 1 << 13, /* IP source address. */
+    OFPFMF_NW_DST      = 1 << 14, /* IP destination address. */
+    OFPFMF_METADATA    = 1 << 15, /* Metadata passed between tables. */
+};
+
 /* Body of reply to OFPST_TABLE request. */
 struct ofp_table_stats {
     uint8_t table_id;        /* Identifier of table.  Lower numbered tables
                                 are consulted first. */
-    uint8_t pad[7];          /* Align to 32-bits. */
+    uint8_t pad[7];          /* Align to 64-bits. */
     char name[OFP_MAX_TABLE_NAME_LEN];
-    uint32_t wildcards;      /* Bitmap of OFPFW_* wildcards that are
+    uint32_t wildcards;      /* Bitmap of OFPFMF_* wildcards that are
                                 supported by the table. */
-    uint32_t match;          /* Bitmap of OFPFW_* that indicate the fields
+    uint32_t match;          /* Bitmap of OFPFMF_* that indicate the fields
                                 the table can match on. */
     uint32_t instructions;   /* Bitmap of OFPIT_* values supported. */
     uint32_t write_actions;  /* Bitmap of OFPAT_* that are supported
