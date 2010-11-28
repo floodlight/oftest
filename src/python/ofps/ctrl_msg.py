@@ -93,6 +93,9 @@ def barrier_request(switch, msg, rawmsg):
     @param rawmsg The actual packet received as a string
     """
     switch.logger.debug("Received barrier_request from controller")
+    b = message.barrier_reply()
+    b.header.xid = msg.header.xid
+    switch.controller.message_send(b)
 
 def desc_stats_reply(switch, msg, rawmsg):
     """
