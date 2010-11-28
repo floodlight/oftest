@@ -36,6 +36,9 @@ import oftest.message as message
 import oftest.instruction as instruction
 import copy
 import time
+import logging
+
+flow_logger = logging.getLogger("flow")
 
 def is_delete_cmd(command):
     """
@@ -138,11 +141,13 @@ def meta_match(match_a, match_b):
     if not (wildcards & ofp.OFPFW_IN_PORT):
         # @todo logical port match?
         if match_a.in_port != match_b.in_port:
+            flow_logger.debug("Failed in port")
             return False
 
     #@todo Does this 64 bit stuff work in Python?
     if (match_a.metadata_mask & match_a.metadata !=
         match_a.metadata_mask & match_b.metadata):
+        flow_logger.debug("Failed metadata")
         return False
 
     return True
@@ -161,35 +166,45 @@ def l2_match(match_a, match_b):
     for byte in match_a.dl_src_mask:
         byte = ~byte
         if match_a.dl_src[idx] & byte != match_b.dl_src[idx] & byte:
+            flow_logger.debug("Failed dl_src byte" + str(idx))
             return False
         idx += 1
     idx = 0
     for byte in match_a.dl_dst_mask:
         byte = ~byte
         if match_a.dl_dst[idx] & byte != match_b.dl_dst[idx] & byte:
+            flow_logger.debug("Failed dl_dst byte" + str(idx))
             return False
         idx += 1
     mask = ~match_a.metadata_mask
     if match_a.metadata & mask != match_b.metadata & mask:
+        flow_logger.debug("Failed L2 metadata" + str(idx))
         return False
 
     # @todo  Check untagged logic
     if not (wildcards & ofp.OFPFW_DL_VLAN):
         if match_a.dl_vlan != match_b.dl_vlan:
+            flow_logger.debug("Failed dl_vlan")
             return False
     if not (wildcards & ofp.OFPFW_DL_VLAN_PCP):
         if match_a.dl_vlan_pcp != match_b.dl_vlan_pcp:
+            flow_logger.debug("Failed dl_vlan_pcp")
             return False
     if not (wildcards & ofp.OFPFW_DL_TYPE):
         if match_a.dl_type != match_b.dl_type:
+            flow_logger.debug("Failed dl_type")
             return False
 
     if not (wildcards & ofp.OFPFW_MPLS_LABEL):
         if match_a.mpls_label != match_b.mpls_label:
+            flow_logger.debug("Failed mpls_label")
             return False
     if not (wildcards & ofp.OFPFW_MPLS_TC):
         if match_a.mpls_tc != match_b.mpls_tc:
+            flow_logger.debug("Failed mpls_tc")
             return False
+
+    return True
 
 def l3_match(match_a, match_b):
     """
@@ -201,16 +216,20 @@ def l3_match(match_a, match_b):
     wildcards = match_a.wildcards
     if not (wildcards & ofp.OFPFW_NW_TOS):
         if match_a.nw_tos != match_b.nw_tos:
+            flow_logger.debug("Failed nw_tos")
             return False
     if not (wildcards & ofp.OFPFW_NW_PROTO):
         if match_a.nw_proto != match_b.nw_proto:
+            flow_logger.debug("Failed nw_proto")
             return False
         #@todo COMPLETE THIS
     mask = ~match_a.nw_src_mask
     if match_a.nw_src & mask != match_b.nw_src & mask:
+        flow_logger.debug("Failed nw_src")
         return False
     mask = ~match_a.nw_dst_mask
     if match_a.nw_dst & mask != match_b.nw_dst & mask:
+        flow_logger.debug("Failed nw_dst")
         return False
 
     return True
@@ -224,18 +243,23 @@ def flow_match_strict(flow_a, flow_b, groups):
     wildcards_a = flow_a.match.wildcards
     wildcards_b = flow_b.match.wildcards
     if (wildcards_a != wildcards_b):
+        flow_logger.debug("Failed wildcards")
         return False
     if (flow_a.priority != flow_b.priority):
+        flow_logger.debug("Failed priority")
         return False
     if (flow_a.cookie_mask & flow_a.cookie != 
-        flow_a.cookie & flow_b.cookie):
+        flow_a.cookie_mask & flow_b.cookie):
+        flow_logger.debug("Failed cookie")
         return False
     if is_delete_cmd(flow_a.command):
         if (flow_a.out_port != ofp.OFPP_ANY):
             if not flow_has_out_port(flow_b, flow_a.out_port, groups):
+                flow_logger.debug("Failed out_port")
                 return False
         if (flow_a.out_group != ofp.OFPG_ANY):
             if not flow_has_out_group(flow_b, flow_a.out_group, groups):
+                flow_logger.debug("Failed out_group")
                 return False
 
     if not l2_match(flow_a.match, flow_b.match):
@@ -302,12 +326,16 @@ class FlowEntry(object):
         """
 
         if not meta_match(self.flow_mod.match, packet.match):
+            flow_logger.debug("packet match failed meta_match")
             return False
         if not l2_match(self.flow_mod.match, packet.match):
+            flow_logger.debug("packet match failed l2_match")
             return False
         if not l3_match(self.flow_mod.match, packet.match):
+            flow_logger.debug("packet match failed l3_match")
             return False
 
+        flow_logger.debug("Packet matched flow")
         # Okay, if we get here, we have a match.
         self.last_hit = time.time()
         self.packets += 1
