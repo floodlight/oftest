@@ -91,6 +91,7 @@ class Packet(object):
         in the OF1.1 spec, Figure 4
         """
         self.bytes = len(self.data)
+        self.match.in_port = self.in_port
         self.match.type = ofp.OFPMT_STANDARD
         self.match.length = ofp.OFPMT_STANDARD_LENGTH
         self.match.wildcards = 0
@@ -144,6 +145,9 @@ class Packet(object):
                 if self.bytes < idx :
                     raise parse_error("_parse_l2(): run away vlan tags!? %d > %d" % (idx, self.bytes))
                 l2_type = struct.unpack("!H", self.data[idx:idx+2])[0]
+        else:
+            self.match.dl_vlan = 0xFFFF
+            self.match.dl_vlan_pcp = 0
         self.match.dl_type = l2_type
         return idx
             
