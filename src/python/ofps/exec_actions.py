@@ -70,7 +70,7 @@ def packet_in_to_controller(switch, packet, reason=ofp.OFPR_NO_MATCH,
     msg.in_port = packet.in_port
     msg.in_phy_port = packet.in_port #@todo Check this
     msg.total_len = packet.bytes
-    msg.buffer_id = -1
+    msg.buffer_id = 0xffffffff
     msg.reason = reason
     msg.table_id = table_id
     switch.controller.message_send(msg)
