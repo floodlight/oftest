@@ -33,6 +33,7 @@ from exec_actions import execute_actions
 from exec_actions import packet_in_to_controller
 import oftest.cstruct as ofp
 import oftest.message as message 
+import oftest.instruction as instruction
 
 class FlowPipeline(Thread):
     """
@@ -86,7 +87,7 @@ class FlowPipeline(Thread):
         @param flow_mod The flow mod message to process
         """
         if flow_mod.table_id >= self.n_tables:
-            self.logger.debug("bad table id " + str(flow_mod.table_id))
+            self.logger.warn("bad table id " + str(flow_mod.table_id))
             return (-1, ofp.OFPFMFC_BAD_TABLE_ID)
 
         return self.tables[flow_mod.table_id].flow_mod_process(flow_mod,
@@ -141,6 +142,32 @@ class FlowPipeline(Thread):
         """
         return None
 
+    def run_instruction(self, switch, inst, packet):
+        """
+        Private function to execute one instruction on a packet.
+        Need switch for immeidate apply
+        """
+        if inst.__class__ == instruction.instruction_goto_table:
+            if inst.table_id >= self.n_tables:
+                self.logger.error("Bad goto table %d" % inst.table_id)
+            else:
+                return inst.table_id
+        elif inst.__class__ == instruction.instruction_write_actions:
+            for action in inst.actions.actions:
+                packet.write_action(action)
+        elif inst.__class__ == instruction.instruction_apply_actions:
+            execute_actions(switch, packet, inst.actions)
+        elif inst.__class__ == instruction.instruction_experimenter:
+            self.logger.error("Got experimenter instruction")
+        elif inst.__class__ == instruction.instruction_write_metadata:
+            packet.set_metadata(inst.metadata, inst.metadata_mask)
+        elif inst.__class__ == instruction.instruction_clear_actions:
+            packet.clear_actions()
+        else:
+            self.logger.error("Bad instruction")
+
+        return None
+
     def apply_pipeline(self, switch, packet):
         """
         Run the pipeline on the packet and execute any actions indicated
@@ -148,46 +175,24 @@ class FlowPipeline(Thread):
         """
         # Generate a match structure from the packet
         table_id = 0
-        action_set = {}
         matched = False  # Did we get any match?
-        while 1:
+        while table_id is not None:
+            next_table_id = None
             flow = self.tables[table_id].match_packet(packet)
             if flow is not None:
-                matched = True
-                # Check instruction set and execute it updating action_set
-                for inst in flow.instructions.instructions:
-                    if inst.__class__ == instruction_goto_table:
-                        table_id = inst.table_id
-                        if table_id >= self.n_tables:
-                            self.logger.error("Bad goto table %d" % table_id)
-                            break
-                    elif inst.__class__ == instruction_write_actions:
-                        for action in inst.actions.actions:
-                            packet.write_action(action)
-                    elif inst.__class__ == instruction_apply_actions:
-                        execute_actions(switch, packet, inst.actions)
-                    elif inst.__class__ == instruction_experimenter:
-                        self.logger.error("Got experimenter instruction")
-                    elif inst.__class__ == instruction_write_metadata:
-                        packet.set_metadata(inst.metadata, inst.metadata_mask)
-                    elif inst.__class__ == instruction_clear_actions:
-                        packet.clear_actions()
-                    else:
-                        self.logger.error("Bad instruction")
-                        
-                        
                 self.logger.debug("Matched packet in table " + str(table_id))
-                # FIXME
-                break
+                matched = True
+                # Check instruction set and execute it updating packet
+                for inst in flow.flow_mod.instructions.instructions:
+                    new_table_id = self.run_instruction(switch, inst, packet)
+                    if new_table_id is not None:
+                        next_table_id = new_table_id
             else:
                 self.logger.debug("No match in table " + str(table_id))
-                break
-        if matched:
-            execute_actions(switch, packet, action_set)
+            table_id = next_table_id
 
-            # @todo This needs clarification.
-            if packet.output_port is not None:
-                switch.dataplane.send(packet.output_port, packet.data)
+        if matched:
+            packet.execute_action_set(switch)
         else:
             #@todo for now, just forward to controller; this should be cfgable
             packet_in_to_controller(switch, packet)
