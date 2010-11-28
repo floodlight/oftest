@@ -82,20 +82,24 @@ class FlowTable(object):
         @param flow_mod
         """
         # @todo Need to check overlap flags
+        match_list = []
         self.flow_sync.acquire()
 
-        match_list = []
         # @todo Verify this will iterate in sorted order by priority
         for flow in self.flow_entries:
             if flow.match_flow_mod(flow_mod, groups):
-                self.logger.debug("Matched in table " + str(self.table_id))
+                self.logger.debug("flow_mod matched in table " + 
+                                  str(self.table_id))
                 if flow_mod.command == ofp.OFPPR_ADD:
                     match_list.append(flow)
 
         if len(match_list) == 0:  # No match
             self.logger.debug("No match in table " + str(self.table_id))
-            if flow_mod.command == ofp.OFPFC_ADD:
-                self.logger.debug("Installing flow into table " + str(flow_mod.cookie))
+            if ((flow_mod.command == ofp.OFPFC_ADD) or
+                (flow_mod.command == ofp.OFPFC_MODIFY) or
+                (flow_mod.command == ofp.OFPFC_MODIFY_STRICT)):
+                self.logger.debug("Installing flow into table " + 
+                                  str(flow_mod.cookie))
                 # @todo Do this for modify/strict too, right?
                 new_flow = ofps_flow.FlowEntry()
                 new_flow.flow_mod_set(flow_mod)
@@ -103,6 +107,8 @@ class FlowTable(object):
                 self.flow_entries.append(new_flow)
                 self.flow_entries.sort(prio_sort)
         elif flow_mod.command == ofp.OFPFC_ADD:
+            new_flow = ofps_flow.FlowEntry()
+            new_flow.flow_mod_set(flow_mod)
             self.flow_entries.append(new_flow)
             self.flow_entries.sort(prio_sort)
 
@@ -117,7 +123,6 @@ class FlowTable(object):
                                       ofp.OFPFC_DELETE_STRICT]:
                 # @todo Generate flow_removed message
                 self.logger.debug("flow mod delete" + str(flow.cookie))
-                
 
         self.flow_sync.release()
         # @todo Check for priority conflict?
