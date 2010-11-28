@@ -27,6 +27,7 @@ import oftest.message as message
 import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.parse as parse
+import oftest.instruction as instruction
 import basic
 
 from testutils import *
@@ -107,7 +108,7 @@ class DirectPacket(basic.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = action.action_output()
+        act = action.action_set_output_port()
 
         for idx in range(len(of_ports)):
             rv = delete_all_flows(self.controller, pa_logger)
@@ -121,11 +122,14 @@ class DirectPacket(basic.SimpleDataPlane):
             match.in_port = ingress_port
 
             request = message.flow_mod()
+            request.command = ofp.OFPFC_ADD
             request.match = match
             request.buffer_id = 0xffffffff
+            inst = instruction.instruction_apply_actions()
             act.port = egress_port
-            self.assertTrue(request.actions.add(act), "Could not add action")
-
+            self.assertTrue(inst.actions.add(act), "Could not add action")
+            self.assertTrue(request.instructions.add(inst),
+                            "Could not add instruction")
             pa_logger.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
@@ -176,7 +180,7 @@ class DirectTwoPorts(basic.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = action.action_output()
+        act = action.action_set_output_port()
 
         for idx in range(len(of_ports)):
             rv = delete_all_flows(self.controller, pa_logger)
@@ -236,7 +240,7 @@ class DirectMCNonIngress(basic.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = action.action_output()
+        act = action.action_set_output_port()
 
         for ingress_port in of_ports:
             rv = delete_all_flows(self.controller, pa_logger)
@@ -291,7 +295,7 @@ class DirectMC(basic.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = action.action_output()
+        act = action.action_set_output_port()
 
         for ingress_port in of_ports:
             rv = delete_all_flows(self.controller, pa_logger)
@@ -342,7 +346,7 @@ class Flood(basic.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = action.action_output()
+        act = action.action_set_output_port()
 
         for ingress_port in of_ports:
             rv = delete_all_flows(self.controller, pa_logger)
@@ -391,7 +395,7 @@ class FloodPlusIngress(basic.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = action.action_output()
+        act = action.action_set_output_port()
 
         for ingress_port in of_ports:
             rv = delete_all_flows(self.controller, pa_logger)
@@ -441,7 +445,7 @@ class All(basic.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = action.action_output()
+        act = action.action_set_output_port()
 
         for ingress_port in of_ports:
             rv = delete_all_flows(self.controller, pa_logger)
@@ -490,7 +494,7 @@ class AllPlusIngress(basic.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = action.action_output()
+        act = action.action_set_output_port()
 
         for ingress_port in of_ports:
             rv = delete_all_flows(self.controller, pa_logger)
@@ -542,7 +546,7 @@ class FloodMinusPort(basic.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = action.action_output()
+        act = action.action_set_output_port()
 
         for idx in range(len(of_ports)):
             rv = delete_all_flows(self.controller, pa_logger)
