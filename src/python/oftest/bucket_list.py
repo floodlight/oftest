@@ -22,7 +22,7 @@ class bucket_list(ofp_base_list):
         ofp_base_list.__init__(self)
         self.buckets = self.items
         self.name = "buckets"
-        self.class_list = (bucket)
+        self.class_list = (bucket,)
 
     def unpack(self, binary_string, bytes=None):
         """
