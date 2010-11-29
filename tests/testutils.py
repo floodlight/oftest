@@ -15,6 +15,7 @@ import oftest.cstruct as ofp
 import oftest.message as message
 import oftest.dataplane as dataplane
 import oftest.action as action
+import oftest.instruction as instruction
 import oftest.parse as parse
 import logging
 import types
@@ -370,8 +371,9 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
                                str(response.byte_count) + " != " + 
                                str(byte_count))
 
-def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=0,
-               egr_port=None, egr_queue=None, check_expire=False):
+def flow_msg_create(parent, pkt, ing_port=None, apply_action_list=None,
+                    wildcards=0, egr_port=None, egr_queue=None,
+                    check_expire=False):
     """
     Create a flow message
 
@@ -384,6 +386,28 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=0,
     match.wildcards = wildcards
     match.in_port = ing_port
 
+    apply_inst = instruction.instruction_apply_actions()
+
+    if apply_action_list is not None:
+        for act in apply_action_list:
+            parent.logger.debug("Adding action " + act.show())
+            rv = apply_inst.actions.add(act)
+            parent.assertTrue(rv, "Could not add action" + act.show())
+
+    # Set up output/enqueue action if directed
+    if egr_queue is not None:
+        parent.assertTrue(egr_port is not None, "Egress port not set")
+        act = action.action_set_queue()
+        act.queue_id = egr_queue
+        rv = apply_inst.actions.add(act)
+        parent.assertTrue(rv, "Could not add set_queue action " +str(egr_queue))
+    
+    if egr_port is not None:
+        act = action.action_set_output_port()
+        act.port = egr_port
+        rv = apply_inst.actions.add(act)
+        parent.assertTrue(rv, "Could not add set_output_port action " + str(egr_port))
+
     request = message.flow_mod()
     request.match = match
     request.buffer_id = 0xffffffff
@@ -391,26 +415,8 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=0,
         request.flags |= ofp.OFPFF_SEND_FLOW_REM
         request.hard_timeout = 1
 
-    if action_list is not None:
-        for act in action_list:
-            parent.logger.debug("Adding action " + act.show())
-            rv = request.actions.add(act)
-            parent.assertTrue(rv, "Could not add action" + act.show())
-
-    # Set up output/enqueue action if directed
-    if egr_queue is not None:
-        parent.assertTrue(egr_port is not None, "Egress port not set")
-        act = action.action_enqueue()
-        act.port = egr_port
-        act.queue_id = egr_queue
-        rv = request.actions.add(act)
-        parent.assertTrue(rv, "Could not add enqueue action " + 
-                          str(egr_port) + " Q: " + str(egr_queue))
-    elif egr_port is not None:
-        act = action.action_output()
-        act.port = egr_port
-        rv = request.actions.add(act)
-        parent.assertTrue(rv, "Could not add output action " + str(egr_port))
+    rv = request.instructions.add(apply_inst)
+    parent.assertTrue(rv, "Could not add apply actions")
 
     parent.logger.debug(request.show())
 
@@ -437,7 +443,7 @@ def flow_msg_install(parent, request, clear_table=True):
 
 def flow_match_test_port_pair(parent, ing_port, egr_port, wildcards=0, 
                               dl_vlan=-1, pkt=None, exp_pkt=None,
-                              action_list=None, check_expire=False):
+                              apply_action_list=None, check_expire=False):
     """
     Flow match test on single TCP packet
 
@@ -453,7 +459,7 @@ def flow_match_test_port_pair(parent, ing_port, egr_port, wildcards=0,
 
     request = flow_msg_create(parent, pkt, ing_port=ing_port, 
                               wildcards=wildcards, egr_port=egr_port,
-                              action_list=action_list)
+                              apply_action_list=apply_action_list)
 
     flow_msg_install(parent, request)
 
@@ -469,8 +475,8 @@ def flow_match_test_port_pair(parent, ing_port, egr_port, wildcards=0,
         flow_removed_verify(parent, request, pkt_count=1, byte_count=len(pkt))
 
 def flow_match_test(parent, port_map, wildcards=0, dl_vlan=-1, pkt=None, 
-                    exp_pkt=None, action_list=None, check_expire=False, 
-                    max_test=0):
+                    exp_pkt=None, apply_action_list=None,
+                    check_expire=False,  max_test=0):
     """
     Run flow_match_test_port_pair on all port pairs
 
@@ -498,7 +504,7 @@ def flow_match_test(parent, port_map, wildcards=0, dl_vlan=-1, pkt=None,
             flow_match_test_port_pair(parent, ingress_port, egress_port, 
                                       wildcards=wildcards, dl_vlan=dl_vlan, 
                                       pkt=pkt, exp_pkt=exp_pkt,
-                                      action_list=action_list,
+                                      apply_action_list=apply_action_list,
                                       check_expire=check_expire)
             test_count += 1
             if (max_test > 0) and (test_count > max_test):

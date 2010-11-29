@@ -732,7 +732,7 @@ class AddVLANTag(BaseMatchCase):
         vid_act.vlan_vid = new_vid
 
         flow_match_test(self, pa_port_map, pkt=pkt, 
-                        exp_pkt=exp_pkt, action_list=[vid_act])
+                        exp_pkt=exp_pkt, apply_action_list=[vid_act])
 
 class PacketOnly(basic.DataPlaneOnly):
     """
@@ -782,7 +782,7 @@ class ModifyVID(BaseMatchCase):
         vid_act.vlan_vid = new_vid
 
         flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt,
-                        action_list=[vid_act])
+                        apply_action_list=[vid_act])
 
 class StripVLANTag(BaseMatchCase):
     """
@@ -803,7 +803,7 @@ class StripVLANTag(BaseMatchCase):
         vid_act = action.action_strip_vlan()
 
         flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt,
-                        action_list=[vid_act])
+                        apply_action_list=[vid_act])
 
 def init_pkt_args():
     """
@@ -835,7 +835,7 @@ class ModifyL2Src(BaseMatchCase):
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_src'],
                                                 check_test_params=True)
         flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
-                        action_list=acts, max_test=2)
+                        apply_action_list=acts, max_test=2)
 
 class ModifyL2Dst(BaseMatchCase):
     """
@@ -850,7 +850,7 @@ class ModifyL2Dst(BaseMatchCase):
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_dst'],
                                                 check_test_params=True)
         flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
-                        action_list=acts, max_test=2)
+                        apply_action_list=acts, max_test=2)
 
 class ModifyL3Src(BaseMatchCase):
     """
@@ -865,7 +865,7 @@ class ModifyL3Src(BaseMatchCase):
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['ip_src'],
                                                 check_test_params=True)
         flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
-                        action_list=acts, max_test=2)
+                        apply_action_list=acts, max_test=2)
 
 class ModifyL3Dst(BaseMatchCase):
     """
@@ -880,7 +880,7 @@ class ModifyL3Dst(BaseMatchCase):
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['ip_dst'],
                                                 check_test_params=True)
         flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
-                        action_list=acts, max_test=2)
+                        apply_action_list=acts, max_test=2)
 
 class ModifyL4Src(BaseMatchCase):
     """
@@ -895,7 +895,7 @@ class ModifyL4Src(BaseMatchCase):
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['tcp_sport'],
                                                 check_test_params=True)
         flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
-                        action_list=acts, max_test=2)
+                        apply_action_list=acts, max_test=2)
 
 class ModifyL4Dst(BaseMatchCase):
     """
@@ -910,7 +910,7 @@ class ModifyL4Dst(BaseMatchCase):
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['tcp_dport'],
                                                 check_test_params=True)
         flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
-                        action_list=acts, max_test=2)
+                        apply_action_list=acts, max_test=2)
 
 class ModifyTOS(BaseMatchCase):
     """
@@ -925,7 +925,7 @@ class ModifyTOS(BaseMatchCase):
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['ip_tos'],
                                                 check_test_params=True)
         flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
-                        action_list=acts, max_test=2)
+                        apply_action_list=acts, max_test=2)
 
 #@todo Need to implement tagged versions of the above tests
 #
