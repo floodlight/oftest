@@ -51,7 +51,7 @@ import oftest.dataplane as dataplane
 import oftest.message as message
 import oftest.action as action
 from ctrl_if import ControllerInterface
-from ofps_pkt import Packet
+from oftest.packet import Packet
 from pipeline import FlowPipeline
 import ctrl_msg
 
