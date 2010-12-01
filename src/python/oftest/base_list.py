@@ -121,11 +121,14 @@ class ofp_base_list(object):
             if not self.add(act):
                 return False
         return True
-        
+
     def __len__(self):
+        """
+        Length of the list packed as a string
+        """
         length = 0
-        for act in self.items:
-            length += act.__len__()
+        for item in self.items:
+            length += item.__len__()
         return length
 
     def __eq__(self, other):
@@ -134,7 +137,11 @@ class ofp_base_list(object):
         return True
 
     def __ne__(self, other): return not self.__eq__(other)
-        
+
+    # Methods to make class iterable
+    def __iter__(self):
+        return self.items.__iter__()
+
     def show(self, prefix=''):
         outstr = prefix + self.name + "list with " + str(len(self.items)) + \
             " items\n"
