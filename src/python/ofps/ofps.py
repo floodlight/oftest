@@ -55,7 +55,7 @@ from ofps_pkt import Packet
 from pipeline import FlowPipeline
 import ctrl_msg
 
-DEFAULT_TABLE_COUNT = 1
+DEFAULT_TABLE_COUNT = 4
 
 class OFSwitchConfig(object):
     """

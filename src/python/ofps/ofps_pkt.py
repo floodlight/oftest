@@ -1,3 +1,13 @@
+
+"""
+OFPS packet class
+
+This class implements the basic abstraction of a packet for OFPS.  It
+includes parsing functionality and OpenFlow actions related to 
+packet modifications.
+
+"""
+
 ######################################################################
 #
 # All files associated with the OpenFlow Python Switch (ofps) are
@@ -23,6 +33,7 @@
 # SOFTWARE.
 # 
 ######################################################################
+
 import socket
 import struct
 import logging
@@ -30,19 +41,6 @@ import oftest.cstruct as ofp
 import unittest
 import binascii
 import string
-
-"""
-OFPS packet class
-
-This class implements the basic abstraction of a packet for OFPS.  It
-includes parsing functionality and OpenFlow actions related to 
-packet modifications.
-
-"""
-
-
-
-from oftest.cstruct import ofp_match
 
 ETHERTYPE_IP = 0x0800
 ETHERTYPE_VLAN = 0x8100
@@ -56,16 +54,13 @@ class Packet(object):
     """
     Packet abstraction for packet object while in the switch
     """
-# ordered_action_list:  This determines the order in which
-# actions in the packet's action set should be executed
-# @todo Verify the ordering in this list
 
     def __init__(self, in_port=None, data=""):
         # Use entries in match when possible.
         self.in_port = in_port
         self.data = data
         self.bytes = len(data)
-        self.match = ofp_match()
+        self.match = ofp.ofp_match()
         self.logger = logging.getLogger("packet")  
         self.instructions = []
         # parsable tags
@@ -87,8 +82,8 @@ class Packet(object):
     def parse(self):
         """ Update the headers in self.match based on self.data 
         
-        Parses the relevant header features out of the packet, using the table outlined 
-        in the OF1.1 spec, Figure 4
+        Parses the relevant header features out of the packet, usieng
+        the table outlined in the OF1.1 spec, Figure 4
         """
         self.bytes = len(self.data)
         self.match.in_port = self.in_port
@@ -103,7 +98,9 @@ class Packet(object):
             if self.match.dl_type == ETHERTYPE_IP:
                 self.ip_header_offset = idx 
                 idx = self._parse_ip(idx)
-                if self.match.nw_proto in [ socket.IPPROTO_TCP, socket.IPPROTO_UDP, socket.IPPROTO_ICMP]:
+                if self.match.nw_proto in [ socket.IPPROTO_TCP,
+                                            socket.IPPROTO_UDP,
+                                            socket.IPPROTO_ICMP]:
                     self.tcp_header_offset = idx
                     if self.match.nw_proto != socket.IPPROTO_ICMP:
                         idx = self._parse_l4(idx)
@@ -112,16 +109,17 @@ class Packet(object):
             elif self.match.dl_type == ETHERTYPE_ARP:
                 self._parse_arp(idx)
         except (parse_error),e:
-            self.logger.warn("Giving up on parsing packet, got %s" % (str(e)))
+            self.logger.warn("Giving up on parsing packet, got %s" % 
+                             (str(e)))
                     
     def _parse_l2(self, idx):
         """ Parse Layer2 Headers of packet
         
-        Parse ether src,dst,type (and vlan and QinQ headers if exists) from self.data
-        starting at idx
+        Parse ether src,dst,type (and vlan and QinQ headers if exists) from 
+        self.data starting at idx
         """ 
         if self.bytes < 14 :
-            raise parse_error("_parse_l2:: packet shorter than 14 bytes; giving up")
+            raise parse_error("_parse_l2:: packet too shorter <14 bytes")
             
         self.match.dl_dst = list(struct.unpack("!6B", self.data[idx:idx+6]))
         self.match.dl_dst_mask = DL_MASK_ALL
@@ -143,7 +141,7 @@ class Packet(object):
             while l2_type in [ETHERTYPE_VLAN, ETHERTYPE_VLAN_QinQ] :
                 idx+=4
                 if self.bytes < idx :
-                    raise parse_error("_parse_l2(): run away vlan tags!? %d > %d" % (idx, self.bytes))
+                    raise parse_error("_parse_l2(): Too many vlan tags")
                 l2_type = struct.unpack("!H", self.data[idx:idx+2])[0]
         else:
             self.match.dl_vlan = 0xFFFF
@@ -155,12 +153,15 @@ class Packet(object):
         """ Parse IP Headers of a packet starting at self.data[idx]
         """
         if self.bytes < (idx + 20) :
-            raise parse_error("_parse_ip :: packet does not contain a full IP header")
-        # the three blanks are id (2bytes), frag offset (2bytes), and ttl (1byte)
-        (hlen_and_v, self.match.nw_tos, len, _,_,_, self.match.nw_proto) = struct.unpack("!BBHHHBB", self.data[idx:idx+10])
+            raise parse_error("_parse_ip: Invalid IP header")
+        # the three blanks are id (2bytes), frag offset (2bytes), 
+        # and ttl (1byte)
+        (hlen_and_v, self.match.nw_tos, len, _,_,_, self.match.nw_proto) = \
+            struct.unpack("!BBHHHBB", self.data[idx:idx+10])
         #@todo add fragmentation parsing
         hlen = hlen_and_v & 0x0f
-        (self.match.nw_src, self.match.nw_dst) = struct.unpack("!II",self.data[idx + 12:idx+20])
+        (self.match.nw_src, self.match.nw_dst) = \
+            struct.unpack("!II", self.data[idx + 12:idx+20])
         self.match.nw_dst_mask = NW_MASK_ALL
         self.match.nw_src_mask = NW_MASK_ALL
         return idx + (hlen *4) # this should correctly skip IP options
@@ -169,16 +170,18 @@ class Packet(object):
         """ Parse the src/dst ports of UDP and TCP packets
         """
         if self.bytes < (idx + 8):
-            raise parse_error("_parse_l4 :: packet does not contain 8 bytes worth of l4 header")
-        (self.match.tp_src, self.match.tp_dst) = struct.unpack("!HH", self.data[idx:idx+4])
+            raise parse_error("_parse_l4: Invalid L4 header")
+        (self.match.tp_src, self.match.tp_dst) = \
+            struct.unpack("!HH", self.data[idx:idx+4])
 
     def _parse_icmp(self,idx):
         """ Parse the type/code of ICMP Packets 
         """
         if self.bytes < (idx + 4):
-            raise parse_error("_parse_icmp :: packet does not contain 4 bytes worth of icmp header")
+            raise parse_error("_parse_icmp: Invalid icmp header")
         # yes, type and code get stored into tp_dst and tp_src...
-        (self.match.tp_src, self.match.tp_dst) = struct.unpack("!BB", self.data[idx:idx+2])
+        (self.match.tp_src, self.match.tp_dst) = \
+            struct.unpack("!BB", self.data[idx:idx+2])
 
 
     def write_action(self, action):
@@ -316,6 +319,11 @@ class Packet(object):
                 except (KeyError),e:
                     self.logger.error("Could not execute pkt action fn (%s)" %
                                       e.__class__.__name__)
+
+    # ordered_action_list:  This determines the order in which
+    # actions in the packet's action set should be executed
+    # @todo Verify the ordering in this list
+
     ordered_action_list = [
         action_pop_mpls,
         action_pop_vlan,
@@ -352,7 +360,7 @@ class parse_error(Exception):
     
     """
     
-    def __init__(self,why):
+    def __init__(self, why):
         self.why = why
         
     def __str__(self):
@@ -363,26 +371,30 @@ class packet_test(unittest.TestCase):
     """
     
     def ascii_to_data(self,str):
-        return binascii.unhexlify(str.translate(string.maketrans('',''),string.whitespace))
+        return binascii.unhexlify(str.translate(string.maketrans('',''),
+                                                string.whitespace))
     
     def setUp(self):
         ''' 
-        random pkt I had access to:
-        
-        [parsed by wireshark]
-        Ethernet II, Src: Fujitsu_ef:cd:8d (00:17:42:ef:cd:8d), Dst: ZhsZeitm_5d:24:00 (00:d0:05:5d:24:00)
-        Internet Protocol, Src: 172.24.74.96 (172.24.74.96), Dst: 171.64.74.58 (171.64.74.58)
-        Transmission Control Protocol, Src Port: 59581 (59581), Dst Port: ssh (22), Seq: 2694, Ack: 2749, Len: 48
+        Simple packet data for parsing tests.  
+
+        Ethernet II, Src: Fujitsu_ef:cd:8d (00:17:42:ef:cd:8d), 
+            Dst: ZhsZeitm_5d:24:00 (00:d0:05:5d:24:00)
+        Internet Protocol, Src: 172.24.74.96 (172.24.74.96), 
+            Dst: 171.64.74.58 (171.64.74.58)
+        Transmission Control Protocol, Src Port: 59581 (59581), 
+            Dst Port: ssh (22), Seq: 2694, Ack: 2749, Len: 48
         
         '''
-        pktdata = self.ascii_to_data('''00 d0 05 5d 24 00 00 17 42 ef cd 8d 08 00 45 10
-                00 64 65 67 40 00 40 06 e9 29 ac 18 4a 60 ab 40
-                4a 3a e8 bd 00 16 7c 28 2f 88 f2 bd 7a 03 80 18
-                00 b5 ec 49 00 00 01 01 08 0a 00 d1 46 8b 32 ed
-                7c 88 78 4b 8a dc 0a 1f c4 d3 02 a3 ae 1d 3c aa
-                6f 1a 36 9f 27 11 12 71 5b 5d 88 f2 97 fa e7 f9
-                99 c1 9f 9c 7f c5 1e 3e 45 c6 a6 ac ec 0b 87 64
-                98 dd''')
+        pktdata = self.ascii_to_data(
+            '''00 d0 05 5d 24 00 00 17 42 ef cd 8d 08 00 45 10
+               00 64 65 67 40 00 40 06 e9 29 ac 18 4a 60 ab 40
+               4a 3a e8 bd 00 16 7c 28 2f 88 f2 bd 7a 03 80 18
+               00 b5 ec 49 00 00 01 01 08 0a 00 d1 46 8b 32 ed
+               7c 88 78 4b 8a dc 0a 1f c4 d3 02 a3 ae 1d 3c aa
+               6f 1a 36 9f 27 11 12 71 5b 5d 88 f2 97 fa e7 f9
+               99 c1 9f 9c 7f c5 1e 3e 45 c6 a6 ac ec 0b 87 64
+               98 dd''')
         self.pkt = Packet(data=pktdata)
     def runTest(self):
         self.assertTrue(self.pkt)
@@ -397,8 +409,9 @@ class l2_parsing_test(packet_test):
 class ip_parsing_test(packet_test):
     def runTest(self):
         match = self.pkt.match
-        self.assertEqual(match.nw_dst,0xab404a3a)   # not sure if test has byte ordering right
-        self.assertEqual(match.nw_src,0xac184a60)             # I *always* screw it up
+        # @todo Verify byte ordering of the following
+        self.assertEqual(match.nw_dst,0xab404a3a)
+        self.assertEqual(match.nw_src,0xac184a60)
         self.assertEqual(match.nw_proto, socket.IPPROTO_TCP)
 
 class l4_parsing_test(packet_test):
@@ -406,6 +419,8 @@ class l4_parsing_test(packet_test):
         match = self.pkt.match
         self.assertEqual(match.tp_dst,22)
         self.assertEqual(match.tp_src,59581)
+
 if __name__ == '__main__':
+    print("Running OFPS packet tests\n")
     unittest.main()
 
