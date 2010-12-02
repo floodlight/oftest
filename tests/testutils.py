@@ -1163,6 +1163,7 @@ def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
                                    exp_mpls_type=0x8847,
                                    exp_mpls_label=-1, exp_mpls_tc=0,
                                    exp_mpls_ttl=64,
+                                   exp_mpls_ttl_int=32,
                                    exp_ip_ttl=192,
                                    label_match=ofp.OFPML_NONE, tc_match=0,
                                    match_exp=True,
@@ -1233,7 +1234,7 @@ def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
                                            mpls_ttl=mpls_ttl,
                                            mpls_label_int=mpls_label_int,
                                            mpls_tc_int=mpls_tc_int,
-                                           mpls_ttl_int=mpls_ttl_int,
+                                           mpls_ttl_int=exp_mpls_ttl_int,
                                            ip_ttl=exp_ip_ttl)
         else:
             if (exp_mpls_label < 0) and (mpls_label_int >= 0):
@@ -1241,7 +1242,7 @@ def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
                                            mpls_type=mpls_type,
                                            mpls_label=mpls_label_int,
                                            mpls_tc=mpls_tc_int,
-                                           mpls_ttl=mpls_ttl_int,
+                                           mpls_ttl=exp_mpls_ttl_int,
                                            ip_ttl=exp_ip_ttl)
             else:
                 exp_pkt = simple_tcp_packet_w_mpls(pktlen=exp_pktlen,
@@ -1251,7 +1252,7 @@ def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
                                            mpls_ttl=exp_mpls_ttl,
                                            mpls_label_int=mpls_label_int,
                                            mpls_tc_int=mpls_tc_int,
-                                           mpls_ttl_int=mpls_ttl_int,
+                                           mpls_ttl_int=exp_mpls_ttl_int,
                                            ip_ttl=exp_ip_ttl)
 
     match = parse.packet_to_flow_match(pkt)
@@ -1304,6 +1305,7 @@ def flow_match_test_mpls(parent, port_map, wildcards=0,
                          label_match=ofp.OFPML_NONE, tc_match=0,
                          exp_mpls_type=0x8847,
                          exp_mpls_label=-1, exp_mpls_tc=0, exp_mpls_ttl=64,
+                         exp_mpls_ttl_int=32,
                          exp_ip_ttl=192,
                          match_exp=True,
                          add_tag_exp=False,
@@ -1332,6 +1334,7 @@ def flow_match_test_mpls(parent, port_map, wildcards=0,
     @param exp_mpls_label Expected MPLS LABEL value. If -1, no MPLS expected
     @param exp_mpls_tc Expected MPLS TC value
     @param exp_mpls_ttl Expected MPLS TTL value
+    @param exp_mpls_ttl_int Expected Inner MPLS TTL value
     @param ip_ttl Expected IP TTL
     @param match_exp Set whether packet is expected to receive
     @param add_tag_exp If True, expected_packet has an additional MPLS shim,
@@ -1371,6 +1374,7 @@ def flow_match_test_mpls(parent, port_map, wildcards=0,
                                       exp_mpls_label=exp_mpls_label,
                                       exp_mpls_tc=exp_mpls_tc,
                                       exp_mpls_ttl=exp_mpls_ttl,
+                                      exp_mpls_ttl_int=exp_mpls_ttl_int,
                                       exp_ip_ttl=exp_ip_ttl,
                                       match_exp=match_exp,
                                       exp_msg=exp_msg,
