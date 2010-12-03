@@ -38,7 +38,7 @@ features_request.
 """
 
 from exec_actions import execute_actions
-from ofps_pkt import Packet
+from oftest.packet import Packet
 
 def aggregate_stats_reply(switch, msg, rawmsg):
     """
