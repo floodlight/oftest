@@ -260,6 +260,9 @@ class pythonizer:
                 if (struct_default != None):
                     code.append(prepend+struct_default)
                 self.__structassert(member, (prepend+"."+member.name).strip())
+                # Hack for match length init
+                if member.name == "match":
+                    code.append(prepend+".match.length = OFP_MATCH_BYTES")
             elif (isinstance(member, cheader.carray)):
                 if (member.typename == "char"):
                     initvalue = "\"\""
