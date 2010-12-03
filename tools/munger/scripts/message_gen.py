@@ -697,12 +697,12 @@ class flow_stats_entry(ofp_flow_stats):
     \"""
     def __init__(self):
         ofp_flow_stats.__init__(self)
-        self.actions = action_list()
+        self.instructions = instructions_list()
 
     def pack(self, assertstruct=True):
         self.length = len(self)
         packed = ofp_flow_stats.pack(self, assertstruct)
-        packed += self.actions.pack()
+        packed += self.instructions.pack()
         if len(packed) != self.length:
             print("ERROR: flow_stats_entry pack length not equal",
                   self.length, len(packed))
@@ -714,22 +714,22 @@ class flow_stats_entry(ofp_flow_stats):
         if ai_len < 0:
             print("ERROR: flow_stats_entry unpack length too small",
                   self.length)
-        binary_string = self.actions.unpack(binary_string, bytes=ai_len)
+        binary_string = self.instructions.unpack(binary_string, bytes=ai_len)
         return binary_string
 
     def __len__(self):
-        return OFP_FLOW_STATS_BYTES + len(self.actions)
+        return OFP_FLOW_STATS_BYTES + len(self.instructions)
 
     def show(self, prefix=''):
         outstr = prefix + "flow_stats_entry\\n"
         outstr += ofp_flow_stats.show(self, prefix + '  ')
-        outstr += self.actions.show(prefix + '  ')
+        outstr += self.instructions.show(prefix + '  ')
         return outstr
 
     def __eq__(self, other):
         if type(self) != type(other): return False
         return (ofp_flow_stats.__eq__(self, other) and 
-                self.actions == other.actions)
+                self.instructions == other.instructions)
 
     def __ne__(self, other): return not self.__eq__(other)
 """
