@@ -83,10 +83,10 @@ def flow_has_out_port(flow, port, groups):
     NOTE: All groups and all group buckets are searched, not just
     active buckets.
     """
-    if port == ofp.OFPP_ANY:
+    if port == ofp.OFPP_ANY or port == ofp.OFPP_ALL:
         return True
 
-    for inst in flow.instructions:
+    for inst in flow.flow_mod.instructions:
         if inst.__class__ == instruction.instruction_write_actions or \
                 inst.__class__ == instruction.instruction_apply_actions:
             if action_list_has_out_port(inst.actions, port, groups):
@@ -371,9 +371,12 @@ class FlowEntry(object):
 
         @todo Check if things like match and instructions should be copies
         """
-        stat = message.flow_stats_request()
-        stat.duration_sec = self.flow_mod.duration_sec
-        stat.duration_nsec = self.flow_mod.duration_nsec
+        stat = message.flow_stats_entry()
+        delta = time.time() - self.insert_time
+        stat.duration_sec = int(delta)
+        # need the extra int() line here because python time might have
+        # higher precision
+        stat.duration_nsec = int((delta - stat.duration_sec) * 1e9)
         stat.priority = self.flow_mod.priority
         stat.idle_timeout = self.flow_mod.idle_timeout
         stat.hard_timeout = self.flow_mod.hard_timeout
