@@ -697,7 +697,7 @@ class flow_stats_entry(ofp_flow_stats):
     \"""
     def __init__(self):
         ofp_flow_stats.__init__(self)
-        self.instructions = instructions_list()
+        self.instructions = instruction_list()
 
     def pack(self, assertstruct=True):
         self.length = len(self)
