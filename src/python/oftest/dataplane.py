@@ -199,10 +199,11 @@ class DataPlanePort(Thread):
         self.pkt_sync.release()
 
 
-    def send(self, packet):
+    def send(self, packet, queue_id=0):
         """
         Send a packet to the dataplane port
         @param packet The packet data to send to the port
+        @param queue_id The queue to send to (to be implemented)
         @retval The number of bytes sent
         """
         return self.socket.send(packet)
@@ -265,16 +266,17 @@ class DataPlane:
         for port_number in self.port_list.keys():
             self.port_list[port_number].register(pkt_handler)
         
-    def send(self, port_number, packet):
+    def send(self, port_number, packet, queue_id=0):
         """
         Send a packet to the given port
         @param port_number The port to send the data to
         @param packet Raw packet data to send to port
+        @param queue_id The queue to send to (to be implemented)
         """
         #@todo Verify port_number is in keys of port_list
         self.logger.debug("Sending %d bytes to port %d" %
                           (len(packet), port_number))
-        bytes = self.port_list[port_number].send(packet)
+        bytes = self.port_list[port_number].send(packet, queue_id=queue_id)
         if bytes != len(packet):
             self.logger.error("Unhandled send error, length mismatch %d != %d" %
                      (bytes, len(packet)))

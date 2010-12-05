@@ -39,6 +39,7 @@ import oftest.cstruct as ofp
 import unittest
 import binascii
 import string
+import oftest.action as action
 
 ETHERTYPE_IP = 0x0800
 ETHERTYPE_VLAN = 0x8100
@@ -73,6 +74,7 @@ class Packet(object):
         self.mpls_tag_offset = None
         self.vlan_tag_offset = None       
         self.action_set = {}
+        self.queue_id = 0
 
         if self.data != "":
             self.parse()
@@ -197,9 +199,20 @@ class Packet(object):
             struct.unpack("!BB", self.data[idx:idx+2])
 
 
+    #
+    # NOTE:  See comment string in write_action regarding exactly
+    # when actions are executed (for apply vs write instructions)
+    #
+
     def write_action(self, action):
         """
         Write the action into the packet's action set
+
+        Note that we do nothing to the packet when the write_action
+        instruction is executed.  We only record the actions for 
+        later processing.  Because of this, the output port is not
+        explicitly recorded in the packet; that state is recorded
+        in the action_set[set_output_port] item.
         """
         self.logger.debug("Setting action " + action.show())
         self.action_set[action.__class__] = action
@@ -207,25 +220,31 @@ class Packet(object):
     def set_metadata(self, value, mask):
         self.match.metadata = (self.match.metadata & ~mask) | \
             (value & mask)
-        
+
+    #
+    # All action functions need to take the action object for params
+    #
+
     def action_set_output_port(self, action, switch):
         #@todo Does packet need to be repacked?
-        switch.dataplane.send(action.port, self.data)        
+        switch.dataplane.send(action.port, self.data, queue_id=self.queue_id)
 
-    def action_set_queue(self, queue):
-        self.queue = queue
+    def action_set_queue(self, action, switch):
+        self.queue_id = action.queue_id
 
-    def action_set_vlan_vid(self, action):
+    def action_set_vlan_vid(self, action, switch):
+        vid = action.vlan_vid
         # @todo Verify proper location of VLAN id
         if self.vlan_tag_offset is None:
             return
         offset = self.vlan_tag_offset
         first = self.data[offset]
-        first = (first & 0xf0) | ((action.vid & 0xf00) >> 8)
+        first = (first & 0xf0) | ((vid & 0xf00) >> 8)
         self.data[offset] = first
-        self.data[offset + 1] = action.vid & 0xff
+        self.data[offset + 1] = vid & 0xff
 
-    def action_set_vlan_pcp(self, pcp):
+    def action_set_vlan_pcp(self, action, switch):
+        pcp = action.vlan_pcp
         # @todo Verify proper location of VLAN pcp
         if self.vlan_tag_offset is None:
             return
@@ -234,17 +253,20 @@ class Packet(object):
         first = (first & 0x1f) | (pcp << 5)
         self.data[offset] = first
 
-    def action_set_dl_src(self, dl_src):
+    def action_set_dl_src(self, action, switch):
+        dl_src = action.dl_addr
         # @todo Do as a slice
         for idx in range(len(dl_src)):
             self.data[6 + idx] = dl_src[idx]
 
-    def action_set_dl_dst(self, dl_dst):
+    def action_set_dl_dst(self, action, switch):
+        dl_dst = action.dl_addr
         # @todo Do as a slice
         for idx in range(len(dl_dst)):
             self.data[idx] = dl_dst[idx]
 
-    def action_set_nw_src(self, nw_src):
+    def action_set_nw_src(self, action, switch):
+        nw_src = action.nw_addr
         # @todo Verify byte order
         if self.ip_header_offset is None:
             return
@@ -254,7 +276,8 @@ class Packet(object):
         self.data[offset + 2] = (nw_src >> 8) & 0xff
         self.data[offset + 3] = nw_src & 0xff
 
-    def action_set_nw_dst(self, nw_dst):
+    def action_set_nw_dst(self, action, switch):
+        nw_dst = action.nw_addr
         # @todo Verify byte order
         if self.ip_header_offset is None:
             return
@@ -264,107 +287,180 @@ class Packet(object):
         self.data[offset + 2] = (nw_dst >> 8) & 0xff
         self.data[offset + 3] = nw_dst & 0xff
 
-    def action_set_nw_tos(self, nw_tos):
+    def action_set_nw_tos(self, action, switch):
         pass
 
-    def action_set_nw_ecn(self, nw_ecn):
+    def action_set_nw_ecn(self, action, switch):
         pass
 
-    def action_set_tp_src(self, tp_src):
+    def action_set_tp_src(self, action, switch):
         pass
 
-    def action_set_tp_dst(self, tp_dst):
+    def action_set_tp_dst(self, action, switch):
         pass
 
-    def action_copy_ttl_out(self):
+    def action_copy_ttl_out(self, action, switch):
         pass
 
-    def action_copy_ttl_in(self):
+    def action_copy_ttl_in(self, action, switch):
         pass
 
-    def action_set_mpls_label(self, mpls_label):
+    def action_set_mpls_label(self, action, switch):
         pass
 
-    def action_set_mpls_tc(self, mpls_tc):
+    def action_set_mpls_tc(self, action, switch):
         pass
 
-    def action_set_mpls_ttl(self, mpls_ttl):
+    def action_set_mpls_ttl(self, action, switch):
         pass
 
-    def action_dec_mpls_ttl(self):
+    def action_dec_mpls_ttl(self, action, switch):
         pass
 
-    def action_push_vlan(self):
+    def action_push_vlan(self, action, switch):
         pass
 
-    def action_pop_vlan(self):
+    def action_pop_vlan(self, action, switch):
         pass
 
-    def action_push_mpls(self):
+    def action_push_mpls(self, action, switch):
         pass
 
-    def action_pop_mpls(self):
+    def action_pop_mpls(self, action, switch):
         pass
     
-    def action_experimenter(self):
+    def action_experimenter(self, action, switch):
         pass
 
-    def action_set_nw_ttl(self, nw_ttl):
+    def action_set_nw_ttl(self, action, switch):
         pass
 
-    def action_dec_nw_ttl(self):
+    def action_dec_nw_ttl(self, action, switch):
         pass
 
-    def action_group(self, switch):
+    def action_group(self, action, switch):
         pass
 
     def execute_action_set(self, switch):
         """
         Execute the actions in the action set for the packet
         according to the order given in ordered_action_list.
+
+        This determines the order in which
+        actions in the packet's action set are executed
+
+        @param switch The parent switch object (for sending pkts out)
+
+        @todo Verify the ordering in this list
         """
-        for action in Packet.ordered_action_list:
-            if action.__class__ in self.action_set.keys():
-                try:
-                    callable = getattr(self, action.__class__.__name__)
-                    self.logger.debug("Pkt exec " + action.__class__.__name__)
-                    callable(self, self.action_set[action.__class__], switch)
-                except (KeyError), e:
-                    self.logger.error("Could not execute pkt action fn (%s)" %
-                                      e.__class__.__name__)
+        cls = action.action_copy_ttl_in
+        if cls in self.action_set.keys():
+            self.logger.debug("Action copy_ttl_in")
+            self.action_copy_ttl_in(self.action_set[cls], switch)
 
-    # ordered_action_list:  This determines the order in which
-    # actions in the packet's action set should be executed
-    # @todo Verify the ordering in this list
+        cls = action.action_pop_mpls
+        if cls in self.action_set.keys():
+            self.logger.debug("Action pop_mpls")
+            self.action_pop_mpls(self.action_set[cls], switch)
+        cls = action.action_pop_vlan
+        if cls in self.action_set.keys():
+            self.logger.debug("Action pop_vlan")
+            self.action_pop_vlan(self.action_set[cls], switch)
+        cls = action.action_push_mpls
+        if cls in self.action_set.keys():
+            self.logger.debug("Action push_mpls")
+            self.action_push_mpls(self.action_set[cls], switch)
+        cls = action.action_push_vlan
+        if cls in self.action_set.keys():
+            self.logger.debug("Action push_vlan")
+            self.action_push_vlan(self.action_set[cls], switch)
 
-    ordered_action_list = [
-        action_pop_mpls,
-        action_pop_vlan,
-        action_push_mpls,
-        action_push_vlan,
-        action_dec_mpls_ttl,
-        action_dec_nw_ttl,
-        action_copy_ttl_in,
-        action_copy_ttl_out,
-        action_set_dl_dst,
-        action_set_dl_src,
-        action_set_mpls_label,
-        action_set_mpls_tc,
-        action_set_mpls_ttl,
-        action_set_nw_dst,
-        action_set_nw_ecn,
-        action_set_nw_src,
-        action_set_nw_tos,
-        action_set_nw_ttl,
-        action_set_queue,
-        action_set_tp_dst,
-        action_set_tp_src,
-        action_set_vlan_pcp,
-        action_set_vlan_vid,
-        action_group,
-        action_experimenter,
-        action_set_output_port]
+        cls = action.action_dec_mpls_ttl
+        if cls in self.action_set.keys():
+            self.logger.debug("Action dec_mpls_ttl")
+            self.action_dec_mpls_ttl(self.action_set[cls], switch)
+        cls = action.action_dec_nw_ttl
+        if cls in self.action_set.keys():
+            self.logger.debug("Action dec_nw_ttl")
+            self.action_dec_nw_ttl(self.action_set[cls], switch)
+        cls = action.action_copy_ttl_out
+        if cls in self.action_set.keys():
+            self.logger.debug("Action copy_ttl_out")
+            self.action_copy_ttl_out(self.action_set[cls], switch)
 
+        cls = action.action_set_dl_dst
+        if cls in self.action_set.keys():
+            self.logger.debug("Action set_dl_dst")
+            self.action_set_dl_dst(self.action_set[cls], switch)
+        cls = action.action_set_dl_src
+        if cls in self.action_set.keys():
+            self.logger.debug("Action set_dl_src")
+            self.action_set_dl_src(self.action_set[cls], switch)
+        cls = action.action_set_mpls_label
+        if cls in self.action_set.keys():
+            self.logger.debug("Action set_mpls_label")
+            self.action_set_mpls_label(self.action_set[cls], switch)
+        cls = action.action_set_mpls_tc
+        if cls in self.action_set.keys():
+            self.logger.debug("Action set_mpls_tc")
+            self.action_set_mpls_tc(self.action_set[cls], switch)
+        cls = action.action_set_mpls_ttl
+        if cls in self.action_set.keys():
+            self.logger.debug("Action set_mpls_ttl")
+            self.action_set_mpls_ttl(self.action_set[cls], switch)
+        cls = action.action_set_nw_dst
+        if cls in self.action_set.keys():
+            self.logger.debug("Action set_nw_dst")
+            self.action_set_nw_dst(self.action_set[cls], switch)
+        cls = action.action_set_nw_ecn
+        if cls in self.action_set.keys():
+            self.logger.debug("Action set_nw_ecn")
+            self.action_set_nw_ecn(self.action_set[cls], switch)
+        cls = action.action_set_nw_src
+        if cls in self.action_set.keys():
+            self.logger.debug("Action set_nw_src")
+            self.action_set_nw_src(self.action_set[cls], switch)
+        cls = action.action_set_nw_tos
+        if cls in self.action_set.keys():
+            self.logger.debug("Action set_nw_tos")
+            self.action_set_nw_tos(self.action_set[cls], switch)
+        cls = action.action_set_nw_ttl
+        if cls in self.action_set.keys():
+            self.logger.debug("Action set_nw_ttl")
+            self.action_set_nw_ttl(self.action_set[cls], switch)
+        cls = action.action_set_queue
+        if cls in self.action_set.keys():
+            self.logger.debug("Action set_queue")
+            self.action_set_queue(self.action_set[cls], switch)
+        cls = action.action_set_tp_dst
+        if cls in self.action_set.keys():
+            self.logger.debug("Action set_tp_dst")
+            self.action_set_tp_dst(self.action_set[cls], switch)
+        cls = action.action_set_tp_src
+        if cls in self.action_set.keys():
+            self.logger.debug("Action set_tp_src")
+            self.action_set_tp_src(self.action_set[cls], switch)
+        cls = action.action_set_vlan_pcp
+        if cls in self.action_set.keys():
+            self.logger.debug("Action set_vlan_pcp")
+            self.action_set_vlan_pcp(self.action_set[cls], switch)
+        cls = action.action_set_vlan_vid
+        if cls in self.action_set.keys():
+            self.logger.debug("Action set_vlan_vid")
+            self.action_set_vlan_vid(self.action_set[cls], switch)
+
+        cls = action.action_group
+        if cls in self.action_set.keys():
+            self.logger.debug("Action group")
+            self.action_group(self.action_set[cls], switch)
+        cls = action.action_experimenter
+        if cls in self.action_set.keys():
+            self.logger.debug("Action experimenter")
+            self.action_experimenter(self.action_set[cls], switch)
+        cls = action.action_set_output_port
+        if cls in self.action_set.keys():
+            self.logger.debug("Action set_output_port")
+            self.action_set_output_port(self.action_set[cls], switch)
 
 class parse_error(Exception):
     """

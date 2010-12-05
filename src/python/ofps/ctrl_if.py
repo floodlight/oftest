@@ -146,8 +146,10 @@ class ControllerInterface(threading.Thread):
             # Extract the raw message bytes
             rawmsg = pkt[offset : offset + hdr.length]
 
-            self.logger.debug("Msg in: len %d. offset %d. type %s. hdr.len %d" %
-                (len(pkt), offset, ofp.ofp_type_map[hdr.type], hdr.length))
+            self.logger.debug("Msg in: len %d. offset %d. hdr type %d. hdr.len %d" %
+                (len(pkt), offset, hdr.type, hdr.length))
+            self.logger.debug("  Message type %s" %
+                              (ofp.ofp_type_map[hdr.type]))
             if hdr.version != ofp.OFP_VERSION:
                 if self.version_checked is None:
                     self.version_checked = 1

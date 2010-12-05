@@ -192,8 +192,10 @@ class FlowPipeline(Thread):
             table_id = next_table_id
 
         if matched:
+            self.logger.debug("Executing actions on packet")
             packet.execute_action_set(switch)
         else:
             #@todo for now, just forward to controller; this should be cfgable
+            self.logger.debug("Forwarding packet to controller")
             packet_in_to_controller(switch, packet)
 

@@ -673,6 +673,12 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
 
     return (ingress_pkt, expected_pkt, new_actions)
         
+def wildcard_all_set(match):
+    match.wildcards = ofp.OFPFW_ALL
+    match.nw_dst_mask = 0xffffffff
+    match.nw_src_mask = 0xffffffff
+    match.dl_dst_mask = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+    match.dl_src_mask = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
 
 def skip_message_emit(parent, s):
     """

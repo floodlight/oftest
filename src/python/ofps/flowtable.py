@@ -99,7 +99,7 @@ class FlowTable(object):
                 (flow_mod.command == ofp.OFPFC_MODIFY) or
                 (flow_mod.command == ofp.OFPFC_MODIFY_STRICT)):
                 self.logger.debug("Installing flow into table " + 
-                                  str(flow_mod.cookie))
+                                  str(flow_mod.table_id))
                 # @todo Do this for modify/strict too, right?
                 new_flow = ofps_flow.FlowEntry()
                 new_flow.flow_mod_set(flow_mod)
