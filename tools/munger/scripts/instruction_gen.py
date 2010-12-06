@@ -33,12 +33,13 @@ class --OBJ_TYPE--_--TYPE--(--PARENT_TYPE--):
     def show(self, prefix=''):
         outstr = prefix + "--OBJ_TYPE--_--TYPE--\\n"
         outstr += --PARENT_TYPE--.show(self, prefix)
+        outstr += self.actions.show(prefix)
         return outstr
     def unpack(self, binary_string):
         binary_string = --PARENT_TYPE--.unpack(self, binary_string)
+        bytes = self.len - OFP_INSTRUCTION_ACTIONS_BYTES
         self.actions = action_list()
-        binary_string = self.actions.unpack(binary_string)
-        self.len = self.__len__()
+        binary_string = self.actions.unpack(binary_string, bytes=bytes)
         return binary_string
     def pack(self):
         self.len = self.__len__()
