@@ -233,7 +233,6 @@ def l3_match(match_a, match_b):
             flow_logger.debug("Failed nw_proto: %d vs %d" % 
                               (match_a.nw_proto, match_b.nw_proto))
             return False
-        #@todo COMPLETE THIS
     mask = ~match_a.nw_src_mask
     if match_a.nw_src & mask != match_b.nw_src & mask:
         flow_logger.debug("Failed nw_src: 0x%x vs 0x%x" % 
@@ -244,6 +243,36 @@ def l3_match(match_a, match_b):
         flow_logger.debug("Failed nw_dst: %x vs %x" % 
                           (match_a.nw_dst & mask, match_b.nw_dst & mask))
         return False
+
+    if not (wildcards & ofp.OFPFW_TP_SRC):
+        if match_a.tp_src != match_b.tp_src:
+            flow_logger.debug("Failed tp_src: %d vs %d" % 
+                              (match_a.tp_src, match_b.tp_src))
+            return False
+    if not (wildcards & ofp.OFPFW_TP_DST):
+        if match_a.tp_dst != match_b.tp_dst:
+            flow_logger.debug("Failed tp_dst: %d vs %d" % 
+                              (match_a.tp_dst, match_b.tp_dst))
+            return False
+
+    return True
+
+def mpls_match(match_a, match_b):
+    """
+    Check MPLS fields for match
+    @params match_a Used for wildcards
+    @params match_b Other fields for match
+    """
+    if not (wildcards & ofp.OFPFW_MPLS_LABEL):
+        if match_a.mpls_label != match_b.mpls_label:
+            flow_logger.debug("Failed mpls_label: %d vs %d" % 
+                              (match_a.mpls_label, match_b.mpls_label))
+            return False
+    if not (wildcards & ofp.OFPFW_MPLS_TC):
+        if match_a.mpls_tc != match_b.mpls_tc:
+            flow_logger.debug("Failed mpls_tc: %d vs %d" % 
+                              (match_a.mpls_tc, match_b.mpls_tc))
+            return False
 
     return True
 
@@ -286,6 +315,12 @@ def flow_match_strict(flow_a, flow_b, groups):
     if flow_a.match.dl_type == 0x800:
         if not l3_match(flow_a.match, flow_b.match):
             return False
+    else:
+        flow_logger.debug("Not an L3 packet")
+
+    # To Do: Check MPLS fields
+    # if not mpls_match(flow_a.match, flow_b.match):
+    #     return False
 
     return True
 
@@ -331,6 +366,9 @@ class FlowEntry(object):
         if new_flow.match.dl_type == 0x800:
             if not l3_match(new_flow.match, self.flow_mod.match):
                 return False
+        # To Do: Check MPLS fields
+        # if not mpls_match(flow_a.match, flow_b.match):
+        #     return False
 
         return True
         
@@ -341,15 +379,23 @@ class FlowEntry(object):
         @param packet The packet object to match.  Assumes parse is up to date
         """
 
+        # Uncomment these for dump of matches being checked
+        # flow_logger.debug("Matching:\n" + packet.match.show())
+        # flow_logger.debug("Me:\n" + self.flow_mod.match.show())
         if not meta_match(self.flow_mod.match, packet.match):
             flow_logger.debug("packet match failed meta_match")
             return False
         if not l2_match(self.flow_mod.match, packet.match):
             flow_logger.debug("packet match failed l2_match")
             return False
-        if not l3_match(self.flow_mod.match, packet.match):
-            flow_logger.debug("packet match failed l3_match")
-            return False
+        if self.flow_mod.match.dl_type == 0x800:
+            if not l3_match(self.flow_mod.match, packet.match):
+                flow_logger.debug("packet match failed l3_match")
+                return False
+
+        # To Do: Check MPLS fields
+        # if not mpls_match(flow_a.match, flow_b.match):
+        #     return False
 
         flow_logger.debug("Packet matched flow")
         # Okay, if we get here, we have a match.

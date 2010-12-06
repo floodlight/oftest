@@ -153,7 +153,7 @@ class FlowPipeline(Thread):
             else:
                 return inst.table_id
         elif inst.__class__ == instruction.instruction_write_actions:
-            for action in inst.actions.actions:
+            for action in inst.actions:
                 packet.write_action(action)
         elif inst.__class__ == instruction.instruction_apply_actions:
             execute_actions(switch, packet, inst.actions)

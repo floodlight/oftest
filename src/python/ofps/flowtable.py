@@ -98,8 +98,9 @@ class FlowTable(object):
             if ((flow_mod.command == ofp.OFPFC_ADD) or
                 (flow_mod.command == ofp.OFPFC_MODIFY) or
                 (flow_mod.command == ofp.OFPFC_MODIFY_STRICT)):
-                self.logger.debug("Installing flow into table " + 
-                                  str(flow_mod.table_id))
+                self.logger.debug("Installing flow in table " + 
+                                  str(self.table_id))
+                self.logger.debug(flow_mod.show())
                 # @todo Do this for modify/strict too, right?
                 new_flow = ofps_flow.FlowEntry()
                 new_flow.flow_mod_set(flow_mod)

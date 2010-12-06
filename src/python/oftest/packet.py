@@ -214,7 +214,6 @@ class Packet(object):
         explicitly recorded in the packet; that state is recorded
         in the action_set[set_output_port] item.
         """
-        self.logger.debug("Setting action " + action.show())
         self.action_set[action.__class__] = action
 
     def set_metadata(self, value, mask):

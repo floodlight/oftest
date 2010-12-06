@@ -168,6 +168,9 @@ class ControllerInterface(threading.Thread):
                 self.logger.warn("Could not parse message")
                 continue
 
+            # Uncomment to see dump of every message received
+            # self.logger.debug("msg in " + msg.show())
+
             # Now check for message handlers; preference is given to
             # handlers for a specific packet
             handled = False
