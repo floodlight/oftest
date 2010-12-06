@@ -275,6 +275,40 @@ class PacketOut(SimpleDataPlane):
                 self.assertEqual(of_port, dp_port, "Unexpected receive port")
             self.assertEqual(str(outpkt), str(pkt),
                              'Response packet does not match send packet')
+class FlowRemoveAll(SimpleProtocol):
+    """
+    Remove all flows; required for almost all tests 
+
+    Add a bunch of flows, remove them, and then make sure there are no flows left
+    This is an intentionally naive test to see if the baseline functionality works 
+    and should be a precondition to any more complicated deletion test (e.g., 
+    delete_strict vs. delete)
+    """
+    def runTest(self):
+        basic_logger.info("Running StatsGet")
+        basic_logger.info("Inserting trial flow")
+        request = message.flow_mod()
+        request.match.wildcards = ofp.OFPFW_ALL
+        request.buffer_id = 0xffffffff
+        for i in range(1,5):
+            request.priority = i*1000
+            basic_logger.debug("Adding flow %d" % i)
+            rv = self.controller.message_send(request)
+            self.assertTrue(rv != -1, "Failed to insert test flow %d" % i)
+        basic_logger.info("Removing all flows")
+        testutils.delete_all_flows(self.controller, basic_logger)
+        basic_logger.info("Sending flow request")
+        request = message.flow_stats_request()
+        request.out_port = ofp.OFPP_ANY
+        request.table_id = 0xff
+        request.match.wildcards = 0 # ofp.OFPFW_ALL
+        response, _ = self.controller.transact(request, timeout=2)
+        self.assertTrue(response is not None, "Did not get response")
+        self.assertTrue(isinstance(response,message.flow_stats_reply),"Not a flow_stats_reply")
+        self.assertEqual(len(response.stats),0)
+        basic_logger.debug(response.show())
+        
+
 
 class FlowStatsGet(SimpleProtocol):
     """

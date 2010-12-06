@@ -82,52 +82,84 @@ class FlowTable(object):
         @param flow_mod
         """
         # @todo Need to check overlap flags
-        match_list = []
-        self.flow_sync.acquire()
-
+        if (flow_mod.command == ofp.OFPFC_ADD):
+            return self._flow_mod_process_add(flow_mod, groups)
+        elif (flow_mod.command == ofp.OFPFC_MODIFY or 
+              flow_mod.command == ofp.OFPFC_MODIFY_STRICT):
+            return self._flow_mod_process_modify(flow_mod, groups)
+        elif (flow_mod.command == ofp.OFPFC_DELETE or 
+              flow_mod.command == ofp.OFPFC_DELETE_STRICT):
+            return self._flow_mod_process_delete(flow_mod, groups)
+        else:
+            return (-1, ofp.OFPFMFC_BAD_COMMAND)
+    
+    def _match(self,flow_mod, groups):
+        """ Return the set of flows that match this flow_mod and group
+        
+        Strict vs. non-strict is done in the flow.match_flow_mod structure
+        @param flow_mod: a valid flow_mod
+        @param groups: the group table
+        @param strict: whether or not we are doing strict matching
+        @attention:  ASSUMES caller has the flow_sync lock!
+        @return a list of flows that match the flow_mod
+        """
+        match_list = []    
         # @todo Verify this will iterate in sorted order by priority
         for flow in self.flow_entries:
             if flow.match_flow_mod(flow_mod, groups):
                 self.logger.debug("flow_mod matched in table " + 
                                   str(self.table_id))
-                if flow_mod.command == ofp.OFPPR_ADD:
-                    match_list.append(flow)
-
-        if len(match_list) == 0:  # No match
-            self.logger.debug("No match in table " + str(self.table_id))
-            if ((flow_mod.command == ofp.OFPFC_ADD) or
-                (flow_mod.command == ofp.OFPFC_MODIFY) or
-                (flow_mod.command == ofp.OFPFC_MODIFY_STRICT)):
-                self.logger.debug("Installing flow in table " + 
-                                  str(self.table_id))
-                self.logger.debug(flow_mod.show())
-                # @todo Do this for modify/strict too, right?
-                new_flow = ofps_flow.FlowEntry()
-                new_flow.flow_mod_set(flow_mod)
-                # @todo Is there a sorted list insert operation?
-                self.flow_entries.append(new_flow)
-                self.flow_entries.sort(prio_sort)
-        elif flow_mod.command == ofp.OFPFC_ADD:
+                match_list.append(flow)
+        return match_list
+    
+    def _flow_mod_process_add(self, flow_mod, groups):
+        ret = (0, None)
+        self.flow_sync.acquire()
+        match_list = self._match(flow_mod, groups)                
+        if len(match_list) != 0 and \
+                    (flow_mod.flags & ofp.OFPFF_CHECK_OVERLAP) != 0:
+            self.logger.info("Not adding overlapping flow_mod %s" % 
+                             flow_mod.show())
+            ret= (-1, ofp.OFPFMFC_OVERLAP)
+        else:
+            self.logger.debug("Installing flow into table " + 
+                                  str(flow_mod.table_id))
             new_flow = ofps_flow.FlowEntry()
             new_flow.flow_mod_set(flow_mod)
+            # @todo Is there a sorted list insert operation?
             self.flow_entries.append(new_flow)
             self.flow_entries.sort(prio_sort)
-
-
-        for flow in match_list:
-            #@todo Implement other flow mod operations
-            if flow_mod.command in [ofp.OFPFC_MODIFY, 
-                                    ofp.OFPFC_MODIFY_STRICT]:
-                self.logger.debug("Updating flow " + str(flow.cookie))
-                flow.update(flow_mod)
-            elif flow_mod.command in [ofp.OFPFC_DELETE, 
-                                      ofp.OFPFC_DELETE_STRICT]:
-                # @todo Generate flow_removed message
-                self.logger.debug("flow mod delete" + str(flow.cookie))
-
         self.flow_sync.release()
-        # @todo Check for priority conflict?
-        return (0, None)
+        return ret
+
+    def _flow_mod_process_modify(self, flow_mod, groups):
+        ret = (0, None)
+        self.flow_sync.acquire()
+        match_list = self._match(flow_mod, groups)
+        if len(match_list) > 0 : 
+            for flow in match_list:
+                    self.logger.debug("Updating flow " + str(flow.cookie))
+                    flow.update(flow_mod)
+        else:
+            ret = (-1, ofp.OFPFMFC_BAD_MATCH) 
+        self.flow_sync.release()
+        return ret
+
+    def _flow_mod_process_delete(self, flow_mod, groups):
+        ret = (0, None)
+        del_count = 0
+        self.flow_sync.acquire()
+        # this is O(n^2) in the worst case b/c
+        # list.remove() is O(n)
+        #@todo add a test for common case, i.e., 
+        #    if flow_mod.match == ALL, then self.flow_entries.clear()
+        for flow in self._match(flow_mod, groups):
+            self.flow_entries.remove(flow)
+            del_count+=1
+        if del_count == 0:
+            ret = (-1, ofp.OFPFMFC_BAD_MATCH) 
+        self.flow_sync.release()
+        return ret
 
     def match_packet(self, packet):
         """

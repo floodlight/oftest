@@ -20,7 +20,6 @@ import oftest.instruction as instruction
 
 import testutils
 #from time import sleep
-import pdb
 
 #@var port_map Local copy of the configuration map from OF port
 # numbers to OS interfaces
