@@ -55,6 +55,8 @@ class FlowTable(object):
         self.table_id = table_id
         self.flow_sync = Lock()
         self.logger = logging.getLogger("flowtable")
+        self.lookup_count = 0
+        self.matched_count = 0
 
     def expire(self):
         """
@@ -168,9 +170,11 @@ class FlowTable(object):
         """
         found = None
         self.flow_sync.acquire()
+        self.lookup_count += 1
         for flow in self.flow_entries:
             if flow.match_packet(packet):
                 found = flow
+                self.matched_count +=1
                 break
         self.flow_sync.release()
         return found
@@ -203,3 +207,6 @@ class FlowTable(object):
                 stats.append(stat)
         self.flow_sync.release()
         return stats
+    
+    def __len__(self):
+        return len(self.flow_entries)

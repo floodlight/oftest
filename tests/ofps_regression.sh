@@ -4,7 +4,8 @@ echo    like via run_switch.py
 exec ./oft --verbose --test-spec=\
 Echo,EchoWithData,FlowRemoveAll,PacketIn,PacketOut,\
 FlowStatsGet,FlowStats,DirectPacket,DirectPacketICMP,TwoTable1,\
-BaseMatchCase
+BaseMatchCase,\
+TableStatsGet
 
 ##### output from `./oft --verbose 2>&1 | grep runTest | sort -r -k 4`
 # runTest (pktact.TwoTable1) ... ok

@@ -34,6 +34,7 @@ from exec_actions import packet_in_to_controller
 import oftest.cstruct as ofp
 import oftest.message as message 
 import oftest.instruction as instruction
+import sys
 
 class FlowPipeline(Thread):
     """
@@ -106,11 +107,31 @@ class FlowPipeline(Thread):
         """
         return self.n_tables
 
-    def stats_get(self):
+    def table_stats_get(self, request):
         """
         Return an ofp_table_stats object
+        @param  request: A table_stats_request objects  
         """
-        return None
+        # we're a software table, can do anything!
+        all = sys.maxint
+        reply = message.table_stats_reply()
+        reply.header.xid = request.header.xid
+        
+        for table in self.tables:
+            stat = message.table_stats_entry()
+            stat.table_id = table.table_id
+            stat.name = "Table %d" % table.table_id
+            stat.wildcards = all
+            stat.match = all
+            stat.write_actions = all
+            stat.apply_actions = all
+            # no bound on our capacity; might want to rethink this
+            stat.max_entries = all
+            stat.active_count = len(table)
+            stat.lookup_count = table.lookup_count
+            stat.matched_count = table.matched_count
+            reply.stats.append(stat)
+        return reply
 
     def flow_stats_get(self, flow_stats_request, groups):
         """

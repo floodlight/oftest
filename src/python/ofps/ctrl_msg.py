@@ -504,3 +504,9 @@ def table_stats_request(switch, msg, rawmsg):
     @param rawmsg The actual packet received as a string
     """
     switch.logger.debug("Received table_stats_request from controller")
+    reply = switch.pipeline.table_stats_get(msg)
+    if msg :
+        switch.logger.debug("Sending table_stats_reply")
+        switch.controller.message_send(reply)
+    else:
+        switch.logger.debug("Got NONE from pipeline.table_stats_get()!?")
