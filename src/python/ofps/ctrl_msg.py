@@ -184,19 +184,7 @@ def features_request(switch, msg, rawmsg):
     # for now, list some simple things that we will likely (but don't yet) support
     rep.capabilities = ofp.OFPC_FLOW_STATS | ofp.OFPC_PORT_STATS | \
         ofp.OFPC_TABLE_STATS 
-    ports = []
-    for key, val in switch.config.port_map.iteritems():
-        port = ofp.ofp_port()
-        port.port_no = key
-        port.name = val
-        port.max_speed = 9999999
-        port.curr_speed = 0
-        mac = netutils.get_if_hwaddr(port.name)
-        switch.logger.debug("Building features_reply: Found port %s (ind=%d) with mac %x:%x:%x:%x:%x:%x" % ((val, key) + mac))
-        port.hw_addr = list(mac)    # stupid frickin' python; need to convert a tuple to a list
-        #@todo fill in rest of port configs and stuff
-        ports.append(port)
-    rep.ports = ports
+    rep.ports = switch.ports.values()
     switch.controller.message_send(rep)
 
 def flow_mod(switch, msg, rawmsg):

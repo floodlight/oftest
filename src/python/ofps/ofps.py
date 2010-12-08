@@ -53,6 +53,7 @@ import oftest.action as action
 from ctrl_if import ControllerInterface
 from oftest.packet import Packet
 from pipeline import FlowPipeline
+import oftest.netutils as netutils
 import ctrl_msg
 
 DEFAULT_TABLE_COUNT = 4
@@ -145,7 +146,7 @@ class OFSwitch(Thread):
         self.config = OFSwitchConfig()
         self.logger = logging.getLogger("switch")
         self.groups = GroupTable()
-
+        self.ports = {}         # hash of ports[index]=ofp.ofp_port
     def config_set(self, config):
         """
         Set the configuration for the switch.
@@ -194,9 +195,24 @@ class OFSwitch(Thread):
         self.pipeline.controller_set(self.controller)
         self.pipeline.start()
         self.logger.info("Pipeline started")
-        for of_port, ifname in self.config.port_map.items():
-            self.logger.info("Adding port " + str(of_port) + " " + ifname)
+        link_status = ofp.OFPPF_1GB_FD  #@todo dynamically infer this from the interface status
+        for of_port, ifname in self.config.port_map.items():          
             self.dataplane.port_add(ifname, of_port)
+            port = ofp.ofp_port()
+            port.port_no = of_port
+            port.name = ifname
+            port.max_speed = 9999999
+            port.curr_speed = 9999999
+            mac = netutils.get_if_hwaddr(port.name)
+            self.logger.info("Added port %s (ind=%d) with mac %x:%x:%x:%x:%x:%x" % ((ifname, of_port) + mac))
+            port.hw_addr = list(mac)    # stupid frickin' python; need to convert a tuple to a list
+            port.config = 0
+            port.state = 0 #@todo infer if link is up/down and set OFPPS_LINK_DOWN
+            port.advertised = link_status
+            port.supported = link_status
+            port.curr = link_status
+            port.peer = link_status
+            self.ports[of_port]=port
         # Register to receive all controller packets
         self.controller.register("all", self.ctrl_pkt_handler, calling_obj=self)
         self.controller.start()
