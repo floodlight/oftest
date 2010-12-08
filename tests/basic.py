@@ -390,10 +390,10 @@ class PortConfigMod(SimpleProtocol):
         self.assertTrue(config is not None, "Did not get port config")
 
         basic_logger.debug("No flood bit port " + str(of_port) + " is now " + 
-                           str(config & ofp.OFPPC_NO_FLOOD))
+                           str(config & ofp.OFPPC_NO_PACKET_IN))
 
         rv = testutils.port_config_set(self.controller, of_port,
-                             config ^ ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD,
+                             config ^ ofp.OFPPC_NO_PACKET_IN, ofp.OFPPC_NO_PACKET_IN,
                              basic_logger)
         self.assertTrue(rv != -1, "Error sending port mod")
 
@@ -401,10 +401,10 @@ class PortConfigMod(SimpleProtocol):
         (_, config2, _) = \
             testutils.port_config_get(self.controller, of_port, basic_logger)
         basic_logger.debug("No flood bit port " + str(of_port) + " is now " + 
-                           str(config2 & ofp.OFPPC_NO_FLOOD))
+                           str(config2 & ofp.OFPPC_NO_PACKET_IN))
         self.assertTrue(config2 is not None, "Did not get port config2")
-        self.assertTrue(config2 & ofp.OFPPC_NO_FLOOD !=
-                        config & ofp.OFPPC_NO_FLOOD,
+        self.assertTrue(config2 & ofp.OFPPC_NO_PACKET_IN !=
+                        config & ofp.OFPPC_NO_PACKET_IN,
                         "Bit change did not take")
         # Set it back
         rv = testutils.port_config_set(self.controller, of_port, config, 
