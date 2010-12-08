@@ -2,9 +2,9 @@
 echo Assumes ofps is running somewhere else
 echo    like via run_switch.py
 exec ./oft --verbose --test-spec=\
-Echo,EchoWithData,FlowRemoveAll,PacketIn,PacketOut,\
+Echo,EchoWithData,FlowRemoveAll,PacketIn,PacketOut,FeaturesRequest,\
 FlowStatsGet,FlowStats,DirectPacket,DirectPacketICMP,TwoTable1,\
-BaseMatchCase,\
+BaseMatchCase,PortConfigMod,\
 TableStatsGet,DescStatsGet
 
 ##### output from `./oft --verbose 2>&1 | grep runTest | sort -r -k 4`
@@ -26,6 +26,7 @@ TableStatsGet,DescStatsGet
 # runTest (basic.DataPlaneOnly) ... ok
 # runTest (basic.TableStatsGet) ... ok
 # runTest (stats.DescStatsGet) ... ok
+# runTest (basic.PortConfigMod) ... ok
 # runTest (pktact.StripVLANTag) ... FAIL
 # runTest (pktact.ModifyVID) ... FAIL
 # runTest (pktact.ModifyTOS) ... FAIL
@@ -54,4 +55,3 @@ TableStatsGet,DescStatsGet
 # runTest (pktact.All) ... ERROR
 # runTest (flow_expire.FlowExpire) ... ERROR
 # runTest (caps.FillTableWC) ... ERROR
-# runTest (basic.PortConfigMod) ... ERROR

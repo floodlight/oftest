@@ -25,7 +25,7 @@
 ######################################################################
 import oftest.cstruct as ofp
 import oftest.message as message
-import oftest.netutils as netutils
+from oftest import ofutils
 
 """
 Functions to handle specific controller messages
@@ -363,6 +363,27 @@ def port_mod(switch, msg, rawmsg):
     @param rawmsg The actual packet received as a string
     """
     switch.logger.debug("Received port_mod from controller")
+    err = None
+    try:
+        port = switch.ports[msg.port_no]
+        if port.hw_addr == msg.hw_addr:
+            port.config = (port.config& ~msg.mask) | (msg.config & msg.mask)
+            if msg.advertise != 0 :
+                port.advertise = msg.advertise
+                #@todo check to see if requested features is valid
+                #@todo throw an error if invalid : 
+                #        http://www.openflow.org/bugs/openflow/ticket/249
+                port.curr = port.advertise
+                #@todo update port.curr and call to ioctl() to actually change
+                #the port's speed
+        else:
+            err =  ofutils.of_error_msg_make(ofp.OFPET_PORT_MOD_FAILED, ofp.OFPPMFC_BAD_HW_ADDR, msg)
+    except IndexError:
+        switch.logger.error("port_mod from controller tried to access non-existent" + 
+                            " port %d %x:%x:%x:%x%x:%x" % ((msg.port) + msg.hw_addr ))
+        err = ofutils.of_error_msg_make(ofp.OFPET_PORT_MOD_FAILED, ofp.OFPPMFC_BAD_PORT, msg)
+    if err:
+        switch.controller.message_send(err)
 
 def port_mod_failed_error_msg(switch, msg, rawmsg):
     """
@@ -397,6 +418,9 @@ def port_status(switch, msg, rawmsg):
     @param switch The main switch object
     @param msg The parsed message object of type port_status
     @param rawmsg The actual packet received as a string
+    
+    @warning: For clarity; controllers should NEVER send port_status msgs
+           they only send port_mod msgs.   
     """
     switch.logger.debug("Received port_status from controller")
 

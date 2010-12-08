@@ -408,7 +408,7 @@ class PortConfigMod(SimpleProtocol):
                         "Bit change did not take")
         # Set it back
         rv = testutils.port_config_set(self.controller, of_port, config, 
-                             ofp.OFPPC_NO_FLOOD, basic_logger)
+                             ofp.OFPPC_NO_PACKET_IN, basic_logger)
         self.assertTrue(rv != -1, "Error sending port mod")
 
 if __name__ == "__main__":
