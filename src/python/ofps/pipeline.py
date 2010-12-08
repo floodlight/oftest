@@ -27,6 +27,10 @@ SOFTWARE.
 
 import time
 import logging
+import sys
+import os
+import socket
+
 from flowtable import FlowTable
 from threading import Thread
 from exec_actions import execute_actions
@@ -34,7 +38,6 @@ from exec_actions import packet_in_to_controller
 import oftest.cstruct as ofp
 import oftest.message as message 
 import oftest.instruction as instruction
-import sys
 
 class FlowPipeline(Thread):
     """
@@ -220,3 +223,20 @@ class FlowPipeline(Thread):
             self.logger.debug("Forwarding packet to controller")
             packet_in_to_controller(switch, packet)
 
+    def desc_stats_get(self, request, switch):
+        """ Get a desc_stats description of the switch
+        @param request: a stats_request object
+        @param switch: a OFSwitch object
+        """
+        
+        reply = message.desc_stats_reply()
+        reply.header.xid = request.header.xid
+        stat = message.desc_stats_entry()
+        stat.mfr_desc = "Stanford Clean Slate Lab"
+        stat.hw_desc = " ".join(os.uname())
+        stat.sw_desc = switch.version()
+        stat.serial_num = "1"  #@todo think of something better
+        stat.dp_desc = "%s:%d" % (socket.gethostname(), os.getpid())
+        #switch.logger.debug("########## %s" % stat.show("--------------"))
+        reply.stats.append(stat)
+        return reply

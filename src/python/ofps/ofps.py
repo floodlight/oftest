@@ -133,6 +133,8 @@ class OFSwitch(Thread):
     The main thread processes dataplane packets and control packets
     """
 
+    VERSION = "OFPS version 0.1"
+
     # @todo Support fail open/closed
     def __init__(self):
         """
@@ -233,6 +235,9 @@ class OFSwitch(Thread):
         for key, val in self.config.port_map.iteritems():
             str += "    interface %d = %s\n" % (key, val)
         return str 
+    
+    def version(self):
+        return OFSwitch.VERSION
 
 class GroupTable(object):
     """

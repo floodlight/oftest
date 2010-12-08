@@ -105,7 +105,7 @@ def desc_stats_reply(switch, msg, rawmsg):
     @param rawmsg The actual packet received as a string
     """
     switch.logger.debug("Received desc_stats_reply from controller")
-
+    
 def desc_stats_request(switch, msg, rawmsg):
     """
     Process a desc_stats_request message from the controller
@@ -114,6 +114,12 @@ def desc_stats_request(switch, msg, rawmsg):
     @param rawmsg The actual packet received as a string
     """
     switch.logger.debug("Received desc_stats_request from controller")
+    reply = switch.pipeline.desc_stats_get(msg, switch)
+    if reply :
+        switch.logger.debug("Sending desc_stats_reply from controller")
+        switch.controller.message_send(reply)
+    else:
+        switch.logger.error("switch.pipeline.desc_stats_get() returned NONE !?")
 
 def echo_reply(switch, msg, rawmsg):
     """

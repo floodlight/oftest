@@ -5,7 +5,7 @@ exec ./oft --verbose --test-spec=\
 Echo,EchoWithData,FlowRemoveAll,PacketIn,PacketOut,\
 FlowStatsGet,FlowStats,DirectPacket,DirectPacketICMP,TwoTable1,\
 BaseMatchCase,\
-TableStatsGet
+TableStatsGet,DescStatsGet
 
 ##### output from `./oft --verbose 2>&1 | grep runTest | sort -r -k 4`
 # runTest (pktact.TwoTable1) ... ok
@@ -24,6 +24,8 @@ TableStatsGet
 # runTest (basic.EchoWithData) ... ok
 # runTest (basic.Echo) ... ok
 # runTest (basic.DataPlaneOnly) ... ok
+# runTest (basic.TableStatsGet) ... ok
+# runTest (stats.DescStatsGet) ... ok
 # runTest (pktact.StripVLANTag) ... FAIL
 # runTest (pktact.ModifyVID) ... FAIL
 # runTest (pktact.ModifyTOS) ... FAIL
@@ -34,7 +36,6 @@ TableStatsGet
 # runTest (pktact.ModifyL2Src) ... FAIL
 # runTest (pktact.ModifyL2Dst) ... FAIL
 # runTest (pktact.AddVLANTag) ... FAIL
-# runTest (basic.TableStatsGet) ... FAIL
 # runTest (pktact.SingleWildcardMatchTagged) ... ERROR
 # runTest (pktact.SingleWildcardMatch) ... ERROR
 # runTest (pktact.FloodPlusIngress) ... ERROR
