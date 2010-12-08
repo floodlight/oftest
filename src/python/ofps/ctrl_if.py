@@ -23,6 +23,7 @@
 # SOFTWARE.
 # 
 ######################################################################
+import traceback
 
 """
 Controller Interface Class
@@ -290,9 +291,13 @@ class ControllerInterface(threading.Thread):
                 if msg.header.xid == 0 and not zero_xid:
                     msg.header.xid = ofutils.gen_xid()
                 outpkt = msg.pack()
-            except StandardError:
+            except StandardError,e:
+                s= "unknown"
+                if e :
+                    s = str(e)
                 self.logger.error(
-                         "message_send: not an OF message or string?")
+                         "message_send: not an OF message or string? : class '%s' threw '%s' at:\n%s" % \
+                         (str(type(msg)), s, traceback.format_exc()))
                 return -1
         else:
             outpkt = msg
