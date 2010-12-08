@@ -256,7 +256,7 @@ class DataPlane:
                                                     port_number, self)
         self.port_list[port_number].start()
         if self.pkt_handler is not None:
-            self.port_list[port_number].register(pkt_handler)
+            self.port_list[port_number].register(self.pkt_handler)
 
     def register(self, pkt_handler):
         """
