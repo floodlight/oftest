@@ -16,6 +16,7 @@ import oftest.message as message
 import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.parse as parse
+from oftest import instruction
 import logging
 import types
 
@@ -370,13 +371,23 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
                                str(response.byte_count) + " != " + 
                                str(byte_count))
 
-def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=0,
-               egr_port=None, egr_queue=None, check_expire=False):
+def flow_msg_create(parent, pkt, ing_port=None, instruction_list=[], 
+                    action_list=[], wildcards=0, egr_port=None, 
+                    egr_queue=None, check_expire=False):
     """
-    Create a flow message
+    Multi-purpose flow_mod creation utility
 
     Match on packet with given wildcards.  
     See flow_match_test for other parameter descriptoins
+   
+    if egr_queue is set
+             append an out_queue action to egr_queue to the actions_list
+    else if egr_port is set:  
+             append an output action to egr_port to the actions_list
+    if the instruction_list is empty, 
+        append an APPLY instruction to it
+    Add the action_list to the last (only?) instruction
+    
     @param egr_queue if not None, make the output an enqueue action
     """
     match = parse.packet_to_flow_match(pkt)
@@ -389,29 +400,46 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=0,
     request.buffer_id = 0xffffffff
     if check_expire:
         request.flags |= ofp.OFPFF_SEND_FLOW_REM
-        request.hard_timeout = 1
-
-    if action_list is not None:
-        for act in action_list:
-            parent.logger.debug("Adding action " + act.show())
-            rv = request.actions.add(act)
-            parent.assertTrue(rv, "Could not add action" + act.show())
-
+        request.hard_timeout = 1    
+    
+    if action_list is None: # some old tests call this explicitly with None
+        action_list = []
+    if instruction_list is None:
+        instruction_list = []
+    
     # Set up output/enqueue action if directed
     if egr_queue is not None:
         parent.assertTrue(egr_port is not None, "Egress port not set")
         act = action.action_enqueue()
         act.port = egr_port
         act.queue_id = egr_queue
-        rv = request.actions.add(act)
-        parent.assertTrue(rv, "Could not add enqueue action " + 
-                          str(egr_port) + " Q: " + str(egr_queue))
+        actions_list.append(act)
     elif egr_port is not None:
-        act = action.action_output()
+        act = action.action_set_output_port()
         act.port = egr_port
-        rv = request.actions.add(act)
-        parent.assertTrue(rv, "Could not add output action " + str(egr_port))
+        action_list.append(act)
+        
+    inst = None
+    if len(instruction_list) == 0: 
+        inst = instruction.instruction_apply_actions()
+        instruction_list.append(inst)
+    else:
+        inst = instruction_list[-1] 
 
+    # add all the actions to the last inst
+    for act in action_list:
+        parent.logger.debug("Adding action " + act.show())
+        rv = inst.actions.add(act)
+        parent.assertTrue(rv, "Could not add action" + act.show())
+    # NOTE that the inst has already been added to the flow_mod
+
+    # add all the instrutions to the flow_mod
+    for i in instruction_list: 
+        parent.logger.debug("Adding instruction " + inst.show())
+        rv = request.instructions.add(i)
+        parent.assertTrue(rv, "Could not add instruction " + i.show())
+
+ 
     parent.logger.debug(request.show())
 
     return request
