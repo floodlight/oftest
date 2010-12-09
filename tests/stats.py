@@ -36,10 +36,10 @@ def test_set_init(config):
     global basic_logger
     global basic_config
 
-    basic_logger = logging.getLogger("basic")
+    basic_logger = logging.getLogger("stats")
     basic_logger.info("Initializing test set")
     basic_port_map = config["port_map"]
     basic_config = config        
         
 if __name__ == "__main__":
-    print "Please run through oft script:  ./oft --test_spec=basic" 
+    print "Please run through oft script:  ./oft --test_spec=stats" 

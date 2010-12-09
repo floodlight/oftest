@@ -400,7 +400,7 @@ class PortConfigMod(SimpleProtocol):
         # Verify change took place with same feature request
         (_, config2, _) = \
             testutils.port_config_get(self.controller, of_port, basic_logger)
-        basic_logger.debug("No flood bit port " + str(of_port) + " is now " + 
+        basic_logger.debug("No packet_in bit port " + str(of_port) + " is now " + 
                            str(config2 & ofp.OFPPC_NO_PACKET_IN))
         self.assertTrue(config2 is not None, "Did not get port config2")
         self.assertTrue(config2 & ofp.OFPPC_NO_PACKET_IN !=
