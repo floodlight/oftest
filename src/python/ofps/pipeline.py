@@ -192,7 +192,7 @@ class FlowPipeline(Thread):
 
         return None
 
-    def apply_pipeline(self, switch, packet):
+    def apply_pipeline(self, switch, packet, of_port):
         """
         Run the pipeline on the packet and execute any actions indicated
         @param packet An OFPS packet object, already parsed
@@ -218,10 +218,12 @@ class FlowPipeline(Thread):
         if matched:
             self.logger.debug("Executing actions on packet")
             packet.execute_action_set(switch)
-        else:
-            #@todo for now, just forward to controller; this should be cfgable
-            self.logger.debug("Forwarding packet to controller")
-            packet_in_to_controller(switch, packet)
+        else: 
+            if (switch.ports[of_port].config & ofp.OFPPC_NO_PACKET_IN) == 0: 
+                self.logger.debug("Forwarding packet to controller")
+                packet_in_to_controller(switch, packet)
+            else:
+                self.logger.debug("Would forward packet to controller; but OFPPC_NO_PACKET_IN set on port")
 
     def desc_stats_get(self, request, switch):
         """ Get a desc_stats description of the switch

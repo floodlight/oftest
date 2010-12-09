@@ -5,7 +5,8 @@ exec ./oft --verbose --test-spec=\
 Echo,EchoWithData,FlowRemoveAll,PacketIn,PacketOut,FeaturesRequest,\
 FlowStatsGet,FlowStats,DirectPacket,DirectPacketICMP,TwoTable1,\
 BaseMatchCase,PortConfigMod,\
-TableStatsGet,DescStatsGet
+TableStatsGet,DescStatsGet,\
+BlockPacketInByPort
 
 ##### output from `./oft --verbose 2>&1 | grep runTest | sort -r -k 4`
 # runTest (pktact.TwoTable1) ... ok
