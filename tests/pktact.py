@@ -438,25 +438,27 @@ class All(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         pkt = testutils.simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
-        match.wildcards &= ~ofp.OFPFW_IN_PORT
-        self.assertTrue(match is not None, 
-                        "Could not generate flow match from pkt")
-        act = action.action_set_output_port()
+#        match = parse.packet_to_flow_match(pkt)
+#        match.wildcards &= ~ofp.OFPFW_IN_PORT
+#        self.assertTrue(match is not None, 
+#                        "Could not generate flow match from pkt")
+#        act = action.action_set_output_port()
 
         for ingress_port in of_ports:
             rv = testutils.delete_all_flows(self.controller, pa_logger)
             self.assertEqual(rv, 0, "Failed to delete all flows")
 
             pa_logger.info("Ingress " + str(ingress_port) + " to all ports")
-            match.in_port = ingress_port
-
-            request = message.flow_mod()
-            request.match = match
-            request.buffer_id = 0xffffffff
-            act.port = ofp.OFPP_ALL
-            self.assertTrue(request.actions.add(act), 
-                            "Could not add ALL port action")
+#            match.in_port = ingress_port
+#
+#            request = message.flow_mod()
+#            request.match = match
+#            request.buffer_id = 0xffffffff
+#            act.port = ofp.OFPP_ALL
+#            self.assertTrue(request.actions.add(act), 
+#                            "Could not add ALL port action")
+            request = testutils.flow_msg_create(self, pkt, ingress_port, 
+                                                egr_port=ofp.OFPP_ALL)
             pa_logger.info(request.show())
 
             pa_logger.info("Inserting flow")
