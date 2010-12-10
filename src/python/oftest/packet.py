@@ -79,6 +79,69 @@ class Packet(object):
         if self.data != "":
             self.parse()
 
+    def simple_tcp_packet(self,
+                          pktlen=100, 
+                          dl_dst='00:01:02:03:04:05',
+                          dl_src='00:06:07:08:09:0a',
+                          dl_vlan_enable=False,
+                          dl_vlan=0,
+                          dl_vlan_pcp=0,
+                          dl_vlan_cfi=0,
+                          ip_src='192.168.0.1',
+                          ip_dst='192.168.0.2',
+                          ip_tos=0,
+                          tcp_sport=1234,
+                          tcp_dport=80):
+        """
+        Return a simple dataplane TCP packet
+
+        Supports a few parameters:
+        @param len Length of packet in bytes w/o CRC
+        @param dl_dst Destinatino MAC
+        @param dl_src Source MAC
+        @param dl_vlan_enable True if the packet is with vlan, False otherwise
+        @param dl_vlan VLAN ID
+        @param dl_vlan_pcp VLAN priority
+        @param ip_src IP source
+        @param ip_dst IP destination
+        @param ip_tos IP ToS
+        @param tcp_dport TCP destination port
+        @param ip_sport TCP source port
+
+        Generates a simple TCP request.  Users shouldn't assume anything 
+        about this packet other than that it is a valid ethernet/IP/TCP frame.
+        """
+        self.logger.error("Called unimplemented packet:simple_tcp_packet")
+        self.data = ""
+        addr = dl_dst.split(":")
+        for byte in map(lambda z: int(z, 16), addr):
+            self.data += struct.pack("!B", byte)
+        addr = dl_src.split(":")
+        for byte in map(lambda z: int(z, 16), addr):
+            self.data += struct.pack("!B", byte)
+
+        if (dl_vlan_enable):
+            # Form and add VLAN tag
+            self.data += struct.pack("!H", 0x8100)
+            vtag = dl_vlan | dl_vlan_pcp >> 12 | dl_vlan_cfi >> 15
+            self.data += struct.pack("!H", vtag)
+
+        # Add type/len field
+        self.data += struct.pack("!H", 0x800)
+
+        # FIXME FIXME FIXME FIXME FIXME
+        # Add IP header
+        self.data += struct.pack("!BBHHBB", hlen, ip_tos, olen, 0, 0, 0, 
+                                 socket.IPPROTO_TCP)
+        # convert  ipsrc/dst to ints
+        self.data += struct.pack("!II", ip_src, ip_dst)
+
+        # Add TCP header
+
+        # Fill out packet
+        self.data += "D" * (pktlen - len(self.data))
+
+
     def length(self):
         return len(self.data)
 
