@@ -236,7 +236,7 @@ class OFSwitch(Thread):
             self.logger.debug("Packet len " + str(len(data)) +
                               " in on port " + str(of_port))
             packet = Packet(in_port=of_port, data=data)
-            self.pipeline.apply_pipeline(self, packet, of_port)
+            self.pipeline.apply_pipeline(self, packet)
 
         self.logger.error("Exiting OFSwitch thread")
         self.pipeline.kill()
