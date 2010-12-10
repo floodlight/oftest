@@ -2,9 +2,9 @@
 echo Assumes ofps is running somewhere else
 echo    like via run_switch.py
 exec ./oft --verbose --test-spec=\
-Echo,EchoWithData,FlowRemoveAll,PacketIn,PacketOut,FeaturesRequest,\
-FlowStatsGet,FlowStats,DirectPacket,DirectPacketICMP,TwoTable1,\
-BaseMatchCase,PortConfigMod,\
+basic,\
+FlowStats,DirectPacket,DirectPacketICMP,TwoTable1,\
+BaseMatchCase,\
 TableStatsGet,DescStatsGet,\
 BlockPacketInByPort
 
