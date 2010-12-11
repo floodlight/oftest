@@ -371,8 +371,8 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
                                str(response.byte_count) + " != " + 
                                str(byte_count))
 
-def flow_msg_create(parent, pkt, ing_port=None, instruction_list=[], 
-                    action_list=[], wildcards=0, egr_port=None, 
+def flow_msg_create(parent, pkt, ing_port=None, instruction_list=None, 
+                    action_list=None, wildcards=0, egr_port=None, 
                     egr_queue=None, check_expire=False):
     """
     Multi-purpose flow_mod creation utility
@@ -392,7 +392,7 @@ def flow_msg_create(parent, pkt, ing_port=None, instruction_list=[],
     """
     match = parse.packet_to_flow_match(pkt)
     parent.assertTrue(match is not None, "Flow match from pkt failed")
-    match.wildcards = wildcards
+    match.wildcards = wildcards & 0xfffffffff # mask out anything out of range
     match.in_port = ing_port
 
     request = message.flow_mod()
@@ -402,7 +402,7 @@ def flow_msg_create(parent, pkt, ing_port=None, instruction_list=[],
         request.flags |= ofp.OFPFF_SEND_FLOW_REM
         request.hard_timeout = 1    
     
-    if action_list is None: # some old tests call this explicitly with None
+    if action_list is None:
         action_list = []
     if instruction_list is None:
         instruction_list = []
@@ -410,7 +410,7 @@ def flow_msg_create(parent, pkt, ing_port=None, instruction_list=[],
     # Set up output/enqueue action if directed
     if egr_queue is not None:
         parent.assertTrue(egr_port is not None, "Egress port not set")
-        act = action.action_enqueue()
+        act = action.action_set_queue()
         act.port = egr_port
         act.queue_id = egr_queue
         actions_list.append(act)
