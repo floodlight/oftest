@@ -131,6 +131,8 @@ class Packet(object):
 
         # FIXME FIXME FIXME FIXME FIXME
         # Add IP header
+        hlen = 0  # FIXME header length
+        olen = 0  # FIXME ?
         self.data += struct.pack("!BBHHBB", hlen, ip_tos, olen, 0, 0, 0, 
                                  socket.IPPROTO_TCP)
         # convert  ipsrc/dst to ints
@@ -141,6 +143,7 @@ class Packet(object):
         # Fill out packet
         self.data += "D" * (pktlen - len(self.data))
 
+        return self
 
     def length(self):
         return len(self.data)
@@ -284,7 +287,115 @@ class Packet(object):
             (value & mask)
 
     #
+    # These are the main action operations that take the 
+    # required parameters
+    # 
+    # Note that 'group', 'experimenter' and 'set_output_port' are only 
+    # implemented for the action versions.
+
+    def set_queue(self, queue_id):
+        self.queue_id = queue_id
+
+    def set_vlan_vid(self, vid):
+        # @todo Verify proper location of VLAN id
+        if self.vlan_tag_offset is None:
+            return
+        offset = self.vlan_tag_offset
+        first = self.data[offset]
+        first = (first & 0xf0) | ((vid & 0xf00) >> 8)
+        self.data[offset] = first
+        self.data[offset + 1] = vid & 0xff
+
+    def set_vlan_pcp(self, pcp):
+        # @todo Verify proper location of VLAN pcp
+        if self.vlan_tag_offset is None:
+            return
+        offset = self.vlan_tag_offset
+        first = self.data[offset]
+        first = (first & 0x1f) | (pcp << 5)
+        self.data[offset] = first
+
+    def set_dl_src(self, dl_src):
+        # @todo Do as a slice
+        for idx in range(len(dl_src)):
+            self.data[6 + idx] = dl_src[idx]
+
+    def set_dl_dst(self, dl_dst):
+        # @todo Do as a slice
+        for idx in range(len(dl_dst)):
+            self.data[idx] = dl_dst[idx]
+
+    def set_nw_src(self, nw_src):
+        # @todo Verify byte order
+        if self.ip_header_offset is None:
+            return
+        offset = self.ip_header_offset
+        self.data[offset] = (nw_src >> 24) & 0xff
+        self.data[offset + 1] = (nw_src >> 16) & 0xff
+        self.data[offset + 2] = (nw_src >> 8) & 0xff
+        self.data[offset + 3] = nw_src & 0xff
+
+    def set_nw_dst(self, nw_dst):
+        # @todo Verify byte order
+        if self.ip_header_offset is None:
+            return
+        offset = self.ip_header_offset + 4
+        self.data[offset] = (nw_dst >> 24) & 0xff
+        self.data[offset + 1] = (nw_dst >> 16) & 0xff
+        self.data[offset + 2] = (nw_dst >> 8) & 0xff
+        self.data[offset + 3] = nw_dst & 0xff
+
+    def set_nw_tos(self, tos):
+        pass
+
+    def set_nw_ecn(self, ecn):
+        pass
+
+    def set_tp_src(self, tp_src):
+        pass
+
+    def set_tp_dst(self, tp_dst):
+        pass
+
+    def copy_ttl_out(self):
+        pass
+
+    def copy_ttl_in(self):
+        pass
+
+    def set_mpls_label(self, mpls_label):
+        pass
+
+    def set_mpls_tc(self, mpls_tc):
+        pass
+
+    def set_mpls_ttl(self, ttl):
+        pass
+
+    def dec_mpls_ttl(self):
+        pass
+
+    def push_vlan(self, ethertype):
+        pass
+
+    def pop_vlan(self):
+        pass
+
+    def push_mpls(self, ethertype):
+        pass
+
+    def pop_mpls(self, ethertype):
+        pass
+    
+    def set_nw_ttl(self, ttl):
+        pass
+
+    def dec_nw_ttl(self):
+        pass
+
+    #
     # All action functions need to take the action object for params
+    # These take an action object to facilitate the switch implementation
     #
 
     def action_set_output_port(self, action, switch):
@@ -300,114 +411,78 @@ class Packet(object):
         else:
             switch.logger.error("NEED to implement action_set_output_port for port %d" %
                                 action.port)        
+
     def action_set_queue(self, action, switch):
-        self.queue_id = action.queue_id
+        self.set_queue(action.queue_id)
 
     def action_set_vlan_vid(self, action, switch):
-        vid = action.vlan_vid
-        # @todo Verify proper location of VLAN id
-        if self.vlan_tag_offset is None:
-            return
-        offset = self.vlan_tag_offset
-        first = self.data[offset]
-        first = (first & 0xf0) | ((vid & 0xf00) >> 8)
-        self.data[offset] = first
-        self.data[offset + 1] = vid & 0xff
+        self.set_vlan_vid(action.vlan_vid)
 
     def action_set_vlan_pcp(self, action, switch):
-        pcp = action.vlan_pcp
-        # @todo Verify proper location of VLAN pcp
-        if self.vlan_tag_offset is None:
-            return
-        offset = self.vlan_tag_offset
-        first = self.data[offset]
-        first = (first & 0x1f) | (pcp << 5)
-        self.data[offset] = first
+        self.set_vlan_pcp(action.vlan_pcp)
 
     def action_set_dl_src(self, action, switch):
-        dl_src = action.dl_addr
-        # @todo Do as a slice
-        for idx in range(len(dl_src)):
-            self.data[6 + idx] = dl_src[idx]
+        self.set_dl_src(action.dl_addr)
 
     def action_set_dl_dst(self, action, switch):
-        dl_dst = action.dl_addr
-        # @todo Do as a slice
-        for idx in range(len(dl_dst)):
-            self.data[idx] = dl_dst[idx]
+        self.set_dl_dst(action.dl_addr)
 
     def action_set_nw_src(self, action, switch):
-        nw_src = action.nw_addr
-        # @todo Verify byte order
-        if self.ip_header_offset is None:
-            return
-        offset = self.ip_header_offset
-        self.data[offset] = (nw_src >> 24) & 0xff
-        self.data[offset + 1] = (nw_src >> 16) & 0xff
-        self.data[offset + 2] = (nw_src >> 8) & 0xff
-        self.data[offset + 3] = nw_src & 0xff
+        self.set_nw_src(action.nw_addr)
 
     def action_set_nw_dst(self, action, switch):
-        nw_dst = action.nw_addr
-        # @todo Verify byte order
-        if self.ip_header_offset is None:
-            return
-        offset = self.ip_header_offset + 4
-        self.data[offset] = (nw_dst >> 24) & 0xff
-        self.data[offset + 1] = (nw_dst >> 16) & 0xff
-        self.data[offset + 2] = (nw_dst >> 8) & 0xff
-        self.data[offset + 3] = nw_dst & 0xff
+        self.set_nw_dst(action.nw_addr)
 
     def action_set_nw_tos(self, action, switch):
-        pass
+        self.set_nw_tos(action.nw_tos)
 
     def action_set_nw_ecn(self, action, switch):
-        pass
+        self.set_nw_ecn(action.nw_ecn)
 
     def action_set_tp_src(self, action, switch):
-        pass
+        self.set_tp_src(action.tp_port)
 
     def action_set_tp_dst(self, action, switch):
-        pass
+        self.set_tp_dst(action.tp_port)
 
     def action_copy_ttl_out(self, action, switch):
-        pass
+        self.copy_ttl_out()
 
     def action_copy_ttl_in(self, action, switch):
-        pass
+        self.copy_ttl_in()
 
     def action_set_mpls_label(self, action, switch):
-        pass
+        self.set_mpls_label(action.mpls_label)
 
     def action_set_mpls_tc(self, action, switch):
-        pass
+        self.set_mpls_tc(action.mpls_tc)
 
     def action_set_mpls_ttl(self, action, switch):
-        pass
+        self.set_mpls_ttl(action.mpls_ttl)
 
     def action_dec_mpls_ttl(self, action, switch):
-        pass
+        self.dec_mpls_ttl()
 
     def action_push_vlan(self, action, switch):
-        pass
+        self.push_vlan(action.ethertype)
 
     def action_pop_vlan(self, action, switch):
-        pass
+        self.pop_vlan()
 
     def action_push_mpls(self, action, switch):
-        pass
+        self.push_mpls(action.ethertype)
 
     def action_pop_mpls(self, action, switch):
-        pass
+        self.pop_mpls(action.ethertype)
     
     def action_experimenter(self, action, switch):
         pass
 
     def action_set_nw_ttl(self, action, switch):
-        pass
+        self.set_nw_ttl(action.nw_ttl)
 
     def action_dec_nw_ttl(self, action, switch):
-        pass
+        self.dec_nw_ttl()
 
     def action_group(self, action, switch):
         pass
