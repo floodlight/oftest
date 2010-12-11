@@ -24,9 +24,11 @@
 # 
 ######################################################################
 import logging
+import traceback
 
 import oftest.cstruct as ofp
 import oftest.message as message
+
 
 """
 Action execution functions
@@ -52,8 +54,8 @@ def execute_actions(switch, packet, actions):
             packet.logger.debug("Exec action %s" % action.__class__.__name__)
             callable(action, switch)
         except (KeyError),e:
-            log.logger.error("Could not execute packet action %s" %
-                                str(e.__class__.__name__))
+            log.error("Could not execute packet action %s :: got %s\n%s" %
+                                (action, str(e.__class__.__name__), traceback.format_exc()))
 
 
 def packet_in_to_controller(switch, packet, reason=ofp.OFPR_NO_MATCH,

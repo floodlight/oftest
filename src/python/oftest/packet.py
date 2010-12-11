@@ -288,9 +288,18 @@ class Packet(object):
     #
 
     def action_set_output_port(self, action, switch):
-        #@todo Does packet need to be repacked?
-        switch.dataplane.send(action.port, self.data, queue_id=self.queue_id)
-
+        if action.port < ofp.OFPP_MAX:
+             switch.dataplane.send(action.port, self.data, queue_id=self.queue_id)
+        # Curse python for not having a switch statement
+        elif action.port == ofp.OFPP_ALL:
+            for of_port in switch.ports.iterkeys():
+                if of_port != self.in_port: 
+                    switch.dataplane.send(of_port, self.data, queue_id=self.queue_id)
+        elif action.port == ofp.OFPP_IN_PORT:
+            switch.dataplane.send(self.in_port, self.data, queue_id=self.queue_id)
+        else:
+            switch.logger.error("NEED to implement action_set_output_port for port %d" %
+                                action.port)        
     def action_set_queue(self, action, switch):
         self.queue_id = action.queue_id
 

@@ -3,7 +3,8 @@ echo Assumes ofps is running somewhere else
 echo    like via run_switch.py
 exec ./oft --verbose --test-spec=\
 basic,\
-FlowStats,DirectPacket,DirectPacketICMP,TwoTable1,\
+FlowStats,\
+DirectPacket,DirectPacketICMP,TwoTable1,All,AllPlusIngress,\
 BaseMatchCase,\
 TableStatsGet,DescStatsGet,\
 BlockPacketInByPort

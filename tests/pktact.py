@@ -457,9 +457,10 @@ class All(basic.SimpleDataPlane):
 #            act.port = ofp.OFPP_ALL
 #            self.assertTrue(request.actions.add(act), 
 #                            "Could not add ALL port action")
-            request = testutils.flow_msg_create(self, pkt, ingress_port, 
+            request = testutils.flow_msg_create(self, pkt, ing_port=ingress_port, 
                                                 egr_port=ofp.OFPP_ALL)
-            pa_logger.info(request.show())
+            # already done in flow_msg_create
+            #pa_logger.info(request.show())
 
             pa_logger.info("Inserting flow")
             rv = self.controller.message_send(request)
@@ -489,32 +490,28 @@ class AllPlusIngress(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         pkt = testutils.simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
-        match.wildcards &= ~ofp.OFPFW_IN_PORT
-        self.assertTrue(match is not None, 
-                        "Could not generate flow match from pkt")
-        act = action.action_set_output_port()
+        
+        act_all = action.action_set_output_port()
+        act_all.port = ofp.OFPP_ALL
+        act_ing = action.action_set_output_port()
+        act_ing.port = ofp.OFPP_IN_PORT
+        actions = [ act_all, act_ing]
 
         for ingress_port in of_ports:
             rv = testutils.delete_all_flows(self.controller, pa_logger)
             self.assertEqual(rv, 0, "Failed to delete all flows")
 
             pa_logger.info("Ingress " + str(ingress_port) + " to all ports")
-            match.in_port = ingress_port
-
-            request = message.flow_mod()
-            request.match = match
-            request.buffer_id = 0xffffffff
-            act.port = ofp.OFPP_ALL
-            self.assertTrue(request.actions.add(act), 
-                            "Could not add ALL port action")
-            act.port = ofp.OFPP_IN_PORT
-            self.assertTrue(request.actions.add(act), 
-                            "Could not add ingress port for output")
-            pa_logger.info(request.show())
+        
+            flow_mod = testutils.flow_msg_create(self, pkt, 
+                                                 ing_port=ingress_port, 
+                                                 action_list=actions, 
+                                                 wildcards=~ofp.OFPFW_IN_PORT)
+            flow_mod.buffer_id = 0xffffffff
+            pa_logger.info(flow_mod.show())
 
             pa_logger.info("Inserting flow")
-            rv = self.controller.message_send(request)
+            rv = self.controller.message_send(flow_mod)
             self.assertTrue(rv != -1, "Error installing flow mod")
             testutils.do_barrier(self.controller)
 
