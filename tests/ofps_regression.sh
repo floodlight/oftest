@@ -3,10 +3,9 @@ echo Assumes ofps is running somewhere else
 echo    like via run_switch.py
 exec ./oft --verbose --test-spec=\
 basic,\
-FlowStats,\
+FlowStats,DescStatsGet,\
 DirectPacket,DirectPacketICMP,TwoTable1,All,AllPlusIngress,\
 BaseMatchCase,\
-TableStatsGet,DescStatsGet,\
 BlockPacketInByPort
 
 ##### output from `./oft --verbose 2>&1 | grep runTest | sort -r -k 4`
