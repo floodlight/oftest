@@ -1,12 +1,16 @@
 #!/usr/bin/python 
 
-from oftest.message import *
+import unittest
+from oftest import message
+from oftest import action
+from oftest import instruction
+from oftest import cstruct as ofp
 
 class flow_stats_pack(unittest.TestCase):
     def runTest(self):
-        msg = flow_stats_entry()
-        match = ofp_match()
-        match.wildcards &= ~OFPFW_IN_PORT
+        msg = message.flow_stats_entry()
+        match = ofp.ofp_match()
+        match.wildcards &= ~ofp.OFPFW_IN_PORT
         act = action.action_set_output_port()
         act.port = 3
         msg.match = match
@@ -19,7 +23,7 @@ class flow_stats_pack(unittest.TestCase):
         pkt = msg.pack()
         # 160 = 136 for flow_stats_entry and 24 for instruction_list
         self.assertEqual(len(pkt), 160)
-        rep = flow_stats_reply()
+        rep = message.flow_stats_reply()
         self.assertEqual(len(rep.pack()),12)
         rep.stats.append(msg)
         self.assertEqual(len(rep.pack()),172)
@@ -28,7 +32,7 @@ class flow_stats_pack(unittest.TestCase):
         
 class match_pack(unittest.TestCase):
     def runTest(self):
-        match = ofp_match()
+        match = ofp.ofp_match()
         self.assertEqual(len(match.pack()), 88)
         
         
