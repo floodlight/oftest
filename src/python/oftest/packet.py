@@ -286,6 +286,64 @@ class Packet(object):
         """
         self.action_set[action.__class__] = action
 
+    def _set_1bytes(self,offset,byte):
+        """ Writes the byte at data[offset] 
+        
+        This function only exists to match the other _set_Xbytes() and
+        is trivial
+    
+        """
+        self.data[offset] = byte & 0xff
+
+    def _set_2bytes(self,offset,short):
+        """ Writes the 2 byte short in network byte order at data[offset] """
+        self.data[offset] = (short >> 8) & 0xff
+        self.data[offset] = short & 0xff
+        
+    def _set_4bytes(self,offset,word):
+        """ Writes the 4 byte word in network byte order at data[offset] """
+        # @todo Verify byte order
+        self.data[offset] = (word >> 24) & 0xff
+        self.data[offset + 1] = (word >> 16) & 0xff
+        self.data[offset + 2] = (word >> 8) & 0xff
+        self.data[offset + 3] = word & 0xff
+        
+    def _set_6bytes(self,offset,byte_list):
+        """ Writes the 4 byte word in the given order to data[offset] """
+        # @todo Do as a slice
+        for idx in range(len(byte_list)):
+            self.data[offset + idx] = byte_list[idx]
+        
+    def _update_l4_checksum(self):
+        """ Recalculate the L4 checksum, if there
+        
+        Can be safely called on non-tcp/non-udp packets as a NOOP
+        """
+        if (self.ip_header_offset is None or 
+            self.tcp_header_offset is None):
+            return
+        if self.match.nw_proto == socket.IPPROTO_TCP:
+            return self._update_tcp_checksum()
+        elif self.match.nw_proto == socket.IPPROTO_UDP:
+            return self._update_udp_checksum()
+        
+    def _update_tcp_checksum(self):
+        """ Recalculate the TCP checksum
+        
+        @warning:  Must only be called on actual TCP Packets
+        """
+        #@todo implemnt tcp checksum update
+        pass
+    
+    def _update_udp_checksum(self):
+        """ Recalculate the TCP checksum
+        
+        @warning:  Must only be called on actual TCP Packets
+        """
+        #@todo implemnt udp checksum update
+        pass
+
+
     def set_metadata(self, value, mask):
         self.match.metadata = (self.match.metadata & ~mask) | \
             (value & mask)
