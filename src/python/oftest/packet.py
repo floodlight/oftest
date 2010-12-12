@@ -378,46 +378,52 @@ class Packet(object):
         self.data[offset] = first
 
     def set_dl_src(self, dl_src):
-        # @todo Do as a slice
-        for idx in range(len(dl_src)):
-            self.data[6 + idx] = dl_src[idx]
+        self._set_6bytes(6, dl_src)
 
     def set_dl_dst(self, dl_dst):
-        # @todo Do as a slice
-        for idx in range(len(dl_dst)):
-            self.data[idx] = dl_dst[idx]
-
+        self._set_6bytes(0, dl_dst)
+        
     def set_nw_src(self, nw_src):
-        # @todo Verify byte order
         if self.ip_header_offset is None:
             return
-        offset = self.ip_header_offset
-        self.data[offset] = (nw_src >> 24) & 0xff
-        self.data[offset + 1] = (nw_src >> 16) & 0xff
-        self.data[offset + 2] = (nw_src >> 8) & 0xff
-        self.data[offset + 3] = nw_src & 0xff
-
+        self._set_4bytes(self.ip_header_offset, nw_src)
+        self._update_l4_checksum()
+    
     def set_nw_dst(self, nw_dst):
         # @todo Verify byte order
         if self.ip_header_offset is None:
             return
-        offset = self.ip_header_offset + 4
-        self.data[offset] = (nw_dst >> 24) & 0xff
-        self.data[offset + 1] = (nw_dst >> 16) & 0xff
-        self.data[offset + 2] = (nw_dst >> 8) & 0xff
-        self.data[offset + 3] = nw_dst & 0xff
+        self._set_4bytes(self.ip_header_offset + 4, nw_dst)
+        self._update_l4_checksum()
 
     def set_nw_tos(self, tos):
-        pass
+        if self.ip_header_offset is None:
+            return
+        self._set_1bytes(self.ip_header_offset + 1, tos)
 
     def set_nw_ecn(self, ecn):
+        #@todo look up ecn implementation details
         pass
 
     def set_tp_src(self, tp_src):
-        pass
-
+        if self.tcp_header_offset is None:
+            return
+        if (self.match.nw_proto == socket.IPPROTO_TCP or
+            self.match.nw_proto == socket.IPPROTO_UDP): 
+            self._set_2bytes(self.tcp_header_offset, tp_src)
+        elif (self.match.nw_proto == socket.IPPROTO_ICMP):
+            self._set_1byte(self.tcp_header_offset, tp_src)
+        self._update_l4_checksum()
+            
     def set_tp_dst(self, tp_dst):
-        pass
+        if self.tcp_header_offset is None:
+            return
+        if (self.match.nw_proto == socket.IPPROTO_TCP or
+            self.match.nw_proto == socket.IPPROTO_UDP): 
+            self._set_2bytes(self.tcp_header_offset +2, tp_dst)
+        elif (self.match.nw_proto == socket.IPPROTO_ICMP):
+            self._set_1byte(self.tcp_header_offset + 1, tp_dst)
+        self._update_l4_checksum()
 
     def copy_ttl_out(self):
         pass
