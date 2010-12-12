@@ -751,6 +751,37 @@ class l4_parsing_test(packet_test):
         self.assertEqual(match.tp_dst,22)
         self.assertEqual(match.tp_src,59581)
 
+class simple_tcp_test(unittest.TestCase):
+    """ Make sure that simple_tcp_test does what it should 
+                          pktlen=100, 
+                          dl_dst='00:01:02:03:04:05',
+                          dl_src='00:06:07:08:09:0a',
+                          dl_vlan_enable=False,
+                          dl_vlan=0,
+                          dl_vlan_pcp=0,
+                          dl_vlan_cfi=0,
+                          ip_src='192.168.0.1',
+                          ip_dst='192.168.0.2',
+                          ip_tos=0,
+                          tcp_sport=1234,
+                          tcp_dport=80):
+    """
+    def setUp(self):
+        self.pkt = Packet().simple_tcp_packet()
+        self.pkt.parse()
+    
+    def _ip_to_bin(self,ip):
+        return struct.unpack("!L", struct.pack("BBBB",ip[0], ip[1], ip[2], ip[3]))
+    
+    def runTest(self):
+        match = self.pkt.match
+        self.assertEqual(match.dl_dst, [0x00, 0x01, 0x02, 0x03, 0x04, 0x05])
+        self.assertEqual(match.dl_dst, [0x00, 0x06, 0x07, 0x08, 0x09, 0x0a])
+        self.assertEqual(match.dl_type, ETHERTYPE_IP)
+        self.assertEqual(match.nw_src, self._ip_to_bin([192,168,0,1]))
+        self.assertEqual(match.nw_dst, self._ip_to_bin([192,168,0,2]))
+        self.assertEqual(match.tp_dst, 80)
+        self.assertEqual(match.tp_src, 1234)
 if __name__ == '__main__':
     print("Running packet tests\n")
     unittest.main()
