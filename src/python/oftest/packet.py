@@ -111,7 +111,6 @@ class Packet(object):
         Generates a simple TCP request.  Users shouldn't assume anything 
         about this packet other than that it is a valid ethernet/IP/TCP frame.
         """
-        self.logger.error("Called unimplemented packet:simple_tcp_packet")
         self.data = ""
         addr = dl_dst.split(":")
         for byte in map(lambda z: int(z, 16), addr):
@@ -129,16 +128,31 @@ class Packet(object):
         # Add type/len field
         self.data += struct.pack("!H", 0x800)
 
-        # FIXME FIXME FIXME FIXME FIXME
         # Add IP header
-        hlen = 0  # FIXME header length
-        olen = 0  # FIXME ?
-        self.data += struct.pack("!BBHHBB", hlen, ip_tos, olen, 0, 0, 0, 
-                                 socket.IPPROTO_TCP)
+        v_and_hlen = 0x45  # assumes no ip or tcp options
+        ip_len = 120 + 40  # assumes no ip or tcp options
+        self.data += struct.pack("!BBHHHBBH", v_and_hlen, ip_tos, ip_len, 
+                                 0, # ip.id 
+                                 0, # ip.frag_off
+                                 64, # ip.ttl
+                                 socket.IPPROTO_TCP,
+                                 0)  # ip.checksum
         # convert  ipsrc/dst to ints
-        self.data += struct.pack("!II", ip_src, ip_dst)
+        self.data += struct.pack("!LL", ascii_ip_to_bin(ip_src), 
+                                 ascii_ip_to_bin(ip_dst))
 
         # Add TCP header
+        self.data += struct.pack("!HHLLBBHHH",
+                                 tcp_sport,
+                                 tcp_dport,
+                                 1,     # tcp.seq
+                                 0,     # tcp.ack
+                                 0x50,  # tcp.doff + tcp.res1
+                                 0x12,  # tcp.syn + tcp.ack
+                                 0,     # tcp.wnd
+                                 0,     # tcp.check
+                                 0,     # tcp.urgent pointer
+                                 )
 
         # Fill out packet
         self.data += "D" * (pktlen - len(self.data))
@@ -342,7 +356,6 @@ class Packet(object):
         """
         #@todo implemnt udp checksum update
         pass
-
 
     def set_metadata(self, value, mask):
         self.match.metadata = (self.match.metadata & ~mask) | \
@@ -685,6 +698,18 @@ class Packet(object):
             self.logger.debug("Action set_output_port")
             self.action_set_output_port(self.action_set[cls], switch)
 
+
+def ascii_ip_to_bin(ip):
+        """ Take '192.168.0.1' and return 0xc0a80101 """
+        #Lookup the cleaner, one-line way of doing this
+        # or if there isn't just a library (!?)
+        s = ip.split('.')
+        return struct.unpack("!L", struct.pack("BBBB", int(s[0]), 
+                                               int(s[1]), 
+                                               int(s[2]), 
+                                               int(s[3]) ))[0]
+    
+
 class parse_error(Exception):
     """
     Thrown internally if there is an error in packet parsing
@@ -741,8 +766,8 @@ class ip_parsing_test(packet_test):
     def runTest(self):
         match = self.pkt.match
         # @todo Verify byte ordering of the following
-        self.assertEqual(match.nw_dst,0xab404a3a)
-        self.assertEqual(match.nw_src,0xac184a60)
+        self.assertEqual(match.nw_dst,ascii_ip_to_bin('171.64.74.58'))
+        self.assertEqual(match.nw_src,ascii_ip_to_bin('172.24.74.96'))
         self.assertEqual(match.nw_proto, socket.IPPROTO_TCP)
 
 class l4_parsing_test(packet_test):
@@ -769,19 +794,17 @@ class simple_tcp_test(unittest.TestCase):
     def setUp(self):
         self.pkt = Packet().simple_tcp_packet()
         self.pkt.parse()
-    
-    def _ip_to_bin(self,ip):
-        return struct.unpack("!L", struct.pack("BBBB",ip[0], ip[1], ip[2], ip[3]))
-    
+       
     def runTest(self):
         match = self.pkt.match
         self.assertEqual(match.dl_dst, [0x00, 0x01, 0x02, 0x03, 0x04, 0x05])
-        self.assertEqual(match.dl_dst, [0x00, 0x06, 0x07, 0x08, 0x09, 0x0a])
+        self.assertEqual(match.dl_src, [0x00, 0x06, 0x07, 0x08, 0x09, 0x0a])
         self.assertEqual(match.dl_type, ETHERTYPE_IP)
-        self.assertEqual(match.nw_src, self._ip_to_bin([192,168,0,1]))
-        self.assertEqual(match.nw_dst, self._ip_to_bin([192,168,0,2]))
+        self.assertEqual(match.nw_src, ascii_ip_to_bin('192.168.0.1'))
+        self.assertEqual(match.nw_dst, ascii_ip_to_bin('192.168.0.2'))
         self.assertEqual(match.tp_dst, 80)
         self.assertEqual(match.tp_src, 1234)
+
 if __name__ == '__main__':
     print("Running packet tests\n")
     unittest.main()
