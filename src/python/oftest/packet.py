@@ -155,7 +155,7 @@ class Packet(object):
         """
         Update the headers in self.match based on self.data 
         
-        Parses the relevant header features out of the packet, usieng
+        Parses the relevant header features out of the packet, using
         the table outlined in the OF1.1 spec, Figure 4
         """
         self.bytes = len(self.data)
@@ -163,6 +163,10 @@ class Packet(object):
         self.match.type = ofp.OFPMT_STANDARD
         self.match.length = ofp.OFPMT_STANDARD_LENGTH
         self.match.wildcards = 0
+        self.match.nw_dst_mask = 0
+        self.match.nw_dst_mask = 0
+        self.match.dl_dst_mask = [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+        self.match.dl_src_mask = [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
         
         idx = 0
         try:
