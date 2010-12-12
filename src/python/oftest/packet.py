@@ -455,11 +455,18 @@ class Packet(object):
     def pop_mpls(self, ethertype):
         pass
     
+    IP_OFFSET_TTL = 8
     def set_nw_ttl(self, ttl):
-        pass
+        if self.ip_header_offset is None:
+            return
+        self._set_1bytes(self.ip_header_offset + Packet.IP_OFFSET_TTL, ttl)
+        self._update_l4_checksum()
 
     def dec_nw_ttl(self):
-        pass
+        if self.ip_header_offset is None:
+            return
+        self.set_nw_ttl(self.data[self.ip_header_offset + 
+                                  Packet.IP_OFFSET_TTL] - 1)
 
     #
     # All action functions need to take the action object for params
