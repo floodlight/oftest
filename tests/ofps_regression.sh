@@ -5,6 +5,7 @@ exec ./oft --verbose --test-spec=\
 basic,\
 FlowStats,DescStatsGet,\
 DirectPacket,DirectPacketICMP,TwoTable1,All,AllPlusIngress,\
+ModifyL2Src,ModifyL2Dst,\
 BaseMatchCase,\
 BlockPacketInByPort
 

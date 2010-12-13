@@ -23,6 +23,7 @@
 # SOFTWARE.
 # 
 ######################################################################
+import pdb
 
 """
 OpenFlow packet class
@@ -324,27 +325,48 @@ class Packet(object):
         is trivial
     
         """
-        self.data[offset] = byte & 0xff
+        tmp= "%s%s" % (self.data[0:offset], 
+                               struct.pack('B',byte & 0xff))
+        if len(self.data) > offset + 1 :
+            tmp += self.data[offset+1:len(self.data)]
+        self.data=tmp
 
     def _set_2bytes(self,offset,short):
         """ Writes the 2 byte short in network byte order at data[offset] """
-        self.data[offset] = (short >> 8) & 0xff
-        self.data[offset] = short & 0xff
+        tmp= "%s%s" % (self.data[0:offset], 
+                               struct.pack('!H',short & 0xffff))
+        if len(self.data) > offset + 2 :
+            tmp += self.data[offset+2:len(self.data)]
+        self.data=tmp
+
+    def _set_4bytes(self,offset,word,forceNBO=True):
+        """ Writes the 4 byte word at data[offset] 
         
-    def _set_4bytes(self,offset,word):
-        """ Writes the 4 byte word in network byte order at data[offset] """
+        Use network byte order if forceNBO is True,
+        else it's assumed that word is already in NBO
+        
+        """
         # @todo Verify byte order
-        self.data[offset] = (word >> 24) & 0xff
-        self.data[offset + 1] = (word >> 16) & 0xff
-        self.data[offset + 2] = (word >> 8) & 0xff
-        self.data[offset + 3] = word & 0xff
+        #pdb.set_trace()
+        fmt ="L"
+        if forceNBO:
+            fmt = '!' + fmt 
+        
+        tmp= "%s%s" % (self.data[0:offset], 
+                               struct.pack(fmt,word & 0xffffffff))
+        if len(self.data) > offset + 4 :
+            tmp += self.data[offset+4:len(self.data)]
+        self.data=tmp
         
     def _set_6bytes(self,offset,byte_list):
-        """ Writes the 4 byte word in the given order to data[offset] """
+        """ Writes the 6 byte sequence in the given order to data[offset] """
         # @todo Do as a slice
-        for idx in range(len(byte_list)):
-            self.data[offset + idx] = byte_list[idx]
-        
+        tmp= self.data[0:offset] 
+        tmp += struct.pack("BBBBBB", *byte_list)
+        if len(self.data) > offset + 6 :
+            tmp += self.data[offset+6:len(self.data)]
+        self.data=tmp
+    
     def _update_l4_checksum(self):
         """ Recalculate the L4 checksum, if there
         
@@ -416,14 +438,14 @@ class Packet(object):
     def set_nw_src(self, nw_src):
         if self.ip_header_offset is None:
             return
-        self._set_4bytes(self.ip_header_offset, nw_src)
+        self._set_4bytes(self.ip_header_offset + 12, nw_src)
         self._update_l4_checksum()
     
     def set_nw_dst(self, nw_dst):
         # @todo Verify byte order
         if self.ip_header_offset is None:
             return
-        self._set_4bytes(self.ip_header_offset + 4, nw_dst)
+        self._set_4bytes(self.ip_header_offset + 16, nw_dst)
         self._update_l4_checksum()
 
     def set_nw_tos(self, tos):
@@ -717,7 +739,7 @@ class Packet(object):
 
 
 def ascii_ip_to_bin(ip):
-        """ Take '192.168.0.1' and return 0xc0a80101 """
+        """ Take '192.168.0.1' and return the NBO decimal equivalent 0xc0a80101 """
         #Lookup the cleaner, one-line way of doing this
         # or if there isn't just a library (!?)
         s = ip.split('.')
@@ -787,11 +809,42 @@ class ip_parsing_test(packet_test):
         self.assertEqual(match.nw_src,ascii_ip_to_bin('172.24.74.96'))
         self.assertEqual(match.nw_proto, socket.IPPROTO_TCP)
 
+
+class ip_setting_test(packet_test):
+    def runTest(self):
+        orig_len = len(self.pkt)
+        ip1 = '11.22.33.44'
+        ip2 = '55.66.77.88'
+        self.pkt.set_nw_src(ascii_ip_to_bin(ip1))
+        self.pkt.set_nw_dst(ascii_ip_to_bin(ip2))
+        self.pkt.parse()
+        self.assertEqual(len(self.pkt), orig_len)
+        match = self.pkt.match
+        
+        # @todo Verify byte ordering of the following
+        self.assertEqual(match.nw_src,ascii_ip_to_bin(ip1))
+        self.assertEqual(match.nw_dst,ascii_ip_to_bin(ip2))
+        
+
+
+
 class l4_parsing_test(packet_test):
     def runTest(self):
         match = self.pkt.match
         self.assertEqual(match.tp_dst,22)
         self.assertEqual(match.tp_src,59581)
+
+class l4_setting_test(packet_test):
+    def runTest(self):
+        orig_len = len(self.pkt)
+        self.pkt.set_tp_src(777)
+        self.pkt.set_tp_dst(666)
+        self.pkt.parse()
+        self.assertEqual(len(self.pkt), orig_len)
+        match = self.pkt.match
+        self.assertEqual(match.tp_src,777)
+        self.assertEqual(match.tp_dst,666)
+
 
 class simple_tcp_test(unittest.TestCase):
     """ Make sure that simple_tcp_test does what it should 
