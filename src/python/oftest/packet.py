@@ -79,6 +79,23 @@ class Packet(object):
         if self.data != "":
             self.parse()
 
+    def __repr__(self):
+        """ Return a ascii hex representation of the packet's data"""
+        ret = ""
+        c = 0
+        for b in list(self.data):
+            if c != 0:
+                if c % 16  == 0:
+                    ret += '\n'
+                elif c % 8 == 0:
+                    ret += '  '
+            c += 1
+            ret += "%0.2x " % struct.unpack('B', b)
+        return ret
+
+    def __len__(self):
+        return len(self.data)
+
     def simple_tcp_packet(self,
                           pktlen=100, 
                           dl_dst='00:01:02:03:04:05',
