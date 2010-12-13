@@ -177,7 +177,8 @@ class DirectTwoPorts(basic.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = action.action_set_output_port()
+        act1 = action.action_set_output_port()
+        act2 = action.action_set_output_port()
 
         for idx in range(len(of_ports)):
             rv = testutils.delete_all_flows(self.controller, pa_logger)
@@ -192,15 +193,12 @@ class DirectTwoPorts(basic.SimpleDataPlane):
 
             match.in_port = ingress_port
 
-            request = message.flow_mod()
-            request.match = match
+            act1.port = egress_port1
+            act2.port = egress_port2
+            
+            request = testutils.flow_msg_create(self, pkt, ingress_port, action_list=[act1, act2])
             request.buffer_id = 0xffffffff
-            act.port = egress_port1
-            self.assertTrue(request.actions.add(act), "Could not add action1")
-            act.port = egress_port2
-            self.assertTrue(request.actions.add(act), "Could not add action2")
-            # pa_logger.info(request.show())
-
+            
             pa_logger.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
@@ -233,11 +231,7 @@ class DirectMCNonIngress(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
         pkt = testutils.simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
-        match.wildcards &= ~ofp.OFPFW_IN_PORT
-        self.assertTrue(match is not None, 
-                        "Could not generate flow match from pkt")
-        act = action.action_set_output_port()
+        
 
         for ingress_port in of_ports:
             rv = testutils.delete_all_flows(self.controller, pa_logger)
@@ -245,19 +239,16 @@ class DirectMCNonIngress(basic.SimpleDataPlane):
 
             pa_logger.info("Ingress " + str(ingress_port) + 
                            " all non-ingress ports")
-            match.in_port = ingress_port
-
-            request = message.flow_mod()
-            request.match = match
-            request.buffer_id = 0xffffffff
+            actions = []
             for egress_port in of_ports:
+                act = action.action_set_output_port()
                 if egress_port == ingress_port:
                     continue
                 act.port = egress_port
-                self.assertTrue(request.actions.add(act), 
-                                "Could not add output to " + str(egress_port))
-            pa_logger.debug(request.show())
-
+                actions.append(act)
+            request = testutils.flow_msg_create(self, pkt, ingress_port, action_list=actions)
+            request.buffer_id = 0xffffffff
+            
             pa_logger.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
@@ -288,29 +279,22 @@ class DirectMC(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
         pkt = testutils.simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
-        match.wildcards &= ~ofp.OFPFW_IN_PORT
-        self.assertTrue(match is not None, 
-                        "Could not generate flow match from pkt")
-        act = action.action_set_output_port()
-
+        
         for ingress_port in of_ports:
             rv = testutils.delete_all_flows(self.controller, pa_logger)
             self.assertEqual(rv, 0, "Failed to delete all flows")
 
-            pa_logger.info("Ingress " + str(ingress_port) + " to all ports")
-            match.in_port = ingress_port
-
-            request = message.flow_mod()
-            request.match = match
-            request.buffer_id = 0xffffffff
+            pa_logger.info("Ingress " + str(ingress_port) + " to all ports")    
+            actions = []
             for egress_port in of_ports:
+                act = action.action_set_output_port()
                 if egress_port == ingress_port:
                     act.port = ofp.OFPP_IN_PORT
                 else:
                     act.port = egress_port
-                self.assertTrue(request.actions.add(act), 
-                                "Could not add output to " + str(egress_port))
+                actions.append(act)
+            request = testutils.flow_msg_create(self, pkt, ingress_port, action_list=actions)
+            request.buffer_id = 0xffffffff
             # pa_logger.info(request.show())
 
             pa_logger.info("Inserting flow")
@@ -714,7 +698,7 @@ class StripVLANTag(BaseMatchCase):
     def runTest(self):
         old_vid = 2
         sup_acts = supported_actions_get(self)
-        if not (sup_acts & 1 << ofp.OFPAT_STRIP_VLAN):
+        if not (sup_acts & 1 << ofp.OFPAT_POP_VLAN):
             testutils.skip_message_emit(self, "Strip VLAN tag test")
             return
 
@@ -723,7 +707,7 @@ class StripVLANTag(BaseMatchCase):
         pkt = testutils.simple_tcp_packet(pktlen=len_w_vid, dl_vlan_enable=True, 
                                 dl_vlan=old_vid)
         exp_pkt = testutils.simple_tcp_packet(pktlen=len)
-        vid_act = action.action_strip_vlan()
+        vid_act = action.action_pop_vlan()
 
         testutils.flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt,
                         action_list=[vid_act])
