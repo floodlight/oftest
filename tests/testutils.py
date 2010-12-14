@@ -429,7 +429,7 @@ def flow_match_test_port_pair(parent, ing_port, egr_port, wildcards=0,
 
     request = flow_msg_create(parent, pkt, ing_port=ing_port, 
                               wildcards=wildcards, egr_port=egr_port,
-                              apply_action_list=apply_action_list)
+                              action_list=apply_action_list)
 
     flow_msg_install(parent, request)
 
