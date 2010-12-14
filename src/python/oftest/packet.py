@@ -317,7 +317,7 @@ class Packet(object):
         l2_type = struct.unpack("!H", self.data[idx:idx+2])[0]
         idx += 2
         if l2_type in [ETHERTYPE_VLAN, ETHERTYPE_VLAN_QinQ] :
-            blob = struct.unpack("H", self.data[idx:idx+2])
+            blob = struct.unpack("H", self.data[idx:idx+2])[0]
             self.match.dl_vlan_pcp = blob & 0xd000
             #cfi = blob & 0x1000     #@todo figure out what to do if cfi!=0
             self.match.dl_vlan = socket.ntohs(blob & 0x0fff)
