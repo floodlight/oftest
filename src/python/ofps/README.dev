@@ -1,0 +1,31 @@
+Rob's NOTES
+-------------------------------
+
+THREADING:
+
+single process: four threads
+* controller thread -- talks to controller, runs select(), does OF msg framing
+    * changes pipeline config
+    * processes stats requests
+* dataplane -- monitors all interfaces for new packets, runs select(); 
+    * queues packets to pipeline thread
+* pipeline -- processes packets through ofps flow tables
+    * e.g., pkt rewriting, pushing out to interfaces
+* ofps main thread: controller for other threads (optional?)
+
+
+
+USEFUL TESTING COMMANDS:
+
+for i in 1 2 3 4 ; do 
+    sudo ip link add type veth
+done
+
+for i in 0 1 2 3 4 5 6 7 ; do
+    sudo ifconfig veth$i 192.168.10$i.1 netmask 255.255.255.0
+done
+
+
+KNOWN WORKING TEST INVOCAITON:
+
+sudo ./oft --verbose --test-spec=Echo,EchoWithData

@@ -94,7 +94,7 @@ from bucket_list import bucket_list
 from error import *
 
 # Define templates for documentation
-class ofp_template_msg:
+class ofp_template_msg(object):
     \"""
     Sample base class for template_msg; normally auto generated
     This class should live in the of_header name space and provides the
@@ -275,7 +275,7 @@ def gen_message_wrapper(msg):
     if has_core_members:
         print "class " + msg + "(" + parent + "):"
     else:
-        print "class " + msg + ":"
+        print "class " + msg + "(object):"
     _p1('"""')
     _p1("Wrapper class for " + msg)
     print
@@ -484,7 +484,7 @@ extra_ofp_stats_req_defs = """
 # Stats request bodies for desc and table stats are not defined in the
 # OpenFlow header;  We define them here.  They are empty classes, really
 
-class ofp_desc_stats_request:
+class ofp_desc_stats_request(object):
     \"""
     Forced definition of ofp_desc_stats_request (empty class)
     \"""
@@ -505,7 +505,7 @@ class ofp_desc_stats_request:
 
 OFP_DESC_STATS_REQUEST_BYTES = 0
 
-class ofp_table_stats_request:
+class ofp_table_stats_request(object):
     \"""
     Forced definition of ofp_table_stats_request (empty class)
     \"""
@@ -526,7 +526,7 @@ class ofp_table_stats_request:
 
 OFP_TABLE_STATS_REQUEST_BYTES = 0
 
-class ofp_group_desc_stats_request:
+class ofp_group_desc_stats_request(object):
     \"""
     Forced definition of ofp_group_desc_stats_request (empty class)
     \"""
@@ -697,12 +697,12 @@ class flow_stats_entry(ofp_flow_stats):
     \"""
     def __init__(self):
         ofp_flow_stats.__init__(self)
-        self.actions = action_list()
+        self.instructions = instruction_list()
 
     def pack(self, assertstruct=True):
         self.length = len(self)
         packed = ofp_flow_stats.pack(self, assertstruct)
-        packed += self.actions.pack()
+        packed += self.instructions.pack()
         if len(packed) != self.length:
             print("ERROR: flow_stats_entry pack length not equal",
                   self.length, len(packed))
@@ -714,22 +714,22 @@ class flow_stats_entry(ofp_flow_stats):
         if ai_len < 0:
             print("ERROR: flow_stats_entry unpack length too small",
                   self.length)
-        binary_string = self.actions.unpack(binary_string, bytes=ai_len)
+        binary_string = self.instructions.unpack(binary_string, bytes=ai_len)
         return binary_string
 
     def __len__(self):
-        return OFP_FLOW_STATS_BYTES + len(self.actions)
+        return OFP_FLOW_STATS_BYTES + len(self.instructions)
 
     def show(self, prefix=''):
         outstr = prefix + "flow_stats_entry\\n"
         outstr += ofp_flow_stats.show(self, prefix + '  ')
-        outstr += self.actions.show(prefix + '  ')
+        outstr += self.instructions.show(prefix + '  ')
         return outstr
 
     def __eq__(self, other):
         if type(self) != type(other): return False
         return (ofp_flow_stats.__eq__(self, other) and 
-                self.actions == other.actions)
+                self.instructions == other.instructions)
 
     def __ne__(self, other): return not self.__eq__(other)
 """

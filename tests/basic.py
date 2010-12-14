@@ -15,8 +15,6 @@ indicated oin oft_config
 
 """
 
-import time
-import signal
 import sys
 import logging
 
@@ -28,7 +26,7 @@ import oftest.message as message
 import oftest.dataplane as dataplane
 import oftest.action as action
 
-from testutils import *
+import testutils
 
 #@var basic_port_map Local copy of the configuration map from OF port
 # numbers to OS interfaces
@@ -71,7 +69,7 @@ class SimpleProtocol(unittest.TestCase):
     def setUp(self):
         self.logger = basic_logger
         self.config = basic_config
-        signal.signal(signal.SIGINT, self.sig_handler)
+        #signal.signal(signal.SIGINT, self.sig_handler)
         basic_logger.info("** START TEST CASE " + str(self))
         self.controller = controller.Controller(
             host=basic_config["controller_host"],
@@ -145,7 +143,7 @@ class DataPlaneOnly(unittest.TestCase):
         self.clean_shutdown = False
         self.logger = basic_logger
         self.config = basic_config
-        signal.signal(signal.SIGINT, self.sig_handler)
+        #signal.signal(signal.SIGINT, self.sig_handler)
         basic_logger.info("** START DataPlaneOnly CASE " + str(self))
         self.dataplane = dataplane.DataPlane()
         for of_port, ifname in basic_port_map.items():
@@ -167,7 +165,7 @@ class Echo(SimpleProtocol):
     """
     def runTest(self):
         request = message.echo_request()
-        response, pkt = self.controller.transact(request)
+        response, _ = self.controller.transact(request)
         self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,
                          'response is not echo_reply')
         self.assertEqual(request.header.xid, response.header.xid,
@@ -181,7 +179,7 @@ class EchoWithData(SimpleProtocol):
     def runTest(self):
         request = message.echo_request()
         request.data = 'OpenFlow Will Rule The World'
-        response, pkt = self.controller.transact(request)
+        response, _ = self.controller.transact(request)
         self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,
                          'response is not echo_reply')
         self.assertEqual(request.header.xid, response.header.xid,
@@ -189,6 +187,20 @@ class EchoWithData(SimpleProtocol):
         self.assertEqual(request.data, response.data,
                          'response data does not match request')
 
+class FeaturesRequest(SimpleProtocol):
+    """
+    Test features_request to make sure we get a response
+    
+    Does NOT test the contents; just that we get a response
+    """
+    def runTest(self):
+        request = message.features_request()
+        response,_ = self.controller.transact(request)
+        self.assertTrue(response,"Got no features_reply to features_request")
+        self.assertEqual(response.header.type, ofp.OFPT_FEATURES_REPLY,
+                         'response is not echo_reply')
+        self.assertTrue(len(response) >= 32, "features_reply too short: %d < 32 " % len(response))
+       
 class PacketIn(SimpleDataPlane):
     """
     Test packet in function
@@ -201,15 +213,15 @@ class PacketIn(SimpleDataPlane):
         # Send packet to dataplane, once to each port
         # Poll controller with expect message type packet in
 
-        rc = delete_all_flows(self.controller, basic_logger)
+        rc = testutils.delete_all_flows(self.controller, basic_logger)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         for of_port in basic_port_map.keys():
             basic_logger.info("PKT IN test, port " + str(of_port))
-            pkt = simple_tcp_packet()
+            pkt = testutils.simple_tcp_packet()
             self.dataplane.send(of_port, str(pkt))
             #@todo Check for unexpected messages?
-            (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
+            (response, _) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
 
             self.assertTrue(response is not None, 
                             'Packet in message not received on port ' + 
@@ -237,17 +249,17 @@ class PacketOut(SimpleDataPlane):
         # Send packet to dataplane
         # Poll controller with expect message type packet in
 
-        rc = delete_all_flows(self.controller, basic_logger)
+        rc = testutils.delete_all_flows(self.controller, basic_logger)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         # These will get put into function
-        outpkt = simple_tcp_packet()
+        outpkt = testutils.simple_tcp_packet()
         of_ports = basic_port_map.keys()
         of_ports.sort()
         for dp_port in of_ports:
             msg = message.packet_out()
             msg.data = str(outpkt)
-            act = action.action_output()
+            act = action.action_set_output_port()
             act.port = dp_port
             self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
 
@@ -255,7 +267,7 @@ class PacketOut(SimpleDataPlane):
             rv = self.controller.message_send(msg)
             self.assertTrue(rv == 0, "Error sending out message")
 
-            (of_port, pkt, pkt_time) = self.dataplane.poll(timeout=1)
+            (of_port, pkt, _) = self.dataplane.poll(timeout=1)
 
             self.assertTrue(pkt is not None, 'Packet not received')
             basic_logger.info("PacketOut: got pkt from " + str(of_port))
@@ -263,6 +275,40 @@ class PacketOut(SimpleDataPlane):
                 self.assertEqual(of_port, dp_port, "Unexpected receive port")
             self.assertEqual(str(outpkt), str(pkt),
                              'Response packet does not match send packet')
+class FlowRemoveAll(SimpleProtocol):
+    """
+    Remove all flows; required for almost all tests 
+
+    Add a bunch of flows, remove them, and then make sure there are no flows left
+    This is an intentionally naive test to see if the baseline functionality works 
+    and should be a precondition to any more complicated deletion test (e.g., 
+    delete_strict vs. delete)
+    """
+    def runTest(self):
+        basic_logger.info("Running StatsGet")
+        basic_logger.info("Inserting trial flow")
+        request = message.flow_mod()
+        request.match.wildcards = ofp.OFPFW_ALL
+        request.buffer_id = 0xffffffff
+        for i in range(1,5):
+            request.priority = i*1000
+            basic_logger.debug("Adding flow %d" % i)
+            rv = self.controller.message_send(request)
+            self.assertTrue(rv != -1, "Failed to insert test flow %d" % i)
+        basic_logger.info("Removing all flows")
+        testutils.delete_all_flows(self.controller, basic_logger)
+        basic_logger.info("Sending flow request")
+        request = message.flow_stats_request()
+        request.out_port = ofp.OFPP_ANY
+        request.table_id = 0xff
+        request.match.wildcards = 0 # ofp.OFPFW_ALL
+        response, _ = self.controller.transact(request, timeout=2)
+        self.assertTrue(response is not None, "Did not get response")
+        self.assertTrue(isinstance(response,message.flow_stats_reply),"Not a flow_stats_reply")
+        self.assertEqual(len(response.stats),0)
+        basic_logger.debug(response.show())
+        
+
 
 class FlowStatsGet(SimpleProtocol):
     """
@@ -281,11 +327,12 @@ class FlowStatsGet(SimpleProtocol):
         
         basic_logger.info("Sending flow request")
         request = message.flow_stats_request()
-        request.out_port = ofp.OFPP_NONE
+        request.out_port = ofp.OFPP_ANY
         request.table_id = 0xff
         request.match.wildcards = 0 # ofp.OFPFW_ALL
-        response, pkt = self.controller.transact(request, timeout=2)
+        response, _ = self.controller.transact(request, timeout=2)
         self.assertTrue(response is not None, "Did not get response")
+        self.assertTrue(isinstance(response,message.flow_stats_reply),"Not a flow_stats_reply")
         basic_logger.debug(response.show())
 
 class TableStatsGet(SimpleProtocol):
@@ -305,7 +352,7 @@ class TableStatsGet(SimpleProtocol):
         
         basic_logger.info("Sending table stats request")
         request = message.table_stats_request()
-        response, pkt = self.controller.transact(request, timeout=2)
+        response, _ = self.controller.transact(request, timeout=2)
         self.assertTrue(response is not None, "Did not get response")
         basic_logger.debug(response.show())
 
@@ -335,33 +382,33 @@ class PortConfigMod(SimpleProtocol):
 
     def runTest(self):
         basic_logger.info("Running " + str(self))
-        for of_port, ifname in basic_port_map.items(): # Grab first port
+        for of_port, _ in basic_port_map.items(): # Grab first port
             break
 
-        (hw_addr, config, advert) = \
-            port_config_get(self.controller, of_port, basic_logger)
+        (_, config, _) = \
+            testutils.port_config_get(self.controller, of_port, basic_logger)
         self.assertTrue(config is not None, "Did not get port config")
 
         basic_logger.debug("No flood bit port " + str(of_port) + " is now " + 
-                           str(config & ofp.OFPPC_NO_FLOOD))
+                           str(config & ofp.OFPPC_NO_PACKET_IN))
 
-        rv = port_config_set(self.controller, of_port,
-                             config ^ ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD,
+        rv = testutils.port_config_set(self.controller, of_port,
+                             config ^ ofp.OFPPC_NO_PACKET_IN, ofp.OFPPC_NO_PACKET_IN,
                              basic_logger)
         self.assertTrue(rv != -1, "Error sending port mod")
 
         # Verify change took place with same feature request
-        (hw_addr, config2, advert) = \
-            port_config_get(self.controller, of_port, basic_logger)
-        basic_logger.debug("No flood bit port " + str(of_port) + " is now " + 
-                           str(config2 & ofp.OFPPC_NO_FLOOD))
+        (_, config2, _) = \
+            testutils.port_config_get(self.controller, of_port, basic_logger)
+        basic_logger.debug("No packet_in bit port " + str(of_port) + " is now " + 
+                           str(config2 & ofp.OFPPC_NO_PACKET_IN))
         self.assertTrue(config2 is not None, "Did not get port config2")
-        self.assertTrue(config2 & ofp.OFPPC_NO_FLOOD !=
-                        config & ofp.OFPPC_NO_FLOOD,
+        self.assertTrue(config2 & ofp.OFPPC_NO_PACKET_IN !=
+                        config & ofp.OFPPC_NO_PACKET_IN,
                         "Bit change did not take")
         # Set it back
-        rv = port_config_set(self.controller, of_port, config, 
-                             ofp.OFPPC_NO_FLOOD, basic_logger)
+        rv = testutils.port_config_set(self.controller, of_port, config, 
+                             ofp.OFPPC_NO_PACKET_IN, basic_logger)
         self.assertTrue(rv != -1, "Error sending port mod")
 
 if __name__ == "__main__":

@@ -1,24 +1,17 @@
 
 import sys
-import copy
+import logging
+#import types
 
-try:
-    import scapy.all as scapy
-except:
-    try:
-        import scapy as scapy
-    except:
-        sys.exit("Need to install scapy for packet parsing")
-
-import oftest.controller as controller
+#import oftest.controller as controller
 import oftest.cstruct as ofp
 import oftest.message as message
-import oftest.dataplane as dataplane
+#import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.instruction as instruction
 import oftest.parse as parse
-import logging
-import types
+from oftest import instruction
+from oftest.packet import Packet
 
 global skipped_test_count
 skipped_test_count = 0
@@ -61,28 +54,16 @@ def delete_all_flows(ctrl, logger):
 
 def clear_port_config(parent, port, logger):
     """
-    Clear the port configuration (currently only no flood setting)
+    Clear the port configuration 
 
     @param parent Object implementing controller and assert equal
     @param logger Logging object
     """
     rv = port_config_set(parent.controller, port,
-                         0, ofp.OFPPC_NO_FLOOD, logger)
-    self.assertEqual(rv, 0, "Failed to reset port config")
+                         0, 0, logger)
+    parent.assertEqual(rv, 0, "Failed to reset port config")
 
-def simple_tcp_packet(pktlen=100, 
-                      dl_dst='00:01:02:03:04:05',
-                      dl_src='00:06:07:08:09:0a',
-                      dl_vlan_enable=False,
-                      dl_vlan=0,
-                      dl_vlan_pcp=0,
-                      dl_vlan_cfi=0,
-                      ip_src='192.168.0.1',
-                      ip_dst='192.168.0.2',
-                      ip_tos=0,
-                      tcp_sport=1234,
-                      tcp_dport=80
-                      ):
+def simple_tcp_packet(**args):
     """
     Return a simple dataplane TCP packet
 
@@ -104,32 +85,10 @@ def simple_tcp_packet(pktlen=100,
     it is a valid ethernet/IP/TCP frame.
     """
     # Note Dot1Q.id is really CFI
-    if (dl_vlan_enable):
-        pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-            scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi, vlan=dl_vlan)/ \
-            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
-            scapy.TCP(sport=tcp_sport, dport=tcp_dport)
-    else:
-        pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
-            scapy.TCP(sport=tcp_sport, dport=tcp_dport)
 
-    pkt = pkt/("D" * (pktlen - len(pkt)))
+    return Packet().simple_tcp_packet(**args)
 
-    return pkt
-
-def simple_icmp_packet(pktlen=60, 
-                      dl_dst='00:01:02:03:04:05',
-                      dl_src='00:06:07:08:09:0a',
-                      dl_vlan_enable=False,
-                      dl_vlan=0,
-                      dl_vlan_pcp=0,
-                      ip_src='192.168.0.1',
-                      ip_dst='192.168.0.2',
-                      ip_tos=0,
-                      icmp_type=8,
-                      icmp_code=0
-                      ):
+def simple_icmp_packet(*args):
     """
     Return a simple ICMP packet
 
@@ -150,19 +109,8 @@ def simple_icmp_packet(pktlen=60,
     shouldn't assume anything about this packet other than that
     it is a valid ethernet/ICMP frame.
     """
-    if (dl_vlan_enable):
-        pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-            scapy.Dot1Q(prio=dl_vlan_pcp, id=0, vlan=dl_vlan)/ \
-            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
-            scapy.ICMP(type=icmp_type, code=icmp_code)
-    else:
-        pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
-            scapy.ICMP(type=icmp_type, code=icmp_code)
 
-    pkt = pkt/("0" * (pktlen - len(pkt)))
-
-    return pkt
+    return Packet().simple_icmp_packet(*args)
 
 def do_barrier(ctrl):
     b = message.barrier_request()
@@ -180,11 +128,11 @@ def port_config_get(controller, port_no, logger):
     advertised values
     """
     request = message.features_request()
-    reply, pkt = controller.transact(request, timeout=2)
-    logger.debug(reply.show())
+    reply, _ = controller.transact(request, timeout=2)
     if reply is None:
         logger.warn("Get feature request failed")
         return None, None, None
+    logger.debug(reply.show())
     for idx in range(len(reply.ports)):
         if reply.ports[idx].port_no == port_no:
             return (reply.ports[idx].hw_addr, reply.ports[idx].config,
@@ -202,7 +150,7 @@ def port_config_set(controller, port_no, config, mask, logger):
     """
     logger.info("Setting port " + str(port_no) + " to config " + str(config))
     request = message.features_request()
-    reply, pkt = controller.transact(request, timeout=2)
+    reply, _ = controller.transact(request, timeout=2)
     if reply is None:
         return -1
     logger.debug(reply.show())
@@ -231,7 +179,7 @@ def receive_pkt_check(dataplane, pkt, yes_ports, no_ports, assert_if, logger):
     """
     for ofport in yes_ports:
         logger.debug("Checking for pkt on port " + str(ofport))
-        (rcv_port, rcv_pkt, pkt_time) = dataplane.poll(
+        (_, rcv_pkt, _) = dataplane.poll(
             port_number=ofport, timeout=1)
         assert_if.assertTrue(rcv_pkt is not None, 
                              "Did not receive pkt on " + str(ofport))
@@ -241,7 +189,7 @@ def receive_pkt_check(dataplane, pkt, yes_ports, no_ports, assert_if, logger):
 
     for ofport in no_ports:
         logger.debug("Negative check for pkt on port " + str(ofport))
-        (rcv_port, rcv_pkt, pkt_time) = dataplane.poll(
+        (_, rcv_pkt, _) = dataplane.poll(
             port_number=ofport, timeout=1)
         assert_if.assertTrue(rcv_pkt is None, 
                              "Unexpected pkt on port " + str(ofport))
@@ -253,7 +201,7 @@ def receive_pkt_verify(parent, egr_port, exp_pkt):
 
     parent must implement dataplane, assertTrue and assertEqual
     """
-    (rcv_port, rcv_pkt, pkt_time) = parent.dataplane.poll(port_number=egr_port,
+    (rcv_port, rcv_pkt, _) = parent.dataplane.poll(port_number=egr_port,
                                                           timeout=1)
     if rcv_pkt is None:
         parent.logger.error("ERROR: No packet received from " + str(egr_port))
@@ -338,7 +286,7 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
     @param pkt_count If >= 0, verify packet count
     @param byte_count If >= 0, verify byte count
     """
-    (response, raw) = parent.controller.poll(ofp.OFPT_FLOW_REMOVED, 2)
+    (response, _) = parent.controller.poll(ofp.OFPT_FLOW_REMOVED, 2)
     parent.assertTrue(response is not None, 'No flow removed message received')
 
     if request is None:
@@ -355,7 +303,7 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
     if (req_match.wildcards != 0):
         parent.assertEqual(request.priority, response.priority,
                            'Flow remove prio mismatch: ' + 
-                           str(request,priority) + " != " + 
+                           str(request.priority) + " != " + 
                            str(response.priority))
         parent.assertEqual(response.reason, ofp.OFPRR_HARD_TIMEOUT,
                            'Flow remove reason is not HARD TIMEOUT:' +
@@ -371,53 +319,75 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
                                str(response.byte_count) + " != " + 
                                str(byte_count))
 
-def flow_msg_create(parent, pkt, ing_port=None, apply_action_list=None,
-                    wildcards=0, egr_port=None, egr_queue=None,
-                    check_expire=False):
+def flow_msg_create(parent, pkt, ing_port=None, instruction_list=None, 
+                    action_list=None, wildcards=0, egr_port=None, 
+                    egr_queue=None, check_expire=False):
     """
-    Create a flow message
+    Multi-purpose flow_mod creation utility
 
     Match on packet with given wildcards.  
     See flow_match_test for other parameter descriptoins
+   
+    if egr_queue is set
+             append an out_queue action to egr_queue to the actions_list
+    else if egr_port is set:  
+             append an output action to egr_port to the actions_list
+    if the instruction_list is empty, 
+        append an APPLY instruction to it
+    Add the action_list to the last (only?) instruction
+    
     @param egr_queue if not None, make the output an enqueue action
     """
     match = parse.packet_to_flow_match(pkt)
     parent.assertTrue(match is not None, "Flow match from pkt failed")
-    match.wildcards = wildcards
+    match.wildcards = wildcards & 0xfffffffff # mask out anything out of range
     match.in_port = ing_port
-
-    apply_inst = instruction.instruction_apply_actions()
-
-    if apply_action_list is not None:
-        for act in apply_action_list:
-            parent.logger.debug("Adding action " + act.show())
-            rv = apply_inst.actions.add(act)
-            parent.assertTrue(rv, "Could not add action" + act.show())
-
-    # Set up output/enqueue action if directed
-    if egr_queue is not None:
-        parent.assertTrue(egr_port is not None, "Egress port not set")
-        act = action.action_set_queue()
-        act.queue_id = egr_queue
-        rv = apply_inst.actions.add(act)
-        parent.assertTrue(rv, "Could not add set_queue action " +str(egr_queue))
-    
-    if egr_port is not None:
-        act = action.action_set_output_port()
-        act.port = egr_port
-        rv = apply_inst.actions.add(act)
-        parent.assertTrue(rv, "Could not add set_output_port action " + str(egr_port))
 
     request = message.flow_mod()
     request.match = match
     request.buffer_id = 0xffffffff
     if check_expire:
         request.flags |= ofp.OFPFF_SEND_FLOW_REM
-        request.hard_timeout = 1
+        request.hard_timeout = 1    
+    
+    if action_list is None:
+        action_list = []
+    if instruction_list is None:
+        instruction_list = []
+    
+    # Set up output/enqueue action if directed
+    if egr_queue is not None:
+        parent.assertTrue(egr_port is not None, "Egress port not set")
+        act = action.action_set_queue()
+        act.port = egr_port
+        act.queue_id = egr_queue
+        action_list.append(act)
+    elif egr_port is not None:
+        act = action.action_set_output_port()
+        act.port = egr_port
+        action_list.append(act)
+        
+    inst = None
+    if len(instruction_list) == 0: 
+        inst = instruction.instruction_apply_actions()
+        instruction_list.append(inst)
+    else:
+        inst = instruction_list[-1] 
 
-    rv = request.instructions.add(apply_inst)
-    parent.assertTrue(rv, "Could not add apply actions")
+    # add all the actions to the last inst
+    for act in action_list:
+        parent.logger.debug("Adding action " + act.show())
+        rv = inst.actions.add(act)
+        parent.assertTrue(rv, "Could not add action" + act.show())
+    # NOTE that the inst has already been added to the flow_mod
 
+    # add all the instrutions to the flow_mod
+    for i in instruction_list: 
+        parent.logger.debug("Adding instruction " + inst.show())
+        rv = request.instructions.add(i)
+        parent.assertTrue(rv, "Could not add instruction " + i.show())
+
+ 
     parent.logger.debug(request.show())
 
     return request
@@ -557,7 +527,7 @@ def action_generate(parent, field_to_mod, mod_field_vals):
         act.dl_addr = parse.parse_mac(mod_field_vals['dl_src'])
     elif field_to_mod == 'dl_vlan_enable':
         if not mod_field_vals['dl_vlan_enable']: # Strip VLAN tag
-            act = action.action_strip_vlan()
+            act = action.action_pop_vlan()
         # Add VLAN tag is handled by dl_vlan field
         # Will return None in this case
     elif field_to_mod == 'dl_vlan':
@@ -679,6 +649,12 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
 
     return (ingress_pkt, expected_pkt, new_actions)
         
+def wildcard_all_set(match):
+    match.wildcards = ofp.OFPFW_ALL
+    match.nw_dst_mask = 0xffffffff
+    match.nw_src_mask = 0xffffffff
+    match.dl_dst_mask = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+    match.dl_src_mask = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
 
 def skip_message_emit(parent, s):
     """

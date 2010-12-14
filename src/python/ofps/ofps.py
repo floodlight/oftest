@@ -1,3 +1,30 @@
+#!/usr/bin/python
+######################################################################
+#
+# All files associated with the OpenFlow Python Switch (ofps) are
+# made available for public use and benefit with the expectation
+# that others will use, modify and enhance the Software and contribute
+# those enhancements back to the community. However, since we would
+# like to make the Software available for broadest use, with as few
+# restrictions as possible permission is hereby granted, free of
+# charge, to any person obtaining a copy of this Software to deal in
+# the Software under the copyrights without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+# BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+# ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# 
+######################################################################
+
 """
 OFPS:  OpenFlow Python Switch
 
@@ -10,57 +37,89 @@ structures, flow table entries with status and actions resulting
 from a match.
 """
 
+import sys
+import logging
+import signal
+import copy
+import struct
+from threading import Thread
+from optparse import OptionParser
+import pdb
+
 import oftest.cstruct as ofp
 import oftest.dataplane as dataplane
 import oftest.message as message
 import oftest.action as action
-from ctrl_if import *
-import copy
-from threading import Condition
-from threading import Thread
-from threading import Lock
-from ofps_act import *
-from ofps_pkt import Packet
+from ctrl_if import ControllerInterface
+from oftest.packet import Packet
+from pipeline import FlowPipeline
+import oftest.netutils as netutils
+import ctrl_msg
+
+DEFAULT_TABLE_COUNT = 4
 
 class OFSwitchConfig(object):
     """
-    Class to document normal configuration parameters
+    Class to hold normal configuration parameters
+    
+       extended to do arg parsing
     """
-    def __init__(self):
+    def __init__(self):         
         self.controller_ip = None
         self.controller_port = None
-        self.passive_listen_port = None
+        self.n_tables = None
+        self.passive_listen_port = None 
         self.port_map = {}
         self.env = {}  # Extensible array
 
-def execute_actions(packet, actions, groups, dataplane, ctrl_if, 
-                    output_now=False):
-    """
-    Execute the list of actions on the packet
-    @param packet The ingress packet on which to execute the actions
-    @param actions The list of actions to be applied to the packet
-    @param groups The GroupTable object for the switch
-    @param dataplane The DataPlane object for the switch
-    @param ctrl_if The controller interface for the switch
-    @param output_immediate If an set-output-port action is seen,
-    execute it immediately and do not update the output-port metadata
-
-    Actions are executed in whatever order they are passed without
-    checking the integrity of this ordering.
-    """
-    for action in actions:
-        exec_str = "do_" + action.__name__ + \
-            "(packet, action, groups, dataplane, ctrl_if, output_now)"
-        try:
-            exec(exec_str)
-        except:  #@todo: Add constraint
-            #@todo Define logging module
-            print("Could not execute " + str(action))
-
-    if packet.output_port is not None:
-        dataplane.send(packet.output_port, packet.data)
-
+        parser = OptionParser(version="%prog 0.1")
+        parser.set_defaults(controller_ip="127.0.0.1")
+        parser.set_defaults(controller_port=6633)
+        parser.set_defaults(n_tables=DEFAULT_TABLE_COUNT)
+        parser.set_defaults(interfaces="veth0,veth2,veth4,veth6")
+        parser.set_defaults(datapath_id=self.devine_datapath_id())
         
+        parser.add_option('-i', '--interfaces', type='string',
+                          help="Comma separated list of interfaces: e.g., \"veth0,veth2,veth4,veth6\"")
+        parser.add_option('-c', '--controller', type="string", dest="controller_ip",
+                           help="OpenFlow Controller Hostname or IP")
+        parser.add_option('-p', '--port', type='int', dest="controller_port",
+                           help="OpenFlow Controller Port")
+        parser.add_option('-t', '--tables', type='int', dest="n_tables",
+                          help="Number of tables to create in the pipeline")
+        parser.add_option('-d', '--datapath-id', dest='datapath_id', type='long'
+                          ,help="DatapathID for switch")
+        self.parser = parser
+    
+    def devine_datapath_id(self):
+        """
+        Come up with a unique dpid from our environment
+        """
+        #@todo Query one of our interfaces to find a good dpid
+        return 0xcafebabedeadbeef
+    def datapath_id2str(self, dpid):
+        '''
+        Convert 8 byte long to "xx:xx:xx:..." string
+        @TODO Move this else where
+        '''
+        return "0x%lx" % (dpid) 
+        
+        
+    def parse_args(self):
+        (self.options, self.args) = self.parser.parse_args()
+        ### Should be a better way to do this
+        self.controller_ip = self.options.controller_ip
+        self.controller_port = self.options.controller_port
+        self.n_tables = self.options.n_tables
+        for intr in self.options.interfaces.split(','):
+            self.addInterface(intr)
+ 
+    def getConfig(self, config):
+        return getattr(self.options, config)
+
+    def addInterface(self, intr):
+        self.port_map[len(self.port_map) + 1] = intr
+ 
 class OFSwitch(Thread):
     """
     Top level class for the ofps implementation
@@ -74,18 +133,20 @@ class OFSwitch(Thread):
        Processing the controller messages
     The main thread processes dataplane packets and control packets
     """
+
+    VERSION = "OFPS version 0.1"
+
     # @todo Support fail open/closed
     def __init__(self):
         """
         Constructor for base class
         """
         super(OFSwitch, self).__init__()
-        self.flow_table = FlowTable()
-        self.ctrl_if = ctrl_if.ControllerInterface()
-        self.dataplane = dataplane.DataPlane()
+        self.setDaemon(True)
         self.config = OFSwitchConfig()
-        
-
+        self.logger = logging.getLogger("switch")
+        self.groups = GroupTable()
+        self.ports = {}         # hash of ports[index]=ofp.ofp_port
     def config_set(self, config):
         """
         Set the configuration for the switch.
@@ -96,296 +157,105 @@ class OFSwitch(Thread):
             Number of tables to support
         """
         self.config = config
+        
+    def ctrl_pkt_handler(self, cookie, msg, rawmsg):
+        """
+        Handle a message from the controller
+        @todo Use a queue so messages can be processed in the main thread
+        """
+        try:
+            callable = getattr(ctrl_msg, msg.__class__.__name__)
+            self.logger.debug("Calling ctrl_msg.%s" % msg.__class__.__name__)
+            callable(self, msg, rawmsg)
+        except KeyError:
+            self.logger.error("Could not execute controller fn (%s)" %
+                                str(msg.__class__.__name__))
+            sys.exit(1)
 
-    def dp_pkt_handler(self, port_number, data):
+        return True
+    
+    def getConfig(self,element):
+        """ 
+        Return the element from the config 
+        @param  element:  a string
         """
-        Packet handler registered with datapath
-        Enqueue packets for main thread to process
-        """
-        pass
+        return self.config.getConfig(element)
 
     def run(self):
         """
         Main execute function for running the switch
         """
-        self.pipeline = FlowPipeline(n_tables=config.n_tables)
-        for of_port, ifname in config.port_map.items():
+
+        logging.basicConfig(filename="", level=logging.DEBUG)
+        self.logger.info("Switch thread running")
+        self.controller = ControllerInterface(host=self.config.controller_ip,
+                                              port=self.config.controller_port)
+        self.dataplane = dataplane.DataPlane()
+        self.logger.info("Dataplane started")
+        self.pipeline = FlowPipeline(self.config.n_tables)
+        self.pipeline.controller_set(self.controller)
+        self.pipeline.start()
+        self.logger.info("Pipeline started")
+        link_status = ofp.OFPPF_1GB_FD  #@todo dynamically infer this from the interface status
+        for of_port, ifname in self.config.port_map.items():          
             self.dataplane.port_add(ifname, of_port)
-        self.dataplane.register(self.dp_pkt_handler)
-        # Kick off the dataplane and add ports to it
-        # Kick off the controller interface
-        # Register to receive packets 
+            port = ofp.ofp_port()
+            port.port_no = of_port
+            port.name = ifname
+            port.max_speed = 9999999
+            port.curr_speed = 9999999
+            mac = netutils.get_if_hwaddr(port.name)
+            self.logger.info("Added port %s (ind=%d) with mac %x:%x:%x:%x:%x:%x" % ((ifname, of_port) + mac))
+            port.hw_addr = list(mac)    # stupid frickin' python; need to convert a tuple to a list
+            port.config = 0
+            port.state = 0 #@todo infer if link is up/down and set OFPPS_LINK_DOWN
+            port.advertised = link_status
+            port.supported = link_status
+            port.curr = link_status
+            port.peer = link_status
+            self.ports[of_port]=port
+        # Register to receive all controller packets
+        self.controller.register("all", self.ctrl_pkt_handler, calling_obj=self)
+        self.controller.start()
+        self.logger.info("Controller started")
 
-class FlowEntry(object):
-    """
-    Structure to track a flow table entry
-    """
-    def __init__(self):
-        self.flow_mod = message.flow_mod()
-        self.last_hit = None
-        self.packets = 0
-        self.bytes = 0
-        self.insert_time = None
+        # Process packets when they arrive
+        self.logger.info("Entering packet processing loop")
+        while True:
+            (of_port, data, recv_time) = self.dataplane.poll(timeout=5)
+            if not self.controller.isAlive():
+                # @todo Implement fail open/closed
+                self.logger.error("Controller dead\n")
+                break
+            if not self.pipeline.isAlive():
+                # @todo Implement fail open/closed
+                self.logger.error("Pipeline dead\n")
+                break
+            if data is None:
+                self.logger.debug("No packet for 5 seconds\n")
+                continue
+            self.logger.debug("Packet len " + str(len(data)) +
+                              " in on port " + str(of_port))
+            packet = Packet(in_port=of_port, data=data)
+            self.pipeline.apply_pipeline(self, packet)
 
-    def flow_mod_set(flow_mod):
-        self.flow_mod = copy.deepcopy(flow_mod)
-        self.last_hit = None
-        self.packets = 0
-        self.bytes = 0
-        self.insert_time = time.time()
+        self.logger.error("Exiting OFSwitch thread")
+        self.pipeline.kill()
+        self.dataplane.kill()
+        self.pipeline.join()
+        self.controller.join()
+    
+    def __str__(self):
+        str  = "OFPS:: OpenFlow Python Switch\n"
+        str += "    datapath_id = %s\n" % (self.config.datapath_id2str(
+                self.config.getConfig('datapath_id')))
+        for key, val in self.config.port_map.iteritems():
+            str += "    interface %d = %s\n" % (key, val)
+        return str 
+    
+    def version(self):
+        return OFSwitch.VERSION
 
-    def _check_ip_fields(entry_fields, fields):
-        if not (wc & ofp.OFPFW_NW_TOS):
-            if entry_fields.nw_tos != fields.nw_tos:
-                return False
-        if not (wc & ofp.OFPFW_NW_PROTO):
-            if entry_fields.nw_proto != fields.nw_proto:
-                return False
-        #@todo COMPLETE THIS
-        mask = ~entry_fields.nw_src_mask
-        if entry_fields.nw_src & mask != pkt_fields.nw_src & mask:
-            return False
-        mask = ~entry_fields.nw_dst_mask
-        if entry_fields.nw_dst & mask != pkt_fields.nw_dst & mask:
-            return False
-
-        return True
-        
-    def is_match(self, fields, bytes, match_only=False):
-        """
-        Return boolean indicating if this flow entry matches "match"
-        which is generated from a packet.  If so, update counters unless
-        match_only is true (indicating we're searching for a flow entry)
-        Otherwise return None.
-        @fields An ofp_match object typically generated from a packet
-        @bytes Number of bytes in the packet for statistics
-        @match_only If True, do not update state of flow, just return T/F.
-        """
-        # Initial lazy approach
-        # Should probably generate list of identifiers from non-wildcards
-
-        # @todo Support "type" field for ofp_match
-        entry_fields = self.flow_mod.match
-        wc = entry_fields.wildcards
-        if not (wc & ofp.OFPFW_IN_PORT):
-            # @todo logical port match?
-            if entry_fields.in_port != fields.in_port:
-                return False
-
-        # Addresses and metadata:  
-        # @todo Check masks are negated correctly
-        for byte in entry_fields.dl_src_mask:
-            byte = ~byte
-            if entry_fields.dl_src & byte != pkt_fields.dl_src & byte:
-                return False
-        for byte in entry_fields.dl_dst_mask:
-            byte = ~byte
-            if entry_fields.dl_dst & byte != pkt_fields.dl_dst & byte:
-                return False
-        mask = ~entry_fields.metadata_mask
-        if entry_fields.metadata & mask != pkt_fields.metadata & mask:
-            return False
-
-        # @todo  Check untagged logic
-        if not (wc & ofp.OFPFW_DL_VLAN):
-            if entry_fields.dl_vlan != fields.dl_vlan:
-                return False
-        if not (wc & ofp.OFPFW_DL_VLAN_PCP):
-            if entry_fields.dl_vlan_pcp != fields.dl_vlan_pcp:
-                return False
-        if not (wc & ofp.OFPFW_DL_TYPE):
-            if entry_fields.dl_type != fields.dl_type:
-                return False
-
-        # @todo  Switch on DL type; handle ARP cases, etc
-        if entry_fields.dl_type == 0x800:
-            if not _check_ip_fields(entry_fields, fields):
-                return False
-        if not (wc & ofp.OFPFW_MPLS_LABEL):
-            if entry_fields.mpls_label != fields.mpls_lablel:
-                return False
-        if not (wc & ofp.OFPFW_MPLS_TC):
-            if entry_fields.mpls_tc != fields.mpls_tc:
-                return False
-
-        # Okay, if we get here, we have a match.
-        if not match_only:
-            self.last_hit = time.time()
-            self.packets += 1
-            self.bytes += bytes
-
-        return True
-
-    def expire(self):
-        """
-        Check if this entry should be expired.  
-        Returns True if so, False otherwise
-        """
-        now = time.time()
-        if self.flow_mod.hard_timeout:
-            delta = now - self.insert_time
-            if delta > self.flow_mod.hard_timeout:
-                return True
-        if self.flow_mod.idle_timeout:
-            if self.last_hit is None:
-                delta = now - self.insert_time
-            else:
-                delta = now - self.last_hit
-            if delta > self.flow_mod.idle_timeout:
-                return True
-        return False
-
-def prio_sort(x, y):
-    """
-    Sort flow entries by priority
-    """
-    if x.flow_mod.priority > y.flow_mod.priority:
-        return 1
-    if x.flow_mod.priority < y.flow_mod.priority:
-        return -1
-    return 0
-                
-class FlowTable(Thread):
-    def __init__(self, table_id=0):
-        super(FlowTable, self).__init__()
-        self.flow_entries = []
-        self.table_id = table_id
-        self.flow_sync = Condition()
-
-    def expire(self):
-        expired_flows = []
-        # @todo May be a better approach to syncing
-        self.flow_sync.acquire()
-        for flow in self.flow_entries:
-            if flow.expire():
-                # remove flow from self.flows
-                # add flow to expired_flows
-                self.flow_entries.remove(flow)
-                expired_flows.append(flow)
-        self.flow_sync.release()
-        return expired_flows
-
-    def flow_mod_add(self, flow_mod):
-        self.flow_sync.acquire()
-        for flow in self.flow_entries:
-            if flow.flow_match(flow_mod, match_only=True):
-                flow.update(flow_mod)
-                self.flow_sync.release()
-                return
-        new_flow = FlowEntry()
-        new_flow.flow_mod_set(flow_mod)
-        # @todo Is there a sorted list insert operation?
-        self.flow_entries.insert(new_flow)
-        self.flow_entries.sort(prio_sort)
-        self.flow_sync.release()
-        # @todo Check for priority conflict?
-
-    def match_packet(self, match, bytes):
-        """
-        Return a flow object if a match is found for the match structure
-        @match Match structure derived from a packet
-        @bytes The number of bytes in the packet for statistics
-        """
-        self.flow_sync.acquire()
-        for flow in self.flow_entries:
-            if flow.is_match(match, bytes):
-                self.flow_sync.release()
-                return flow
-        self.flow_sync.release()
-        return None
-
-#@todo
-DEFAULT_TABLE_COUNT=1
-
-class FlowPipeline(Thread):
-    """
-    Class to implement a pipeline of flow tables
-    The thread interface is to allow flow expiration operations
-    """
-    def __init__(self, n_tables=DEFAULT_TABLE_COUNT):
-        """
-        Constructor for base class
-        """
-        super(FlowPipeline, self).__init__()
-        self.controller = None
-        self.tables = []
-        self.n_tables = n_tables
-        # Instantiate table instances
-        for idx in range(n_tables):
-            self.tables.append(FlowTable(table_id=idx))
-
-    def run(self):
-        """
-        Thread to run expiration checks
-        """
-        while 1:
-            time.sleep(1)
-            for idx in range(self.n_tables):
-                expired_flows = self.tables[idx].expire
-                for flow in expired_flows:
-                    # @todo  Send flow expiration report
-                    print "Need to expire " + str(flow)
-                
-    def controller_set(self, controller):
-        """
-        Set the controller connection object for transmits to controller
-        For example, the flow table may generate flow expired messages
-        """
-        self.controller = controller
-
-    def flow_mod_add(self, flow_mod):
-        """
-        Update the table according to the flow mod message 
-        @param flow_mod The flow mod message to process
-        """
-        if flow_mod.table_id > self.n_tables:
-            return -1
-        return self.tables[flow_mod.table_id].flow_mod_add(flow_moe)
-
-    def table_caps_get(self, table_id=0):
-        """
-        Return the capabilities supported by this implementation
-        """
-        return 0
-
-    def n_tables_get(self):
-        """
-        Return the number of tables supported by this implementation
-        """
-        return self.n_tables
-
-    def stats_get(self):
-        """
-        Return an ofp_table_stats object
-        """
-        return None
-
-    def flow_stats_get(self, flow_stats_request):
-        """
-        Return an ofp_flow_stats object based on the flow stats request
-        """
-        return None
-
-    def aggregate_stats_get(self, aggregate_stats_request):
-        """
-        Return an ofp_aggregate_stats_reply object based on the request
-        """
-        return None
-
-    def apply_pipeline(self, match, bytes):
-        """
-        Run the pipeline on the packet and execute any actions indicated
-        """
-        table_id = 0
-        action_set = {}
-        while 1:
-            flow = self.tables[table_id].match_packet(match, bytes)
-            if flow is not None:
-                # Check instruction set and execute it updating action_set
-                pass
-
-        # Execute action set
-        
 class GroupTable(object):
     """
     Class to implement a group table object
@@ -393,17 +263,50 @@ class GroupTable(object):
     def __init__(self):
         """
         Constructor for base class
+        Groups is a dict indexed by group_id with values group_mod messages
         """
-        self.groups = []
+        self.groups = {}
 
     def update(self, group_mod):
         """
         Execute the group_mod operation on the table
         """
-        
+        # @todo Error checking, etc; should this be copy?
+        self.groups[group_mod.group_id] = group_mod
+
+    def group_get(self, group_id):
+        if group_id in self.groups.keys():
+            return self.groups[group_id]
+        else:
+            return None
+
     def group_stats_get(self, group_id):
         """
         Return an ofp_group_stats object for the group_id
         """
         return None
 
+def sigint_handler(signum, frame):
+    sys.exit()
+
+#####
+# If we're actually executing this file, then run this
+if __name__ == '__main__':
+    signal.signal(signal.SIGINT, sigint_handler)
+
+    #pdb.set_trace()
+    config = OFSwitchConfig()
+    config.parse_args()
+    threads = []
+
+    ofps = OFSwitch()
+    threads.append(ofps)
+
+    ofps.config_set(config)
+    print 'OFPS Starting...'
+    ofps.start()
+
+    while True:
+        threads = [t.join(2) for t in threads if t is not None and t.isAlive()]
+
+    print 'OFPS Exiting'

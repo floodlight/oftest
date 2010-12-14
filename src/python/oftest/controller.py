@@ -29,12 +29,14 @@ on an administrative socket and can shut down the socket might work.
 import os
 import socket
 import time
+import sys
 from threading import Thread
 from threading import Lock
 from threading import Condition
 from message import *
 from parse import *
 from ofutils import *
+from oftest.message import *
 # For some reason, it seems select to be last (or later).
 # Otherwise get an attribute error when calling select.select
 import select
@@ -223,6 +225,8 @@ class Controller(Thread):
 
             # Now check for message handlers; preference is given to
             # handlers for a specific packet
+            # @todo FIXME handler should be called with ptr to 
+            #   registering object, not 'self'
             handled = False
             if hdr.type in self.handlers.keys():
                 handled = self.handlers[hdr.type](self, msg, rawmsg)
@@ -250,6 +254,7 @@ class Controller(Thread):
         @retval True, reset the switch connection
         """
 
+        self.logger.debug("handling a read socket connection")
         if s == self.listen_socket:
             if self.switch_socket:
                 self.logger.error("Multiple switch cxns not supported")
@@ -268,8 +273,9 @@ class Controller(Thread):
         elif s == self.switch_socket:
             try:
                 pkt = self.switch_socket.recv(self.rcv_size)
-            except:
+            except StandardError:
                 self.logger.warning("Error on switch read")
+                raise
                 return True
 
             if not self.active:
@@ -321,7 +327,7 @@ class Controller(Thread):
             try:
                 sel_in, sel_out, sel_err = \
                     select.select(self.socs, [], self.socs, 1)
-            except:
+            except StandardError:
                 print sys.exc_info()
                 self.logger.error("Select error, exiting")
                 sys.exit(1)
@@ -348,7 +354,7 @@ class Controller(Thread):
                     self.logger.warning("Closing switch cxn")
                     try:
                         self.switch_socket.close()
-                    except:
+                    except StandardError:
                         pass
                     self.switch_socket = None
                     self.socs = self.socs[0:1]
@@ -395,13 +401,13 @@ class Controller(Thread):
         self.active = False
         try:
             self.switch_socket.shutdown(socket.SHUT_RDWR)
-        except:
+        except StandardError:
             self.logger.info("Ignoring switch soc shutdown error")
         self.switch_socket = None
 
         try:
             self.listen_socket.shutdown(socket.SHUT_RDWR)
-        except:
+        except StandardError:
             self.logger.info("Ignoring listen soc shutdown error")
         self.listen_socket = None
         self.dbg_state = "down"
@@ -491,7 +497,7 @@ class Controller(Thread):
 
         return (msg, pkt)
 
-    def transact(self, msg, timeout=None, zero_xid=False):
+    def transact(self, msg, timeout=5, zero_xid=False):
         """
         Run a message transaction with the switch
 
@@ -555,7 +561,7 @@ class Controller(Thread):
                 if msg.header.xid == 0 and not zero_xid:
                     msg.header.xid = gen_xid()
                 outpkt = msg.pack()
-            except:
+            except StandardError:
                 self.logger.error(
                          "message_send: not an OF message or string?")
                 return -1

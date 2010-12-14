@@ -2,22 +2,22 @@
 OpenFlow instruction list class
 """
 
-from action import *
-from instruction import *
+import oftest.action as action
+import oftest.instruction as instruction
 from action_list import action_list
 from base_list import ofp_base_list
 from cstruct import ofp_header
-import copy
+import unittest
 
 # Instruction list
 
 instruction_object_map = {
-    OFPIT_GOTO_TABLE          : instruction_goto_table,
-    OFPIT_WRITE_METADATA      : instruction_write_metadata,      
-    OFPIT_WRITE_ACTIONS       : instruction_write_actions,       
-    OFPIT_APPLY_ACTIONS       : instruction_apply_actions,       
-    OFPIT_CLEAR_ACTIONS       : instruction_clear_actions,       
-    OFPIT_EXPERIMENTER        : instruction_experimenter        
+    action.OFPIT_GOTO_TABLE          : instruction.instruction_goto_table,
+    action.OFPIT_WRITE_METADATA      : instruction.instruction_write_metadata,      
+    action.OFPIT_WRITE_ACTIONS       : instruction.instruction_write_actions,       
+    action.OFPIT_APPLY_ACTIONS       : instruction.instruction_apply_actions,       
+    action.OFPIT_CLEAR_ACTIONS       : instruction.instruction_clear_actions,       
+    action.OFPIT_EXPERIMENTER        : instruction.instruction_experimenter        
 }
 
 class instruction_list(ofp_base_list):
@@ -40,7 +40,7 @@ class instruction_list(ofp_base_list):
         ofp_base_list.__init__(self)
         self.instructions = self.items
         self.name = "instruction"
-        self.class_list = instruction_class_list
+        self.class_list = instruction.instruction_class_list
 
     def unpack(self, binary_string, bytes=None):
         """
@@ -64,9 +64,9 @@ class instruction_list(ofp_base_list):
         count = 0
         cur_string = binary_string
         while bytes_done < bytes:
-            hdr = ofp_instruction()
+            hdr = instruction.ofp_instruction()
             hdr.unpack(cur_string)
-            if hdr.len < OFP_ACTION_HEADER_BYTES:
+            if hdr.len < action.OFP_ACTION_HEADER_BYTES:
                 print "ERROR: Action too short"
                 break
             if not hdr.type in instruction_object_map.keys():
@@ -78,3 +78,20 @@ class instruction_list(ofp_base_list):
             cur_string = cur_string[hdr.len:]
             bytes_done += hdr.len
         return cur_string
+
+class Instruction_List_Test(unittest.TestCase):
+    def runTest(self):
+        # instructions header is 8 bytes
+        l = instruction_list()
+        act = action.action_set_output_port()
+        act.port = 7
+        inst = instruction.instruction_apply_actions()
+        self.assertTrue(inst.actions.add(act)) 
+        self.assertTrue(l.add(inst))
+        pkt = l.pack()
+        # 24 == 8 (list header) + (apply header) 8 + (output action) 8 
+        self.assertEqual(len(pkt),24)
+       
+        l = instruction_list()
+        self.assertTrue(l.add(instruction.instruction_goto_table()))
+        

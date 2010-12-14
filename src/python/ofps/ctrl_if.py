@@ -1,3 +1,30 @@
+######################################################################
+#
+# All files associated with the OpenFlow Python Switch (ofps) are
+# made available for public use and benefit with the expectation
+# that others will use, modify and enhance the Software and contribute
+# those enhancements back to the community. However, since we would
+# like to make the Software available for broadest use, with as few
+# restrictions as possible permission is hereby granted, free of
+# charge, to any person obtaining a copy of this Software to deal in
+# the Software under the copyrights without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+# BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+# ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# 
+######################################################################
+import traceback
+
 """
 Controller Interface Class
 
@@ -6,24 +33,27 @@ roughly based on the controller object from OFTest.  It is
 threaded.
 """
 
-
-import os
 import socket
 import time
-from threading import Thread
-from oftest.message import *
-from oftest.parse import *
-from oftest.ofutils import *
+import sys
+import errno
+import threading
+import logging
+
+
+import oftest.message as message
+import oftest.parse as parse
+import oftest.cstruct as ofp
+import oftest.ofutils as ofutils
+
 # For some reason, it seems select to be last (or later).
 # Otherwise get an attribute error when calling select.select
 import select
-import logging
 
 ##@todo Find a better home for these identifiers (controller)
 RCV_SIZE_DEFAULT = 32768
 
-
-class ControllerInterface(Thread):
+class ControllerInterface(threading.Thread):
     """
     Class abstracting the interface to the controller.
     """
@@ -43,17 +73,53 @@ class ControllerInterface(Thread):
 
         # State
         self.handlers = {}
-        self.keep_alive = False
-        self.active = True
+        self.keep_alive = True
+        self.active = True  # Means we're alive and connecting
+        self.connected = False  # Connected to switch
         self.initial_hello = True
         self.exit_on_reset = True
+        self.sending_lock = threading.Lock()
 
         # Settings
         self.host = host
         self.port = port
-        self.dbg_state = "init"
         self.logger = logging.getLogger("controller")
+        self.no_version_check = False
+        self.version_checked = False
 
+    def _socket_connect(self):
+        """
+        Reset socket and attempt to create and connect
+        Sets self.ctrl_socket
+        If fatal error, clears self.active
+        Sets self.connected to reflect success of connection
+        """
+        self.connected = False
+        if self.ctrl_socket is not None:
+            self.ctrl_socket.close()
+            self.ctrl_socket = None
+
+        self.logger.info("Creating socket")
+        try: # Create socket
+            self.ctrl_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        except (socket.error), e:
+            self.logger.error("Could not create socket.  Exiting:: " + str(e))
+            self.active = False
+            return
+
+        self.logger.info("Control socket connecting.")
+        try:
+            self.ctrl_socket.connect((self.host, self.port))
+        except (socket.error), e:
+            self.logger.error("Could not connect to %s at %d:: %s" % 
+                              (self.host, self.port, str(e)))
+            return
+            
+        self.connected = True
+        self.logger.info("Connected to " + self.host + " on " +
+                         str(self.port))
+        self._send_hand_shake()
+        
     def _pkt_handle(self, pkt):
         """
         Check for all packet handling conditions
@@ -69,7 +135,7 @@ class ControllerInterface(Thread):
         offset = 0
         while offset < len(pkt):
             # Parse the header to get type
-            hdr = of_header_parse(pkt[offset:])
+            hdr = parse.of_header_parse(pkt[offset:])
             if not hdr:
                 self.logger.info("Could not parse header, pkt len", len(pkt))
                 self.parse_errors += 1
@@ -82,41 +148,41 @@ class ControllerInterface(Thread):
             # Extract the raw message bytes
             rawmsg = pkt[offset : offset + hdr.length]
 
-            self.logger.debug("Msg in: len %d. offset %d. type %s. hdr.len %d" %
-                (len(pkt), offset, ofp_type_map[hdr.type], hdr.length))
-            if hdr.version != OFP_VERSION:
-                self.logger.error("Version %d does not match my version %d"
-                                  % (hdr.version, OFP_VERSION))
-                print "Version %d does not match my version %d" % \
-                    (hdr.version, OFP_VERSION)
-                self.active = False
-                self.switch_socket = None
-                self.kill()
+            self.logger.debug("Msg in: len %d. offset %d. hdr type %d. hdr.len %d" %
+                (len(pkt), offset, hdr.type, hdr.length))
+            self.logger.debug("  Message type %s" %
+                              (ofp.ofp_type_map[hdr.type]))
+            if hdr.version != ofp.OFP_VERSION:
+                if self.version_checked is None:
+                    self.version_checked = 1
+                    self.logger.error("Version %d does not match my version %d"
+                                      % (hdr.version, ofp.OFP_VERSION))
+                    print "Version %d does not match my version %d" % \
+                        (hdr.version, ofp.OFP_VERSION)
+                if not self.no_version_check:
+                    self.active = False
+                    self.ctrl_socket = None
 
-            msg = of_message_parse(rawmsg)
+            msg = parse.of_message_parse(rawmsg)
             if not msg:
                 self.parse_errors += 1
                 self.logger.warn("Could not parse message")
                 continue
 
-            # Check if keep alive is set; if so, respond to echo requests
-            if self.keep_alive:
-                if hdr.type == OFPT_ECHO_REQUEST:
-                    self.logger.debug("Responding to echo request")
-                    rep = echo_reply()
-                    rep.header.xid = hdr.xid
-                    # Ignoring additional data
-                    self.message_send(rep.pack(), zero_xid=True)
-                    offset += hdr.length
-                    continue
+            # Uncomment to see dump of every message received
+            # self.logger.debug("msg in " + msg.show())
 
             # Now check for message handlers; preference is given to
             # handlers for a specific packet
             handled = False
             if hdr.type in self.handlers.keys():
-                handled = self.handlers[hdr.type](self, msg, rawmsg)
+                fn = self.handlers[hdr.type]["fn"]
+                cookie = self.handlers[hdr.type]["cookie"]
+                handled = fn(cookie, msg, rawmsg)
             if not handled and ("all" in self.handlers.keys()):
-                handled = self.handlers["all"](self, msg, rawmsg)
+                fn = self.handlers["all"]["fn"]
+                cookie = self.handlers["all"]["cookie"]
+                handled = fn(cookie, msg, rawmsg)
 
             if not handled: # Not handled, enqueue
                 self.packets_discarded += 1
@@ -127,18 +193,34 @@ class ControllerInterface(Thread):
 
             offset += hdr.length
 
-    def _socket_ready(self):
+    def _send_hand_shake(self):
+        """
+        This is send only; All of the negotiation happens elsewhere, e.g., 
+            if the remote side speaks a different protocol version
+        """
+        self.logger.debug("Sending initial HELLO")
+        ret = self.message_send(message.hello())
+        if ret != 0 :
+            self.logger.error("Got %d when sending initial HELL0" % (ret))
+
+    def _process_socket(self):
+        """
+        Return False if error reading socket
+        Otherwise handle packet
+        """
         try:
             pkt = self.ctrl_socket.recv(self.rcv_size)
-        except:
+        except StandardError:
             self.logger.warning("Error on switch read")
-            return
+            return False
 
         if len(pkt) == 0:
             self.logger.info("zero-len pkt in")
-            return
+            return False
 
+        # @todo Handle case of incomplete packet
         self._pkt_handle(pkt)
+        return True
 
     def run(self):
         """
@@ -148,38 +230,49 @@ class ControllerInterface(Thread):
         Listens on socket for messages until an error (or zero len pkt)
         occurs.
 
+        Loop until we get a connection with exponential back-off
+
         When there is a message on the socket, check for handlers; queue the
         packet if no one handles the packet.
         """
-
-        self.dbg_state = "starting"
-
-        # Create listen socket
-        self.logger.info("Create at " + self.host + ":" + 
-                 str(self.port))
-        self.ctrl_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-        self.logger.info("Connecting\n")
-        self.dbg_state = "connecting"
-        self.ctrl_socket.connect((self.host, self.port))
-        self.dbg_state = "connected"
-        self.socs = [self.ctrl_socket]
+        sleep_time = 1
         while self.active:
+            if not self.connected:
+                self._socket_connect()
+            if not self.active:
+                break
+            if not self.connected:
+                # Sleep and try again
+                self.logger.debug("Sleeping before reconnect attempt")
+                time.sleep(sleep_time)
+                continue
+
+            self.socs = [self.ctrl_socket]
             try:
                 sel_in, sel_out, sel_err = \
                     select.select(self.socs, [], self.socs, 1)
-            except:
+            except StandardError:
                 print sys.exc_info()
-                self.logger.error("Select error, exiting")
-                sys.exit(1)
-            if s in sel_in:
-                if _socket_ready():
-                    self.logger.error("Error reading packet from controller")
-                    self.active = False
+                self.logger.error("Select error, disconnecting")
+                self.connected = False
+                continue
 
-    def message_send(self, msg):
+            if self.ctrl_socket in sel_in:
+                if not self._process_socket():
+                    self.logger.error("Error reading packet from controller")
+                    self.connected = False
+                    continue
+
+            if self.ctrl_socket in sel_err:
+                self.logger.error("Error on control socket, resetting")
+                self.connected = False
+                continue
+
+        self.logger.error("Exiting controller thread")
+
+    def message_send(self, msg, zero_xid=False):
         """
-        Send the message to the switch
+        Send the message to the controller
 
         @param msg A string or OpenFlow message object to be forwarded to
         the switch.
@@ -188,31 +281,46 @@ class ControllerInterface(Thread):
 
         """
 
-        if not self.switch_socket:
-            # Sending a string indicates the message is ready to go
+        if not self.ctrl_socket:
             self.logger.info("message_send: no socket")
             return -1
-        #@todo If not string, try to pack
+        # Sending a string indicates the message is ready to go
+        # Otherwise, try to pack the message into a string
         if type(msg) != type(""):
             try:
-                if msg.header.xid == 0:
-                    msg.header.xid = gen_xid()
+                if msg.header.xid == 0 and not zero_xid:
+                    msg.header.xid = ofutils.gen_xid()
                 outpkt = msg.pack()
-            except:
+            except StandardError,e:
+                s= "unknown"
+                if e :
+                    s = str(e)
                 self.logger.error(
-                         "message_send: not an OF message or string?")
+                         "message_send: not an OF message or string? : class '%s' threw '%s' at:\n%s" % \
+                         (str(type(msg)), s, traceback.format_exc()))
                 return -1
         else:
             outpkt = msg
 
         self.logger.debug("Sending pkt of len " + str(len(outpkt)))
-        if self.switch_socket.sendall(outpkt) is None:
-            return 0
+        try:
+            self.sending_lock.acquire()  # stop multiple threads from writing at the same time
+            if self.ctrl_socket.sendall(outpkt) is None:
+                ## self.sending_lock.release()  # the 'finally' definition makes this redundant
+                return 0
+        except socket.error, e:
+            if isinstance(e.args, tuple):
+                print "errno is %d" % (e[0])
+                if e[0] == errno.EPIPE:
+                    # Remote hangup
+                    return 0
+        finally:
+            self.sending_lock.release()
 
         self.logger.error("Unknown error on sendall")
         return -1
 
-    def register(self, msg_type, handler):
+    def register(self, msg_type, handler, calling_obj=None, cookie=None):
         """
         Register a callback to receive a specific message type.
 
@@ -231,11 +339,11 @@ class ControllerInterface(Thread):
         if not handler and msg_type in self.handlers.keys():
             del self.handlers[msg_type]
             return
-        self.handlers[msg_type] = handler
+        self.handlers[msg_type] = {"fn" : handler, 
+                                   "cookie" : cookie}
 
     def __str__(self):
         string = "Controller Interface:\n"
-        string += "  state           " + self.dbg_state + "\n"
         string += "  total pkts      " + str(self.packets_total) + "\n"
         string += "  handled pkts    " + str(self.packets_handled) + "\n"
         string += "  discarded pkts  " + str(self.packets_discarded) + "\n"

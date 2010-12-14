@@ -126,14 +126,6 @@ import os
 
 import testutils
 
-try:
-    import scapy.all as scapy
-except:
-    try:
-        import scapy as scapy
-    except:
-        sys.exit("Need to install scapy for packet parsing")
-
 ##@var DEBUG_LEVELS
 # Map from strings to debugging levels
 DEBUG_LEVELS = {
@@ -317,7 +309,7 @@ def test_list_generate(config):
 
         try:
             mod = __import__(modfile)
-        except:
+        except StandardError:
             logging.warning("Could not import file " + file)
             continue
         mod_name_map[modfile] = mod
@@ -388,7 +380,7 @@ if config["list"]:
             try:
                 desc = eval('mod.' + test + '.__doc__.strip()')
                 desc = desc.split('\n')[0]
-            except:
+            except StandardError:
                 desc = "No description"
             if test_prio_get(mod, test) < 0:
                 start_str = "  * " + test + ":"
@@ -457,12 +449,12 @@ if config["platform"]:
     logging.info("Importing platform: " + _imp_string)
     try:
         exec(_imp_string)
-    except:
+    except StandardError:
         logging.warn("Failed to import " + config["platform"] + " file")
 
 try:
     platform_config_update(config)
-except:
+except StandardError:
     logging.warn("Could not run platform host configuration")
 
 if not config["port_map"]:
@@ -479,7 +471,7 @@ logging.info("OF port map: " + str(config["port_map"]))
 for (modname,mod) in config["mod_name_map"].items():
     try:
         mod.test_set_init(config)
-    except:
+    except StandardError:
         logging.warning("Could not run test_set_init for " + modname)
 
 if config["dbg_level"] == logging.CRITICAL:

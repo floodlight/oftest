@@ -15,12 +15,12 @@ for filters should include a callback or a counter
 """
 
 import sys
-import os
+#import os
 import socket
 import time
 import netutils
 from threading import Thread
-from threading import Lock
+#from threading import Lock
 from threading import Condition
 import select
 import logging
@@ -66,7 +66,7 @@ class DataPlanePort(Thread):
         self.logger = logging.getLogger(logname)
         try:
             self.socket = self.interface_open(interface_name)
-        except:
+        except StandardError:
             self.logger.info("Could not open socket")
             sys.exit(1)
         self.logger.info("Openned port monitor socket")
@@ -98,7 +98,7 @@ class DataPlanePort(Thread):
             try:
                 sel_in, sel_out, sel_err = \
                     select.select(self.socs, [], [], 1)
-            except:
+            except StandardError:
                 print sys.exc_info()
                 self.logger.error("Select error, exiting")
                 break
@@ -111,7 +111,7 @@ class DataPlanePort(Thread):
 
             try:
                 rcvmsg = self.socket.recv(RCV_SIZE_DEFAULT)
-            except socket.error:
+            except StandardError:
                 if not error_warned:
                     self.logger.info("Socket error on recv")
                     error_warned = True
@@ -155,7 +155,7 @@ class DataPlanePort(Thread):
         self.running = False
         try:
             self.socket.close()
-        except:
+        except StandardError:
             self.logger.info("Ignoring dataplane soc shutdown error")
 
     def dequeue(self, use_lock=True):
@@ -183,7 +183,7 @@ class DataPlanePort(Thread):
         rv = None
         try:
             rv = self.packets[0][1]
-        except:
+        except StandardError:
             rv = None
         return rv
 
@@ -199,10 +199,11 @@ class DataPlanePort(Thread):
         self.pkt_sync.release()
 
 
-    def send(self, packet):
+    def send(self, packet, queue_id=0):
         """
         Send a packet to the dataplane port
         @param packet The packet data to send to the port
+        @param queue_id The queue to send to (to be implemented)
         @retval The number of bytes sent
         """
         return self.socket.send(packet)
@@ -255,7 +256,7 @@ class DataPlane:
                                                     port_number, self)
         self.port_list[port_number].start()
         if self.pkt_handler is not None:
-            self.port_list[port_number].register(pkt_handler)
+            self.port_list[port_number].register(self.pkt_handler)
 
     def register(self, pkt_handler):
         """
@@ -265,16 +266,17 @@ class DataPlane:
         for port_number in self.port_list.keys():
             self.port_list[port_number].register(pkt_handler)
         
-    def send(self, port_number, packet):
+    def send(self, port_number, packet, queue_id=0):
         """
         Send a packet to the given port
         @param port_number The port to send the data to
         @param packet Raw packet data to send to port
+        @param queue_id The queue to send to (to be implemented)
         """
         #@todo Verify port_number is in keys of port_list
         self.logger.debug("Sending %d bytes to port %d" %
                           (len(packet), port_number))
-        bytes = self.port_list[port_number].send(packet)
+        bytes = self.port_list[port_number].send(packet, queue_id=queue_id)
         if bytes != len(packet):
             self.logger.error("Unhandled send error, length mismatch %d != %d" %
                      (bytes, len(packet)))

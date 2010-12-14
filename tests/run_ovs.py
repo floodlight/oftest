@@ -7,6 +7,7 @@ import os
 import time
 from subprocess import Popen,PIPE,call,check_call
 from optparse import OptionParser
+import sys
 
 print("Modified for use with OVS")
 parser = OptionParser(version="%prog 0.1")
@@ -52,7 +53,7 @@ try:
     check_call(["ls", ofd])
 except:
     print "Could not find datapath daemon: " + ofd
-    os._exit(1)
+    sys.exit(1)
 
 if not options.no_wait:
     print "Starting ofprotocol in 2 seconds; ^C to quit"
