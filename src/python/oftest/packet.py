@@ -24,6 +24,7 @@
 # 
 ######################################################################
 import pdb
+import os
 
 """
 OpenFlow packet class
@@ -60,6 +61,8 @@ class Packet(object):
     packet parsing and modification functions used to manipulate
     a packet.
     """
+    
+    icmp_counter = 1
 
     def __init__(self, in_port=None, data=""):
         # Use entries in match when possible.
@@ -136,34 +139,9 @@ class Packet(object):
         about this packet other than that it is a valid ethernet/IP/TCP frame.
         """
         self.data = ""
-        addr = dl_dst.split(":")
-        for byte in map(lambda z: int(z, 16), addr):
-            self.data += struct.pack("!B", byte)
-        addr = dl_src.split(":")
-        for byte in map(lambda z: int(z, 16), addr):
-            self.data += struct.pack("!B", byte)
-
-        if (dl_vlan_enable):
-            # Form and add VLAN tag
-            self.data += struct.pack("!H", 0x8100)
-            vtag = dl_vlan | dl_vlan_pcp >> 12 | dl_vlan_cfi >> 15
-            self.data += struct.pack("!H", vtag)
-
-        # Add type/len field
-        self.data += struct.pack("!H", 0x800)
-
-        # Add IP header
-        v_and_hlen = 0x45  # assumes no ip or tcp options
-        ip_len = 120 + 40  # assumes no ip or tcp options
-        self.data += struct.pack("!BBHHHBBH", v_and_hlen, ip_tos, ip_len, 
-                                 0, # ip.id 
-                                 0, # ip.frag_off
-                                 64, # ip.ttl
-                                 socket.IPPROTO_TCP,
-                                 0)  # ip.checksum
-        # convert  ipsrc/dst to ints
-        self.data += struct.pack("!LL", ascii_ip_to_bin(ip_src), 
-                                 ascii_ip_to_bin(ip_dst))
+        self._make_ip_packet(dl_dst, dl_src, dl_vlan_enable, dl_vlan, 
+                             dl_vlan_pcp, dl_vlan_cfi, ip_tos, ip_src, 
+                             ip_dst, socket.IPPROTO_TCP)
 
         # Add TCP header
         self.data += struct.pack("!HHLLBBHHH",
@@ -180,8 +158,94 @@ class Packet(object):
 
         # Fill out packet
         self.data += "D" * (pktlen - len(self.data))
+        return self
+    
+    def simple_icmp_packet(self,
+                          pktlen=100, 
+                          dl_dst='00:01:02:03:04:05',
+                          dl_src='00:06:07:08:09:0a',
+                          dl_vlan_enable=False,
+                          dl_vlan=0,
+                          dl_vlan_pcp=0,
+                          dl_vlan_cfi=0,
+                          ip_src='192.168.0.1',
+                          ip_dst='192.168.0.2',
+                          ip_tos=0,
+                          icmp_type=8, # ICMP_ECHO_REQUEST
+                          icmp_code=0, 
+                          ):
+        """
+        Return a simple dataplane ICMP packet
+
+        Supports a few parameters:
+        @param len Length of packet in bytes w/o CRC
+        @param dl_dst Destinatino MAC
+        @param dl_src Source MAC
+        @param dl_vlan_enable True if the packet is with vlan, False otherwise
+        @param dl_vlan VLAN ID
+        @param dl_vlan_pcp VLAN priority
+        @param ip_src IP source
+        @param ip_dst IP destination
+        @param ip_tos IP ToS
+        @param tcp_dport TCP destination port
+        @param ip_sport TCP source port
+
+        Generates a simple TCP request.  Users shouldn't assume anything 
+        about this packet other than that it is a valid ethernet/IP/TCP frame.
+        """
+        self.data = ""
+        self._make_ip_packet(dl_dst, dl_src, dl_vlan_enable, dl_vlan, 
+                             dl_vlan_pcp, dl_vlan_cfi, ip_tos, ip_src, 
+                             ip_dst, socket.IPPROTO_ICMP)
+
+        # Add ICMP header
+        self.data += struct.pack("!BBHHH",
+                                 icmp_type,
+                                 icmp_code,
+                                 0,  # icmp.checksum
+                                 os.getpid() & 0xffff,  # icmp.echo.id
+                                 Packet.icmp_counter   # icmp.echo.seq
+                                 )                  
+        Packet.icmp_counter += 1       
+
+        # Fill out packet
+        self.data += "D" * (pktlen - len(self.data))
 
         return self
+
+    
+    def _make_ip_packet(self, dl_dst, dl_src, dl_vlan_enable, dl_vlan, 
+                          dl_vlan_pcp, dl_vlan_cfi, ip_tos, ip_src, 
+                          ip_dst, ip_proto):
+        self.data = ""
+        addr = dl_dst.split(":")
+        for byte in map(lambda z: int(z, 16), addr):
+            self.data += struct.pack("!B", byte)
+        addr = dl_src.split(":")
+        for byte in map(lambda z: int(z, 16), addr):
+            self.data += struct.pack("!B", byte)
+
+        if (dl_vlan_enable):
+            # Form and add VLAN tag
+            self.data += struct.pack("!H", 0x8100)
+            vtag = dl_vlan | dl_vlan_pcp >> 12 | dl_vlan_cfi >> 15
+            self.data += struct.pack("!H", vtag)
+
+        # Add type/len field
+        self.data += struct.pack("!H", ETHERTYPE_IP)
+
+        # Add IP header
+        v_and_hlen = 0x45  # assumes no ip or tcp options
+        ip_len = 120 + 40  # assumes no ip or tcp options
+        self.data += struct.pack("!BBHHHBBH", v_and_hlen, ip_tos, ip_len, 
+                                 0, # ip.id 
+                                 0, # ip.frag_off
+                                 64, # ip.ttl
+                                 ip_proto,
+                                 0)  # ip.checksum
+        # convert  ipsrc/dst to ints
+        self.data += struct.pack("!LL", ascii_ip_to_bin(ip_src), 
+                                 ascii_ip_to_bin(ip_dst))
 
     def length(self):
         return len(self.data)
@@ -226,6 +290,8 @@ class Packet(object):
         except (parse_error), e:
             self.logger.warn("Giving up on parsing packet, got %s" % 
                              (str(e)))
+            return None
+        return self.match
 
     def _parse_arp(self, idx):
         # @todo Implement
