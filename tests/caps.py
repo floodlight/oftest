@@ -72,7 +72,7 @@ def flow_caps_common(obj, is_exact=True):
     if is_exact:
         match.wildcards = 0
     else:
-        match.wildcards |= ofp.OFPFW_DL_SRC
+        match.dl_src_mask = [0,0,0,0,0,0]
 
     request.match = match
     caps_logger.info(request.show())
