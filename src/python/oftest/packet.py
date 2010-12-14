@@ -80,7 +80,7 @@ class Packet(object):
         if self.data != "":
             self.parse()
 
-    def __repr__(self):
+    def show(self):
         """ Return a ascii hex representation of the packet's data"""
         ret = ""
         c = 0
@@ -93,6 +93,12 @@ class Packet(object):
             c += 1
             ret += "%0.2x " % struct.unpack('B', b)
         return ret
+
+    def __repr__(self):
+        return self.data
+    
+    def __str__(self):
+        return  self.__repr__()
 
     def __len__(self):
         return len(self.data)
