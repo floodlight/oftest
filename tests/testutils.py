@@ -1,24 +1,16 @@
 
 import sys
-import copy
+import logging
+#import types
 
-try:
-    import scapy.all as scapy
-except:
-    try:
-        import scapy as scapy
-    except:
-        sys.exit("Need to install scapy for packet parsing")
-
-import oftest.controller as controller
+#import oftest.controller as controller
 import oftest.cstruct as ofp
 import oftest.message as message
-import oftest.dataplane as dataplane
+#import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.parse as parse
 from oftest import instruction
-import logging
-import types
+from oftest.packet import Packet
 
 global skipped_test_count
 skipped_test_count = 0
@@ -61,28 +53,16 @@ def delete_all_flows(ctrl, logger):
 
 def clear_port_config(parent, port, logger):
     """
-    Clear the port configuration (currently only no flood setting)
+    Clear the port configuration 
 
     @param parent Object implementing controller and assert equal
     @param logger Logging object
     """
     rv = port_config_set(parent.controller, port,
-                         0, ofp.OFPPC_NO_FLOOD, logger)
-    self.assertEqual(rv, 0, "Failed to reset port config")
+                         0, 0, logger)
+    parent.assertEqual(rv, 0, "Failed to reset port config")
 
-def simple_tcp_packet(pktlen=100, 
-                      dl_dst='00:01:02:03:04:05',
-                      dl_src='00:06:07:08:09:0a',
-                      dl_vlan_enable=False,
-                      dl_vlan=0,
-                      dl_vlan_pcp=0,
-                      dl_vlan_cfi=0,
-                      ip_src='192.168.0.1',
-                      ip_dst='192.168.0.2',
-                      ip_tos=0,
-                      tcp_sport=1234,
-                      tcp_dport=80
-                      ):
+def simple_tcp_packet(**args):
     """
     Return a simple dataplane TCP packet
 
@@ -104,32 +84,10 @@ def simple_tcp_packet(pktlen=100,
     it is a valid ethernet/IP/TCP frame.
     """
     # Note Dot1Q.id is really CFI
-    if (dl_vlan_enable):
-        pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-            scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi, vlan=dl_vlan)/ \
-            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
-            scapy.TCP(sport=tcp_sport, dport=tcp_dport)
-    else:
-        pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
-            scapy.TCP(sport=tcp_sport, dport=tcp_dport)
 
-    pkt = pkt/("D" * (pktlen - len(pkt)))
+    return Packet().simple_tcp_packet(**args)
 
-    return pkt
-
-def simple_icmp_packet(pktlen=60, 
-                      dl_dst='00:01:02:03:04:05',
-                      dl_src='00:06:07:08:09:0a',
-                      dl_vlan_enable=False,
-                      dl_vlan=0,
-                      dl_vlan_pcp=0,
-                      ip_src='192.168.0.1',
-                      ip_dst='192.168.0.2',
-                      ip_tos=0,
-                      icmp_type=8,
-                      icmp_code=0
-                      ):
+def simple_icmp_packet(*args):
     """
     Return a simple ICMP packet
 
@@ -150,19 +108,8 @@ def simple_icmp_packet(pktlen=60,
     shouldn't assume anything about this packet other than that
     it is a valid ethernet/ICMP frame.
     """
-    if (dl_vlan_enable):
-        pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-            scapy.Dot1Q(prio=dl_vlan_pcp, id=0, vlan=dl_vlan)/ \
-            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
-            scapy.ICMP(type=icmp_type, code=icmp_code)
-    else:
-        pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
-            scapy.ICMP(type=icmp_type, code=icmp_code)
 
-    pkt = pkt/("0" * (pktlen - len(pkt)))
-
-    return pkt
+    return Packet().simple_icmp_packet(*args)
 
 def do_barrier(ctrl):
     b = message.barrier_request()
@@ -180,7 +127,7 @@ def port_config_get(controller, port_no, logger):
     advertised values
     """
     request = message.features_request()
-    reply, pkt = controller.transact(request, timeout=2)
+    reply, _ = controller.transact(request, timeout=2)
     if reply is None:
         logger.warn("Get feature request failed")
         return None, None, None
@@ -202,7 +149,7 @@ def port_config_set(controller, port_no, config, mask, logger):
     """
     logger.info("Setting port " + str(port_no) + " to config " + str(config))
     request = message.features_request()
-    reply, pkt = controller.transact(request, timeout=2)
+    reply, _ = controller.transact(request, timeout=2)
     if reply is None:
         return -1
     logger.debug(reply.show())
@@ -231,7 +178,7 @@ def receive_pkt_check(dataplane, pkt, yes_ports, no_ports, assert_if, logger):
     """
     for ofport in yes_ports:
         logger.debug("Checking for pkt on port " + str(ofport))
-        (rcv_port, rcv_pkt, pkt_time) = dataplane.poll(
+        (_, rcv_pkt, _) = dataplane.poll(
             port_number=ofport, timeout=1)
         assert_if.assertTrue(rcv_pkt is not None, 
                              "Did not receive pkt on " + str(ofport))
@@ -241,7 +188,7 @@ def receive_pkt_check(dataplane, pkt, yes_ports, no_ports, assert_if, logger):
 
     for ofport in no_ports:
         logger.debug("Negative check for pkt on port " + str(ofport))
-        (rcv_port, rcv_pkt, pkt_time) = dataplane.poll(
+        (_, rcv_pkt, _) = dataplane.poll(
             port_number=ofport, timeout=1)
         assert_if.assertTrue(rcv_pkt is None, 
                              "Unexpected pkt on port " + str(ofport))
@@ -253,7 +200,7 @@ def receive_pkt_verify(parent, egr_port, exp_pkt):
 
     parent must implement dataplane, assertTrue and assertEqual
     """
-    (rcv_port, rcv_pkt, pkt_time) = parent.dataplane.poll(port_number=egr_port,
+    (rcv_port, rcv_pkt, _) = parent.dataplane.poll(port_number=egr_port,
                                                           timeout=1)
     if rcv_pkt is None:
         parent.logger.error("ERROR: No packet received from " + str(egr_port))
@@ -338,7 +285,7 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
     @param pkt_count If >= 0, verify packet count
     @param byte_count If >= 0, verify byte count
     """
-    (response, raw) = parent.controller.poll(ofp.OFPT_FLOW_REMOVED, 2)
+    (response, _) = parent.controller.poll(ofp.OFPT_FLOW_REMOVED, 2)
     parent.assertTrue(response is not None, 'No flow removed message received')
 
     if request is None:
@@ -355,7 +302,7 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
     if (req_match.wildcards != 0):
         parent.assertEqual(request.priority, response.priority,
                            'Flow remove prio mismatch: ' + 
-                           str(request,priority) + " != " + 
+                           str(request.priority) + " != " + 
                            str(response.priority))
         parent.assertEqual(response.reason, ofp.OFPRR_HARD_TIMEOUT,
                            'Flow remove reason is not HARD TIMEOUT:' +
@@ -413,7 +360,7 @@ def flow_msg_create(parent, pkt, ing_port=None, instruction_list=None,
         act = action.action_set_queue()
         act.port = egr_port
         act.queue_id = egr_queue
-        actions_list.append(act)
+        action_list.append(act)
     elif egr_port is not None:
         act = action.action_set_output_port()
         act.port = egr_port
@@ -579,7 +526,7 @@ def action_generate(parent, field_to_mod, mod_field_vals):
         act.dl_addr = parse.parse_mac(mod_field_vals['dl_src'])
     elif field_to_mod == 'dl_vlan_enable':
         if not mod_field_vals['dl_vlan_enable']: # Strip VLAN tag
-            act = action.action_strip_vlan()
+            act = action.action_pop_vlan()
         # Add VLAN tag is handled by dl_vlan field
         # Will return None in this case
     elif field_to_mod == 'dl_vlan':

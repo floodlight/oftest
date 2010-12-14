@@ -9,13 +9,6 @@ from error import *
 from action import *
 from action_list import action_list
 from cstruct import *
-try:
-    import scapy.all as scapy
-except:
-    try:
-        import scapy as scapy
-    except:
-        sys.exit("Need to install scapy for packet parsing")
 
 """
 of_message.py
@@ -219,37 +212,7 @@ def parse_ip(ip_str):
         val += a
     return val
 
-def packet_type_classify(ether):
-    try:
-        dot1q = ether[scapy.Dot1Q]
-    except LookupError:
-        dot1q = None
-
-    try:
-        ip = ether[scapy.IP]
-    except LookupError:
-        ip = None
-
-    try:
-        tcp = ether[scapy.TCP]
-    except LookupError:
-        tcp = None
-
-    try:
-        udp = ether[scapy.UDP]
-    except LookupError:
-        udp = None
-
-    try:
-        icmp = ether[scapy.ICMP]
-    except LookupError:
-        icmp = None
-
-    # @todo arp is not yet supported
-    arp = None
-    return (dot1q, ip, tcp, udp, icmp, arp)
-
-def packet_to_flow_match(packet, pkt_format="L2"):
+def packet_to_flow_match(packet):
     """
     Create a flow match that matches packet with the given wildcards
 
@@ -265,67 +228,4 @@ def packet_to_flow_match(packet, pkt_format="L2"):
     @todo Implement ICMP and ARP fields
     """
 
-    #@todo check min length of packet
-    if pkt_format.upper() != "L2":
-        parse_logger.error("Only L2 supported for packet_to_flow")
-        return None
-
-    if type(packet) == type(""):
-        ether = scapy.Ether(packet)
-    else:
-        ether = packet
-
-    # For now, assume ether IP packet and ignore wildcards
-    try:
-        (dot1q, ip, tcp, udp, icmp, arp) = packet_type_classify(ether)
-    except StandardError:
-        parse_logger.error("packet_to_flow_match: Classify error")
-        return None
-
-    match = ofp_match()
-    match.wildcards = OFPFW_ALL
-    #@todo Check if packet is other than L2 format
-    #@todo NEEDS UPDATE FOR 1.1
-    match.dl_dst = parse_mac(ether.dst)
-    match.dl_src = parse_mac(ether.src)
-    match.dl_type = ether.type
-    match.wildcards &= ~OFPFW_DL_TYPE
-
-    if dot1q:
-        match.dl_vlan = dot1q.vlan
-        match.dl_vlan_pcp = dot1q.prio
-        match.dl_type = dot1q.type
-    else:
-        match.dl_vlan = OFP_VLAN_NONE
-        match.dl_vlan_pcp = 0
-    match.wildcards &= ~OFPFW_DL_VLAN
-    match.wildcards &= ~OFPFW_DL_VLAN_PCP
-
-    if ip:
-        match.nw_src = parse_ip(ip.src)
-        match.nw_dst = parse_ip(ip.dst)
-        match.nw_tos = ip.tos
-        match.wildcards &= ~OFPFW_NW_TOS
-
-    if tcp:
-        match.nw_proto = 6
-        match.wildcards &= ~OFPFW_NW_PROTO
-    elif not tcp and udp:
-        tcp = udp
-        match.nw_proto = 17
-        match.wildcards &= ~OFPFW_NW_PROTO
-
-    if tcp:
-        match.tp_src = tcp.sport
-        match.wildcards &= ~OFPFW_TP_SRC
-        match.tp_dst = tcp.dport
-        match.wildcards &= ~OFPFW_TP_DST
-
-    if icmp:
-        match.nw_proto = 1
-        match.tp_src = icmp.type
-        match.tp_dst = icmp.code
-
-    #@todo Implement ARP fields
-
-    return match
+    return packet.parse()

@@ -126,14 +126,6 @@ import os
 
 import testutils
 
-try:
-    import scapy.all as scapy
-except:
-    try:
-        import scapy as scapy
-    except:
-        sys.exit("Need to install scapy for packet parsing")
-
 ##@var DEBUG_LEVELS
 # Map from strings to debugging levels
 DEBUG_LEVELS = {
