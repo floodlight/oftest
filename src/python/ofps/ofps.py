@@ -275,7 +275,7 @@ class GroupTable(object):
 
     def group_get(self, group_id):
         if group_id in self.groups.keys():
-            return groups[group_id]
+            return self.groups[group_id]
         else:
             return None
 

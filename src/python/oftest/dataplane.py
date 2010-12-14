@@ -15,12 +15,12 @@ for filters should include a callback or a counter
 """
 
 import sys
-import os
+#import os
 import socket
 import time
 import netutils
 from threading import Thread
-from threading import Lock
+#from threading import Lock
 from threading import Condition
 import select
 import logging

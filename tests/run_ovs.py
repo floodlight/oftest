@@ -7,6 +7,7 @@ import os
 import time
 from subprocess import Popen,PIPE,call,check_call
 from optparse import OptionParser
+import sys
 
 print("Modified for use with OVS")
 parser = OptionParser(version="%prog 0.1")

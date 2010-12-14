@@ -263,12 +263,12 @@ def mpls_match(match_a, match_b):
     @params match_a Used for wildcards
     @params match_b Other fields for match
     """
-    if not (wildcards & ofp.OFPFW_MPLS_LABEL):
+    if not (match_a.wildcards & ofp.OFPFW_MPLS_LABEL):
         if match_a.mpls_label != match_b.mpls_label:
             flow_logger.debug("Failed mpls_label: %d vs %d" % 
                               (match_a.mpls_label, match_b.mpls_label))
             return False
-    if not (wildcards & ofp.OFPFW_MPLS_TC):
+    if not (match_b.wildcards & ofp.OFPFW_MPLS_TC):
         if match_a.mpls_tc != match_b.mpls_tc:
             flow_logger.debug("Failed mpls_tc: %d vs %d" % 
                               (match_a.mpls_tc, match_b.mpls_tc))

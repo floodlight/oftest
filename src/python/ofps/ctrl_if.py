@@ -38,6 +38,8 @@ import time
 import sys
 import errno
 import threading
+import logging
+
 
 import oftest.message as message
 import oftest.parse as parse
@@ -47,7 +49,6 @@ import oftest.ofutils as ofutils
 # For some reason, it seems select to be last (or later).
 # Otherwise get an attribute error when calling select.select
 import select
-import logging
 
 ##@todo Find a better home for these identifiers (controller)
 RCV_SIZE_DEFAULT = 32768
@@ -161,7 +162,6 @@ class ControllerInterface(threading.Thread):
                 if not self.no_version_check:
                     self.active = False
                     self.ctrl_socket = None
-                    self.kill()
 
             msg = parse.of_message_parse(rawmsg)
             if not msg:

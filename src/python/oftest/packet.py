@@ -536,7 +536,7 @@ class Packet(object):
             self.match.nw_proto == socket.IPPROTO_UDP): 
             self._set_2bytes(self.tcp_header_offset, tp_src)
         elif (self.match.nw_proto == socket.IPPROTO_ICMP):
-            self._set_1byte(self.tcp_header_offset, tp_src)
+            self._set_1bytes(self.tcp_header_offset, tp_src)
         self._update_l4_checksum()
             
     def set_tp_dst(self, tp_dst):
@@ -546,7 +546,7 @@ class Packet(object):
             self.match.nw_proto == socket.IPPROTO_UDP): 
             self._set_2bytes(self.tcp_header_offset +2, tp_dst)
         elif (self.match.nw_proto == socket.IPPROTO_ICMP):
-            self._set_1byte(self.tcp_header_offset + 1, tp_dst)
+            self._set_1bytes(self.tcp_header_offset + 1, tp_dst)
         self._update_l4_checksum()
 
     def copy_ttl_out(self):
