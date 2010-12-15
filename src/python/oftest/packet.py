@@ -23,7 +23,6 @@
 # SOFTWARE.
 # 
 ######################################################################
-import pdb
 import os
 
 """
@@ -75,8 +74,8 @@ class Packet(object):
         # parsable tags
         self.ip_header_offset = None
         self.tcp_header_offset = None
-        self.mpls_tag_offset = None
-        self.vlan_tag_offset = None       
+        self.mpls_tag_offset = None         # pointer to outer mpls tag
+        self.vlan_tag_offset = None         # pointer to outer vlan tag
         self.action_set = {}
         self.queue_id = 0
 
@@ -317,6 +316,7 @@ class Packet(object):
         l2_type = struct.unpack("!H", self.data[idx:idx+2])[0]
         idx += 2
         if l2_type in [ETHERTYPE_VLAN, ETHERTYPE_VLAN_QinQ] :
+            self.vlan_tag_offset = 12
             blob = struct.unpack("H", self.data[idx:idx+2])[0]
             self.match.dl_vlan_pcp = blob & 0xd000
             #cfi = blob & 0x1000     #@todo figure out what to do if cfi!=0
@@ -330,6 +330,7 @@ class Packet(object):
                     raise parse_error("_parse_l2(): Too many vlan tags")
                 l2_type = struct.unpack("!H", self.data[idx:idx+2])[0]
         else:
+            self.vlan_tag_offset = None
             self.match.dl_vlan = 0xFFFF
             self.match.dl_vlan_pcp = 0
         self.match.dl_type = l2_type
@@ -486,11 +487,11 @@ class Packet(object):
         # @todo Verify proper location of VLAN id
         if self.vlan_tag_offset is None:
             return
-        offset = self.vlan_tag_offset
-        first = self.data[offset]
-        first = (first & 0xf0) | ((vid & 0xf00) >> 8)
-        self.data[offset] = first
-        self.data[offset + 1] = vid & 0xff
+        offset = self.vlan_tag_offset + 2
+        short = struct.unpack('!H', self.data[offset:offset+2])[0]
+        short = (short & 0xf000) | ((vid & 0x0fff) )
+        self.data = self.data[0:offset] + struct.pack('!H',short) + \
+                self.data[offset+2:len(self.data)]
 
     def set_vlan_pcp(self, pcp):
         # @todo Verify proper location of VLAN pcp

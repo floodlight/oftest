@@ -4,11 +4,10 @@ import logging
 #import types
 
 #import oftest.controller as controller
-import oftest.cstruct as ofp
+from oftest import cstruct as ofp
 import oftest.message as message
 #import oftest.dataplane as dataplane
 import oftest.action as action
-import oftest.instruction as instruction
 import oftest.parse as parse
 from oftest import instruction
 from oftest.packet import Packet
