@@ -48,7 +48,7 @@ import oftest.ofutils as ofutils
 
 # For some reason, it seems select to be last (or later).
 # Otherwise get an attribute error when calling select.select
-import select
+import select #@UnresolvedImport
 
 ##@todo Find a better home for these identifiers (controller)
 RCV_SIZE_DEFAULT = 32768

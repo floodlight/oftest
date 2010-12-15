@@ -500,6 +500,7 @@ def test_param_get(config, key, default=None):
 
     s = "val = " + str(key)
     try:
+        val = None
         exec s
         return val
     except:

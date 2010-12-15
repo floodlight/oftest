@@ -22,7 +22,7 @@ import netutils
 from threading import Thread
 #from threading import Lock
 from threading import Condition
-import select
+import select #@UnresolvedImport
 import logging
 from oft_assert import oft_assert
 

@@ -39,7 +39,7 @@ from ofutils import *
 from oftest.message import *
 # For some reason, it seems select to be last (or later).
 # Otherwise get an attribute error when calling select.select
-import select
+import select #@UnresolvedImport
 import logging
 
 ##@todo Find a better home for these identifiers (controller)

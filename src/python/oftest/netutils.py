@@ -23,7 +23,7 @@ Network utilities for the OpenFlow test framework
 #############################################################################
 
 import socket
-from fcntl import ioctl
+from fcntl import ioctl #@UnresolvedImport
 import struct
 
 # From net/if_arp.h
