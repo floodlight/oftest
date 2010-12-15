@@ -414,15 +414,15 @@ class FlowEntry(object):
         if self.flow_mod.hard_timeout:
             delta = now - self.insert_time
             if delta > self.flow_mod.hard_timeout:
-                return True
+                return ofp.OFPRR_HARD_TIMEOUT
         if self.flow_mod.idle_timeout:
             if self.last_hit is None:
                 delta = now - self.insert_time
             else:
                 delta = now - self.last_hit
             if delta > self.flow_mod.idle_timeout:
-                return True
-        return False
+                return ofp.OFPRR_IDLE_TIMEOUT
+        return None
     
     def flow_stat_get(self):
         """

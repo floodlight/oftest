@@ -23,6 +23,7 @@
 # SOFTWARE.
 # 
 ######################################################################
+import time
 
 """
 The FlowTable class definition
@@ -63,19 +64,31 @@ class FlowTable(object):
         Run the expiration process on this table
         Run through all flows in the table and call the expire
         method.  Build a list of expired flows.
-        @return The list of expired flows
+        @return A list of flow_removed messages, ready to send to controller
         """
-        expired_flows = []
-        # @todo May be a better approach to syncing
+        msgs = []
+        # @todo May be a better approach than sync'ing
         self.flow_sync.acquire()
         for flow in self.flow_entries:
-            if flow.expire():
-                # remove flow from self.flows
-                # add flow to expired_flows
+            timeout = flow.expire()
+            if timeout: # timeout == one of None, OFPRR_IDLE_TIMEOUT, or OFPRR_HARD_TIMEOUT
                 self.flow_entries.remove(flow)
-                expired_flows.append(flow)
+                if flow.flow_mod.flags & ofp.OFPFF_SEND_FLOW_REM:
+                    msg = message.flow_removed()
+                    msg.cookie = flow.flow_mod.cookie
+                    msg.priority = flow.flow_mod.priority
+                    msg.reason = timeout
+                    msg.table_id = self.table_id
+                    duration = time.time() - self.insert_time
+                    msg.duration_sec = int(duration)
+                    msg.duration_nsec = (duration-msg.duration_sec) * 10e9
+                    msg.idle_timeout = flow.flow_mod.idle_timeout
+                    msg.packet_count = flow.packet_count
+                    msg.byte_count = flow.byte_count
+                    msg.match = flow.flow_mod.match
+                    msgs.append(msg)
         self.flow_sync.release()
-        return expired_flows
+        return msgs
 
     def flow_mod_process(self, flow_mod, groups):
         """

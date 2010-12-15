@@ -68,10 +68,10 @@ class FlowPipeline(Thread):
             #self.logger.debug("Pipeline thread awake");
             if self.active:
                 for idx in range(self.n_tables):
-                    expired_flows = self.tables[idx].expire()
-                    for flow in expired_flows:
-                        # @todo  Send flow expiration report
-                        self.logger.debug("Expire " + str(flow))
+                    flow_remove_msgs= self.tables[idx].expire()
+                    for msg in flow_remove_msgs:
+                        self.logger.debug("Expire " + str(msg))
+                        self.controller.message_send(msg)
         self.logger.info("Exiting pipeline thread")
 
     def kill(self):
