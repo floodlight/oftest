@@ -535,7 +535,7 @@ class AddVLANTag(BaseMatchCase):
     Add a VLAN tag to an untagged packet
     """
     def runTest(self):
-        new_vid = 2
+        new_vid = 4002
         sup_acts = supported_actions_get(self)
         if not(sup_acts & 1<<ofp.OFPAT_SET_VLAN_VID):
             testutils.skip_message_emit(self, "Add VLAN tag test")

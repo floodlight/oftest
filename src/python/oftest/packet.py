@@ -227,7 +227,9 @@ class Packet(object):
         if (dl_vlan_enable):
             # Form and add VLAN tag
             self.data += struct.pack("!H", 0x8100)
-            vtag = dl_vlan | dl_vlan_pcp >> 12 | dl_vlan_cfi >> 15
+            vtag = (dl_vlan & 0x0fff) | \
+                            (dl_vlan_pcp & 0xe000) >> 12 | \
+                            (dl_vlan_cfi & 0x1000) >> 15
             self.data += struct.pack("!H", vtag)
 
         # Add type/len field
@@ -317,13 +319,14 @@ class Packet(object):
         idx += 2
         if l2_type in [ETHERTYPE_VLAN, ETHERTYPE_VLAN_QinQ] :
             self.vlan_tag_offset = 12
-            blob = struct.unpack("H", self.data[idx:idx+2])[0]
-            self.match.dl_vlan_pcp = blob & 0xd000
-            #cfi = blob & 0x1000     #@todo figure out what to do if cfi!=0
-            self.match.dl_vlan = socket.ntohs(blob & 0x0fff)
+            blob = struct.unpack("!H", self.data[idx:idx+2])[0]
             idx += 2
+            self.match.dl_vlan_pcp = blob & 0xe000
+            #cfi = blob & 0x1000     #@todo figure out what to do if cfi!=0
+            self.match.dl_vlan = blob & 0x0fff
             l2_type = struct.unpack("!H", self.data[idx:idx+2])[0]
             # now skip past any more nest VLAN tags (per the spec)
+            idx += 2
             while l2_type in [ETHERTYPE_VLAN, ETHERTYPE_VLAN_QinQ] :
                 idx += 4
                 if self.bytes < idx :
@@ -486,33 +489,42 @@ class Packet(object):
     def set_vlan_vid(self, vid):
         # @todo Verify proper location of VLAN id
         if self.vlan_tag_offset is None:
-            return
+            self.logger.debug("set_vlan_vid(): Adding new vlan tag to untagged packet")
+            self.push_vlan(ETHERTYPE_VLAN)
         offset = self.vlan_tag_offset + 2
         short = struct.unpack('!H', self.data[offset:offset+2])[0]
         short = (short & 0xf000) | ((vid & 0x0fff) )
         self.data = self.data[0:offset] + struct.pack('!H',short) + \
                 self.data[offset+2:len(self.data)]
+        self.match.dl_vlan = vid & 0x0fff
+        self.logger.debug("set_vlan_vid(): setting packet vlan_vid to 0x%x " % 
+                          self.match.dl_vlan)
 
     def set_vlan_pcp(self, pcp):
         # @todo Verify proper location of VLAN pcp
         if self.vlan_tag_offset is None:
             return
-        offset = self.vlan_tag_offset
-        first = self.data[offset]
-        first = (first & 0x1f) | (pcp << 5)
-        self.data[offset] = first
+        offset = self.vlan_tag_offset + 2
+        short = struct.unpack('!H', self.data[offset:offset+2])[0]
+        short = (pcp & 0xf0) | ((short & 0x0fff) )
+        self.data = self.data[0:offset] + struct.pack('!H',short) + \
+                self.data[offset+2:len(self.data)]
+        self.match.dl_vlan_pcp = pcp & 0xf0
 
     def set_dl_src(self, dl_src):
         self._set_6bytes(6, dl_src)
+        self.match.dl_src = dl_src
 
     def set_dl_dst(self, dl_dst):
         self._set_6bytes(0, dl_dst)
+        self.match.dl_dst = dl_dst
         
     def set_nw_src(self, nw_src):
         if self.ip_header_offset is None:
             return
         self._set_4bytes(self.ip_header_offset + 12, nw_src)
         self._update_l4_checksum()
+        self.match.nw_src = nw_src
     
     def set_nw_dst(self, nw_dst):
         # @todo Verify byte order
@@ -520,11 +532,13 @@ class Packet(object):
             return
         self._set_4bytes(self.ip_header_offset + 16, nw_dst)
         self._update_l4_checksum()
+        self.match.nw_dst = nw_dst
 
     def set_nw_tos(self, tos):
         if self.ip_header_offset is None:
             return
         self._set_1bytes(self.ip_header_offset + 1, tos)
+        self.match.nw_tos = tos
 
     def set_nw_ecn(self, ecn):
         #@todo look up ecn implementation details
@@ -539,6 +553,7 @@ class Packet(object):
         elif (self.match.nw_proto == socket.IPPROTO_ICMP):
             self._set_1bytes(self.tcp_header_offset, tp_src)
         self._update_l4_checksum()
+        self.match.tp_src = tp_src
             
     def set_tp_dst(self, tp_dst):
         if self.tcp_header_offset is None:
@@ -549,6 +564,7 @@ class Packet(object):
         elif (self.match.nw_proto == socket.IPPROTO_ICMP):
             self._set_1bytes(self.tcp_header_offset + 1, tp_dst)
         self._update_l4_checksum()
+        self.match.tp_dst = tp_dst
 
     def copy_ttl_out(self):
         pass
@@ -569,10 +585,26 @@ class Packet(object):
         pass
 
     def push_vlan(self, ethertype):
-        pass
-
+        if len(self) < 14: 
+            self.logger.error("NOT Pushing a new VLAN tag: packet too short!")
+            pass    # invalid ethernet frame, can't add vlan tag
+        new_tag = struct.pack('!HH',
+                                  # one of 0x8100 or x88a8
+                                  # could check to enforce this?
+                                  ethertype & 0xffff,
+                                  # from 4.8.1 of the spec
+                                  # default values are zero
+                                  # on a push operation 
+                                  0,  
+                                  )
+        self.data = self.data[0:12] + new_tag + self.data[12:len(self.data)]  
+        self.parse()
+        
     def pop_vlan(self):
-        pass
+        if self.vlan_tag_offset is None:
+            pass
+        self.data = self.data[0:12] + self.data[16:len(self.data)]
+        self.parse()
 
     def push_mpls(self, ethertype):
         pass
@@ -586,6 +618,7 @@ class Packet(object):
             return
         self._set_1bytes(self.ip_header_offset + Packet.IP_OFFSET_TTL, ttl)
         self._update_l4_checksum()
+        # don't need to update self.match; no ttl in it
 
     def dec_nw_ttl(self):
         if self.ip_header_offset is None:
@@ -917,8 +950,7 @@ class l4_setting_test(packet_test):
         match = self.pkt.match
         self.assertEqual(match.tp_src,777)
         self.assertEqual(match.tp_dst,666)
-
-
+        
 class simple_tcp_test(unittest.TestCase):
     """ Make sure that simple_tcp_test does what it should 
                           pktlen=100, 
@@ -937,6 +969,8 @@ class simple_tcp_test(unittest.TestCase):
     def setUp(self):
         self.pkt = Packet().simple_tcp_packet()
         self.pkt.parse()
+        logging.basicConfig(filename="", level=logging.DEBUG)
+        self.logger = logging.getLogger('unittest')
        
     def runTest(self):
         match = self.pkt.match
@@ -947,6 +981,41 @@ class simple_tcp_test(unittest.TestCase):
         self.assertEqual(match.nw_dst, ascii_ip_to_bin('192.168.0.2'))
         self.assertEqual(match.tp_dst, 80)
         self.assertEqual(match.tp_src, 1234)
+
+class simple_vlan_test(simple_tcp_test):
+    """ Make sure that simple_tcp_test does what it should with vlans 
+                         
+    """    
+       
+    def runTest(self):
+        self.pkt = Packet().simple_tcp_packet(dl_vlan_enable=True,dl_vlan=0x0abc)
+        self.pkt.parse()
+        match = self.pkt.match
+        #self.logger.debug("Packet=\n%s" % self.pkt.show())
+        self.assertEqual(match.dl_dst, [0x00, 0x01, 0x02, 0x03, 0x04, 0x05])
+        self.assertEqual(match.dl_src, [0x00, 0x06, 0x07, 0x08, 0x09, 0x0a])
+        self.assertEqual(match.dl_type, ETHERTYPE_IP)
+        self.assertEqual(match.nw_src, ascii_ip_to_bin('192.168.0.1'))
+        self.assertEqual(match.nw_dst, ascii_ip_to_bin('192.168.0.2'))
+        self.assertEqual(match.tp_dst, 80)
+        self.assertEqual(match.tp_src, 1234)
+        self.assertEqual(match.dl_vlan, 0xabc)
+        
+class vlan_mod(simple_tcp_test):
+    """ Start with a packet with no vlan, add one, change it, remove it"""
+    def runTest(self):
+        old_len = len(self.pkt)
+        match = self.pkt.match
+        self.assertEqual(match.dl_vlan, 0xffff)
+        self.assertEqual(len(self.pkt), old_len)
+        #self.logger.debug("PKT=\n" + self.pkt.show())
+        self.pkt.push_vlan(ETHERTYPE_VLAN) # implicitly pushes vid=0
+        self.assertEqual(len(self.pkt), old_len + 4)
+        self.assertEqual(match.dl_vlan, 0)
+        #self.logger.debug("PKT=\n" + self.pkt.show())
+        self.assertEqual(match.dl_type,ETHERTYPE_IP)
+        self.pkt.set_vlan_vid(0xbabe)
+        self.assertEqual(match.dl_vlan, 0x0abe)
 
 if __name__ == '__main__':
     print("Running packet tests\n")
