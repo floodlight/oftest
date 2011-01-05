@@ -3,6 +3,14 @@ import sys
 import logging
 #import types
 
+try:
+    import scapy.all as scapy
+except:
+    try:
+        import scapy as scapy
+    except:
+        sys.exit("Need to install scapy for packet parsing")
+
 #import oftest.controller as controller
 import oftest.cstruct as ofp
 import oftest.message as message
@@ -320,7 +328,7 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
                                str(byte_count))
 
 def flow_msg_create(parent, pkt, ing_port=None, instruction_list=None, 
-                    action_list=None, wildcards=0, egr_port=None, 
+                    action_list=None, wildcards=0, match=None, egr_port=None, 
                     egr_queue=None, check_expire=False):
     """
     Multi-purpose flow_mod creation utility
@@ -338,8 +346,11 @@ def flow_msg_create(parent, pkt, ing_port=None, instruction_list=None,
     
     @param egr_queue if not None, make the output an enqueue action
     """
-    match = parse.packet_to_flow_match(pkt)
+    
+    if match is None:
+        match = parse.packet_to_flow_match(pkt)
     parent.assertTrue(match is not None, "Flow match from pkt failed")
+
     match.wildcards = wildcards & 0xfffffffff # mask out anything out of range
     match.in_port = ing_port
 
@@ -412,6 +423,7 @@ def flow_msg_install(parent, request, clear_table=True):
     do_barrier(parent.controller)
 
 def flow_match_test_port_pair(parent, ing_port, egr_port, wildcards=0, 
+                              mask=None,
                               dl_vlan=-1, pkt=None, exp_pkt=None,
                               apply_action_list=None, check_expire=False):
     """
@@ -427,8 +439,24 @@ def flow_match_test_port_pair(parent, ing_port, egr_port, wildcards=0,
     if pkt is None:
         pkt = simple_tcp_packet(dl_vlan_enable=(dl_vlan >= 0), dl_vlan=dl_vlan)
 
+    match = parse.packet_to_flow_match(pkt)
+    parent.assertTrue(match is not None, "Flow match from pkt failed")
+
+    if mask is not None:
+        match.dl_src_mask = mask['dl_src']
+        match.dl_dst_mask = mask['dl_dst']
+        match.nw_src_mask = mask['nw_src']
+        match.nw_dst_mask = mask['nw_dst']
+        #Set unmatching values on corresponding match fields
+        for i in range(ofp.OFP_ETH_ALEN):
+            match.dl_src[i] = match.dl_src[i] ^ match.dl_src_mask[i]
+            match.dl_dst[i] = match.dl_dst[i] ^ match.dl_dst_mask[i]
+        match.nw_src = match.nw_src ^ match.nw_src_mask
+        match.nw_dst = match.nw_dst ^ match.nw_dst_mask
+
     request = flow_msg_create(parent, pkt, ing_port=ing_port, 
                               wildcards=wildcards, egr_port=egr_port,
+                              match=match,
                               action_list=apply_action_list)
 
     flow_msg_install(parent, request)
@@ -444,7 +472,8 @@ def flow_match_test_port_pair(parent, ing_port, egr_port, wildcards=0,
         #@todo Not all HW supports both pkt and byte counters
         flow_removed_verify(parent, request, pkt_count=1, byte_count=len(pkt))
 
-def flow_match_test(parent, port_map, wildcards=0, dl_vlan=-1, pkt=None, 
+def flow_match_test(parent, port_map, wildcards=0,
+                    mask=None, dl_vlan=-1, pkt=None,
                     exp_pkt=None, apply_action_list=None,
                     check_expire=False,  max_test=0):
     """
@@ -455,7 +484,9 @@ def flow_match_test(parent, port_map, wildcards=0, dl_vlan=-1, pkt=None,
     and logger
     @param pkt If not None, use this packet for ingress
     @param wildcards For flow match entry
-    @param dl_vlan If not -1, and pkt is not None, create a pkt w/ VLAN tag
+    @param mask DL/NW address bit masks as a dictionary. If set, it is tested
+    against the corresponding match fields with the opposite values
+    @param dl_vlan If not -1, and pkt is None, create a pkt w/ VLAN tag
     @param exp_pkt If not None, use this as the expected output pkt; els use pkt
     @param action_list Additional actions to add to flow mod
     @param check_expire Check for flow expiration message
@@ -472,7 +503,8 @@ def flow_match_test(parent, port_map, wildcards=0, dl_vlan=-1, pkt=None,
                 continue
             egress_port = of_ports[egr_idx]
             flow_match_test_port_pair(parent, ingress_port, egress_port, 
-                                      wildcards=wildcards, dl_vlan=dl_vlan, 
+                                      wildcards=wildcards, mask=mask,
+                                      dl_vlan=dl_vlan,
                                       pkt=pkt, exp_pkt=exp_pkt,
                                       apply_action_list=apply_action_list,
                                       check_expire=check_expire)
@@ -671,3 +703,666 @@ def skip_message_emit(parent, s):
         sys.stderr.write("(skipped) ")
     else:
         sys.stderr.write("(S)")
+
+def simple_tcp_packet_w_multi_vlan(pktlen=100,
+                      dl_dst='00:01:02:03:04:05',
+                      dl_src='00:06:07:08:09:0a',
+                      dl_vlan=-1,
+                      dl_vlan_pcp=0,
+                      dl_vlan_type=0x8100,
+                      dl_vlan_cfi=0,
+                      dl_vlan_int=-1,
+                      dl_vlan_pcp_int=0,
+                      dl_vlan_type_int=0x8100,
+                      dl_vlan_cfi_int=0,
+                      dl_vlan_ext=-1,
+                      dl_vlan_pcp_ext=0,
+                      dl_vlan_type_ext=0x8100,
+                      dl_vlan_cfi_ext=0,
+                      ip_src='192.168.0.1',
+                      ip_dst='192.168.0.2',
+                      ip_tos=0,
+                      tcp_sport=1234,
+                      tcp_dport=80
+                      ):
+    """
+    Return a simple dataplane TCP packet with up to 3 vlan tags if specified
+
+    Supports a few parameters:
+    @param pktlen Length of packet in bytes w/o CRC
+    @param dl_dst Destinatino MAC
+    @param dl_src Source MAC
+    @param dl_vlan VLAN ID
+    @param dl_vlan_pcp VLAN priority
+    @param dl_vlan_type VLAN ethtype
+    @param dl_vlan_int Inner VLAN ID if available(not -1). The tag will be
+    added inide of dl_vlan tag
+    @param dl_vlan_pcp_int Inner VLAN priority
+    @param dl_vlan_type_int Inner VLAN ethtype
+    @param dl_vlan_ext External VLAN ID if available(not -1). The tag will be
+    added outside of dl_vlan tag
+    @param dl_vlan_pcp_ext External VLAN priority
+    @param dl_vlan_type_ext External VLAN ethtype
+    @param ip_src IP source
+    @param ip_dst IP destination
+    @param ip_tos IP ToS
+    @param tcp_dport TCP destination port
+    @param tcp_sport TCP source port
+
+    Generates a simple TCP request.  Users
+    shouldn't assume anything about this packet other than that
+    it is a valid ethernet/IP/TCP frame.
+    """
+    # Note Dot1Q.id is really CFI
+    if dl_vlan_ext >= 0:
+        if dl_vlan >= 0:
+            if dl_vlan_int >= 0:
+                pkt = scapy.Ether(dst=dl_dst, src=dl_src,
+                                  type=dl_vlan_type_ext)/ \
+                    scapy.Dot1Q(prio=dl_vlan_pcp_ext, id=dl_vlan_cfi_ext,
+                                type=dl_vlan_type, vlan=dl_vlan_ext)/ \
+                    scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi,
+                                type=dl_vlan_type_int, vlan=dl_vlan)/ \
+                    scapy.Dot1Q(prio=dl_vlan_pcp_int, id=dl_vlan_cfi_int,
+                                vlan=dl_vlan_int)/ \
+                    scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                    scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+            else:
+                pkt = scapy.Ether(dst=dl_dst, src=dl_src,
+                                  type=dl_vlan_type_ext)/ \
+                    scapy.Dot1Q(prio=dl_vlan_pcp_ext, id=dl_vlan_cfi_ext,
+                                type=dl_vlan_type, vlan=dl_vlan_ext)/ \
+                    scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi,
+                                vlan=dl_vlan)/ \
+                    scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                    scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+        else:
+            pkt = scapy.Ether(dst=dl_dst, src=dl_src,
+                              type=dl_vlan_type_ext)/ \
+                scapy.Dot1Q(prio=dl_vlan_pcp_ext, id=dl_vlan_cfi_ext,
+                            type=dl_vlan_type, vlan=dl_vlan_ext)/ \
+                scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+    else:
+        if (dl_vlan >= 0):
+            if (dl_vlan_int >= 0):
+                pkt = scapy.Ether(dst=dl_dst, src=dl_src,
+                                  type=dl_vlan_type)/ \
+                    scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi,
+                                type=dl_vlan_type_int, vlan=dl_vlan)/ \
+                    scapy.Dot1Q(prio=dl_vlan_pcp_int, id=dl_vlan_cfi_int,
+                                vlan=dl_vlan_int)/ \
+                    scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                    scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+            else:
+                pkt = scapy.Ether(dst=dl_dst, src=dl_src,
+                                  type=dl_vlan_type)/ \
+                    scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi,
+                                vlan=dl_vlan)/ \
+                    scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                    scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+        else:
+            pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+                scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+                scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+
+    pkt = pkt/("D" * (pktlen - len(pkt)))
+
+    return pkt
+
+def error_verify(parent, exp_type, exp_code):
+    """
+    Receive an error msg and verify if it is as expected
+
+    @param parent Must implement controller, assertEqual
+    @param exp_type Expected error type
+    @param exp_code Expected error code
+    """
+    (response, raw) = parent.controller.poll(ofp.OFPT_ERROR, 2)
+    parent.assertTrue(response is not None, 'No error message received')
+
+    if (exp_type is None) or (exp_code is None):
+        parent.logger.debug("Parametrs are not sufficient")
+        return
+
+    parent.assertEqual(exp_type, response.type,
+                       'Error message type mismatch: ' +
+                       str(exp_type) + " != " +
+                       str(response.type))
+    parent.assertEqual(exp_code, response.code,
+                       'Error message code mismatch: ' +
+                       str(exp_code) + " != " +
+                       str(response.code))
+
+def flow_match_test_port_pair_vlan(parent, ing_port, egr_port, wildcards=0,
+                                   dl_vlan=-1, dl_vlan_pcp=0,
+                                   dl_vlan_type=0x8100,
+                                   dl_vlan_int=-1, dl_vlan_pcp_int=0,
+                                   vid_match=ofp.OFPVID_NONE, pcp_match=0,
+                                   exp_vid=-1, exp_pcp=0,
+                                   exp_vlan_type=0x8100,
+                                   match_exp=True,
+                                   add_tag_exp=False,
+                                   exp_msg=ofp.OFPT_FLOW_REMOVED,
+                                   exp_msg_type=0, exp_msg_code=0,
+                                   pkt=None, exp_pkt=None,
+                                   action_list=None, check_expire=False):
+    """
+    Flow match test for various vlan matching patterns on single TCP packet
+
+    Run test with packet through switch from ing_port to egr_port
+    See flow_match_test for parameter descriptions
+    """
+
+    parent.logger.info("Pkt match test: " + str(ing_port) + " to " + str(egr_port))
+    parent.logger.debug("  WC: " + hex(wildcards) + " vlan: " + str(dl_vlan) +
+                    " expire: " + str(check_expire))
+    len = 100
+    len_w_vid = len + 4
+    len_w_2vid = len_w_vid + 4
+    len_w_3vid = len_w_2vid + 4
+    if pkt is None:
+        if dl_vlan >= 0:
+            if dl_vlan_int >= 0:
+                pktlen=len_w_2vid
+            else:
+                pktlen=len_w_vid
+        else:
+            pktlen=len
+        pkt = simple_tcp_packet_w_multi_vlan(pktlen=pktlen,
+                                dl_vlan=dl_vlan,
+                                dl_vlan_pcp=dl_vlan_pcp,
+                                dl_vlan_type=dl_vlan_type,
+                                dl_vlan_int=dl_vlan_int,
+                                dl_vlan_pcp_int=dl_vlan_pcp_int)
+
+    if exp_pkt is None:
+        if exp_vid >= 0:
+            if add_tag_exp:
+                if dl_vlan >= 0:
+                    if dl_vlan_int >= 0:
+                        exp_pktlen=len_w_3vid
+                    else:
+                        exp_pktlen=len_w_2vid
+                else:
+                    exp_pktlen=len_w_vid
+            else:
+                if dl_vlan_int >= 0:
+                    exp_pktlen=len_w_2vid
+                else:
+                    exp_pktlen=len_w_vid
+        else:
+            exp_pktlen=len
+
+        if add_tag_exp:
+            exp_pkt = simple_tcp_packet_w_multi_vlan(pktlen=exp_pktlen,
+                                    dl_vlan_ext=exp_vid,
+                                    dl_vlan_pcp_ext=exp_pcp,
+                                    dl_vlan_type_ext=exp_vlan_type,
+                                    dl_vlan=dl_vlan,
+                                    dl_vlan_pcp=dl_vlan_pcp,
+                                    dl_vlan_type=dl_vlan_type,
+                                    dl_vlan_int=dl_vlan_int,
+                                    dl_vlan_pcp_int=dl_vlan_pcp_int)
+        else:
+            exp_pkt = simple_tcp_packet_w_multi_vlan(pktlen=exp_pktlen,
+                                    dl_vlan=exp_vid, dl_vlan_pcp=exp_pcp,
+                                    dl_vlan_type=exp_vlan_type,
+                                    dl_vlan_int=dl_vlan_int,
+                                    dl_vlan_pcp_int=dl_vlan_pcp_int)
+
+    match = parse.packet_to_flow_match(pkt)
+    parent.assertTrue(match is not None, "Flow match from pkt failed")
+
+    match.dl_vlan = vid_match
+    match.dl_vlan_pcp = pcp_match
+    match.wildcards = wildcards
+
+    request = flow_msg_create(parent, pkt, ing_port=ing_port,
+                              wildcards=wildcards,
+                              match=match,
+                              egr_port=egr_port,
+                              action_list=action_list)
+
+    flow_msg_install(parent, request)
+
+    parent.logger.debug("Send packet: " + str(ing_port) + " to " + str(egr_port))
+    parent.dataplane.send(ing_port, str(pkt))
+
+    if match_exp:
+        receive_pkt_verify(parent, egr_port, exp_pkt)
+        if check_expire:
+            #@todo Not all HW supports both pkt and byte counters
+            flow_removed_verify(parent, request, pkt_count=1, byte_count=len(pkt))
+    else:
+        if exp_msg is ofp.OFPT_FLOW_REMOVED:
+            if check_expire:
+                flow_removed_verify(parent, request, pkt_count=0, byte_count=0)
+        elif exp_msg is ofp.OFPT_ERROR:
+            error_verify(parent, exp_msg_type, exp_msg_code)
+        else:
+            parent.assertTrue(0, "Rcv: Unexpected Message: " + str(exp_msg))
+
+def flow_match_test_vlan(parent, port_map, wildcards=0,
+                         dl_vlan=-1, dl_vlan_pcp=0, dl_vlan_type=0x8100,
+                         dl_vlan_int=-1, dl_vlan_pcp_int=0,
+                         vid_match=ofp.OFPVID_NONE, pcp_match=0,
+                         exp_vid=-1, exp_pcp=0,
+                         exp_vlan_type=0x8100,
+                         match_exp=True,
+                         add_tag_exp=False,
+                         exp_msg=ofp.OFPT_FLOW_REMOVED,
+                         exp_msg_type=0, exp_msg_code=0,
+                         pkt=None, exp_pkt=None,
+                         action_list=None,
+                         check_expire=False,
+                         max_test=0):
+    """
+    Run flow_match_test_port_pair on all port pairs
+
+    @param max_test If > 0 no more than this number of tests are executed.
+    @param parent Must implement controller, dataplane, assertTrue, assertEqual
+    and logger
+    @param wildcards For flow match entry
+    @param dl_vlan If not -1, and pkt is not None, create a pkt w/ VLAN tag
+    @param dl_vlan_pcp VLAN PCP associated with dl_vlan
+    @param dl_vlan_type VLAN ether type associated with dl_vlan
+    @param dl_vlan_int If not -1, create pkt w/ Inner Vlan tag
+    @param dl_vlan_pcp_int VLAN PCP associated with dl_vlan_2nd
+    @param vid_match Matching value for VLAN VID field
+    @param pcp_match Matching value for VLAN PCP field
+    @param exp_vid Expected VLAN VID value. If -1, no VLAN expected
+    @param exp_vlan_type Expected VLAN ether type
+    @param exp_pcp Expected VLAN PCP value
+    @param match_exp Set whether packet is expected to receive
+    @param add_tag_exp If True, expected_packet has an additional vlan tag,
+    If not, expected_packet's vlan tag is replaced as specified
+    @param exp_msg Expected message
+    @param exp_msg_type Expected message type associated with the message
+    @param exp_msg_code Expected message code associated with the msg_type
+    @param pkt If not None, use this packet for ingress
+    @param exp_pkt If not None, use this as the expected output pkt
+    @param action_list Additional actions to add to flow mod
+    @param check_expire Check for flow expiration message
+    """
+    of_ports = port_map.keys()
+    of_ports.sort()
+    parent.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+    test_count = 0
+
+    for ing_idx in range(len(of_ports)):
+        ingress_port = of_ports[ing_idx]
+        for egr_idx in range(len(of_ports)):
+            if egr_idx == ing_idx:
+                continue
+            egress_port = of_ports[egr_idx]
+            flow_match_test_port_pair_vlan(parent, ingress_port, egress_port,
+                                           wildcards=wildcards,
+                                           dl_vlan=dl_vlan,
+                                           dl_vlan_pcp=dl_vlan_pcp,
+                                           dl_vlan_type=dl_vlan_type,
+                                           dl_vlan_int=dl_vlan_int,
+                                           dl_vlan_pcp_int=dl_vlan_pcp_int,
+                                           vid_match=vid_match,
+                                           pcp_match=pcp_match,
+                                           exp_vid=exp_vid,
+                                           exp_pcp=exp_pcp,
+                                           exp_vlan_type=exp_vlan_type,
+                                           exp_msg=exp_msg,
+                                           exp_msg_type=exp_msg_type,
+                                           exp_msg_code=exp_msg_code,
+                                           match_exp=match_exp,
+                                           add_tag_exp=add_tag_exp,
+                                           pkt=pkt, exp_pkt=exp_pkt,
+                                           action_list=action_list,
+                                           check_expire=check_expire)
+            test_count += 1
+            if (max_test > 0) and (test_count > max_test):
+                parent.logger.info("Ran " + str(test_count) + " tests; exiting")
+                return
+
+def simple_tcp_packet_w_mpls(pktlen=100,
+                      dl_dst='00:01:02:03:04:05',
+                      dl_src='00:06:07:08:09:0a',
+                      mpls_type=0x8847,
+                      mpls_label=-1,
+                      mpls_tc=0,
+                      mpls_ttl=64,
+                      mpls_label_int=-1,
+                      mpls_tc_int=0,
+                      mpls_ttl_int=32,
+                      mpls_label_ext=-1,
+                      mpls_tc_ext=0,
+                      mpls_ttl_ext=128,
+                      ip_src='192.168.0.1',
+                      ip_dst='192.168.0.2',
+                      ip_tos=0,
+                      ip_ttl=192,
+                      tcp_sport=1234,
+                      tcp_dport=80
+                      ):
+    """
+    Return a simple dataplane TCP packet w/wo MPLS tags
+
+    Supports a few parameters:
+    @param len Length of packet in bytes w/o CRC
+    @param dl_dst Destinatino MAC
+    @param dl_src Source MAC
+    @param mpls_type MPLS type as ether type
+    @param mpls_label MPLS LABEL if not -1
+    @param mpls_tc MPLS TC
+    @param mpls_ttl MPLS TTL
+    @param mpls_label_int Inner MPLS LABEL if not -1. The shim will be added
+    inside of mpls_label shim.
+    @param mpls_tc_int Inner MPLS TC
+    @param mpls_ttl_int Inner MPLS TTL
+    @param mpls_label_ext External MPLS LABEL if not -1. The shim will be
+    added outside of mpls_label shim
+    @param mpls_tc_ext External MPLS TC
+    @param mpls_ttl_ext External MPLS TTL
+    @param ip_src IP source
+    @param ip_dst IP destination
+    @param ip_tos IP ToS
+    @param tcp_dport TCP destination port
+    @param ip_sport TCP source port
+
+    Generates a simple MPLS/IP/TCP request.  Users
+    shouldn't assume anything about this packet other than that
+    it is a valid ethernet/IP/TCP frame.
+    """
+    if mpls_label_ext >= 0:
+        if mpls_label >= 0:
+            if mpls_label_int >= 0:
+                pkt = scapy.Ether(dst=dl_dst, src=dl_src,
+                                  type=mpls_type)/ \
+                      scapy.MPLS(label=mpls_label_ext, tc=mpls_tc_ext,
+                                 ttl=mpls_ttl_ext, s=0)/ \
+                      scapy.MPLS(label=mpls_label, tc=mpls_tc,
+                                 ttl=mpls_ttl, s=0)/ \
+                      scapy.MPLS(label=mpls_label_int, tc=mpls_tc_int,
+                                 ttl=mpls_ttl_int)/ \
+                      scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos,
+                               ttl=ip_ttl)/ \
+                      scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+            else:
+                pkt = scapy.Ether(dst=dl_dst, src=dl_src,
+                                  type=mpls_type)/ \
+                      scapy.MPLS(label=mpls_label_ext, tc=mpls_tc_ext,
+                                 ttl=mpls_ttl_ext, s=0)/ \
+                      scapy.MPLS(label=mpls_label, tc=mpls_tc,
+                                 ttl=mpls_ttl)/ \
+                      scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos,
+                               ttl=ip_ttl)/ \
+                      scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+        else:
+            pkt = scapy.Ether(dst=dl_dst, src=dl_src,
+                              type=mpls_type)/ \
+                  scapy.MPLS(label=mpls_label_ext, tc=mpls_tc_ext,
+                             ttl=mpls_ttl_ext)/ \
+                  scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos,
+                           ttl=ip_ttl)/ \
+                  scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+    else:
+        if mpls_label >= 0:
+            if mpls_label_int >= 0:
+                pkt = scapy.Ether(dst=dl_dst, src=dl_src,
+                                  type=mpls_type)/ \
+                      scapy.MPLS(label=mpls_label, tc=mpls_tc,
+                                 ttl=mpls_ttl, s=0)/ \
+                      scapy.MPLS(label=mpls_label_int, tc=mpls_tc_int,
+                                 ttl=mpls_ttl_int)/ \
+                      scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos,
+                               ttl=ip_ttl)/ \
+                      scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+            else:
+                pkt = scapy.Ether(dst=dl_dst, src=dl_src,
+                                  type=mpls_type)/ \
+                      scapy.MPLS(label=mpls_label, tc=mpls_tc,
+                                 ttl=mpls_ttl)/ \
+                      scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos,
+                               ttl=ip_ttl)/ \
+                      scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+        else:
+            pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+                  scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos,
+                           ttl=ip_ttl)/ \
+                  scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+
+    pkt = pkt/("D" * (pktlen - len(pkt)))
+
+    return pkt
+
+def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
+                                   mpls_type=0x8847,
+                                   mpls_label=-1, mpls_tc=0,mpls_ttl=64,
+                                   mpls_label_int=-1, mpls_tc_int=0,
+                                   mpls_ttl_int=32,
+                                   ip_ttl=192,
+                                   exp_mpls_type=0x8847,
+                                   exp_mpls_label=-1, exp_mpls_tc=0,
+                                   exp_mpls_ttl=64,
+                                   exp_mpls_ttl_int=32,
+                                   exp_ip_ttl=192,
+                                   label_match=ofp.OFPML_NONE, tc_match=0,
+                                   match_exp=True,
+                                   add_tag_exp=False,
+                                   exp_msg=ofp.OFPT_FLOW_REMOVED,
+                                   exp_msg_type=0, exp_msg_code=0,
+                                   pkt=None,
+                                   exp_pkt=None, action_list=None,
+                                   check_expire=False):
+    """
+    Flow match test on single packet w/ MPLS tags
+
+    Run test with packet through switch from ing_port to egr_port
+    See flow_match_test for parameter descriptions
+    """
+    parent.logger.info("Pkt match test: " + str(ing_port) + " to " + str(egr_port))
+    parent.logger.debug("  WC: " + hex(wildcards) + " MPLS: " +
+                    str(mpls_label) + " expire: " + str(check_expire))
+    len = 100
+    len_w_shim = len + 4
+    len_w_2shim = len_w_shim + 4
+    len_w_3shim = len_w_2shim + 4
+    if pkt is None:
+        if mpls_label >= 0:
+            if mpls_label_int >= 0:
+                pktlen=len_w_2shim
+            else:
+                pktlen=len_w_shim
+        else:
+            pktlen=len
+        pkt = simple_tcp_packet_w_mpls(pktlen=pktlen,
+                                       mpls_type=mpls_type,
+                                       mpls_label=mpls_label,
+                                       mpls_tc=mpls_tc,
+                                       mpls_ttl=mpls_ttl,
+                                       mpls_label_int=mpls_label_int,
+                                       mpls_tc_int=mpls_tc_int,
+                                       mpls_ttl_int=mpls_ttl_int,
+                                       ip_ttl=ip_ttl)
+
+    if exp_pkt is None:
+        if exp_mpls_label >= 0:
+            if add_tag_exp:
+                if mpls_label_int >= 0:
+                    exp_pktlen=len_w_3shim
+                else:
+                    exp_pktlen=len_w_2shim
+            else:
+                if mpls_label_int >= 0:
+                    exp_pktlen=len_w_2shim
+                else:
+                    exp_pktlen=len_w_shim
+        else:
+            #subtract action
+            if mpls_label_int >= 0:
+                exp_pktlen=len_w_shim
+            else:
+                exp_pktlen=len
+
+        if add_tag_exp:
+            exp_pkt = simple_tcp_packet_w_mpls(pktlen=exp_pktlen,
+                                           mpls_type=exp_mpls_type,
+                                           mpls_label_ext=exp_mpls_label,
+                                           mpls_tc_ext=exp_mpls_tc,
+                                           mpls_ttl_ext=exp_mpls_ttl,
+                                           mpls_label=mpls_label,
+                                           mpls_tc=mpls_tc,
+                                           mpls_ttl=mpls_ttl,
+                                           mpls_label_int=mpls_label_int,
+                                           mpls_tc_int=mpls_tc_int,
+                                           mpls_ttl_int=exp_mpls_ttl_int,
+                                           ip_ttl=exp_ip_ttl)
+        else:
+            if (exp_mpls_label < 0) and (mpls_label_int >= 0):
+                exp_pkt = simple_tcp_packet_w_mpls(pktlen=exp_pktlen,
+                                           mpls_type=mpls_type,
+                                           mpls_label=mpls_label_int,
+                                           mpls_tc=mpls_tc_int,
+                                           mpls_ttl=exp_mpls_ttl_int,
+                                           ip_ttl=exp_ip_ttl)
+            else:
+                exp_pkt = simple_tcp_packet_w_mpls(pktlen=exp_pktlen,
+                                           mpls_type=exp_mpls_type,
+                                           mpls_label=exp_mpls_label,
+                                           mpls_tc=exp_mpls_tc,
+                                           mpls_ttl=exp_mpls_ttl,
+                                           mpls_label_int=mpls_label_int,
+                                           mpls_tc_int=mpls_tc_int,
+                                           mpls_ttl_int=exp_mpls_ttl_int,
+                                           ip_ttl=exp_ip_ttl)
+
+    match = parse.packet_to_flow_match(pkt)
+    parent.assertTrue(match is not None, "Flow match from pkt failed")
+
+    match.mpls_label = label_match
+    match.mpls_tc = tc_match
+    match.wildcards = wildcards
+
+    match.dl_type = 0
+    match.nw_tos = 0
+    match.nw_proto = 0
+    match.nw_src = 0
+    match.nw_src_mask = 0
+    match.nw_dst = 0
+    match.nw_dst_mask = 0
+    match.tp_src = 0
+    match.tp_dst = 0
+
+    request = flow_msg_create(parent, pkt, ing_port=ing_port,
+                              wildcards=wildcards,
+                              match=match,
+                              egr_port=egr_port,
+                              action_list=action_list)
+
+    flow_msg_install(parent, request)
+
+    parent.logger.debug("Send packet: " + str(ing_port) + " to " + str(egr_port))
+    parent.dataplane.send(ing_port, str(pkt))
+
+    if match_exp:
+        receive_pkt_verify(parent, egr_port, exp_pkt)
+        if check_expire:
+            #@todo Not all HW supports both pkt and byte counters
+            flow_removed_verify(parent, request, pkt_count=1, byte_count=len(pkt))
+    else:
+        if exp_msg == ofp.OFPT_FLOW_REMOVED:
+            if check_expire:
+                flow_removed_verify(parent, request, pkt_count=0, byte_count=0)
+        elif exp_msg == ofp.OFPT_ERROR:
+            error_verify(parent, exp_msg_type, exp_msg_code)
+        else:
+            parent.assertTrue(0, "Rcv: Unexpected Message: " + str(exp_msg))
+
+def flow_match_test_mpls(parent, port_map, wildcards=0,
+                         mpls_type=0x8847,
+                         mpls_label=-1, mpls_tc=0, mpls_ttl=64,
+                         mpls_label_int=-1, mpls_tc_int=0, mpls_ttl_int=32,
+                         ip_ttl = 192,
+                         label_match=ofp.OFPML_NONE, tc_match=0,
+                         exp_mpls_type=0x8847,
+                         exp_mpls_label=-1, exp_mpls_tc=0, exp_mpls_ttl=64,
+                         exp_mpls_ttl_int=32,
+                         exp_ip_ttl=192,
+                         match_exp=True,
+                         add_tag_exp=False,
+                         exp_msg=ofp.OFPT_FLOW_REMOVED,
+                         exp_msg_type=0, exp_msg_code=0,
+                         pkt=None,
+                         exp_pkt=None, action_list=None, check_expire=False,
+                         max_test=0):
+    """
+    Run flow_match_test_port_pair on all port pairs
+
+    @param max_test If > 0 no more than this number of tests are executed.
+    @param parent Must implement controller, dataplane, assertTrue, assertEqual
+    and logger
+    @param wildcards For flow match entry
+    @param mpls_type MPLS type
+    @param mpls_label If not -1 create a pkt w/ MPLS tag
+    @param mpls_tc MPLS TC associated with MPLS label
+    @param mpls_ttl MPLS TTL associated with MPLS label
+    @param mpls_label_int If not -1 create a pkt w/ Inner MPLS tag
+    @param mpls_tc_int MPLS TC associated with Inner MPLS label
+    @param mpls_ttl_int MPLS TTL associated with Inner MPLS label
+    @param ip_ttl IP TTL
+    @param label_match Matching value for MPLS LABEL field
+    @param tc_match Matching value for MPLS TC field
+    @param exp_mpls_label Expected MPLS LABEL value. If -1, no MPLS expected
+    @param exp_mpls_tc Expected MPLS TC value
+    @param exp_mpls_ttl Expected MPLS TTL value
+    @param exp_mpls_ttl_int Expected Inner MPLS TTL value
+    @param ip_ttl Expected IP TTL
+    @param match_exp Set whether packet is expected to receive
+    @param add_tag_exp If True, expected_packet has an additional MPLS shim,
+    If not expected_packet's MPLS shim is replaced as specified
+    @param exp_msg Expected message
+    @param exp_msg_type Expected message type associated with the message
+    @param exp_msg_code Expected message code associated with the msg_type
+    @param pkt If not None, use this packet for ingress
+    @param exp_pkt If not None, use this as the expected output pkt; els use pkt
+    @param action_list Additional actions to add to flow mod
+    @param check_expire Check for flow expiration message
+    """
+    of_ports = port_map.keys()
+    of_ports.sort()
+    parent.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+    test_count = 0
+
+    for ing_idx in range(len(of_ports)):
+        ingress_port = of_ports[ing_idx]
+        for egr_idx in range(len(of_ports)):
+            if egr_idx == ing_idx:
+                continue
+            egress_port = of_ports[egr_idx]
+            flow_match_test_port_pair_mpls(parent, ingress_port, egress_port,
+                                      wildcards=wildcards,
+                                      mpls_type=mpls_type,
+                                      mpls_label=mpls_label,
+                                      mpls_tc=mpls_tc,
+                                      mpls_ttl=mpls_ttl,
+                                      mpls_label_int=mpls_label_int,
+                                      mpls_tc_int=mpls_tc_int,
+                                      mpls_ttl_int=mpls_ttl_int,
+                                      ip_ttl=ip_ttl,
+                                      label_match=label_match,
+                                      tc_match=tc_match,
+                                      exp_mpls_type=exp_mpls_type,
+                                      exp_mpls_label=exp_mpls_label,
+                                      exp_mpls_tc=exp_mpls_tc,
+                                      exp_mpls_ttl=exp_mpls_ttl,
+                                      exp_mpls_ttl_int=exp_mpls_ttl_int,
+                                      exp_ip_ttl=exp_ip_ttl,
+                                      match_exp=match_exp,
+                                      exp_msg=exp_msg,
+                                      exp_msg_type=exp_msg_type,
+                                      exp_msg_code=exp_msg_code,
+                                      add_tag_exp=add_tag_exp,
+                                      pkt=pkt, exp_pkt=exp_pkt,
+                                      action_list=action_list,
+                                      check_expire=check_expire)
+            test_count += 1
+            if (max_test > 0) and (test_count >= max_test):
+                parent.logger.info("Ran " + str(test_count) + " tests; exiting")
+                return
