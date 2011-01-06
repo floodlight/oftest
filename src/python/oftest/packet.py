@@ -47,6 +47,7 @@ ETHERTYPE_IP = 0x0800
 ETHERTYPE_VLAN = 0x8100
 ETHERTYPE_VLAN_QinQ = 0x88a8
 ETHERTYPE_ARP = 0x0806
+ETHERTYPE_MPLS = 0x8847
 
 DL_MASK_ALL = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
 NW_MASK_ALL = 0xffffffff
@@ -273,8 +274,14 @@ class Packet(object):
         idx = 0
         try:
             idx = self._parse_l2(idx)
-            # idx = self._parse_mpls(idx)  #@todo add MPLS support
-            if self.match.dl_type == ETHERTYPE_IP:
+            parsetype = self.match.dl_type
+            
+            if parsetype == ETHERTYPE_MPLS:
+                self.mpls_tag_offset = idx
+                idx = self._parse_mpls(idx)
+                parsetype = ETHERTYPE_IP  # Assumes that IP follows MPLS
+                
+            if parsetype == ETHERTYPE_IP:
                 self.ip_header_offset = idx 
                 idx = self._parse_ip(idx)
                 if self.match.nw_proto in [ socket.IPPROTO_TCP,
@@ -285,7 +292,7 @@ class Packet(object):
                         idx = self._parse_l4(idx)
                     else:
                         idx = self._parse_icmp(idx)
-            elif self.match.dl_type == ETHERTYPE_ARP:
+            elif parsetype == ETHERTYPE_ARP:
                 self._parse_arp(idx)
         except (parse_error), e:
             self.logger.warn("Giving up on parsing packet, got %s" % 
@@ -334,6 +341,18 @@ class Packet(object):
             self.match.dl_vlan_pcp = 0
         self.match.dl_type = l2_type
         return idx
+      
+    def _parse_mpls(self, idx):
+        """
+        Parse MPLS Header starting at self.data[idx]
+        """
+        if self.bytes < (idx + 4):
+            raise parse_error("_parse_mpls:  Invalid MPLS header")
+        
+        tag = struct.unpack("!I", self.data[idx:idx+4])[0]
+        self.match.mpls_label = tag >> 12
+        self.match.mpls_tc = (tag >> 9) & 0x0007        
+        return idx + 4
             
     def _parse_ip(self, idx):
         """
@@ -556,16 +575,32 @@ class Packet(object):
         pass
 
     def set_mpls_label(self, mpls_label):
-        pass
+        if self.mpls_tag_offset is None:
+            return
+        tag = struct.unpack("!I", self.data[self.mpls_tag_offset:
+                                            self.mpls_tag_offset+4])[0]
+        tag = ((mpls_label & 0xfffff) << 12) | (tag & 0x00000fff)     
+        self._set_4bytes(self.mpls_tag_offset, tag)
 
     def set_mpls_tc(self, mpls_tc):
-        pass
+        if self.mpls_tag_offset is None:
+            return
+        tag = struct.unpack("!I", self.data[self.mpls_tag_offset:
+                                            self.mpls_tag_offset+4])[0]
+        tag = ((mpls_tc & 0x7) << 9) | (tag & 0xfffff1ff)     
+        self._set_4bytes(self.mpls_tag_offset, tag)
 
     def set_mpls_ttl(self, ttl):
-        pass
+        if self.mpls_tag_offset is None:
+            return   
+        self._set_1bytes(self.mpls_tag_offset + 3, ttl)
 
     def dec_mpls_ttl(self):
-        pass
+        if self.mpls_tag_offset is None:
+            return
+        ttl = struct.unpack("B", self.data[self.mpls_tag_offset + 3:
+                                           self.mpls_tag_offset + 4])[0]
+        self.set_mpls_ttl(ttl - 1)
 
     def push_vlan(self, ethertype):
         pass
@@ -847,15 +882,18 @@ class packet_test(unittest.TestCase):
 
         Ethernet II, Src: Fujitsu_ef:cd:8d (00:17:42:ef:cd:8d), 
             Dst: ZhsZeitm_5d:24:00 (00:d0:05:5d:24:00)
+        MPLS, Label: 0xFEFEF, TC: 5, S: 1, TTL: 0xAA
         Internet Protocol, Src: 172.24.74.96 (172.24.74.96), 
             Dst: 171.64.74.58 (171.64.74.58)
         Transmission Control Protocol, Src Port: 59581 (59581), 
             Dst Port: ssh (22), Seq: 2694, Ack: 2749, Len: 48
         """
         pktdata = self.ascii_to_data(
-            """00 d0 05 5d 24 00 00 17 42 ef cd 8d 08 00 45 10
-               00 64 65 67 40 00 40 06 e9 29 ac 18 4a 60 ab 40
-               4a 3a e8 bd 00 16 7c 28 2f 88 f2 bd 7a 03 80 18
+            """00 d0 05 5d 24 00 00 17 42 ef cd 8d 88 47
+               FE FE FB AA
+               45 10 00 64 65 67 40 00 40 06 e9 29 ac 18 4a 60 
+               ab 40 4a 3a 
+               e8 bd 00 16 7c 28 2f 88 f2 bd 7a 03 80 18
                00 b5 ec 49 00 00 01 01 08 0a 00 d1 46 8b 32 ed
                7c 88 78 4b 8a dc 0a 1f c4 d3 02 a3 ae 1d 3c aa
                6f 1a 36 9f 27 11 12 71 5b 5d 88 f2 97 fa e7 f9
@@ -871,7 +909,13 @@ class l2_parsing_test(packet_test):
         match = self.pkt.match
         self.assertEqual(match.dl_dst,[0x00,0xd0,0x05,0x5d,0x24,0x00])
         self.assertEqual(match.dl_src,[0x00,0x17,0x42,0xef,0xcd,0x8d])
-        self.assertEqual(match.dl_type,ETHERTYPE_IP)
+        self.assertEqual(match.dl_type,ETHERTYPE_MPLS)
+        
+class mpls_parsing_test(packet_test):
+    def runTest(self):
+        match = self.pkt.match
+        self.assertEqual(match.mpls_label, 0xFEFEF)
+        self.assertEqual(match.mpls_tc, 5)
 
 class ip_parsing_test(packet_test):
     def runTest(self):
@@ -881,6 +925,27 @@ class ip_parsing_test(packet_test):
         self.assertEqual(match.nw_src,ascii_ip_to_bin('172.24.74.96'))
         self.assertEqual(match.nw_proto, socket.IPPROTO_TCP)
 
+class mpls_setting_test(packet_test):
+    def runTest(self):
+        orig_len = len(self.pkt)
+        label = 0x12345
+        tc = 6
+        ttl = 0x78
+        self.pkt.set_mpls_label(label)
+        self.pkt.set_mpls_tc(tc)
+        self.pkt.set_mpls_ttl(ttl)
+        self.pkt.dec_mpls_ttl()
+        self.pkt.parse()
+        
+        self.assertEqual(len(self.pkt), orig_len)
+        self.assertTrue(self.pkt.mpls_tag_offset)
+        match = self.pkt.match
+        
+        self.assertEqual(match.mpls_label, label)
+        self.assertEqual(match.mpls_tc, tc)
+        new_ttl = struct.unpack("B", self.pkt.data[self.pkt.mpls_tag_offset + 3:
+                                                   self.pkt.mpls_tag_offset + 4])[0]
+        self.assertEqual(new_ttl, ttl - 1)
 
 class ip_setting_test(packet_test):
     def runTest(self):
