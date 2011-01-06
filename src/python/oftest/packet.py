@@ -274,14 +274,11 @@ class Packet(object):
         idx = 0
         try:
             idx = self._parse_l2(idx)
-            parsetype = self.match.dl_type
             
-            if parsetype == ETHERTYPE_MPLS:
+            if self.match.dl_type == ETHERTYPE_MPLS:
                 self.mpls_tag_offset = idx
                 idx = self._parse_mpls(idx)
-                parsetype = ETHERTYPE_IP  # Assumes that IP follows MPLS
-                
-            if parsetype == ETHERTYPE_IP:
+            elif self.match.dl_type == ETHERTYPE_IP:
                 self.ip_header_offset = idx 
                 idx = self._parse_ip(idx)
                 if self.match.nw_proto in [ socket.IPPROTO_TCP,
@@ -292,7 +289,7 @@ class Packet(object):
                         idx = self._parse_l4(idx)
                     else:
                         idx = self._parse_icmp(idx)
-            elif parsetype == ETHERTYPE_ARP:
+            elif self.match.dl_type == ETHERTYPE_ARP:
                 self._parse_arp(idx)
         except (parse_error), e:
             self.logger.warn("Giving up on parsing packet, got %s" % 
@@ -882,13 +879,34 @@ class packet_test(unittest.TestCase):
 
         Ethernet II, Src: Fujitsu_ef:cd:8d (00:17:42:ef:cd:8d), 
             Dst: ZhsZeitm_5d:24:00 (00:d0:05:5d:24:00)
-        MPLS, Label: 0xFEFEF, TC: 5, S: 1, TTL: 0xAA
         Internet Protocol, Src: 172.24.74.96 (172.24.74.96), 
             Dst: 171.64.74.58 (171.64.74.58)
         Transmission Control Protocol, Src Port: 59581 (59581), 
             Dst Port: ssh (22), Seq: 2694, Ack: 2749, Len: 48
         """
         pktdata = self.ascii_to_data(
+            """00 d0 05 5d 24 00 00 17 42 ef cd 8d 08 00 45 10
+               00 64 65 67 40 00 40 06 e9 29 ac 18 4a 60 ab 40
+               4a 3a e8 bd 00 16 7c 28 2f 88 f2 bd 7a 03 80 18
+               00 b5 ec 49 00 00 01 01 08 0a 00 d1 46 8b 32 ed
+               7c 88 78 4b 8a dc 0a 1f c4 d3 02 a3 ae 1d 3c aa
+               6f 1a 36 9f 27 11 12 71 5b 5d 88 f2 97 fa e7 f9
+               99 c1 9f 9c 7f c5 1e 3e 45 c6 a6 ac ec 0b 87 64
+               98 dd""")
+        self.pkt = Packet(data=pktdata)
+        
+        """
+        MPLS packet data for MPLS parsing tests.  
+
+        Ethernet II, Src: Fujitsu_ef:cd:8d (00:17:42:ef:cd:8d), 
+            Dst: ZhsZeitm_5d:24:00 (00:d0:05:5d:24:00)
+        MPLS, Label: 0xFEFEF, TC: 5, S: 1, TTL: 0xAA
+        Internet Protocol, Src: 172.24.74.96 (172.24.74.96), 
+            Dst: 171.64.74.58 (171.64.74.58)
+        Transmission Control Protocol, Src Port: 59581 (59581), 
+            Dst Port: ssh (22), Seq: 2694, Ack: 2749, Len: 48
+        """
+        mplspktdata = self.ascii_to_data(
             """00 d0 05 5d 24 00 00 17 42 ef cd 8d 88 47
                FE FE FB AA
                45 10 00 64 65 67 40 00 40 06 e9 29 ac 18 4a 60 
@@ -899,7 +917,7 @@ class packet_test(unittest.TestCase):
                6f 1a 36 9f 27 11 12 71 5b 5d 88 f2 97 fa e7 f9
                99 c1 9f 9c 7f c5 1e 3e 45 c6 a6 ac ec 0b 87 64
                98 dd""")
-        self.pkt = Packet(data=pktdata)
+        self.mplspkt = Packet(data=mplspktdata)
 
     def runTest(self):
         self.assertTrue(self.pkt)
@@ -909,11 +927,11 @@ class l2_parsing_test(packet_test):
         match = self.pkt.match
         self.assertEqual(match.dl_dst,[0x00,0xd0,0x05,0x5d,0x24,0x00])
         self.assertEqual(match.dl_src,[0x00,0x17,0x42,0xef,0xcd,0x8d])
-        self.assertEqual(match.dl_type,ETHERTYPE_MPLS)
+        self.assertEqual(match.dl_type,ETHERTYPE_IP)
         
 class mpls_parsing_test(packet_test):
     def runTest(self):
-        match = self.pkt.match
+        match = self.mplspkt.match
         self.assertEqual(match.mpls_label, 0xFEFEF)
         self.assertEqual(match.mpls_tc, 5)
 
@@ -927,24 +945,24 @@ class ip_parsing_test(packet_test):
 
 class mpls_setting_test(packet_test):
     def runTest(self):
-        orig_len = len(self.pkt)
+        orig_len = len(self.mplspkt)
         label = 0x12345
         tc = 6
         ttl = 0x78
-        self.pkt.set_mpls_label(label)
-        self.pkt.set_mpls_tc(tc)
-        self.pkt.set_mpls_ttl(ttl)
-        self.pkt.dec_mpls_ttl()
-        self.pkt.parse()
+        self.mplspkt.set_mpls_label(label)
+        self.mplspkt.set_mpls_tc(tc)
+        self.mplspkt.set_mpls_ttl(ttl)
+        self.mplspkt.dec_mpls_ttl()
+        self.mplspkt.parse()
         
-        self.assertEqual(len(self.pkt), orig_len)
-        self.assertTrue(self.pkt.mpls_tag_offset)
-        match = self.pkt.match
+        self.assertEqual(len(self.mplspkt), orig_len)
+        self.assertTrue(self.mplspkt.mpls_tag_offset)
+        match = self.mplspkt.match
         
         self.assertEqual(match.mpls_label, label)
         self.assertEqual(match.mpls_tc, tc)
-        new_ttl = struct.unpack("B", self.pkt.data[self.pkt.mpls_tag_offset + 3:
-                                                   self.pkt.mpls_tag_offset + 4])[0]
+        new_ttl = struct.unpack("B", self.mplspkt.data[self.mplspkt.mpls_tag_offset + 3:
+                                                       self.mplspkt.mpls_tag_offset + 4])[0]
         self.assertEqual(new_ttl, ttl - 1)
 
 class ip_setting_test(packet_test):
