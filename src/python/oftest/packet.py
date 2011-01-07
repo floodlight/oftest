@@ -41,6 +41,7 @@ import oftest.cstruct as ofp
 import unittest
 import binascii
 import string
+import collections
 import oftest.action as action
 
 ETHERTYPE_IP = 0x0800
@@ -48,9 +49,13 @@ ETHERTYPE_VLAN = 0x8100
 ETHERTYPE_VLAN_QinQ = 0x88a8
 ETHERTYPE_ARP = 0x0806
 ETHERTYPE_MPLS = 0x8847
+ETHERTYPE_MPLS_MCAST = 0x8848
+ETHERTYPES_MPLS = [ETHERTYPE_MPLS, ETHERTYPE_MPLS_MCAST]
 
 DL_MASK_ALL = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
 NW_MASK_ALL = 0xffffffff
+
+MplsTag = collections.namedtuple("MplsTag", "label tc ttl")
 
 class Packet(object):
     """
@@ -115,9 +120,12 @@ class Packet(object):
                           dl_vlan=0,
                           dl_vlan_pcp=0,
                           dl_vlan_cfi=0,
+                          mpls_type=None,
+                          mpls_tags=None,
                           ip_src='192.168.0.1',
                           ip_dst='192.168.0.2',
                           ip_tos=0,
+                          ip_ttl=64,
                           tcp_sport=1234,
                           tcp_dport=80):
         """
@@ -141,8 +149,8 @@ class Packet(object):
         """
         self.data = ""
         self._make_ip_packet(dl_dst, dl_src, dl_vlan_enable, dl_vlan, 
-                             dl_vlan_pcp, dl_vlan_cfi, ip_tos, ip_src, 
-                             ip_dst, socket.IPPROTO_TCP)
+                             dl_vlan_pcp, dl_vlan_cfi, mpls_type, mpls_tags, 
+                             ip_tos, ip_ttl, ip_src, ip_dst, socket.IPPROTO_TCP)
 
         # Add TCP header
         self.data += struct.pack("!HHLLBBHHH",
@@ -172,6 +180,7 @@ class Packet(object):
                           ip_src='192.168.0.1',
                           ip_dst='192.168.0.2',
                           ip_tos=0,
+                          ip_ttl=64,
                           icmp_type=8, # ICMP_ECHO_REQUEST
                           icmp_code=0, 
                           ):
@@ -196,7 +205,7 @@ class Packet(object):
         """
         self.data = ""
         self._make_ip_packet(dl_dst, dl_src, dl_vlan_enable, dl_vlan, 
-                             dl_vlan_pcp, dl_vlan_cfi, ip_tos, ip_src, 
+                             dl_vlan_pcp, dl_vlan_cfi, None, None, ip_tos, ip_ttl, ip_src, 
                              ip_dst, socket.IPPROTO_ICMP)
 
         # Add ICMP header
@@ -216,8 +225,8 @@ class Packet(object):
 
     
     def _make_ip_packet(self, dl_dst, dl_src, dl_vlan_enable, dl_vlan, 
-                          dl_vlan_pcp, dl_vlan_cfi, ip_tos, ip_src, 
-                          ip_dst, ip_proto):
+                          dl_vlan_pcp, dl_vlan_cfi, mpls_type, mpls_tags, 
+                          ip_tos, ip_ttl, ip_src, ip_dst, ip_proto):
         self.data = ""
         addr = dl_dst.split(":")
         for byte in map(lambda z: int(z, 16), addr):
@@ -231,9 +240,18 @@ class Packet(object):
             self.data += struct.pack("!H", 0x8100)
             vtag = dl_vlan | dl_vlan_pcp >> 12 | dl_vlan_cfi >> 15
             self.data += struct.pack("!H", vtag)
-
-        # Add type/len field
-        self.data += struct.pack("!H", ETHERTYPE_IP)
+            
+        if mpls_tags and len(mpls_tags):
+            # Add type/len field
+            self.data += struct.pack("!H", mpls_type)
+            for tag in mpls_tags:
+                packed_tag = ((tag.label & 0xfffff) << 12) | \
+                             ((tag.tc & 0x7) << 9) | \
+                             (tag.ttl & 0xFF)
+                self.data += struct.pack("!I", packed_tag)
+        else:
+            # Add type/len field
+            self.data += struct.pack("!H", ETHERTYPE_IP)
 
         # Add IP header
         v_and_hlen = 0x45  # assumes no ip or tcp options
@@ -241,7 +259,7 @@ class Packet(object):
         self.data += struct.pack("!BBHHHBBH", v_and_hlen, ip_tos, ip_len, 
                                  0, # ip.id 
                                  0, # ip.frag_off
-                                 64, # ip.ttl
+                                 ip_ttl, # ip.ttl
                                  ip_proto,
                                  0)  # ip.checksum
         # convert  ipsrc/dst to ints
@@ -275,7 +293,7 @@ class Packet(object):
         try:
             idx = self._parse_l2(idx)
             
-            if self.match.dl_type == ETHERTYPE_MPLS:
+            if self.match.dl_type in ETHERTYPES_MPLS:
                 self.mpls_tag_offset = idx
                 idx = self._parse_mpls(idx)
             elif self.match.dl_type == ETHERTYPE_IP:

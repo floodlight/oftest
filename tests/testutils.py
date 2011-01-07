@@ -696,6 +696,7 @@ def skip_message_emit(parent, s):
     else:
         sys.stderr.write("(S)")
 
+from oftest.packet import MplsTag
 def simple_tcp_packet_w_mpls(pktlen=100,
                       dl_dst='00:01:02:03:04:05',
                       dl_src='00:06:07:08:09:0a',
@@ -745,68 +746,58 @@ def simple_tcp_packet_w_mpls(pktlen=100,
     shouldn't assume anything about this packet other than that
     it is a valid ethernet/IP/TCP frame.
     """
+    
+    mpls_tags = ()
+    
     if mpls_label_ext >= 0:
-        if mpls_label >= 0:
-            if mpls_label_int >= 0:
-                pkt = scapy.Ether(dst=dl_dst, src=dl_src,
-                                  type=mpls_type)/ \
-                      scapy.MPLS(label=mpls_label_ext, tc=mpls_tc_ext,
-                                 ttl=mpls_ttl_ext, s=0)/ \
-                      scapy.MPLS(label=mpls_label, tc=mpls_tc,
-                                 ttl=mpls_ttl, s=0)/ \
-                      scapy.MPLS(label=mpls_label_int, tc=mpls_tc_int,
-                                 ttl=mpls_ttl_int)/ \
-                      scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos,
-                               ttl=ip_ttl)/ \
-                      scapy.TCP(sport=tcp_sport, dport=tcp_dport)
-            else:
-                pkt = scapy.Ether(dst=dl_dst, src=dl_src,
-                                  type=mpls_type)/ \
-                      scapy.MPLS(label=mpls_label_ext, tc=mpls_tc_ext,
-                                 ttl=mpls_ttl_ext, s=0)/ \
-                      scapy.MPLS(label=mpls_label, tc=mpls_tc,
-                                 ttl=mpls_ttl)/ \
-                      scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos,
-                               ttl=ip_ttl)/ \
-                      scapy.TCP(sport=tcp_sport, dport=tcp_dport)
-        else:
-            pkt = scapy.Ether(dst=dl_dst, src=dl_src,
-                              type=mpls_type)/ \
-                  scapy.MPLS(label=mpls_label_ext, tc=mpls_tc_ext,
-                             ttl=mpls_ttl_ext)/ \
-                  scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos,
-                           ttl=ip_ttl)/ \
-                  scapy.TCP(sport=tcp_sport, dport=tcp_dport)
-    else:
-        if mpls_label >= 0:
-            if mpls_label_int >= 0:
-                pkt = scapy.Ether(dst=dl_dst, src=dl_src,
-                                  type=mpls_type)/ \
-                      scapy.MPLS(label=mpls_label, tc=mpls_tc,
-                                 ttl=mpls_ttl, s=0)/ \
-                      scapy.MPLS(label=mpls_label_int, tc=mpls_tc_int,
-                                 ttl=mpls_ttl_int)/ \
-                      scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos,
-                               ttl=ip_ttl)/ \
-                      scapy.TCP(sport=tcp_sport, dport=tcp_dport)
-            else:
-                pkt = scapy.Ether(dst=dl_dst, src=dl_src,
-                                  type=mpls_type)/ \
-                      scapy.MPLS(label=mpls_label, tc=mpls_tc,
-                                 ttl=mpls_ttl)/ \
-                      scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos,
-                               ttl=ip_ttl)/ \
-                      scapy.TCP(sport=tcp_sport, dport=tcp_dport)
-        else:
-            pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-                  scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos,
-                           ttl=ip_ttl)/ \
-                  scapy.TCP(sport=tcp_sport, dport=tcp_dport)
-
-    pkt = pkt/("D" * (pktlen - len(pkt)))
-
+        tag = MplsTag(mpls_label_ext, mpls_tc_ext, mpls_ttl_ext)
+        mpls_tags += (tag,)
+        
+    if mpls_label >= 0:
+        tag = MplsTag(mpls_label, mpls_tc, mpls_ttl)
+        mpls_tags += (tag,)
+        
+    if mpls_label_int >= 0:
+        tag = MplsTag(mpls_label_int, mpls_tc_int, mpls_ttl_int)
+        mpls_tags += (tag,)
+    
+    pkt = Packet().simple_tcp_packet(pktlen=pktlen,
+                                     dl_dst=dl_dst,
+                                     dl_src=dl_src,
+                                     mpls_type=mpls_type,
+                                     mpls_tags=mpls_tags,
+                                     ip_src=ip_src,
+                                     ip_dst=ip_dst,
+                                     ip_tos=ip_tos,  
+                                     ip_ttl=ip_ttl,
+                                     tcp_sport=tcp_sport,
+                                     tcp_dport=tcp_dport)
     return pkt
 
+def error_verify(parent, exp_type, exp_code):
+    """
+    Receive an error msg and verify if it is as expected
+
+    @param parent Must implement controller, assertEqual
+    @param exp_type Expected error type
+    @param exp_code Expected error code
+    """
+    (response, raw) = parent.controller.poll(ofp.OFPT_ERROR, 2)
+    parent.assertTrue(response is not None, 'No error message received')
+
+    if (exp_type is None) or (exp_code is None):
+        parent.logger.debug("Parametrs are not sufficient")
+        return
+
+    parent.assertEqual(exp_type, response.type,
+                       'Error message type mismatch: ' +
+                       str(exp_type) + " != " +
+                       str(response.type))
+    parent.assertEqual(exp_code, response.code,
+                       'Error message code mismatch: ' +
+                       str(exp_code) + " != " +
+                       str(response.code))
+    
 def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
                                    mpls_type=0x8847,
                                    mpls_label=-1, mpls_tc=0,mpls_ttl=64,
