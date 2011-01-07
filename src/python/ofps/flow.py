@@ -263,12 +263,13 @@ def mpls_match(match_a, match_b):
     @params match_a Used for wildcards
     @params match_b Other fields for match
     """
-    if not (match_a.wildcards & ofp.OFPFW_MPLS_LABEL):
+    wildcards = match_a.wildcards
+    if not (wildcards & ofp.OFPFW_MPLS_LABEL):
         if match_a.mpls_label != match_b.mpls_label:
             flow_logger.debug("Failed mpls_label: %d vs %d" % 
                               (match_a.mpls_label, match_b.mpls_label))
             return False
-    if not (match_b.wildcards & ofp.OFPFW_MPLS_TC):
+    if not (wildcards & ofp.OFPFW_MPLS_TC):
         if match_a.mpls_tc != match_b.mpls_tc:
             flow_logger.debug("Failed mpls_tc: %d vs %d" % 
                               (match_a.mpls_tc, match_b.mpls_tc))
@@ -318,9 +319,8 @@ def flow_match_strict(flow_a, flow_b, groups):
     else:
         flow_logger.debug("Not an L3 packet")
 
-    # To Do: Check MPLS fields
-    # if not mpls_match(flow_a.match, flow_b.match):
-    #     return False
+    if not mpls_match(flow_a.match, flow_b.match):
+        return False
 
     return True
 
@@ -366,9 +366,8 @@ class FlowEntry(object):
         if new_flow.match.dl_type == 0x800:
             if not l3_match(new_flow.match, self.flow_mod.match):
                 return False
-        # To Do: Check MPLS fields
-        # if not mpls_match(flow_a.match, flow_b.match):
-        #     return False
+        if not mpls_match(new_flow.match, self.flow_mod.match):
+            return False
 
         return True
         
@@ -392,10 +391,8 @@ class FlowEntry(object):
             if not l3_match(self.flow_mod.match, packet.match):
                 flow_logger.debug("packet match failed l3_match")
                 return False
-
-        # To Do: Check MPLS fields
-        # if not mpls_match(flow_a.match, flow_b.match):
-        #     return False
+        if not mpls_match(self.flow_mod.match, packet.match):
+            return False
 
         flow_logger.debug("Packet matched flow")
         # Okay, if we get here, we have a match.

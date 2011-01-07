@@ -1047,6 +1047,38 @@ class simple_tcp_test(unittest.TestCase):
         self.assertEqual(match.nw_dst, ascii_ip_to_bin('192.168.0.2'))
         self.assertEqual(match.tp_dst, 80)
         self.assertEqual(match.tp_src, 1234)
+        
+class simple_tcp_with_mpls_test(unittest.TestCase):
+    """ Make sure that simple_tcp_packet does what it should 
+                          pktlen=100, 
+                          dl_dst='00:01:02:03:04:05',
+                          dl_src='00:06:07:08:09:0a',
+                          dl_vlan_enable=False,
+                          dl_vlan=0,
+                          dl_vlan_pcp=0,
+                          dl_vlan_cfi=0,
+                          ip_src='192.168.0.1',
+                          ip_dst='192.168.0.2',
+                          ip_tos=0,
+                          tcp_sport=1234,
+                          tcp_dport=80):
+    """
+    def setUp(self):
+        tag1 = MplsTag(0xabcde, 0x5, 0xAA)
+        tag2 = MplsTag(0x54321, 0x2, 0xBB)
+        mpls_tags = (tag1, tag2)        
+        
+        self.pkt = Packet().simple_tcp_packet(mpls_type=ETHERTYPE_MPLS,
+                                              mpls_tags=mpls_tags)
+        self.pkt.parse()
+       
+    def runTest(self):
+        match = self.pkt.match
+        self.assertEqual(match.dl_dst, [0x00, 0x01, 0x02, 0x03, 0x04, 0x05])
+        self.assertEqual(match.dl_src, [0x00, 0x06, 0x07, 0x08, 0x09, 0x0a])
+        self.assertEqual(match.dl_type, ETHERTYPE_MPLS)
+        self.assertEqual(match.mpls_label, 0xabcde)
+        self.assertEqual(match.mpls_tc, 0x5)
 
 if __name__ == '__main__':
     print("Running packet tests\n")
