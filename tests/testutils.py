@@ -671,3 +671,12 @@ def skip_message_emit(parent, s):
         sys.stderr.write("(skipped) ")
     else:
         sys.stderr.write("(S)")
+
+def do_echo_request_reply_test(test,controller):
+        request = message.echo_request()
+        response, _ = controller.transact(request)
+        test.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,
+                         'response is not echo_reply')
+        test.assertEqual(request.header.xid, response.header.xid,
+                         'response xid != request xid')
+        test.assertEqual(len(response.data), 0, 'response data non-empty')

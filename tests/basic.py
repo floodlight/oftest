@@ -164,13 +164,7 @@ class Echo(SimpleProtocol):
     Test echo response with no data
     """
     def runTest(self):
-        request = message.echo_request()
-        response, _ = self.controller.transact(request)
-        self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,
-                         'response is not echo_reply')
-        self.assertEqual(request.header.xid, response.header.xid,
-                         'response xid != request xid')
-        self.assertEqual(len(response.data), 0, 'response data non-empty')
+        testutils.do_echo_request_reply_test(self, self.controller)
 
 class EchoWithData(SimpleProtocol):
     """
@@ -410,6 +404,23 @@ class PortConfigMod(SimpleProtocol):
         rv = testutils.port_config_set(self.controller, of_port, config, 
                              ofp.OFPPC_NO_PACKET_IN, basic_logger)
         self.assertTrue(rv != -1, "Error sending port mod")
+        
+class TableModConfig(SimpleProtocol):
+    """ Simple table modification
+    
+    Mostly to make sure the switch correctly responds to these messages.
+    More complicated tests in the multi-tables.py tests
+    """        
+    def runTest(self):
+        basic_logger.info("Running " + str(self))
+        table_mod = message.table_mod()
+        table_mod.table_id = 0 # first table should always exist
+        table_mod.config = ofp.OFPTC_TABLE_MISS_CONTROLLER
+        
+        rv = self.controller.message_send(table_mod)
+        self.assertTrue(rv != -1, "Error sending table_mod")
+        testutils.do_echo_request_reply_test(self, self.controller)
+    
 
 if __name__ == "__main__":
     print "Please run through oft script:  ./oft --test_spec=basic"
