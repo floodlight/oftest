@@ -50,7 +50,13 @@ def delete_all_flows(ctrl, logger):
     msg.command = ofp.OFPFC_DELETE
     msg.buffer_id = 0xffffffff
     logger.debug(msg.show())
-    return ctrl.message_send(msg)
+
+#DEFAULT_TABLE_COUNT = 4
+    rv = 0
+    for table_no in [0, 1, 2, 3, 4, 5, 6, 7]:
+       msg.table_id = table_no
+       rv |= ctrl.message_send(msg)
+    return rv
 
 def clear_port_config(parent, port, logger):
     """
