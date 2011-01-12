@@ -133,7 +133,7 @@ class Packet(object):
         @param ip_dst IP destination
         @param ip_tos IP ToS
         @param tcp_dport TCP destination port
-        @param ip_sport TCP source port
+        @param tcp_sport TCP source port
 
         Generates a simple TCP request.  Users shouldn't assume anything 
         about this packet other than that it is a valid ethernet/IP/TCP frame.

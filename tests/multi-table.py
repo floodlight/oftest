@@ -39,8 +39,8 @@ class TwoTable1(basic.SimpleDataPlane):
     Simple two table test
 
     Add two flow entries:
-    Table 1 Match IP Src A; send to 1, goto 2
-    Table 2 Match TCP port B; send to 2
+    Table 0 Match IP Src A; send to 1, goto 1
+    Table 1 Match TCP port B; send to 2
 
     Then send in 2 packets:
     IP A, TCP C; expect out port 1
@@ -70,6 +70,7 @@ class TwoTable1(basic.SimpleDataPlane):
         request = message.flow_mod()
         request.match = match
         request.buffer_id = 0xffffffff
+        request.table_id = 0
         inst = instruction.instruction_write_actions()
         self.assertTrue(inst.actions.add(act), "Could not add action")
         self.assertTrue(request.instructions.add(inst), "Could not add inst1")
