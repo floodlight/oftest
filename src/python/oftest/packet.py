@@ -55,6 +55,7 @@ ETHERTYPES_MPLS = [ETHERTYPE_MPLS, ETHERTYPE_MPLS_MCAST]
 DL_MASK_ALL = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
 NW_MASK_ALL = 0xffffffff
 
+MPLS_BOTTOM_OF_STACK = 0x00000100
 MplsTag = collections.namedtuple("MplsTag", "label tc ttl")
 
 class Packet(object):
@@ -288,6 +289,8 @@ class Packet(object):
         self.match.nw_dst_mask = 0
         self.match.dl_dst_mask = [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
         self.match.dl_src_mask = [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+        self.mpls_tag_offset = None
+        self.ip_header_offset = None
         
         idx = 0
         try:
@@ -624,10 +627,28 @@ class Packet(object):
         pass
 
     def push_mpls(self, ethertype):
-        pass
+        # If there are existing tags, this is not the Bottom of Stack
+        bos = not self.mpls_tag_offset
+        
+        tag = MPLS_BOTTOM_OF_STACK if bos else 0
+        self.data = self.data[0:14] + \
+                    struct.pack("!I", tag) + \
+                    self.data[14:]
+        if bos:
+            self._set_2bytes(12, ethertype)
 
     def pop_mpls(self, ethertype):
-        pass
+        # Ignore if no existing tags.
+        if self.mpls_tag_offset:
+            # If the existing tag has the BoS bit set, this is the bottom.
+            tag = struct.unpack("!I", self.data[self.mpls_tag_offset:
+                                                self.mpls_tag_offset+4])[0]
+            bos = bool(tag & MPLS_BOTTOM_OF_STACK)
+            
+            self.data = self.data[0:self.mpls_tag_offset] + \
+                        self.data[self.mpls_tag_offset + 4:]
+            if bos:
+                self._set_2bytes(12, ethertype)
     
     IP_OFFSET_TTL = 8
     def set_nw_ttl(self, ttl):
@@ -982,6 +1003,35 @@ class mpls_setting_test(packet_test):
         new_ttl = struct.unpack("B", self.mplspkt.data[self.mplspkt.mpls_tag_offset + 3:
                                                        self.mplspkt.mpls_tag_offset + 4])[0]
         self.assertEqual(new_ttl, ttl - 1)
+
+class mpls_pop_test(packet_test):
+    def runTest(self):
+        orig_len = len(self.mplspkt)
+        self.mplspkt.pop_mpls(ETHERTYPE_IP)
+        self.mplspkt.parse()
+        
+        self.assertEqual(len(self.mplspkt), orig_len - 4)
+        self.assertFalse(self.mplspkt.mpls_tag_offset)
+        match = self.mplspkt.match
+        
+        self.assertEqual(match.dl_type,ETHERTYPE_IP)
+        self.assertEqual(match.nw_dst,ascii_ip_to_bin('171.64.74.58'))
+        self.assertEqual(match.nw_src,ascii_ip_to_bin('172.24.74.96'))
+        self.assertEqual(match.nw_proto, socket.IPPROTO_TCP)
+        
+class mpls_push_test(packet_test):
+    def runTest(self):
+        orig_len = len(self.pkt)
+        self.pkt.push_mpls(ETHERTYPE_MPLS)
+        self.pkt.parse()
+        
+        self.assertEqual(len(self.pkt), orig_len + 4)
+        self.assertTrue(self.pkt.mpls_tag_offset)
+        match = self.pkt.match
+        
+        self.assertEqual(match.dl_type, ETHERTYPE_MPLS)
+        self.assertEqual(match.mpls_label, 0)
+        self.assertEqual(match.mpls_tc, 0)
 
 class ip_setting_test(packet_test):
     def runTest(self):
