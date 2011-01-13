@@ -110,6 +110,7 @@ class Packet(object):
                           dl_dst='00:01:02:03:04:05',
                           dl_src='00:06:07:08:09:0a',
                           dl_vlan_enable=False,
+                          dl_vlan_type=ETHERTYPE_VLAN,
                           dl_vlan=0,
                           dl_vlan_pcp=0,
                           dl_vlan_cfi=0,
@@ -126,6 +127,7 @@ class Packet(object):
         @param dl_dst Destinatino MAC
         @param dl_src Source MAC
         @param dl_vlan_enable True if the packet is with vlan, False otherwise
+        @param dl_vlan_type Ether type for VLAN
         @param dl_vlan VLAN ID
         @param dl_vlan_pcp VLAN priority
         @param ip_src IP source
@@ -138,9 +140,9 @@ class Packet(object):
         about this packet other than that it is a valid ethernet/IP/TCP frame.
         """
         self.data = ""
-        self._make_ip_packet(dl_dst, dl_src, dl_vlan_enable, dl_vlan, 
-                             dl_vlan_pcp, dl_vlan_cfi, ip_tos, ip_src, 
-                             ip_dst, socket.IPPROTO_TCP)
+        self._make_ip_packet(dl_dst, dl_src, dl_vlan_enable, dl_vlan_type, 
+                             dl_vlan, dl_vlan_pcp, dl_vlan_cfi, ip_tos,
+                             ip_src, ip_dst, socket.IPPROTO_TCP)
 
         # Add TCP header
         self.data += struct.pack("!HHLLBBHHH",
@@ -164,6 +166,7 @@ class Packet(object):
                           dl_dst='00:01:02:03:04:05',
                           dl_src='00:06:07:08:09:0a',
                           dl_vlan_enable=False,
+                          dl_vlan_type=ETHERTYPE_VLAN,
                           dl_vlan=0,
                           dl_vlan_pcp=0,
                           dl_vlan_cfi=0,
@@ -181,6 +184,7 @@ class Packet(object):
         @param dl_dst Destinatino MAC
         @param dl_src Source MAC
         @param dl_vlan_enable True if the packet is with vlan, False otherwise
+        @param dl_vlan_type Ether type for VLAN
         @param dl_vlan VLAN ID
         @param dl_vlan_pcp VLAN priority
         @param ip_src IP source
@@ -193,9 +197,9 @@ class Packet(object):
         about this packet other than that it is a valid ethernet/IP/TCP frame.
         """
         self.data = ""
-        self._make_ip_packet(dl_dst, dl_src, dl_vlan_enable, dl_vlan, 
-                             dl_vlan_pcp, dl_vlan_cfi, ip_tos, ip_src, 
-                             ip_dst, socket.IPPROTO_ICMP)
+        self._make_ip_packet(dl_dst, dl_src, dl_vlan_enable, dl_vlan_type, 
+                             dl_vlan, dl_vlan_pcp, dl_vlan_cfi, ip_tos,
+                             ip_src, ip_dst, socket.IPPROTO_ICMP)
 
         # Add ICMP header
         self.data += struct.pack("!BBHHH",
@@ -213,9 +217,9 @@ class Packet(object):
         return self
 
     
-    def _make_ip_packet(self, dl_dst, dl_src, dl_vlan_enable, dl_vlan, 
-                          dl_vlan_pcp, dl_vlan_cfi, ip_tos, ip_src, 
-                          ip_dst, ip_proto):
+    def _make_ip_packet(self, dl_dst, dl_src, dl_vlan_enable, dl_vlan_type, 
+                          dl_vlan, dl_vlan_pcp, dl_vlan_cfi, ip_tos,
+                          ip_src, ip_dst, ip_proto):
         self.data = ""
         addr = dl_dst.split(":")
         for byte in map(lambda z: int(z, 16), addr):
@@ -226,7 +230,7 @@ class Packet(object):
 
         if (dl_vlan_enable):
             # Form and add VLAN tag
-            self.data += struct.pack("!H", 0x8100)
+            self.data += struct.pack("!H", dl_vlan_type)
             vtag = (dl_vlan & 0x0fff) | \
                             (dl_vlan_pcp & 0x7) << 13 | \
                             (dl_vlan_cfi & 0x1) << 12
