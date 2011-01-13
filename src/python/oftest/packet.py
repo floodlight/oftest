@@ -228,8 +228,8 @@ class Packet(object):
             # Form and add VLAN tag
             self.data += struct.pack("!H", 0x8100)
             vtag = (dl_vlan & 0x0fff) | \
-                            (dl_vlan_pcp & 0xe000) >> 12 | \
-                            (dl_vlan_cfi & 0x1000) >> 15
+                            (dl_vlan_pcp & 0x7) << 13 | \
+                            (dl_vlan_cfi & 0x1) << 12
             self.data += struct.pack("!H", vtag)
 
         # Add type/len field
@@ -321,17 +321,17 @@ class Packet(object):
             self.vlan_tag_offset = 12
             blob = struct.unpack("!H", self.data[idx:idx+2])[0]
             idx += 2
-            self.match.dl_vlan_pcp = blob & 0xe000
+            self.match.dl_vlan_pcp = (blob & 0xe000) >> 13
             #cfi = blob & 0x1000     #@todo figure out what to do if cfi!=0
             self.match.dl_vlan = blob & 0x0fff
             l2_type = struct.unpack("!H", self.data[idx:idx+2])[0]
             # now skip past any more nest VLAN tags (per the spec)
-            idx += 2
             while l2_type in [ETHERTYPE_VLAN, ETHERTYPE_VLAN_QinQ] :
                 idx += 4
                 if self.bytes < idx :
                     raise parse_error("_parse_l2(): Too many vlan tags")
                 l2_type = struct.unpack("!H", self.data[idx:idx+2])[0]
+            idx += 2
         else:
             self.vlan_tag_offset = None
             self.match.dl_vlan = 0xFFFF
@@ -506,10 +506,10 @@ class Packet(object):
             return
         offset = self.vlan_tag_offset + 2
         short = struct.unpack('!H', self.data[offset:offset+2])[0]
-        short = (pcp & 0xf0) | ((short & 0x0fff) )
+        short = (pcp<<13 & 0xf000) | ((short & 0x0fff) )
         self.data = self.data[0:offset] + struct.pack('!H',short) + \
                 self.data[offset+2:len(self.data)]
-        self.match.dl_vlan_pcp = pcp & 0xf0
+        self.match.dl_vlan_pcp = pcp & 0xf
 
     def set_dl_src(self, dl_src):
         self._set_6bytes(6, dl_src)
