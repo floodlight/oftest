@@ -1050,3 +1050,95 @@ class MultiTableConfigController(basic.SimpleDataPlane):
 
     def runTest(self):
         self.scenario2(0,1)
+
+
+class MultiTableConfigDrop(basic.SimpleDataPlane):
+    """
+    Simple table config test for "drop"
+
+    Lots of negative tests are not checked
+    """
+    def scenario2(self, first_table = 0, second_table = 1):
+        """
+        Set the first table config as "Drop" and second table as "Controller"
+        add flow entry:
+        First Table; Match IP Src A; send to 1 // if not match, then drop
+        Second Table; Match IP Src B; send to 2 // if not match, controller
+
+        Then send in a packet:
+        IP B; expect drop
+        """
+        of_ports = pa_port_map.keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
+
+        # Set table config as "drop"
+        request = message.table_mod()
+        request.table_id = first_table
+        request.config = ofp.OFPTC_TABLE_MISS_DROP
+        rv = self.controller.message_send(request)
+        self.assertTrue(rv != -1, "Error configuring table")
+
+        testutils.do_barrier(self.controller)
+
+        # Set table config as "send to controller"
+        request = message.table_mod()
+        request.table_id = second_table
+        request.config = ofp.OFPTC_TABLE_MISS_CONTROLLER
+        rv = self.controller.message_send(request)
+        self.assertTrue(rv != -1, "Error configuring table")
+
+        testutils.do_barrier(self.controller)
+
+        # Clear flow table
+        rv = testutils.delete_all_flows(self.controller, pa_logger)
+        self.assertEqual(rv, 0, "Failed to delete all flows")
+
+        testutils.do_barrier(self.controller)
+
+        # Set up first match
+        act = action.action_set_output_port()
+        act.port = of_ports[0]
+
+        request = message.flow_mod()
+        request.match = make_match()
+        request.buffer_id = 0xffffffff
+        request.table_id = first_table
+        inst = instruction.instruction_write_actions()
+        self.assertTrue(inst.actions.add(act), "Could not add action")
+        self.assertTrue(request.instructions.add(inst), "Could not add inst1")
+        pa_logger.info("Inserting flow 1")
+        rv = self.controller.message_send(request)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+
+        testutils.do_barrier(self.controller)
+
+        # Set up second match
+        act = action.action_set_output_port()
+        act.port = of_ports[1]
+
+        request = message.flow_mod()
+        request.match = make_match(nw_src = "192.168.1.70")
+        request.buffer_id = 0xffffffff
+        request.table_id = second_table
+        inst = instruction.instruction_write_actions()
+        self.assertTrue(inst.actions.add(act), "Could not add action")
+        self.assertTrue(request.instructions.add(inst), "Could not add inst2")
+        pa_logger.info("Inserting flow 2")
+        rv = self.controller.message_send(request)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+
+        testutils.do_barrier(self.controller)
+
+        # Generate a packet not matching to any flow, then drop
+        pkt = testutils.simple_tcp_packet(ip_src='192.168.1.70', tcp_sport=10)
+        self.dataplane.send(of_ports[2], str(pkt))
+        # checks no response from controller and dataplane
+        (response, _) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
+        # self.assertIsNone() is preferable for newer python
+        self.assertFalse(response is not None, "PacketIn message is received")
+        (_, rcv_pkt, _) = self.dataplane.poll(timeout=5)
+        self.assertFalse(rcv_pkt is not None, "Packet on dataplane")
+
+    def runTest(self):
+        self.scenario2(0,1)
