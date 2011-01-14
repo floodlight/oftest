@@ -902,7 +902,7 @@ def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
     match = parse.packet_to_flow_match(pkt)
     parent.assertTrue(match is not None, "Flow match from pkt failed")
 
-    wildcards = ~(ofp.OFPFW_MPLS_LABEL | ofp.OFPFW_MPLS_TC) | wildcards
+    wildcards = ofp.OFPFW_DL_TYPE | wildcards
 
     match.mpls_label = label_match
     match.mpls_tc = tc_match
