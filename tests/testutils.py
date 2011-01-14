@@ -17,6 +17,7 @@ skipped_test_count = 0
 
 # Some useful defines
 IP_ETHERTYPE = 0x800
+ETHERTYPE_VLAN = 0x8100
 TCP_PROTOCOL = 0x6
 UDP_PROTOCOL = 0x11
 
@@ -71,6 +72,7 @@ def simple_tcp_packet(**args):
     @param dl_dst Destinatino MAC
     @param dl_src Source MAC
     @param dl_vlan_enable True if the packet is with vlan, False otherwise
+    @param dl_vlan_type Ether type for VLAN
     @param dl_vlan VLAN ID
     @param dl_vlan_pcp VLAN priority
     @param ip_src IP source
@@ -96,6 +98,7 @@ def simple_icmp_packet(*args):
     @param dl_dst Destinatino MAC
     @param dl_src Source MAC
     @param dl_vlan_enable True if the packet is with vlan, False otherwise
+    @param dl_vlan_type Ether type for VLAN
     @param dl_vlan VLAN ID
     @param dl_vlan_pcp VLAN priority
     @param ip_src IP source
@@ -504,6 +507,217 @@ def flow_match_test(parent, port_map, match=None, wildcards=0, dl_vlan=-1,
                                       pkt=pkt, exp_pkt=exp_pkt,
                                       apply_action_list=apply_action_list,
                                       check_expire=check_expire)
+            test_count += 1
+            if (max_test > 0) and (test_count >= max_test):
+                parent.logger.info("Ran " + str(test_count) + " tests; exiting")
+                return
+
+def flow_match_test_port_pair_vlan(parent, ing_port, egr_port, wildcards=0,
+                                   dl_vlan=-1, dl_vlan_pcp=0,
+                                   dl_vlan_type=ETHERTYPE_VLAN,
+                                   dl_vlan_int=-1, dl_vlan_pcp_int=0,
+                                   vid_match=ofp.OFPVID_NONE, pcp_match=0,
+                                   exp_vid=-1, exp_pcp=0,
+                                   exp_vlan_type=ETHERTYPE_VLAN,
+                                   match_exp=True,
+                                   add_tag_exp=False,
+                                   exp_msg=ofp.OFPT_FLOW_REMOVED,
+                                   exp_msg_type=0, exp_msg_code=0,
+                                   pkt=None, exp_pkt=None,
+                                   action_list=None, check_expire=False):
+    """
+    Flow match test for various vlan matching patterns on single TCP packet
+
+    Run test with packet through switch from ing_port to egr_port
+    See flow_match_test_vlan for parameter descriptions
+    """
+    parent.logger.info("Pkt match test: " + str(ing_port) + " to " + str(egr_port))
+    parent.logger.debug("  WC: " + hex(wildcards) + " vlan: " + str(dl_vlan) +
+                    " expire: " + str(check_expire))
+    len = 100
+    len_w_vid = len + 4
+
+    if pkt is None:
+        if dl_vlan >= 0:
+            if dl_vlan_int >= 0:
+                pkt = simple_tcp_packet(pktlen=len_w_vid,
+                        dl_vlan_enable=True,
+                        dl_vlan=dl_vlan_int,
+                        dl_vlan_pcp=dl_vlan_pcp_int)
+                pkt.push_vlan(dl_vlan_type)
+                pkt.set_vlan_vid(dl_vlan)
+                pkt.set_vlan_pcp(dl_vlan_pcp)
+            else:
+                pkt = simple_tcp_packet(pktlen=len_w_vid,
+                        dl_vlan_enable=True,
+                        dl_vlan_type=dl_vlan_type,
+                        dl_vlan=dl_vlan,
+                        dl_vlan_pcp=dl_vlan_pcp)
+        else:
+            pkt = simple_tcp_packet(pktlen=len,
+                                    dl_vlan_enable=False)
+
+    if exp_pkt is None:
+        if exp_vid >= 0:
+            if add_tag_exp:
+                if dl_vlan >= 0:
+                    if dl_vlan_int >= 0:
+                        exp_pkt = simple_tcp_packet(pktlen=len_w_vid,
+                                    dl_vlan_enable=True,
+                                    dl_vlan=dl_vlan_int,
+                                    dl_vlan_pcp=dl_vlan_pcp_int)
+                        exp_pkt.push_vlan(dl_vlan_type)
+                        exp_pkt.set_vlan_vid(dl_vlan)
+                        exp_pkt.set_vlan_pcp(dl_vlan_pcp)
+                    else:
+                        exp_pkt = simple_tcp_packet(pktlen=len_w_vid,
+                                    dl_vlan_enable=True,
+                                    dl_vlan_type=dl_vlan_type,
+                                    dl_vlan=dl_vlan,
+                                    dl_vlan_pcp=dl_vlan_pcp)
+                    #Push one more tag in either case
+                    exp_pkt.push_vlan(exp_vlan_type)
+                    exp_pkt.set_vlan_vid(exp_vid)
+                    exp_pkt.set_vlan_pcp(exp_pcp)
+                else:
+                    exp_pkt = simple_tcp_packet(pktlen=len_w_vid,
+                                dl_vlan_enable=True,
+                                dl_vlan_type=exp_vlan_type,
+                                dl_vlan=exp_vid,
+                                dl_vlan_pcp=exp_pcp)
+            else:
+                if dl_vlan_int >= 0:
+                    exp_pkt = simple_tcp_packet(pktlen=len_w_vid,
+                                dl_vlan_enable=True,
+                                dl_vlan=dl_vlan_int,
+                                dl_vlan_pcp=dl_vlan_pcp_int)
+                    exp_pkt.push_vlan(exp_vlan_type)
+                    exp_pkt.set_vlan_vid(exp_vid)
+                    exp_pkt.set_vlan_pcp(exp_pcp)
+
+                else:
+                    exp_pkt = simple_tcp_packet(pktlen=len_w_vid,
+                                dl_vlan_enable=True,
+                                dl_vlan_type=exp_vlan_type,
+                                dl_vlan=exp_vid,
+                                dl_vlan_pcp=exp_pcp)
+        else:
+            #subtract action
+            if dl_vlan_int >= 0:
+                exp_pkt = simple_tcp_packet(pktlen=len_w_vid,
+                            dl_vlan_enable=True,
+                            dl_vlan=dl_vlan_int,
+                            dl_vlan_pcp=dl_vlan_pcp_int)
+            else:
+                exp_pkt = simple_tcp_packet(pktlen=len,
+                            dl_vlan_enable=False)
+
+    match = parse.packet_to_flow_match(pkt)
+    parent.assertTrue(match is not None, "Flow match from pkt failed")
+
+    match.dl_vlan = vid_match
+    match.dl_vlan_pcp = pcp_match
+    match.wildcards = wildcards
+
+    request = flow_msg_create(parent, pkt, ing_port=ing_port,
+                              wildcards=wildcards,
+                              match=match,
+                              egr_port=egr_port,
+                              action_list=action_list)
+
+    flow_msg_install(parent, request)
+
+    parent.logger.debug("Send packet: " + str(ing_port) + " to " + str(egr_port))
+    parent.logger.debug("Sent:" + str(pkt).encode('hex'))
+    parent.dataplane.send(ing_port, str(pkt))
+
+    if match_exp:
+        receive_pkt_verify(parent, egr_port, exp_pkt)
+        if check_expire:
+            #@todo Not all HW supports both pkt and byte counters
+            flow_removed_verify(parent, request, pkt_count=1, byte_count=len(pkt))
+    else:
+        if exp_msg is ofp.OFPT_FLOW_REMOVED:
+            if check_expire:
+                flow_removed_verify(parent, request, pkt_count=0, byte_count=0)
+        elif exp_msg is ofp.OFPT_ERROR:
+            error_verify(parent, exp_msg_type, exp_msg_code)
+        else:
+            parent.assertTrue(0, "Rcv: Unexpected Message: " + str(exp_msg))
+
+def flow_match_test_vlan(parent, port_map, wildcards=0,
+                         dl_vlan=-1, dl_vlan_pcp=0, dl_vlan_type=ETHERTYPE_VLAN,
+                         dl_vlan_int=-1, dl_vlan_pcp_int=0,
+                         vid_match=ofp.OFPVID_NONE, pcp_match=0,
+                         exp_vid=-1, exp_pcp=0,
+                         exp_vlan_type=ETHERTYPE_VLAN,
+                         match_exp=True,
+                         add_tag_exp=False,
+                         exp_msg=ofp.OFPT_FLOW_REMOVED,
+                         exp_msg_type=0, exp_msg_code=0,
+                         pkt=None, exp_pkt=None,
+                         action_list=None,
+                         check_expire=False,
+                         max_test=0):
+    """
+    Run flow_match_test_port_pair on all port pairs
+
+    @param max_test If > 0 no more than this number of tests are executed.
+    @param parent Must implement controller, dataplane, assertTrue, assertEqual
+    and logger
+    @param wildcards For flow match entry
+    @param dl_vlan If not -1, and pkt is not None, create a pkt w/ VLAN tag
+    @param dl_vlan_pcp VLAN PCP associated with dl_vlan
+    @param dl_vlan_type VLAN ether type associated with dl_vlan
+    @param dl_vlan_int If not -1, create pkt w/ Inner Vlan tag
+    @param dl_vlan_pcp_int VLAN PCP associated with dl_vlan_2nd
+    @param vid_match Matching value for VLAN VID field
+    @param pcp_match Matching value for VLAN PCP field
+    @param exp_vid Expected VLAN VID value. If -1, no VLAN expected
+    @param exp_vlan_type Expected VLAN ether type
+    @param exp_pcp Expected VLAN PCP value
+    @param match_exp Set whether packet is expected to receive
+    @param add_tag_exp If True, expected_packet has an additional vlan tag,
+    If not, expected_packet's vlan tag is replaced as specified
+    @param exp_msg Expected message
+    @param exp_msg_type Expected message type associated with the message
+    @param exp_msg_code Expected message code associated with the msg_type
+    @param pkt If not None, use this packet for ingress
+    @param exp_pkt If not None, use this as the expected output pkt
+    @param action_list Additional actions to add to flow mod
+    @param check_expire Check for flow expiration message
+    """
+    of_ports = port_map.keys()
+    of_ports.sort()
+    parent.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+    test_count = 0
+
+    for ing_idx in range(len(of_ports)):
+        ingress_port = of_ports[ing_idx]
+        for egr_idx in range(len(of_ports)):
+            if egr_idx == ing_idx:
+                continue
+            egress_port = of_ports[egr_idx]
+            flow_match_test_port_pair_vlan(parent, ingress_port, egress_port,
+                                           wildcards=wildcards,
+                                           dl_vlan=dl_vlan,
+                                           dl_vlan_pcp=dl_vlan_pcp,
+                                           dl_vlan_type=dl_vlan_type,
+                                           dl_vlan_int=dl_vlan_int,
+                                           dl_vlan_pcp_int=dl_vlan_pcp_int,
+                                           vid_match=vid_match,
+                                           pcp_match=pcp_match,
+                                           exp_vid=exp_vid,
+                                           exp_pcp=exp_pcp,
+                                           exp_vlan_type=exp_vlan_type,
+                                           exp_msg=exp_msg,
+                                           exp_msg_type=exp_msg_type,
+                                           exp_msg_code=exp_msg_code,
+                                           match_exp=match_exp,
+                                           add_tag_exp=add_tag_exp,
+                                           pkt=pkt, exp_pkt=exp_pkt,
+                                           action_list=action_list,
+                                           check_expire=check_expire)
             test_count += 1
             if (max_test > 0) and (test_count >= max_test):
                 parent.logger.info("Ran " + str(test_count) + " tests; exiting")
