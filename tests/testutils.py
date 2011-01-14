@@ -411,6 +411,30 @@ def flow_msg_install(parent, request, clear_table=True):
     parent.assertTrue(rv != -1, "Error installing flow mod")
     do_barrier(parent.controller)
 
+def error_verify(parent, exp_type, exp_code):
+    """
+    Receive an error msg and verify if it is as expected
+
+    @param parent Must implement controller, assertEqual
+    @param exp_type Expected error type
+    @param exp_code Expected error code
+    """
+    (response, raw) = parent.controller.poll(ofp.OFPT_ERROR, 2)
+    parent.assertTrue(response is not None, 'No error message received')
+
+    if (exp_type is None) or (exp_code is None):
+        parent.logger.debug("Parametrs are not sufficient")
+        return
+
+    parent.assertEqual(exp_type, response.type,
+                       'Error message type mismatch: ' +
+                       str(exp_type) + " != " +
+                       str(response.type))
+    parent.assertEqual(exp_code, response.code,
+                       'Error message code mismatch: ' +
+                       str(exp_code) + " != " +
+                       str(response.code))
+
 def flow_match_test_port_pair(parent, ing_port, egr_port, match=None,
                               wildcards=0, dl_vlan=-1,
                               pkt=None, exp_pkt=None,
