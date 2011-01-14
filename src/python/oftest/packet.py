@@ -58,6 +58,20 @@ NW_MASK_ALL = 0xffffffff
 MPLS_BOTTOM_OF_STACK = 0x00000100
 MplsTag = collections.namedtuple("MplsTag", "label tc ttl")
 
+def pack_tag(mpls_tag, bos = 0):
+    packed_tag = ((mpls_tag.label & 0xfffff) << 12) | \
+                 ((mpls_tag.tc & 0x7) << 9) | \
+                 (mpls_tag.ttl & 0xFF) | \
+                 (MPLS_BOTTOM_OF_STACK if bos else 0)
+    return packed_tag
+
+def unpack_tag(packed_tag):
+    tag = MplsTag(packed_tag >> 12,
+                  (packed_tag >> 9) & 0x0007,
+                  packed_tag & 0xFF)
+    bos = bool(packed_tag & MPLS_BOTTOM_OF_STACK)
+    return (tag, bos)
+
 class Packet(object):
     """
     Packet abstraction
@@ -245,11 +259,12 @@ class Packet(object):
         if mpls_tags and len(mpls_tags):
             # Add type/len field
             self.data += struct.pack("!H", mpls_type)
-            for tag in mpls_tags:
-                packed_tag = ((tag.label & 0xfffff) << 12) | \
-                             ((tag.tc & 0x7) << 9) | \
-                             (tag.ttl & 0xFF)
+            mpls_tags = list(mpls_tags)          
+            while len(mpls_tags):
+                tag = mpls_tags.pop(0)
+                packed_tag = pack_tag(tag, bos = not len(mpls_tags))
                 self.data += struct.pack("!I", packed_tag)
+            
         else:
             # Add type/len field
             self.data += struct.pack("!H", ETHERTYPE_IP)
@@ -616,8 +631,7 @@ class Packet(object):
     def dec_mpls_ttl(self):
         if self.mpls_tag_offset is None:
             return
-        ttl = struct.unpack("B", self.data[self.mpls_tag_offset + 3:
-                                           self.mpls_tag_offset + 4])[0]
+        ttl = struct.unpack("B", self.data[self.mpls_tag_offset + 3])[0]
         self.set_mpls_ttl(ttl - 1)
 
     def push_vlan(self, ethertype):
@@ -626,17 +640,35 @@ class Packet(object):
     def pop_vlan(self):
         pass
 
+    IP_OFFSET_TTL = 8
+    
     def push_mpls(self, ethertype):
-        # If there are existing tags, this is not the Bottom of Stack
-        bos = not self.mpls_tag_offset
+        tag = MplsTag(0, 0, 0)
+        bos = False
         
-        tag = MPLS_BOTTOM_OF_STACK if bos else 0
-        self.data = self.data[0:14] + \
-                    struct.pack("!I", tag) + \
-                    self.data[14:]
-        if bos:
+        if self.mpls_tag_offset:
+            # The new tag defaults to the old one.
+            packed_tag = struct.unpack("!I", self.data[self.mpls_tag_offset:
+                                                       self.mpls_tag_offset+4])[0]
+            (tag, _) = unpack_tag(packed_tag)
+            
+        else:
+            # Pushing a new label stack, set the BoS bit and ethertype
             self._set_2bytes(12, ethertype)
-
+            bos = True
+            # And get TTL from IP.
+            if self.ip_header_offset:
+                ttl = struct.unpack("B", self.data[self.ip_header_offset + \
+                                                       Packet.IP_OFFSET_TTL])[0]
+                tag = MplsTag(0, 0, ttl)
+                                                       
+        self.data = self.data[0:14] + \
+                    struct.pack("!I", pack_tag(tag, bos)) + \
+                    self.data[14:]
+        
+        # Reparse to update offsets, ethertype, etc.
+        self.parse()
+            
     def pop_mpls(self, ethertype):
         # Ignore if no existing tags.
         if self.mpls_tag_offset:
@@ -649,8 +681,10 @@ class Packet(object):
                         self.data[self.mpls_tag_offset + 4:]
             if bos:
                 self._set_2bytes(12, ethertype)
+            
+            # Reparse to update offsets, ethertype, etc.
+            self.parse()
     
-    IP_OFFSET_TTL = 8
     def set_nw_ttl(self, ttl):
         if self.ip_header_offset is None:
             return

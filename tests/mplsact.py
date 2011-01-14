@@ -433,6 +433,7 @@ def mpls_pop_act_tests(parent):
         return
 
     act = action.action_pop_mpls()
+    act.ethertype = 0x8847 if parent.num_tags > 1 else 0x0800
 
     if parent.num_tags == 0:
         match_exp = False
@@ -898,6 +899,7 @@ def mpls_push_act_tests(parent):
         return
 
     act = action.action_push_mpls()
+    act.ethertype = 0x8847
 
     if parent.num_tags == 0:
         exp_label = 0
@@ -910,7 +912,7 @@ def mpls_push_act_tests(parent):
         exp_ttl = parent.ttl
 
     match_exp = True
-    add_tag_exp = True
+    add_tag_exp = parent.num_tags > 0
     exp_msg = ofp.OFPT_FLOW_REMOVED
     exp_msg_type = 0 #NOT_EXPECTED
     exp_msg_code = 0 #NOT_EXPECTED
@@ -929,6 +931,7 @@ def mpls_push_act_tests(parent):
                     exp_mpls_tc=exp_tc,
                     exp_mpls_ttl=exp_ttl,
                     match_exp=match_exp,
+                    add_tag_exp=add_tag_exp,
                     exp_msg=exp_msg,
                     exp_msg_type=exp_msg_type,
                     exp_msg_code=exp_msg_code,
@@ -961,6 +964,7 @@ def mpls_multipush1_act_tests(parent):
         return
 
     act = action.action_push_mpls()
+    act.ethertype = 0x8847
 
     for test_condition in range(2):
         if test_condition == 0:
@@ -1037,6 +1041,7 @@ def mpls_multipush2_act_tests(parent):
         return
 
     act = action.action_push_mpls()
+    act.ethertype = 0x8847
 
     for test_condition in range(4):
         if test_condition == 0:
@@ -1081,7 +1086,7 @@ def mpls_multipush2_act_tests(parent):
                 exp_tc = parent.tc
 
         match_exp = True
-        add_tag_exp = True
+        add_tag_exp = parent.num_tags > 0
         exp_msg = ofp.OFPT_FLOW_REMOVED
         exp_msg_type = 0 #NOT_EXPECTED
         exp_msg_code = 0 #NOT_EXPECTED
@@ -1100,6 +1105,7 @@ def mpls_multipush2_act_tests(parent):
                     exp_mpls_tc=exp_tc,
                     exp_mpls_ttl=exp_ttl,
                     match_exp=match_exp,
+                    add_tag_exp=add_tag_exp,
                     exp_msg=exp_msg,
                     exp_msg_type=exp_msg_type,
                     exp_msg_code=exp_msg_code,
@@ -1133,6 +1139,7 @@ def mpls_multipush3_act_tests(parent):
         return
 
     act = action.action_push_mpls()
+    act.ethertype = 0x8847
 
     for test_condition in range(2):
         if test_condition == 0:
