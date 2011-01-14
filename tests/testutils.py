@@ -319,7 +319,7 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
                                str(byte_count))
 
 def flow_msg_create(parent, pkt, ing_port=None, instruction_list=None, 
-                    action_list=None, wildcards=0, egr_port=None, 
+                    action_list=None, match=None, wildcards=0, egr_port=None, 
                     egr_queue=None, check_expire=False):
     """
     Multi-purpose flow_mod creation utility
@@ -337,8 +337,9 @@ def flow_msg_create(parent, pkt, ing_port=None, instruction_list=None,
     
     @param egr_queue if not None, make the output an enqueue action
     """
-    match = parse.packet_to_flow_match(pkt)
-    parent.assertTrue(match is not None, "Flow match from pkt failed")
+    if match is None:
+        match = parse.packet_to_flow_match(pkt)
+        parent.assertTrue(match is not None, "Flow match from pkt failed")
     match.wildcards = wildcards & 0xfffffffff # mask out anything out of range
     match.in_port = ing_port
 
@@ -410,8 +411,9 @@ def flow_msg_install(parent, request, clear_table=True):
     parent.assertTrue(rv != -1, "Error installing flow mod")
     do_barrier(parent.controller)
 
-def flow_match_test_port_pair(parent, ing_port, egr_port, wildcards=0, 
-                              dl_vlan=-1, pkt=None, exp_pkt=None,
+def flow_match_test_port_pair(parent, ing_port, egr_port, match=None,
+                              wildcards=0, dl_vlan=-1,
+                              pkt=None, exp_pkt=None,
                               apply_action_list=None, check_expire=False):
     """
     Flow match test on single TCP packet
@@ -427,6 +429,7 @@ def flow_match_test_port_pair(parent, ing_port, egr_port, wildcards=0,
         pkt = simple_tcp_packet(dl_vlan_enable=(dl_vlan >= 0), dl_vlan=dl_vlan)
 
     request = flow_msg_create(parent, pkt, ing_port=ing_port, 
+                              match=match,
                               wildcards=wildcards, egr_port=egr_port,
                               action_list=apply_action_list)
 
@@ -443,8 +446,8 @@ def flow_match_test_port_pair(parent, ing_port, egr_port, wildcards=0,
         #@todo Not all HW supports both pkt and byte counters
         flow_removed_verify(parent, request, pkt_count=1, byte_count=len(pkt))
 
-def flow_match_test(parent, port_map, wildcards=0, dl_vlan=-1, pkt=None, 
-                    exp_pkt=None, apply_action_list=None,
+def flow_match_test(parent, port_map, match=None, wildcards=0, dl_vlan=-1,
+                    pkt=None, exp_pkt=None, apply_action_list=None,
                     check_expire=False,  max_test=0):
     """
     Run flow_match_test_port_pair on all port pairs
@@ -453,6 +456,7 @@ def flow_match_test(parent, port_map, wildcards=0, dl_vlan=-1, pkt=None,
     @param parent Must implement controller, dataplane, assertTrue, assertEqual
     and logger
     @param pkt If not None, use this packet for ingress
+    @param match If not None, use this value in flow_mod
     @param wildcards For flow match entry
     @param dl_vlan If not -1, and pkt is not None, create a pkt w/ VLAN tag
     @param exp_pkt If not None, use this as the expected output pkt; els use pkt
@@ -471,12 +475,13 @@ def flow_match_test(parent, port_map, wildcards=0, dl_vlan=-1, pkt=None,
                 continue
             egress_port = of_ports[egr_idx]
             flow_match_test_port_pair(parent, ingress_port, egress_port, 
-                                      wildcards=wildcards, dl_vlan=dl_vlan, 
+                                      match=match, wildcards=wildcards,
+                                      dl_vlan=dl_vlan, 
                                       pkt=pkt, exp_pkt=exp_pkt,
                                       apply_action_list=apply_action_list,
                                       check_expire=check_expire)
             test_count += 1
-            if (max_test > 0) and (test_count > max_test):
+            if (max_test > 0) and (test_count >= max_test):
                 parent.logger.info("Ran " + str(test_count) + " tests; exiting")
                 return
 
