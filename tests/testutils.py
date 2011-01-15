@@ -40,6 +40,20 @@ def delete_all_flows(ctrl, logger):
     """
 
     logger.info("Deleting all flows")
+    #DEFAULT_TABLE_COUNT = 4
+    rv = 0
+    for table_id in [0, 1, 2, 3, 4, 5, 6, 7]:
+        rv |= delete_all_flows_one_table(ctrl, logger, table_id=table_id)
+    return rv
+
+def delete_all_flows_one_table(ctrl, logger, table_id=0):
+    """
+    Delete all flows on a table
+    @param ctrl The controller object for the test
+    @param logger Logging object
+    @param table_id Table ID
+    """
+    logger.info("Deleting all flows on table ID: " + str(table_id))
     msg = message.flow_mod()
     msg.match.wildcards = ofp.OFPFW_ALL
     msg.match.dl_src_mask= [255,255,255,255,255,255]
@@ -49,6 +63,7 @@ def delete_all_flows(ctrl, logger):
     msg.out_port = ofp.OFPP_ANY  # @todo CHECKME 
     msg.command = ofp.OFPFC_DELETE
     msg.buffer_id = 0xffffffff
+    msg.table_id = table_id
     logger.debug(msg.show())
     return ctrl.message_send(msg)
 
@@ -323,7 +338,7 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
 
 def flow_msg_create(parent, pkt, ing_port=None, instruction_list=None, 
                     action_list=None, match=None, wildcards=0, egr_port=None, 
-                    egr_queue=None, check_expire=False):
+                    egr_queue=None, table_id=0, check_expire=False):
     """
     Multi-purpose flow_mod creation utility
 
@@ -339,6 +354,7 @@ def flow_msg_create(parent, pkt, ing_port=None, instruction_list=None,
     Add the action_list to the last (only?) instruction
     
     @param egr_queue if not None, make the output an enqueue action
+    @param table_id Table ID for writing a flow_mod
     """
     if match is None:
         match = parse.packet_to_flow_match(pkt)
@@ -349,6 +365,7 @@ def flow_msg_create(parent, pkt, ing_port=None, instruction_list=None,
     request = message.flow_mod()
     request.match = match
     request.buffer_id = 0xffffffff
+    request.table_id = table_id
     if check_expire:
         request.flags |= ofp.OFPFF_SEND_FLOW_REM
         request.hard_timeout = 1    
@@ -405,8 +422,15 @@ def flow_msg_install(parent, request, clear_table=True):
     """
     if clear_table:
         parent.logger.debug("Clear flow table")
-        rc = delete_all_flows(parent.controller, parent.logger)
-        parent.assertEqual(rc, 0, "Failed to delete all flows")
+        if request.table_id:
+            table_id = request.table_id
+        else:
+            table_id = 0
+        rc = delete_all_flows_one_table(parent.controller,
+                                        parent.logger,
+                                        table_id)
+        parent.assertEqual(rc, 0, "Failed to delete all flows on table: "
+                           + str(table_id))
         do_barrier(parent.controller)
 
     parent.logger.debug("Insert flow")
