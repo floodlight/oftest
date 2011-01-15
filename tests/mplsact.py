@@ -15,23 +15,17 @@ indicated oin oft_config
 
 """
 
-import copy
-
 import logging
 
-import unittest
-
 import random
-import oftest.controller as controller
 import oftest.cstruct as ofp
 import oftest.message as message
-import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.parse as parse
 import basic
 import pktact
 
-from testutils import *
+import testutils
 
 #@var port_map Local copy of the configuration map from OF port
 # numbers to OS interfaces
@@ -77,7 +71,7 @@ def test_set_init(config):
     global pa_logger
     global pa_config
 
-    pa_logger = logging.getLogger("pkt_act")
+    pa_logger = logging.getLogger("mpls_act")
     pa_logger.info("Initializing test set")
     pa_port_map = config["port_map"]
     pa_config = config
@@ -86,7 +80,8 @@ def test_set_init(config):
 
 class MplsActNonTagPop(pktact.BaseMatchCase):
     """
-    MPLS action test with untagged pkts (pop)
+    MPLS pop action test with untagged pkt
+    Expectation: OFPET_BAD_ACTION (INCONSISTENT) error
     Test on one pair of ports
     """
     def __init__(self):
@@ -107,7 +102,8 @@ class MplsActNonTagPop(pktact.BaseMatchCase):
 
 class MplsActNonTagTtlIn(MplsActNonTagPop):
     """
-    MPLS action test with untagged pkts (Copy TTL in)
+    MPLS Copy TTL inward with untagged pkt
+    Expectation: OFPET_BAD_ACTION (INCONSISTENT) error
     Test on one pair of ports
     """
     def runTest(self):
@@ -115,31 +111,53 @@ class MplsActNonTagTtlIn(MplsActNonTagPop):
 
 class MplsActNonTagTtlOut(MplsActNonTagPop):
     """
-    MPLS action test with untagged pkts (Copy TTL out)
+    MPLS Copy TTL outward with untagged pkt
+    Expectation: OFPET_BAD_ACTION (INCONSISTENT) error
     Test on one pair of ports
     """
     def runTest(self):
         mpls_ttl_out_act_tests(self)
 
-class MplsActNonTagSetLabel(MplsActNonTagPop):
+class MplsActNonTagSetLabel0(MplsActNonTagPop):
     """
-    MPLS action test with untagged pkts (Set label)
+    MPLS set LABEL action test with untagged pkt
+    Expectation: OFPET_BAD_ACTION (INCONSISTENT) error
     Test on one pair of ports
     """
     def runTest(self):
-        mpls_set_label_act_tests(self)
+        mpls_set_label_act_tests(self, test_condition=0)
 
-class MplsActNonTagSetTc(MplsActNonTagPop):
+class MplsActNonTagSetLabel1(MplsActNonTagPop):
     """
-    MPLS action test with untagged pkts (Set TC)
+    MPLS set LABEL action (outrange value) test with untagged pkt
+    Expectation: OFPET_BAD_ACTION (BAD ARG) error
     Test on one pair of ports
     """
     def runTest(self):
-        mpls_set_tc_act_tests(self)
+        mpls_set_label_act_tests(self, test_condition=1)
+
+class MplsActNonTagSetTc0(MplsActNonTagPop):
+    """
+    MPLS set TC action test with untagged pkt
+    Expectation: OFPET_BAD_ACTION (INCONSISTENT) error
+    Test on one pair of ports
+    """
+    def runTest(self):
+        mpls_set_tc_act_tests(self, test_condition=0)
+
+class MplsActNonTagSetTc1(MplsActNonTagPop):
+    """
+    MPLS set TC action (outrange value) test with untagged pkt
+    Expectation: OFPET_BAD_ACTION (BAD ARG) error
+    Test on one pair of ports
+    """
+    def runTest(self):
+        mpls_set_tc_act_tests(self, test_condition=1)
 
 class MplsActNonTagSetTtl(MplsActNonTagPop):
     """
-    MPLS action test with untagged pkts (Set TTL)
+    MPLS set TTL action test with untagged pkt
+    Expectation: OFPET_BAD_ACTION (INCONSISTENT) error
     Test on one pair of ports
     """
     def runTest(self):
@@ -147,7 +165,8 @@ class MplsActNonTagSetTtl(MplsActNonTagPop):
 
 class MplsActNonTagDecTtl(MplsActNonTagPop):
     """
-    MPLS action test with untagged pkts (Dec TTL)
+    MPLS TTL decrement action test with untagged pkt
+    Expectation: OFPET_BAD_ACTION (INCONSISTENT) error
     Test on one pair of ports
     """
     def runTest(self):
@@ -155,42 +174,89 @@ class MplsActNonTagDecTtl(MplsActNonTagPop):
 
 class MplsActNonTagPush(MplsActNonTagPop):
     """
-    MPLS action test with untagged pkts (Push)
+    MPLS push action (0x8847) test with untagged pkt
+    Expectation: Pkt with MPLS (LABEL=0 TC=0 TTL=same as in IP)
     Test on one pair of ports
     """
     def runTest(self):
         mpls_push_act_tests(self)
 
-class MplsActNonTagPushAndTtlInOut(MplsActNonTagPop):
+class MplsActNonTagPushTtlIn(MplsActNonTagPop):
     """
-    MPLS action test with untagged pkts
-    Push+TTLin/out actions. The result should be the same as single Push act
+    MPLS push and TTL-in action test with untagged pkts
+    Expectation: Pkt with MPLS (LABEL=0 TC=0 TTL=same as in IP)
     Test on one pair of ports
     """
     def runTest(self):
-        mpls_multipush1_act_tests(self)
+        mpls_multipush1_act_tests(self, test_condition=0)
 
-class MplsActNonTagPushAndSet(MplsActNonTagPop):
+class MplsActNonTagPushTtlOut(MplsActNonTagPop):
     """
-    MPLS action test with untagged pkts
-    Push+set label/tc/ttl/dec_ttl actions
+    MPLS push and TTL-out action test with untagged pkts
+    Expectation: Pkt with MPLS (LABEL=0 TC=0 TTL=same as in IP)
     Test on one pair of ports
     """
     def runTest(self):
-        mpls_multipush2_act_tests(self)
+        mpls_multipush1_act_tests(self, test_condition=1)
 
-class MplsActNonTagPushAndSetOutrange(MplsActNonTagPop):
+class MplsActNonTagPushSetLabel(MplsActNonTagPop):
     """
-    MPLS action test with untagged pkts
-    Push+set label/tc with outrange values
+    MPLS Push and Set LABEL action test with untagged pkt
+    Expectation: Pkt with MPLS (LABEL=Set value TC=0)
     Test on one pair of ports
     """
     def runTest(self):
-        mpls_multipush3_act_tests(self)
+        mpls_multipush2_act_tests(self, test_condition=0)
+
+class MplsActNonTagPushSetTc(MplsActNonTagPop):
+    """
+    MPLS Push and Set TC action test with untagged pkt
+    Expectation: Pkt with MPLS (LABEL=0 TC=Set value)
+    Test on one pair of ports
+    """
+    def runTest(self):
+        mpls_multipush2_act_tests(self, test_condition=1)
+
+class MplsActNonTagPushSetTtl(MplsActNonTagPop):
+    """
+    MPLS Push and Set TTL action test with untagged pkt
+    Expectation: Pkt with MPLS (LABEL=0 TC=0 TTL=Set value)
+    Test on one pair of ports
+    """
+    def runTest(self):
+        mpls_multipush2_act_tests(self, test_condition=2)
+
+class MplsActNonTagPushDecTtl(MplsActNonTagPop):
+    """
+    MPLS Push and TTL decrement action test with untagged pkt
+    Expectation: Pkt with MPLS (LABEL=0 TC=0 TTL=IP's value-1)
+    Test on one pair of ports
+    """
+    def runTest(self):
+        mpls_multipush2_act_tests(self, test_condition=3)
+
+class MplsActNonTagPushSetOutrange0(MplsActNonTagPop):
+    """
+    MPLS set LABEL action (outrange value) test with untagged pkt
+    Expectation: OFPET_BAD_ACTION (BAD ARG) error
+    Test on one pair of ports
+    """
+    def runTest(self):
+        mpls_multipush3_act_tests(self, test_condition=0)
+
+class MplsActNonTagPushSetOutrange1(MplsActNonTagPop):
+    """
+    MPLS set TC action test with untagged pkt
+    Expectation: OFPET_BAD_ACTION (INCONSISTENT) error
+    Test on one pair of ports
+    """
+    def runTest(self):
+        mpls_multipush3_act_tests(self, test_condition=1)
 
 class MplsActOneTagPop(MplsActNonTagPop):
     """
-    MPLS action test with tagged pkts (Pop)
+    MPLS pop action test with tagged pkt
+    Expectation: Pkt w/o MPLS
     Test on one pair of ports
     """
     def __init__(self):
@@ -207,7 +273,8 @@ class MplsActOneTagPop(MplsActNonTagPop):
 
 class MplsActOneTagTtlIn(MplsActOneTagPop):
     """
-    MPLS action test with tagged pkts (Copy TTL in)
+    MPLS Copy TTL inward with tagged pkt
+    Expectation: Pkt with MPLS (MPLS TTL=same as in IP)
     Test on one pair of ports
     """
     def runTest(self):
@@ -215,31 +282,53 @@ class MplsActOneTagTtlIn(MplsActOneTagPop):
 
 class MplsActOneTagTtlOut(MplsActOneTagPop):
     """
-    MPLS action test with tagged pkts (Copy TTL out)
+    MPLS Copy TTL outward with tagged pkt
+    Expectation: Pkt with MPLS (IP TTL=same as in MPLS)
     Test on one pair of ports
     """
     def runTest(self):
         mpls_ttl_out_act_tests(self)
 
-class MplsActOneTagSetLabel(MplsActOneTagPop):
+class MplsActOneTagSetLabel0(MplsActOneTagPop):
     """
-    MPLS action test with tagged pkts (Set label)
+    MPLS set LABEL action test with tagged pkt
+    Expectation: LABEL=Set value
     Test on one pair of ports
     """
     def runTest(self):
-        mpls_set_label_act_tests(self)
+        mpls_set_label_act_tests(self, test_condition=0)
 
-class MplsActOneTagSetTc(MplsActOneTagPop):
+class MplsActOneTagSetLabel1(MplsActOneTagPop):
     """
-    MPLS action test with tagged pkts (Set TC)
+    MPLS set LABEL action (outrange value) test with tagged pkt
+    Expectation: OFPET_BAD_ACTION (BAD ARG) error
     Test on one pair of ports
     """
     def runTest(self):
-        mpls_set_tc_act_tests(self)
+        mpls_set_label_act_tests(self, test_condition=1)
+
+class MplsActOneTagSetTc0(MplsActOneTagPop):
+    """
+    MPLS set action test with tagged pkt
+    Expectation: TC=Set value
+    Test on one pair of ports
+    """
+    def runTest(self):
+        mpls_set_tc_act_tests(self, test_condition=0)
+
+class MplsActOneTagSetTc1(MplsActOneTagPop):
+    """
+    MPLS set action test with tagged pkt
+    Expectation: OFPET_BAD_ACTION (BAD ARG) error
+    Test on one pair of ports
+    """
+    def runTest(self):
+        mpls_set_tc_act_tests(self, test_condition=1)
 
 class MplsActOneTagSetTtl(MplsActOneTagPop):
     """
-    MPLS action test with tagged pkts (Set TTL)
+    MPLS Set TTL action test with tagged pkt
+    Expectation: Pkt with MPLS (TTL=set value)
     Test on one pair of ports
     """
     def runTest(self):
@@ -247,7 +336,8 @@ class MplsActOneTagSetTtl(MplsActOneTagPop):
 
 class MplsActOneTagDecTtl(MplsActOneTagPop):
     """
-    MPLS action test with tagged pkts (Dec TTL)
+    MPLS TTL decrement action test with tagged pkt
+    Expectation: Pkt with MPLS (TTL=Current-1)
     Test on one pair of ports
     """
     def runTest(self):
@@ -255,42 +345,97 @@ class MplsActOneTagDecTtl(MplsActOneTagPop):
 
 class MplsActOneTagPush(MplsActOneTagPop):
     """
-    MPLS action test with tagged pkts (Push)
+    MPLS push action (0x8847) test with tagged pkt
+    Expectation: Pkt with two MPLSs
+     - Outer MPLS LABEL=Set value
+     - Outer and Inner MPLS should have the same values
     Test on one pair of ports
     """
     def runTest(self):
         mpls_push_act_tests(self)
 
-class MplsActOneTagPushAndTtlInOut(MplsActOneTagPop):
+class MplsActOneTagPushTtlIn(MplsActOneTagPop):
     """
-    MPLS action test with tagged pkts
-    Push+TTLin/out actions. The result should be the same as single Push act
+    MPLS push and TTL-in action test with tagged pkt
+    Expectation: Pkt with two MPLS tags
+    (LABEL, TC, TTL=same as in current tag)
     Test on one pair of ports
     """
     def runTest(self):
-        mpls_multipush1_act_tests(self)
+        mpls_multipush1_act_tests(self, test_condition=0)
 
-class MplsActOneTagPushAndSet(MplsActOneTagPop):
+class MplsActOneTagPushTtlOut(MplsActOneTagPop):
     """
-    MPLS action test with tagged pkts
-    Push+set label/tc/ttl/dec_ttl actions
+    MPLS push and TTL-out action test with tagged pkt
+    Expectation: Pkt with two MPLS tags
+    (LABEL, TC, TTL=same as in current tag)
     Test on one pair of ports
     """
     def runTest(self):
-        mpls_multipush2_act_tests(self)
+        mpls_multipush1_act_tests(self, test_condition=1)
 
-class MplsActOneTagPushAndSetOutrange(MplsActOneTagPop):
+class MplsActOneTagPushSetLabel(MplsActOneTagPop):
     """
-    MPLS action test with tagged pkts
-    Push+set label/tc with outrange values
+    MPLS Push and Set LABEL action test with tagged pkt
+    Expectation: Pkt with two MPLS tags
+     - Outer MPLS LABEL=Set value
     Test on one pair of ports
     """
     def runTest(self):
-        mpls_multipush3_act_tests(self)
+        mpls_multipush2_act_tests(self, test_condition=0)
+
+class MplsActOneTagPushSetTc(MplsActOneTagPop):
+    """
+    MPLS Push and Set TC action test with tagged pkt
+    Expectation: Pkt with two MPLS tags
+     - Outer MPLS TC=Set value
+    Test on one pair of ports
+    """
+    def runTest(self):
+        mpls_multipush2_act_tests(self, test_condition=1)
+
+class MplsActOneTagPushSetTtl(MplsActOneTagPop):
+    """
+    MPLS Push and Set TTL action test with tagged pkt
+    Expectation: Pkt with two MPLS tags
+     - Outer MPLS TTL=Set value
+    Test on one pair of ports
+    """
+    def runTest(self):
+        mpls_multipush2_act_tests(self, test_condition=2)
+
+class MplsActOneTagPushDecTtl(MplsActOneTagPop):
+    """
+    MPLS Push and TTL decrement action test with tagged pkt
+    Expectation: Pkt with two MPLS tags
+     - Outer MPLS TTL= Inner tag's value-1
+    Test on one pair of ports
+    """
+    def runTest(self):
+        mpls_multipush2_act_tests(self, test_condition=3)
+
+class MplsActOneTagPushSetOutrange0(MplsActOneTagPop):
+    """
+    MPLS push and set LABEL action (outrange value) test with tagged pkt
+    Expectation: OFPET_BAD_ACTION (BAD ARG) error
+    Test on one pair of ports
+    """
+    def runTest(self):
+        mpls_multipush3_act_tests(self, test_condition=0)
+
+class MplsActOneTagPushSetOutrange1(MplsActOneTagPop):
+    """
+    MPLS push and set TC action (outrange value) test with tagged pkt
+    Expectation: OFPET_BAD_ACTION (BAD ARG) error
+    Test on one pair of ports
+    """
+    def runTest(self):
+        mpls_multipush3_act_tests(self, test_condition=1)
 
 class MplsActTwoTagPop(MplsActNonTagPop):
     """
-    MPLS action test with two-tagged pkts (pop)
+    MPLS pop action test with two-tagged pkt
+    Expectation: Outer MPLS tag to be removed
     Test on one pair of ports
     """
     def __init__(self):
@@ -310,7 +455,8 @@ class MplsActTwoTagPop(MplsActNonTagPop):
 
 class MplsActTwoTagTtlIn(MplsActTwoTagPop):
     """
-    MPLS action test with two-tagged pkts (Copy TTL in)
+    MPLS Copy TTL inward with two-tagged pkt
+    Expectation: Pkt with MPLS (Outer MPLS TTL=same as in Inner MPLS)
     Test on one pair of ports
     """
     def runTest(self):
@@ -318,31 +464,53 @@ class MplsActTwoTagTtlIn(MplsActTwoTagPop):
 
 class MplsActTwoTagTtlOut(MplsActTwoTagPop):
     """
-    MPLS action test with two-tagged pkts (Copy TTL out)
+    MPLS Copy TTL outward with two-tagged pkt
+    Expectation: Pkt with MPLS (Inner MPLS TTL=same as in Outer MPLS)
     Test on one pair of ports
     """
     def runTest(self):
         mpls_ttl_out_act_tests(self)
 
-class MplsActTwoTagSetLabel(MplsActTwoTagPop):
+class MplsActTwoTagSetLabel0(MplsActTwoTagPop):
     """
-    MPLS action test with two-tagged pkts (Set label)
+    MPLS set LABEL action test with two-tagged pkt
+    Expectation: LABEL=Set value
     Test on one pair of ports
     """
     def runTest(self):
-        mpls_set_label_act_tests(self)
+        mpls_set_label_act_tests(self, test_condition=0)
 
-class MplsActTwoTagSetTc(MplsActTwoTagPop):
+class MplsActTwoTagSetLabel1(MplsActTwoTagPop):
     """
-    MPLS action test with two-tagged pkts (Set TC)
+    MPLS set LABEL action (outrange value) test with two-tagged pkt
+    Expectation: OFPET_BAD_ACTION (BAD ARG) error
     Test on one pair of ports
     """
     def runTest(self):
-        mpls_set_tc_act_tests(self)
+        mpls_set_label_act_tests(self, test_condition=1)
+
+class MplsActTwoTagSetTc0(MplsActTwoTagPop):
+    """
+    MPLS set TC action test with two-tagged pkt
+    Expectation: TC=Set value
+    Test on one pair of ports
+    """
+    def runTest(self):
+        mpls_set_tc_act_tests(self, test_condition=0)
+
+class MplsActTwoTagSetTc1(MplsActTwoTagPop):
+    """
+    MPLS set TC action (outrange value) test with two-tagged pkt
+    Expectation: OFPET_BAD_ACTION (BAD ARG) error
+    Test on one pair of ports
+    """
+    def runTest(self):
+        mpls_set_tc_act_tests(self, test_condition=1)
 
 class MplsActTwoTagSetTtl(MplsActTwoTagPop):
     """
-    MPLS action test with two-tagged pkts (Set TTL)
+    MPLS set TTL action test with two-tagged pkt
+    Expectation: TTL=Set value
     Test on one pair of ports
     """
     def runTest(self):
@@ -350,7 +518,8 @@ class MplsActTwoTagSetTtl(MplsActTwoTagPop):
 
 class MplsActTwoTagDecTtl(MplsActTwoTagPop):
     """
-    MPLS action test with two-tagged pkts (Dec TTL)
+    MPLS TTL decrement action test with two-tagged pkt
+    Expectation: TTL=Inner tag's value-1
     Test on one pair of ports
     """
     def runTest(self):
@@ -358,38 +527,90 @@ class MplsActTwoTagDecTtl(MplsActTwoTagPop):
 
 class MplsActTwoTagPush(MplsActTwoTagPop):
     """
-    MPLS action test with two-tagged pkts (Push)
+    MPLS push action (0x8847) test with two-tagged pkt
+    Expectation: Pkt with three MPLS tags
+     - Outer most and second MPLS should have the same values
     Test on one pair of ports
     """
     def runTest(self):
         mpls_push_act_tests(self)
 
-class MplsActTwoTagPushAndTtlInOut(MplsActTwoTagPop):
+class MplsActTwoTagPushTtlIn(MplsActTwoTagPop):
     """
-    MPLS action test with two-tagged pkts
-    Push+TTLin/out actions. The result should be the same as single Push act
+    MPLS push and TTL-in action test with two-tagged pkts
+    Expectation: Pkt with three MPLS (LABEL=0 TC=0 TTL=same as in Inner)
     Test on one pair of ports
     """
     def runTest(self):
-        mpls_multipush1_act_tests(self)
+        mpls_multipush1_act_tests(self,test_condition=0)
 
-class MplsActTwoTagPushAndSet(MplsActTwoTagPop):
+class MplsActTwoTagPushTtlOut(MplsActTwoTagPop):
     """
-    MPLS action test with two-tagged pkts
-    Push+set label/tc/ttl/dec_ttl actions
+    MPLS push and TTL-out action test with two-tagged pkts
+    Expectation: Pkt with three MPLS tags
+    (Outer LABEL=0 Outer TC=0 Inner TTL=same as outer)
     Test on one pair of ports
     """
     def runTest(self):
-        mpls_multipush2_act_tests(self)
+        mpls_multipush1_act_tests(self,test_condition=1)
 
-class MplsActTwoTagPushAndSetOutrange(MplsActTwoTagPop):
+class MplsActTwoTagPushSetLabel(MplsActTwoTagPop):
     """
-    MPLS action test with two-tagged pkts
-    Push+set label/tc with outrange values
+    MPLS Push and Set LABEL action test with two-tagged pkt
+    Expectation: Pkt with three MPLS tags
+     - Outer most MPLS LABEL=Set Value
     Test on one pair of ports
     """
     def runTest(self):
-        mpls_multipush3_act_tests(self)
+        mpls_multipush2_act_tests(self, test_condition=0)
+
+class MplsActTwoTagPushSetTc(MplsActTwoTagPop):
+    """
+    MPLS Push and Set TC action test with two-tagged pkt
+    Expectation: Pkt with three MPLS tags
+     - Outer most MPLS TC=Set Value
+    Test on one pair of ports
+    """
+    def runTest(self):
+        mpls_multipush2_act_tests(self, test_condition=1)
+
+class MplsActTwoTagPushSetTtl(MplsActTwoTagPop):
+    """
+    MPLS Push and Set TTL action test with two-tagged pkt
+    Expectation: Pkt with three MPLS tags
+     - Outer most MPLS TTL=Set Value
+    Test on one pair of ports
+    """
+    def runTest(self):
+        mpls_multipush2_act_tests(self, test_condition=2)
+
+class MplsActTwoTagPushDecTtl(MplsActTwoTagPop):
+    """
+    MPLS Push and Set TTL action test with two-tagged pkt
+    Expectation: Pkt with three MPLS tags
+     - Outer most MPLS TTL=Inner-1
+    Test on one pair of ports
+    """
+    def runTest(self):
+        mpls_multipush2_act_tests(self, test_condition=3)
+
+class MplsActTwoTagPushSetOutrange0(MplsActTwoTagPop):
+    """
+    MPLS push and set LABEL action (outrange value) test with two-tagged pkt
+    Expectation: OFPET_BAD_ACTION (BAD ARG) error
+    Test on one pair of ports
+    """
+    def runTest(self):
+        mpls_multipush3_act_tests(self, test_condition=0)
+
+class MplsActTwoTagPushSetOutrange1(MplsActTwoTagPop):
+    """
+    MPLS push and set TC action (outrange value) test with two-tagged pkt
+    Expectation: OFPET_BAD_ACTION (BAD ARG) error
+    Test on one pair of ports
+    """
+    def runTest(self):
+        mpls_multipush3_act_tests(self, test_condition=1)
 
 
 def mpls_action_support_check(parent):
@@ -429,7 +650,7 @@ def mpls_pop_act_tests(parent):
     sup_mpls_act = mpls_action_support_check(parent)
 
     if sup_mpls_act.has_key('sup_pop_mpls') == False:
-        skip_message_emit(parent, "MPLS pop action test. POP not supported")
+        testutils.skip_message_emit(parent, "MPLS pop action test. POP not supported")
         return
 
     act = action.action_pop_mpls()
@@ -453,7 +674,7 @@ def mpls_pop_act_tests(parent):
 
     action_list=[act]
 
-    flow_match_test_mpls(parent, pa_port_map,
+    testutils.flow_match_test_mpls(parent, pa_port_map,
                     wildcards=0,
                     mpls_label=parent.label,
                     mpls_tc=parent.tc,
@@ -485,7 +706,7 @@ def mpls_ttl_in_act_tests(parent):
     sup_mpls_act = mpls_action_support_check(parent)
 
     if sup_mpls_act.has_key('sup_copy_ttl_in') == False:
-        skip_message_emit(parent,
+        testutils.skip_message_emit(parent,
             "MPLS copy_ttl_in action test. TTL_IN not supported")
         return
 
@@ -512,7 +733,7 @@ def mpls_ttl_in_act_tests(parent):
 
     action_list=[act]
 
-    flow_match_test_mpls(parent, pa_port_map,
+    testutils.flow_match_test_mpls(parent, pa_port_map,
                     wildcards=0,
                     mpls_label=parent.label,
                     mpls_tc=parent.tc,
@@ -550,7 +771,7 @@ def mpls_ttl_out_act_tests(parent):
     sup_mpls_act = mpls_action_support_check(parent)
 
     if sup_mpls_act.has_key('sup_copy_ttl_out') == False:
-        skip_message_emit(parent,
+        testutils.skip_message_emit(parent,
             "MPLS copy_ttl_out action test. TTL_OUT not supported")
         return
 
@@ -582,7 +803,7 @@ def mpls_ttl_out_act_tests(parent):
 
     action_list=[act]
 
-    flow_match_test_mpls(parent, pa_port_map,
+    testutils.flow_match_test_mpls(parent, pa_port_map,
                     wildcards=0,
                     mpls_label=parent.label,
                     mpls_tc=parent.tc,
@@ -603,7 +824,7 @@ def mpls_ttl_out_act_tests(parent):
                     action_list=action_list,
                     max_test=1)
 
-def mpls_set_label_act_tests(parent):
+def mpls_set_label_act_tests(parent, test_condition=0):
     """
     Test mpls set_label action for the packets with/without tags
 
@@ -616,7 +837,7 @@ def mpls_set_label_act_tests(parent):
     sup_mpls_act = mpls_action_support_check(parent)
 
     if sup_mpls_act.has_key('sup_set_mpls_label') == False:
-        skip_message_emit(parent,
+        testutils.skip_message_emit(parent,
             "MPLS set_label action test. SET_LABEL not supported")
         return
 
@@ -625,65 +846,67 @@ def mpls_set_label_act_tests(parent):
     exp_tc = parent.tc
     exp_ttl = parent.ttl
 
-    for test_condition in range(2):
-        if test_condition == 0:
-            act.mpls_label = parent.label + 2
-            if parent.num_tags == 0:
-                match_exp = False
-                exp_msg = ofp.OFPT_ERROR
-                exp_msg_type = ofp.OFPET_BAD_ACTION
-                exp_msg_code = ofp.OFPBAC_MATCH_INCONSISTENT
-                exp_label = parent.label
+    if test_condition == 0:
+        act.mpls_label = parent.label + 2
+        if parent.num_tags == 0:
+            match_exp = False
+            exp_msg = ofp.OFPT_ERROR
+            exp_msg_type = ofp.OFPET_BAD_ACTION
+            exp_msg_code = ofp.OFPBAC_MATCH_INCONSISTENT
+            exp_label = parent.label
 
-            else:
-                match_exp = True
-                exp_msg = ofp.OFPT_FLOW_REMOVED
-                exp_msg_type = 0 #NOT_EXPECTED
-                exp_msg_code = 0 #NOT_EXPECTED
-                exp_label = act.mpls_label
+        else:
+            match_exp = True
+            exp_msg = ofp.OFPT_FLOW_REMOVED
+            exp_msg_type = 0 #NOT_EXPECTED
+            exp_msg_code = 0 #NOT_EXPECTED
+            exp_label = act.mpls_label
 
-            action_list=[act]
+        action_list=[act]
 
-        elif test_condition == 1:
-            act.mpls_label = parent.label + 1048576
-            if parent.num_tags == 0:
-                match_exp = False
-                exp_msg = ofp.OFPT_ERROR
-                exp_msg_type = ofp.OFPET_BAD_ACTION
-                exp_msg_code = ofp.OFPBAC_MATCH_INCONSISTENT
-                exp_label = parent.label
+    elif test_condition == 1:
+        act.mpls_label = parent.label + 1048576
+        if parent.num_tags == 0:
+            match_exp = False
+            exp_msg = ofp.OFPT_ERROR
+            exp_msg_type = ofp.OFPET_BAD_ACTION
+            exp_msg_code = ofp.OFPBAC_MATCH_INCONSISTENT
+            exp_label = parent.label
 
-            else:
-                match_exp = True
-                exp_msg = ofp.OFPT_ERROR
-                exp_msg_type = ofp.OFPET_BAD_ACTION
-                exp_msg_code = ofp.OFPBAC_BAD_ARGUMENT
-                exp_label = act.mpls_label
+        else:
+            match_exp = True
+            exp_msg = ofp.OFPT_ERROR
+            exp_msg_type = ofp.OFPET_BAD_ACTION
+            exp_msg_code = ofp.OFPBAC_BAD_ARGUMENT
+            exp_label = act.mpls_label
 
-            action_list=[act]
+        action_list=[act]
 
-            flow_match_test_mpls(parent, pa_port_map,
-                    wildcards=0,
-                    mpls_label=parent.label,
-                    mpls_tc=parent.tc,
-                    mpls_ttl=parent.ttl,
-                    mpls_label_int=parent.label_int,
-                    mpls_tc_int=parent.tc_int,
-                    mpls_ttl_int=parent.ttl_int,
-                    ip_ttl=parent.ip_ttl,
-                    label_match=parent.label_match,
-                    tc_match=parent.tc_match,
-                    exp_mpls_label=exp_label,
-                    exp_mpls_tc=exp_tc,
-                    exp_mpls_ttl=exp_ttl,
-                    match_exp=match_exp,
-                    exp_msg=exp_msg,
-                    exp_msg_type=exp_msg_type,
-                    exp_msg_code=exp_msg_code,
-                    action_list=action_list,
-                    max_test=1)
+    else:
+        return
 
-def mpls_set_tc_act_tests(parent):
+    testutils.flow_match_test_mpls(parent, pa_port_map,
+            wildcards=0,
+            mpls_label=parent.label,
+            mpls_tc=parent.tc,
+            mpls_ttl=parent.ttl,
+            mpls_label_int=parent.label_int,
+            mpls_tc_int=parent.tc_int,
+            mpls_ttl_int=parent.ttl_int,
+            ip_ttl=parent.ip_ttl,
+            label_match=parent.label_match,
+            tc_match=parent.tc_match,
+            exp_mpls_label=exp_label,
+            exp_mpls_tc=exp_tc,
+            exp_mpls_ttl=exp_ttl,
+            match_exp=match_exp,
+            exp_msg=exp_msg,
+            exp_msg_type=exp_msg_type,
+            exp_msg_code=exp_msg_code,
+            action_list=action_list,
+            max_test=1)
+
+def mpls_set_tc_act_tests(parent, test_condition=0):
     """
     Test mpls set_tc action for the packets with/without tags
 
@@ -696,7 +919,7 @@ def mpls_set_tc_act_tests(parent):
     sup_mpls_act = mpls_action_support_check(parent)
 
     if sup_mpls_act.has_key('sup_set_mpls_tc') == False:
-        skip_message_emit(parent,
+        testutils.skip_message_emit(parent,
             "MPLS set_tc action test. SET_TC not supported")
         return
 
@@ -705,63 +928,65 @@ def mpls_set_tc_act_tests(parent):
     exp_label = parent.label
     exp_ttl = parent.ttl
 
-    for test_condition in range(2):
-        if test_condition == 0:
-            act.mpls_tc = parent.tc + 2
-            if parent.num_tags == 0:
-                match_exp = False
-                exp_msg = ofp.OFPT_ERROR
-                exp_msg_type = ofp.OFPET_BAD_ACTION
-                exp_msg_code = ofp.OFPBAC_MATCH_INCONSISTENT
-                exp_tc = parent.tc
+    if test_condition == 0:
+        act.mpls_tc = parent.tc + 2
+        if parent.num_tags == 0:
+            match_exp = False
+            exp_msg = ofp.OFPT_ERROR
+            exp_msg_type = ofp.OFPET_BAD_ACTION
+            exp_msg_code = ofp.OFPBAC_MATCH_INCONSISTENT
+            exp_tc = parent.tc
 
-            else:
-                match_exp = True
-                exp_msg = ofp.OFPT_FLOW_REMOVED
-                exp_msg_type = 0 #NOT_EXPECTED
-                exp_msg_code = 0 #NOT_EXPECTED
-                exp_tc = act.mpls_tc
+        else:
+            match_exp = True
+            exp_msg = ofp.OFPT_FLOW_REMOVED
+            exp_msg_type = 0 #NOT_EXPECTED
+            exp_msg_code = 0 #NOT_EXPECTED
+            exp_tc = act.mpls_tc
 
-            action_list=[act]
+        action_list=[act]
 
-        elif test_condition == 1:
-            act.mpls_tc = parent.tc + 7
-            if parent.num_tags == 0:
-                match_exp = False
-                exp_msg = ofp.OFPT_ERROR
-                exp_msg_type = ofp.OFPET_BAD_ACTION
-                exp_msg_code = ofp.OFPBAC_MATCH_INCONSISTENT
-                exp_label = parent.label
+    elif test_condition == 1:
+        act.mpls_tc = parent.tc + 7
+        if parent.num_tags == 0:
+            match_exp = False
+            exp_msg = ofp.OFPT_ERROR
+            exp_msg_type = ofp.OFPET_BAD_ACTION
+            exp_msg_code = ofp.OFPBAC_MATCH_INCONSISTENT
+            exp_tc = parent.tc
 
-            else:
-                match_exp = True
-                exp_msg = ofp.OFPT_ERROR
-                exp_msg_type = ofp.OFPET_BAD_ACTION
-                exp_msg_code = ofp.OFPBAC_BAD_ARGUMENT
-                exp_label = act.mpls_tc
+        else:
+            match_exp = True
+            exp_msg = ofp.OFPT_ERROR
+            exp_msg_type = ofp.OFPET_BAD_ACTION
+            exp_msg_code = ofp.OFPBAC_BAD_ARGUMENT
+            exp_tc = act.mpls_tc
 
-            action_list=[act]
+        action_list=[act]
 
-            flow_match_test_mpls(parent, pa_port_map,
-                    wildcards=0,
-                    mpls_label=parent.label,
-                    mpls_tc=parent.tc,
-                    mpls_ttl=parent.ttl,
-                    mpls_label_int=parent.label_int,
-                    mpls_tc_int=parent.tc_int,
-                    mpls_ttl_int=parent.ttl_int,
-                    ip_ttl=parent.ip_ttl,
-                    label_match=parent.label_match,
-                    tc_match=parent.tc_match,
-                    exp_mpls_label=exp_label,
-                    exp_mpls_tc=exp_tc,
-                    exp_mpls_ttl=exp_ttl,
-                    match_exp=match_exp,
-                    exp_msg=exp_msg,
-                    exp_msg_type=exp_msg_type,
-                    exp_msg_code=exp_msg_code,
-                    action_list=action_list,
-                    max_test=1)
+    else:
+        return
+
+    testutils.flow_match_test_mpls(parent, pa_port_map,
+            wildcards=0,
+            mpls_label=parent.label,
+            mpls_tc=parent.tc,
+            mpls_ttl=parent.ttl,
+            mpls_label_int=parent.label_int,
+            mpls_tc_int=parent.tc_int,
+            mpls_ttl_int=parent.ttl_int,
+            ip_ttl=parent.ip_ttl,
+            label_match=parent.label_match,
+            tc_match=parent.tc_match,
+            exp_mpls_label=exp_label,
+            exp_mpls_tc=exp_tc,
+            exp_mpls_ttl=exp_ttl,
+            match_exp=match_exp,
+            exp_msg=exp_msg,
+            exp_msg_type=exp_msg_type,
+            exp_msg_code=exp_msg_code,
+            action_list=action_list,
+            max_test=1)
 
 def mpls_set_ttl_act_tests(parent):
     """
@@ -776,7 +1001,7 @@ def mpls_set_ttl_act_tests(parent):
     sup_mpls_act = mpls_action_support_check(parent)
 
     if sup_mpls_act.has_key('sup_set_mpls_ttl') == False:
-        skip_message_emit(parent,
+        testutils.skip_message_emit(parent,
             "MPLS set_ttl action test. SET_TTL not supported")
         return
 
@@ -802,7 +1027,7 @@ def mpls_set_ttl_act_tests(parent):
 
     action_list=[act]
 
-    flow_match_test_mpls(parent, pa_port_map,
+    testutils.flow_match_test_mpls(parent, pa_port_map,
                     wildcards=0,
                     mpls_label=parent.label,
                     mpls_tc=parent.tc,
@@ -836,7 +1061,7 @@ def mpls_dec_ttl_act_tests(parent):
     sup_mpls_act = mpls_action_support_check(parent)
 
     if sup_mpls_act.has_key('sup_dec_mpls_ttl') == False:
-        skip_message_emit(parent,
+        testutils.skip_message_emit(parent,
             "MPLS dec_ttl action test. DEC_TTL not supported")
         return
 
@@ -861,7 +1086,7 @@ def mpls_dec_ttl_act_tests(parent):
 
     action_list=[act]
 
-    flow_match_test_mpls(parent, pa_port_map,
+    testutils.flow_match_test_mpls(parent, pa_port_map,
                     wildcards=0,
                     mpls_label=parent.label,
                     mpls_tc=parent.tc,
@@ -895,7 +1120,7 @@ def mpls_push_act_tests(parent):
     sup_mpls_act = mpls_action_support_check(parent)
 
     if sup_mpls_act.has_key('sup_push_mpls') == False:
-        skip_message_emit(parent, "MPLS push action test. PUSH not supported")
+        testutils.skip_message_emit(parent, "MPLS push action test. PUSH not supported")
         return
 
     act = action.action_push_mpls()
@@ -919,7 +1144,7 @@ def mpls_push_act_tests(parent):
 
     action_list=[act]
 
-    flow_match_test_mpls(parent, pa_port_map,
+    testutils.flow_match_test_mpls(parent, pa_port_map,
                     wildcards=0,
                     mpls_label=parent.label,
                     mpls_tc=parent.tc,
@@ -938,7 +1163,7 @@ def mpls_push_act_tests(parent):
                     action_list=action_list,
                     max_test=1)
 
-def mpls_multipush1_act_tests(parent):
+def mpls_multipush1_act_tests(parent, test_condition=0):
     """
     Test mpls push and copy actions for the packets with/without tags
 
@@ -951,63 +1176,66 @@ def mpls_multipush1_act_tests(parent):
     sup_mpls_act = mpls_action_support_check(parent)
 
     if sup_mpls_act.has_key('sup_push_mpls') == False:
-        skip_message_emit(parent,
+        testutils.skip_message_emit(parent,
             "MPLS multipush action test. PUSH not supported")
         return
     if sup_mpls_act.has_key('sup_copy_ttl_in') == False:
-        skip_message_emit(parent,
+        testutils.skip_message_emit(parent,
             "MPLS multipush action test. TTL_IN not supported")
         return
     if sup_mpls_act.has_key('sup_copy_ttl_out') == False:
-        skip_message_emit(parent,
+        testutils.skip_message_emit(parent,
             "MPLS multipush action test. TTL_OUT not supported")
         return
 
     act = action.action_push_mpls()
     act.ethertype = 0x8847
 
-    for test_condition in range(2):
-        if test_condition == 0:
-            act2 = action.action_copy_ttl_in()
-        elif test_condition == 1:
-            act2 = action.action_copy_ttl_out()
+    if test_condition == 0:
+        act2 = action.action_copy_ttl_in()
 
-        if parent.num_tags == 0:
-            exp_label = 0
-            exp_tc = 0
-            exp_ttl = parent.ip_ttl
-        else:
-            exp_label = parent.label
-            exp_tc = parent.tc
-            exp_ttl = parent.ttl
+    elif test_condition == 1:
+        act2 = action.action_copy_ttl_out()
 
-        match_exp = True
-        add_tag_exp = True
-        exp_msg = ofp.OFPT_FLOW_REMOVED
-        exp_msg_type = 0 #NOT_EXPECTED
-        exp_msg_code = 0 #NOT_EXPECTED
+    else:
+        return
 
-        action_list=[act, act2]
+    if parent.num_tags == 0:
+        exp_label = 0
+        exp_tc = 0
+        exp_ttl = parent.ip_ttl
+    else:
+        exp_label = parent.label
+        exp_tc = parent.tc
+        exp_ttl = parent.ttl
 
-        flow_match_test_mpls(parent, pa_port_map,
-                    wildcards=0,
-                    mpls_label=parent.label,
-                    mpls_tc=parent.tc,
-                    mpls_label_int=parent.label_int,
-                    mpls_tc_int=parent.tc_int,
-                    label_match=parent.label_match,
-                    tc_match=parent.tc_match,
-                    exp_mpls_label=exp_label,
-                    exp_mpls_tc=exp_tc,
-                    exp_mpls_ttl=exp_ttl,
-                    match_exp=match_exp,
-                    exp_msg=exp_msg,
-                    exp_msg_type=exp_msg_type,
-                    exp_msg_code=exp_msg_code,
-                    action_list=action_list,
-                    max_test=1)
+    match_exp = True
+    add_tag_exp = True
+    exp_msg = ofp.OFPT_FLOW_REMOVED
+    exp_msg_type = 0 #NOT_EXPECTED
+    exp_msg_code = 0 #NOT_EXPECTED
 
-def mpls_multipush2_act_tests(parent):
+    action_list=[act, act2]
+
+    testutils.flow_match_test_mpls(parent, pa_port_map,
+                wildcards=0,
+                mpls_label=parent.label,
+                mpls_tc=parent.tc,
+                mpls_label_int=parent.label_int,
+                mpls_tc_int=parent.tc_int,
+                label_match=parent.label_match,
+                tc_match=parent.tc_match,
+                exp_mpls_label=exp_label,
+                exp_mpls_tc=exp_tc,
+                exp_mpls_ttl=exp_ttl,
+                match_exp=match_exp,
+                exp_msg=exp_msg,
+                exp_msg_type=exp_msg_type,
+                exp_msg_code=exp_msg_code,
+                action_list=action_list,
+                max_test=1)
+
+def mpls_multipush2_act_tests(parent, test_condition=0):
     """
     Test mpls push and set actions for the packets with/without tags
 
@@ -1020,99 +1248,104 @@ def mpls_multipush2_act_tests(parent):
     sup_mpls_act = mpls_action_support_check(parent)
 
     if sup_mpls_act.has_key('sup_push_mpls') == False:
-        skip_message_emit(parent,
+        testutils.skip_message_emit(parent,
             "MPLS multipush action test. PUSH not supported")
         return
     if sup_mpls_act.has_key('sup_set_mpls_label') == False:
-        skip_message_emit(parent,
+        testutils.skip_message_emit(parent,
             "MPLS multipush action test. SET_LABEL not supported")
         return
     if sup_mpls_act.has_key('sup_set_mpls_tc') == False:
-        skip_message_emit(parent,
+        testutils.skip_message_emit(parent,
             "MPLS multipush action test. SET_TC not supported")
         return
     if sup_mpls_act.has_key('sup_set_mpls_ttl') == False:
-        skip_message_emit(parent,
+        testutils.skip_message_emit(parent,
             "MPLS multipush action test. SET_TTL not supported")
         return
     if sup_mpls_act.has_key('sup_dec_mpls_ttl') == False:
-        skip_message_emit(parent,
+        testutils.skip_message_emit(parent,
             "MPLS multipush action test. DEC_TTL not supported")
         return
 
     act = action.action_push_mpls()
     act.ethertype = 0x8847
 
-    for test_condition in range(4):
-        if test_condition == 0:
-            act2 = action.action_set_mpls_label()
-            act2.mpls_label = parent.label + 2
-            exp_label = act2.mpls_label
-            if parent.num_tags == 0:
-                exp_tc = 0
-                exp_ttl = parent.ip_ttl
-            else:
-                exp_tc = parent.tc
-                exp_ttl = parent.ttl
-        elif test_condition == 1:
-            act2 = action.action_set_mpls_tc()
-            act2.mpls_tc = parent.tc + 2
-            exp_tc = act2.mpls_tc
-            if parent.num_tags == 0:
-                exp_label = 0
-                exp_ttl = parent.ip_ttl
-            else:
-                exp_label = parent.label
-                exp_ttl = parent.ttl
-        elif test_condition == 2:
-            act2 = action.action_set_mpls_ttl()
-            act2.mpls_ttl = parent.ttl + 2
-            exp_ttl = act2.mpls_ttl
-            if parent.num_tags == 0:
-                exp_label = 0
-                exp_tc = 0
-            else:
-                exp_label = parent.label
-                exp_tc = parent.tc
-        elif test_condition == 3:
-            act2 = action.action_dec_mpls_ttl()
-            if parent.num_tags == 0:
-                exp_ttl = parent.ip_ttl - 1
-                exp_label = 0
-                exp_tc = 0
-            else:
-                exp_ttl = parent.ttl - 1
-                exp_label = parent.label
-                exp_tc = parent.tc
+    if test_condition == 0:
+        act2 = action.action_set_mpls_label()
+        act2.mpls_label = parent.label + 2
+        exp_label = act2.mpls_label
+        if parent.num_tags == 0:
+            exp_tc = 0
+            exp_ttl = parent.ip_ttl
+        else:
+            exp_tc = parent.tc
+            exp_ttl = parent.ttl
 
-        match_exp = True
-        add_tag_exp = parent.num_tags > 0
-        exp_msg = ofp.OFPT_FLOW_REMOVED
-        exp_msg_type = 0 #NOT_EXPECTED
-        exp_msg_code = 0 #NOT_EXPECTED
+    elif test_condition == 1:
+        act2 = action.action_set_mpls_tc()
+        act2.mpls_tc = parent.tc + 2
+        exp_tc = act2.mpls_tc
+        if parent.num_tags == 0:
+            exp_label = 0
+            exp_ttl = parent.ip_ttl
+        else:
+            exp_label = parent.label
+            exp_ttl = parent.ttl
 
-        action_list=[act, act2]
+    elif test_condition == 2:
+        act2 = action.action_set_mpls_ttl()
+        act2.mpls_ttl = parent.ttl + 2
+        exp_ttl = act2.mpls_ttl
+        if parent.num_tags == 0:
+            exp_label = 0
+            exp_tc = 0
+        else:
+            exp_label = parent.label
+            exp_tc = parent.tc
 
-        flow_match_test_mpls(parent, pa_port_map,
-                    wildcards=0,
-                    mpls_label=parent.label,
-                    mpls_tc=parent.tc,
-                    mpls_label_int=parent.label_int,
-                    mpls_tc_int=parent.tc_int,
-                    label_match=parent.label_match,
-                    tc_match=parent.tc_match,
-                    exp_mpls_label=exp_label,
-                    exp_mpls_tc=exp_tc,
-                    exp_mpls_ttl=exp_ttl,
-                    match_exp=match_exp,
-                    add_tag_exp=add_tag_exp,
-                    exp_msg=exp_msg,
-                    exp_msg_type=exp_msg_type,
-                    exp_msg_code=exp_msg_code,
-                    action_list=action_list,
-                    max_test=1)
+    elif test_condition == 3:
+        act2 = action.action_dec_mpls_ttl()
+        if parent.num_tags == 0:
+            exp_ttl = parent.ip_ttl - 1
+            exp_label = 0
+            exp_tc = 0
+        else:
+            exp_ttl = parent.ttl - 1
+            exp_label = parent.label
+            exp_tc = parent.tc
 
-def mpls_multipush3_act_tests(parent):
+    else:
+        return
+
+    match_exp = True
+    add_tag_exp = parent.num_tags > 0
+    exp_msg = ofp.OFPT_FLOW_REMOVED
+    exp_msg_type = 0 #NOT_EXPECTED
+    exp_msg_code = 0 #NOT_EXPECTED
+
+    action_list=[act, act2]
+
+    testutils.flow_match_test_mpls(parent, pa_port_map,
+                wildcards=0,
+                mpls_label=parent.label,
+                mpls_tc=parent.tc,
+                mpls_label_int=parent.label_int,
+                mpls_tc_int=parent.tc_int,
+                label_match=parent.label_match,
+                tc_match=parent.tc_match,
+                exp_mpls_label=exp_label,
+                exp_mpls_tc=exp_tc,
+                exp_mpls_ttl=exp_ttl,
+                match_exp=match_exp,
+                add_tag_exp=add_tag_exp,
+                exp_msg=exp_msg,
+                exp_msg_type=exp_msg_type,
+                exp_msg_code=exp_msg_code,
+                action_list=action_list,
+                max_test=1)
+
+def mpls_multipush3_act_tests(parent, test_condition=0):
     """
     Test mpls push and set with out-of-range value actions for the packets
     with/without tags
@@ -1126,59 +1359,62 @@ def mpls_multipush3_act_tests(parent):
     sup_mpls_act = mpls_action_support_check(parent)
 
     if sup_mpls_act.has_key('sup_push_mpls') == False:
-        skip_message_emit(parent,
+        testutils.skip_message_emit(parent,
             "MPLS multipush action test. PUSH not supported")
         return
     if sup_mpls_act.has_key('sup_set_mpls_label') == False:
-        skip_message_emit(parent,
+        testutils.skip_message_emit(parent,
             "MPLS multipush action test. SET_LABEL not supported")
         return
     if sup_mpls_act.has_key('sup_set_mpls_tc') == False:
-        skip_message_emit(parent,
+        testutils.skip_message_emit(parent,
             "MPLS multipush action test. SET_TC not supported")
         return
 
     act = action.action_push_mpls()
     act.ethertype = 0x8847
 
-    for test_condition in range(2):
-        if test_condition == 0:
-            act2 = action.action_set_mpls_label()
-            act2.mpls_label = parent.label + 1048576
-            exp_label = act2.mpls_label
-            exp_tc = 0
-            exp_ttl = 0 # Not expected
-        elif test_condition == 1:
-            act2 = action.action_set_mpls_tc()
-            act2.mpls_tc = parent.tc + 8
-            exp_tc = act2.mpls_tc
-            exp_label = 0
-            exp_ttl = 0 # Not expected
+    if test_condition == 0:
+        act2 = action.action_set_mpls_label()
+        act2.mpls_label = parent.label + 1048576
+        exp_label = act2.mpls_label
+        exp_tc = 0
+        exp_ttl = 0 # Not expected
 
-        match_exp = False
-        exp_msg = ofp.OFPT_ERROR
-        exp_msg_type = ofp.OFPET_BAD_ACTION
-        exp_msg_code = ofp.OFPBAC_BAD_ARGUMENT
+    elif test_condition == 1:
+        act2 = action.action_set_mpls_tc()
+        act2.mpls_tc = parent.tc + 8
+        exp_tc = act2.mpls_tc
+        exp_label = 0
+        exp_ttl = 0 # Not expected
 
-        action_list=[act, act2]
+    else:
+        return
 
-        flow_match_test_mpls(parent, pa_port_map,
-                    wildcards=0,
-                    mpls_label=parent.label,
-                    mpls_tc=parent.tc,
-                    mpls_label_int=parent.label_int,
-                    mpls_tc_int=parent.tc_int,
-                    label_match=parent.label_match,
-                    tc_match=parent.tc_match,
-                    exp_mpls_label=exp_label,
-                    exp_mpls_tc=exp_tc,
-                    exp_mpls_ttl=exp_ttl,
-                    match_exp=match_exp,
-                    exp_msg=exp_msg,
-                    exp_msg_type=exp_msg_type,
-                    exp_msg_code=exp_msg_code,
-                    action_list=action_list,
-                    max_test=1)
+    match_exp = False
+    exp_msg = ofp.OFPT_ERROR
+    exp_msg_type = ofp.OFPET_BAD_ACTION
+    exp_msg_code = ofp.OFPBAC_BAD_ARGUMENT
+
+    action_list=[act, act2]
+
+    testutils.flow_match_test_mpls(parent, pa_port_map,
+                wildcards=0,
+                mpls_label=parent.label,
+                mpls_tc=parent.tc,
+                mpls_label_int=parent.label_int,
+                mpls_tc_int=parent.tc_int,
+                label_match=parent.label_match,
+                tc_match=parent.tc_match,
+                exp_mpls_label=exp_label,
+                exp_mpls_tc=exp_tc,
+                exp_mpls_ttl=exp_ttl,
+                match_exp=match_exp,
+                exp_msg=exp_msg,
+                exp_msg_type=exp_msg_type,
+                exp_msg_code=exp_msg_code,
+                action_list=action_list,
+                max_test=1)
 
 if __name__ == "__main__":
     print "Please run through oft script:  ./oft --test-spec=mplsact"
