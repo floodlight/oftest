@@ -351,7 +351,7 @@ def flow_msg_create(parent, pkt, ing_port=None, instruction_list=None,
              append an output action to egr_port to the actions_list
     if the instruction_list is empty, 
         append an APPLY instruction to it
-    Add the action_list to the last (only?) instruction
+    Add the action_list to the first write or apply instruction
     
     @param egr_queue if not None, make the output an enqueue action
     @param table_id Table ID for writing a flow_mod
@@ -392,7 +392,10 @@ def flow_msg_create(parent, pkt, ing_port=None, instruction_list=None,
         inst = instruction.instruction_apply_actions()
         instruction_list.append(inst)
     else:
-        inst = instruction_list[-1] 
+        for inst in instruction_list:
+            if (inst.type == ofp.OFPIT_WRITE_ACTIONS or
+                inst.type == ofp.OFPIT_APPLY_ACTIONS):
+                break
 
     # add all the actions to the last inst
     for act in action_list:
