@@ -66,12 +66,7 @@ def delete_all_flows_one_table(ctrl, logger, table_id=0):
     msg.table_id = table_id
     logger.debug(msg.show())
 
-#DEFAULT_TABLE_COUNT = 4
-    rv = 0
-    for table_no in [0, 1, 2, 3, 4, 5, 6, 7]:
-       msg.table_id = table_no
-       rv |= ctrl.message_send(msg)
-    return rv
+    return ctrl.message_send(msg)
 
 def clear_port_config(parent, port, logger):
     """
