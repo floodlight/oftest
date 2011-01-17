@@ -407,7 +407,7 @@ class Controller(Thread):
 
         try:
             self.listen_socket.shutdown(socket.SHUT_RDWR)
-        except StandardError:
+        except StandardError, socket.error:
             self.logger.info("Ignoring listen soc shutdown error")
         self.listen_socket = None
         self.dbg_state = "down"
