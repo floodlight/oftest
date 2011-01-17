@@ -38,6 +38,7 @@ from exec_actions import packet_in_to_controller
 import oftest.cstruct as ofp
 import oftest.message as message 
 import oftest.instruction as instruction
+from oftest import ofutils
 
 class FlowPipeline(Thread):
     """
@@ -96,6 +97,36 @@ class FlowPipeline(Thread):
 
         return self.tables[flow_mod.table_id].flow_mod_process(flow_mod,
                                                                groups)
+    def table_mod_process(self, table_mod):
+        """
+        Apply the config changes specified in a table_mod to
+        one or more tables in the pipeline
+        @param table_mod a fully instantiated table_mod class
+        @return None on success, an ofp_error message on error
+        """
+        if (table_mod.table_id >= self.n_tables and 
+            table_mod.table_id != 0xff):
+            return ofutils.of_error_msg_make(ofp.OFPET_TABLE_MOD_FAILED, 
+                                             ofp.OFPTMFC_BAD_TABLE,
+                                             table_mod)
+        if table_mod.config not in [ ofp.OFPTC_TABLE_MISS_CONTROLLER, 
+                                    ofp.OFPTC_TABLE_MISS_CONTINUE, 
+                                    ofp.OFPTC_TABLE_MISS_DROP]:
+            return ofutils.of_error_msg_make(ofp.OFPET_TABLE_MOD_FAILED,
+                                             ofp.OFPTMFC_BAD_CONFIG,
+                                             table_mod)
+            
+        update_list = None
+        if table_mod.table_id == 0xff:
+            update_list = self.tables
+        else:
+            update_list = [ self.tables[table_mod.table_id]]
+        for table in update_list:
+            self.logger.debug("table_mod: " + 
+                              "setting table %d " % table.table_id +
+                              "to miss_policy %d" % table_mod.config)
+            table.miss_policy = table_mod.config
+        return None 
 
 
     def table_caps_get(self, table_id=0):
@@ -198,11 +229,12 @@ class FlowPipeline(Thread):
         @param packet An OFPS packet object, already parsed
         """
         # Generate a match structure from the packet
-        table_id = 0
+        table_id = 0     # Start at table 0, per spec
         matched = False  # Did we get any match?
         while table_id is not None:
             next_table_id = None
-            flow = self.tables[table_id].match_packet(packet)
+            table = self.tables[table_id]
+            flow = table.match_packet(packet)
             if flow is not None:
                 self.logger.debug("Matched packet in table " + str(table_id))
                 matched = True
@@ -211,10 +243,30 @@ class FlowPipeline(Thread):
                     new_table_id = self.run_instruction(switch, inst, packet)
                     if new_table_id is not None:
                         next_table_id = new_table_id
+                table_id = next_table_id
             else:
-                self.logger.debug("No match in table " + str(table_id))
-            table_id = next_table_id
-
+                if table.miss_policy == ofp.OFPTC_TABLE_MISS_CONTINUE:
+                    self.logger.debug("No match in table %d:" % table_id
+                                      + " next table")
+                    table_id = table_id + 1
+                    if table_id >= self.n_tables:
+                        table_id = None      
+                elif table.miss_policy == ofp.OFPTC_TABLE_MISS_CONTROLLER:
+                    self.logger.debug("No match in table %d:" % table_id 
+                                      + " send to controller")
+                    table_id = None     # break while loop
+                else:
+                    if table.miss_policy != ofp.OFPTC_TABLE_MISS_DROP:
+                        # if this triggers, something is really broken
+                        # defaulting to CONTINUE might be nicer, but
+                        # would let the problem persist for longer
+                        self.logger.error(
+                            "Table %d miss policy is not one of " % table_id +
+                            "OFPTC_TABLE_MISS_*: DROPing packet")
+                    self.logger.debug("No match in table %s:" + 
+                                      " dropping" % table_id)
+                    return
+                    
         if matched:
             self.logger.debug("Executing actions on packet")
             packet.execute_action_set(switch)

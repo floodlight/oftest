@@ -495,6 +495,9 @@ def table_mod(switch, msg, rawmsg):
     @param rawmsg The actual packet received as a string
     """
     switch.logger.debug("Received table_mod from controller")
+    error = switch.pipeline.table_mod_process(msg)
+    if error :
+        switch.controller.message_send(error)
 
 def table_mod_failed_error_msg(switch, msg, rawmsg):
     """

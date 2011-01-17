@@ -58,6 +58,9 @@ class FlowTable(object):
         self.logger = logging.getLogger("flowtable")
         self.lookup_count = 0
         self.matched_count = 0
+        # by default, when a packet does not match the table
+        # is send to controller -- OpenFlow Spec, A.3.3
+        self.miss_policy = ofp.OFPTC_TABLE_MISS_CONTROLLER
 
     def expire(self):
         """
