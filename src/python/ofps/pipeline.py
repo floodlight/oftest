@@ -263,8 +263,9 @@ class FlowPipeline(Thread):
                         self.logger.error(
                             "Table %d miss policy is not one of " % table_id +
                             "OFPTC_TABLE_MISS_*: DROPing packet")
-                    self.logger.debug("No match in table %s:" + 
-                                      " dropping" % table_id)
+                    self.logger.debug(
+                            "No match in table %s: dropping" 
+                            % table_id)
                     return
                     
         if matched:
