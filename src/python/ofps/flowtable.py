@@ -79,7 +79,10 @@ class FlowTable(object):
                     msg.priority = flow.flow_mod.priority
                     msg.reason = timeout
                     msg.table_id = self.table_id
-                    duration = time.time() - self.insert_time
+                    if flow.insert_time:
+                        duration = time.time() - flow.insert_time
+                    else:
+                        duration = 0
                     msg.duration_sec = int(duration)
                     msg.duration_nsec = (duration-msg.duration_sec) * 10e9
                     msg.idle_timeout = flow.flow_mod.idle_timeout
