@@ -40,12 +40,12 @@ def test_set_init(config):
     global pa_logger
     global pa_config
 
-    pa_logger = logging.getLogger("pkt_act")
+    pa_logger = logging.getLogger("flow_remove")
     pa_logger.info("Initializing test set")
     pa_port_map = config["port_map"]
     pa_config = config
 
-class FlowExpire(basic.SimpleDataPlane):
+class BaseFlowExpire(basic.SimpleDataPlane):
     """
     Verify flow expire messages are properly generated.
 
@@ -53,7 +53,7 @@ class FlowExpire(basic.SimpleDataPlane):
     Generate and install a matching flow with idle timeout = 1 sec
     Verify the flow expiration message is received
     """
-    def runTest(self):
+    def runExpireTest(self, idle_timeout=0, hard_timeout=0):
         global pa_port_map
 
         of_ports = pa_port_map.keys()
@@ -83,7 +83,8 @@ class FlowExpire(basic.SimpleDataPlane):
         request = testutils.flow_msg_create(self, pkt, ingress_port, egr_port=egress_port, check_expire=True)
         request.cookie = random.randint(0,9007199254740992)
         request.buffer_id = 0xffffffff
-        request.idle_timeout = 1
+        request.idle_timeout = idle_timeout
+        request.hard_timeout = hard_timeout
         request.flags |= ofp.OFPFF_SEND_FLOW_REM
         match = request.match
         
@@ -100,9 +101,22 @@ class FlowExpire(basic.SimpleDataPlane):
         self.assertEqual(request.cookie, response.cookie,
                          'Cookies do not match')
 
-        self.assertEqual(ofp.OFPRR_IDLE_TIMEOUT, response.reason,
-                         'Flow table entry removal reason is not idle_timeout')
+        if idle_timeout == 0:
+            self.assertEqual(ofp.OFPRR_HARD_TIMEOUT, response.reason,
+                             'Flow table entry removal reason is not idle_timeout')
+        elif hard_timeout == 0:
+            self.assertEqual(ofp.OFPRR_IDLE_TIMEOUT, response.reason,
+                             'Flow table entry removal reason is not idle_timeout')
 
         self.assertEqual(match, response.match,
                          'Flow table entry does not match')
         
+class IdleFlowExpire(BaseFlowExpire):
+    def runTest(self):
+        self.runExpireTest(1, 0)
+
+
+class HardFlowExpire(BaseFlowExpire):
+    def runTest(self):
+        self.runExpireTest(0, 1)
+

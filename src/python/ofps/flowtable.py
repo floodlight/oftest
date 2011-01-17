@@ -86,8 +86,8 @@ class FlowTable(object):
                     msg.duration_sec = int(duration)
                     msg.duration_nsec = (duration-msg.duration_sec) * 10e9
                     msg.idle_timeout = flow.flow_mod.idle_timeout
-                    msg.packet_count = flow.packet_count
-                    msg.byte_count = flow.byte_count
+                    msg.packet_count = flow.packets
+                    msg.byte_count = flow.bytes
                     msg.match = flow.flow_mod.match
                     msgs.append(msg)
         self.flow_sync.release()
