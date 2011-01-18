@@ -1270,10 +1270,7 @@ def vlan_any_tests(parent, vlan_id_mask=False, vlan_pcp_mask=False,
     elif test_condition == 1:
         vid = random.randint(0, 4095)
         pcp_match = 7 - pcp # unmatching value
-        if (vlan_id_mask == True) or (vlan_pcp_mask == True):
-            match_exp = True
-        else:
-            match_exp = False
+        match_exp = True
 
     else:
         return

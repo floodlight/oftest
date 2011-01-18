@@ -673,6 +673,9 @@ def flow_match_test_port_pair_vlan(parent, ing_port, egr_port, wildcards=0,
         else:
             parent.assertTrue(0, "Rcv: Unexpected Message: " + str(exp_msg))
 
+        (_, rcv_pkt, _) = parent.dataplane.poll(timeout=1)
+        parent.assertFalse(rcv_pkt is not None, "Packet on dataplane")
+
 def flow_match_test_vlan(parent, port_map, wildcards=0,
                          dl_vlan=-1, dl_vlan_pcp=0, dl_vlan_type=ETHERTYPE_VLAN,
                          dl_vlan_int=-1, dl_vlan_pcp_int=0,
