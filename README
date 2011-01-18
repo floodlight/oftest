@@ -81,9 +81,8 @@ Longer Start
         * Root privilege on host running oft
         * Switch running OpenFlow 1.0 and attempting to connect 
           to a controller on the machine running oft.
-        * Python 2.6.  Python 2.5 works correctly, but throws a
-          number of untrapped (untrappable?), non-fatal socket errors.
-          This might be fixable, but has not been a priority.
+        * Python 2.5.  You can run platforms using eth interfaces
+          with Python 2.4.
         * Python setup tools (e.g.: sudo apt-get install python-setuptools)
         * oftest checked out (called <oftest> here)
         * scapy installed:  http://www.secdev.org/projects/scapy/
