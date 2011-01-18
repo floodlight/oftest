@@ -390,7 +390,7 @@ class FlowEntry(object):
             if not l3_match(self.flow_mod.match, packet.match):
                 flow_logger.debug("packet match failed l3_match")
                 return False
-        if self.flow_mod.match.dl_type in (0x8847, 0x8848):
+        if packet.match.dl_type in (0x8847, 0x8848):
             if not mpls_match(self.flow_mod.match, packet.match):
                 flow_logger.debug("packet match failed mpls_match")
                 return False

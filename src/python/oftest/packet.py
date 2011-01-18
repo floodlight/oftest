@@ -602,10 +602,36 @@ class Packet(object):
         self._update_l4_checksum()
 
     def copy_ttl_out(self):
-        pass
+        if self.mpls_tag_offset is None:
+            # No MPLS tag.
+            return
+        outerTag = struct.unpack("!I", self.data[self.mpls_tag_offset:
+                                                 self.mpls_tag_offset+4])[0]
+        if not (outerTag & MPLS_BOTTOM_OF_STACK):
+            # Payload is another MPLS tag:
+            innerTag = struct.unpack("!I", self.data[self.mpls_tag_offset+4:
+                                                     self.mpls_tag_offset+8])[0]
+            outerTag = (outerTag & 0xFFFFFF00) | (innerTag & 0x000000FF)
+            self._set_4bytes(self.mpls_tag_offset, outerTag)
+        else:
+            # How can we know the payload?
+            return
 
     def copy_ttl_in(self):
-        pass
+        if self.mpls_tag_offset is None:
+            # No MPLS tag.
+            return
+        outerTag = struct.unpack("!I", self.data[self.mpls_tag_offset:
+                                                 self.mpls_tag_offset+4])[0]
+        if not (outerTag & MPLS_BOTTOM_OF_STACK):
+            # Payload is another MPLS tag:
+            innerTag = struct.unpack("!I", self.data[self.mpls_tag_offset+4:
+                                                     self.mpls_tag_offset+8])[0]
+            innerTag = (innerTag & 0xFFFFFF00) | (outerTag & 0x000000FF)
+            self._set_4bytes(self.mpls_tag_offset+4, innerTag)
+        else:
+            # How can we know the payload?
+            return
 
     def set_mpls_label(self, mpls_label):
         if self.mpls_tag_offset is None:
