@@ -1210,7 +1210,7 @@ def mpls_multipush1_act_tests(parent, test_condition=0):
         exp_ttl = parent.ttl
 
     match_exp = True
-    add_tag_exp = True
+    add_tag_exp = parent.num_tags > 0
     exp_msg = ofp.OFPT_FLOW_REMOVED
     exp_msg_type = 0 #NOT_EXPECTED
     exp_msg_code = 0 #NOT_EXPECTED
@@ -1229,6 +1229,7 @@ def mpls_multipush1_act_tests(parent, test_condition=0):
                 exp_mpls_tc=exp_tc,
                 exp_mpls_ttl=exp_ttl,
                 match_exp=match_exp,
+                add_tag_exp=add_tag_exp,
                 exp_msg=exp_msg,
                 exp_msg_type=exp_msg_type,
                 exp_msg_code=exp_msg_code,
