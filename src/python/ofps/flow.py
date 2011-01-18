@@ -340,10 +340,10 @@ class FlowEntry(object):
         Set this flow entry's core flow_mod message
         """
         self.flow_mod = copy.deepcopy(flow_mod)
-        self.last_hit = None
         self.packets = 0
         self.bytes = 0
         self.insert_time = time.time()
+        self.last_hit = time.time() # important for idle expiration
 
     def match_flow_mod(self, new_flow, groups):
         """
@@ -411,18 +411,29 @@ class FlowEntry(object):
         Returns True if so, False otherwise
         """
         now = time.time()
-        if self.flow_mod.hard_timeout:
-            delta = now - self.insert_time
-            if delta > self.flow_mod.hard_timeout:
-                return ofp.OFPRR_HARD_TIMEOUT
-        if self.flow_mod.idle_timeout:
-            if self.last_hit is None:
-                delta = now - self.insert_time
-            else:
-                delta = now - self.last_hit
-            if delta > self.flow_mod.idle_timeout:
-                return ofp.OFPRR_IDLE_TIMEOUT
-        return None
+        ret = None
+        h_delta = 999999
+        i_delta = 999999
+        if self.flow_mod.hard_timeout and self.insert_time:
+            h_delta = now - self.insert_time
+            if h_delta > self.flow_mod.hard_timeout:
+                ret = ofp.OFPRR_HARD_TIMEOUT
+        if self.flow_mod.idle_timeout and self.last_hit:
+            i_delta = now - self.last_hit
+            if i_delta > self.flow_mod.idle_timeout:
+                ret = ofp.OFPRR_IDLE_TIMEOUT
+#        str = "-------- FLOWEXP: ht=%f it=%f h=%f i=%f" % (
+#                     h_delta,
+#                     i_delta, 
+#                     self.flow_mod.hard_timeout, 
+#                     self.flow_mod.idle_timeout,
+#                     )
+#        if ret is not None:
+#            str += " dec=%d" % ret
+#        else: 
+#            str += " dec=LATER"
+#        flow_logger.error(str)
+        return ret
     
     def flow_stat_get(self):
         """

@@ -72,10 +72,11 @@ class FlowTable(object):
         msgs = []
         # @todo May be a better approach than sync'ing
         self.flow_sync.acquire()
+        delete_list = []
         for flow in self.flow_entries:
             timeout = flow.expire()
-            if timeout: # timeout == one of None, OFPRR_IDLE_TIMEOUT, or OFPRR_HARD_TIMEOUT
-                self.flow_entries.remove(flow)
+            if timeout is not None: # timeout == one of None, OFPRR_IDLE_TIMEOUT, or OFPRR_HARD_TIMEOUT
+                delete_list.append(flow)
                 if flow.flow_mod.flags & ofp.OFPFF_SEND_FLOW_REM:
                     msg = message.flow_removed()
                     msg.cookie = flow.flow_mod.cookie
@@ -93,6 +94,8 @@ class FlowTable(object):
                     msg.byte_count = flow.bytes
                     msg.match = flow.flow_mod.match
                     msgs.append(msg)
+        for flow in delete_list:
+            self.flow_entries.remove(flow)
         self.flow_sync.release()
         return msgs
 
