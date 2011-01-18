@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 ######################################################################
 #
 # All files associated with the OpenFlow Python Switch (ofps) are
@@ -38,6 +38,12 @@ from a match.
 """
 
 import sys
+if sys.hexversion < 0x2060000:
+    sys.stderr.write("Requires Python version 2.6.x or greater\n")
+    sys.stderr.write("Exiting...\n")
+    sys.exit(1)
+
+
 import logging
 import signal
 import copy
@@ -288,6 +294,7 @@ class GroupTable(object):
 
 def sigint_handler(signum, frame):
     sys.exit()
+    
 
 #####
 # If we're actually executing this file, then run this
