@@ -592,18 +592,23 @@ class Packet(object):
         if len(self) < 14: 
             self.logger.error("NOT Pushing a new VLAN tag: packet too short!")
             pass    # invalid ethernet frame, can't add vlan tag
+
+        # from 4.8.1 of the spec, default values are zero
+        # on a push operation if no VLAN tag already exists
+        l2_type = struct.unpack("!H", self.data[12:14])[0]
+        if ((l2_type == ETHERTYPE_VLAN) or (l2_type == ETHERTYPE_VLAN_QinQ)):
+            current_tag = struct.unpack("!H", self.data[14:16])[0]
+        else:
+            current_tag = 0
         new_tag = struct.pack('!HH',
                                   # one of 0x8100 or x88a8
                                   # could check to enforce this?
                                   ethertype & 0xffff,
-                                  # from 4.8.1 of the spec
-                                  # default values are zero
-                                  # on a push operation 
-                                  0,  
+                                  current_tag
                                   )
         self.data = self.data[0:12] + new_tag + self.data[12:len(self.data)]  
         self.parse()
-        
+
     def pop_vlan(self):
         if self.vlan_tag_offset is None:
             pass
