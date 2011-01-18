@@ -315,8 +315,8 @@ class ControllerInterface(threading.Thread):
                     # Remote hangup
                     return 0
         except:
-            (type,info,tb) = sys.exc_info()
-            self.logger.error("#### broken socket crap: uncaught type %s" % str(type))
+            (etype,info,tb) = sys.exc_info()
+            self.logger.error("#### broken socket crap: uncaught type %s" % str(etype))
         finally:
             self.sending_lock.release()
 
