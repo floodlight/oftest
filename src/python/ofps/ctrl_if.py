@@ -110,7 +110,7 @@ class ControllerInterface(threading.Thread):
         self.logger.info("Control socket connecting.")
         try:
             self.ctrl_socket.connect((self.host, self.port))
-        except (socket.error), e:
+        except StandardError, e:
             self.logger.error("Could not connect to %s at %d:: %s" % 
                               (self.host, self.port, str(e)))
             return
