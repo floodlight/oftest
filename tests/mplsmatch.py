@@ -1276,10 +1276,7 @@ def mpls_any_tests(parent, mpls_label_mask=False, mpls_tc_mask=False,
     elif test_condition == 1:
         label = random.randint(16, 1048575)
         tc_match = 7 - tc # unmatching value
-        if (mpls_label_mask == True) or (mpls_tc_mask == True):
-            match_exp = True
-        else:
-            match_exp = False
+        match_exp = True
 
     else:
         return
