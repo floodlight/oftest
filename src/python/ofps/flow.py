@@ -191,11 +191,11 @@ def l2_match(match_a, match_b):
             flow_logger.debug("Failed dl_vlan: %d vs %d" % 
                               (match_a.dl_vlan, match_b.dl_vlan))
             return False
-    if not (wildcards & ofp.OFPFW_DL_VLAN_PCP):
-        if match_a.dl_vlan_pcp != match_b.dl_vlan_pcp:
-            flow_logger.debug("Failed dl_vlan_pcp: %d vs %d" %
-                              (match_a.dl_vlan_pcp, match_b.dl_vlan_pcp))
-            return False
+        if not (wildcards & ofp.OFPFW_DL_VLAN_PCP):
+            if match_a.dl_vlan_pcp != match_b.dl_vlan_pcp:
+                flow_logger.debug("Failed dl_vlan_pcp: %d vs %d" %
+                                  (match_a.dl_vlan_pcp, match_b.dl_vlan_pcp))
+                return False
     if not (wildcards & ofp.OFPFW_DL_TYPE):
         if match_a.dl_type != match_b.dl_type:
             flow_logger.debug("Failed dl_type: %d vs %d" % 
@@ -385,6 +385,13 @@ class FlowEntry(object):
         if not meta_match(self.flow_mod.match, packet.match):
             flow_logger.debug("packet match failed meta_match")
             return False
+        if self.flow_mod.match.dl_vlan == ofp.OFPVID_NONE:
+            self.flow_mod.match.dl_vlan_pcp = 0
+        if ((self.flow_mod.match.dl_vlan == ofp.OFPVID_ANY) and
+            (packet.match.dl_vlan != ofp.OFPVID_NONE)):
+                self.flow_mod.match.dl_vlan_pcp = 0
+                packet.match.dl_vlan = ofp.OFPVID_ANY
+                packet.match.dl_vlan_pcp = 0
         if not l2_match(self.flow_mod.match, packet.match):
             flow_logger.debug("packet match failed l2_match")
             return False
