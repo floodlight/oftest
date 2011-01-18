@@ -362,7 +362,7 @@ struct ofp_packet_in {
 OFP_ASSERT(sizeof(struct ofp_packet_in) == 24);
 
 enum ofp_action_type {
-    OFPAT_SET_OUTPUT_PORT,  /* Set the output port for the packet. */
+    OFPAT_OUTPUT,           /* Output to switch port. */
     OFPAT_SET_VLAN_VID,     /* Set the 802.1q VLAN id. */
     OFPAT_SET_VLAN_PCP,     /* Set the 802.1q priority. */
     OFPAT_SET_DL_SRC,       /* Ethernet source address. */
@@ -393,18 +393,18 @@ enum ofp_action_type {
     OFPAT_EXPERIMENTER = 0xffff
 };
 
-/* Action structure for OFPAT_SET_OUTPUT_PORT, which sends packets out 'port'.
+/* Action structure for OFPAT_OUTPUT, which sends packets out 'port'.
  * When the 'port' is the OFPP_CONTROLLER, 'max_len' indicates the max
  * number of bytes to send.  A 'max_len' of zero means no bytes of the
  * packet should be sent.*/
-struct ofp_action_set_output_port {
-    uint16_t type;                  /* OFPAT_SET_OUTPUT_PORT. */
+struct ofp_action_output {
+    uint16_t type;                  /* OFPAT_OUTPUT. */
     uint16_t len;                   /* Length is 16. */
     uint32_t port;                  /* Output port. */
     uint16_t max_len;               /* Max length to send to controller. */
     uint8_t pad[6];                 /* Pad to 64 bits. */
 };
-OFP_ASSERT(sizeof(struct ofp_action_set_output_port) == 16);
+OFP_ASSERT(sizeof(struct ofp_action_output) == 16);
 
 /* Action structure for OFPAT_SET_VLAN_VID. */
 struct ofp_action_vlan_vid {
@@ -557,10 +557,10 @@ OFP_ASSERT(sizeof(struct ofp_action_header) == 8);
 struct ofp_packet_out {
     struct ofp_header header;
     uint32_t buffer_id;           /* ID assigned by datapath (-1 if none). */
-    uint32_t in_port;             /* Packet's input port (OFPP_ANY if none). */
+    uint32_t in_port;             /* Packet's input port or OFPP_CONTROLLER. */
     uint16_t actions_len;         /* Size of action array in bytes. */
     uint8_t pad[2];
-    struct ofp_action_header actions[0]; /* Actions. */
+    struct ofp_action_header actions[0]; /* Action list. */
     /* uint8_t data[0]; */        /* Packet data.  The length is inferred
                                      from the length field in the header.
                                      (Only meaningful if buffer_id == -1.) */
@@ -994,8 +994,11 @@ enum ofp_group_mod_failed_code {
 /* ofp_error_msg 'code' values for OFPET_PORT_MOD_FAILED.  'data' contains
  * at least the first 64 bytes of the failed request. */
 enum ofp_port_mod_failed_code {
-    OFPPMFC_BAD_PORT,            /* Specified port does not exist. */
-    OFPPMFC_BAD_HW_ADDR          /* Specified hardware address is wrong. */
+    OFPPMFC_BAD_PORT,            /* Specified port number does not exist. */
+    OFPPMFC_BAD_HW_ADDR,         /* Specified hardware address does not
+                                  * match the port number. */
+    OFPPMFC_BAD_CONFIG,          /* Specified config is invalid. */
+    OFPPMFC_BAD_ADVERTISE        /* Specified advertise is invalid. */
 };
 
 /* ofp_error_msg 'code' values for OFPET_TABLE_MOD_FAILED.  'data' contains
@@ -1270,9 +1273,6 @@ struct ofp_group_stats_request {
 };
 OFP_ASSERT(sizeof(struct ofp_group_stats_request) == 8);
 
-/* All ones is used to indicate all groups on a switch. */
-#define OFPG_ALL      0xffffffff
-
 /* Used in group stats replies. */
 struct ofp_bucket_counter {
     uint64_t packet_count;   /* Number of packets processed by bucket. */
@@ -1379,7 +1379,7 @@ struct ofp_action_set_queue {
 OFP_ASSERT(sizeof(struct ofp_action_set_queue) == 8);
 
 struct ofp_queue_stats_request {
-    uint32_t port_no;        /* All ports if OFPT_ALL. */
+    uint32_t port_no;        /* All ports if OFPP_ANY. */
     uint32_t queue_id;       /* All queues if OFPQ_ALL. */
 };
 OFP_ASSERT(sizeof(struct ofp_queue_stats_request) == 8);

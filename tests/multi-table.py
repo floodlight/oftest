@@ -66,7 +66,7 @@ class TwoTable1(basic.SimpleDataPlane):
         match.nw_src_mask = 0 # Match nw_src
         match.dl_type = 0x800
         match.nw_src = parse.parse_ip("192.168.1.10")
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[0]
 
         request = message.flow_mod()
@@ -91,7 +91,7 @@ class TwoTable1(basic.SimpleDataPlane):
         match.wildcards -= ofp.OFPFW_TP_SRC
         match.dl_type = 0x800
         match.tp_src = 80
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[1]
 
         request = message.flow_mod()
@@ -194,7 +194,7 @@ class MultiTableGoto(basic.SimpleDataPlane):
         testutils.do_barrier(self.controller)
 
         # Set up second match
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[0]
 
         request = message.flow_mod()
@@ -221,7 +221,7 @@ class MultiTableGoto(basic.SimpleDataPlane):
         match.wildcards -= ofp.OFPFW_TP_SRC
         match.dl_type = 0x800
         match.tp_src = 80
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[1]
 
         request = message.flow_mod()
@@ -316,7 +316,7 @@ class MultiTableNoGoto(basic.SimpleDataPlane):
         testutils.do_barrier(self.controller)
 
         # Set up second match
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[0]
 
         request = message.flow_mod()
@@ -347,7 +347,7 @@ class MultiTableNoGoto(basic.SimpleDataPlane):
         testutils.do_barrier(self.controller)
 
         # Set up fourth match
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[1]
 
         request = message.flow_mod()
@@ -439,7 +439,7 @@ class MultiTableClearAction(basic.SimpleDataPlane):
         testutils.do_barrier(self.controller)
 
         # Set up second match
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[0]
 
         request = message.flow_mod()
@@ -475,7 +475,7 @@ class MultiTableClearAction(basic.SimpleDataPlane):
         testutils.do_barrier(self.controller)
 
         # Set up fourth match
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[1]
 
         request = message.flow_mod()
@@ -553,7 +553,7 @@ class MultiTableMetadata(basic.SimpleDataPlane):
         testutils.do_barrier(self.controller)
 
         # Set up first match
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[0]
 
         request = message.flow_mod()
@@ -599,7 +599,7 @@ class MultiTableMetadata(basic.SimpleDataPlane):
         match.nw_src = parse.parse_ip("192.168.1.10")
         match.metadata =      0xfedcba9876543210
         match.metadata_mask = 0xffffffffffffffff
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[1]
 
         request = message.flow_mod()
@@ -616,7 +616,7 @@ class MultiTableMetadata(basic.SimpleDataPlane):
         testutils.do_barrier(self.controller)
 
         # Set up fourth match
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[0]
 
         request = message.flow_mod()
@@ -709,7 +709,7 @@ class MultiTableEmptyInstruction(basic.SimpleDataPlane):
         testutils.do_barrier(self.controller)
 
         # Set up second match
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[0]
 
         request = message.flow_mod()
@@ -740,7 +740,7 @@ class MultiTableEmptyInstruction(basic.SimpleDataPlane):
         testutils.do_barrier(self.controller)
 
         # Set up fourth match
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[1]
 
         request = message.flow_mod()
@@ -818,7 +818,7 @@ class MultiTableMiss(basic.SimpleDataPlane):
         testutils.do_barrier(self.controller)
 
         # Set up first match
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[0]
 
         request = message.flow_mod()
@@ -835,7 +835,7 @@ class MultiTableMiss(basic.SimpleDataPlane):
         testutils.do_barrier(self.controller)
 
         # Set up second match
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[0]
 
         request = message.flow_mod()
@@ -852,7 +852,7 @@ class MultiTableMiss(basic.SimpleDataPlane):
         testutils.do_barrier(self.controller)
 
         # Set up third match
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[0]
 
         request = message.flow_mod()
@@ -869,7 +869,7 @@ class MultiTableMiss(basic.SimpleDataPlane):
         testutils.do_barrier(self.controller)
 
         # Set up fourth match
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[0]
 
         request = message.flow_mod()
@@ -944,7 +944,7 @@ class MultiTableConfigContinue(basic.SimpleDataPlane):
         testutils.do_barrier(self.controller)
 
         # Set up first match
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[0]
 
         request = message.flow_mod()
@@ -961,7 +961,7 @@ class MultiTableConfigContinue(basic.SimpleDataPlane):
         testutils.do_barrier(self.controller)
 
         # Set up second match
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[1]
 
         request = message.flow_mod()
@@ -1041,7 +1041,7 @@ class MultiTableConfigController(basic.SimpleDataPlane):
         testutils.do_barrier(self.controller)
 
         # Set up first match
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[0]
 
         request = message.flow_mod()
@@ -1058,7 +1058,7 @@ class MultiTableConfigController(basic.SimpleDataPlane):
         testutils.do_barrier(self.controller)
 
         # Set up second match
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[1]
 
         request = message.flow_mod()
@@ -1144,7 +1144,7 @@ class MultiTableConfigDrop(basic.SimpleDataPlane):
         testutils.do_barrier(self.controller)
 
         # Set up first match
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[0]
 
         request = message.flow_mod()
@@ -1161,7 +1161,7 @@ class MultiTableConfigDrop(basic.SimpleDataPlane):
         testutils.do_barrier(self.controller)
 
         # Set up second match
-        act = action.action_set_output_port()
+        act = action.action_set_output()
         act.port = of_ports[1]
 
         request = message.flow_mod()

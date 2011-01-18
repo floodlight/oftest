@@ -64,7 +64,7 @@ def action_list_has_out_port(action_list, port, groups):
     better check for loops in group lists elsewhere).
     """
     for action in action_list:
-        if action.__class__ == action.set_output_port:
+        if action.__class__ == action.set_output:
             if action.port == port:
                 return True
         if action.__class__ == action.action_group:

@@ -327,7 +327,7 @@ def vlan_set_two_tables_tests(parent, test_condition=0):
     action_list_tbl0 = [act, act2]
 
     # Create action_list for TBL1
-    act = action.action_set_output_port()
+    act = action.action_set_output()
     action_list_tbl1 = [act]
 
     flow_match_test_vlan_two_tables(parent, pa_port_map,
@@ -383,7 +383,7 @@ def novlan_push_two_tables_tests(parent):
     vid_match_tbl1 = exp_vid
     pcp_match_tbl1 = exp_pcp
 
-    act = action.action_set_output_port()
+    act = action.action_set_output()
     action_list_tbl1 = [act]
 
     flow_match_test_vlan_two_tables(parent, pa_port_map,
@@ -465,7 +465,7 @@ def vlan_push_two_tables_tests(parent, test_condition=0, match_exp = True):
     vid_match_tbl1 = exp_vid
     pcp_match_tbl1 = exp_pcp
 
-    act = action.action_set_output_port()
+    act = action.action_set_output()
     action_list_tbl1 = [act]
 
     flow_match_test_vlan_two_tables(parent, pa_port_map,
@@ -525,7 +525,7 @@ def vlan_pop_two_tables_tests(parent, test_condition=0, match_exp=True):
     act = action.action_pop_vlan()
     action_list_tbl0 = [act]
 
-    act = action.action_set_output_port()
+    act = action.action_set_output()
     action_list_tbl1 = [act]
 
     flow_match_test_vlan_two_tables(parent, pa_port_map,

@@ -394,7 +394,7 @@ class Packet(object):
         instruction is executed.  We only record the actions for 
         later processing.  Because of this, the output port is not
         explicitly recorded in the packet; that state is recorded
-        in the action_set[set_output_port] item.
+        in the action_set[set_output] item.
         """
         self.action_set[action.__class__] = action
 
@@ -484,7 +484,7 @@ class Packet(object):
     # These are the main action operations that take the 
     # required parameters
     # 
-    # Note that 'group', 'experimenter' and 'set_output_port' are only 
+    # Note that 'group', 'experimenter' and 'set_output' are only 
     # implemented for the action versions.
 
     def set_queue(self, queue_id):
@@ -640,7 +640,7 @@ class Packet(object):
     # These take an action object to facilitate the switch implementation
     #
 
-    def action_set_output_port(self, action, switch):
+    def action_set_output(self, action, switch):
         if action.port < ofp.OFPP_MAX:
             switch.dataplane.send(action.port, self.data, 
                                   queue_id=self.queue_id)
@@ -653,7 +653,7 @@ class Packet(object):
             switch.dataplane.send(self.in_port, self.data, 
                                   queue_id=self.queue_id)
         else:
-            switch.logger.error("NEED to implement action_set_output_port" + 
+            switch.logger.error("NEED to implement action_set_output" + 
                                 " for port %d" % action.port)        
 
     def action_set_queue(self, action, switch):
@@ -847,10 +847,10 @@ class Packet(object):
         if cls in self.action_set.keys():
             self.logger.debug("Action experimenter")
             self.action_experimenter(self.action_set[cls], switch)
-        cls = action.action_set_output_port
+        cls = action.action_set_output
         if cls in self.action_set.keys():
-            self.logger.debug("Action set_output_port")
-            self.action_set_output_port(self.action_set[cls], switch)
+            self.logger.debug("Action set_output")
+            self.action_set_output(self.action_set[cls], switch)
 
 
 def ascii_ip_to_bin(ip):
