@@ -1142,3 +1142,193 @@ class MultiTableConfigDrop(basic.SimpleDataPlane):
 
     def runTest(self):
         self.scenario2(0,1)
+
+class TwoTableApplyActGenericSimple(basic.SimpleDataPlane):
+    """
+    Test if apply_action on one table is effective to the next table
+    Table0: Modify one field and apply
+    Table1: Match against modified pkt and send out to a port
+    Expect packet with a modification
+    """
+    def __init__(self):
+        basic.SimpleDataPlane.__init__(self)
+
+        self.base_pkt_params = {}
+        self.base_pkt_params['pktlen'] = 100
+        self.base_pkt_params['dl_dst'] = '00:DE:F0:12:34:56'
+        self.base_pkt_params['dl_src'] = '00:23:45:67:89:AB'
+        self.base_pkt_params['dl_vlan_enable'] = True
+        self.base_pkt_params['dl_vlan'] = 2
+        self.base_pkt_params['dl_vlan_pcp'] = 0
+        self.base_pkt_params['ip_src'] = '192.168.0.1'
+        self.base_pkt_params['ip_dst'] = '192.168.0.2'
+        self.base_pkt_params['ip_tos'] = 0
+        self.base_pkt_params['tcp_sport'] = 1234
+        self.base_pkt_params['tcp_dport'] = 80
+
+        self.start_pkt_params = self.base_pkt_params.copy()
+        del self.start_pkt_params['dl_vlan_enable']
+        del self.start_pkt_params['pktlen']
+
+        self.mod_pkt_params = {}
+        self.mod_pkt_params['pktlen'] = 100
+        self.mod_pkt_params['dl_dst'] = '00:21:0F:ED:CB:A9'
+        self.mod_pkt_params['dl_src'] = '00:ED:CB:A9:87:65'
+        self.mod_pkt_params['dl_vlan'] = 3
+        self.mod_pkt_params['dl_vlan_pcp'] = 7
+        self.mod_pkt_params['ip_src'] = '10.20.30.40'
+        self.mod_pkt_params['ip_dst'] = '50.60.70.80'
+        self.mod_pkt_params['ip_tos'] = 0xf0
+        self.mod_pkt_params['tcp_sport'] = 4321
+        self.mod_pkt_params['tcp_dport'] = 8765
+
+    def runTest(self):
+        of_ports = pa_port_map.keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
+
+        # For making the test simpler...
+        ing_port = of_ports[0]
+        egr_port = of_ports[1]
+        check_expire_tbl0 = False
+        check_expire_tbl1 = False
+
+        # Clear flow table
+        rv = testutils.delete_all_flows(self.controller, pa_logger)
+        self.assertEqual(rv, 0, "Failed to delete all flows")
+
+        # Build the ingress packet
+        pkt = testutils.simple_tcp_packet(**self.base_pkt_params)
+
+        # Set action for the first table
+        for item_tbl0 in self.start_pkt_params:
+            tbl0_pkt_params = self.base_pkt_params.copy()
+            tbl0_pkt_params[item_tbl0] = self.mod_pkt_params[item_tbl0]
+            act = testutils.action_generate(self, item_tbl0, tbl0_pkt_params)
+            action_list = [act]
+
+            inst_1 = instruction.instruction_apply_actions()
+            inst_2 = instruction.instruction_goto_table()
+            inst_2.table_id = 1
+            inst_list = [inst_1, inst_2]
+            request0 = testutils.flow_msg_create(self, pkt,
+                              ing_port=ing_port,
+                              instruction_list=inst_list,
+                              action_list=action_list,
+                              check_expire=check_expire_tbl0,
+                              table_id=0)
+
+            exp_pkt = testutils.simple_tcp_packet(**tbl0_pkt_params)
+
+            request1 = testutils.flow_msg_create(self, exp_pkt,
+                              ing_port=ing_port,
+                              check_expire=check_expire_tbl1,
+                              table_id=1,
+                              egr_port=egr_port)
+
+            # Insert two flows
+            self.logger.debug("Inserting flows: Modify-field: " + item_tbl0)
+            testutils.flow_msg_install(self, request0)
+            testutils.flow_msg_install(self, request1)
+
+            # Send pkt
+            self.logger.debug("Send packet: " + str(ing_port) +
+                              " to " + str(egr_port))
+            self.dataplane.send(ing_port, str(pkt))
+
+            #@todo Not all HW supports both pkt and byte counters
+            #@todo We shouldn't expect the order of coming response..
+            if check_expire_tbl0:
+                flow_removed_verify(self, request0, pkt_count=1,
+                                    byte_count=pktlen)
+            if check_expire_tbl1:
+                flow_removed_verify(self, request1, pkt_count=1,
+                                    byte_count=exp_pktlen)
+            # Receive and verify pkt
+            testutils.receive_pkt_verify(self, egr_port, exp_pkt)
+
+class TwoTableApplyActGeneric2Mod(TwoTableApplyActGenericSimple):
+    """
+    Test if apply_action on one table is effective to the next table
+    Table0: Modify one field and apply
+    Table1: Match against modified pkt, modify another field and send out
+    Expect packet with two modifications
+    """
+    def runTest(self):
+        of_ports = pa_port_map.keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
+
+        # For making the test simpler...
+        ing_port = of_ports[0]
+        egr_port = of_ports[1]
+        check_expire_tbl0 = False
+        check_expire_tbl1 = False
+
+        # Clear flow table
+        rv = testutils.delete_all_flows(self.controller, pa_logger)
+        self.assertEqual(rv, 0, "Failed to delete all flows")
+
+        # Build the ingress packet
+        pkt = testutils.simple_tcp_packet(**self.base_pkt_params)
+
+        # Set action for the first table
+        for item_tbl0 in self.start_pkt_params:
+            tbl0_pkt_params = self.base_pkt_params.copy()
+            tbl0_pkt_params[item_tbl0] = self.mod_pkt_params[item_tbl0]
+            act = testutils.action_generate(self, item_tbl0, tbl0_pkt_params)
+            action_list = [act]
+
+            inst_1 = instruction.instruction_apply_actions()
+            inst_2 = instruction.instruction_goto_table()
+            inst_2.table_id = 1
+            inst_list = [inst_1, inst_2]
+            request0 = testutils.flow_msg_create(self, pkt,
+                              ing_port=ing_port,
+                              instruction_list=inst_list,
+                              action_list=action_list,
+                              check_expire=check_expire_tbl0,
+                              table_id=0)
+
+            mod_pkt = testutils.simple_tcp_packet(**tbl0_pkt_params)
+
+            for item_tbl1 in self.start_pkt_params:
+                if item_tbl1 == item_tbl0:
+                    continue
+                tbl1_pkt_params = tbl0_pkt_params.copy()
+                tbl1_pkt_params[item_tbl1] = self.mod_pkt_params[item_tbl1]
+                act = testutils.action_generate(self, item_tbl1,
+                                                tbl1_pkt_params)
+                self.assertTrue(act is not None, "Action not available")
+                action_list = [act]
+
+                request1 = testutils.flow_msg_create(self, mod_pkt,
+                              ing_port=ing_port,
+                              action_list=action_list,
+                              check_expire=check_expire_tbl1,
+                              table_id=1,
+                              egr_port=egr_port)
+
+                exp_pkt = testutils.simple_tcp_packet(**tbl1_pkt_params)
+
+                # Insert two flows
+                self.logger.debug("Inserting flows: Modify-fields: TBL0= " +
+                                  item_tbl0 + ", TBL1= " + item_tbl1)
+                testutils.flow_msg_install(self, request0)
+                testutils.flow_msg_install(self, request1)
+
+                # Send pkt
+                self.logger.debug("Send packet: " + str(ing_port) +
+                                  " to " + str(egr_port))
+                self.dataplane.send(ing_port, str(pkt))
+
+                #@todo Not all HW supports both pkt and byte counters
+                #@todo We shouldn't expect the order of coming response..
+                if check_expire_tbl0:
+                    flow_removed_verify(self, request0, pkt_count=1,
+                                        byte_count=pktlen)
+                if check_expire_tbl1:
+                    flow_removed_verify(self, request1, pkt_count=1,
+                                        byte_count=exp_pktlen)
+                # Receive and verify pkt
+                testutils.receive_pkt_verify(self, egr_port, exp_pkt)
