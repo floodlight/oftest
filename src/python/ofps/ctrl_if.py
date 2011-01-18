@@ -284,6 +284,11 @@ class ControllerInterface(threading.Thread):
         if not self.ctrl_socket:
             self.logger.info("message_send: no socket")
             return -1
+        
+        if msg is None:
+            self.logger.error("ctrl_if.message_send() called with msg=None!?")
+            return
+            
         # Sending a string indicates the message is ready to go
         # Otherwise, try to pack the message into a string
         if type(msg) != type(""):
