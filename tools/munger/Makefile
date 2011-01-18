@@ -14,6 +14,8 @@ PYLIBOF_DIR = ${TOOLS_DIR}/pylibopenflow
 TARGET_DIR = ${TOP_DIR}/src/python/oftest
 SETUP_DIR = ${TOP_DIR}/src/python/
 
+PYTHON := python
+
 # Relative to pyopenflow-pythonize exec location
 OF_HEADER = include/openflow.h
 
@@ -43,7 +45,7 @@ LINT_FILES := $(subst ${TARGET_DIR}/,lint/,${LINT_FILES})
 all: ${GEN_FILES}
 
 install: all
-	(cd ${SETUP_DIR} && python setup.py install)
+	(cd ${SETUP_DIR} && $(PYTHON) setup.py install)
 
 # The core OpenFlow libraries generated from openflow.h
 ${TARGET_DIR}/cstruct.py: ${CSTRUCT_DEP}
