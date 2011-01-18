@@ -32,6 +32,20 @@ def clear_switch(parent, port_list, logger):
         clear_port_config(parent, port, logger)
     delete_all_flows(parent.controller, logger)
 
+def initialize_table_config(ctrl, logger):
+    """
+    Initialize all table configs to default setting ("CONTROLLER")
+    @param ctrl The controller object for the test
+    """
+    logger.info("Initializing all table configs")
+    request = message.table_mod()  
+    request.config = ofp.OFPTC_TABLE_MISS_CONTROLLER
+    rv = 0
+    for table_id in [0, 1, 2, 3, 4, 5, 6, 7]:
+        request.table_id = table_id
+        rv |= ctrl.message_send(request)
+    return rv
+
 def delete_all_flows(ctrl, logger):
     """
     Delete all flows on the switch

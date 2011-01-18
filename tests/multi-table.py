@@ -54,6 +54,8 @@ class TwoTable1(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
         # Clear flow table
+        rv = testutils.initialize_table_config(self.controller, pa_logger)
+        self.assertEqual(rv, 0, "Failed to initialize table config")
         rv = testutils.delete_all_flows(self.controller, pa_logger)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
@@ -166,6 +168,11 @@ class MultiTableGoto(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
         # Clear flow table
+        rv = testutils.initialize_table_config(self.controller, pa_logger)
+        self.assertEqual(rv, 0, "Failed to initialize table config")
+
+        testutils.do_barrier(self.controller)
+
         rv = testutils.delete_all_flows(self.controller, pa_logger)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
@@ -284,6 +291,11 @@ class MultiTableNoGoto(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
         # Clear flow table
+        rv = testutils.initialize_table_config(self.controller, pa_logger)
+        self.assertEqual(rv, 0, "Failed to initialize table config")
+
+        testutils.do_barrier(self.controller)
+
         rv = testutils.delete_all_flows(self.controller, pa_logger)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
@@ -402,6 +414,11 @@ class MultiTableClearAction(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
         # Clear flow table
+        rv = testutils.initialize_table_config(self.controller, pa_logger)
+        self.assertEqual(rv, 0, "Failed to initialize table config")
+
+        testutils.do_barrier(self.controller)
+
         rv = testutils.delete_all_flows(self.controller, pa_logger)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
@@ -525,6 +542,11 @@ class MultiTableMetadata(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
         # Clear flow table
+        rv = testutils.initialize_table_config(self.controller, pa_logger)
+        self.assertEqual(rv, 0, "Failed to initialize table config")
+
+        testutils.do_barrier(self.controller)
+
         rv = testutils.delete_all_flows(self.controller, pa_logger)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
@@ -662,6 +684,11 @@ class MultiTableEmptyInstruction(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
         # Clear flow table
+        rv = testutils.initialize_table_config(self.controller, pa_logger)
+        self.assertEqual(rv, 0, "Failed to initialize table config")
+
+        testutils.do_barrier(self.controller)
+
         rv = testutils.delete_all_flows(self.controller, pa_logger)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
@@ -780,6 +807,11 @@ class MultiTableMiss(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
         # Clear flow table
+        rv = testutils.initialize_table_config(self.controller, pa_logger)
+        self.assertEqual(rv, 0, "Failed to initialize table config")
+
+        testutils.do_barrier(self.controller)
+
         rv = testutils.delete_all_flows(self.controller, pa_logger)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
@@ -892,6 +924,11 @@ class MultiTableConfigContinue(basic.SimpleDataPlane):
         of_ports.sort()
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
+        rv = testutils.initialize_table_config(self.controller, pa_logger)
+        self.assertEqual(rv, 0, "Failed to initialize table config")
+
+        testutils.do_barrier(self.controller)
+
         # Set table config as "send to controller"
         request = message.table_mod()
         request.table_id = 0
@@ -973,6 +1010,11 @@ class MultiTableConfigController(basic.SimpleDataPlane):
         of_ports = pa_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
+
+        rv = testutils.initialize_table_config(self.controller, pa_logger)
+        self.assertEqual(rv, 0, "Failed to initialize table config")
+
+        testutils.do_barrier(self.controller)
 
         # Set table config as "send to controller"
         request = message.table_mod()
@@ -1071,6 +1113,11 @@ class MultiTableConfigDrop(basic.SimpleDataPlane):
         of_ports = pa_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
+
+        rv = testutils.initialize_table_config(self.controller, pa_logger)
+        self.assertEqual(rv, 0, "Failed to initialize table config")
+
+        testutils.do_barrier(self.controller)
 
         # Set table config as "drop"
         request = message.table_mod()
@@ -1194,6 +1241,8 @@ class TwoTableApplyActGenericSimple(basic.SimpleDataPlane):
         check_expire_tbl1 = False
 
         # Clear flow table
+        rv = testutils.initialize_table_config(self.controller, pa_logger)
+        self.assertEqual(rv, 0, "Failed to initialize table config")
         rv = testutils.delete_all_flows(self.controller, pa_logger)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
@@ -1266,6 +1315,8 @@ class TwoTableApplyActGeneric2Mod(TwoTableApplyActGenericSimple):
         check_expire_tbl1 = False
 
         # Clear flow table
+        rv = testutils.initialize_table_config(self.controller, pa_logger)
+        self.assertEqual(rv, 0, "Failed to initialize table config")
         rv = testutils.delete_all_flows(self.controller, pa_logger)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
