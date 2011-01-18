@@ -210,7 +210,7 @@ class ControllerInterface(threading.Thread):
         """
         try:
             pkt = self.ctrl_socket.recv(self.rcv_size)
-        except StandardError:
+        except StandardError, socket.error:
             self.logger.warning("Error on switch read")
             return False
 

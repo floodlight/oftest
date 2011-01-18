@@ -401,7 +401,7 @@ class Controller(Thread):
         self.active = False
         try:
             self.switch_socket.shutdown(socket.SHUT_RDWR)
-        except StandardError:
+        except StandardError, socket.error:
             self.logger.info("Ignoring switch soc shutdown error")
         self.switch_socket = None
 
