@@ -117,19 +117,12 @@ module will be run.
 """
 
 import sys
-
-if sys.hexversion < 0x2060000:
-	sys.stderr.write("Requires Python version 2.6.x or greater\n")
-	sys.stderr.write("Exiting...\n")
-	sys.exit(1)
-
 from optparse import OptionParser
 from subprocess import Popen,PIPE
 import logging
 import unittest
 import time
 import os
-
 
 import testutils
 
