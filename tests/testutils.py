@@ -942,6 +942,8 @@ def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
             error_verify(parent, exp_msg_type, exp_msg_code)
         else:
             parent.assertTrue(0, "Rcv: Unexpected Message: " + str(exp_msg))
+        (_, rcv_pkt, _) = parent.dataplane.poll(timeout=1)
+        parent.assertFalse(rcv_pkt is not None, "Packet on dataplane")
 
 def flow_match_test_mpls(parent, port_map, wildcards=0,
                          mpls_type=0x8847,
