@@ -314,6 +314,9 @@ class ControllerInterface(threading.Thread):
                 if e[0] == errno.EPIPE:
                     # Remote hangup
                     return 0
+        except:
+            (type,info,tb) = sys.exc_info()
+            self.logger.error("#### broken socket crap: uncaught type %s" % str(type))
         finally:
             self.sending_lock.release()
 
