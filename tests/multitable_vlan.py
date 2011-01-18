@@ -83,7 +83,7 @@ class TwoTableVlanSetMatch(pktact.BaseMatchCase):
     Multitable test: Set VID+PCP, apply it and expect it on outport
     Test Conditions:
      -Table0:
-       Match: VLAN match, Actions: Set VID, Set PCP, Appply
+       Match: VLAN match, Actions: Set VID, Set PCP
      -Table1:
        Match: Modified VLAN, Action: outport
      -Expectation:
@@ -97,7 +97,7 @@ class TwoTableVlanSetUnmatch(pktact.BaseMatchCase):
     Multitable test: Set VID+PCP, apply it but not expect it on outport
     Test Conditions:
      -Table0:
-       Match: VLAN match, Actions: Set VID, Set PCP, Appply
+       Match: VLAN match, Actions: Set VID, Set PCP
      -Table1:
        Match: Same as in Table0, Action: output
      -Expectation:
@@ -111,7 +111,7 @@ class TwoTable0VlanPushSetVidPcpMatch(pktact.BaseMatchCase):
     Multitable test: Push, Set VID, PCP and apply it and expect it on outport
     Test Conditions:
      -Table0:
-       Match: NO VLAN, Actions: Push (Must be the same tag value)
+       Match: NO VLAN, Actions: Push, set VID, set PCP
      -Table1:
        Match: VLAN, Action: output
      -Expectation:
@@ -153,9 +153,9 @@ class TwoTableVlanPushSetVidMatch1(pktact.BaseMatchCase):
     Multitable test: Push, Set VID, apply it and expect it on outport
     Test Conditions:
      -Table0:
-       Match: VLAN match, Actions: Push, Set VID, Appply
+       Match: VLAN match, Actions: Push, Set VID
      -Table1:
-       Match: Modified VLAN, Action: output
+       Match: Modified VLAN (VID), Action: output
      -Expectation:
        Pkt to be received
     """
@@ -181,9 +181,9 @@ class TwoTableVlanPushSetPcpMatch(pktact.BaseMatchCase):
     Multitable test: Push, Set PCP, apply it and expect it on outport
     Test Conditions:
      -Table0:
-       Match: VLAN match, Actions: Push, Set PCP, Appply
+       Match: VLAN match, Actions: Push, Set PCP
      -Table1:
-       Match: Modified VLAN, Action: output
+       Match: Modified VLAN (PCP), Action: output
      -Expectation:
        Pkt to be received
     """
@@ -209,9 +209,9 @@ class TwoTableVlanPushSetVidPcpMatch(pktact.BaseMatchCase):
     Multitable test: Push, Set VID+PCP, apply it and expect it on outport
     Test Conditions:
      -Table0:
-       Match: VLAN match, Actions: Push, Set VID, Set PCP, Appply
+       Match: VLAN match, Actions: Push, Set VID, Set PCP
      -Table1:
-       Match: Modified VLAN, Action: output
+       Match: Modified VLAN (VID, PCP), Action: output
      -Expectation:
        Pkt to be received
     """
