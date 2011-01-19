@@ -723,6 +723,13 @@ def mpls_ttl_in_act_tests(parent):
         exp_msg = ofp.OFPT_ERROR
         exp_msg_type = ofp.OFPET_BAD_ACTION
         exp_msg_code = ofp.OFPBAC_MATCH_INCONSISTENT
+        
+    elif parent.num_tags == 1:
+        match_exp = True
+        exp_msg = ofp.OFPT_FLOW_REMOVED
+        exp_msg_type = 0 #NOT_EXPECTED
+        exp_msg_code = 0 #NOT_EXPECTED
+        exp_ip_ttl = parent.ttl
 
     else:
         match_exp = True

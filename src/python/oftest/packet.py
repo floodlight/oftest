@@ -599,6 +599,8 @@ class Packet(object):
             self._set_1bytes(self.tcp_header_offset + 1, tp_dst)
         self._update_l4_checksum()
 
+    IP_OFFSET_TTL = 8
+    
     def copy_ttl_out(self):
         if self.mpls_tag_offset is None:
             # No MPLS tag.
@@ -612,7 +614,18 @@ class Packet(object):
             outerTag = (outerTag & 0xFFFFFF00) | (innerTag & 0x000000FF)
             self._set_4bytes(self.mpls_tag_offset, outerTag)
         else:
-            # How can we know the payload?
+            # This MPLS tag is the bottom of the stack.
+            # See if the payload looks like it might be IPv4.
+            versionLen = struct.unpack("B", 
+                                       self.data[self.mpls_tag_offset+4])[0]
+            if versionLen >> 4 != 4:
+                # This is not IPv4.
+                return;
+            # This looks like IPv4, so copy the TTL.
+            ipTTL = struct.unpack("B", self.data[self.mpls_tag_offset + 4 +
+                                                 Packet.IP_OFFSET_TTL])[0]
+            outerTag = (outerTag & 0xFFFFFF00) | (ipTTL & 0xFF)
+            self._set_4bytes(self.mpls_tag_offset, outerTag)      
             return
 
     def copy_ttl_in(self):
@@ -628,7 +641,16 @@ class Packet(object):
             innerTag = (innerTag & 0xFFFFFF00) | (outerTag & 0x000000FF)
             self._set_4bytes(self.mpls_tag_offset+4, innerTag)
         else:
-            # How can we know the payload?
+            # This MPLS tag is the bottom of the stack.
+            # See if the payload looks like it might be IPv4.
+            versionLen = struct.unpack("B", self.data[self.mpls_tag_offset+4])[0]
+            if versionLen >> 4 != 4:
+                # This is not IPv4.
+                return;
+            # This looks like IPv4, so copy the TTL.
+            self._set_1bytes(self.mpls_tag_offset + 4 + Packet.IP_OFFSET_TTL,
+                             outerTag & 0x000000FF) 
+            #@todo update checksum
             return
 
     def set_mpls_label(self, mpls_label):
@@ -664,8 +686,6 @@ class Packet(object):
     def pop_vlan(self):
         pass
 
-    IP_OFFSET_TTL = 8
-    
     def push_mpls(self, ethertype):
         tag = MplsTag(0, 0, 0)
         bos = False
