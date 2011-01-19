@@ -262,6 +262,131 @@ class MultiTableGoto(basic.SimpleDataPlane):
 #        self.scenario3(1, 2, 3)
 
 
+class MultiTableGotoAndSendport(basic.SimpleDataPlane):
+    """
+    Simple three table test for "goto and send to output port"
+
+    Lots of negative tests are not checked
+    """
+    def scenario3(self, first_table = 0, second_table = 1, third_table = 2):
+        """
+        Add three flow entries:
+        First Table; Match IP Src A; send to 0 now, goto Second Table
+        Second Table; Match IP Src A; send to 1 now, goto Third Table
+        Third Table; Match IP src A; send to 2 now
+
+        Then send a packet:
+        IP A;  expect out port 0, 1, and 2
+
+        @param self object instance
+        @param first_table first table
+        @param second_table second table
+        @param third_table third table
+        """
+        of_ports = pa_port_map.keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
+
+        # Clear flow table
+        rv = testutils.initialize_table_config(self.controller, pa_logger)
+        self.assertEqual(rv, 0, "Failed to initialize table config")
+
+        testutils.do_barrier(self.controller)
+
+        rv = testutils.delete_all_flows(self.controller, pa_logger)
+        self.assertEqual(rv, 0, "Failed to delete all flows")
+
+        testutils.do_barrier(self.controller)
+
+        # Set up first match
+        act = action.action_set_output()
+        act.port = of_ports[0]
+
+        request = message.flow_mod()
+        request.match = make_match()
+        request.buffer_id = 0xffffffff
+        request.table_id = first_table
+        inst = instruction.instruction_apply_actions()
+        self.assertTrue(inst.actions.add(act), "Could not add action")
+        self.assertTrue(request.instructions.add(inst), "Could not add inst1")
+        inst = instruction.instruction_goto_table()
+        inst.table_id = second_table
+        self.assertTrue(request.instructions.add(inst), "Could not add inst2")
+        pa_logger.info("Inserting flow 1")
+        rv = self.controller.message_send(request)
+        # pa_logger.debug(request.show())
+        self.assertTrue(rv != -1, "Error installing flow mod")
+
+        testutils.do_barrier(self.controller)
+
+        # Set up second match
+        act = action.action_set_output()
+        act.port = of_ports[1]
+
+        request = message.flow_mod()
+        request.match = make_match()
+        request.buffer_id = 0xffffffff
+        request.table_id = second_table
+        inst = instruction.instruction_apply_actions()
+        self.assertTrue(inst.actions.add(act), "Could not add action")
+        self.assertTrue(request.instructions.add(inst), "Could not add inst3")
+        inst = instruction.instruction_goto_table()
+        inst.table_id = third_table
+        self.assertTrue(request.instructions.add(inst), "Could not add inst4")
+        pa_logger.info("Inserting flow 2")
+        rv = self.controller.message_send(request)
+        # pa_logger.debug(request.show())
+        self.assertTrue(rv != -1, "Error installing flow mod")
+
+        testutils.do_barrier(self.controller)
+
+        # Set up third match
+        act = action.action_set_output()
+        act.port = of_ports[2]
+
+        request = message.flow_mod()
+        request.match = make_match()
+        request.buffer_id = 0xffffffff
+        request.table_id = third_table
+        inst = instruction.instruction_apply_actions()
+        self.assertTrue(inst.actions.add(act), "Could not add action")
+        self.assertTrue(request.instructions.add(inst), "Could not add inst5")
+        pa_logger.info("Inserting flow 3")
+        rv = self.controller.message_send(request)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+
+        testutils.do_barrier(self.controller)
+
+        # Generate a packet and receive 3 responses
+        pkt = testutils.simple_tcp_packet(ip_src='192.168.1.10', tcp_sport=10)
+        self.dataplane.send(of_ports[3], str(pkt))
+
+        (rcv_port, rcv_pkt, _) = self.dataplane.poll(timeout=5)
+        self.assertTrue(rcv_pkt is not None, "Did not receive packet on " +
+                        str(of_ports[0]))
+        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " +
+                        str(rcv_port))
+        self.assertEqual(rcv_port, of_ports[0], "Unexpected receive port")
+
+        (rcv_port, rcv_pkt, _) = self.dataplane.poll(timeout=5)
+        self.assertTrue(rcv_pkt is not None, "Did not receive packet on " +
+                        str(of_ports[1]))
+        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " +
+                        str(rcv_port))
+        self.assertEqual(rcv_port, of_ports[1], "Unexpected receive port")
+
+        (rcv_port, rcv_pkt, _) = self.dataplane.poll(timeout=5)
+        self.assertTrue(rcv_pkt is not None, "Did not receive packet on " +
+                        str(of_ports[2]))
+        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " +
+                        str(rcv_port))
+        self.assertEqual(rcv_port, of_ports[2], "Unexpected receive port")
+
+    def runTest(self):
+        self.scenario3(0, 1, 2)
+        self.scenario3(0, 2, 3)
+
+
 class MultiTableNoGoto(basic.SimpleDataPlane):
     """
     Simple four table test for "No-goto"
