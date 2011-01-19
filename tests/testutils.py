@@ -351,7 +351,7 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
                                str(response.byte_count) + " != " + 
                                str(byte_count))
 
-def flow_msg_create(parent, pkt, ing_port=None, instruction_list=None, 
+def flow_msg_create(parent, pkt, ing_port=0, instruction_list=None, 
                     action_list=None, match=None, wildcards=0, egr_port=None, 
                     egr_queue=None, table_id=0, check_expire=False):
     """
@@ -968,3 +968,13 @@ def do_echo_request_reply_test(test,controller):
         test.assertEqual(request.header.xid, response.header.xid,
                          'response xid != request xid')
         test.assertEqual(len(response.data), 0, 'response data non-empty')
+
+def match_all_generate():
+    match = ofp.ofp_match()
+    match.length = ofp.OFP_MATCH_BYTES
+    match.wildcards = ofp.OFPFW_ALL
+    match.dl_src_mask = [255,255,255,255,255,255]
+    match.dl_dst_mask = [255,255,255,255,255,255]
+    match.nw_src_mask = int(0xffffffff)
+    match.nw_dst_mask = int(0xffffffff)
+    return match
