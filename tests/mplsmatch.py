@@ -1389,10 +1389,12 @@ def mpls_specific_tests(parent, mpls_label_mask=False, mpls_tc_mask=False,
         exp_label = label
         exp_tc = tc
         exp_ttl = ttl
+        exp_ttl_int = ttl_int
     else:
         exp_label = 0 #NOT_EXPECTED
         exp_tc = 0 #NOT_EXPECTED
         exp_ttl = 0 #NOT_EXPECTED
+        exp_ttl_int = 0 #NOT_EXPECTED
 
     testutils.flow_match_test_mpls(parent, pa_port_map,
                 wildcards=wildcards,
@@ -1407,6 +1409,7 @@ def mpls_specific_tests(parent, mpls_label_mask=False, mpls_tc_mask=False,
                 exp_mpls_label=exp_label,
                 exp_mpls_tc=exp_tc,
                 exp_mpls_ttl=exp_ttl,
+                exp_mpls_ttl_int=exp_ttl_int,
                 match_exp=match_exp,
                 exp_msg=exp_msg,
                 exp_msg_type=exp_msg_type,
