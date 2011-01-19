@@ -155,7 +155,7 @@ def meta_match(match_a, match_b):
 
 def l2_match(match_a, match_b):
     """
-    Compare in_port, L2 fields and VLAN tags for two flows
+    Compare in_port, L2 fields and VLAN and MPLS tags for two flows
     @params match_a Used for wildcards and masks
     @params match_b Other fields for match
     """
@@ -209,6 +209,8 @@ def l2_match(match_a, match_b):
                 return False
         elif match_a.mpls_label == ofp.OFPML_NONE:
             if match_b.mpls_label != ofp.OFPML_NONE:
+                flow_logger.debug("Failed mpls_label: NONE vs %d" %
+                                  match_b.mpls_label)
                 return False
         else:
             if match_a.mpls_label != match_b.mpls_label:
