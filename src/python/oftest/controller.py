@@ -41,6 +41,7 @@ from oftest.message import *
 # Otherwise get an attribute error when calling select.select
 import select #@UnresolvedImport
 import logging
+import traceback
 
 ##@todo Find a better home for these identifiers (controller)
 RCV_SIZE_DEFAULT = 32768
@@ -562,9 +563,14 @@ class Controller(Thread):
                     msg.header.xid = gen_xid()
                 outpkt = msg.pack()
             except StandardError:
+                (etype,info,tb) = sys.exc_info()
                 self.logger.error(
-                         "message_send: not an OF message or string?")
+                         "message_send: not an OF message or string?  Got %s::%s\n%s" % 
+                         (str(etype), info, "\n".join(traceback.format_tb(tb))))
                 return -1
+            except: 
+                self.logger.error("both hit :-(")
+                return -1 
         else:
             outpkt = msg
 

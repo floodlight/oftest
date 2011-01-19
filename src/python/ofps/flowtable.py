@@ -146,13 +146,15 @@ class FlowTable(object):
                              flow_mod.show())
             ret= (-1, ofp.OFPFMFC_OVERLAP)
         else:
-            self.logger.debug("Installing flow into table " + 
-                                  str(flow_mod.table_id))
             new_flow = ofps_flow.FlowEntry()
             new_flow.flow_mod_set(flow_mod)
             # @todo Is there a sorted list insert operation?
             self.flow_entries.append(new_flow)
             self.flow_entries.sort(prio_sort)
+            self.logger.debug(
+                    "Installing flow into table %d: now has %d entries" % 
+                                  (flow_mod.table_id, len(self.flow_entries))
+                                  )
         self.flow_sync.release()
         return ret
 

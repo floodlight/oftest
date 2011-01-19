@@ -162,6 +162,8 @@ class FlowPipeline(Thread):
             # no bound on our capacity; might want to rethink this
             stat.max_entries = all
             stat.active_count = len(table)
+            self.logger.debug("table_stats: table_id=%d has %d entries" %
+                              (stat.table_id, stat.active_count))
             stat.lookup_count = table.lookup_count
             stat.matched_count = table.matched_count
             reply.stats.append(stat)
