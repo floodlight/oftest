@@ -201,7 +201,26 @@ def l2_match(match_a, match_b):
             flow_logger.debug("Failed dl_type: %d vs %d" % 
                               (match_a.dl_type, match_b.dl_type))
             return False
-
+    
+    if not (wildcards & ofp.OFPFW_MPLS_LABEL):
+        if match_a.mpls_label == ofp.OFPML_ANY:
+            if match_b.mpls_label == ofp.OFPML_NONE:
+                flow_logger.debug("Failed mpls_label: ANY vs NONE")
+                return False
+        elif match_a.mpls_label == ofp.OFPML_NONE:
+            if match_b.mpls_label != ofp.OFPML_NONE:
+                return False
+        else:
+            if match_a.mpls_label != match_b.mpls_label:
+                flow_logger.debug("Failed mpls_label: %d vs %d" % 
+                                  (match_a.mpls_label, match_b.mpls_label))
+                return False            
+            if not (wildcards & ofp.OFPFW_MPLS_TC):
+                if match_a.mpls_tc != match_b.mpls_tc:
+                    flow_logger.debug("Failed mpls_tc: %d vs %d" % 
+                                      (match_a.mpls_tc, match_b.mpls_tc))
+                    return False
+            
     return True
 
 def l3_match(match_a, match_b):
@@ -243,34 +262,6 @@ def l3_match(match_a, match_b):
             flow_logger.debug("Failed tp_dst: %d vs %d" % 
                               (match_a.tp_dst, match_b.tp_dst))
             return False
-
-    return True
-
-def mpls_match(match_a, match_b):
-    """
-    Check MPLS fields for match
-    @params match_a Used for wildcards
-    @params match_b Other fields for match
-    """
-    wildcards = match_a.wildcards
-        
-    if match_a.mpls_label == ofp.OFPML_NONE:
-        if not (wildcards & ofp.OFPFW_MPLS_LABEL):
-            # mpls_match only called when the type indcates a label,
-            # so a NONE fails the match.
-            return False
-    
-    if match_a.mpls_label != ofp.OFPML_ANY:
-        if not (wildcards & ofp.OFPFW_MPLS_LABEL):
-            if match_a.mpls_label != match_b.mpls_label:
-                flow_logger.debug("Failed mpls_label: %d vs %d" % 
-                                  (match_a.mpls_label, match_b.mpls_label))
-                return False
-            if not (wildcards & ofp.OFPFW_MPLS_TC):
-                if match_a.mpls_tc != match_b.mpls_tc:
-                    flow_logger.debug("Failed mpls_tc: %d vs %d" % 
-                                      (match_a.mpls_tc, match_b.mpls_tc))
-                    return False
 
     return True
 
@@ -316,10 +307,6 @@ def flow_match_strict(flow_a, flow_b, groups):
     else:
         flow_logger.debug("Not an L3 packet")
 
-    if flow_a.match.dl_type in (0x8847, 0x8848):
-        if not mpls_match(flow_a.match, flow_b.match):
-            return False        
-
     return True
 
 class FlowEntry(object):
@@ -364,9 +351,6 @@ class FlowEntry(object):
         if new_flow.match.dl_type == 0x800:
             if not l3_match(new_flow.match, self.flow_mod.match):
                 return False
-        if new_flow.match.dl_type in (0x8847, 0x8848):
-            if not mpls_match(new_flow.match, self.flow_mod.match):
-                return False
 
         return True
         
@@ -389,10 +373,6 @@ class FlowEntry(object):
         if self.flow_mod.match.dl_type == 0x800:
             if not l3_match(self.flow_mod.match, packet.match):
                 flow_logger.debug("packet match failed l3_match")
-                return False
-        if packet.match.dl_type in (0x8847, 0x8848):
-            if not mpls_match(self.flow_mod.match, packet.match):
-                flow_logger.debug("packet match failed mpls_match")
                 return False
 
         flow_logger.debug("Packet matched flow")

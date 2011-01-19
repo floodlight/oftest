@@ -311,10 +311,7 @@ class Packet(object):
         try:
             idx = self._parse_l2(idx)
             
-            if self.match.dl_type in ETHERTYPES_MPLS:
-                self.mpls_tag_offset = idx
-                idx = self._parse_mpls(idx)
-            elif self.match.dl_type == ETHERTYPE_IP:
+            if self.match.dl_type == ETHERTYPE_IP:
                 self.ip_header_offset = idx 
                 idx = self._parse_ip(idx)
                 if self.match.nw_proto in [ socket.IPPROTO_TCP,
@@ -372,20 +369,21 @@ class Packet(object):
         else:
             self.match.dl_vlan = 0xFFFF
             self.match.dl_vlan_pcp = 0
+            
+        if l2_type in ETHERTYPES_MPLS:
+            if self.bytes < (idx + 4):
+                raise parse_error("_parse_l2:  Invalid MPLS header")
+            self.mpls_tag_offset = idx
+            tag = struct.unpack("!I", self.data[idx:idx+4])[0]
+            self.match.mpls_label = tag >> 12
+            self.match.mpls_tc = (tag >> 9) & 0x0007
+            idx += 4
+        else:
+            self.match.mpls_label = ofp.OFPML_NONE
+            self.match.mpls_tc = 0
+            
         self.match.dl_type = l2_type
         return idx
-      
-    def _parse_mpls(self, idx):
-        """
-        Parse MPLS Header starting at self.data[idx]
-        """
-        if self.bytes < (idx + 4):
-            raise parse_error("_parse_mpls:  Invalid MPLS header")
-        
-        tag = struct.unpack("!I", self.data[idx:idx+4])[0]
-        self.match.mpls_label = tag >> 12
-        self.match.mpls_tc = (tag >> 9) & 0x0007        
-        return idx + 4
             
     def _parse_ip(self, idx):
         """
