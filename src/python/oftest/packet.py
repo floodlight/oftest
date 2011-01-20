@@ -692,7 +692,7 @@ class Packet(object):
         tag = struct.unpack("!I", self.data[self.mpls_tag_offset:
                                             self.mpls_tag_offset+4])[0]
         tag = ((mpls_label & 0xfffff) << 12) | (tag & 0x00000fff)
-        self.match.mpls_label = tag
+        self.match.mpls_label = mpls_label
         self._set_4bytes(self.mpls_tag_offset, tag)
 
     def set_mpls_tc(self, mpls_tc):
