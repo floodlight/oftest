@@ -274,7 +274,7 @@ class Controller(Thread):
         elif s == self.switch_socket:
             try:
                 pkt = self.switch_socket.recv(self.rcv_size)
-            except StandardError:
+            except (StandardError, socket.error):
                 self.logger.warning("Error on switch read")
                 raise
                 return True
@@ -328,7 +328,7 @@ class Controller(Thread):
             try:
                 sel_in, sel_out, sel_err = \
                     select.select(self.socs, [], self.socs, 1)
-            except StandardError:
+            except (StandardError, socket.error):
                 print sys.exc_info()
                 self.logger.error("Select error, exiting")
                 sys.exit(1)
@@ -355,7 +355,7 @@ class Controller(Thread):
                     self.logger.warning("Closing switch cxn")
                     try:
                         self.switch_socket.close()
-                    except StandardError:
+                    except (StandardError, socket.error):
                         pass
                     self.switch_socket = None
                     self.socs = self.socs[0:1]
@@ -402,13 +402,13 @@ class Controller(Thread):
         self.active = False
         try:
             self.switch_socket.shutdown(socket.SHUT_RDWR)
-        except StandardError, socket.error:
+        except (StandardError, socket.error):
             self.logger.info("Ignoring switch soc shutdown error")
         self.switch_socket = None
 
         try:
             self.listen_socket.shutdown(socket.SHUT_RDWR)
-        except StandardError, socket.error:
+        except (StandardError, socket.error):
             self.logger.info("Ignoring listen soc shutdown error")
         self.listen_socket = None
         self.dbg_state = "down"
@@ -568,9 +568,7 @@ class Controller(Thread):
                          "message_send: not an OF message or string?  Got %s::%s\n%s" % 
                          (str(etype), info, "\n".join(traceback.format_tb(tb))))
                 return -1
-            except: 
-                self.logger.error("both hit :-(")
-                return -1 
+
         else:
             outpkt = msg
 

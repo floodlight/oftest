@@ -210,7 +210,7 @@ class ControllerInterface(threading.Thread):
         """
         try:
             pkt = self.ctrl_socket.recv(self.rcv_size)
-        except StandardError, socket.error:
+        except (StandardError, socket.error):
             self.logger.warning("Error on switch read")
             return False
 
@@ -251,7 +251,7 @@ class ControllerInterface(threading.Thread):
             try:
                 sel_in, sel_out, sel_err = \
                     select.select(self.socs, [], self.socs, 1)
-            except StandardError:
+            except (StandardError, socket.error):
                 print sys.exc_info()
                 self.logger.error("Select error, disconnecting")
                 self.connected = False
