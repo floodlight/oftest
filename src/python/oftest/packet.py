@@ -40,15 +40,44 @@ import oftest.cstruct as ofp
 import unittest
 import binascii
 import string
+import collections
 import oftest.action as action
 
 ETHERTYPE_IP = 0x0800
 ETHERTYPE_VLAN = 0x8100
 ETHERTYPE_VLAN_QinQ = 0x88a8
 ETHERTYPE_ARP = 0x0806
+ETHERTYPE_MPLS = 0x8847
+ETHERTYPE_MPLS_MCAST = 0x8848
+ETHERTYPES_MPLS = [ETHERTYPE_MPLS, ETHERTYPE_MPLS_MCAST]
 
 DL_MASK_ALL = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
 NW_MASK_ALL = 0xffffffff
+
+MPLS_BOTTOM_OF_STACK = 0x00000100
+
+# Sigh.. not python26
+#MplsTag = collections.namedtuple("MplsTag", "label tc ttl")
+
+class MplsTag(object):
+    def __init__(self, label, tc, ttl):
+        self.label = label
+        self.tc = tc
+        self.ttl = ttl
+    def pack(self, bos = 0):
+        packed_tag = ((self.label & 0xfffff) << 12) | \
+                     ((self.tc & 0x7) << 9) | \
+                     (self.ttl & 0xFF) | \
+                     (MPLS_BOTTOM_OF_STACK if bos else 0)
+        return packed_tag
+    
+    def unpack(packed_tag):
+        tag = MplsTag(packed_tag >> 12,
+                      (packed_tag >> 9) & 0x0007,
+                      packed_tag & 0xFF)
+        bos = bool(packed_tag & MPLS_BOTTOM_OF_STACK)
+        return (tag, bos)
+    unpack = staticmethod(unpack)
 
 class Packet(object):
     """
@@ -114,9 +143,12 @@ class Packet(object):
                           dl_vlan=0,
                           dl_vlan_pcp=0,
                           dl_vlan_cfi=0,
+                          mpls_type=None,
+                          mpls_tags=None,
                           ip_src='192.168.0.1',
                           ip_dst='192.168.0.2',
                           ip_tos=0,
+                          ip_ttl=64,
                           tcp_sport=1234,
                           tcp_dport=80):
         """
@@ -141,8 +173,9 @@ class Packet(object):
         """
         self.data = ""
         self._make_ip_packet(dl_dst, dl_src, dl_vlan_enable, dl_vlan_type, 
-                             dl_vlan, dl_vlan_pcp, dl_vlan_cfi, ip_tos,
-                             ip_src, ip_dst, socket.IPPROTO_TCP)
+                             dl_vlan, dl_vlan_pcp, dl_vlan_cfi, 
+                             mpls_type, mpls_tags, 
+                             ip_tos, ip_ttl, ip_src, ip_dst, socket.IPPROTO_TCP)
 
         # Add TCP header
         self.data += struct.pack("!HHLLBBHHH",
@@ -170,9 +203,12 @@ class Packet(object):
                           dl_vlan=0,
                           dl_vlan_pcp=0,
                           dl_vlan_cfi=0,
+                          mpls_type=None,
+                          mpls_tags=None,
                           ip_src='192.168.0.1',
                           ip_dst='192.168.0.2',
                           ip_tos=0,
+                          ip_ttl=64,
                           icmp_type=8, # ICMP_ECHO_REQUEST
                           icmp_code=0, 
                           ):
@@ -198,8 +234,10 @@ class Packet(object):
         """
         self.data = ""
         self._make_ip_packet(dl_dst, dl_src, dl_vlan_enable, dl_vlan_type, 
-                             dl_vlan, dl_vlan_pcp, dl_vlan_cfi, ip_tos,
-                             ip_src, ip_dst, socket.IPPROTO_ICMP)
+                             dl_vlan, dl_vlan_pcp, dl_vlan_cfi, 
+                             mpls_type, mpls_tags,
+                             ip_tos,
+                              ip_ttl, ip_src, ip_dst, socket.IPPROTO_ICMP)
 
         # Add ICMP header
         self.data += struct.pack("!BBHHH",
@@ -216,10 +254,9 @@ class Packet(object):
 
         return self
 
-    
     def _make_ip_packet(self, dl_dst, dl_src, dl_vlan_enable, dl_vlan_type, 
-                          dl_vlan, dl_vlan_pcp, dl_vlan_cfi, ip_tos,
-                          ip_src, ip_dst, ip_proto):
+                          dl_vlan, dl_vlan_pcp, dl_vlan_cfi, mpls_type, mpls_tags,
+                          ip_tos, ip_ttl, ip_src, ip_dst, ip_proto):
         self.data = ""
         addr = dl_dst.split(":")
         for byte in map(lambda z: int(z, 16), addr):
@@ -235,9 +272,19 @@ class Packet(object):
                             (dl_vlan_pcp & 0x7) << 13 | \
                             (dl_vlan_cfi & 0x1) << 12
             self.data += struct.pack("!H", vtag)
-
-        # Add type/len field
-        self.data += struct.pack("!H", ETHERTYPE_IP)
+            
+        if mpls_tags:
+            # Add type/len field
+            self.data += struct.pack("!H", mpls_type)
+            mpls_tags = list(mpls_tags)          
+            while len(mpls_tags):
+                tag = mpls_tags.pop(0)
+                packed_tag = tag.pack(bos = not len(mpls_tags))
+                self.data += struct.pack("!I", packed_tag)
+            
+        else:
+            # Add type/len field
+            self.data += struct.pack("!H", ETHERTYPE_IP)
 
         # Add IP header
         v_and_hlen = 0x45  # assumes no ip or tcp options
@@ -245,7 +292,7 @@ class Packet(object):
         self.data += struct.pack("!BBHHHBBH", v_and_hlen, ip_tos, ip_len, 
                                  0, # ip.id 
                                  0, # ip.frag_off
-                                 64, # ip.ttl
+                                 ip_ttl, # ip.ttl
                                  ip_proto,
                                  0)  # ip.checksum
         # convert  ipsrc/dst to ints
@@ -274,11 +321,13 @@ class Packet(object):
         self.match.nw_dst_mask = 0
         self.match.dl_dst_mask = [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
         self.match.dl_src_mask = [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+        self.mpls_tag_offset = None
+        self.ip_header_offset = None
         
         idx = 0
         try:
             idx = self._parse_l2(idx)
-            # idx = self._parse_mpls(idx)  #@todo add MPLS support
+            
             if self.match.dl_type == ETHERTYPE_IP:
                 self.ip_header_offset = idx 
                 idx = self._parse_ip(idx)
@@ -340,6 +389,19 @@ class Packet(object):
             self.vlan_tag_offset = None
             self.match.dl_vlan = 0xFFFF
             self.match.dl_vlan_pcp = 0
+            
+        if l2_type in ETHERTYPES_MPLS:
+            if self.bytes < (idx + 4):
+                raise parse_error("_parse_l2:  Invalid MPLS header")
+            self.mpls_tag_offset = idx
+            tag = struct.unpack("!I", self.data[idx:idx+4])[0]
+            self.match.mpls_label = tag >> 12
+            self.match.mpls_tc = (tag >> 9) & 0x0007
+            idx += 4
+        else:
+            self.match.mpls_label = ofp.OFPML_NONE
+            self.match.mpls_tc = 0
+            
         self.match.dl_type = l2_type
         return idx
             
@@ -570,23 +632,86 @@ class Packet(object):
         self._update_l4_checksum()
         self.match.tp_dst = tp_dst
 
+    IP_OFFSET_TTL = 8
+    
     def copy_ttl_out(self):
-        pass
+        if self.mpls_tag_offset is None:
+            # No MPLS tag.
+            return
+        outerTag = struct.unpack("!I", self.data[self.mpls_tag_offset:
+                                                 self.mpls_tag_offset+4])[0]
+        if not (outerTag & MPLS_BOTTOM_OF_STACK):
+            # Payload is another MPLS tag:
+            innerTag = struct.unpack("!I", self.data[self.mpls_tag_offset+4:
+                                                     self.mpls_tag_offset+8])[0]
+            outerTag = (outerTag & 0xFFFFFF00) | (innerTag & 0x000000FF)
+            self._set_4bytes(self.mpls_tag_offset, outerTag)
+        else:
+            # This MPLS tag is the bottom of the stack.
+            # See if the payload looks like it might be IPv4.
+            versionLen = struct.unpack("B", 
+                                       self.data[self.mpls_tag_offset+4])[0]
+            if versionLen >> 4 != 4:
+                # This is not IPv4.
+                return;
+            # This looks like IPv4, so copy the TTL.
+            ipTTL = struct.unpack("B", self.data[self.mpls_tag_offset + 4 +
+                                                 Packet.IP_OFFSET_TTL])[0]
+            outerTag = (outerTag & 0xFFFFFF00) | (ipTTL & 0xFF)
+            self._set_4bytes(self.mpls_tag_offset, outerTag)      
+            return
 
     def copy_ttl_in(self):
-        pass
+        if self.mpls_tag_offset is None:
+            # No MPLS tag.
+            return
+        outerTag = struct.unpack("!I", self.data[self.mpls_tag_offset:
+                                                 self.mpls_tag_offset+4])[0]
+        if not (outerTag & MPLS_BOTTOM_OF_STACK):
+            # Payload is another MPLS tag:
+            innerTag = struct.unpack("!I", self.data[self.mpls_tag_offset+4:
+                                                     self.mpls_tag_offset+8])[0]
+            innerTag = (innerTag & 0xFFFFFF00) | (outerTag & 0x000000FF)
+            self._set_4bytes(self.mpls_tag_offset+4, innerTag)
+        else:
+            # This MPLS tag is the bottom of the stack.
+            # See if the payload looks like it might be IPv4.
+            versionLen = struct.unpack("B", self.data[self.mpls_tag_offset+4])[0]
+            if versionLen >> 4 != 4:
+                # This is not IPv4.
+                return;
+            # This looks like IPv4, so copy the TTL.
+            self._set_1bytes(self.mpls_tag_offset + 4 + Packet.IP_OFFSET_TTL,
+                             outerTag & 0x000000FF) 
+            #@todo update checksum
+            return
 
     def set_mpls_label(self, mpls_label):
-        pass
+        if self.mpls_tag_offset is None:
+            return
+        tag = struct.unpack("!I", self.data[self.mpls_tag_offset:
+                                            self.mpls_tag_offset+4])[0]
+        tag = ((mpls_label & 0xfffff) << 12) | (tag & 0x00000fff)     
+        self._set_4bytes(self.mpls_tag_offset, tag)
 
     def set_mpls_tc(self, mpls_tc):
-        pass
+        if self.mpls_tag_offset is None:
+            return
+        tag = struct.unpack("!I", self.data[self.mpls_tag_offset:
+                                            self.mpls_tag_offset+4])[0]
+        tag = ((mpls_tc & 0x7) << 9) | (tag & 0xfffff1ff)     
+        self._set_4bytes(self.mpls_tag_offset, tag)
 
     def set_mpls_ttl(self, ttl):
-        pass
+        if self.mpls_tag_offset is None:
+            return   
+        self._set_1bytes(self.mpls_tag_offset + 3, ttl)
 
     def dec_mpls_ttl(self):
-        pass
+        if self.mpls_tag_offset is None:
+            return
+        ttl = struct.unpack("B", self.data[self.mpls_tag_offset + 3])[0]
+        self.set_mpls_ttl(ttl - 1)
 
     def push_vlan(self, ethertype):
         if len(self) < 14: 
@@ -616,12 +741,48 @@ class Packet(object):
         self.parse()
 
     def push_mpls(self, ethertype):
-        pass
-
+        tag = MplsTag(0, 0, 0)
+        bos = False
+        
+        if self.mpls_tag_offset:
+            # The new tag defaults to the old one.
+            packed_tag = struct.unpack("!I", self.data[self.mpls_tag_offset:
+                                                       self.mpls_tag_offset+4])[0]
+            (tag, _) = MplsTag.unpack(packed_tag)
+            
+        else:
+            # Pushing a new label stack, set the BoS bit and ethertype
+            self._set_2bytes(12, ethertype)
+            bos = True
+            # And get TTL from IP.
+            if self.ip_header_offset:
+                ttl = struct.unpack("B", self.data[self.ip_header_offset + \
+                                                       Packet.IP_OFFSET_TTL])[0]
+                tag = MplsTag(0, 0, ttl)
+                                                       
+        self.data = self.data[0:14] + \
+                    struct.pack("!I", tag.pack(bos)) + \
+                    self.data[14:]
+        
+        # Reparse to update offsets, ethertype, etc.
+        self.parse()
+            
     def pop_mpls(self, ethertype):
-        pass
+        # Ignore if no existing tags.
+        if self.mpls_tag_offset:
+            # If the existing tag has the BoS bit set, this is the bottom.
+            tag = struct.unpack("!I", self.data[self.mpls_tag_offset:
+                                                self.mpls_tag_offset+4])[0]
+            bos = bool(tag & MPLS_BOTTOM_OF_STACK)
+            
+            self.data = self.data[0:self.mpls_tag_offset] + \
+                        self.data[self.mpls_tag_offset + 4:]
+            if bos:
+                self._set_2bytes(12, ethertype)
+            
+            # Reparse to update offsets, ethertype, etc.
+            self.parse()
     
-    IP_OFFSET_TTL = 8
     def set_nw_ttl(self, ttl):
         if self.ip_header_offset is None:
             return
@@ -905,6 +1066,30 @@ class packet_test(unittest.TestCase):
                99 c1 9f 9c 7f c5 1e 3e 45 c6 a6 ac ec 0b 87 64
                98 dd""")
         self.pkt = Packet(data=pktdata)
+        
+        """
+        MPLS packet data for MPLS parsing tests.  
+
+        Ethernet II, Src: Fujitsu_ef:cd:8d (00:17:42:ef:cd:8d), 
+            Dst: ZhsZeitm_5d:24:00 (00:d0:05:5d:24:00)
+        MPLS, Label: 0xFEFEF, TC: 5, S: 1, TTL: 0xAA
+        Internet Protocol, Src: 172.24.74.96 (172.24.74.96), 
+            Dst: 171.64.74.58 (171.64.74.58)
+        Transmission Control Protocol, Src Port: 59581 (59581), 
+            Dst Port: ssh (22), Seq: 2694, Ack: 2749, Len: 48
+        """
+        mplspktdata = self.ascii_to_data(
+            """00 d0 05 5d 24 00 00 17 42 ef cd 8d 88 47
+               FE FE FB AA
+               45 10 00 64 65 67 40 00 40 06 e9 29 ac 18 4a 60 
+               ab 40 4a 3a 
+               e8 bd 00 16 7c 28 2f 88 f2 bd 7a 03 80 18
+               00 b5 ec 49 00 00 01 01 08 0a 00 d1 46 8b 32 ed
+               7c 88 78 4b 8a dc 0a 1f c4 d3 02 a3 ae 1d 3c aa
+               6f 1a 36 9f 27 11 12 71 5b 5d 88 f2 97 fa e7 f9
+               99 c1 9f 9c 7f c5 1e 3e 45 c6 a6 ac ec 0b 87 64
+               98 dd""")
+        self.mplspkt = Packet(data=mplspktdata)
 
     def runTest(self):
         self.assertTrue(self.pkt)
@@ -915,6 +1100,12 @@ class l2_parsing_test(packet_test):
         self.assertEqual(match.dl_dst,[0x00,0xd0,0x05,0x5d,0x24,0x00])
         self.assertEqual(match.dl_src,[0x00,0x17,0x42,0xef,0xcd,0x8d])
         self.assertEqual(match.dl_type,ETHERTYPE_IP)
+        
+class mpls_parsing_test(packet_test):
+    def runTest(self):
+        match = self.mplspkt.match
+        self.assertEqual(match.mpls_label, 0xFEFEF)
+        self.assertEqual(match.mpls_tc, 5)
 
 class ip_parsing_test(packet_test):
     def runTest(self):
@@ -924,6 +1115,56 @@ class ip_parsing_test(packet_test):
         self.assertEqual(match.nw_src,ascii_ip_to_bin('172.24.74.96'))
         self.assertEqual(match.nw_proto, socket.IPPROTO_TCP)
 
+class mpls_setting_test(packet_test):
+    def runTest(self):
+        orig_len = len(self.mplspkt)
+        label = 0x12345
+        tc = 6
+        ttl = 0x78
+        self.mplspkt.set_mpls_label(label)
+        self.mplspkt.set_mpls_tc(tc)
+        self.mplspkt.set_mpls_ttl(ttl)
+        self.mplspkt.dec_mpls_ttl()
+        self.mplspkt.parse()
+        
+        self.assertEqual(len(self.mplspkt), orig_len)
+        self.assertTrue(self.mplspkt.mpls_tag_offset)
+        match = self.mplspkt.match
+        
+        self.assertEqual(match.mpls_label, label)
+        self.assertEqual(match.mpls_tc, tc)
+        new_ttl = struct.unpack("B", self.mplspkt.data[self.mplspkt.mpls_tag_offset + 3:
+                                                       self.mplspkt.mpls_tag_offset + 4])[0]
+        self.assertEqual(new_ttl, ttl - 1)
+
+class mpls_pop_test(packet_test):
+    def runTest(self):
+        orig_len = len(self.mplspkt)
+        self.mplspkt.pop_mpls(ETHERTYPE_IP)
+        self.mplspkt.parse()
+        
+        self.assertEqual(len(self.mplspkt), orig_len - 4)
+        self.assertFalse(self.mplspkt.mpls_tag_offset)
+        match = self.mplspkt.match
+        
+        self.assertEqual(match.dl_type,ETHERTYPE_IP)
+        self.assertEqual(match.nw_dst,ascii_ip_to_bin('171.64.74.58'))
+        self.assertEqual(match.nw_src,ascii_ip_to_bin('172.24.74.96'))
+        self.assertEqual(match.nw_proto, socket.IPPROTO_TCP)
+        
+class mpls_push_test(packet_test):
+    def runTest(self):
+        orig_len = len(self.pkt)
+        self.pkt.push_mpls(ETHERTYPE_MPLS)
+        self.pkt.parse()
+        
+        self.assertEqual(len(self.pkt), orig_len + 4)
+        self.assertTrue(self.pkt.mpls_tag_offset)
+        match = self.pkt.match
+        
+        self.assertEqual(match.dl_type, ETHERTYPE_MPLS)
+        self.assertEqual(match.mpls_label, 0)
+        self.assertEqual(match.mpls_tc, 0)
 
 class ip_setting_test(packet_test):
     def runTest(self):
@@ -1025,6 +1266,38 @@ class vlan_mod(simple_tcp_test):
         self.assertEqual(match.dl_type,ETHERTYPE_IP)
         self.pkt.set_vlan_vid(0xbabe)
         self.assertEqual(match.dl_vlan, 0x0abe)
+
+class simple_tcp_with_mpls_test(unittest.TestCase):
+    """ Make sure that simple_tcp_packet does what it should 
+                          pktlen=100, 
+                          dl_dst='00:01:02:03:04:05',
+                          dl_src='00:06:07:08:09:0a',
+                          dl_vlan_enable=False,
+                          dl_vlan=0,
+                          dl_vlan_pcp=0,
+                          dl_vlan_cfi=0,
+                          ip_src='192.168.0.1',
+                          ip_dst='192.168.0.2',
+                          ip_tos=0,
+                          tcp_sport=1234,
+                          tcp_dport=80):
+    """
+    def setUp(self):
+        tag1 = MplsTag(0xabcde, 0x5, 0xAA)
+        tag2 = MplsTag(0x54321, 0x2, 0xBB)
+        mpls_tags = (tag1, tag2)        
+        
+        self.pkt = Packet().simple_tcp_packet(mpls_type=ETHERTYPE_MPLS,
+                                              mpls_tags=mpls_tags)
+        self.pkt.parse()
+       
+    def runTest(self):
+        match = self.pkt.match
+        self.assertEqual(match.dl_dst, [0x00, 0x01, 0x02, 0x03, 0x04, 0x05])
+        self.assertEqual(match.dl_src, [0x00, 0x06, 0x07, 0x08, 0x09, 0x0a])
+        self.assertEqual(match.dl_type, ETHERTYPE_MPLS)
+        self.assertEqual(match.mpls_label, 0xabcde)
+        self.assertEqual(match.mpls_tc, 0x5)
 
 if __name__ == '__main__':
     print("Running packet tests\n")
