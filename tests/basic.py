@@ -253,7 +253,7 @@ class PacketOut(SimpleDataPlane):
         for dp_port in of_ports:
             msg = message.packet_out()
             msg.data = str(outpkt)
-            act = action.action_set_output()
+            act = action.action_output()
             act.port = dp_port
             self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
 

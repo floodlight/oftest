@@ -70,7 +70,7 @@ class FlowStats(basic.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = action.action_set_output()
+        act = action.action_output()
 
         ingress_port = of_ports[0];
         egress_port = of_ports[1];

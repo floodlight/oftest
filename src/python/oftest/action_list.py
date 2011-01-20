@@ -8,7 +8,7 @@ from base_list import ofp_base_list
 import copy
 
 action_object_map = {
-    OFPAT_OUTPUT                        : action_set_output,
+    OFPAT_OUTPUT                        : action_output,
     OFPAT_SET_VLAN_VID                  : action_set_vlan_vid,
     OFPAT_SET_VLAN_PCP                  : action_set_vlan_pcp,
     OFPAT_SET_DL_SRC                    : action_set_dl_src,

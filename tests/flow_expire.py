@@ -68,7 +68,7 @@ class BaseFlowExpire(basic.SimpleDataPlane):
 #        match.wildcards &= ~ofp.OFPFW_IN_PORT
 #        self.assertTrue(match is not None, 
 #                        "Could not generate flow match from pkt")
-#        act = action.action_set_output()
+#        act = action.action_output()
 #
         ingress_port = pa_config["base_of_port"]
         egress_port  = (pa_config["base_of_port"] + 1) % len(of_ports)

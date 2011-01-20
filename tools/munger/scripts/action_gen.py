@@ -22,7 +22,7 @@ from cstruct import *
 ################################################################
 
 action_class_map = {
-    'set_output' : 'ofp_action_output',
+    'output' : 'ofp_action_output',
     'set_vlan_vid' : 'ofp_action_vlan_vid',
     'set_vlan_pcp' : 'ofp_action_vlan_pcp',
     'set_dl_src' : 'ofp_action_dl_addr',

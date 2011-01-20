@@ -640,7 +640,7 @@ class Packet(object):
     # These take an action object to facilitate the switch implementation
     #
 
-    def action_set_output(self, action, switch):
+    def action_output(self, action, switch):
         if action.port < ofp.OFPP_MAX:
             switch.dataplane.send(action.port, self.data, 
                                   queue_id=self.queue_id)
@@ -653,7 +653,7 @@ class Packet(object):
             switch.dataplane.send(self.in_port, self.data, 
                                   queue_id=self.queue_id)
         else:
-            switch.logger.error("NEED to implement action_set_output" + 
+            switch.logger.error("NEED to implement action_output" + 
                                 " for port %d" % action.port)        
 
     def action_set_queue(self, action, switch):
@@ -847,10 +847,10 @@ class Packet(object):
         if cls in self.action_set.keys():
             self.logger.debug("Action experimenter")
             self.action_experimenter(self.action_set[cls], switch)
-        cls = action.action_set_output
+        cls = action.action_output
         if cls in self.action_set.keys():
             self.logger.debug("Action set_output")
-            self.action_set_output(self.action_set[cls], switch)
+            self.action_output(self.action_set[cls], switch)
 
 
 def ascii_ip_to_bin(ip):

@@ -83,7 +83,7 @@ class Instruction_List_Test(unittest.TestCase):
     def runTest(self):
         # instructions header is 8 bytes
         l = instruction_list()
-        act = action.action_set_output()
+        act = action.action_output()
         act.port = 7
         inst = instruction.instruction_apply_actions()
         self.assertTrue(inst.actions.add(act)) 

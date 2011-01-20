@@ -105,7 +105,7 @@ class DirectPacket(basic.SimpleDataPlane):
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
         match.wildcards &= ~ofp.OFPFW_IN_PORT
-        act = action.action_set_output()
+        act = action.action_output()
 
         for idx in range(len(of_ports)):
             rv = testutils.delete_all_flows(self.controller, pa_logger)
@@ -177,8 +177,8 @@ class DirectTwoPorts(basic.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act1 = action.action_set_output()
-        act2 = action.action_set_output()
+        act1 = action.action_output()
+        act2 = action.action_output()
 
         for idx in range(len(of_ports)):
             rv = testutils.delete_all_flows(self.controller, pa_logger)
@@ -241,7 +241,7 @@ class DirectMCNonIngress(basic.SimpleDataPlane):
                            " all non-ingress ports")
             actions = []
             for egress_port in of_ports:
-                act = action.action_set_output()
+                act = action.action_output()
                 if egress_port == ingress_port:
                     continue
                 act.port = egress_port
@@ -287,7 +287,7 @@ class DirectMC(basic.SimpleDataPlane):
             pa_logger.info("Ingress " + str(ingress_port) + " to all ports")    
             actions = []
             for egress_port in of_ports:
-                act = action.action_set_output()
+                act = action.action_output()
                 if egress_port == ingress_port:
                     act.port = ofp.OFPP_IN_PORT
                 else:
@@ -327,7 +327,7 @@ class All(basic.SimpleDataPlane):
 #        match.wildcards &= ~ofp.OFPFW_IN_PORT
 #        self.assertTrue(match is not None, 
 #                        "Could not generate flow match from pkt")
-#        act = action.action_set_output()
+#        act = action.action_output()
 
         for ingress_port in of_ports:
             rv = testutils.delete_all_flows(self.controller, pa_logger)
@@ -376,9 +376,9 @@ class AllPlusIngress(basic.SimpleDataPlane):
 
         pkt = testutils.simple_tcp_packet()
         
-        act_all = action.action_set_output()
+        act_all = action.action_output()
         act_all.port = ofp.OFPP_ALL
-        act_ing = action.action_set_output()
+        act_ing = action.action_output()
         act_ing.port = ofp.OFPP_IN_PORT
         actions = [ act_all, act_ing]
 

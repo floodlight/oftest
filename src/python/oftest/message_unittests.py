@@ -11,7 +11,7 @@ class flow_stats_pack(unittest.TestCase):
         msg = message.flow_stats_entry()
         match = ofp.ofp_match()
         match.wildcards &= ~ofp.OFPFW_IN_PORT
-        act = action.action_set_output()
+        act = action.action_output()
         act.port = 3
         msg.match = match
         pkt = msg.pack()

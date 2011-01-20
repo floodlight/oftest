@@ -398,7 +398,7 @@ def flow_msg_create(parent, pkt, ing_port=0, instruction_list=None,
         act.queue_id = egr_queue
         action_list.append(act)
     elif egr_port is not None:
-        act = action.action_set_output()
+        act = action.action_output()
         act.port = egr_port
         action_list.append(act)
         
