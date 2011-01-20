@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # This python script generates wrapper functions for OpenFlow messages
 #

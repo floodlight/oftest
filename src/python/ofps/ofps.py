@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 ######################################################################
 #
 # All files associated with the OpenFlow Python Switch (ofps) are
