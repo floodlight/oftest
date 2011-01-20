@@ -40,6 +40,7 @@ import oftest.message as message
 import oftest.instruction as instruction
 from oftest import ofutils
 
+
 class FlowPipeline(Thread):
     """
     Class to implement a pipeline of flow tables
@@ -91,12 +92,24 @@ class FlowPipeline(Thread):
         @param operation The flow operation add, mod delete
         @param flow_mod The flow mod message to process
         """
-        if flow_mod.table_id >= self.n_tables:
+        tables = []
+        
+        if flow_mod.table_id < self.n_tables:
+            tables.append(self.tables[flow_mod.table_id])
+        elif flow_mod.table_id == 0xff and (
+                        flow_mod.command == ofp.OFPFC_DELETE or 
+                        flow_mod.command == ofp.OFPFC_DELETE_STRICT):
+            tables = self.tables
+        else:
             self.logger.warn("bad table id " + str(flow_mod.table_id))
             return (-1, ofp.OFPFMFC_BAD_TABLE_ID)
-
-        return self.tables[flow_mod.table_id].flow_mod_process(flow_mod,
-                                                               groups)
+            
+        for table in tables:
+            rv, err_msg = table.flow_mod_process(flow_mod, groups)
+            if rv :       # rv != 0 --> error 
+                return (rv, err_msg)
+        return (0, None)   # success
+    
     def table_mod_process(self, table_mod):
         """
         Apply the config changes specified in a table_mod to
