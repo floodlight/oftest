@@ -55,10 +55,7 @@ def delete_all_flows(ctrl, logger):
 
     logger.info("Deleting all flows")
     #DEFAULT_TABLE_COUNT = 4
-    rv = 0
-    for table_id in [0, 1, 2, 3, 4, 5, 6, 7]:
-        rv |= delete_all_flows_one_table(ctrl, logger, table_id=table_id)
-    return rv
+    return delete_all_flows_one_table(ctrl, logger, table_id=0xff)
 
 def delete_all_flows_one_table(ctrl, logger, table_id=0):
     """
