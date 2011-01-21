@@ -510,6 +510,140 @@ class MultiTableNoGoto(basic.SimpleDataPlane):
         self.scenario4(0,1,2,3)
 
 
+class MultiTablePolicyDecoupling(basic.SimpleDataPlane):
+    """
+    Simple two-table test for "policy decoupling"
+
+    Lots of negative tests are not checked
+    """
+    def scenario2(self, first_table = 0, second_table = 1, tos1 = 4, tos2 = 8):
+        """
+        Add flow entries:
+        First Table; Match IP Src A; set ToS = tos1, goto Second Table
+        First Table; Match IP Src B; set ToS = tos2, goto Second Table
+        Second Table; Match IP Src A; send to 1
+        Second Table; Match IP Src B; send to 1
+
+        Then send packets:
+        IP A;  expect port 1 with ToS = tos1
+        IP B;  expect port 1 with ToS = tos2
+
+        @param self object instance
+        @param first_table first table
+        @param second_table second table
+        @param tos1 ToS value to be set for first flow
+        @param tos2 ToS value to be set for second flow
+        """
+        of_ports = pa_port_map.keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
+
+        # Clear flow table
+        rv = testutils.initialize_table_config(self.controller, pa_logger)
+        self.assertEqual(rv, 0, "Failed to initialize table config")
+
+        testutils.do_barrier(self.controller)
+
+        rv = testutils.delete_all_flows(self.controller, pa_logger)
+        self.assertEqual(rv, 0, "Failed to delete all flows")
+
+        testutils.do_barrier(self.controller)
+
+        # Set up first flow match in table A
+        t_act = action.action_set_nw_tos()
+        t_act.nw_tos = tos1
+        request = message.flow_mod()
+        request.match = make_match()
+        request.buffer_id = 0xffffffff
+        request.table_id = first_table
+        inst = instruction.instruction_write_actions()
+        self.assertTrue(inst.actions.add(t_act), "Could not add action")
+        self.assertTrue(request.instructions.add(inst), "Could not add inst1")
+        inst = instruction.instruction_goto_table()
+        inst.table_id = second_table
+        self.assertTrue(request.instructions.add(inst), "Could not add inst2")
+        pa_logger.info("Inserting flow 1A")
+        rv = self.controller.message_send(request)
+        # pa_logger.debug(request.show())
+        self.assertTrue(rv != -1, "Error installing flow mod")
+
+        # Set up second flow match in table A
+        t_act = action.action_set_nw_tos()
+        t_act.nw_tos = tos2
+        request = message.flow_mod()
+        request.match = make_match(nw_src = "192.168.1.30")
+        request.buffer_id = 0xffffffff
+        request.table_id = first_table
+        inst = instruction.instruction_write_actions()
+        self.assertTrue(inst.actions.add(t_act), "Could not add action")
+        self.assertTrue(request.instructions.add(inst), "Could not add inst3")
+        inst = instruction.instruction_goto_table()
+        inst.table_id = second_table
+        self.assertTrue(request.instructions.add(inst), "Could not add inst4")
+        pa_logger.info("Inserting flow 2A")
+        rv = self.controller.message_send(request)
+        # pa_logger.debug(request.show())
+        self.assertTrue(rv != -1, "Error installing flow mod")
+
+        # Set up first flow match in table B
+        act = action.action_output()
+        act.port = of_ports[1]
+        request = message.flow_mod()
+        request.match = make_match()
+        request.buffer_id = 0xffffffff
+        request.table_id = second_table
+        inst = instruction.instruction_write_actions()
+        self.assertTrue(inst.actions.add(act), "Could not add action")
+        self.assertTrue(request.instructions.add(inst), "Could not add inst5")
+        pa_logger.info("Inserting flow 1B")
+        rv = self.controller.message_send(request)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+
+        # Set up second flow match in table B
+        act = action.action_output()
+        act.port = of_ports[1]
+        request = message.flow_mod()
+        request.match = make_match(nw_src = "192.168.1.30")
+        request.buffer_id = 0xffffffff
+        request.table_id = second_table
+        inst = instruction.instruction_write_actions()
+        self.assertTrue(inst.actions.add(act), "Could not add action")
+        self.assertTrue(request.instructions.add(inst), "Could not add inst6")
+        pa_logger.info("Inserting flow 2B")
+        rv = self.controller.message_send(request)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+
+        testutils.do_barrier(self.controller)
+
+        # Generate packets and check them
+        pkt = testutils.simple_tcp_packet(ip_src='192.168.1.10', tcp_sport=10)
+        exp_pkt = testutils.simple_tcp_packet(ip_src='192.168.1.10',
+                                              tcp_sport=10, ip_tos=tos1)
+        self.dataplane.send(of_ports[2], str(pkt))
+        (rcv_port, rcv_pkt, _) = self.dataplane.poll(timeout=5)
+        self.assertTrue(rcv_pkt is not None, "Did not receive packet on " +
+                        str(of_ports[1]))
+        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " +
+                        str(rcv_port))
+        self.assertEqual(rcv_port, of_ports[1], "Unexpected receive port")
+        self.assertEqual(str(rcv_pkt), str(exp_pkt), "ToS error in flow #1")
+
+        pkt = testutils.simple_tcp_packet(ip_src='192.168.1.30', tcp_sport=10)
+        exp_pkt = testutils.simple_tcp_packet(ip_src='192.168.1.30',
+                                              tcp_sport=10, ip_tos=tos2)
+        self.dataplane.send(of_ports[2], str(pkt))
+        (rcv_port, rcv_pkt, _) = self.dataplane.poll(timeout=5)
+        self.assertTrue(rcv_pkt is not None, "Did not receive packet on " +
+                        str(of_ports[1]))
+        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " +
+                        str(rcv_port))
+        self.assertEqual(rcv_port, of_ports[1], "Unexpected receive port")
+        self.assertEqual(str(rcv_pkt), str(exp_pkt), "ToS error in flow #2")
+
+    def runTest(self):
+        self.scenario2(0, 1, 0x1b, 0x13)
+
+
 class MultiTableClearAction(basic.SimpleDataPlane):
     """
     Simple four table test for "ClearAction"

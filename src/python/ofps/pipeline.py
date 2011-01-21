@@ -106,8 +106,8 @@ class FlowPipeline(Thread):
             
         for table in tables:
             rv, err_msg = table.flow_mod_process(flow_mod, groups)
-            if rv and     # rv != 0 --> error 
-               err_msg != ofp.OFPFMFC_BAD_MATCH:  #but ignore no deleted entry
+            # rv != 0 --> error, but ignore no deleted entry
+            if rv and err_msg != ofp.OFPFMFC_BAD_MATCH:
                 return (rv, err_msg)
         return (0, None)   # success
     
