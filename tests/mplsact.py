@@ -78,10 +78,10 @@ def test_set_init(config):
 
 ################################################################
 
-class MplsActNonTagPop(pktact.BaseMatchCase):
+class MplsActNonTagPush(pktact.BaseMatchCase):
     """
-    MPLS pop action test with untagged pkt
-    Expectation: OFPET_BAD_ACTION (INCONSISTENT) error
+    MPLS push action (0x8847) test with untagged pkt
+    Expectation: Pkt with MPLS (LABEL=0 TC=0 TTL=same as in IP)
     Test on one pair of ports
     """
     def __init__(self):
@@ -98,90 +98,9 @@ class MplsActNonTagPop(pktact.BaseMatchCase):
         self.tc_match = 0
 
     def runTest(self):
-        mpls_pop_act_tests(self)
-
-class MplsActNonTagTtlIn(MplsActNonTagPop):
-    """
-    MPLS Copy TTL inward with untagged pkt
-    Expectation: OFPET_BAD_ACTION (INCONSISTENT) error
-    Test on one pair of ports
-    """
-    def runTest(self):
-        mpls_ttl_in_act_tests(self)
-
-class MplsActNonTagTtlOut(MplsActNonTagPop):
-    """
-    MPLS Copy TTL outward with untagged pkt
-    Expectation: OFPET_BAD_ACTION (INCONSISTENT) error
-    Test on one pair of ports
-    """
-    def runTest(self):
-        mpls_ttl_out_act_tests(self)
-
-class MplsActNonTagSetLabel0(MplsActNonTagPop):
-    """
-    MPLS set LABEL action test with untagged pkt
-    Expectation: OFPET_BAD_ACTION (INCONSISTENT) error
-    Test on one pair of ports
-    """
-    def runTest(self):
-        mpls_set_label_act_tests(self, test_condition=0)
-
-class MplsActNonTagSetLabel1(MplsActNonTagPop):
-    """
-    MPLS set LABEL action (outrange value) test with untagged pkt
-    Expectation: OFPET_BAD_ACTION (BAD ARG) error
-    Test on one pair of ports
-    """
-    def runTest(self):
-        mpls_set_label_act_tests(self, test_condition=1)
-
-class MplsActNonTagSetTc0(MplsActNonTagPop):
-    """
-    MPLS set TC action test with untagged pkt
-    Expectation: OFPET_BAD_ACTION (INCONSISTENT) error
-    Test on one pair of ports
-    """
-    def runTest(self):
-        mpls_set_tc_act_tests(self, test_condition=0)
-
-class MplsActNonTagSetTc1(MplsActNonTagPop):
-    """
-    MPLS set TC action (outrange value) test with untagged pkt
-    Expectation: OFPET_BAD_ACTION (BAD ARG) error
-    Test on one pair of ports
-    """
-    def runTest(self):
-        mpls_set_tc_act_tests(self, test_condition=1)
-
-class MplsActNonTagSetTtl(MplsActNonTagPop):
-    """
-    MPLS set TTL action test with untagged pkt
-    Expectation: OFPET_BAD_ACTION (INCONSISTENT) error
-    Test on one pair of ports
-    """
-    def runTest(self):
-        mpls_set_ttl_act_tests(self)
-
-class MplsActNonTagDecTtl(MplsActNonTagPop):
-    """
-    MPLS TTL decrement action test with untagged pkt
-    Expectation: OFPET_BAD_ACTION (INCONSISTENT) error
-    Test on one pair of ports
-    """
-    def runTest(self):
-        mpls_dec_ttl_act_tests(self)
-
-class MplsActNonTagPush(MplsActNonTagPop):
-    """
-    MPLS push action (0x8847) test with untagged pkt
-    Expectation: Pkt with MPLS (LABEL=0 TC=0 TTL=same as in IP)
-    Test on one pair of ports
-    """
-    def runTest(self):
         mpls_push_act_tests(self)
 
-class MplsActNonTagPushTtlIn(MplsActNonTagPop):
+class MplsActNonTagPushTtlIn(MplsActNonTagPush):
     """
     MPLS push and TTL-in action test with untagged pkts
     Expectation: Pkt with MPLS (LABEL=0 TC=0 TTL=same as in IP)
@@ -190,7 +109,7 @@ class MplsActNonTagPushTtlIn(MplsActNonTagPop):
     def runTest(self):
         mpls_multipush1_act_tests(self, test_condition=0)
 
-class MplsActNonTagPushTtlOut(MplsActNonTagPop):
+class MplsActNonTagPushTtlOut(MplsActNonTagPush):
     """
     MPLS push and TTL-out action test with untagged pkts
     Expectation: Pkt with MPLS (LABEL=0 TC=0 TTL=same as in IP)
@@ -199,7 +118,7 @@ class MplsActNonTagPushTtlOut(MplsActNonTagPop):
     def runTest(self):
         mpls_multipush1_act_tests(self, test_condition=1)
 
-class MplsActNonTagPushSetLabel(MplsActNonTagPop):
+class MplsActNonTagPushSetLabel(MplsActNonTagPush):
     """
     MPLS Push and Set LABEL action test with untagged pkt
     Expectation: Pkt with MPLS (LABEL=Set value TC=0)
@@ -208,7 +127,7 @@ class MplsActNonTagPushSetLabel(MplsActNonTagPop):
     def runTest(self):
         mpls_multipush2_act_tests(self, test_condition=0)
 
-class MplsActNonTagPushSetTc(MplsActNonTagPop):
+class MplsActNonTagPushSetTc(MplsActNonTagPush):
     """
     MPLS Push and Set TC action test with untagged pkt
     Expectation: Pkt with MPLS (LABEL=0 TC=Set value)
@@ -217,7 +136,7 @@ class MplsActNonTagPushSetTc(MplsActNonTagPop):
     def runTest(self):
         mpls_multipush2_act_tests(self, test_condition=1)
 
-class MplsActNonTagPushSetTtl(MplsActNonTagPop):
+class MplsActNonTagPushSetTtl(MplsActNonTagPush):
     """
     MPLS Push and Set TTL action test with untagged pkt
     Expectation: Pkt with MPLS (LABEL=0 TC=0 TTL=Set value)
@@ -226,7 +145,7 @@ class MplsActNonTagPushSetTtl(MplsActNonTagPop):
     def runTest(self):
         mpls_multipush2_act_tests(self, test_condition=2)
 
-class MplsActNonTagPushDecTtl(MplsActNonTagPop):
+class MplsActNonTagPushDecTtl(MplsActNonTagPush):
     """
     MPLS Push and TTL decrement action test with untagged pkt
     Expectation: Pkt with MPLS (LABEL=0 TC=0 TTL=IP's value-1)
@@ -235,7 +154,7 @@ class MplsActNonTagPushDecTtl(MplsActNonTagPop):
     def runTest(self):
         mpls_multipush2_act_tests(self, test_condition=3)
 
-class MplsActNonTagPushSetOutrange0(MplsActNonTagPop):
+class MplsActNonTagPushSetOutrange0(MplsActNonTagPush):
     """
     MPLS set LABEL action (outrange value) test with untagged pkt
     Expectation: OFPET_BAD_ACTION (BAD ARG) error
@@ -244,7 +163,7 @@ class MplsActNonTagPushSetOutrange0(MplsActNonTagPop):
     def runTest(self):
         mpls_multipush3_act_tests(self, test_condition=0)
 
-class MplsActNonTagPushSetOutrange1(MplsActNonTagPop):
+class MplsActNonTagPushSetOutrange1(MplsActNonTagPush):
     """
     MPLS set TC action test with untagged pkt
     Expectation: OFPET_BAD_ACTION (INCONSISTENT) error
@@ -253,14 +172,14 @@ class MplsActNonTagPushSetOutrange1(MplsActNonTagPop):
     def runTest(self):
         mpls_multipush3_act_tests(self, test_condition=1)
 
-class MplsActOneTagPop(MplsActNonTagPop):
+class MplsActOneTagPop(MplsActNonTagPush):
     """
     MPLS pop action test with tagged pkt
     Expectation: Pkt w/o MPLS
     Test on one pair of ports
     """
     def __init__(self):
-        MplsActNonTagPop.__init__(self)
+        MplsActNonTagPush.__init__(self)
         self.num_tags = 1
         self.label = random.randint(16, 1048573)
         self.tc = random.randint(0,5)
@@ -432,14 +351,14 @@ class MplsActOneTagPushSetOutrange1(MplsActOneTagPop):
     def runTest(self):
         mpls_multipush3_act_tests(self, test_condition=1)
 
-class MplsActTwoTagPop(MplsActNonTagPop):
+class MplsActTwoTagPop(MplsActNonTagPush):
     """
     MPLS pop action test with two-tagged pkt
     Expectation: Outer MPLS tag to be removed
     Test on one pair of ports
     """
     def __init__(self):
-        MplsActNonTagPop.__init__(self)
+        MplsActNonTagPush.__init__(self)
         self.num_tags = 2
         self.label = random.randint(16, 1048573)
         self.tc = random.randint(0,5)

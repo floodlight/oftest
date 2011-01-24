@@ -84,10 +84,10 @@ def test_set_init(config):
 
 ###########################################################################
 
-class VlanActNonTagPop(pktact.BaseMatchCase):
+class VlanActNonTagPush0(pktact.BaseMatchCase):
     """
-    VLAN pop action test with untagged pkt
-    Expectation: OFPET_BAD_ACTION (INCONSISTENT) error
+    VLAN push action (type VLAN) test with untagged pkt
+    Expectation: Pkt with VLAN (VID=0 PCP=0)
     Test on one pair of ports
     """
     def __init__(self):
@@ -102,18 +102,9 @@ class VlanActNonTagPop(pktact.BaseMatchCase):
         self.pcp_match = 0
 
     def runTest(self):
-        vlan_pop_act_tests(self)
-
-class VlanActNonTagPush0(VlanActNonTagPop):
-    """
-    VLAN push action (type VLAN) test with untagged pkt
-    Expectation: Pkt with VLAN (VID=0 PCP=0)
-    Test on one pair of ports
-    """
-    def runTest(self):
         vlan_singlepush_act_tests(self, test_condition=0)
 
-class VlanActNonTagPush1(VlanActNonTagPop):
+class VlanActNonTagPush1(VlanActNonTagPush0):
     """
     VLAN push action (type QinQ) test with untagged pkt
     Expectation: Pkt with VLAN (VID=0 PCP=0)
@@ -122,7 +113,7 @@ class VlanActNonTagPush1(VlanActNonTagPop):
     def runTest(self):
         vlan_singlepush_act_tests(self, test_condition=1)
 
-class VlanActNonTagPush2(VlanActNonTagPop):
+class VlanActNonTagPush2(VlanActNonTagPush0):
     """
     VLAN push action (type other) test with untagged pkt
     Expectation: OFPET_BAD_ACTION (BAD ARG) error
@@ -131,7 +122,7 @@ class VlanActNonTagPush2(VlanActNonTagPop):
     def runTest(self):
         vlan_singlepush_act_tests(self, test_condition=2)
 
-class VlanActNonTagPushSetVid(VlanActNonTagPop):
+class VlanActNonTagPushSetVid(VlanActNonTagPush0):
     """
     VLAN Push and Set VID action test with untagged pkt
     Expectation: Pkt with VLAN (VID=Set value PCP=0)
@@ -140,7 +131,7 @@ class VlanActNonTagPushSetVid(VlanActNonTagPop):
     def runTest(self):
         vlan_multipush_act_tests(self, test_condition=0)
 
-class VlanActNonTagPushSetPcp(VlanActNonTagPop):
+class VlanActNonTagPushSetPcp(VlanActNonTagPush0):
     """
     VLAN Push and Set PCP action test with untagged pkt
     Expectation: Pkt with VLAN (VID=0 PCP=Set value)
@@ -149,7 +140,7 @@ class VlanActNonTagPushSetPcp(VlanActNonTagPop):
     def runTest(self):
         vlan_multipush_act_tests(self, test_condition=1)
 
-class VlanActNonTagPushSetVidPcp(VlanActNonTagPop):
+class VlanActNonTagPushSetVidPcp(VlanActNonTagPush0):
     """
     VLAN Push, Set VID and Set PCP action test with untagged pkt
     Expectation: Pkt with VLAN (VID=Set value PCP=Set value)
@@ -158,7 +149,7 @@ class VlanActNonTagPushSetVidPcp(VlanActNonTagPop):
     def runTest(self):
         vlan_multipush_act_tests(self, test_condition=2)
 
-class VlanActNonTagPushPop(VlanActNonTagPop):
+class VlanActNonTagPushPop(VlanActNonTagPush0):
     """
     VLAN Push and Pop action test with untagged pkt
     Expectation: Same pkt
@@ -167,50 +158,14 @@ class VlanActNonTagPushPop(VlanActNonTagPop):
     def runTest(self):
         vlan_multipush_act_tests(self, test_condition=3)
 
-class VlanActNonTagSetVid0(VlanActNonTagPop):
-    """
-    VLAN set VID action test with untagged pkt
-    Expectation: OFPET_BAD_ACTION (INCONSISTENT) error
-    Test on one pair of ports
-    """
-    def runTest(self):
-        vlan_set_act_tests(self, test_condition=0)
-
-class VlanActNonTagSetVid1(VlanActNonTagPop):
-    """
-    VLAN set VID action (outrange value) test with untagged pkt
-    Expectation: OFPET_BAD_ACTION (BAD ARG) error
-    Test on one pair of ports
-    """
-    def runTest(self):
-        vlan_set_act_tests(self, test_condition=1)
-
-class VlanActNonTagSetPcp0(VlanActNonTagPop):
-    """
-    VLAN set PCP action test with untagged pkt
-    Expectation: OFPET_BAD_ACTION (INCONSISTENT) error
-    Test on one pair of ports
-    """
-    def runTest(self):
-        vlan_set_act_tests(self, test_condition=2)
-
-class VlanActNonTagSetPcp1(VlanActNonTagPop):
-    """
-    VLAN set PCP action (outrane value) test with untagged pkt
-    Expectation: OFPET_BAD_ACTION (BAD ARG) error
-    Test on one pair of ports
-    """
-    def runTest(self):
-        vlan_set_act_tests(self, test_condition=3)
-
-class VlanActOneTagPop(VlanActNonTagPop):
+class VlanActOneTagPop(VlanActNonTagPush0):
     """
     VLAN pop action test with tagged pkt
     Expectation: Pkt w/o VLAN
     Test on one pair of ports
     """
     def __init__(self):
-        VlanActNonTagPop.__init__(self)
+        VlanActNonTagPush0.__init__(self)
         self.num_tags = 1
         self.vid = random.randint(0,4093)
         self.pcp = random.randint(0,5)
@@ -324,14 +279,14 @@ class VlanActOneTagSetPcp1(VlanActOneTagPop):
     def runTest(self):
         vlan_set_act_tests(self, test_condition=3)
 
-class VlanActTwoTagPop(VlanActNonTagPop):
+class VlanActTwoTagPop(VlanActNonTagPush0):
     """
     VLAN pop action test with two-tagged pkt
     Expectation: Outer VLAN tag to be removed
     Test on one pair of ports
     """
     def __init__(self):
-        VlanActNonTagPop.__init__(self)
+        VlanActNonTagPush0.__init__(self)
         self.num_tags = 2
         self.vid = random.randint(0,4093)
         self.pcp = random.randint(0,5)
