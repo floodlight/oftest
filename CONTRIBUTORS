@@ -1,0 +1,15 @@
+git log | grep Author | sort  | uniq -c | sort -rn
+
+    177 Author: Dan Talayco <dtalayco@stanford.edu>
+    126 Author: Rob Sherwood <rob.sherwood@stanford.edu>
+     49 Author: Tatsuya Yabe <tyabe@stanford.edu>
+     16 Author: Nick Bastin <nbastin@stanford.edu>
+     16 Author: Casey Barker <crbarker@google.com>
+      9 Author: Masahiko Takahashi <masahik7@stanford.edu>
+      3 Author: Saurav Das <saurav2@saurav2-desktop.(none)>
+      3 Author: Brandon Heller <brandonh@stanford.edu>
+      2 Author: Glen Gibb <grg@stanford.edu>
+      2 Author: Dan Talayco <dtalayco@snowcrash.dbd.mogulmouse.net>
+      1 Author: Zoltan Lajos Kis <zoltan.lajos.kis@ericsson.com>
+      1 Author: Rajiv Ramanathan <rajivr@google.com>
+      1 Author: Dan Talayco <dtalayco@figment-tres.Stanford.EDU>
