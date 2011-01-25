@@ -1,0 +1,343 @@
+OpenFlow Testing Framework
+July, 2010
+
+Copyright (c) 2010 The Board of Trustees of The Leland Stanford 
+Junior University
+
+Warning
++++++++
+
+    This is still experimental and it requires root privilege to
+    control the dataplane ports.  As a consequence, there may be
+    risks to the machine on which this is running.  Use caution.
+
+    Please see Helpful Notes below.
+
+License
++++++++
+
+    The software included with this distribution is subject to the
+    OpenFlow Switching License as given in the included file LICENSE.
+    Details are also available at:
+
+    http://www.openflow.org/wp/legal
+
+    Other software referenced in this distribution is subject to its
+    respective license.
+
+Getting OFTest
+++++++++++++++
+
+    You can check out OFTest with git with the following command:
+
+    git clone git://openflow.org/oftest
+
+Introduction
+++++++++++++
+
+    This test framework is meant to exercise a candidate OpenFlow
+    switch (the device/switch under test, DUT or SUT).  It provides a
+    connection like a controller to which the switch connects and it 
+    controls data plane ports, sending and receiving packets, which 
+    should be connected to the switch.
+
+    There are two parts to running the test framework:
+
+    * Building the python libraries that support the OF protocol
+    * Running oft, the main entry point of the test framework
+
+    Normally log output from oft is sent to the file oft.log, but
+    can be redirected to the console by specifying --log-file="".
+ 
+Quick Start
++++++++++++
+
+    You need to have Python setup tools and Scapy installed on your
+    system.  See 'Pre-requisites' below.
+
+    Make sure your switch is running and trying to connect to a
+    controller on the machine where you're running oft (normally port
+    6633).  See below regarding run_switch.py for a script that starts 
+    up a software switch on the test host.
+
+    Currently, switches must be running version 1.0 of OpenFlow. 
+
+      # git clone yuba:/usr/local/git/openflow-projects/oftest
+      # cd oftest/tools/munger
+      # make install
+      # cd ../../tests
+         Make sure the switch you want to test is running --
+         see (4) below for the reference switch example.
+      # ./oft --list
+      # sudo ./oft
+      # sudo ./oft --verbose --log-file=""    
+      # sudo ./oft --test-spec=<mod> --platform=remote --host=...
+
+Longer Start
+++++++++++++
+
+    1.  Pre-requisites:
+        * An OF switch instance to test (see 4 below)
+        * Root privilege on host running oft
+        * Switch running OpenFlow 1.0 and attempting to connect 
+          to a controller on the machine running oft.
+        * Python 2.5.  You can run platforms using eth interfaces
+          with Python 2.4.
+        * Python setup tools (e.g.: sudo apt-get install python-setuptools)
+        * oftest checked out (called <oftest> here)
+        * scapy installed:  http://www.secdev.org/projects/scapy/
+          'sudo apt-get install scapy' should work on Debian.
+        * tcpdump installed (optional, but scapy will complain if it's
+          not there)
+        * Doxygen and doxypy for document generation (optional)
+        * lint for source checking (optional)
+
+    2.  Build the OpenFlow Python message classes
+
+        Important:  The OF version used by the controller is based on 
+        the file in <oftest>/tools/pylibopenflow/include/openflow.h
+        This is currently the 1.0 release file.
+
+        cd <oftest>/tools/munger
+        make install
+
+        This places files in <oftest>/src/python/oftest/src and then
+        calls setuptools to install on the local host
+
+    3.  Edit configuration if necessary
+        Local platforms work with veth interface pairs and default to
+        four ports.  You can adjust this a bit with the command line
+        parameters port_count, base_of_port and base_if_index.
+ 
+        Starting from remote.py as a simple example, you can add your
+        own <platform>.py file and then have it imported with
+        --platform=<platform> on the command line.  This is meant to 
+        allow you to test remote switches attempting to connect to a
+        controller on a network accessible to the test host.
+
+    4.  Start the switch to test
+        The switch must be running and actively attempting to 
+        connect to a controller on the test host at the port number
+        used by oft (6633 by default, or specified as --port=<n> as
+        an argument to oft).
+
+        If you're new to the test environment and want to check its 
+        sanity, you can do the following.  This requires that
+        your host kernel supports virtual ethernet interfaces.  This
+        is best done in a window separate from where you will run oft.
+ 
+        4A. Check out openflow (preferably at the same level as oftest):
+            git clone git://openflowswitch.org/openflow.git
+        4B. cd openflow; ./boot.sh; ./configure; make
+        4C. cd ../oftest/tests
+        4D. Run the switch startup script:
+            sudo ./run_switch.py; Now you can run oft (see below).
+        4F. Use --help to see command line switches.  If you use a port
+            number other than the default, make sure you use the same
+            one for the switch as for oft.
+        4E. Use control-C to terminate the switch daemons.
+        4F. To clean up the virtual ethernet interfaces, use
+            sudo rmmod veth
+
+    5.  Run oft
+        See Warning above; requires sudo to control the dataplane
+        cd <oftest>/tests
+        sudo ./oft --help
+
+Helpful Note: Rebuilding
+++++++++++++++++++++++++
+
+    If you ever make a change to the code in src/oftest/python...
+    you must rebuild and reinstall the source code.  See Step (2)
+    in the Longer Start above.
+
+    If you see
+
+        WARNING:..:Could not import file ...
+
+    There is likely a Python error in the file.  Try invoking the
+    Python cli directly and importing the file to get more
+    information.
+
+Helpful Note: Recovering From Crash
++++++++++++++++++++++++++++++++++++
+
+    If the test script, oft, becomes unresponsive, you may find that
+    ^C does not break out of the script.  In this case you have two
+    options:
+
+    * Use ^Z to interrupt the script and return to the shell prompt.
+    * Start another terminal window to the same machine.
+
+    In either case, you then need to kill the process that is hung.
+    Use the following commands:
+
+        me@host> ps aux | grep oft
+        root         4  0.0      S<   Jul07   0:00 [ksoftirqd/0]
+        ...
+        root     14066  3.2      Tl   09:27   0:00 python ./oft ...
+        me       14074  0.0      R+   09:28   0:00 grep oft
+
+        me@host> sudo kill -9 14066
+
+    where 14066 is the process ID of the hung process.  (Replace it
+    with the PID for your process.)
+
+    This is still preliminary work and there are bugs in the framework
+    that need to be ironed out.  Please report any issues to
+    dtalayco@stanford.edu.
+
+
+OFT Command Line Options
+++++++++++++++++++++++++
+
+    Here is a summary of the oft command line options.  Use --help to see
+    the long and short command option names.
+
+    platform          : String identifying the target platform
+    controller_host   : Host on which test controller is running (for sockets)
+    controller_port   : Port on which test controller listens for switch cxn
+    port_count        : Number of ports in dataplane
+    base_of_port      : Base OpenFlow port number in dataplane
+    base_if_index     : Base OS network interface for dataplane
+    test_dir          : Directory to search for test files (default .)
+    test_spec         : Specification of test(s) to run
+    log_file          : Filename for test logging
+    list              : Boolean:  List all tests and exit
+    debug             : String giving debug level (info, warning, error...)
+    verbose           : Same as debug=verbose
+
+Overview
+++++++++
+
+    The directory structure is currently:
+
+     <oftest>
+         `
+         |-- doc
+         |-- src
+         |   `-- python
+         |       `-- oftest
+         |-- tests
+         |   `-- oft and files with test cases
+         `-- tools
+             |-- munger
+             `-- pylibopenflow
+
+    The tools directory is what processes the OpenFlow header
+    files to produce Python classes representing OpenFlow messages.
+    The results are placed in src/python/oftest and currently
+    include:
+
+        message.py:      The main API providing OF message classes
+        error.py:        Subclasses for error messages
+        action.py:       Subclasses for action specification
+        cstruct.py:      Direct representation of C structures in Python
+        class_maps.py:   Addition info about C structures
+
+    In addition, the following Python files are present in 
+    src/python/oftest:
+
+        controller.py:   The controller representation
+        dataplane.py:    The dataplane representation
+        action_list.py:  Action list class
+        netutils.py:     e.g., set promisc on sockets
+        ofutils.py:      Utilities related to OpenFlow messages
+        oft_assert.py:   Test framework level assertion
+
+    Tests are run from the tests directory.  The file oft is the
+    top level entry point for tests.  Try ./oft --help for some more.
+
+Important Notes
++++++++++++++++
+
+    1.  If you edit any of the files in src/python/oftest or any of the
+    scripts in tools/munger/scripts, you MUST re-run make install.  This
+    is easy to forget.
+
+    2.  If your running into issues with transactions, and it appears that
+    OpenFlow messages aren't quite right, start by looking at any length
+    fields in the packets.  With the local platform, you can use wireshark
+    on the loopback interface as well as the dataplane veth interfaces.
+
+Adding Your Own Test Cases
+++++++++++++++++++++++++++
+
+    Check the online tutorial:  
+        http://openflow.org/wk/index.php/OFTestTutorial
+
+    You can:
+
+        * Add cases to an existing file
+        * Add a new file
+
+    If you add cases to an existing file, each case should be its own
+    class.  It must inherit from unittest.TestCase or one of its 
+    derivatives and define runTest (that's how test cases are discovered).
+
+    If you add a new file, it must implement a top level function called
+    test_set_init which takes a configuration dictionary.  See basic.py
+    for an example.  The main point of this is to pass the port map 
+    object to the test cases.  But you can access any configuration
+    parameters this way.  Each test case in the new file must derive
+    from unittest.TestCase.
+
+    CONVENTIONS:
+
+    The first line of the doc string for a file and for a test class is 
+    displayed in the list command.  Please keep it clear and under 50
+    characters.
+
+
+Using CentOS/RHEL
++++++++++++++++++
+
+    CentOS/RHEL have two challenges:  they are very tied to Python 2.4
+    (and Scapy requires Python 2.5 for its latest version) and they
+    require a kernel upgrade to use veth pairs for local platform
+    testing.  
+
+    If you only need to control eth interfaces for a remote platform,
+    you can use CentOS/RHEL without major disruption.  The key is to 
+    download scapy-1.2 from the following link:
+
+    wget http://hg.secdev.org/scapy/raw-file/v1.2.0.2/scapy.py
+
+    See: http://www.dirk-loss.de/scapy-doc/installation.html#installing-scapy-v1-2
+    for more info.
+
+    Copy scapy.py to /usr/lib/python2.4/site-packages
+
+    If you hit an error related to importing scapy.all, you just need
+    to change the import to refer to scapy (not scapy.all).  See
+    examples in parse.py for example.
+
+
+Other Info
+++++++++++
+
+    * Build doc with
+      + cd <oftest>/tools/munger
+      + make doc
+    Places the results in <oftest>/doc/html
+    If you have problems, check the install location doxypy.py and
+    that it is set correctly in <oftest>/doc/Doxyfile
+
+    * Run lint on sources
+      + cd <oftest>/tools/munger
+      + make lint
+    Places results in <oftest>/lint/*.log
+    The file controller.log currently has some errors indicated
+
+
+To Do
++++++
+
+    * Need to have an overview of the components of the test, how they
+      connect and how they are managed by the test framework.
+    * See the Regression Test component on trac:
+      http://www.openflowswitch.org/bugs/openflow
+      http://www.openflowswitch.org/bugs/openflow/query?component=Regression+test+suite
+
+    * Make the framework work with OF versions other than 1.0?
+

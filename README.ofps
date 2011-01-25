@@ -1,0 +1,60 @@
+###########################################################
+# ofps summary
+#
+
+ofps[1] is a python implementation of a OpenFlow switch.  Unlike
+other implementations, it is optimized for ease of readability over
+performance.  The goal is for the code to closely approximate a
+pseudo-code implementation of an OpenFlow switch.
+
+
+###########################################################
+# INSTALL
+#
+
+ofps shares libraries with oftest, so oftest must be installed
+first (see README.oftest).  Currently, ofps only runs from the
+source directory, but this will hopefully change soon.
+
+
+###########################################################
+# RUN
+#
+
+The easiest way to invoke ofps is from the wrapper script run_switch:
+
+cd tests
+sudo ./run_switch.py
+
+This script creates veth pairs veth0...veth7 and starts ofps.  This is
+the default setup that oftest assumes, so to run oftest against ofps,
+in another window, run:
+
+cd tests
+sudo ./oft
+
+The switch can also be invoked manually on the command line as:
+
+cd src/python/ofps
+sudo ./ofps.py
+
+but this command assumes that the interfaces have been brought up ahead of time.
+
+
+###########################################################
+# STATUS
+#
+
+ofps is alpha quality code.  It is not even a complete switch
+implement ion, but we hope that it short order that it will be.  ofps is
+not recommended for use in production environments, and we expect that
+it will perform prohibitively slow.  For example, packet lookups and flow
+insertion both take linear time as a function of the number flow entries.
+We do not wish to improve ofps's efficiency, as that will likely reduce
+its readability.
+
+###########################################################
+# Footnotes 
+#
+
+[1] "OpenFlow Python Switch"
