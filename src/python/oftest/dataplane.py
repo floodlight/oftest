@@ -98,7 +98,7 @@ class DataPlanePort(Thread):
             try:
                 sel_in, sel_out, sel_err = \
                     select.select(self.socs, [], [], 1)
-            except StandardError:
+            except (StandardError, socket.error):
                 print sys.exc_info()
                 self.logger.error("Select error, exiting")
                 break
