@@ -321,6 +321,7 @@ def mpls_set_two_tables_tests(parent, match_exp=True):
     # Match condition on TBL0 (match)
     label_match_tbl0 = label
     tc_match_tbl0 = tc
+    dl_type_match_tbl0 = ETHERTYPE_MPLS
 
     # Set LABEL TC TTL
     exp_label = label + 1
@@ -344,6 +345,7 @@ def mpls_set_two_tables_tests(parent, match_exp=True):
     else:
         label_match_tbl1 = label
         tc_match_tbl1 = tc
+    dl_type_match_tbl1 = ETHERTYPE_MPLS
 
     # Create action_list for TBL1
     act = action.action_output()
@@ -357,10 +359,12 @@ def mpls_set_two_tables_tests(parent, match_exp=True):
                     ip_ttl=ip_ttl,
                     label_match_tbl0=label_match_tbl0,
                     tc_match_tbl0=tc_match_tbl0,
+                    dl_type_match_tbl0=dl_type_match_tbl0,
                     action_list_tbl0 = action_list_tbl0,
                     match_exp_tbl0=True,
                     label_match_tbl1=label_match_tbl1,
                     tc_match_tbl1=tc_match_tbl1,
+                    dl_type_match_tbl1=dl_type_match_tbl1,
                     action_list_tbl1 = action_list_tbl1,
                     match_exp_tbl1=match_exp,
                     exp_mpls_label=exp_label,
@@ -383,6 +387,7 @@ def mpls_ttl_inout_two_tables_tests(parent, test_inwards=True):
     # Match condition on TBL0 (match)
     label_match_tbl0 = label
     tc_match_tbl0 = tc
+    dl_type_match_tbl0 = ETHERTYPE_MPLS
 
     exp_label = label
     exp_tc = tc
@@ -403,6 +408,7 @@ def mpls_ttl_inout_two_tables_tests(parent, test_inwards=True):
     # Expect modified pkt on TBL1 (match)
     label_match_tbl1 = exp_label
     tc_match_tbl1 = exp_tc
+    dl_type_match_tbl1 = ETHERTYPE_MPLS
 
     # Create action_list for TBL1
     act = action.action_output()
@@ -416,10 +422,12 @@ def mpls_ttl_inout_two_tables_tests(parent, test_inwards=True):
                     ip_ttl=ip_ttl,
                     label_match_tbl0=label_match_tbl0,
                     tc_match_tbl0=tc_match_tbl0,
+                    dl_type_match_tbl0=dl_type_match_tbl0,
                     action_list_tbl0 = action_list_tbl0,
                     match_exp_tbl0=True,
                     label_match_tbl1=label_match_tbl1,
                     tc_match_tbl1=tc_match_tbl1,
+                    dl_type_match_tbl1=dl_type_match_tbl1,
                     action_list_tbl1 = action_list_tbl1,
                     match_exp_tbl1=True,
                     exp_mpls_label=exp_label,
@@ -445,8 +453,9 @@ def nompls_push_set_two_tables_tests(parent):
     exp_ip_ttl = ip_ttl
 
     # Match condition on TBL0 (match)
-    label_match_tbl0 = ofp.OFPML_NONE
+    label_match_tbl0 = 0
     tc_match_tbl0 = 0
+    dl_type_match_tbl0 = ETHERTYPE_IP
 
     # Create action_list for TBL0
     action_list_tbl0 = []
@@ -464,6 +473,7 @@ def nompls_push_set_two_tables_tests(parent):
     # Match condition on TBL1 (match)
     label_match_tbl1 = exp_label
     tc_match_tbl1 = exp_tc
+    dl_type_match_tbl1 = ETHERTYPE_MPLS
 
     # Create action_list for TBL1
     act = action.action_output()
@@ -477,10 +487,12 @@ def nompls_push_set_two_tables_tests(parent):
                     ip_ttl=ip_ttl,
                     label_match_tbl0=label_match_tbl0,
                     tc_match_tbl0=tc_match_tbl0,
+                    dl_type_match_tbl0=dl_type_match_tbl0,
                     action_list_tbl0 = action_list_tbl0,
                     match_exp_tbl0 = True,
                     label_match_tbl1=label_match_tbl1,
                     tc_match_tbl1=tc_match_tbl1,
+                    dl_type_match_tbl1=dl_type_match_tbl1,
                     action_list_tbl1 = action_list_tbl1,
                     match_exp_tbl1 = True,
                     exp_mpls_label=exp_label,
@@ -503,6 +515,7 @@ def mpls_push_two_tables_tests(parent, match_exp = True):
     # Match condition on TBL0 (match)
     label_match_tbl0 = label
     tc_match_tbl0 = tc
+    dl_type_match_tbl0 = ETHERTYPE_MPLS
 
     # Match or Unmatch depends on match_exp parameter
     # Expect same tag
@@ -525,6 +538,7 @@ def mpls_push_two_tables_tests(parent, match_exp = True):
     # Match condition on TBL1
     label_match_tbl1 = exp_label
     tc_match_tbl1 = exp_tc
+    dl_type_match_tbl1 = ETHERTYPE_MPLS
 
     # Create action_list for TBL1
     act = action.action_output()
@@ -537,10 +551,12 @@ def mpls_push_two_tables_tests(parent, match_exp = True):
                     mpls_ttl=ttl,
                     label_match_tbl0=label_match_tbl0,
                     tc_match_tbl0=tc_match_tbl0,
+                    dl_type_match_tbl0=dl_type_match_tbl0,
                     action_list_tbl0 = action_list_tbl0,
                     match_exp_tbl0 = True,
                     label_match_tbl1=label_match_tbl1,
                     tc_match_tbl1=tc_match_tbl1,
+                    dl_type_match_tbl1=dl_type_match_tbl1,
                     action_list_tbl1 = action_list_tbl1,
                     match_exp_tbl1 = match_exp,
                     exp_mpls_label=exp_label,
@@ -562,6 +578,7 @@ def mpls_push_set_two_tables_tests(parent, test_condition=0, match_exp = True):
     # Match condition on TBL0 (match)
     label_match_tbl0 = label
     tc_match_tbl0 = tc
+    dl_type_match_tbl0 = ETHERTYPE_MPLS
 
     # Match or Unmatch depends on match_exp parameter
     # Expect different label
@@ -602,6 +619,7 @@ def mpls_push_set_two_tables_tests(parent, test_condition=0, match_exp = True):
     # Match condition on TBL1
     label_match_tbl1 = exp_label
     tc_match_tbl1 = exp_tc
+    dl_type_match_tbl1 = ETHERTYPE_MPLS
 
     # Create action_list for TBL1
     act = action.action_output()
@@ -614,10 +632,12 @@ def mpls_push_set_two_tables_tests(parent, test_condition=0, match_exp = True):
                     mpls_ttl=ttl,
                     label_match_tbl0=label_match_tbl0,
                     tc_match_tbl0=tc_match_tbl0,
+                    dl_type_match_tbl0=dl_type_match_tbl0,
                     action_list_tbl0 = action_list_tbl0,
                     match_exp_tbl0 = True,
                     label_match_tbl1=label_match_tbl1,
                     tc_match_tbl1=tc_match_tbl1,
+                    dl_type_match_tbl1=dl_type_match_tbl1,
                     action_list_tbl1 = action_list_tbl1,
                     match_exp_tbl1 = match_exp,
                     exp_mpls_label=exp_label,
@@ -649,6 +669,7 @@ def mpls_pop_two_tables_tests(parent, test_condition=0, match_exp=True):
     # Match condition on TBL0
     label_match_tbl0 = label
     tc_match_tbl0 = tc
+    dl_type_match_tbl0 = ETHERTYPE_MPLS
 
     # Create action_list for TBL0
     act = action.action_pop_mpls()
@@ -659,14 +680,17 @@ def mpls_pop_two_tables_tests(parent, test_condition=0, match_exp=True):
     # Create matching value for TBL1
     if (match_exp):
         if (test_condition == 0):
-            label_match_tbl1 = ofp.OFPML_NONE
+            label_match_tbl1 = 0
             tc_match_tbl1 = 0
+            dl_type_match_tbl1 = ETHERTYPE_IP
         else: #test_condition == 1
             label_match_tbl1 = label_int
             tc_match_tbl1 = tc_int
+            dl_type_match_tbl1 = ETHERTYPE_MPLS
     else:
         label_match_tbl1 = label
         tc_match_tbl1 = tc
+        dl_type_match_tbl1 = ETHERTYPE_MPLS
 
     # Create action_list for TBL1
     act = action.action_output()
@@ -690,10 +714,12 @@ def mpls_pop_two_tables_tests(parent, test_condition=0, match_exp=True):
                     mpls_ttl_int=ttl_int,
                     label_match_tbl0=label_match_tbl0,
                     tc_match_tbl0=tc_match_tbl0,
+                    dl_type_match_tbl0=dl_type_match_tbl0,
                     action_list_tbl0 = action_list_tbl0,
                     match_exp_tbl0=True,
                     label_match_tbl1=label_match_tbl1,
                     tc_match_tbl1=tc_match_tbl1,
+                    dl_type_match_tbl1=dl_type_match_tbl1,
                     action_list_tbl1 = action_list_tbl1,
                     match_exp_tbl1=match_exp,
                     exp_mpls_label=exp_label,
@@ -714,16 +740,18 @@ def flow_match_test_port_pair_mpls_two_tables(parent, ing_port, egr_port,
                                    mpls_tc_int=0,
                                    mpls_ttl_int=32,
                                    ip_ttl=192,
-                                   label_match_tbl0=ofp.OFPML_NONE,
+                                   label_match_tbl0=0,
                                    tc_match_tbl0=0,
+                                   dl_type_match_tbl0=ETHERTYPE_MPLS,
                                    action_list_tbl0=None,
                                    check_expire_tbl0=False,
                                    match_exp_tbl0=True,
                                    exp_msg_tbl0=ofp.OFPT_FLOW_REMOVED,
                                    exp_msg_type_tbl0=0,
                                    exp_msg_code_tbl0=0,
-                                   label_match_tbl1=ofp.OFPML_NONE,
+                                   label_match_tbl1=0,
                                    tc_match_tbl1=0,
+                                   dl_type_match_tbl1=ETHERTYPE_MPLS,
                                    action_list_tbl1=None,
                                    check_expire_tbl1=False,
                                    match_exp_tbl1=True,
@@ -840,8 +868,7 @@ def flow_match_test_port_pair_mpls_two_tables(parent, ing_port, egr_port,
     # Flow Mod for Table0
     match.mpls_label = label_match_tbl0
     match.mpls_tc = tc_match_tbl0
-
-    match.dl_type = 0
+    match.dl_type = dl_type_match_tbl0
     match.nw_tos = 0
     match.nw_proto = 0
     match.nw_src = 0
@@ -850,9 +877,6 @@ def flow_match_test_port_pair_mpls_two_tables(parent, ing_port, egr_port,
     match.nw_dst_mask = 0
     match.tp_src = 0
     match.tp_dst = 0
-
-    # Unde spec discussion
-    wildcards = ofp.OFPFW_DL_TYPE | wildcards
 
     inst_1 = instruction.instruction_apply_actions()
     inst_2 = instruction.instruction_goto_table()
@@ -871,6 +895,7 @@ def flow_match_test_port_pair_mpls_two_tables(parent, ing_port, egr_port,
     # Other match parameters are the same
     match.mpls_label = label_match_tbl1
     match.mpls_tc = tc_match_tbl1
+    match.dl_type = dl_type_match_tbl1
 
     request1 = testutils.flow_msg_create(parent, pkt, ing_port=ing_port,
                               action_list=action_list_tbl1,
@@ -930,15 +955,17 @@ def flow_match_test_mpls_two_tables(parent, port_map, wildcards=0,
                          mpls_label=-1, mpls_tc=0, mpls_ttl=64,
                          mpls_label_int=-1, mpls_tc_int=0, mpls_ttl_int=32,
                          ip_ttl=192,
-                         label_match_tbl0=ofp.OFPML_NONE,
+                         label_match_tbl0=0,
                          tc_match_tbl0=0,
+                         dl_type_match_tbl0=ETHERTYPE_MPLS,
                          action_list_tbl0=None,
                          check_expire_tbl0=False,
                          match_exp_tbl0=True,
                          exp_msg_tbl0=ofp.OFPT_FLOW_REMOVED,
                          exp_msg_type_tbl0=0, exp_msg_code_tbl0=0,
-                         label_match_tbl1=ofp.OFPML_NONE,
+                         label_match_tbl1=0,
                          tc_match_tbl1=0,
+                         dl_type_match_tbl1=ETHERTYPE_MPLS,
                          action_list_tbl1=None,
                          check_expire_tbl1=False,
                          match_exp_tbl1=True,
@@ -967,6 +994,7 @@ def flow_match_test_mpls_two_tables(parent, port_map, wildcards=0,
     @param ip_ttl IP TTL
     @param label_match_tbl0 Matching value for MPLS LABEL field
     @param tc_match_tbl0 Matching value for MPLS TC field
+    @param dl_type_match_tbl0 Matching value for DL_TYPE field
     @param action_list_tbl0 Additional actions to add to flow mod
     @param check_expire_tbl0 Check for flow expiration message
     @param match_exp_tbl0 Set whether packet is expected to receive
@@ -975,6 +1003,7 @@ def flow_match_test_mpls_two_tables(parent, port_map, wildcards=0,
     @param exp_msg_code_tbl0 Expected message code associated with the msg_type
     @param label_match_tbl1 Matching value for MPLS LABEL field
     @param tc_match_tbl1 Matching value for MPLS TC field
+    @param dl_type_match_tbl1 Matching value for DL_TYPE field
     @param action_list_tbl1 Additional actions to add to flow mod
     @param check_expire_tbl1 Check for flow expiration message
     @param match_exp_tbl0 Set whether packet is expected to receive
@@ -1016,6 +1045,7 @@ def flow_match_test_mpls_two_tables(parent, port_map, wildcards=0,
                                    ip_ttl=ip_ttl,
                                    label_match_tbl0=label_match_tbl0,
                                    tc_match_tbl0=tc_match_tbl0,
+                                   dl_type_match_tbl0=dl_type_match_tbl0,
                                    action_list_tbl0=action_list_tbl0,
                                    check_expire_tbl0=check_expire_tbl0,
                                    match_exp_tbl0=match_exp_tbl0,
@@ -1024,6 +1054,7 @@ def flow_match_test_mpls_two_tables(parent, port_map, wildcards=0,
                                    exp_msg_code_tbl0=exp_msg_code_tbl0,
                                    label_match_tbl1=label_match_tbl1,
                                    tc_match_tbl1=tc_match_tbl1,
+                                   dl_type_match_tbl1=dl_type_match_tbl1,
                                    action_list_tbl1=action_list_tbl1,
                                    check_expire_tbl1=check_expire_tbl1,
                                    match_exp_tbl1=match_exp_tbl1,
