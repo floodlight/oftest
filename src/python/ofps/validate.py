@@ -5,7 +5,7 @@ Created on Jan 24, 2011
 '''
 import logging
 
-from oftest import cstruct as ofp
+from oftest import cstruct as ofp, packet
 from oftest import ofutils
 
 
@@ -83,16 +83,29 @@ def _validate_instruction_clear_actions(instruction, switch, flow_mod, logger):
 ##### Actions
 
 def _validate_action_output(action, switch, flow_mod, logger):
-    try: 
-        if (action.port >= ofp.OFPP_MAX or 
-                    switch.ports[action.port] is not None):
-            return None         # port is valid
-    except KeyError:
-        logger.error("Got KeyError when checking port %x" % action.port )
-        pass                    # just fall through
-    return ofutils.of_error_msg_make(ofp.OFPET_BAD_ACTION, 
+
+    if action.port >= ofp.OFPP_MAX:
+        return None 
+    elif switch.ports.contains(action.port):
+        return None         # port is valid
+    else:
+        logger.error("invalid port %d (0x%x) in action_output" % 
+                     (action.port, action.port))
+        return ofutils.of_error_msg_make(ofp.OFPET_BAD_ACTION, 
                                      ofp.OFPBAC_BAD_OUT_PORT, 
                                      flow_mod)
+
+def _validate_action_push_vlan(action, switch, flow_mod, logger):
+    if (action.ethertype == packet.ETHERTYPE_VLAN or
+            action.ethertype == packet.ETHERTYPE_VLAN_QinQ):
+        return None
+    else: 
+        logger.error("invalid ethertype 0x%x in action_push_vlan" 
+                            % action.ethertype )
+        return ofutils.of_error_msg_make(ofp.OFPET_BAD_ACTION, 
+                                     ofp.OFPBAC_BAD_ARGUMENT, 
+                                     flow_mod) 
+        
         
 def _validate_action_pop_vlan(action, switch, flow_mod, logger):
     pass
