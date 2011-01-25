@@ -39,6 +39,7 @@ import oftest.cstruct as ofp
 import oftest.message as message 
 import oftest.instruction as instruction
 from oftest import ofutils
+import validate
 
 
 class FlowPipeline(Thread):
@@ -46,7 +47,7 @@ class FlowPipeline(Thread):
     Class to implement a pipeline of flow tables
     The thread interface is to allow flow expiration operations
     """
-    def __init__(self, n_tables):
+    def __init__(self, switch, n_tables):
         """
         Constructor for base class
         """
@@ -55,6 +56,7 @@ class FlowPipeline(Thread):
         self.tables = []
         self.n_tables = n_tables
         self.active = True
+        self.switch = switch
         # Instantiate table instances
         for idx in range(n_tables):
             self.tables.append(FlowTable(table_id=idx))
@@ -91,8 +93,16 @@ class FlowPipeline(Thread):
         Update the table according to the flow mod message 
         @param operation The flow operation add, mod delete
         @param flow_mod The flow mod message to process
+        @return tuple(err_code, err_msg) ; err_code = 0 --> success
         """
         tables = []
+        
+        if (flow_mod.command !=  ofp.OFPFC_DELETE and
+                flow_mod.command != ofp.OFPFC_DELETE_STRICT):
+            err = validate.validate_flow_mod(self.switch, flow_mod)
+            if err is not None:
+                self.logger.error("Flow_mod failed validation: %s" % err.show())
+                return (-1, err)
         
         if flow_mod.table_id < self.n_tables:
             tables.append(self.tables[flow_mod.table_id])
@@ -141,7 +151,6 @@ class FlowPipeline(Thread):
                               "to miss_policy %d" % table_mod.config)
             table.miss_policy = table_mod.config
         return None 
-
 
     def table_caps_get(self, table_id=0):
         """

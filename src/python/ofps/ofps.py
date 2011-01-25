@@ -78,6 +78,7 @@ class OFSwitchConfig(object):
         parser.set_defaults(n_tables=DEFAULT_TABLE_COUNT)
         parser.set_defaults(interfaces="veth0,veth2,veth4,veth6")
         parser.set_defaults(datapath_id=self.devine_datapath_id())
+        parser.set_defaults(validate_flow_mods=True)
         
         parser.add_option('-i', '--interfaces', type='string',
                           help="Comma separated list of interfaces: e.g., \"veth0,veth2,veth4,veth6\"")
@@ -192,7 +193,7 @@ class OFSwitch(Thread):
                                               port=self.config.controller_port)
         self.dataplane = dataplane.DataPlane()
         self.logger.info("Dataplane started")
-        self.pipeline = FlowPipeline(self.config.n_tables)
+        self.pipeline = FlowPipeline(self, self.config.n_tables)
         self.pipeline.controller_set(self.controller)
         self.pipeline.start()
         self.logger.info("Pipeline started")

@@ -196,7 +196,7 @@ def flow_mod(switch, msg, rawmsg):
     """
     (rv, code) = switch.pipeline.flow_mod_process(msg, switch.groups)
     switch.logger.debug("Handled flow_mod, result: " + str(rv) + ", " +
-                        "None" if code is None else ofp.ofp_flow_mod_failed_code[code])
+                        "None" if code is None else code.__class__.__name__)
     if rv < 0:
         #@todo Send error message with error code
         pass
