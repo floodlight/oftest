@@ -29,9 +29,13 @@ def clear_switch(parent, port_list, logger):
     @param parent Object implementing controller and assert equal
     @param logger Logging object
     """
+    parent.assertTrue(len(port_list) > 2, "Not enough ports for test")
     for port in port_list:
         clear_port_config(parent, port, logger)
+    initialize_table_config(parent.controller, logger)
     delete_all_flows(parent.controller, logger)
+
+    return port_list
 
 def initialize_table_config(ctrl, logger):
     """
