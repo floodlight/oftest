@@ -111,7 +111,7 @@ class DataPlanePort(Thread):
 
             try:
                 rcvmsg = self.socket.recv(RCV_SIZE_DEFAULT)
-            except StandardError:
+            except (StandardError, socket.error):
                 if not error_warned:
                     self.logger.info("Socket error on recv")
                     error_warned = True
