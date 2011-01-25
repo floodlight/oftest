@@ -194,12 +194,11 @@ def flow_mod(switch, msg, rawmsg):
     @param msg The parsed message object of type flow_mod
     @param rawmsg The actual packet received as a string
     """
-    (rv, code) = switch.pipeline.flow_mod_process(msg, switch.groups)
+    (rv, err_msg) = switch.pipeline.flow_mod_process(msg, switch.groups)
     switch.logger.debug("Handled flow_mod, result: " + str(rv) + ", " +
-                        "None" if code is None else code.__class__.__name__)
-    if rv < 0:
-        #@todo Send error message with error code
-        pass
+                        "None" if err_msg is None else err_msg.__class__.__name__)
+    if rv !=  0:
+        switch.controller.message_send(err_msg)
 
 def flow_mod_failed_error_msg(switch, msg, rawmsg):
     """
