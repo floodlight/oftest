@@ -58,6 +58,8 @@ MODIFY_ACTION_VALUES =  [ofp.OFPAT_SET_VLAN_VID,
                          ofp.OFPAT_SET_TP_SRC,
                          ofp.OFPAT_SET_TP_DST]
 
+ETHERTYPE_IP = 0x800
+
 # Cache supported features to avoid transaction overhead
 cached_supported_actions = None
 
@@ -84,7 +86,8 @@ class MplsExactNone0(pktact.BaseMatchCase):
     MPLS match test with Exact LABEL, TC
     Test conditions:
     - MATCH
-     - LABEL: OFPML_NONE  TC: SPECIFIC
+     - LABEL: SPECIFIC  TC: SPECIFIC
+     - DL_TYPE: IP(NON MPLS)
     - SENDING PKT
      - NUM OF TAGS: 0
      - LABEL: N/A  TC: N/A
@@ -101,7 +104,8 @@ class MplsExactNone1(pktact.BaseMatchCase):
     MPLS match test with Exact LABEL, TC
     Test conditions:
     - MATCH
-     - LABEL: OFPML_NONE  TC: SPECIFIC
+     - LABEL: SPECIFIC  TC: SPECIFIC
+     - DL_TYPE: IP(NON MPLS)
     - SENDING PKT
      - NUM OF TAGS: 1
      - LABEL: unmatch value  TC: unmatch value
@@ -118,7 +122,8 @@ class MplsExactNone2(pktact.BaseMatchCase):
     MPLS match test with Exact LABEL, TC
     Test conditions:
     - MATCH
-     - LABEL: OFPML_NONE  TC: SPECIFIC
+     - LABEL: SPECIFIC  TC: SPECIFIC
+     - DL_TYPE: IP(NON MPLS)
     - SENDING PKT
      - NUM OF TAGS: 1
      - LABEL: unmatch value  TC: match value
@@ -341,7 +346,8 @@ class MplsWildLabelExactTcNone0(pktact.BaseMatchCase):
     MPLS match test with Wildcard LABEL and Exact TC
     Test conditions:
     - MATCH
-     - LABEL: OFPML_NONE  TC: SPECIFIC
+     - LABEL: SPECIFIC  TC: SPECIFIC
+     - DL_TYPE: IP(NON MPLS)
     - SENDING PKT
      - NUM OF TAGS: 0
      - LABEL: N/A  TC: N/A
@@ -358,7 +364,8 @@ class MplsWildLabelExactTcNone1(pktact.BaseMatchCase):
     MPLS match test with Wildcard LABEL and Exact TC
     Test conditions:
     - MATCH
-     - LABEL: OFPML_NONE  TC: SPECIFIC
+     - LABEL: SPECIFIC  TC: SPECIFIC
+     - DL_TYPE: IP(NON MPLS)
     - SENDING PKT
      - NUM OF TAGS: 1
      - LABEL: unmatch value  TC: unmatch value
@@ -375,7 +382,8 @@ class MplsWildLabelExactTcNone2(pktact.BaseMatchCase):
     MPLS match test with Wildcard LABEL and Exact TC
     Test conditions:
     - MATCH
-     - LABEL: OFPML_NONE  TC: SPECIFIC
+     - LABEL: SPECIFIC  TC: SPECIFIC
+     - DL_TYPE: IP(NON MPLS)
     - SENDING PKT
      - NUM OF TAGS: 1
      - LABEL: unmatch value  TC: match value
@@ -594,7 +602,8 @@ class MplsExactLabelWildTcNone0(pktact.BaseMatchCase):
     MPLS match test with Exact LABEL and Wildcard TC
     Test conditions:
     - MATCH
-     - LABEL: OFPML_NONE  TC: SPECIFIC
+     - LABEL: SPECIFIC  TC: SPECIFIC
+     - DL_TYPE: IP(NON MPLS)
     - SENDING PKT
      - NUM OF TAGS: 0
      - LABEL: N/A  TC: N/A
@@ -611,7 +620,8 @@ class MplsExactLabelWildTcNone1(pktact.BaseMatchCase):
     MPLS match test with Exact LABEL and Wildcard TC
     Test conditions:
     - MATCH
-     - LABEL: OFPML_NONE  TC: SPECIFIC
+     - LABEL: SPECIFIC  TC: SPECIFIC
+     - DL_TYPE: IP(NON MPLS)
     - SENDING PKT
      - NUM OF TAGS: 1
      - LABEL: unmatch value  TC: unmatch value
@@ -628,7 +638,8 @@ class MplsExactLabelWildTcNone2(pktact.BaseMatchCase):
     MPLS match test with Exact LABEL and Wildcard TC
     Test conditions:
     - MATCH
-     - LABEL: OFPML_NONE  TC: SPECIFIC
+     - LABEL: SPECIFIC  TC: SPECIFIC
+     - DL_TYPE: IP(NON MPLS)
     - SENDING PKT
      - NUM OF TAGS: 1
      - LABEL: unmatch value  TC: match value
@@ -850,7 +861,8 @@ class MplsWildNone0(pktact.BaseMatchCase):
     MPLS match test with Wildcard LABEL, TC
     Test conditions:
     - MATCH
-     - LABEL: OFPML_NONE  TC: SPECIFIC
+     - LABEL: SPECIFIC  TC: SPECIFIC
+     - DL_TYPE: IP(NON MPLS)
     - SENDING PKT
      - NUM OF TAGS: 0
      - LABEL: N/A  TC: N/A
@@ -867,7 +879,8 @@ class MplsWildNone1(pktact.BaseMatchCase):
     MPLS match test with Wildcard LABEL, TC
     Test conditions:
     - MATCH
-     - LABEL: OFPML_NONE  TC: SPECIFIC
+     - LABEL: SPECIFIC  TC: SPECIFIC
+     - DL_TYPE: IP(NON MPLS)
     - SENDING PKT
      - NUM OF TAGS: 1
      - LABEL: unmatch value  TC: unmatch value
@@ -884,7 +897,8 @@ class MplsWildNone2(pktact.BaseMatchCase):
     MPLS match test with Wildcard LABEL, TC
     Test conditions:
     - MATCH
-     - LABEL: OFPML_NONE  TC: SPECIFIC
+     - LABEL: SPECIFIC  TC: SPECIFIC
+     - DL_TYPE: IP(NON MPLS)
     - SENDING PKT
      - NUM OF TAGS: 1
      - LABEL: unmatch value  TC: match value
@@ -1103,7 +1117,7 @@ class MplsWildOutrange4(pktact.BaseMatchCase):
 def mpls_none_tests(parent, mpls_label_mask=False, mpls_tc_mask=False,
                     test_condition=0):
     """
-    MPLS match test with OFPML_NONE
+    MPLS match test when matching type is not MPLS
 
     @param parent Must implement controller, dataplane, assertTrue, assertEqual
     and logger
@@ -1117,7 +1131,8 @@ def mpls_none_tests(parent, mpls_label_mask=False, mpls_tc_mask=False,
     if mpls_tc_mask == True:
         wildcards = wildcards + ofp.OFPFW_MPLS_TC
 
-    label_match = ofp.OFPML_NONE
+    dl_type_match = ETHERTYPE_IP
+    label_match = random.randint(16,1048574)
     tc = random.randint(0, 7)
     ttl = 128
 
@@ -1131,32 +1146,28 @@ def mpls_none_tests(parent, mpls_label_mask=False, mpls_tc_mask=False,
         match_exp = True
 
     elif test_condition == 1:
-        label = random.randint(16, 1048575)
+        label = label_match + 1 # unmatching value
         tc_match = 7 - tc # unmatching value
-        if mpls_label_mask == True:
-            match_exp = True
-        else:
-            match_exp = False
+        match_exp = False
 
     elif test_condition == 2:
-        label = random.randint(16, 1048575)
+        label = label_match + 1 # unmatching value
         tc_match = tc
-        if mpls_label_mask == True:
-            match_exp = True
-        else:
-            match_exp = False
+        match_exp = False
 
     else:
         return
 
     if match_exp == True:
-        exp_label = label
-        exp_tc = tc
-        exp_ttl = ttl
+        #MPLS tag Not Expected
+        exp_label = -1
+        exp_tc = 0
+        exp_ttl = 0
     else:
-        exp_label = 0 #NOT_EXPECTED
-        exp_tc = 0 #NOT_EXPECTED
-        exp_ttl = 0 #NOT_EXPECTED
+        #PKT Not Expected
+        exp_label = 0
+        exp_tc = 0
+        exp_ttl = 0
 
     testutils.flow_match_test_mpls(parent, pa_port_map,
                 wildcards=wildcards,
@@ -1167,6 +1178,7 @@ def mpls_none_tests(parent, mpls_label_mask=False, mpls_tc_mask=False,
                 mpls_tc_int=0,
                 label_match=label_match,
                 tc_match=tc_match,
+                dl_type_match=dl_type_match,
                 exp_mpls_label=exp_label,
                 exp_mpls_tc=exp_tc,
                 exp_mpls_ttl=exp_ttl,
