@@ -18,6 +18,7 @@ skipped_test_count = 0
 # Some useful defines
 IP_ETHERTYPE = 0x800
 ETHERTYPE_VLAN = 0x8100
+ETHERTYPE_MPLS = 0x8847
 TCP_PROTOCOL = 0x6
 UDP_PROTOCOL = 0x11
 
@@ -1082,7 +1083,8 @@ def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
                                    exp_mpls_ttl=64,
                                    exp_mpls_ttl_int=32,
                                    exp_ip_ttl=192,
-                                   label_match=ofp.OFPML_NONE, tc_match=0,
+                                   label_match=0, tc_match=0,
+                                   dl_type_match=ETHERTYPE_MPLS,
                                    match_exp=True,
                                    add_tag_exp=False,
                                    exp_msg=ofp.OFPT_FLOW_REMOVED,
@@ -1171,17 +1173,16 @@ def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
                                            mpls_tc_int=mpls_tc_int,
                                            mpls_ttl_int=exp_mpls_ttl_int,
                                            ip_ttl=exp_ip_ttl)
+    wildcards = ofp.OFPFW_DL_TYPE | wildcards
 
     match = parse.packet_to_flow_match(pkt)
     parent.assertTrue(match is not None, "Flow match from pkt failed")
-
-    wildcards = ofp.OFPFW_DL_TYPE | wildcards
 
     match.mpls_label = label_match
     match.mpls_tc = tc_match
     match.wildcards = wildcards
 
-    match.dl_type = 0
+    match.dl_type = dl_type_match
     match.nw_tos = 0
     match.nw_proto = 0
     match.nw_src = 0
@@ -1223,7 +1224,8 @@ def flow_match_test_mpls(parent, port_map, wildcards=0,
                          mpls_label=-1, mpls_tc=0, mpls_ttl=64,
                          mpls_label_int=-1, mpls_tc_int=0, mpls_ttl_int=32,
                          ip_ttl = 192,
-                         label_match=ofp.OFPML_NONE, tc_match=0,
+                         label_match=0, tc_match=0,
+                         dl_type_match=ETHERTYPE_MPLS,
                          exp_mpls_type=0x8847,
                          exp_mpls_label=-1, exp_mpls_tc=0, exp_mpls_ttl=64,
                          exp_mpls_ttl_int=32,
@@ -1291,6 +1293,7 @@ def flow_match_test_mpls(parent, port_map, wildcards=0,
                                       ip_ttl=ip_ttl,
                                       label_match=label_match,
                                       tc_match=tc_match,
+                                      dl_type_match=dl_type_match,
                                       exp_mpls_type=exp_mpls_type,
                                       exp_mpls_label=exp_mpls_label,
                                       exp_mpls_tc=exp_mpls_tc,
