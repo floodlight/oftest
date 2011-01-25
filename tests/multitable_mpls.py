@@ -345,9 +345,8 @@ def mpls_set_two_tables_tests(parent, match_exp=True):
         label_match_tbl1 = label
         tc_match_tbl1 = tc
 
-    # Create action_list for TBL1
-    act = action.action_output()
-    action_list_tbl1 = [act]
+    # Output action for table1 will be set in the framework
+    action_list_tbl1 = None
 
     flow_match_test_mpls_two_tables(parent, pa_port_map,
                     wildcards=wildcards,
@@ -404,9 +403,8 @@ def mpls_ttl_inout_two_tables_tests(parent, test_inwards=True):
     label_match_tbl1 = exp_label
     tc_match_tbl1 = exp_tc
 
-    # Create action_list for TBL1
-    act = action.action_output()
-    action_list_tbl1 = [act]
+    # Output action for table1 will be set in the framework
+    action_list_tbl1 = None
 
     flow_match_test_mpls_two_tables(parent, pa_port_map,
                     wildcards=wildcards,
@@ -465,9 +463,8 @@ def nompls_push_set_two_tables_tests(parent):
     label_match_tbl1 = exp_label
     tc_match_tbl1 = exp_tc
 
-    # Create action_list for TBL1
-    act = action.action_output()
-    action_list_tbl1 = [act]
+    # Output action for table1 will be set in the framework
+    action_list_tbl1 = None
 
     flow_match_test_mpls_two_tables(parent, pa_port_map,
                     wildcards=wildcards,
@@ -526,9 +523,8 @@ def mpls_push_two_tables_tests(parent, match_exp = True):
     label_match_tbl1 = exp_label
     tc_match_tbl1 = exp_tc
 
-    # Create action_list for TBL1
-    act = action.action_output()
-    action_list_tbl1 = [act]
+    # Output action for table1 will be set in the framework
+    action_list_tbl1 = None
 
     flow_match_test_mpls_two_tables(parent, pa_port_map,
                     wildcards=wildcards,
@@ -603,9 +599,8 @@ def mpls_push_set_two_tables_tests(parent, test_condition=0, match_exp = True):
     label_match_tbl1 = exp_label
     tc_match_tbl1 = exp_tc
 
-    # Create action_list for TBL1
-    act = action.action_output()
-    action_list_tbl1 = [act]
+    # Output action for table1 will be set in the framework
+    action_list_tbl1 = None
 
     flow_match_test_mpls_two_tables(parent, pa_port_map,
                     wildcards=wildcards,
@@ -668,9 +663,8 @@ def mpls_pop_two_tables_tests(parent, test_condition=0, match_exp=True):
         label_match_tbl1 = label
         tc_match_tbl1 = tc
 
-    # Create action_list for TBL1
-    act = action.action_output()
-    action_list_tbl1 = [act]
+    # Output action for table1 will be set in the framework
+    action_list_tbl1 = None
 
     # One-tag-removed packet expected
     exp_label = -1

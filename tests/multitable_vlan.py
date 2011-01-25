@@ -326,9 +326,8 @@ def vlan_set_two_tables_tests(parent, test_condition=0):
     act2.vlan_pcp = exp_pcp
     action_list_tbl0 = [act, act2]
 
-    # Create action_list for TBL1
-    act = action.action_output()
-    action_list_tbl1 = [act]
+    # Output action for table1 will be set in the framework
+    action_list_tbl1 = None
 
     flow_match_test_vlan_two_tables(parent, pa_port_map,
                     wildcards=wildcards,
@@ -383,8 +382,8 @@ def novlan_push_two_tables_tests(parent):
     vid_match_tbl1 = exp_vid
     pcp_match_tbl1 = exp_pcp
 
-    act = action.action_output()
-    action_list_tbl1 = [act]
+    # Output action for table1 will be set in the framework
+    action_list_tbl1 = None
 
     flow_match_test_vlan_two_tables(parent, pa_port_map,
                     dl_vlan=vid,
@@ -465,8 +464,8 @@ def vlan_push_two_tables_tests(parent, test_condition=0, match_exp = True):
     vid_match_tbl1 = exp_vid
     pcp_match_tbl1 = exp_pcp
 
-    act = action.action_output()
-    action_list_tbl1 = [act]
+    # Output action for table1 will be set in the framework
+    action_list_tbl1 = None
 
     flow_match_test_vlan_two_tables(parent, pa_port_map,
                     dl_vlan=vid,
@@ -525,8 +524,8 @@ def vlan_pop_two_tables_tests(parent, test_condition=0, match_exp=True):
     act = action.action_pop_vlan()
     action_list_tbl0 = [act]
 
-    act = action.action_output()
-    action_list_tbl1 = [act]
+    # Output action for table1 will be set in the framework
+    action_list_tbl1 = None
 
     flow_match_test_vlan_two_tables(parent, pa_port_map,
                     dl_vlan=vid,
