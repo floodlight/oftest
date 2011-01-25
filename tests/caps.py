@@ -136,7 +136,9 @@ class FillTableExact(basic.SimpleProtocol):
         caps_logger.info("Running " + str(self))
         flow_caps_common(self)
 
+# mark these tests as optional
 test_prio["FillTableExact"] = -1
+test_prio["FillTableWC"] = -1
 
 class FillTableWC(basic.SimpleProtocol):
     """
