@@ -38,7 +38,7 @@ def validate_flow_mod(switch, flow_mod):
             logger.error(
                 "No validation test for instruction %s:: failed cmd '%s'::%s"  %
                 (t, cmd, str(e)))
-    return None
+    return _validate_match(switch, flow_mod)
             
 ##### instructions 
 
@@ -158,3 +158,14 @@ def _validate_action_set_mpls_tc(action, switch, flow_mod, logger):
                                          ofp.OFPBAC_BAD_ARGUMENT, 
                                          flow_mod)
         
+###### match
+def _validate_match(switch, flow_mod):
+    match = flow_mod.match
+    if (
+        (match.mpls_label < 0 or match.mpls_label > 0x0fffff) or
+        (match.mpls_tc    < 0 or match.mpls_tc >= 8 )
+        ):
+        return ofutils.of_error_msg_make(ofp.OFPET_FLOW_MOD_FAILED, 
+                                         ofp.OFPFMFC_BAD_MATCH, 
+                                         flow_mod)
+    return None
