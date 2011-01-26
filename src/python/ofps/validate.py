@@ -145,8 +145,16 @@ def _validate_action_copy_ttl_out(action, switch, flow_mod, logger):
 def _validate_action_copy_ttl_in(action, switch, flow_mod, logger):
     pass
 def _validate_action_set_mpls_ttl(action, switch, flow_mod, logger):
+    # noop; 8 bit in openflow, 8 bit in mpls
     pass
 def _validate_action_dec_mpls_ttl(action, switch, flow_mod, logger):
+    # noop; always works
     pass
 def _validate_action_set_mpls_tc(action, switch, flow_mod, logger):
-    pass
+    if (action.mpls_tc < 8 and action.mpls_tc >=0 ):
+        return None
+    else:
+        return ofutils.of_error_msg_make(ofp.OFPET_BAD_ACTION, 
+                                         ofp.OFPBAC_BAD_ARGUMENT, 
+                                         flow_mod)
+        
