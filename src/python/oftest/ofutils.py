@@ -24,5 +24,5 @@ def of_error_msg_make(type, code, data):
     if isinstance(data,str):
         err.data = data
     else:
-        err.data= data.pack()
+        err.data = data.pack()
     return err

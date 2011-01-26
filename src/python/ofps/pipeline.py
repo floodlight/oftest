@@ -103,6 +103,8 @@ class FlowPipeline(Thread):
             if err is not None:
                 self.logger.error("Flow_mod failed validation: %s" % err.show())
                 return (-1, err)
+            else:
+                self.logger.debug("Flow_mod add/mod successfully validated")
         
         if flow_mod.table_id < self.n_tables:
             tables.append(self.tables[flow_mod.table_id])

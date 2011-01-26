@@ -448,7 +448,7 @@ def flow_msg_install(parent, request, clear_table=True):
                            + str(table_id))
         do_barrier(parent.controller)
 
-    parent.logger.debug("Insert flow")
+    parent.logger.debug("Insert flow::\n%s" % request.show())
     rv = parent.controller.message_send(request)
     parent.assertTrue(rv != -1, "Error installing flow mod")
     do_barrier(parent.controller)
