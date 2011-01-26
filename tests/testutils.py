@@ -1173,7 +1173,7 @@ def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
                                            mpls_tc_int=mpls_tc_int,
                                            mpls_ttl_int=exp_mpls_ttl_int,
                                            ip_ttl=exp_ip_ttl)
-    wildcards = ofp.OFPFW_DL_TYPE | wildcards
+    wildcards = (ofp.OFPFW_ALL & ~(ofp.OFPFW_DL_TYPE | ofp.OFPFW_MPLS_LABEL | ofp.OFPFW_MPLS_TC)) | wildcards
 
     match = parse.packet_to_flow_match(pkt)
     parent.assertTrue(match is not None, "Flow match from pkt failed")
@@ -1186,9 +1186,9 @@ def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
     match.nw_tos = 0
     match.nw_proto = 0
     match.nw_src = 0
-    match.nw_src_mask = 0
+    match.nw_src_mask = 0xFFFFFFFF
     match.nw_dst = 0
-    match.nw_dst_mask = 0
+    match.nw_dst_mask = 0xFFFFFFFF
     match.tp_src = 0
     match.tp_dst = 0
 
@@ -1201,6 +1201,7 @@ def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
     flow_msg_install(parent, request)
 
     parent.logger.debug("Send packet: " + str(ing_port) + " to " + str(egr_port))
+    #parent.logger.debug(str(pkt).encode("hex"))
     parent.dataplane.send(ing_port, str(pkt))
 
     if match_exp:
