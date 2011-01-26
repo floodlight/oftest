@@ -791,7 +791,7 @@ def mpls_set_label_act_tests(parent, test_condition=0):
         action_list=[act]
 
     elif test_condition == 1:
-        act.mpls_label = parent.label + 1048576
+        act.mpls_label = 1048576
         if parent.num_tags == 0:
             match_exp = False
             exp_msg = ofp.OFPT_ERROR
@@ -873,7 +873,7 @@ def mpls_set_tc_act_tests(parent, test_condition=0):
         action_list=[act]
 
     elif test_condition == 1:
-        act.mpls_tc = parent.tc + 7
+        act.mpls_tc = 8
         if parent.num_tags == 0:
             match_exp = False
             exp_msg = ofp.OFPT_ERROR
@@ -1303,14 +1303,14 @@ def mpls_multipush3_act_tests(parent, test_condition=0):
 
     if test_condition == 0:
         act2 = action.action_set_mpls_label()
-        act2.mpls_label = parent.label + 1048576
+        act2.mpls_label = 1048576
         exp_label = act2.mpls_label
         exp_tc = 0
         exp_ttl = 0 # Not expected
 
     elif test_condition == 1:
         act2 = action.action_set_mpls_tc()
-        act2.mpls_tc = parent.tc + 8
+        act2.mpls_tc = 8
         exp_tc = act2.mpls_tc
         exp_label = 0
         exp_ttl = 0 # Not expected

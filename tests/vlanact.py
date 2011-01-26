@@ -545,7 +545,7 @@ def vlan_set_act_tests(parent, test_condition=0):
 
     elif test_condition == 1:
         act = action.action_set_vlan_vid()
-        act.vlan_vid = new_vid + 4096  #OUT OF RANGE
+        act.vlan_vid = 4096  #OUT OF RANGE
         match_exp = False
         exp_vid = -1
         exp_pcp = 0
@@ -573,7 +573,7 @@ def vlan_set_act_tests(parent, test_condition=0):
 
     elif test_condition == 3:
         act = action.action_set_vlan_pcp()
-        act.vlan_pcp = new_pcp + 8  #OUT OF RANGE
+        act.vlan_pcp = 8  #OUT OF RANGE
         match_exp = False
         exp_vid = -1
         exp_pcp = 0
