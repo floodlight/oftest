@@ -52,7 +52,10 @@ error_to_class_map = {
     ofp.OFPET_BAD_ACTION                : message.bad_action_error_msg,
     ofp.OFPET_FLOW_MOD_FAILED           : message.flow_mod_failed_error_msg,
     ofp.OFPET_PORT_MOD_FAILED           : message.port_mod_failed_error_msg,
-    ofp.OFPET_QUEUE_OP_FAILED           : message.queue_op_failed_error_msg
+    ofp.OFPET_QUEUE_OP_FAILED           : message.queue_op_failed_error_msg,
+    ofp.OFPET_TABLE_MOD_FAILED          : message.table_mod_failed_error_msg,
+    ofp.OFPET_QUEUE_OP_FAILED           : message.queue_op_failed_error_msg,
+    ofp.OFPET_SWITCH_CONFIG_FAILED      : message.switch_config_failed_error_msg
 }
 
 # Map from header type value to the underlieing message class
