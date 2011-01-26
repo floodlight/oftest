@@ -38,7 +38,7 @@ def validate_flow_mod(switch, flow_mod):
             logger.error(
                 "No validation test for instruction %s:: failed cmd '%s'::%s"  %
                 (t, cmd, str(e)))
-    return _validate_match(switch, flow_mod)
+    return _validate_match(switch, flow_mod, logger)
             
 ##### instructions 
 
@@ -159,13 +159,57 @@ def _validate_action_set_mpls_tc(action, switch, flow_mod, logger):
                                          flow_mod)
         
 ###### match
-def _validate_match(switch, flow_mod):
+class MatchException(StandardError):
+    def __init__(self,of_err):
+        self.of_err = of_err
+        
+def _validate_match(switch, flow_mod, logger):
     match = flow_mod.match
-    if (
-        (match.mpls_label < 0 or match.mpls_label > 0x0fffff) or
-        (match.mpls_tc    < 0 or match.mpls_tc >= 8 )
-        ):
-        return ofutils.of_error_msg_make(ofp.OFPET_FLOW_MOD_FAILED, 
-                                         ofp.OFPFMFC_BAD_MATCH, 
-                                         flow_mod)
+    try:
+        _validate_match_mpls(match, flow_mod, logger)
+        _validate_match_vlan(match, flow_mod, logger)
+    except MatchException, e:
+        return e.of_err
+    return None             # the success case
+
+def _validate_match_mpls(match, flow_mod, logger):
+    if (match.wildcards & ofp.OFPFMF_MPLS_LABEL) == 0:
+        if match.mpls_label < 0 or match.mpls_label > 0xffffff:
+            logger.error(
+                "rejecting broken match: bad mpls label: %x %d" %
+                (match.wildcards, match.mpls_label))
+            raise MatchException(
+                        ofutils.of_error_msg_make(
+                                ofp.OFPET_FLOW_MOD_FAILED, 
+                                ofp.OFPFMFC_BAD_MATCH, 
+                                flow_mod))
+    if (match.wildcards & ofp.OFPFMF_MPLS_TC) == 0:
+        if match.mpls_tc < 0 or match.mpls_tc >= 8:
+            logger.error("rejecting broken match: bad mpls tc")
+            raise MatchException(
+                        ofutils.of_error_msg_make(
+                                ofp.OFPET_FLOW_MOD_FAILED, 
+                                ofp.OFPFMFC_BAD_MATCH, 
+                                flow_mod))
+    return None
+
+def _validate_match_vlan(match, flow_mod, logger):
+    if (match.wildcards & ofp.OFPFMF_DL_VLAN) == 0:
+        if (match.dl_vlan != 65535 and
+            (match.dl_vlan < 0 or match.dl_vlan > 4096)):
+            logger.error("rejecting broken match: bad vlan: %d" %
+                         match.dl_vlan)
+            raise MatchException(
+                        ofutils.of_error_msg_make(
+                                ofp.OFPET_FLOW_MOD_FAILED, 
+                                ofp.OFPFMFC_BAD_MATCH, 
+                                flow_mod))
+    if (match.wildcards & ofp.OFPFMF_DL_VLAN_PCP) == 0:
+        if match.dl_vlan_pcp < 0 or match.dl_vlan_pcp >= 8:
+            logger.error("rejecting broken match: bad vlan_pcp")
+            raise MatchException(
+                        ofutils.of_error_msg_make(
+                                ofp.OFPET_FLOW_MOD_FAILED, 
+                                ofp.OFPFMFC_BAD_MATCH, 
+                                flow_mod))
     return None
