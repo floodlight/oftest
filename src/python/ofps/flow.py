@@ -201,18 +201,11 @@ def l2_match(match_a, match_b):
             flow_logger.debug("Failed dl_type: %d vs %d" % 
                               (match_a.dl_type, match_b.dl_type))
             return False
-    
-    if not (wildcards & ofp.OFPFW_MPLS_LABEL):
-        if match_a.mpls_label == ofp.OFPML_ANY:
-            if match_b.mpls_label == ofp.OFPML_NONE:
-                flow_logger.debug("Failed mpls_label: ANY vs NONE")
-                return False
-        elif match_a.mpls_label == ofp.OFPML_NONE:
-            if match_b.mpls_label != ofp.OFPML_NONE:
-                flow_logger.debug("Failed mpls_label: NONE vs %d" %
-                                  match_b.mpls_label)
-                return False
-        else:
+        
+        # MPLS only evaluated if type is not wild and is one of the MPLS types.
+        if (match_a.dl_type in (0x8847, 0x8848)
+            and not (wildcards & ofp.OFPFW_MPLS_LABEL)
+            and (match_a.mpls_label != ofp.OFPML_ANY)):
             if match_a.mpls_label != match_b.mpls_label:
                 flow_logger.debug("Failed mpls_label: %d vs %d" % 
                                   (match_a.mpls_label, match_b.mpls_label))
@@ -221,8 +214,7 @@ def l2_match(match_a, match_b):
                 if match_a.mpls_tc != match_b.mpls_tc:
                     flow_logger.debug("Failed mpls_tc: %d vs %d" % 
                                       (match_a.mpls_tc, match_b.mpls_tc))
-                    return False
-            
+                    return False    
     return True
 
 def l3_match(match_a, match_b):
@@ -302,8 +294,8 @@ def flow_match_strict(flow_a, flow_b, groups):
         return False
 
     # @todo  Switch on DL type; handle ARP cases, etc
-    # @todo  What if DL_TYPE is wildcarded?
-    if flow_a.match.dl_type == 0x800:
+    # L3 only evaluated if DL_TYPE is not wild and equal to 0x800.
+    if (not (wildcards_a & ofp.OFPFW_DL_TYPE)) and (flow_a.match.dl_type == 0x800):
         if not l3_match(flow_a.match, flow_b.match):
             return False
     else:

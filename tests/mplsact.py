@@ -57,6 +57,9 @@ MODIFY_ACTION_VALUES =  [ofp.OFPAT_COPY_TTL_OUT,
                          ofp.OFPAT_PUSH_MPLS,
                          ofp.OFPAT_POP_MPLS]
 
+ETHERTYPE_IP = 0x800
+ETHERTYPE_MPLS = 0x8847
+
 # Cache supported features to avoid transaction overhead
 cached_supported_actions = None
 
@@ -94,8 +97,9 @@ class MplsActNonTagPush(pktact.BaseMatchCase):
         self.tc_int = 0
         self.ttl_int = 0
         self.ip_ttl = 192
-        self.label_match = ofp.OFPML_NONE
+        self.label_match = 0
         self.tc_match = 0
+        self.dl_type_match = ETHERTYPE_IP
 
     def runTest(self):
         mpls_push_act_tests(self)
@@ -186,6 +190,7 @@ class MplsActOneTagPop(MplsActNonTagPush):
         self.ttl = 64
         self.label_match = self.label
         self.tc_match = self.tc
+        self.dl_type_match = ETHERTYPE_MPLS
 
     def runTest(self):
         mpls_pop_act_tests(self)
@@ -367,7 +372,8 @@ class MplsActTwoTagPop(MplsActNonTagPush):
         self.tc_int = self.tc + 1
         self.ttl_int = 32
         self.label_match = self.label
-        self.tc_match = self.tc
+        self.tc_match = self.tc 
+        self.dl_type_match = ETHERTYPE_MPLS
 
     def runTest(self):
         mpls_pop_act_tests(self)
@@ -601,6 +607,7 @@ def mpls_pop_act_tests(parent):
                     mpls_tc_int=parent.tc_int,
                     label_match=parent.label_match,
                     tc_match=parent.tc_match,
+                    dl_type_match=parent.dl_type_match,
                     exp_mpls_label=exp_label,
                     exp_mpls_tc=exp_tc,
                     exp_mpls_ttl=exp_ttl,
@@ -670,6 +677,7 @@ def mpls_ttl_in_act_tests(parent):
                     ip_ttl=parent.ip_ttl,
                     label_match=parent.label_match,
                     tc_match=parent.tc_match,
+                    dl_type_match=parent.dl_type_match,
                     exp_mpls_label=exp_label,
                     exp_mpls_tc=exp_tc,
                     exp_mpls_ttl=exp_ttl,
@@ -740,6 +748,7 @@ def mpls_ttl_out_act_tests(parent):
                     ip_ttl=parent.ip_ttl,
                     label_match=parent.label_match,
                     tc_match=parent.tc_match,
+                    dl_type_match=parent.dl_type_match,
                     exp_mpls_label=exp_label,
                     exp_mpls_tc=exp_tc,
                     exp_mpls_ttl=exp_ttl,
@@ -822,6 +831,7 @@ def mpls_set_label_act_tests(parent, test_condition=0):
             ip_ttl=parent.ip_ttl,
             label_match=parent.label_match,
             tc_match=parent.tc_match,
+            dl_type_match=parent.dl_type_match,
             exp_mpls_label=exp_label,
             exp_mpls_tc=exp_tc,
             exp_mpls_ttl=exp_ttl,
@@ -904,6 +914,7 @@ def mpls_set_tc_act_tests(parent, test_condition=0):
             ip_ttl=parent.ip_ttl,
             label_match=parent.label_match,
             tc_match=parent.tc_match,
+            dl_type_match=parent.dl_type_match,
             exp_mpls_label=exp_label,
             exp_mpls_tc=exp_tc,
             exp_mpls_ttl=exp_ttl,
@@ -964,6 +975,7 @@ def mpls_set_ttl_act_tests(parent):
                     ip_ttl=parent.ip_ttl,
                     label_match=parent.label_match,
                     tc_match=parent.tc_match,
+                    dl_type_match=parent.dl_type_match,
                     exp_mpls_label=exp_label,
                     exp_mpls_tc=exp_tc,
                     exp_mpls_ttl=exp_ttl,
@@ -1023,6 +1035,7 @@ def mpls_dec_ttl_act_tests(parent):
                     ip_ttl=parent.ip_ttl,
                     label_match=parent.label_match,
                     tc_match=parent.tc_match,
+                    dl_type_match=parent.dl_type_match,
                     exp_mpls_label=exp_label,
                     exp_mpls_tc=exp_tc,
                     exp_mpls_ttl=exp_ttl,
@@ -1078,6 +1091,7 @@ def mpls_push_act_tests(parent):
                     mpls_tc_int=parent.tc_int,
                     label_match=parent.label_match,
                     tc_match=parent.tc_match,
+                    dl_type_match=parent.dl_type_match,
                     exp_mpls_label=exp_label,
                     exp_mpls_tc=exp_tc,
                     exp_mpls_ttl=exp_ttl,
@@ -1151,6 +1165,7 @@ def mpls_multipush1_act_tests(parent, test_condition=0):
                 mpls_tc_int=parent.tc_int,
                 label_match=parent.label_match,
                 tc_match=parent.tc_match,
+                dl_type_match=parent.dl_type_match,
                 exp_mpls_label=exp_label,
                 exp_mpls_tc=exp_tc,
                 exp_mpls_ttl=exp_ttl,
@@ -1261,6 +1276,7 @@ def mpls_multipush2_act_tests(parent, test_condition=0):
                 mpls_tc_int=parent.tc_int,
                 label_match=parent.label_match,
                 tc_match=parent.tc_match,
+                dl_type_match=parent.dl_type_match,
                 exp_mpls_label=exp_label,
                 exp_mpls_tc=exp_tc,
                 exp_mpls_ttl=exp_ttl,
@@ -1333,6 +1349,7 @@ def mpls_multipush3_act_tests(parent, test_condition=0):
                 mpls_tc_int=parent.tc_int,
                 label_match=parent.label_match,
                 tc_match=parent.tc_match,
+                dl_type_match=parent.dl_type_match,
                 exp_mpls_label=exp_label,
                 exp_mpls_tc=exp_tc,
                 exp_mpls_ttl=exp_ttl,
