@@ -254,6 +254,21 @@ def receive_pkt_verify(parent, egr_port, exp_pkt):
     parent.assertEqual(str(exp_pkt), str(rcv_pkt),
                        "Packet match error on port " + str(egr_port))
     
+def packetin_verify(parent, exp_pkt):
+    """
+    Receive packet_in and verify it matches an expected value
+    """
+    (response, _) = parent.controller.poll(ofp.OFPT_PACKET_IN, 2)
+
+    parent.assertTrue(response is not None, 'Packet in message not received')
+    if str(exp_pkt) != response.data:
+        parent.logger.debug("pkt  len " + str(len(str(exp_pkt))) + ": "
+                            + str(exp_pkt).encode('hex'))
+        parent.logger.debug("resp len " + str(len(str(response.data))) + ": "
+                            + str(response.data).encode('hex'))
+    parent.assertEqual(str(exp_pkt), response.data,
+                     'PACKET_IN packet does not match send packet')
+
 def match_verify(parent, req_match, res_match):
     """
     Verify flow matches agree; if they disagree, report where

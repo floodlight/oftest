@@ -126,20 +126,99 @@ class TwoTable1(basic.SimpleDataPlane):
         self.assertEqual(rcv_port, of_ports[1], "Unexpected receive port")
 
 
-def make_match(dl_type = 0x800, nw_src = "192.168.1.10"):
-    """
-    Making simple packet
+MT_TEST_IP = "192.168.1.10"
+MT_TEST_DL_TYPE = 0x800
 
-    @param dl_type Data_link type
-    @param nw_src Source IP address
+def make_match(dl_type=MT_TEST_DL_TYPE, ip_src=MT_TEST_IP):
+    """
+    Make matching entry template
     """
     match = ofp.ofp_match()
     testutils.wildcard_all_set(match)
     match.wildcards -= ofp.OFPFW_DL_TYPE
+    match.nw_src = parse.parse_ip(ip_src)
     match.nw_src_mask = 0 # Match nw_src
     match.dl_type = dl_type
-    match.nw_src = parse.parse_ip(nw_src)
     return match
+
+def reply_check_dp(parent, ip_src=MT_TEST_IP, tcp_sport=10,
+                   exp_pkt=None, ing_port=0, egr_port=1):
+    """
+    Receiving and received packet check on dataplane
+    """
+    pkt = testutils.simple_tcp_packet(ip_src=ip_src, tcp_sport=tcp_sport)
+    parent.dataplane.send(ing_port, str(pkt))
+    if exp_pkt is None:
+        exp_pkt = pkt
+    testutils.receive_pkt_verify(parent, egr_port, exp_pkt)
+
+def reply_check_ctrl(parent, ip_src=MT_TEST_IP, tcp_sport=10,
+                     exp_pkt=None, ing_port=0):
+    """
+    Receiving and received packet check on controlplane
+    """
+    pkt = testutils.simple_tcp_packet(ip_src=ip_src, tcp_sport=tcp_sport)
+    parent.dataplane.send(ing_port, str(pkt))
+    if exp_pkt is None:
+        exp_pkt = pkt
+    testutils.packetin_verify(parent, exp_pkt)
+
+def write_output(parent, set_id, outport, ip_src=MT_TEST_IP, match=None):
+    """
+    Make flow_mod of Write_action instruction of Output
+    """
+    act = action.action_output()
+    act.port = outport
+    request = message.flow_mod()
+    if match is None:
+        request.match = make_match(ip_src=ip_src)
+    else:
+        request.match = match
+    request.buffer_id = 0xffffffff
+    request.table_id = set_id
+    inst = instruction.instruction_write_actions()
+    parent.assertTrue(inst.actions.add(act), "Can't add action")
+    parent.assertTrue(request.instructions.add(inst), "Can't add inst")
+    pa_logger.info("Inserting flow")
+    rv = parent.controller.message_send(request)
+    parent.assertTrue(rv != -1, "Error installing flow mod")
+    testutils.do_barrier(parent.controller)
+
+def write_goto(parent, set_id, next_id, ip_src=MT_TEST_IP, add_inst=None):
+    """
+    Make flow_mod of Goto table instruction
+    """
+    request = message.flow_mod()
+    request.match = make_match(ip_src=ip_src)
+    request.buffer_id = 0xffffffff
+    request.table_id = set_id
+    if add_inst is not None:
+        parent.assertTrue(request.instructions.add(add_inst), "Can't add inst")
+    inst = instruction.instruction_goto_table()
+    inst.table_id = next_id
+    parent.assertTrue(request.instructions.add(inst), "Can't add inst")
+    pa_logger.info("Inserting flow")
+    rv = parent.controller.message_send(request)
+    parent.assertTrue(rv != -1, "Error installing flow mod")
+    testutils.do_barrier(parent.controller)
+
+def write_goto_action(parent, set_id, next_id, act, ip_src=MT_TEST_IP):
+    """
+    Make Goto instruction with/without write_action
+    """
+    inst = instruction.instruction_write_actions()
+    parent.assertTrue(inst.actions.add(act), "Can't add action")
+    write_goto(parent, set_id, next_id, ip_src=ip_src, add_inst=inst)
+
+def write_goto_output(parent, set_id, next_id, outport, ip_src=MT_TEST_IP,
+                      act=None):
+    """
+    Make flow_mod of Goto table and Write_action instruction of Output
+    """
+    act = action.action_output()
+    act.port = outport
+    write_goto_action(parent, set_id, next_id, act, ip_src=ip_src)
+
 
 class MultiTableGoto(basic.SimpleDataPlane):
     """
@@ -166,81 +245,26 @@ class MultiTableGoto(basic.SimpleDataPlane):
         of_ports = testutils.clear_switch(self, pa_port_map.keys(), pa_logger)
 
         # Set up first match
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = first_table
-        inst = instruction.instruction_goto_table()
-        inst.table_id = second_table
-        self.assertTrue(request.instructions.add(inst), "Could not add inst1")
-        pa_logger.info("Inserting flow 1")
-        rv = self.controller.message_send(request)
-        # pa_logger.debug(request.show())
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
+        write_goto(self, first_table, second_table)
 
         # Set up second match
-        act = action.action_output()
-        act.port = of_ports[0]
-
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = second_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst2")
-        inst = instruction.instruction_goto_table()
-        inst.table_id = third_table
-        self.assertTrue(request.instructions.add(inst), "Could not add inst3")
-        pa_logger.info("Inserting flow 2")
-        rv = self.controller.message_send(request)
-        # pa_logger.debug(request.show())
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
+        write_goto_output(self, second_table, third_table, of_ports[0])
 
         # Set up third match
         match = ofp.ofp_match()
         testutils.wildcard_all_set(match)
         match.wildcards -= ofp.OFPFW_DL_TYPE
         match.wildcards -= ofp.OFPFW_TP_SRC
-        match.dl_type = 0x800
+        match.dl_type = MT_TEST_DL_TYPE
         match.tp_src = 80
-        act = action.action_output()
-        act.port = of_ports[1]
+        write_output(self, third_table, of_ports[1], match=match)
 
-        request = message.flow_mod()
-        request.match = match
-        request.buffer_id = 0xffffffff
-        request.table_id = third_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst4")
-        pa_logger.info("Inserting flow 3")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
-
-        # Generate a packet matching only flow 1 and flow 2; rcv on port[0]
-        pkt = testutils.simple_tcp_packet(ip_src='192.168.1.10', tcp_sport=10)
-        self.dataplane.send(of_ports[2], str(pkt))
-        (rcv_port, rcv_pkt, _) = self.dataplane.poll(timeout=5)
-        self.assertTrue(rcv_pkt is not None, "Did not receive packet")
-        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
-                        str(rcv_port))
-        self.assertEqual(rcv_port, of_ports[0], "Unexpected receive port")
-        
+        # Generate a packet matching only flow 1 and 2; rcv on port[0]
+        reply_check_dp(self, tcp_sport=10,
+                       ing_port = of_ports[2], egr_port = of_ports[0])
         # Generate a packet matching both flow 1, 2 and 3; rcv on port[1]
-        pkt = testutils.simple_tcp_packet(ip_src='192.168.1.10', tcp_sport=80)
-        self.dataplane.send(of_ports[2], str(pkt))
-        (rcv_port, rcv_pkt, _) = self.dataplane.poll(timeout=5)
-        self.assertTrue(rcv_pkt is not None, "Did not receive packet")
-        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
-                        str(rcv_port))
-        self.assertEqual(rcv_port, of_ports[1], "Unexpected receive port")
+        reply_check_dp(self, tcp_sport=80,
+                       ing_port = of_ports[2], egr_port = of_ports[1])
 
     def runTest(self):
         self.scenario3(0, 1, 2)
@@ -255,6 +279,24 @@ class MultiTableGotoAndSendport(basic.SimpleDataPlane):
 
     Lots of negative tests are not checked
     """
+    def set_apply_output(self, table_id, outport, add_inst=None):
+        act = action.action_output()
+        act.port = outport
+        request = message.flow_mod()
+        request.match = make_match()
+        request.buffer_id = 0xffffffff
+        request.table_id = table_id
+        inst = instruction.instruction_apply_actions()
+        self.assertTrue(inst.actions.add(act), "Can't add action")
+        self.assertTrue(request.instructions.add(inst), "Can't add inst")
+        if add_inst is not None:
+            self.assertTrue(request.instructions.add(add_inst),
+                            "Can't add inst")
+        pa_logger.info("Inserting flow")
+        rv = self.controller.message_send(request)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        testutils.do_barrier(self.controller)
+
     def scenario3(self, first_table = 0, second_table = 1, third_table = 2):
         """
         Add three flow entries:
@@ -272,89 +314,23 @@ class MultiTableGotoAndSendport(basic.SimpleDataPlane):
         """
         of_ports = testutils.clear_switch(self, pa_port_map.keys(), pa_logger)
 
-        # Set up first match
-        act = action.action_output()
-        act.port = of_ports[0]
-
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = first_table
-        inst = instruction.instruction_apply_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst1")
+        # Set up matches
         inst = instruction.instruction_goto_table()
         inst.table_id = second_table
-        self.assertTrue(request.instructions.add(inst), "Could not add inst2")
-        pa_logger.info("Inserting flow 1")
-        rv = self.controller.message_send(request)
-        # pa_logger.debug(request.show())
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
-
+        self.set_apply_output(first_table, of_ports[0], inst)
         # Set up second match
-        act = action.action_output()
-        act.port = of_ports[1]
-
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = second_table
-        inst = instruction.instruction_apply_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst3")
-        inst = instruction.instruction_goto_table()
         inst.table_id = third_table
-        self.assertTrue(request.instructions.add(inst), "Could not add inst4")
-        pa_logger.info("Inserting flow 2")
-        rv = self.controller.message_send(request)
-        # pa_logger.debug(request.show())
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
-
+        self.set_apply_output(second_table, of_ports[1], inst)
         # Set up third match
-        act = action.action_output()
-        act.port = of_ports[2]
-
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = third_table
-        inst = instruction.instruction_apply_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst5")
-        pa_logger.info("Inserting flow 3")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
+        self.set_apply_output(third_table, of_ports[2])
 
         # Generate a packet and receive 3 responses
-        pkt = testutils.simple_tcp_packet(ip_src='192.168.1.10', tcp_sport=10)
+        pkt = testutils.simple_tcp_packet(ip_src=MT_TEST_IP, tcp_sport=10)
         self.dataplane.send(of_ports[3], str(pkt))
 
-        (rcv_port, rcv_pkt, _) = self.dataplane.poll(timeout=5)
-        self.assertTrue(rcv_pkt is not None, "Did not receive packet on " +
-                        str(of_ports[0]))
-        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " +
-                        str(rcv_port))
-        self.assertEqual(rcv_port, of_ports[0], "Unexpected receive port")
-
-        (rcv_port, rcv_pkt, _) = self.dataplane.poll(timeout=5)
-        self.assertTrue(rcv_pkt is not None, "Did not receive packet on " +
-                        str(of_ports[1]))
-        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " +
-                        str(rcv_port))
-        self.assertEqual(rcv_port, of_ports[1], "Unexpected receive port")
-
-        (rcv_port, rcv_pkt, _) = self.dataplane.poll(timeout=5)
-        self.assertTrue(rcv_pkt is not None, "Did not receive packet on " +
-                        str(of_ports[2]))
-        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " +
-                        str(rcv_port))
-        self.assertEqual(rcv_port, of_ports[2], "Unexpected receive port")
+        testutils.receive_pkt_verify(self, of_ports[0], pkt)
+        testutils.receive_pkt_verify(self, of_ports[1], pkt)
+        testutils.receive_pkt_verify(self, of_ports[2], pkt)
 
     def runTest(self):
         self.scenario3(0, 1, 2)
@@ -387,38 +363,10 @@ class MultiTableNoGoto(basic.SimpleDataPlane):
         of_ports = testutils.clear_switch(self, pa_port_map.keys(), pa_logger)
 
         # Set up first match
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = first_table
-        inst = instruction.instruction_goto_table()
-        inst.table_id = second_table
-        self.assertTrue(request.instructions.add(inst), "Could not add inst1")
-        pa_logger.info("Inserting flow 1")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
+        write_goto(self, first_table, second_table)
 
         # Set up second match
-        act = action.action_output()
-        act.port = of_ports[0]
-
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = second_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst2")
-        inst = instruction.instruction_goto_table()
-        inst.table_id = third_table
-        self.assertTrue(request.instructions.add(inst), "Could not add inst3")
-        pa_logger.info("Inserting flow 2")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
+        write_goto_output(self, second_table, third_table, of_ports[0])
 
         # Set up third match
         request = message.flow_mod()
@@ -432,39 +380,14 @@ class MultiTableNoGoto(basic.SimpleDataPlane):
         testutils.do_barrier(self.controller)
 
         # Set up fourth match
-        act = action.action_output()
-        act.port = of_ports[1]
-
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = fourth_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst4")
-        pa_logger.info("Inserting flow 4")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
+        write_output(self, fourth_table, of_ports[1])
 
         # Generate a packet matching flow 1, 2, and 3; rcv on port[0]
-        pkt = testutils.simple_tcp_packet(ip_src='192.168.1.10', tcp_sport=10)
-        self.dataplane.send(of_ports[2], str(pkt))
-        (rcv_port, rcv_pkt, _) = self.dataplane.poll(timeout=5)
-        self.assertTrue(rcv_pkt is not None, "Did not receive packet")
-        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
-                        str(rcv_port))
-        self.assertEqual(rcv_port, of_ports[0], "Unexpected receive port")
-        
+        reply_check_dp(self, tcp_sport=10,
+                       ing_port = of_ports[2], egr_port = of_ports[0])
         # Generate a packet matching flow 1, 2, and 3; rcv on port[0]
-        pkt = testutils.simple_tcp_packet(ip_src='192.168.1.10', tcp_sport=80)
-        self.dataplane.send(of_ports[2], str(pkt))
-        (rcv_port, rcv_pkt, _) = self.dataplane.poll(timeout=5)
-        self.assertTrue(rcv_pkt is not None, "Did not receive packet")
-        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
-                        str(rcv_port))
-        self.assertEqual(rcv_port, of_ports[0], "Unexpected receive port")
+        reply_check_dp(self, tcp_sport=80,
+                       ing_port = of_ports[2], egr_port = of_ports[0])
 
     def runTest(self):
         self.scenario4(0,1,2,3)
@@ -496,96 +419,29 @@ class MultiTablePolicyDecoupling(basic.SimpleDataPlane):
         """
         of_ports = testutils.clear_switch(self, pa_port_map.keys(), pa_logger)
 
-        # Set up first flow match in table A
+        # Set up flow match in table A: set ToS
         t_act = action.action_set_nw_tos()
         t_act.nw_tos = tos1
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = first_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(t_act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst1")
-        inst = instruction.instruction_goto_table()
-        inst.table_id = second_table
-        self.assertTrue(request.instructions.add(inst), "Could not add inst2")
-        pa_logger.info("Inserting flow 1A")
-        rv = self.controller.message_send(request)
-        # pa_logger.debug(request.show())
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        # Set up second flow match in table A
-        t_act = action.action_set_nw_tos()
+        write_goto_action(self, first_table, second_table, t_act,
+                          ip_src='192.168.1.10')
         t_act.nw_tos = tos2
-        request = message.flow_mod()
-        request.match = make_match(nw_src = "192.168.1.30")
-        request.buffer_id = 0xffffffff
-        request.table_id = first_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(t_act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst3")
-        inst = instruction.instruction_goto_table()
-        inst.table_id = second_table
-        self.assertTrue(request.instructions.add(inst), "Could not add inst4")
-        pa_logger.info("Inserting flow 2A")
-        rv = self.controller.message_send(request)
-        # pa_logger.debug(request.show())
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        write_goto_action(self, first_table, second_table, t_act,
+                          ip_src='192.168.1.30')
 
-        # Set up first flow match in table B
-        act = action.action_output()
-        act.port = of_ports[1]
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = second_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst5")
-        pa_logger.info("Inserting flow 1B")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        # Set up second flow match in table B
-        act = action.action_output()
-        act.port = of_ports[1]
-        request = message.flow_mod()
-        request.match = make_match(nw_src = "192.168.1.30")
-        request.buffer_id = 0xffffffff
-        request.table_id = second_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst6")
-        pa_logger.info("Inserting flow 2B")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
+        # Set up flow matches in table B: routing
+        write_output(self, second_table, of_ports[1], ip_src="192.168.1.10")
+        write_output(self, second_table, of_ports[1], ip_src="192.168.1.30")
 
         # Generate packets and check them
-        pkt = testutils.simple_tcp_packet(ip_src='192.168.1.10', tcp_sport=10)
         exp_pkt = testutils.simple_tcp_packet(ip_src='192.168.1.10',
                                               tcp_sport=10, ip_tos=tos1)
-        self.dataplane.send(of_ports[2], str(pkt))
-        (rcv_port, rcv_pkt, _) = self.dataplane.poll(timeout=5)
-        self.assertTrue(rcv_pkt is not None, "Did not receive packet on " +
-                        str(of_ports[1]))
-        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " +
-                        str(rcv_port))
-        self.assertEqual(rcv_port, of_ports[1], "Unexpected receive port")
-        self.assertEqual(str(rcv_pkt), str(exp_pkt), "ToS error in flow #1")
+        reply_check_dp(self, ip_src='192.168.1.10', tcp_sport=10,
+                 exp_pkt=exp_pkt, ing_port=of_ports[2], egr_port=of_ports[1])
 
-        pkt = testutils.simple_tcp_packet(ip_src='192.168.1.30', tcp_sport=10)
         exp_pkt = testutils.simple_tcp_packet(ip_src='192.168.1.30',
                                               tcp_sport=10, ip_tos=tos2)
-        self.dataplane.send(of_ports[2], str(pkt))
-        (rcv_port, rcv_pkt, _) = self.dataplane.poll(timeout=5)
-        self.assertTrue(rcv_pkt is not None, "Did not receive packet on " +
-                        str(of_ports[1]))
-        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " +
-                        str(rcv_port))
-        self.assertEqual(rcv_port, of_ports[1], "Unexpected receive port")
-        self.assertEqual(str(rcv_pkt), str(exp_pkt), "ToS error in flow #2")
+        reply_check_dp(self, ip_src='192.168.1.30', tcp_sport=10,
+                 exp_pkt=exp_pkt, ing_port=of_ports[2], egr_port=of_ports[1])
 
     def runTest(self):
         self.scenario2(0, 1, 0x1b, 0x13)
@@ -618,89 +474,21 @@ class MultiTableClearAction(basic.SimpleDataPlane):
         of_ports = testutils.clear_switch(self, pa_port_map.keys(), pa_logger)
 
         # Set up first match
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = first_table
-        inst = instruction.instruction_goto_table()
-        inst.table_id = second_table
-        self.assertTrue(request.instructions.add(inst), "Could not add inst1")
-        pa_logger.info("Inserting flow 1")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
-
+        write_goto(self, first_table, second_table)
         # Set up second match
-        act = action.action_output()
-        act.port = of_ports[0]
-
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = second_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst2")
-        inst = instruction.instruction_goto_table()
-        inst.table_id = third_table
-        self.assertTrue(request.instructions.add(inst), "Could not add inst3")
-        pa_logger.info("Inserting flow 2")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
-
-        # Set up third match
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = third_table
+        write_goto_output(self, second_table, third_table, of_ports[0])
+        # Set up third match, "Clear Action"
         inst = instruction.instruction_clear_actions()
-        self.assertTrue(request.instructions.add(inst), "Could not add inst3")
-        inst = instruction.instruction_goto_table()
-        inst.table_id = fourth_table
-        self.assertTrue(request.instructions.add(inst), "Could not add inst4")
-        pa_logger.info("Inserting flow 3")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
-
+        write_goto(self, third_table, fourth_table, add_inst=inst)
         # Set up fourth match
-        act = action.action_output()
-        act.port = of_ports[1]
+        write_output(self, fourth_table, of_ports[1])
 
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = fourth_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst5")
-        pa_logger.info("Inserting flow 4")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
-
-        # Generate a packet matching flow 1, 2, and 3; rcv on port[0]
-        pkt = testutils.simple_tcp_packet(ip_src='192.168.1.10', tcp_sport=10)
-        self.dataplane.send(of_ports[2], str(pkt))
-        (rcv_port, rcv_pkt, _) = self.dataplane.poll(timeout=5)
-        self.assertTrue(rcv_pkt is not None, "Did not receive packet")
-        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
-                        str(rcv_port))
-        self.assertEqual(rcv_port, of_ports[1], "Unexpected receive port")
-        
-        # Generate a packet matching flow 1, 2, and 3; rcv on port[0]
-        pkt = testutils.simple_tcp_packet(ip_src='192.168.1.10', tcp_sport=80)
-        self.dataplane.send(of_ports[2], str(pkt))
-        (rcv_port, rcv_pkt, _) = self.dataplane.poll(timeout=5)
-        self.assertTrue(rcv_pkt is not None, "Did not receive packet")
-        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
-                        str(rcv_port))
-        self.assertEqual(rcv_port, of_ports[1], "Unexpected receive port")
+        # Generate a packet matching flow 1, 2, and 3; rcv on port[1]
+        reply_check_dp(self, tcp_sport=10,
+                       ing_port = of_ports[2], egr_port = of_ports[1])
+        # Generate a packet matching flow 1, 2, and 3; rcv on port[1]
+        reply_check_dp(self, tcp_sport=80,
+                       ing_port = of_ports[2], egr_port = of_ports[1])
 
     def runTest(self):
         self.scenario4(0,1,2,3)
@@ -733,102 +521,30 @@ class MultiTableMetadata(basic.SimpleDataPlane):
         of_ports = testutils.clear_switch(self, pa_port_map.keys(), pa_logger)
 
         # Set up first match
-        act = action.action_output()
-        act.port = of_ports[0]
-
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = first_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst1")
-        inst = instruction.instruction_goto_table()
-        inst.table_id = second_table
-        self.assertTrue(request.instructions.add(inst), "Could not add inst2")
-        pa_logger.info("Inserting flow 1")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
+        write_goto_output(self, first_table, second_table, of_ports[0])
 
         # Set up second match
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = second_table
         inst = instruction.instruction_write_metadata()
         inst.metadata =      0xfedcba9876543210
         inst.metadata_mask = 0xffffffffffffffff
-        self.assertTrue(request.instructions.add(inst), "Could not add inst3")
-        inst = instruction.instruction_goto_table()
-        inst.table_id = third_table
-        self.assertTrue(request.instructions.add(inst), "Could not add inst4")
-        pa_logger.info("Inserting flow 2")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
+        write_goto(self, second_table, third_table, add_inst=inst)
 
         # Set up third match
-        match = ofp.ofp_match()
-        testutils.wildcard_all_set(match)
-        match.wildcards -= ofp.OFPFW_DL_TYPE
-        match.nw_src_mask = 0 # Match nw_src
-        match.dl_type = 0x800
-        match.nw_src = parse.parse_ip("192.168.1.10")
+        match = make_match()
         match.metadata =      0xfedcba9876543210
         match.metadata_mask = 0xffffffffffffffff
-        act = action.action_output()
-        act.port = of_ports[1]
-
-        request = message.flow_mod()
-        request.match = match
-        request.buffer_id = 0xffffffff
-        request.table_id = third_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst5")
-        pa_logger.info("Inserting flow 3")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
+        write_output(self, third_table, of_ports[1], match=match)
 
         # Set up fourth match
-        act = action.action_output()
-        act.port = of_ports[0]
+        write_output(self, fourth_table, of_ports[0])
 
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = fourth_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst6")
-        pa_logger.info("Inserting flow 4")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        # Generate a packet matching flow 1, 2, and 3; rcv on port[1]
+        reply_check_dp(self, tcp_sport=10,
+                       ing_port = of_ports[2], egr_port = of_ports[1])
+        # Generate a packet matching flow 1, 2, and 3; rcv on port[1]
+        reply_check_dp(self, tcp_sport=80,
+                       ing_port = of_ports[2], egr_port = of_ports[1])
 
-        testutils.do_barrier(self.controller)
-
-        # Generate a packet matching flow 1, 2, and 3; rcv on port[0]
-        pkt = testutils.simple_tcp_packet(ip_src='192.168.1.10', tcp_sport=10)
-        self.dataplane.send(of_ports[2], str(pkt))
-        (rcv_port, rcv_pkt, _) = self.dataplane.poll(timeout=5)
-        self.assertTrue(rcv_pkt is not None, "Did not receive packet")
-        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
-                        str(rcv_port))
-        self.assertEqual(rcv_port, of_ports[1], "Unexpected receive port")
-        
-        # Generate a packet matching flow 1, 2, and 3; rcv on port[0]
-        pkt = testutils.simple_tcp_packet(ip_src='192.168.1.10', tcp_sport=80)
-        self.dataplane.send(of_ports[2], str(pkt))
-        (rcv_port, rcv_pkt, _) = self.dataplane.poll(timeout=5)
-        self.assertTrue(rcv_pkt is not None, "Did not receive packet")
-        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
-                        str(rcv_port))
-        self.assertEqual(rcv_port, of_ports[1], "Unexpected receive port")
     def runTest(self):
         self.scenario4(0,1,2,3)
 
@@ -862,40 +578,12 @@ class MultiTableEmptyInstruction(basic.SimpleDataPlane):
         of_ports = testutils.clear_switch(self, pa_port_map.keys(), pa_logger)
 
         # Set up first match
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = first_table
-        inst = instruction.instruction_goto_table()
-        inst.table_id = second_table
-        self.assertTrue(request.instructions.add(inst), "Could not add inst1")
-        pa_logger.info("Inserting flow 1")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
+        write_goto(self, first_table, second_table)
 
         # Set up second match
-        act = action.action_output()
-        act.port = of_ports[0]
+        write_goto_output(self, second_table, third_table, of_ports[0])
 
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = second_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst2")
-        inst = instruction.instruction_goto_table()
-        inst.table_id = third_table
-        self.assertTrue(request.instructions.add(inst), "Could not add inst3")
-        pa_logger.info("Inserting flow 2")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
-
-        # Set up third match
+        # Set up third match, "Empty Instruction"
         request = message.flow_mod()
         request.match = make_match()
         request.buffer_id = 0xffffffff
@@ -907,39 +595,14 @@ class MultiTableEmptyInstruction(basic.SimpleDataPlane):
         testutils.do_barrier(self.controller)
 
         # Set up fourth match
-        act = action.action_output()
-        act.port = of_ports[1]
-
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = fourth_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst4")
-        pa_logger.info("Inserting flow 4")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
+        write_output(self, fourth_table, of_ports[1])
 
         # Generate a packet matching flow 1, 2, and 3; rcv on port[0]
-        pkt = testutils.simple_tcp_packet(ip_src='192.168.1.10', tcp_sport=10)
-        self.dataplane.send(of_ports[2], str(pkt))
-        (rcv_port, rcv_pkt, _) = self.dataplane.poll(timeout=5)
-        self.assertTrue(rcv_pkt is not None, "Did not receive packet")
-        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
-                        str(rcv_port))
-        self.assertEqual(rcv_port, of_ports[0], "Unexpected receive port")
-        
+        reply_check_dp(self, tcp_sport=10,
+                       ing_port = of_ports[2], egr_port = of_ports[0])
         # Generate a packet matching flow 1, 2, and 3; rcv on port[0]
-        pkt = testutils.simple_tcp_packet(ip_src='192.168.1.10', tcp_sport=80)
-        self.dataplane.send(of_ports[2], str(pkt))
-        (rcv_port, rcv_pkt, _) = self.dataplane.poll(timeout=5)
-        self.assertTrue(rcv_pkt is not None, "Did not receive packet")
-        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
-                        str(rcv_port))
-        self.assertEqual(rcv_port, of_ports[0], "Unexpected receive port")
+        reply_check_dp(self, tcp_sport=80,
+                       ing_port = of_ports[2], egr_port = of_ports[0])
 
     def runTest(self):
         self.scenario4(0,1,2,3)
@@ -971,92 +634,27 @@ class MultiTableMiss(basic.SimpleDataPlane):
         """
         of_ports = testutils.clear_switch(self, pa_port_map.keys(), pa_logger)
 
-        # Set up first match
-        act = action.action_output()
-        act.port = of_ports[0]
-
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = first_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst1")
-        pa_logger.info("Inserting flow 1")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
-
-        # Set up second match
-        act = action.action_output()
-        act.port = of_ports[0]
-
-        request = message.flow_mod()
-        request.match = make_match(nw_src = "192.168.1.20")
-        request.buffer_id = 0xffffffff
-        request.table_id = second_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst1")
-        pa_logger.info("Inserting flow 1")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
-
-        # Set up third match
-        act = action.action_output()
-        act.port = of_ports[0]
-
-        request = message.flow_mod()
-        request.match = make_match(nw_src = "192.168.1.30")
-        request.buffer_id = 0xffffffff
-        request.table_id = third_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst2")
-        pa_logger.info("Inserting flow 1")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
-
-        # Set up fourth match
-        act = action.action_output()
-        act.port = of_ports[0]
-
-        request = message.flow_mod()
-        request.match = make_match(nw_src = "192.168.1.40")
-        request.buffer_id = 0xffffffff
-        request.table_id = fourth_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst3")
-        pa_logger.info("Inserting flow 1")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
-
+        # Set up matches
+        write_output(self, first_table, of_ports[0], ip_src="192.168.1.10")
+        write_output(self, second_table, of_ports[0], ip_src="192.168.1.20")
+        write_output(self, third_table, of_ports[0], ip_src="192.168.1.30")
+        write_output(self, fourth_table, of_ports[0], ip_src="192.168.1.40")
 
         # Generate a packet not matching to any flow, then packet_in
-        pkt = testutils.simple_tcp_packet(ip_src='192.168.1.70', tcp_sport=10)
-        self.dataplane.send(of_ports[2], str(pkt))
-        (response, _) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
-        self.assertTrue(response is not None, 
-            'Packet in message not received for port ' + str(of_ports[2]))
-        pa_logger.debug("Packet In")
-        if str(pkt) != response.data:
-            pa_logger.debug("pkt  len " + str(len(str(pkt))) +
-                               ": " + str(pkt))
-            pa_logger.debug("resp len " + str(len(str(response.data))) +
-                               ": " + str(response.data))
-        self.assertEqual(str(pkt), response.data,
-                         'Response packet does not match send packet' +
-                         ' for port ' + str(of_ports[2]))
+        reply_check_ctrl(self, ip_src='192.168.1.70', tcp_sport=10,
+                         ing_port = of_ports[2])
+
     def runTest(self):
         self.scenario4(0,1,2,3)
+
+
+def setup_table_config(parent, table_id, table_config):
+    request = message.table_mod()
+    request.table_id = table_id
+    request.config = table_config
+    rv = parent.controller.message_send(request)
+    parent.assertTrue(rv != -1, "Error configuring table")
+    testutils.do_barrier(parent.controller)
 
 
 class MultiTableConfigContinue(basic.SimpleDataPlane):
@@ -1067,7 +665,7 @@ class MultiTableConfigContinue(basic.SimpleDataPlane):
     """
     def scenario2(self, first_table = 0, second_table = 1):
         """
-        Set table config as "Send to Controller" and add flow entry:
+        Set table config as "Continue" and add flow entry:
         First Table; Match IP Src A; send to 1 // not match then continue
         Second Table; Match IP Src B; send to 2 // do execution
 
@@ -1076,57 +674,16 @@ class MultiTableConfigContinue(basic.SimpleDataPlane):
         """
         of_ports = testutils.clear_switch(self, pa_port_map.keys(), pa_logger)
 
-        # Set table config as "send to controller"
-        request = message.table_mod()
-        request.table_id = 0
-        request.config = ofp.OFPTC_TABLE_MISS_CONTINUE
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error configuring table")
-        testutils.do_barrier(self.controller)
+        # Set table config as "continue"
+        setup_table_config(self, first_table, ofp.OFPTC_TABLE_MISS_CONTINUE)
 
-        # Set up first match
-        act = action.action_output()
-        act.port = of_ports[0]
-
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = first_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst1")
-        pa_logger.info("Inserting flow 1")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
-
-        # Set up second match
-        act = action.action_output()
-        act.port = of_ports[1]
-
-        request = message.flow_mod()
-        request.match = make_match(nw_src = "192.168.1.70")
-        request.buffer_id = 0xffffffff
-        request.table_id = second_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst2")
-        pa_logger.info("Inserting flow 2")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
+        # Set up flow entries
+        write_output(self, first_table, of_ports[0], ip_src="192.168.1.10")
+        write_output(self, second_table, of_ports[1], ip_src="192.168.1.70")
 
         # Generate a packet not matching in the first table, but in the second
-        pkt = testutils.simple_tcp_packet(ip_src='192.168.1.70', tcp_sport=10)
-        self.dataplane.send(of_ports[2], str(pkt))
-
-        (rcv_port, rcv_pkt, _) = self.dataplane.poll(timeout=5)
-        self.assertTrue(rcv_pkt is not None, "Did not receive packet")
-        pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
-                        str(rcv_port))
-        self.assertEqual(rcv_port, of_ports[1], "Unexpected receive port")
+        reply_check_dp(self, ip_src='192.168.1.70', tcp_sport=10,
+                       ing_port = of_ports[2], egr_port = of_ports[1])
 
     def runTest(self):
         self.scenario2(0,1)
@@ -1150,73 +707,17 @@ class MultiTableConfigController(basic.SimpleDataPlane):
         """
         of_ports = testutils.clear_switch(self, pa_port_map.keys(), pa_logger)
 
-        # Set table config as "send to controller"
-        request = message.table_mod()
-        request.table_id = first_table
-        request.config = ofp.OFPTC_TABLE_MISS_CONTROLLER
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error configuring table")
+        # Set table config as "send to controller" and "drop"
+        setup_table_config(self, first_table, ofp.OFPTC_TABLE_MISS_CONTROLLER)
+        setup_table_config(self, second_table, ofp.OFPTC_TABLE_MISS_DROP)
 
-        testutils.do_barrier(self.controller)
-
-        # Set table config as "drop"
-        request = message.table_mod()
-        request.table_id = second_table
-        request.config = ofp.OFPTC_TABLE_MISS_DROP
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error configuring table")
-
-        testutils.do_barrier(self.controller)
-
-        # Set up first match
-        act = action.action_output()
-        act.port = of_ports[0]
-
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = first_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst1")
-        pa_logger.info("Inserting flow 1")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
-
-        # Set up second match
-        act = action.action_output()
-        act.port = of_ports[1]
-
-        request = message.flow_mod()
-        request.match = make_match(nw_src = "192.168.1.70")
-        request.buffer_id = 0xffffffff
-        request.table_id = second_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst2")
-        pa_logger.info("Inserting flow 2")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
+        # Set up matches
+        write_output(self, first_table, of_ports[0], ip_src="192.168.1.10")
+        write_output(self, second_table, of_ports[1], ip_src="192.168.1.70")
 
         # Generate a packet not matching to any flow entry in the first table
-        pkt = testutils.simple_tcp_packet(ip_src='192.168.1.70', tcp_sport=10)
-        self.dataplane.send(of_ports[2], str(pkt))
-        (response, _) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
-        self.assertTrue(response is not None, 
-            'Packet in message not received for port ' + str(of_ports[2]))
-        pa_logger.debug("Packet In")
-        if str(pkt) != response.data:
-            pa_logger.debug("pkt  len " + str(len(str(pkt))) +
-                            ": " + str(pkt))
-            pa_logger.debug("resp len " + str(len(str(response.data))) +
-                            ": " + str(response.data))
-        self.assertEqual(str(pkt), response.data,
-                         'Response packet does not match send packet' +
-                         ' for port ' + str(of_ports[2]))
+        reply_check_ctrl(self, ip_src='192.168.1.70', tcp_sport=10,
+                         ing_port = of_ports[2])
 
     def runTest(self):
         self.scenario2(0,1)
@@ -1240,57 +741,13 @@ class MultiTableConfigDrop(basic.SimpleDataPlane):
         """
         of_ports = testutils.clear_switch(self, pa_port_map.keys(), pa_logger)
 
-        # Set table config as "drop"
-        request = message.table_mod()
-        request.table_id = first_table
-        request.config = ofp.OFPTC_TABLE_MISS_DROP
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error configuring table")
-
-        testutils.do_barrier(self.controller)
-
-        # Set table config as "send to controller"
-        request = message.table_mod()
-        request.table_id = second_table
-        request.config = ofp.OFPTC_TABLE_MISS_CONTROLLER
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error configuring table")
-
-        testutils.do_barrier(self.controller)
+        # Set table config as "drop" and "send to controller"
+        setup_table_config(self, first_table, ofp.OFPTC_TABLE_MISS_DROP)
+        setup_table_config(self, second_table, ofp.OFPTC_TABLE_MISS_CONTROLLER)
 
         # Set up first match
-        act = action.action_output()
-        act.port = of_ports[0]
-
-        request = message.flow_mod()
-        request.match = make_match()
-        request.buffer_id = 0xffffffff
-        request.table_id = first_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst1")
-        pa_logger.info("Inserting flow 1")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
-
-        # Set up second match
-        act = action.action_output()
-        act.port = of_ports[1]
-
-        request = message.flow_mod()
-        request.match = make_match(nw_src = "192.168.1.70")
-        request.buffer_id = 0xffffffff
-        request.table_id = second_table
-        inst = instruction.instruction_write_actions()
-        self.assertTrue(inst.actions.add(act), "Could not add action")
-        self.assertTrue(request.instructions.add(inst), "Could not add inst2")
-        pa_logger.info("Inserting flow 2")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-
-        testutils.do_barrier(self.controller)
+        write_output(self, first_table, of_ports[0], ip_src="192.168.1.10")
+        write_output(self, second_table, of_ports[1], ip_src="192.168.1.70")
 
         # Generate a packet not matching to any flow, then drop
         pkt = testutils.simple_tcp_packet(ip_src='192.168.1.70', tcp_sport=10)
