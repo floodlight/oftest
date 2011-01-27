@@ -795,8 +795,9 @@ class Packet(object):
     def dec_nw_ttl(self):
         if self.ip_header_offset is None:
             return
-        self.set_nw_ttl(self.data[self.ip_header_offset + 
-                                  Packet.IP_OFFSET_TTL] - 1)
+        offset = self.ip_header_offset + Packet.IP_OFFSET_TTL
+        old_ttl = struct.unpack("b",self.data[offset:offset + 1])[0]
+        self.set_nw_ttl( old_ttl - 1)
 
     #
     # All action functions need to take the action object for params
