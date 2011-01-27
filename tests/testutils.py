@@ -1332,3 +1332,19 @@ def flow_match_test_mpls(parent, port_map, wildcards=0,
             if (max_test > 0) and (test_count >= max_test):
                 parent.logger.info("Ran " + str(test_count) + " tests; exiting")
                 return
+
+def flow_stats_get(parent, match=None):
+    """ Get the flow_stats from the switch
+    Test the response to make sure it's really a flow_stats object
+    """
+    request = message.flow_stats_request()
+    request.out_port = ofp.OFPP_ANY
+    request.table_id = 0xff
+    if match is None:
+        match = match_all_generate()
+    request.match = match
+    response, _ = parent.controller.transact(request, timeout=2)
+    parent.assertTrue(response is not None, "Did not get response")
+    parent.assertTrue(isinstance(response,message.flow_stats_reply),
+                      "Expected a flow_stats_reply, but didn't get it")
+    return response

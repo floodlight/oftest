@@ -320,13 +320,7 @@ class FlowStatsGet(SimpleProtocol):
         self.assertTrue(rv != -1, "Failed to insert test flow")
         
         basic_logger.info("Sending flow request")
-        request = message.flow_stats_request()
-        request.out_port = ofp.OFPP_ANY
-        request.table_id = 0xff
-        request.match.wildcards = 0 # ofp.OFPFW_ALL
-        response, _ = self.controller.transact(request, timeout=2)
-        self.assertTrue(response is not None, "Did not get response")
-        self.assertTrue(isinstance(response,message.flow_stats_reply),"Not a flow_stats_reply")
+        response = testutils.flow_stats_get(self)
         basic_logger.debug(response.show())
 
 class TableStatsGet(SimpleProtocol):
