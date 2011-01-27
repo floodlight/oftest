@@ -135,40 +135,6 @@ class MplsExactNone2(pktact.BaseMatchCase):
         mpls_none_tests(self, mpls_label_mask = False, mpls_tc_mask=False,
                         test_condition=2)
 
-class MplsExactAny0(pktact.BaseMatchCase):
-    """
-    MPLS match test with Exact LABEL, TC
-    Test conditions:
-    - MATCH
-     - LABEL: OFPML_ANY  TC: SPECIFIC
-    - SENDING PKT
-     - NUM OF TAGS: 0
-     - LABEL: N/A  TC: N/A
-    - EXPECTATIONS
-     - Pkt NOT to be forwarded
-    Test on one pair of ports
-    """
-    def runTest(self):
-        mpls_any_tests(self, mpls_label_mask = False, mpls_tc_mask=False,
-                       test_condition=0)
-
-class MplsExactAny1(pktact.BaseMatchCase):
-    """
-    MPLS match test with Exact LABEL, TC
-    Test conditions:
-    - MATCH
-     - LABEL: OFPML_ANY  TC: SPECIFIC
-    - SENDING PKT
-     - NUM OF TAGS: 1
-     - LABEL: unmatch value  TC: unmatch value
-    - EXPECTATIONS
-     - Pkt to be forwarded
-    Test on one pair of ports
-    """
-    def runTest(self):
-        mpls_any_tests(self, mpls_label_mask = False, mpls_tc_mask=False,
-                       test_condition=1)
-
 class MplsExactSpecific0(pktact.BaseMatchCase):
     """
     MPLS match test with Exact LABEL, TC
@@ -272,23 +238,6 @@ class MplsExactSpecific5(pktact.BaseMatchCase):
     def runTest(self):
         mpls_specific_tests(self, mpls_label_mask = False, mpls_tc_mask=False,
                             test_condition=5)
-
-class MplsExactOutrange1(pktact.BaseMatchCase):
-    """
-    MPLS match test with Exact LABEL, TC
-    Test conditions:
-    - MATCH
-     - LABEL: OFPML_ANY  TC: outrange value
-    - SENDING PKT
-     - NUM OF TAGS: 1
-    - EXPECTATIONS
-     - FLOW_MOD_FAILED error
-     - Pkt NOT to be forwarded
-    Test on one pair of ports
-    """
-    def runTest(self):
-        mpls_outrange_tests(self, mpls_label_mask = False, mpls_tc_mask=False,
-                            test_condition=1)
 
 class MplsExactOutrange2(pktact.BaseMatchCase):
     """
@@ -395,40 +344,6 @@ class MplsWildLabelExactTcNone2(pktact.BaseMatchCase):
         mpls_none_tests(self, mpls_label_mask = True, mpls_tc_mask=False,
                         test_condition=2)
 
-class MplsWildLabelExactTcAny0(pktact.BaseMatchCase):
-    """
-    MPLS match test with Wildcard LABEL and Exact TC
-    Test conditions:
-    - MATCH
-     - LABEL: OFPML_ANY  TC: SPECIFIC
-    - SENDING PKT
-     - NUM OF TAGS: 0
-     - LABEL: N/A  TC: N/A
-    - EXPECTATIONS
-     - Pkt to be forwarded
-    Test on one pair of ports
-    """
-    def runTest(self):
-        mpls_any_tests(self, mpls_label_mask = True, mpls_tc_mask=False,
-                       test_condition=0)
-
-class MplsWildLabelExactTcAny1(pktact.BaseMatchCase):
-    """
-    MPLS match test with Wildcard LABEL and Exact TC
-    Test conditions:
-    - MATCH
-     - LABEL: OFPML_ANY  TC: SPECIFIC
-    - SENDING PKT
-     - NUM OF TAGS: 1
-     - LABEL: unmatch value  TC: unmatch value
-    - EXPECTATIONS
-     - Pkt to be forwarded
-    Test on one pair of ports
-    """
-    def runTest(self):
-        mpls_any_tests(self, mpls_label_mask = True, mpls_tc_mask=False,
-                       test_condition=1)
-
 class MplsWildLabelExactTcSpecific0(pktact.BaseMatchCase):
     """
     MPLS match test with Wildcard LABEL and Exact TC
@@ -533,22 +448,6 @@ class MplsWildLabelExactTcSpecific5(pktact.BaseMatchCase):
         mpls_specific_tests(self, mpls_label_mask = True, mpls_tc_mask=False,
                             test_condition=5)
 
-class MplsWildLabelExactTcOutrange1(pktact.BaseMatchCase):
-    """
-    MPLS match test with Wildcard LABEL and Exact TC
-    Test conditions:
-    - MATCH
-     - LABEL: OFPML_ANY  TC: outrange value
-    - SENDING PKT
-     - NUM OF TAGS: 1
-    - EXPECTATIONS
-     - Pkt to be forwarded
-    Test on one pair of ports
-    """
-    def runTest(self):
-        mpls_outrange_tests(self, mpls_label_mask = True, mpls_tc_mask=False,
-                            test_condition=1)
-
 class MplsWildLabelExactTcOutrange2(pktact.BaseMatchCase):
     """
     MPLS match test with Wildcard LABEL and Exact TC
@@ -650,40 +549,6 @@ class MplsExactLabelWildTcNone2(pktact.BaseMatchCase):
     def runTest(self):
         mpls_none_tests(self, mpls_label_mask = False, mpls_tc_mask=True,
                         test_condition=2)
-
-class MplsExactLabelWildTcAny0(pktact.BaseMatchCase):
-    """
-    MPLS match test with Exact LABEL and Wildcard TC
-    Test conditions:
-    - MATCH
-     - LABEL: OFPML_ANY  TC: SPECIFIC
-    - SENDING PKT
-     - NUM OF TAGS: 0
-     - LABEL: N/A  TC: N/A
-    - EXPECTATIONS
-     - Pkt NOT to be forwarded
-    Test on one pair of ports
-    """
-    def runTest(self):
-        mpls_any_tests(self, mpls_label_mask = False, mpls_tc_mask=True,
-                       test_condition=0)
-
-class MplsExactLabelWildTcAny1(pktact.BaseMatchCase):
-    """
-    MPLS match test with Exact LABEL and Wildcard TC
-    Test conditions:
-    - MATCH
-     - LABEL: OFPML_ANY  TC: SPECIFIC
-    - SENDING PKT
-     - NUM OF TAGS: 1
-     - LABEL: unmatch value  TC: unmatch value
-    - EXPECTATIONS
-     - Pkt to be forwarded
-    Test on one pair of ports
-    """
-    def runTest(self):
-        mpls_any_tests(self, mpls_label_mask = False, mpls_tc_mask=True,
-                       test_condition=1)
 
 class MplsExactLabelWildTcSpecific0(pktact.BaseMatchCase):
     """
@@ -790,22 +655,6 @@ class MplsExactLabelWildTcSpecific5(pktact.BaseMatchCase):
         mpls_specific_tests(self, mpls_label_mask = False, mpls_tc_mask=True,
                             test_condition=5)
 
-class MplsExactLabelWildTcOutrange1(pktact.BaseMatchCase):
-    """
-    MPLS match test with Exact LABEL and Wildcard TC
-    Test conditions:
-    - MATCH
-     - LABEL: OFPML_ANY  TC: outrange value
-    - SENDING PKT
-     - NUM OF TAGS: 1
-    - EXPECTATIONS
-     - Pkt to be forwarded
-    Test on one pair of ports
-    """
-    def runTest(self):
-        mpls_outrange_tests(self, mpls_label_mask = False, mpls_tc_mask=True,
-                            test_condition=1)
-
 class MplsExactLabelWildTcOutrange2(pktact.BaseMatchCase):
     """
     MPLS match test with Exact LABEL and Wildcard TC
@@ -909,40 +758,6 @@ class MplsWildNone2(pktact.BaseMatchCase):
     def runTest(self):
         mpls_none_tests(self, mpls_label_mask = True, mpls_tc_mask=True,
                         test_condition=2)
-
-class MplsWildAny0(pktact.BaseMatchCase):
-    """
-    MPLS match test with Wildcard LABEL, TC
-    Test conditions:
-    - MATCH
-     - LABEL: OFPML_ANY  TC: SPECIFIC
-    - SENDING PKT
-     - NUM OF TAGS: 0
-     - LABEL: N/A  TC: N/A
-    - EXPECTATIONS
-     - Pkt to be forwarded
-    Test on one pair of ports
-    """
-    def runTest(self):
-        mpls_any_tests(self, mpls_label_mask = True, mpls_tc_mask=True,
-                       test_condition=0)
-
-class MplsWildAny1(pktact.BaseMatchCase):
-    """
-    MPLS match test with Wildcard LABEL, TC
-    Test conditions:
-    - MATCH
-     - LABEL: OFPML_ANY  TC: SPECIFIC
-    - SENDING PKT
-     - NUM OF TAGS: 1
-     - LABEL: unmatch value  TC: unmatch value
-    - EXPECTATIONS
-     - Pkt to be forwarded
-    Test on one pair of ports
-    """
-    def runTest(self):
-        mpls_any_tests(self, mpls_label_mask = True, mpls_tc_mask=True,
-                       test_condition=1)
 
 class MplsWildSpecific0(pktact.BaseMatchCase):
     """
@@ -1048,22 +863,6 @@ class MplsWildSpecific5(pktact.BaseMatchCase):
     def runTest(self):
         mpls_specific_tests(self, mpls_label_mask = True, mpls_tc_mask=True,
                             test_condition=5)
-
-class MplsWildOutrange1(pktact.BaseMatchCase):
-    """
-    MPLS match test with Wildcard LABEL, TC
-    Test conditions:
-    - MATCH
-     - LABEL: OFPML_ANY  TC: outrange value
-    - SENDING PKT
-     - NUM OF TAGS: 1
-    - EXPECTATIONS
-     - Pkt to be forwarded
-    Test on one pair of ports
-    """
-    def runTest(self):
-        mpls_outrange_tests(self, mpls_label_mask = True, mpls_tc_mask=True,
-                            test_condition=1)
 
 class MplsWildOutrange2(pktact.BaseMatchCase):
     """
@@ -1188,74 +987,6 @@ def mpls_none_tests(parent, mpls_label_mask=False, mpls_tc_mask=False,
                 exp_msg_code=exp_msg_code,
                 max_test=1)
 
-def mpls_any_tests(parent, mpls_label_mask=False, mpls_tc_mask=False,
-                   test_condition=0):
-    """
-    MPLS match test with OFPML_ANY
-
-    @param parent Must implement controller, dataplane, assertTrue, assertEqual
-    and logger
-    @param mpls_label_mask If True, MPLS LABEL is wildcarded
-    @param mpls_tc_mask If True, MPLS TC is wildcarded
-    @param test_condition Value between 0 and 1
-    """
-    wildcards = 0
-    if mpls_label_mask == True:
-        wildcards = ofp.OFPFW_MPLS_LABEL
-    if mpls_tc_mask == True:
-        wildcards = wildcards + ofp.OFPFW_MPLS_TC
-
-    tc = random.randint(0, 7)
-    ttl = 128
-    label_match = ofp.OFPML_ANY
-
-    exp_msg = ofp.OFPT_FLOW_REMOVED
-    exp_msg_type = 0 #NOT_EXPECTED
-    exp_msg_code = 0 #NOT_EXPECTED
-
-    if test_condition == 0:
-        label = -1
-        tc_match = 7 - tc # unmatching value
-        if mpls_label_mask == True:
-            match_exp = True
-        else:
-            match_exp = False
-
-    elif test_condition == 1:
-        label = random.randint(16, 1048575)
-        tc_match = 7 - tc # unmatching value
-        match_exp = True
-
-    else:
-        return
-
-    if match_exp == True:
-        exp_label = label
-        exp_tc = tc
-        exp_ttl = ttl
-    else:
-        exp_label = 0 #NOT_EXPECTED
-        exp_tc = 0 #NOT_EXPECTED
-        exp_ttl = 0 #NOT_EXPECTED
-
-    testutils.flow_match_test_mpls(parent, pa_port_map,
-                wildcards=wildcards,
-                mpls_label=label,
-                mpls_tc=tc,
-                mpls_ttl=ttl,
-                mpls_label_int=-1,
-                mpls_tc_int=0,
-                label_match=label_match,
-                tc_match=tc_match,
-                exp_mpls_label=exp_label,
-                exp_mpls_tc=exp_tc,
-                exp_mpls_ttl=exp_ttl,
-                match_exp=match_exp,
-                exp_msg=exp_msg,
-                exp_msg_type=exp_msg_type,
-                exp_msg_code=exp_msg_code,
-                max_test=1)
-
 def mpls_specific_tests(parent, mpls_label_mask=False, mpls_tc_mask=False,
                         test_condition=0):
     """
@@ -1288,10 +1019,7 @@ def mpls_specific_tests(parent, mpls_label_mask=False, mpls_tc_mask=False,
     if test_condition == 0:
         label = -1
         tc = 0
-        if mpls_label_mask == True:
-            match_exp = True
-        else:
-            match_exp = False
+        match_exp = False
 
     elif test_condition == 1:
         label = label_match
@@ -1301,7 +1029,7 @@ def mpls_specific_tests(parent, mpls_label_mask=False, mpls_tc_mask=False,
     elif test_condition == 2:
         label = label_match
         tc = tc_match + 1
-        if (mpls_label_mask == True) or (mpls_tc_mask == True):
+        if mpls_tc_mask == True:
             match_exp = True
         else:
             match_exp = False
@@ -1325,7 +1053,7 @@ def mpls_specific_tests(parent, mpls_label_mask=False, mpls_tc_mask=False,
     elif test_condition == 5:
         label = label_match + 1
         tc = tc_match + 1
-        if mpls_label_mask == True:
+        if (mpls_label_mask == True) and (mpls_tc_mask == True):
             match_exp = True
         else:
             match_exp = False
@@ -1385,21 +1113,7 @@ def mpls_outrange_tests(parent, mpls_label_mask=False, mpls_tc_mask=False,
     tc = random.randint(0, 7)
     ttl = 128
 
-    if test_condition == 1:
-        label_match = ofp.OFPML_ANY
-        tc_match = tc + 8  #out of range
-        if (mpls_label_mask == True) or (mpls_tc_mask == True):
-            match_exp = True
-            exp_msg = ofp.OFPT_FLOW_REMOVED
-            exp_msg_type = 0 #NOT EXPECTED
-            exp_msg_code = 0 #NOT EXPECTED
-        else:
-            match_exp = False
-            exp_msg = ofp.OFPT_ERROR
-            exp_msg_type = ofp.OFPET_FLOW_MOD_FAILED
-            exp_msg_code = ofp.OFPFMFC_BAD_MATCH
-
-    elif test_condition == 2:
+    if test_condition == 2:
         label_match = label + 1048576  #out of range
         tc_match = tc
         if mpls_label_mask == True:
@@ -1416,7 +1130,7 @@ def mpls_outrange_tests(parent, mpls_label_mask=False, mpls_tc_mask=False,
     elif test_condition == 3:
         label_match = label
         tc_match = tc + 8  #out of range
-        if (mpls_label_mask == True) or (mpls_tc_mask == True):
+        if mpls_tc_mask == True:
             match_exp = True
             exp_msg = ofp.OFPT_FLOW_REMOVED
             exp_msg_type = 0 #NOT EXPECTED
@@ -1430,7 +1144,7 @@ def mpls_outrange_tests(parent, mpls_label_mask=False, mpls_tc_mask=False,
     elif test_condition == 4:
         label_match = label + 1048576  #out of range
         tc_match = tc + 8  #out of range
-        if mpls_label_mask == True:
+        if (mpls_label_mask == True) and (mpls_tc_mask == True):
             match_exp = True
             exp_msg = ofp.OFPT_FLOW_REMOVED
             exp_msg_type = 0 #NOT EXPECTED
