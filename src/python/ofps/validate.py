@@ -71,10 +71,13 @@ def _validate_instruction_goto_table(instruction, switch, flow_mod, logger):
 
 def _validate_instruction_write_actions(instruction, switch, flow_mod, logger):
     pass
+
 def _validate_instruction_write_metadata(instruction, switch, flow_mod, logger):
     pass
+
 def _validate_instruction_experimenter(instruction, switch, flow_mod, logger):
     pass
+
 def _validate_instruction_clear_actions(instruction, switch, flow_mod, logger):
     pass
 
@@ -106,26 +109,51 @@ def _validate_action_push_vlan(action, switch, flow_mod, logger):
         
         
 def _validate_action_pop_vlan(action, switch, flow_mod, logger):
-    pass
+    pass        # always passes
+
 def _validate_action_set_dl_dst(action, switch, flow_mod, logger):
     pass
+
 def _validate_action_set_dl_src(action, switch, flow_mod, logger):
     pass
+
 def _validate_action_set_nw_dst(action, switch, flow_mod, logger):
-    pass
+    pass        # always passes
+
 def _validate_action_set_nw_src(action, switch, flow_mod, logger):
-    pass
+    pass        # always passes
+
 def _validate_action_set_nw_tos(action, switch, flow_mod, logger):
-    pass
+    if _test_nw_tos(action.nw_tos):
+        return None
+    else:
+        return ofutils.of_error_msg_make(ofp.OFPET_BAD_ACTION, 
+                                         ofp.OFPBAC_BAD_ARGUMENT, 
+                                         flow_mod) 
+        
 def _validate_action_set_tp_dst(action, switch, flow_mod, logger):
-    pass
+    pass        # always passes
+
 def _validate_action_set_tp_src(action, switch, flow_mod, logger):
-    pass
+    pass        # always passes
+
 def _validate_action_set_vlan_vid(action, switch, flow_mod, logger):
-    pass
+    if _test_vlan_vid(action.vlan_vid):
+        return None
+    else:
+        return ofutils.of_error_msg_make(ofp.OFPET_BAD_ACTION, 
+                                         ofp.OFPBAC_BAD_ARGUMENT, 
+                                         flow_mod) 
+def _validate_action_set_vlan_pcp(action, switch, flow_mod, logger):
+    if _test_vlan_pcp(action.vlan_pcp):
+        return None
+    else:
+        return ofutils.of_error_msg_make(ofp.OFPET_BAD_ACTION, 
+                                         ofp.OFPBAC_BAD_ARGUMENT, 
+                                         flow_mod) 
 # mpls
 def _validate_action_set_mpls_label(action, switch, flow_mod, logger):
-    if (action.mpls_label < 1048576 and action.mpls_label >=0 ):
+    if _test_mpls_label(action.mpls_label):
         return None
     else:
         return ofutils.of_error_msg_make(ofp.OFPET_BAD_ACTION, 
@@ -151,7 +179,7 @@ def _validate_action_dec_mpls_ttl(action, switch, flow_mod, logger):
     # noop; always works
     pass
 def _validate_action_set_mpls_tc(action, switch, flow_mod, logger):
-    if (action.mpls_tc < 8 and action.mpls_tc >=0 ):
+    if _test_mpls_tc(action.mpls_tc):
         return None
     else:
         return ofutils.of_error_msg_make(ofp.OFPET_BAD_ACTION, 
@@ -173,43 +201,69 @@ def _validate_match(switch, flow_mod, logger):
     return None             # the success case
 
 def _validate_match_mpls(match, flow_mod, logger):
-    if (match.wildcards & ofp.OFPFMF_MPLS_LABEL) == 0:
-        if match.mpls_label < 0 or match.mpls_label > 0xffffff:
-            logger.error(
-                "rejecting broken match: bad mpls label: %x %d" %
-                (match.wildcards, match.mpls_label))
-            raise MatchException(
-                        ofutils.of_error_msg_make(
-                                ofp.OFPET_FLOW_MOD_FAILED, 
-                                ofp.OFPFMFC_BAD_MATCH, 
-                                flow_mod))
-    if (match.wildcards & ofp.OFPFMF_MPLS_TC) == 0:
-        if match.mpls_tc < 0 or match.mpls_tc >= 8:
-            logger.error("rejecting broken match: bad mpls tc")
-            raise MatchException(
-                        ofutils.of_error_msg_make(
-                                ofp.OFPET_FLOW_MOD_FAILED, 
-                                ofp.OFPFMFC_BAD_MATCH, 
-                                flow_mod))
+    if ((match.wildcards & ofp.OFPFMF_MPLS_LABEL) == 0 and
+                not _test_mpls_label(match.mpls_label)):
+        logger.error(
+            "rejecting broken match: bad mpls label: %x %d" %
+            (match.wildcards, match.mpls_label))
+        raise MatchException(
+                    ofutils.of_error_msg_make(
+                            ofp.OFPET_FLOW_MOD_FAILED, 
+                            ofp.OFPFMFC_BAD_MATCH, 
+                            flow_mod))
+    if ((match.wildcards & ofp.OFPFMF_MPLS_TC) == 0 and
+                not _test_mpls_tc(match.mpls_tc)):
+        logger.error("rejecting broken match: bad mpls tc")
+        raise MatchException(
+                    ofutils.of_error_msg_make(
+                            ofp.OFPET_FLOW_MOD_FAILED, 
+                            ofp.OFPFMFC_BAD_MATCH, 
+                            flow_mod))
     return None
 
 def _validate_match_vlan(match, flow_mod, logger):
-    if (match.wildcards & ofp.OFPFMF_DL_VLAN) == 0:
-        if (match.dl_vlan != 65535 and
-            (match.dl_vlan < 0 or match.dl_vlan > 4096)):
-            logger.error("rejecting broken match: bad vlan: %d" %
-                         match.dl_vlan)
-            raise MatchException(
-                        ofutils.of_error_msg_make(
-                                ofp.OFPET_FLOW_MOD_FAILED, 
-                                ofp.OFPFMFC_BAD_MATCH, 
-                                flow_mod))
-    if (match.wildcards & ofp.OFPFMF_DL_VLAN_PCP) == 0:
-        if match.dl_vlan_pcp < 0 or match.dl_vlan_pcp >= 8:
-            logger.error("rejecting broken match: bad vlan_pcp")
-            raise MatchException(
-                        ofutils.of_error_msg_make(
-                                ofp.OFPET_FLOW_MOD_FAILED, 
-                                ofp.OFPFMFC_BAD_MATCH, 
-                                flow_mod))
+    if ((match.wildcards & ofp.OFPFMF_DL_VLAN) == 0 and
+            not _test_vlan_vid(match.dl_vlan)):
+        logger.error("rejecting broken match: bad vlan: %d" %
+                     match.dl_vlan)
+        raise MatchException(
+                    ofutils.of_error_msg_make(
+                            ofp.OFPET_FLOW_MOD_FAILED, 
+                            ofp.OFPFMFC_BAD_MATCH, 
+                            flow_mod))
+    if ((match.wildcards & ofp.OFPFMF_DL_VLAN_PCP) == 0 and
+            not _test_vlan_pcp(match.dl_vlan_pcp)):
+        logger.error("rejecting broken match: bad vlan_pcp")
+        raise MatchException(
+                    ofutils.of_error_msg_make(
+                            ofp.OFPET_FLOW_MOD_FAILED, 
+                            ofp.OFPFMFC_BAD_MATCH, 
+                            flow_mod))
     return None
+########### Actual tests
+def _test_mpls_label(mpls_label):
+    if mpls_label < 0 or mpls_label > 0xffffff:
+        return False
+    return True
+
+def _test_mpls_tc(mpls_tc):
+    if mpls_tc < 0 or mpls_tc >= 8:
+        return False
+    return True
+
+def _test_vlan_vid(vlan_vid):
+    if vlan_vid == ofp.OFPVID_NONE:
+        return True
+    if vlan_vid < 0 or vlan_vid >= 4096:
+        return False
+    return True
+
+def _test_vlan_pcp(vlan_pcp):
+    if vlan_pcp < 0 or vlan_pcp >= 8:
+        return False
+    return True
+
+def _test_nw_tos(nw_tos):
+    if nw_tos < 0 or nw_tos >= 8:
+        return False
+    return True
