@@ -164,8 +164,8 @@ class FlowTable(object):
         match_list = self._match(flow_mod, groups)
         if len(match_list) > 0 : 
             for flow in match_list:
-                    self.logger.debug("Updating flow " + str(flow.cookie))
-                    flow.update(flow_mod)
+                    self.logger.debug("Updating flow " + str(flow.flow_mod.cookie))
+                    flow.flow_mod_set(flow_mod)
         else:
             ret = (-1, ofp.OFPFMFC_BAD_MATCH) 
         self.flow_sync.release()
@@ -216,8 +216,7 @@ class FlowTable(object):
         stats = []
         fake_flow_mod = message.flow_mod()
         fake_flow_mod.match = flow_stats_request.match
-        #@todo decide if flow_stats are 'strict' or not; if yes, then uncomment next line
-        #fake_flow_mod.flags = ofp.OFPFF_CHECK_OVERLAP
+        fake_flow_mod.command = ofp.OFPFC_MODIFY # non-strict!
         for flow in self.flow_entries:
             # match the out_port
             if ofps_flow.flow_has_out_port(flow, 
