@@ -1033,6 +1033,80 @@ class MultiTableWriteActMpls8(pktact.BaseMatchCase):
             pkt = pkt,
             exp_pkt = exp_pkt)
 
+class MultiTableWriteActMpls9(pktact.BaseMatchCase):
+    """
+    Check exec order is correct among the action set against MPLS pkt
+    Sent pkt: pkt w/ MPLS
+    Actions:
+        Table0: Outport
+        Table1: Decrement IP TTL
+        Table2: Pop MPLS
+        Table3: Copy TTL inwards
+    Expectation: Rcv pkt w/o MPLS. IP TTL must be orig MPLS TTL - 1
+    """
+    def runTest(self):
+        of_ports = pa_port_map.keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
+        # For making the test simpler...
+        ing_port = of_ports[0]
+        egr_port = of_ports[1]
+
+        pktlen = 104
+        mpls_label = 0xa5f05 # no specific meaning
+        mpls_tc = 5
+        mpls_ttl = 129
+        pkt = testutils.simple_tcp_packet_w_mpls(pktlen=pktlen,
+                                                 mpls_label=mpls_label,
+                                                 mpls_tc=mpls_tc,
+                                                 mpls_ttl=mpls_ttl)
+
+        match = parse.packet_to_flow_match(pkt)
+        wildcards = 0
+
+        exp_pkt = testutils.simple_tcp_packet_w_mpls(pktlen=pktlen-4,
+                                                     ip_ttl=mpls_ttl-1)
+
+        # Create parameters for each table
+        act_list = []
+        next_avail = []
+        chk_expire = []
+
+        #Table 0
+        act = action.action_output()
+        act.port = egr_port
+        act_list.append([act])
+        next_avail.append(True)
+        chk_expire.append(False)
+
+        #Table 1
+        act = action.action_dec_nw_ttl()
+        act_list.append([act])
+        next_avail.append(True)
+        chk_expire.append(False)
+
+        #Table 2
+        act = action.action_pop_mpls()
+        act.ethertype = ETHERTYPE_IP
+        act_list.append([act])
+        next_avail.append(True)
+        chk_expire.append(False)
+
+        #Table 3
+        act = action.action_copy_ttl_in()
+        act_list.append([act])
+        next_avail.append(False)
+        chk_expire.append(False)
+
+        write_action_test_multi_tables(self, ing_port, egr_port,
+            match = match,
+            wildcards = wildcards,
+            act_list = act_list,
+            next_avail = next_avail,
+            chk_expire = chk_expire,
+            pkt = pkt,
+            exp_pkt = exp_pkt)
+
 class MultiTableWriteAct2Mpls1(pktact.BaseMatchCase):
     """
     Check exec order is correct among the action set against MPLS pkt
