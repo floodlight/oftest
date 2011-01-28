@@ -444,7 +444,7 @@ class MultiTablePolicyDecoupling(basic.SimpleDataPlane):
                  exp_pkt=exp_pkt, ing_port=of_ports[2], egr_port=of_ports[1])
 
     def runTest(self):
-        self.scenario2(0, 1, 0x1b, 0x13)
+        self.scenario2(0, 1, 0x6c, 0x4c)
 
 
 class MultiTableClearAction(basic.SimpleDataPlane):
