@@ -219,10 +219,11 @@ def _validate_match_mpls(match, flow_mod, logger):
     # IF it's not wildcarded and
     #  if mpls_label is wildcarded or not NONE
     #        because if there is no mpls_label, there is no tc
-    if ((match.wildcards & ofp.OFPFMF_MPLS_TC) == 0 and
+    tc_needs_test = (
+            (match.wildcards & ofp.OFPFMF_MPLS_TC) == 0 and
             ( not mpls_label_specified or 
-                    match.mpls_label != ofp.OFPML_NONE ) and
-            not _test_mpls_tc(match.mpls_tc)):
+                    match.mpls_label != ofp.OFPML_NONE ))
+    if ( tc_needs_test and not _test_mpls_tc(match.mpls_tc)):
         logger.error("rejecting broken match: bad mpls tc")
         raise MatchException(
                     ofutils.of_error_msg_make(
@@ -232,8 +233,8 @@ def _validate_match_mpls(match, flow_mod, logger):
     return None
 
 def _validate_match_vlan(match, flow_mod, logger):
-    if ((match.wildcards & ofp.OFPFMF_DL_VLAN) == 0 and
-            not _test_vlan_vid(match.dl_vlan)):
+    vlan_specified = (match.wildcards & ofp.OFPFMF_DL_VLAN) == 0
+    if ( vlan_specified and not _test_vlan_vid(match.dl_vlan)):
         logger.error("rejecting broken match: bad vlan: %d" %
                      match.dl_vlan)
         raise MatchException(
@@ -241,8 +242,10 @@ def _validate_match_vlan(match, flow_mod, logger):
                             ofp.OFPET_FLOW_MOD_FAILED, 
                             ofp.OFPFMFC_BAD_MATCH, 
                             flow_mod))
-    if ((match.wildcards & ofp.OFPFMF_DL_VLAN_PCP) == 0 and
-            not _test_vlan_pcp(match.dl_vlan_pcp)):
+    pcp_needs_test = (
+            (match.wildcards & ofp.OFPFMF_DL_VLAN_PCP) == 0 and
+            (not vlan_specified or match.dl_vlan != ofp.OFPVID_NONE))
+    if ( pcp_needs_test and not _test_vlan_pcp(match.dl_vlan_pcp)):
         logger.error("rejecting broken match: bad vlan_pcp")
         raise MatchException(
                     ofutils.of_error_msg_make(
