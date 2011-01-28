@@ -204,7 +204,8 @@ def _validate_match(switch, flow_mod, logger):
     return None             # the success case
 
 def _validate_match_mpls(match, flow_mod, logger):
-    if ((match.wildcards & ofp.OFPFMF_MPLS_LABEL) == 0 and
+    mpls_label_specified = (match.wildcards & ofp.OFPFMF_MPLS_LABEL) == 0
+    if ( mpls_label_specified and
                 not _test_mpls_label(match.mpls_label)):
         logger.error(
             "rejecting broken match: bad mpls label: %x %d" %
@@ -214,8 +215,14 @@ def _validate_match_mpls(match, flow_mod, logger):
                             ofp.OFPET_FLOW_MOD_FAILED, 
                             ofp.OFPFMFC_BAD_MATCH, 
                             flow_mod))
+    # We only care about the tc value:
+    # IF it's not wildcarded and
+    #  if mpls_label is wildcarded or not NONE
+    #        because if there is no mpls_label, there is no tc
     if ((match.wildcards & ofp.OFPFMF_MPLS_TC) == 0 and
-                not _test_mpls_tc(match.mpls_tc)):
+            ( not mpls_label_specified or 
+                    match.mpls_label != ofp.OFPML_NONE ) and
+            not _test_mpls_tc(match.mpls_tc)):
         logger.error("rejecting broken match: bad mpls tc")
         raise MatchException(
                     ofutils.of_error_msg_make(
