@@ -1,0 +1,30 @@
+#!/usr/bin/perl -w
+#############################################
+# Stupid utility to parse the output of oft and print just the tests that
+#   failed.  Intended usage is:
+#
+#
+# First, run all tests:
+# ./oft --verbose 2>&1 | tee oft.out
+# Second, just re-run broken tests
+# ./oft --verbose --test-spec=`./list_broken_tests oft.out`
+#
+# Useful for speeding up re-testing
+
+$str="";
+while(<>) {
+    if ( /FAIL:/) {
+        @line = split;
+        $str .= "," if ($str ne "");
+        $str.= $line[2];
+    }
+}
+
+if($str eq "") {
+    die("USAGE: list_broken_tests <oft.out|stdin>\n");
+}
+
+
+$str =~ s/[()]//g;
+print "$str"
+
