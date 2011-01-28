@@ -280,6 +280,6 @@ def _test_vlan_pcp(vlan_pcp):
     return True
 
 def _test_nw_tos(nw_tos):
-    if nw_tos < 0 or nw_tos >= 8:
-        return False
-    return True
+    if (nw_tos & 0x03) == 0:
+        return True
+    return False
