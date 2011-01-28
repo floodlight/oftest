@@ -155,7 +155,7 @@ class VlanExactAny1(pktact.BaseMatchCase):
      - VID: OFPVID_ANY  PCP: SPECIFIC
     - SENDING PKT
      - NUM OF TAGS: 1
-     - VID: unmatch value  PCP: unmatch value
+     - VID: unmatch value  PCP: match value
     - EXPECTATIONS
      - Pkt to be forwarded
     Test on one pair of ports
@@ -293,7 +293,8 @@ class VlanExactOutrange1(pktact.BaseMatchCase):
     - SENDING PKT
      - NUM OF TAGS: 1
     - EXPECTATIONS
-     - Pkt to be forwarded
+     - FLOW_MOD_FAILED error
+     - Pkt NOT to be forwarded
     Test on one pair of ports
     """
     def runTest(self):
@@ -427,9 +428,9 @@ class VlanWildIdExactPcpAny1(pktact.BaseMatchCase):
      - VID: OFPVID_ANY  PCP: SPECIFIC
     - SENDING PKT
      - NUM OF TAGS: 1
-     - VID: unmatch value  PCP: unmatch value
+     - VID: unmatch value  PCP: match value
     - EXPECTATIONS
-     - Pkt NOT to be forwarded
+     - Pkt to be forwarded
     Test on one pair of ports
     """
     def runTest(self):
@@ -700,7 +701,7 @@ class VlanExactIdWildPcpAny1(pktact.BaseMatchCase):
      - VID: OFPVID_ANY  PCP: SPECIFIC
     - SENDING PKT
      - NUM OF TAGS: 1
-     - VID: unmatch value  PCP: unmatch value
+     - VID: unmatch value  PCP: match value
     - EXPECTATIONS
      - Pkt to be forwarded
     Test on one pair of ports
@@ -839,7 +840,7 @@ class VlanExactIdWildPcpOutrange1(pktact.BaseMatchCase):
     - SENDING PKT
      - NUM OF TAGS: 1
     - EXPECTATIONS
-     - Pkt to be forwarded
+     - Pkt NOT to be forwarded
     Test on one pair of ports
     """
     def runTest(self):
@@ -972,7 +973,7 @@ class VlanWildAny1(pktact.BaseMatchCase):
      - VID: OFPVID_ANY  PCP: SPECIFIC
     - SENDING PKT
      - NUM OF TAGS: 1
-     - VID: unmatch value  PCP: unmatch value
+     - VID: unmatch value  PCP: match value
     - EXPECTATIONS
      - Pkt to be forwarded
     Test on one pair of ports
@@ -1272,11 +1273,8 @@ def vlan_any_tests(parent, vlan_id_mask=False, vlan_pcp_mask=False,
 
     elif test_condition == 1:
         vid = random.randint(0, 4095)
-        pcp_match = 7 - pcp # unmatching value
-        if (vlan_id_mask == True) and (vlan_pcp_mask == False):
-            match_exp = False
-        else:
-            match_exp = True
+        pcp_match = pcp
+        match_exp = True
         match_exp = True
 
     else:
@@ -1429,6 +1427,26 @@ def vlan_outrange_tests(parent, vlan_id_mask=False, vlan_pcp_mask=False,
     if test_condition == 0:
         vid_match = ofp.OFPVID_NONE
         pcp_match = pcp + 8  #out of range
+        if vlan_id_mask == True:
+            if vlan_pcp_mask == True:
+                match_exp = True
+                exp_msg = ofp.OFPT_FLOW_REMOVED
+                exp_msg_type = 0 #NOT EXPECTED
+                exp_msg_code = 0 #NOT EXPECTED
+            else:
+                match_exp = False
+                exp_msg = ofp.OFPT_ERROR
+                exp_msg_type = ofp.OFPET_FLOW_MOD_FAILED
+                exp_msg_code = ofp.OFPFMFC_BAD_MATCH
+        else:
+            match_exp = False
+            exp_msg = ofp.OFPT_FLOW_REMOVED
+            exp_msg_type = 0 #NOT EXPECTED
+            exp_msg_code = 0 #NOT EXPECTED
+
+    elif test_condition == 1:
+        vid_match = ofp.OFPVID_ANY
+        pcp_match = pcp + 8  #out of range
         if vlan_pcp_mask == True:
             match_exp = True
             exp_msg = ofp.OFPT_FLOW_REMOVED
@@ -1436,28 +1454,9 @@ def vlan_outrange_tests(parent, vlan_id_mask=False, vlan_pcp_mask=False,
             exp_msg_code = 0 #NOT EXPECTED
         else:
             match_exp = False
-            if vlan_id_mask == True:
-                exp_msg = ofp.OFPT_ERROR
-                exp_msg_type = ofp.OFPET_FLOW_MOD_FAILED
-                exp_msg_code = ofp.OFPFMFC_BAD_MATCH
-            else:
-                exp_msg = ofp.OFPT_FLOW_REMOVED
-                exp_msg_type = 0 #NOT EXPECTED
-                exp_msg_code = 0 #NOT EXPECTED
-
-    elif test_condition == 1:
-        vid_match = ofp.OFPVID_ANY
-        pcp_match = pcp + 8  #out of range
-        if (vlan_id_mask == True) and (vlan_pcp_mask == False):
-            match_exp = False
             exp_msg = ofp.OFPT_ERROR
             exp_msg_type = ofp.OFPET_FLOW_MOD_FAILED
             exp_msg_code = ofp.OFPFMFC_BAD_MATCH
-        else:
-            match_exp = True
-            exp_msg = ofp.OFPT_FLOW_REMOVED
-            exp_msg_type = 0 #NOT EXPECTED
-            exp_msg_code = 0 #NOT EXPECTED
 
     elif test_condition == 2:
         vid_match = vid + 4096  #out of range
