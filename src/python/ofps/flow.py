@@ -203,13 +203,13 @@ def l2_match(match_a, match_b):
             return False
         
         # MPLS only evaluated if type is not wild and is one of the MPLS types.
-        if (match_a.dl_type in (0x8847, 0x8848)
-            and not (wildcards & ofp.OFPFW_MPLS_LABEL)
-            and (match_a.mpls_label != ofp.OFPML_ANY)):
-            if match_a.mpls_label != match_b.mpls_label:
-                flow_logger.debug("Failed mpls_label: %d vs %d" % 
-                                  (match_a.mpls_label, match_b.mpls_label))
-                return False            
+        if (match_a.dl_type in (0x8847, 0x8848)):
+            if not (wildcards & ofp.OFPFW_MPLS_LABEL):
+                if match_a.mpls_label != match_b.mpls_label:
+                    flow_logger.debug("Failed mpls_label: %d vs %d" % 
+                                      (match_a.mpls_label, match_b.mpls_label))
+                    return False
+            
             if not (wildcards & ofp.OFPFW_MPLS_TC):
                 if match_a.mpls_tc != match_b.mpls_tc:
                     flow_logger.debug("Failed mpls_tc: %d vs %d" % 
