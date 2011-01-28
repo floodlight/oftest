@@ -57,7 +57,7 @@ MODIFY_ACTION_VALUES =  [ofp.OFPAT_SET_VLAN_VID,
                          ofp.OFPAT_SET_TP_DST]
 
 ETHERTYPE_MPLS = 0x8847
-ETYERTYPE_MPLS_MC = 0x8848
+ETHERTYPE_MPLS_MC = 0x8848
 ETHERTYPE_IP = 0x0800
 
 # Cache supported features to avoid transaction overhead
@@ -348,7 +348,6 @@ def mpls_set_two_tables_tests(parent, match_exp=True):
     dl_type_match_tbl1 = ETHERTYPE_MPLS
 
     # Output action for table1 will be set in the framework
-    action_list_tbl1 = None
 
     flow_match_test_mpls_two_tables(parent, pa_port_map,
                     wildcards=wildcards,
@@ -364,7 +363,6 @@ def mpls_set_two_tables_tests(parent, match_exp=True):
                     label_match_tbl1=label_match_tbl1,
                     tc_match_tbl1=tc_match_tbl1,
                     dl_type_match_tbl1=dl_type_match_tbl1,
-                    action_list_tbl1 = action_list_tbl1,
                     match_exp_tbl1=match_exp,
                     exp_mpls_label=exp_label,
                     exp_mpls_tc=exp_tc,
@@ -410,7 +408,6 @@ def mpls_ttl_inout_two_tables_tests(parent, test_inwards=True):
     dl_type_match_tbl1 = ETHERTYPE_MPLS
 
     # Output action for table1 will be set in the framework
-    action_list_tbl1 = None
 
     flow_match_test_mpls_two_tables(parent, pa_port_map,
                     wildcards=wildcards,
@@ -426,7 +423,6 @@ def mpls_ttl_inout_two_tables_tests(parent, test_inwards=True):
                     label_match_tbl1=label_match_tbl1,
                     tc_match_tbl1=tc_match_tbl1,
                     dl_type_match_tbl1=dl_type_match_tbl1,
-                    action_list_tbl1 = action_list_tbl1,
                     match_exp_tbl1=True,
                     exp_mpls_label=exp_label,
                     exp_mpls_tc=exp_tc,
@@ -474,7 +470,6 @@ def nompls_push_set_two_tables_tests(parent):
     dl_type_match_tbl1 = ETHERTYPE_MPLS
 
     # Output action for table1 will be set in the framework
-    action_list_tbl1 = None
 
     flow_match_test_mpls_two_tables(parent, pa_port_map,
                     wildcards=wildcards,
@@ -490,7 +485,6 @@ def nompls_push_set_two_tables_tests(parent):
                     label_match_tbl1=label_match_tbl1,
                     tc_match_tbl1=tc_match_tbl1,
                     dl_type_match_tbl1=dl_type_match_tbl1,
-                    action_list_tbl1 = action_list_tbl1,
                     match_exp_tbl1 = True,
                     exp_mpls_label=exp_label,
                     exp_mpls_tc=exp_tc,
@@ -538,7 +532,6 @@ def mpls_push_two_tables_tests(parent, match_exp = True):
     dl_type_match_tbl1 = ETHERTYPE_MPLS
 
     # Output action for table1 will be set in the framework
-    action_list_tbl1 = None
 
     flow_match_test_mpls_two_tables(parent, pa_port_map,
                     wildcards=wildcards,
@@ -553,7 +546,6 @@ def mpls_push_two_tables_tests(parent, match_exp = True):
                     label_match_tbl1=label_match_tbl1,
                     tc_match_tbl1=tc_match_tbl1,
                     dl_type_match_tbl1=dl_type_match_tbl1,
-                    action_list_tbl1 = action_list_tbl1,
                     match_exp_tbl1 = match_exp,
                     exp_mpls_label=exp_label,
                     exp_mpls_tc=exp_tc,
@@ -618,7 +610,6 @@ def mpls_push_set_two_tables_tests(parent, test_condition=0, match_exp = True):
     dl_type_match_tbl1 = ETHERTYPE_MPLS
 
     # Output action for table1 will be set in the framework
-    action_list_tbl1 = None
 
     flow_match_test_mpls_two_tables(parent, pa_port_map,
                     wildcards=wildcards,
@@ -633,7 +624,6 @@ def mpls_push_set_two_tables_tests(parent, test_condition=0, match_exp = True):
                     label_match_tbl1=label_match_tbl1,
                     tc_match_tbl1=tc_match_tbl1,
                     dl_type_match_tbl1=dl_type_match_tbl1,
-                    action_list_tbl1 = action_list_tbl1,
                     match_exp_tbl1 = match_exp,
                     exp_mpls_label=exp_label,
                     exp_mpls_tc=exp_tc,
@@ -688,7 +678,6 @@ def mpls_pop_two_tables_tests(parent, test_condition=0, match_exp=True):
         dl_type_match_tbl1 = ETHERTYPE_MPLS
 
     # Output action for table1 will be set in the framework
-    action_list_tbl1 = None
 
     # One-tag-removed packet expected
     exp_label = -1
@@ -714,7 +703,6 @@ def mpls_pop_two_tables_tests(parent, test_condition=0, match_exp=True):
                     label_match_tbl1=label_match_tbl1,
                     tc_match_tbl1=tc_match_tbl1,
                     dl_type_match_tbl1=dl_type_match_tbl1,
-                    action_list_tbl1 = action_list_tbl1,
                     match_exp_tbl1=match_exp,
                     exp_mpls_label=exp_label,
                     exp_mpls_tc=exp_tc,
@@ -746,7 +734,6 @@ def flow_match_test_port_pair_mpls_two_tables(parent, ing_port, egr_port,
                                    label_match_tbl1=0,
                                    tc_match_tbl1=0,
                                    dl_type_match_tbl1=ETHERTYPE_MPLS,
-                                   action_list_tbl1=None,
                                    check_expire_tbl1=False,
                                    match_exp_tbl1=True,
                                    exp_msg_tbl1=ofp.OFPT_FLOW_REMOVED,
@@ -856,21 +843,23 @@ def flow_match_test_port_pair_mpls_two_tables(parent, ing_port, egr_port,
                                            mpls_ttl_int=exp_mpls_ttl_int,
                                            ip_ttl=exp_ip_ttl)
 
+    # Flow Mod for Table0
     match = parse.packet_to_flow_match(pkt)
     parent.assertTrue(match is not None, "Flow match from pkt failed")
 
-    # Flow Mod for Table0
     match.mpls_label = label_match_tbl0
     match.mpls_tc = tc_match_tbl0
     match.dl_type = dl_type_match_tbl0
-    match.nw_tos = 0
-    match.nw_proto = 0
-    match.nw_src = 0
-    match.nw_src_mask = 0
-    match.nw_dst = 0
-    match.nw_dst_mask = 0
-    match.tp_src = 0
-    match.tp_dst = 0
+    if ((dl_type_match_tbl0 == ETHERTYPE_MPLS) or
+       (dl_type_match_tbl0 == ETHERTYPE_MPLS_MC)):
+        match.nw_tos = 0
+        match.nw_proto = 0
+        match.nw_src = 0
+        match.nw_src_mask = 0
+        match.nw_dst = 0
+        match.nw_dst_mask = 0
+        match.tp_src = 0
+        match.tp_dst = 0
 
     inst_1 = instruction.instruction_apply_actions()
     inst_2 = instruction.instruction_goto_table()
@@ -886,13 +875,25 @@ def flow_match_test_port_pair_mpls_two_tables(parent, ing_port, egr_port,
     testutils.flow_msg_install(parent, request0)
 
     # Flow Mod for Table1
-    # Other match parameters are the same
+    match = parse.packet_to_flow_match(exp_pkt)
+    parent.assertTrue(match is not None, "Flow match from pkt failed")
+
     match.mpls_label = label_match_tbl1
     match.mpls_tc = tc_match_tbl1
     match.dl_type = dl_type_match_tbl1
 
+    if ((dl_type_match_tbl1 == ETHERTYPE_MPLS) or
+       (dl_type_match_tbl1 == ETHERTYPE_MPLS_MC)):
+        match.nw_tos = 0
+        match.nw_proto = 0
+        match.nw_src = 0
+        match.nw_src_mask = 0
+        match.nw_dst = 0
+        match.nw_dst_mask = 0
+        match.tp_src = 0
+        match.tp_dst = 0
+
     request1 = testutils.flow_msg_create(parent, pkt, ing_port=ing_port,
-                              action_list=action_list_tbl1,
                               wildcards=wildcards,
                               match=match,
                               check_expire=check_expire_tbl1,
@@ -960,7 +961,6 @@ def flow_match_test_mpls_two_tables(parent, port_map, wildcards=0,
                          label_match_tbl1=0,
                          tc_match_tbl1=0,
                          dl_type_match_tbl1=ETHERTYPE_MPLS,
-                         action_list_tbl1=None,
                          check_expire_tbl1=False,
                          match_exp_tbl1=True,
                          exp_msg_tbl1=ofp.OFPT_FLOW_REMOVED,
@@ -998,7 +998,6 @@ def flow_match_test_mpls_two_tables(parent, port_map, wildcards=0,
     @param label_match_tbl1 Matching value for MPLS LABEL field
     @param tc_match_tbl1 Matching value for MPLS TC field
     @param dl_type_match_tbl1 Matching value for DL_TYPE field
-    @param action_list_tbl1 Additional actions to add to flow mod
     @param check_expire_tbl1 Check for flow expiration message
     @param match_exp_tbl0 Set whether packet is expected to receive
     @param exp_msg_tbl1 Expected message
@@ -1049,7 +1048,6 @@ def flow_match_test_mpls_two_tables(parent, port_map, wildcards=0,
                                    label_match_tbl1=label_match_tbl1,
                                    tc_match_tbl1=tc_match_tbl1,
                                    dl_type_match_tbl1=dl_type_match_tbl1,
-                                   action_list_tbl1=action_list_tbl1,
                                    check_expire_tbl1=check_expire_tbl1,
                                    match_exp_tbl1=match_exp_tbl1,
                                    exp_msg_tbl1=exp_msg_tbl1,
