@@ -40,7 +40,7 @@ import oftest.cstruct as ofp
 import unittest
 import binascii
 import string
-import collections
+import collections #@UnresolvedImport
 import oftest.action as action
 
 ETHERTYPE_IP = 0x0800
