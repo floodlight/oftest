@@ -268,7 +268,7 @@ def _test_mpls_tc(mpls_tc):
     return True
 
 def _test_vlan_vid(vlan_vid):
-    if vlan_vid == ofp.OFPVID_NONE:
+    if vlan_vid == ofp.OFPVID_NONE or vlan_vid == ofp.OFPVID_ANY:
         return True
     if vlan_vid < 0 or vlan_vid >= 4096:
         return False
