@@ -809,7 +809,7 @@ def mpls_set_label_act_tests(parent, test_condition=0):
             exp_label = parent.label
 
         else:
-            match_exp = True
+            match_exp = False
             exp_msg = ofp.OFPT_ERROR
             exp_msg_type = ofp.OFPET_BAD_ACTION
             exp_msg_code = ofp.OFPBAC_BAD_ARGUMENT
@@ -884,15 +884,14 @@ def mpls_set_tc_act_tests(parent, test_condition=0):
 
     elif test_condition == 1:
         act.mpls_tc = 8
+        match_exp = False
         if parent.num_tags == 0:
-            match_exp = False
             exp_msg = ofp.OFPT_ERROR
             exp_msg_type = ofp.OFPET_BAD_ACTION
             exp_msg_code = ofp.OFPBAC_MATCH_INCONSISTENT
             exp_tc = parent.tc
 
         else:
-            match_exp = True
             exp_msg = ofp.OFPT_ERROR
             exp_msg_type = ofp.OFPET_BAD_ACTION
             exp_msg_code = ofp.OFPBAC_BAD_ARGUMENT
