@@ -354,7 +354,7 @@ class MplsWildLabelExactTcSpecific0(pktact.BaseMatchCase):
      - NUM OF TAGS: 0
      - LABEL: N/A  TC: N/A
     - EXPECTATIONS
-     - Pkt to be forwarded
+     - Pkt NOT to be forwarded
     Test on one pair of ports
     """
     def runTest(self):
@@ -388,7 +388,7 @@ class MplsWildLabelExactTcSpecific2(pktact.BaseMatchCase):
      - NUM OF TAGS: 1
      - LABEL: match value  TC: unmatch value
     - EXPECTATIONS
-     - Pkt to be forwarded
+     - Pkt NOT to be forwarded
     Test on one pair of ports
     """
     def runTest(self):
@@ -441,7 +441,7 @@ class MplsWildLabelExactTcSpecific5(pktact.BaseMatchCase):
      - LABEL: unmatch value  TC: ummatch value
      - Inner LABEL: match value  TC: match value
     - EXPECTATIONS
-     - Pkt to be forwarded
+     - Pkt NOT to be forwarded
     Test on one pair of ports
     """
     def runTest(self):
@@ -473,7 +473,8 @@ class MplsWildLabelExactTcOutrange3(pktact.BaseMatchCase):
     - SENDING PKT
      - NUM OF TAGS: 1
     - EXPECTATIONS
-     - Pkt to be forwarded
+     - FLOW_MOD_FAILED error
+     - Pkt NOT to be forwarded
     Test on one pair of ports
     """
     def runTest(self):
@@ -489,7 +490,8 @@ class MplsWildLabelExactTcOutrange4(pktact.BaseMatchCase):
     - SENDING PKT
      - NUM OF TAGS: 1
     - EXPECTATIONS
-     - Pkt to be forwarded
+     - FLOW_MOD_FAILED error
+     - Pkt NOT to be forwarded
     Test on one pair of ports
     """
     def runTest(self):
@@ -769,7 +771,7 @@ class MplsWildSpecific0(pktact.BaseMatchCase):
      - NUM OF TAGS: 0
      - LABEL: N/A  TC: N/A
     - EXPECTATIONS
-     - Pkt to be forwarded
+     - Pkt NOT to be forwarded
     Test on one pair of ports
     """
     def runTest(self):
