@@ -191,11 +191,12 @@ def l2_match(match_a, match_b):
             flow_logger.debug("Failed dl_vlan: %d vs %d" % 
                               (match_a.dl_vlan, match_b.dl_vlan))
             return False
-        if not (wildcards & ofp.OFPFW_DL_VLAN_PCP):
-            if match_a.dl_vlan_pcp != match_b.dl_vlan_pcp:
-                flow_logger.debug("Failed dl_vlan_pcp: %d vs %d" %
-                                  (match_a.dl_vlan_pcp, match_b.dl_vlan_pcp))
-                return False
+    # note that we should check vlan_pcp even if vlan is wild
+    if not (wildcards & ofp.OFPFW_DL_VLAN_PCP):
+        if match_a.dl_vlan_pcp != match_b.dl_vlan_pcp:
+            flow_logger.debug("Failed dl_vlan_pcp: %d vs %d" %
+                              (match_a.dl_vlan_pcp, match_b.dl_vlan_pcp))
+            return False
     if not (wildcards & ofp.OFPFW_DL_TYPE):
         if match_a.dl_type != match_b.dl_type:
             flow_logger.debug("Failed dl_type: %d vs %d" % 
