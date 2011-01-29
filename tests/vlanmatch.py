@@ -1371,7 +1371,7 @@ def vlan_specific_tests(parent, vlan_id_mask=False, vlan_pcp_mask=False,
         pcp = pcp_match + 1
         vid_int = vid_match
         pcp_int = pcp_match
-        if vlan_id_mask == True:
+        if (vlan_id_mask == True) and (vlan_pcp_mask == True):
             match_exp = True
         else:
             match_exp = False
