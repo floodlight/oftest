@@ -102,6 +102,7 @@ class ControllerInterface(threading.Thread):
         self.logger.info("Creating socket")
         try: # Create socket
             self.ctrl_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.ctrl_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         except (socket.error), e:
             self.logger.error("Could not create socket.  Exiting:: " + str(e))
             self.active = False

@@ -264,6 +264,7 @@ class Controller(Thread):
             (self.switch_socket, self.switch_addr) = \
                 self.listen_socket.accept()
             self.logger.info("Got cxn to " + str(self.switch_addr))
+            self.switch_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             # Notify anyone waiting
             self.connect_cv.acquire()
             self.connect_cv.notify()
