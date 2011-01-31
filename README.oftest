@@ -52,7 +52,7 @@ Introduction
 Quick Start
 +++++++++++
 
-    You need to have Python setup tools and Scapy installed on your
+    You need to have Python setup tools installed on your
     system.  See 'Pre-requisites' below.
 
     Make sure your switch is running and trying to connect to a
@@ -85,10 +85,6 @@ Longer Start
           with Python 2.4.
         * Python setup tools (e.g.: sudo apt-get install python-setuptools)
         * oftest checked out (called <oftest> here)
-        * scapy installed:  http://www.secdev.org/projects/scapy/
-          'sudo apt-get install scapy' should work on Debian.
-        * tcpdump installed (optional, but scapy will complain if it's
-          not there)
         * Doxygen and doxypy for document generation (optional)
         * lint for source checking (optional)
 
@@ -292,25 +288,16 @@ Adding Your Own Test Cases
 Using CentOS/RHEL
 +++++++++++++++++
 
-    CentOS/RHEL have two challenges:  they are very tied to Python 2.4
-    (and Scapy requires Python 2.5 for its latest version) and they
-    require a kernel upgrade to use veth pairs for local platform
-    testing.  
+    CentOS/RHEL have two challenges:  they are very tied to Python
+    2.4 and they require a kernel upgrade to use veth pairs for local
+    platform testing.  Both oftest and ofps are designed to use
+    the python binrary in your path, not a fixed (e.g., "/usr/bin/python")
+    so installing a new python in a non-standard directory is a viable
+    work around.
 
     If you only need to control eth interfaces for a remote platform,
-    you can use CentOS/RHEL without major disruption.  The key is to 
-    download scapy-1.2 from the following link:
-
-    wget http://hg.secdev.org/scapy/raw-file/v1.2.0.2/scapy.py
-
-    See: http://www.dirk-loss.de/scapy-doc/installation.html#installing-scapy-v1-2
-    for more info.
-
-    Copy scapy.py to /usr/lib/python2.4/site-packages
-
-    If you hit an error related to importing scapy.all, you just need
-    to change the import to refer to scapy (not scapy.all).  See
-    examples in parse.py for example.
+    you can use CentOS/RHEL without major disruption.  Otherwise, you will
+    need to upgrade to a modern kernel that supports veth pairs.
 
 
 Other Info

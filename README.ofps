@@ -12,7 +12,7 @@ pseudo-code implementation of an OpenFlow switch.
 # INSTALL
 #
 
-ofps shares libraries with oftest, so oftest must be installed
+ofps shares libraries with oftest, so oftest MUST be installed
 first (see README.oftest).  Currently, ofps only runs from the
 source directory, but this will hopefully change soon.
 
