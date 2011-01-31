@@ -45,7 +45,6 @@ import struct
 from threading import Thread
 from optparse import OptionParser
 import pdb
-import time
 
 import oftest.cstruct as ofp
 import oftest.dataplane as dataplane
@@ -306,10 +305,5 @@ if __name__ == '__main__':
 
     ofps.config_set(config)
     print 'OFPS Starting...'
-    ofps.start()
-
-    while True:
-        time.sleep(1)
-        threads = [t.join(2) for t in threads if t is not None and t.isAlive()]
-
+    ofps.run()
     print 'OFPS Exiting'
