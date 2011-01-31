@@ -387,8 +387,8 @@ class Packet(object):
             idx += 2
         else:
             self.vlan_tag_offset = None
-            self.match.dl_vlan = 0xFFFF
-            self.match.dl_vlan_pcp = 0
+            self.match.dl_vlan = ofp.OFPVID_NONE
+            self.match.dl_vlan_pcp = 9
             
         if l2_type in ETHERTYPES_MPLS:
             if self.bytes < (idx + 4):
