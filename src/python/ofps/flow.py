@@ -370,7 +370,8 @@ class FlowEntry(object):
         if not meta_match(self.flow_mod.match, packet.match):
             flow_logger.debug("packet match failed meta_match")
             return False
-        if self.flow_mod.match.dl_vlan == ofp.OFPVID_NONE:
+        if (self.flow_mod.match.dl_vlan == ofp.OFPVID_NONE and 
+                (self.flow_mod.match.wildcards & ofp.OFPFMF_DL_VLAN) == 0):
             self.flow_mod.match.dl_vlan_pcp = 9
 #        if ((self.flow_mod.match.dl_vlan == ofp.OFPVID_ANY) and
 #            (packet.match.dl_vlan != ofp.OFPVID_NONE)):
