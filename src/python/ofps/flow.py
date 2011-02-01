@@ -187,7 +187,15 @@ def l2_match(match_a, match_b):
 
     # @todo  Check untagged logic
     if not (wildcards & ofp.OFPFW_DL_VLAN):
-        if match_a.dl_vlan != match_b.dl_vlan:
+        if match_a.dl_vlan == ofp.OFPVID_ANY:
+            if match_b.dl_vlan == ofp.OFPVID_NONE:
+                flow_logger.debug("Failed dl_vlan: ANY vs NONE")
+                return False
+        elif match_b.dl_vlan == ofp.OFPVID_ANY:
+            if match_a.dl_vlan == ofp.OFPVID_NONE:
+                flow_logger.debug("Failed dl_vlan: NONE vs ANY")
+                return False
+        elif match_a.dl_vlan != match_b.dl_vlan:
             flow_logger.debug("Failed dl_vlan: %d vs %d" % 
                               (match_a.dl_vlan, match_b.dl_vlan))
             return False
