@@ -255,44 +255,143 @@ class Controller(Thread):
         @retval True, reset the switch connection
         """
 
-        self.logger.debug("handling a read socket connection")
-        if s == self.listen_socket:
-            if self.switch_socket:
-                self.logger.error("Multiple switch cxns not supported")
-                sys.exit(1)
-
-            (self.switch_socket, self.switch_addr) = \
-                self.listen_socket.accept()
-            self.logger.info("Got cxn to " + str(self.switch_addr))
-            self.switch_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-            # Notify anyone waiting
-            self.connect_cv.acquire()
-            self.connect_cv.notify()
-            self.connect_cv.release()
-            self.socs.append(self.switch_socket)
-            if self.initial_hello:
-                self.message_send(hello())
-        elif s == self.switch_socket:
-            try:
-                pkt = self.switch_socket.recv(self.rcv_size)
-            except (StandardError, socket.error):
-                self.logger.warning("Error on switch read")
-                raise
-                return True
-
-            if not self.active:
-                return False
-
-            if len(pkt) == 0:
-                self.logger.info("zero-len pkt in")
-                return True
-
-            self._pkt_handle(pkt)
-        else:
-            self.logger.error("Unknown socket ready: " + str(s))
+#        self.logger.debug("handling a read socket connection")
+#        if s == self.listen_socket:
+#            if self.switch_socket:
+#                self.logger.error("Multiple switch cxns not supported")
+#                sys.exit(1)
+#
+#            (self.switch_socket, self.switch_addr) = \
+#                self.listen_socket.accept()
+#            self.logger.info("Got cxn to " + str(self.switch_addr))
+#            self.switch_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+#            # Notify anyone waiting
+#            self.connect_cv.acquire()
+#            self.connect_cv.notify()
+#            self.connect_cv.release()
+#            self.socs.append(self.switch_socket)
+#            if self.initial_hello:
+#                self.message_send(hello())
+#        elif s == self.switch_socket:
+        try:
+            pkt = self.switch_socket.recv(self.rcv_size)
+        except (StandardError, socket.error):
+            self.logger.warning("Error on switch read")
+            raise
             return True
 
+        if not self.active:
+            return False
+
+        if len(pkt) == 0:
+            self.logger.info("zero-len pkt in")
+            return True
+
+        self._pkt_handle(pkt)
+#        else:
+#            self.logger.error("Unknown socket ready: " + str(s))
+#            return True
+
         return False
+    
+    #  @fixme: duplicate code from ctrl_if --- rewrite me!
+    def _socket_connect_active(self):
+        """ Initiate the connection to the other side 
+        @return: None on failure or a valid socket object on success
+        """
+        try:
+            self.logger.info("Creating socket")
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.logger.info("Control socket connecting.")
+            sock.connect((self.host, self.port))
+            self.logger.info("Connected to " + self.host + " on " +
+                         str(self.port))
+            self.switch_addr = (self.host, self.port)
+            return sock
+        except (StandardError, socket.error), e:
+            self.logger.error("Could not connect to %s at %d:: %s" % 
+                              (self.host, self.port, str(e)))
+        return None
+    
+    #  @fixme: duplicate code from ctrl_if --- rewrite me!
+    def _socket_connect_passive(self):
+        """ Listen on self.port and wait a bit for someone to connect
+        @return: None on failure or a valida socket obj on success
+        """
+        try:
+            if self.listen_socket is not None:
+                self.listen_socket.close()
+            self.logger.info("Creating socket")
+            self.listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.listen_socket.setsockopt(socket.SOL_SOCKET, 
+                                  socket.SO_REUSEADDR, 1)
+            self.logger.info("Binding control socket to  port %d" %
+                             self.port)
+            self.listen_socket.bind(('', self.port))
+            self.listen_socket.listen(LISTEN_QUEUE_SIZE)
+            (sock, addr) = self.listen_socket.accept()
+            self.switch_addr = addr
+            self.logger.info("Got connection from %s:%d" % ( 
+                                            addr[0], addr[1]))
+            return sock
+        except (StandardError, socket.error), e:
+            self.logger.error("Passive connect failed on port %d:: %s" % 
+                              (self.port, str(e)), exc_info=True)
+        return None
+    
+    
+    def _socket_connect(self, reconnect_delay=1):
+        """
+        Reset socket and attempt to create and connect
+        Sets self.switch_socket
+        If fatal error, sets self.dbg_state to 'down'
+        else, sits infinitely trying to connect
+        set notify on cv_
+        Sets self.dbb_state to 'running' on success
+        """
+        if self.switch_socket is not None:
+            self.switch_socket.close()
+            self.switch_socket = None
+        
+        self.logger.info("Trying to connect")
+        start = time.time()
+
+        while self.switch_socket is None:
+            if self.host: 
+                self.switch_socket = self._socket_connect_active()
+            else:
+                self.switch_socket =  self._socket_connect_passive()
+            if not self.switch_socket:
+                self.logger.info(
+                    "Connection timed out; trying again in %s seconds" %
+                            reconnect_delay)
+                time.sleep(reconnect_delay)
+                
+        diff = time.time() - start
+        self.logger.info("profiling : %s secs connecting" % diff)
+
+        if self.switch_socket is None:
+            return  # try again later
+
+        try: 
+            self.switch_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        except (socket.error), e:
+            self.logger.error("Failed to set TCP_NODELAY (!?): %s" + str(e))
+            self.dbg_state = 'down'
+            return
+            
+
+        self.dbg_state = "running"
+
+        # Notify anyone waiting
+        
+        self.connect_cv.acquire()
+        self.socs.append(self.switch_socket)
+        self.connect_cv.notify()
+        self.connect_cv.release()
+    
+        if self.initial_hello:
+            self.message_send(hello())
 
     def run(self):
         """
@@ -310,21 +409,12 @@ class Controller(Thread):
         """
 
         self.dbg_state = "starting"
-
-        # Create listen socket
-        self.logger.info("Create/listen at " + self.host + ":" + 
-                 str(self.port))
-        self.listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.listen_socket.setsockopt(socket.SOL_SOCKET, 
-                                      socket.SO_REUSEADDR, 1)
-        self.listen_socket.bind((self.host, self.port))
-        self.dbg_state = "listening"
-        self.listen_socket.listen(LISTEN_QUEUE_SIZE)
-
-        self.logger.info("Waiting for switch connection")
-        self.socs = [self.listen_socket]
-        self.dbg_state = "running"
-        while self.active:
+        self.active = True
+        self.socs = []
+        while self.dbg_state in ['starting', 'running']:
+            while self.dbg_state == 'starting':
+                self.logger.info("Waiting for switch connection")
+                self._socket_connect()  # blocks until we have a connection
             reset_switch_cxn = False
             try:
                 sel_in, sel_out, sel_err = \
