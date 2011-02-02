@@ -17,14 +17,23 @@ def parse_args():
     parser = OptionParser(version="%prog 0.1")
     parser.set_defaults(switch="ofps")
     parser.set_defaults(port_count=4)
+    parser.set_defaults(controller_host='127.0.0.1')
+    parser.set_defaults(passive_connect=False)
     parser.set_defaults(of_dir=None)
     parser.set_defaults(port=6633)
     parser.set_defaults(wait=2)
     parser.add_option("-n", "--port_count", type="int",
                       help="Number of veth pairs to create")
-    parser.add_option("-o", "--of_dir", help="OpenFlow root directory for host")
+    parser.add_option("-H", "--host", dest="controller_host",
+                      help="The IP/name of the test controller host ")
+    parser.add_option("-o", "--of_dir", 
+                      help="OpenFlow root directory for host")
     parser.add_option("-p", "--port", type="int",
-                      help="Port for OFP to listen on")
+                      help="Port for OFP to listen on/connect to",
+                      dest="passive_connect")
+    parser.add_option("-P", "--passive-connect", 
+                      help="Listen on port; don't connect",
+                      action="store_true")
     parser.add_option("-N", "--no_wait", action="store_true",
                       help="Do not wait to start daemons")
     parser.add_option("-s","--switch",help="Which OpenFlow Switch to run: 'reference', 'ofps', 'ovs'")

@@ -64,6 +64,7 @@ class ControllerInterface(threading.Thread):
         self.ctrl_socket = None
         self.rcv_size = RCV_SIZE_DEFAULT
         self.socs = []
+        self.listen_sock = None
 
         # Counters
         self.parse_errors = 0
@@ -87,6 +88,48 @@ class ControllerInterface(threading.Thread):
         self.no_version_check = False
         self.version_checked = False
 
+    def _socket_connect_active(self):
+        """ Initiate the connection to the other side 
+        @return: None on failure or a valid socket object on success
+        """
+        try:
+            self.logger.info("Creating socket")
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.logger.info("Control socket connecting.")
+            sock.connect((self.host, self.port))
+            self.logger.info("Connected to " + self.host + " on " +
+                         str(self.port))
+            return sock
+        except (StandardError, socket.error), e:
+            self.logger.error("Could not connect to %s at %d:: %s" % 
+                              (self.host, self.port, str(e)))
+        return None
+    
+    def _socket_connect_passive(self):
+        """ Listen on self.port and wait a bit for someone to connect
+        @return: None on failure or a valida socket obj on success
+        """
+        try:
+            self.logger.info("Doing passive connect")
+            if self.listen_sock is None:
+                self.logger.info("Creating passive socket")
+                self.listen_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.listen_sock.setsockopt(socket.SOL_SOCKET, 
+                                      socket.SO_REUSEADDR, 1)
+                self.logger.info("Binding control socket to  port %d" %
+                                 self.port)
+                self.listen_sock.bind(('', self.port))
+                self.listen_sock.listen(1)
+            (sock, addr) = self.listen_sock.accept()
+            self.logger.info("Got connection from %s:%d" % ( 
+                                            addr[0], addr[1]))
+            return sock
+        except (StandardError, socket.error), e:
+            self.listen_sock = None
+            self.logger.error("Could not get a connection from port %d:: %s" % 
+                              (self.port, str(e)), exc_info=True)
+        return None
+
     def _socket_connect(self):
         """
         Reset socket and attempt to create and connect
@@ -95,30 +138,30 @@ class ControllerInterface(threading.Thread):
         Sets self.connected to reflect success of connection
         """
         self.connected = False
+        self.logger.info("Trying to connect")
+        start = time.time()
         if self.ctrl_socket is not None:
             self.ctrl_socket.close()
             self.ctrl_socket = None
 
-        self.logger.info("Creating socket")
-        try: # Create socket
-            self.ctrl_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if self.host: 
+            self.ctrl_socket = self._socket_connect_active()
+        else:
+            self.ctrl_socket =  self._socket_connect_passive()
+        
+        diff = time.time() - start
+        self.logger.info("profiling : %s secs connecting" % diff)
+        if self.ctrl_socket is None:
+            return  # try again later
+
+        try: 
             self.ctrl_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         except (socket.error), e:
-            self.logger.error("Could not create socket.  Exiting:: " + str(e))
+            self.logger.error("Failed to set TCP_NODELAY (!?): %s" + str(e))
             self.active = False
-            return
-
-        self.logger.info("Control socket connecting.")
-        try:
-            self.ctrl_socket.connect((self.host, self.port))
-        except (StandardError, socket.error), e:
-            self.logger.error("Could not connect to %s at %d:: %s" % 
-                              (self.host, self.port, str(e)))
             return
             
         self.connected = True
-        self.logger.info("Connected to " + self.host + " on " +
-                         str(self.port))
         self._send_hand_shake()
         
     def _pkt_handle(self, pkt):

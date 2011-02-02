@@ -75,6 +75,7 @@ class OFSwitchConfig(object):
         parser = OptionParser(version="%prog 0.1")
         parser.set_defaults(controller_ip="127.0.0.1")
         parser.set_defaults(controller_port=6633)
+        parser.set_defaults(passive_connect=False)
         parser.set_defaults(n_tables=DEFAULT_TABLE_COUNT)
         parser.set_defaults(interfaces="veth0,veth2,veth4,veth6")
         parser.set_defaults(datapath_id=self.devine_datapath_id())
@@ -86,6 +87,9 @@ class OFSwitchConfig(object):
                            help="OpenFlow Controller Hostname or IP")
         parser.add_option('-p', '--port', type='int', dest="controller_port",
                            help="OpenFlow Controller Port")
+        parser.add_option("-P", "--passive-connect", 
+                          help="Listen on port; don't connect",
+                          action="store_true")
         parser.add_option('-t', '--tables', type='int', dest="n_tables",
                           help="Number of tables to create in the pipeline")
         parser.add_option('-d', '--datapath-id', dest='datapath_id', type='long'
@@ -111,6 +115,7 @@ class OFSwitchConfig(object):
         ### Should be a better way to do this
         self.controller_ip = self.options.controller_ip
         self.controller_port = self.options.controller_port
+        self.passive_connect = self.options.passive_connect
         self.n_tables = self.options.n_tables
         for intr in self.options.interfaces.split(','):
             self.addInterface(intr)
@@ -189,7 +194,10 @@ class OFSwitch(Thread):
 
         logging.basicConfig(filename="", level=logging.DEBUG)
         self.logger.info("Switch thread running")
-        self.controller = ControllerInterface(host=self.config.controller_ip,
+        host = self.config.controller_ip
+        if self.config.passive_connect:
+            host = None
+        self.controller = ControllerInterface(host=host,
                                               port=self.config.controller_port)
         self.dataplane = dataplane.DataPlane()
         self.logger.info("Dataplane started")

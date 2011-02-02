@@ -66,9 +66,11 @@ class OFReferenceSwitch(OFSwitch):
     def start(self):
         ints = ','.join(self.interfaces)
         self.ofd_op = subprocess.Popen([self.ofd, "-i", ints, "punix:/tmp/ofd"])
-        print "Started ofdatapath on IFs " + ints + " with pid " + str(self.ofd_op.pid)        
-        subprocess.call([self.ofp, "unix:/tmp/ofd", "tcp:127.0.0.1:" + str(self.port),
-              "--fail=closed", "--max-backoff=1"])
+        print "Started ofdatapath on IFs " + ints + \
+                    " with pid " + str(self.ofd_op.pid)        
+        subprocess.call([self.ofp, "unix:/tmp/ofd", 
+                "tcp:%s:%d" % (self.config.controller_host, self.config.port),
+                "--fail=closed", "--max-backoff=1"])
 
     def stop(self):
         if self.ofd_op:
@@ -90,6 +92,7 @@ class OFPS(OFSwitch):
         else:
             self.of_dir = os.path.normpath("../src/python/ofps")
         self.ofps = os.path.normpath(self.of_dir + "/ofps.py")
+        self.config = config
         
     def test(self):
         if not OFSwitch.test(self):
@@ -103,7 +106,15 @@ class OFPS(OFSwitch):
 
     def start(self):
         intfs = ','.join(self.interfaces)
-        cmd = "%s -c 127.0.0.01 -i %s -p %d" % (self.ofps, intfs, self.port)
+        how = None
+        if self.config.passive_connect:
+            how = "-P"
+        else:
+            how = "-c %s" % self.config.controller_host
+        cmd = "%s %s -i %s -p %d" % (self.ofps, 
+                                        how, 
+                                        intfs, 
+                                        self.port)
         print "Running '%s'" % (cmd)
         subprocess.call(cmd, shell=True)
         
