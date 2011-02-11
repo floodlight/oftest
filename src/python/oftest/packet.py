@@ -753,10 +753,8 @@ class Packet(object):
             (tag, _) = MplsTag.unpack(packed_tag)
             
         else:
-            # Pushing a new label stack, set the BoS bit and ethertype
-            self._set_2bytes(12, ethertype)
+            # Pushing a new label stack, set the BoS bit and get TTL from IP.
             bos = True
-            # And get TTL from IP.
             if self.ip_header_offset:
                 ttl = struct.unpack("B", self.data[self.ip_header_offset + \
                                                        Packet.IP_OFFSET_TTL])[0]
@@ -765,22 +763,16 @@ class Packet(object):
         self.data = self.data[0:14] + \
                     struct.pack("!I", tag.pack(bos)) + \
                     self.data[14:]
-        
+        self._set_2bytes(12, ethertype)   
         # Reparse to update offsets, ethertype, etc.
         self.parse()
             
     def pop_mpls(self, ethertype):
         # Ignore if no existing tags.
         if self.mpls_tag_offset:
-            # If the existing tag has the BoS bit set, this is the bottom.
-            tag = struct.unpack("!I", self.data[self.mpls_tag_offset:
-                                                self.mpls_tag_offset+4])[0]
-            bos = bool(tag & MPLS_BOTTOM_OF_STACK)
-            
             self.data = self.data[0:self.mpls_tag_offset] + \
                         self.data[self.mpls_tag_offset + 4:]
-            if bos:
-                self._set_2bytes(12, ethertype)
+            self._set_2bytes(12, ethertype)
             
             # Reparse to update offsets, ethertype, etc.
             self.parse()
