@@ -159,6 +159,7 @@ config_default = {
     "port_count"         : 4,
     "base_of_port"       : 1,
     "base_if_index"      : 1,
+    "relax"              : False,
     "test_spec"          : "all",
     "test_dir"           : ".",
     "log_file"           : "oft.log",
@@ -240,6 +241,8 @@ def config_setup(cfg_dflt):
                       help="List all tests and exit")
     parser.add_option("--verbose", action="store_true",
                       help="Short cut for --debug=verbose")
+    parser.add_option("--relax", action="store_true",
+                      help="Relax packet match checks allowing other packets")
     parser.add_option("--param", type="int",
                       help="Parameter sent to test (for debugging)")
     parser.add_option("-t", "--test-params",
@@ -370,6 +373,7 @@ def test_prio_get(mod, test):
 (config, args) = config_setup(config_default)
 
 test_list_generate(config)
+oft_config = config
 
 # Check if test list is requested; display and exit if so
 if config["list"]:

@@ -209,7 +209,18 @@ class PacketIn(SimpleDataPlane):
             pkt = simple_tcp_packet()
             self.dataplane.send(of_port, str(pkt))
             #@todo Check for unexpected messages?
-            (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
+            count = 0
+            while True:
+                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
+                if not response:  # Timeout
+                    break
+                if str(pkt) == response.data:  # Got match
+                    break
+                if not basic_config["relax"]:  # Only one attempt to match
+                    break
+                count += 1
+                if count > 10:   # Too many tries
+                    break
 
             self.assertTrue(response is not None, 
                             'Packet in message not received on port ' + 
@@ -255,7 +266,14 @@ class PacketOut(SimpleDataPlane):
             rv = self.controller.message_send(msg)
             self.assertTrue(rv == 0, "Error sending out message")
 
-            (of_port, pkt, pkt_time) = self.dataplane.poll(timeout=1)
+            exp_pkt_arg = None
+            exp_port = None
+            if basic_config["relax"]:
+                exp_pkt_arg = outpkt
+                exp_port = dp_port
+            (of_port, pkt, pkt_time) = self.dataplane.poll(timeout=1, 
+                                                           port_number=exp_port,
+                                                           exp_pkt=exp_pkt_arg)
 
             self.assertTrue(pkt is not None, 'Packet not received')
             basic_logger.info("PacketOut: got pkt from " + str(of_port))
