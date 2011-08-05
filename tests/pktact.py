@@ -141,7 +141,16 @@ class DirectPacket(basic.SimpleDataPlane):
             pa_logger.info("Sending packet to dp port " + 
                            str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
-            (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(timeout=1)
+
+            exp_pkt_arg = None
+            exp_port = None
+            if pa_config["relax"]:
+                exp_pkt_arg = pkt
+                exp_port = egress_port
+
+            (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(timeout=1, 
+                                                                port_number=exp_port,
+                                                                exp_pkt=exp_pkt_arg)
             self.assertTrue(rcv_pkt is not None, "Did not receive packet")
             pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
                          str(rcv_port))
@@ -219,7 +228,7 @@ class DirectTwoPorts(basic.SimpleDataPlane):
             no_ports = set(of_ports).difference(yes_ports)
 
             receive_pkt_check(self.dataplane, pkt, yes_ports, no_ports,
-                              self, pa_logger)
+                              self, pa_logger, pa_config)
 
 class DirectMCNonIngress(basic.SimpleDataPlane):
     """
@@ -273,7 +282,7 @@ class DirectMCNonIngress(basic.SimpleDataPlane):
             self.dataplane.send(ingress_port, str(pkt))
             yes_ports = set(of_ports).difference([ingress_port])
             receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
-                              self, pa_logger)
+                              self, pa_logger, pa_config)
 
 
 class DirectMC(basic.SimpleDataPlane):
@@ -327,7 +336,7 @@ class DirectMC(basic.SimpleDataPlane):
             pa_logger.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
             receive_pkt_check(self.dataplane, pkt, of_ports, [], self,
-                              pa_logger)
+                              pa_logger, pa_config)
 
 class Flood(basic.SimpleDataPlane):
     """
@@ -375,7 +384,7 @@ class Flood(basic.SimpleDataPlane):
             self.dataplane.send(ingress_port, str(pkt))
             yes_ports = set(of_ports).difference([ingress_port])
             receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
-                              self, pa_logger)
+                              self, pa_logger, pa_config)
 
 class FloodPlusIngress(basic.SimpleDataPlane):
     """
@@ -426,7 +435,7 @@ class FloodPlusIngress(basic.SimpleDataPlane):
             pa_logger.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
             receive_pkt_check(self.dataplane, pkt, of_ports, [], self,
-                              pa_logger)
+                              pa_logger, pa_config)
 
 class All(basic.SimpleDataPlane):
     """
@@ -474,7 +483,7 @@ class All(basic.SimpleDataPlane):
             self.dataplane.send(ingress_port, str(pkt))
             yes_ports = set(of_ports).difference([ingress_port])
             receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
-                              self, pa_logger)
+                              self, pa_logger, pa_config)
 
 class AllPlusIngress(basic.SimpleDataPlane):
     """
@@ -525,7 +534,7 @@ class AllPlusIngress(basic.SimpleDataPlane):
             pa_logger.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
             receive_pkt_check(self.dataplane, pkt, of_ports, [], self,
-                              pa_logger)
+                              pa_logger, pa_config)
             
 class FloodMinusPort(basic.SimpleDataPlane):
     """
@@ -584,7 +593,7 @@ class FloodMinusPort(basic.SimpleDataPlane):
             no_ports = set([ingress_port, no_flood_port])
             yes_ports = set(of_ports).difference(no_ports)
             receive_pkt_check(self.dataplane, pkt, yes_ports, no_ports, self,
-                              pa_logger)
+                              pa_logger, pa_config)
 
             # Turn no flood off again
             rv = port_config_set(self.controller, no_flood_port,
