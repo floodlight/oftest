@@ -433,7 +433,8 @@ else:
             if ts_entry in config["mod_name_map"].keys():
                 mod = config["mod_name_map"][ts_entry]
                 for test in config["all_tests"][mod]:
-                    add_test(suite, mod, test)
+                    if test_prio_get(mod, test) >= 0:
+                        add_test(suite, mod, test)
             else: # Search for matching tests
                 test_found = False
                 for mod in config["all_tests"].keys():
