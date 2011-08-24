@@ -377,16 +377,19 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
                                str(byte_count))
 
 def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=0,
-               egr_port=None, egr_queue=None, check_expire=False):
+               egr_port=None, egr_queue=None, check_expire=False, in_band=True):
     """
     Create a flow message
 
     Match on packet with given wildcards.  
     See flow_match_test for other parameter descriptoins
     @param egr_queue if not None, make the output an enqueue action
+    @param in_band if True, do not wildcard ingress port
     """
     match = parse.packet_to_flow_match(pkt)
     parent.assertTrue(match is not None, "Flow match from pkt failed")
+    if in_band:
+        wildcards &= ~ofp.OFPFW_IN_PORT
     match.wildcards = wildcards
     match.in_port = ing_port
 
@@ -677,7 +680,19 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
     expected_pkt = simple_tcp_packet(**base_pkt_params)
 
     return (ingress_pkt, expected_pkt, new_actions)
-        
+
+# Generate a simple "drop" flow mod
+# If in_band is true, then only drop from first test port
+def flow_mod_gen(port_map, in_band):
+    request = message.flow_mod()
+    request.match.wildcards = ofp.OFPFW_ALL
+    if in_band:
+        request.match.wildcards = ofp.OFPFW_ALL - ofp.OFPFW_IN_PORT
+        for of_port, ifname in port_map.items(): # Grab first port
+            break
+        request.match.in_port = of_port
+    request.buffer_id = 0xffffffff
+    return request
 
 def skip_message_emit(parent, s):
     """
@@ -694,3 +709,4 @@ def skip_message_emit(parent, s):
         sys.stderr.write("(skipped) ")
     else:
         sys.stderr.write("(S)")
+
