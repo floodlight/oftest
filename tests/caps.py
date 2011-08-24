@@ -161,3 +161,5 @@ class FillTableWC(basic.SimpleProtocol):
     def runTest(self):
         caps_logger.info("Running " + str(self))
         flow_caps_common(self, is_exact=False)
+
+test_prio["FillTableWC"] = -1
