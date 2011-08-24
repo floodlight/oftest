@@ -85,6 +85,9 @@ class SimpleProtocol(unittest.TestCase):
         if not self.controller.active:
             print "Controller startup failed; exiting"
             sys.exit(1)
+        if self.controller.switch_addr is None: 
+            print "Controller startup failed (no switch addr); exiting"
+            sys.exit(1)
         basic_logger.info("Connected " + str(self.controller.switch_addr))
 
     def tearDown(self):
@@ -291,9 +294,7 @@ class FlowStatsGet(SimpleProtocol):
     def runTest(self):
         basic_logger.info("Running StatsGet")
         basic_logger.info("Inserting trial flow")
-        request = message.flow_mod()
-        request.match.wildcards = ofp.OFPFW_ALL
-        request.buffer_id = 0xffffffff
+        request = flow_mod_gen(basic_port_map, True)
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Failed to insert test flow")
         
@@ -306,6 +307,8 @@ class FlowStatsGet(SimpleProtocol):
         self.assertTrue(response is not None, "Did not get response")
         basic_logger.debug(response.show())
 
+test_prio["FlowStatsGet"] = -1
+
 class TableStatsGet(SimpleProtocol):
     """
     Get table stats 
@@ -315,9 +318,7 @@ class TableStatsGet(SimpleProtocol):
     def runTest(self):
         basic_logger.info("Running TableStatsGet")
         basic_logger.info("Inserting trial flow")
-        request = message.flow_mod()
-        request.match.wildcards = ofp.OFPFW_ALL
-        request.buffer_id = 0xffffffff
+        request = flow_mod_gen(basic_port_map, True)
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Failed to insert test flow")
         
@@ -336,9 +337,7 @@ class FlowMod(SimpleProtocol):
 
     def runTest(self):
         basic_logger.info("Running " + str(self))
-        request = message.flow_mod()
-        request.match.wildcards = ofp.OFPFW_ALL
-        request.buffer_id = 0xffffffff
+        request = flow_mod_gen(basic_port_map, True)
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Error installing flow mod")
 
