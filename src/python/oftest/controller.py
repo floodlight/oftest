@@ -172,6 +172,7 @@ class Controller(Thread):
 
             self.logger.debug("Msg in: len %d. offset %d. type %s. hdr.len %d" %
                 (len(pkt), offset, ofp_type_map[hdr.type], hdr.length))
+            offset += hdr.length
             if hdr.version != OFP_VERSION:
                 self.logger.error("Version %d does not match OFTest version %d"
                                   % (hdr.version, OFP_VERSION))
@@ -226,7 +227,6 @@ class Controller(Thread):
                     rep.header.xid = hdr.xid
                     # Ignoring additional data
                     self.message_send(rep.pack(), zero_xid=True)
-                    offset += hdr.length
                     continue
 
             # Now check for message handlers; preference is given to
@@ -249,7 +249,6 @@ class Controller(Thread):
                 self.logger.debug("Message handled by callback")
 
             self.sync.release()
-            offset += hdr.length
         # end of 'while offset < len(pkt)'
         #   note that if offset = len(pkt), this is
         #   appends a harmless empty string
