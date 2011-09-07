@@ -172,6 +172,7 @@ class Controller(Thread):
 
             self.logger.debug("Msg in: len %d. offset %d. type %s. hdr.len %d" %
                 (len(pkt), offset, ofp_type_map[hdr.type], hdr.length))
+            offset += hdr.length
             if hdr.version != OFP_VERSION:
                 self.logger.error("Version %d does not match OFTest version %d"
                                   % (hdr.version, OFP_VERSION))
