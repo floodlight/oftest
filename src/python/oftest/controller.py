@@ -129,6 +129,7 @@ class Controller(Thread):
         self.expect_msg_cv = Condition()
         self.expect_msg_type = None
         self.expect_msg_response = None
+        self.buffered_input = ""
 
     def _pkt_handle(self, pkt):
         """
@@ -145,6 +146,11 @@ class Controller(Thread):
         registered message handlers.
         @param pkt The raw packet (string) which may contain multiple OF msgs
         """
+
+        # snag any left over data from last read()
+        pkt = self.buffered_input + pkt
+        self.buffered_input = ""
+
         # Process each of the OF msgs inside the pkt
         offset = 0
         while offset < len(pkt):
@@ -160,6 +166,8 @@ class Controller(Thread):
                 return
 
             # Extract the raw message bytes
+            if (offset + hdr.length) > len( pkt[offset:]):
+                break
             rawmsg = pkt[offset : offset + hdr.length]
 
             self.logger.debug("Msg in: len %d. offset %d. type %s. hdr.len %d" %
@@ -242,6 +250,10 @@ class Controller(Thread):
 
             self.sync.release()
             offset += hdr.length
+        # end of 'while offset < len(pkt)'
+        #   note that if offset = len(pkt), this is
+        #   appends a harmless empty string
+        self.buffered_input += pkt[offset:]
 
     def _socket_ready_handle(self, s):
         """
