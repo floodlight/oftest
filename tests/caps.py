@@ -75,6 +75,7 @@ def flow_caps_common(obj, is_exact=True):
         match.wildcards |= ofp.OFPFW_DL_SRC
 
     request.match = match
+    request.buffer_id = 0xffffffff      # set to NONE
     caps_logger.info(request.show())
 
     tstats = message.table_stats_request()
