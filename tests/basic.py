@@ -85,6 +85,9 @@ class SimpleProtocol(unittest.TestCase):
         if not self.controller.active:
             print "Controller startup failed; exiting"
             sys.exit(1)
+        if self.controller.switch_addr is None: 
+            print "Controller startup failed (no switch addr); exiting"
+            sys.exit(1)
         basic_logger.info("Connected " + str(self.controller.switch_addr))
 
     def tearDown(self):
@@ -209,7 +212,18 @@ class PacketIn(SimpleDataPlane):
             pkt = simple_tcp_packet()
             self.dataplane.send(of_port, str(pkt))
             #@todo Check for unexpected messages?
-            (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
+            count = 0
+            while True:
+                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
+                if not response:  # Timeout
+                    break
+                if str(pkt) == response.data:  # Got match
+                    break
+                if not basic_config["relax"]:  # Only one attempt to match
+                    break
+                count += 1
+                if count > 10:   # Too many tries
+                    break
 
             self.assertTrue(response is not None, 
                             'Packet in message not received on port ' + 
@@ -255,7 +269,14 @@ class PacketOut(SimpleDataPlane):
             rv = self.controller.message_send(msg)
             self.assertTrue(rv == 0, "Error sending out message")
 
-            (of_port, pkt, pkt_time) = self.dataplane.poll(timeout=1)
+            exp_pkt_arg = None
+            exp_port = None
+            if basic_config["relax"]:
+                exp_pkt_arg = outpkt
+                exp_port = dp_port
+            (of_port, pkt, pkt_time) = self.dataplane.poll(timeout=1, 
+                                                           port_number=exp_port,
+                                                           exp_pkt=exp_pkt_arg)
 
             self.assertTrue(pkt is not None, 'Packet not received')
             basic_logger.info("PacketOut: got pkt from " + str(of_port))
@@ -273,9 +294,7 @@ class FlowStatsGet(SimpleProtocol):
     def runTest(self):
         basic_logger.info("Running StatsGet")
         basic_logger.info("Inserting trial flow")
-        request = message.flow_mod()
-        request.match.wildcards = ofp.OFPFW_ALL
-        request.buffer_id = 0xffffffff
+        request = flow_mod_gen(basic_port_map, True)
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Failed to insert test flow")
         
@@ -288,6 +307,8 @@ class FlowStatsGet(SimpleProtocol):
         self.assertTrue(response is not None, "Did not get response")
         basic_logger.debug(response.show())
 
+test_prio["FlowStatsGet"] = -1
+
 class TableStatsGet(SimpleProtocol):
     """
     Get table stats 
@@ -297,9 +318,7 @@ class TableStatsGet(SimpleProtocol):
     def runTest(self):
         basic_logger.info("Running TableStatsGet")
         basic_logger.info("Inserting trial flow")
-        request = message.flow_mod()
-        request.match.wildcards = ofp.OFPFW_ALL
-        request.buffer_id = 0xffffffff
+        request = flow_mod_gen(basic_port_map, True)
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Failed to insert test flow")
         
@@ -318,9 +337,7 @@ class FlowMod(SimpleProtocol):
 
     def runTest(self):
         basic_logger.info("Running " + str(self))
-        request = message.flow_mod()
-        request.match.wildcards = ofp.OFPFW_ALL
-        request.buffer_id = 0xffffffff
+        request = flow_mod_gen(basic_port_map, True)
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Error installing flow mod")
 
