@@ -263,8 +263,7 @@ class Controller(Thread):
 
         if s == self.listen_socket:
             if self.switch_socket:
-                self.logger.error("Multiple switch cxns not supported")
-                sys.exit(1)
+                return False
 
             (self.switch_socket, self.switch_addr) = \
                 self.listen_socket.accept()
