@@ -79,6 +79,8 @@ def test_set_init(config):
     @param config The configuration dictionary; see oft
     """
 
+    basic.test_set_init(config)
+
     global pa_port_map
     global pa_logger
     global pa_config

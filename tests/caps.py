@@ -35,6 +35,8 @@ def test_set_init(config):
     @param config The configuration dictionary; see oft
     """
 
+    basic.test_set_init(config)
+
     global caps_port_map
     global caps_logger
     global caps_config
