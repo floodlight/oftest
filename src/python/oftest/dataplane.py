@@ -123,7 +123,8 @@ class DataPlanePort(Thread):
 
             rcvtime = time.clock()
             self.logger.debug("Pkt len " + str(len(rcvmsg)) +
-                     " in at " + str(rcvtime))
+                     " in at " + str(rcvtime) + " on port " +
+                     str(self.port_number))
 
             # Enqueue packet
             self.pkt_sync.acquire()
