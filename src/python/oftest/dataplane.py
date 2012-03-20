@@ -123,7 +123,8 @@ class DataPlanePort(Thread):
 
             rcvtime = time.clock()
             self.logger.debug("Pkt len " + str(len(rcvmsg)) +
-                     " in at " + str(rcvtime))
+                     " in at " + str(rcvtime) + " on port " +
+                     str(self.port_number))
 
             # Enqueue packet
             self.pkt_sync.acquire()
@@ -134,14 +135,20 @@ class DataPlanePort(Thread):
             else:
                 self.parent.packets_pending += 1
             # Check if parent is waiting on this (or any) port
+            drop_pkt = False
             if self.parent.want_pkt:
                 if (not self.parent.want_pkt_port or
                         self.parent.want_pkt_port == self.port_number):
-                    self.parent.got_pkt_port = self.port_number
-                    self.parent.want_pkt = False
-                    self.parent.pkt_sync.notify()
-            self.packets.append((rcvmsg, rcvtime))
-            self.packets_total += 1
+                    if self.parent.exp_pkt:
+                        if str(self.parent.exp_pkt) != str(rcvmsg):
+                            drop_pkt = True
+                    if not drop_pkt:
+                        self.parent.got_pkt_port = self.port_number
+                        self.parent.want_pkt = False
+                        self.parent.pkt_sync.notify()
+            if not drop_pkt:
+                self.packets.append((rcvmsg, rcvtime))
+                self.packets_total += 1
             self.pkt_sync.release()
 
         self.logger.info("Thread exit ")
@@ -238,6 +245,7 @@ class DataPlane:
 
         # These are used to signal async pkt arrival for polling
         self.want_pkt = False
+        self.exp_pkt = None
         self.want_pkt_port = None # What port required (or None)
         self.got_pkt_port = None # On what port received?
         self.packets_pending = 0 # Total pkts in all port queues
@@ -295,7 +303,7 @@ class DataPlane:
 
         return min_port
 
-    def poll(self, port_number=None, timeout=None):
+    def poll(self, port_number=None, timeout=None, exp_pkt=None):
         """
         Poll one or all dataplane ports for a packet
 
@@ -305,6 +313,8 @@ class DataPlane:
         @param port_number If set, get packet from this port
         @param timeout If positive and no packet is available, block
         until a packet is received or for this many seconds
+        @param exp_pkt If not None, look for this packet and ignore any
+        others received.  Requires port_number to be specified
         @return The triple port_number, packet, pkt_time where packet
         is received from port_number at time pkt_time.  If a timeout
         occurs, return None, None, None
@@ -312,13 +322,23 @@ class DataPlane:
 
         self.pkt_sync.acquire()
 
+        if exp_pkt and not port_number:
+            print "WARNING: Dataplane poll: exp_pkt without port number"
+
         # Check if requested specific port and it has a packet
         if port_number and len(self.port_list[port_number].packets) != 0:
-            pkt, time = self.port_list[port_number].dequeue(use_lock=False)
-            self.pkt_sync.release()
-            oft_assert(pkt, "Poll: packet not found on port " +
-                       str(port_number))
-            return port_number, pkt, time
+            while len(self.port_list[port_number].packets) != 0:
+                pkt, time = self.port_list[port_number].dequeue(use_lock=False)
+                if not exp_pkt:
+                    break
+                if str(pkt) == str(exp_pkt):
+                    break
+                pkt = None # Discard silently
+            if pkt:
+                self.pkt_sync.release()
+                oft_assert(pkt, "Poll: packet not found on port " +
+                           str(port_number))
+                return port_number, pkt, time
 
         # Check if requested any port and some packet pending
         if not port_number and self.packets_pending != 0:
@@ -336,10 +356,12 @@ class DataPlane:
         # Desired packet isn't available and timeout is specified
         # Already holding pkt_sync; wait on pkt_sync variable
         self.want_pkt = True
+        self.exp_pkt = exp_pkt
         self.want_pkt_port = port_number
         self.got_pkt_port = None
         self.pkt_sync.wait(timeout)
         self.want_pkt = False
+        self.exp_pkt = None
         if self.got_pkt_port:
             pkt, time = \
                 self.port_list[self.got_pkt_port].dequeue(use_lock=False)

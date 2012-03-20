@@ -214,7 +214,8 @@ def port_config_set(controller, port_no, config, mask, logger):
     rv = controller.message_send(mod)
     return rv
 
-def receive_pkt_check(dataplane, pkt, yes_ports, no_ports, assert_if, logger):
+def receive_pkt_check(dataplane, pkt, yes_ports, no_ports, assert_if, logger,
+                      config):
     """
     Check for proper receive packets across all ports
     @param dataplane The dataplane object
@@ -223,10 +224,14 @@ def receive_pkt_check(dataplane, pkt, yes_ports, no_ports, assert_if, logger):
     @param no_ports Set or list of ports that should not receive packet
     @param assert_if Object that implements assertXXX
     """
+    exp_pkt_arg = None
+    if config and config["relax"]:
+        exp_pkt_arg = pkt
+
     for ofport in yes_ports:
         logger.debug("Checking for pkt on port " + str(ofport))
         (rcv_port, rcv_pkt, pkt_time) = dataplane.poll(
-            port_number=ofport, timeout=1)
+            port_number=ofport, timeout=1, exp_pkt=exp_pkt_arg)
         assert_if.assertTrue(rcv_pkt is not None, 
                              "Did not receive pkt on " + str(ofport))
         assert_if.assertEqual(str(pkt), str(rcv_pkt),
@@ -236,7 +241,7 @@ def receive_pkt_check(dataplane, pkt, yes_ports, no_ports, assert_if, logger):
     for ofport in no_ports:
         logger.debug("Negative check for pkt on port " + str(ofport))
         (rcv_port, rcv_pkt, pkt_time) = dataplane.poll(
-            port_number=ofport, timeout=1)
+            port_number=ofport, timeout=1, exp_pkt=exp_pkt_arg)
         assert_if.assertTrue(rcv_pkt is None, 
                              "Unexpected pkt on port " + str(ofport))
 
@@ -247,8 +252,14 @@ def receive_pkt_verify(parent, egr_port, exp_pkt):
 
     parent must implement dataplane, assertTrue and assertEqual
     """
+    exp_pkt_arg = None
+    if parent.config["relax"]:
+        exp_pkt_arg = exp_pkt
+
     (rcv_port, rcv_pkt, pkt_time) = parent.dataplane.poll(port_number=egr_port,
-                                                          timeout=1)
+                                                          timeout=1, 
+                                                          exp_pkt=exp_pkt_arg)
+
     if rcv_pkt is None:
         parent.logger.error("ERROR: No packet received from " + str(egr_port))
 
@@ -366,16 +377,19 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
                                str(byte_count))
 
 def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=0,
-               egr_port=None, egr_queue=None, check_expire=False):
+               egr_port=None, egr_queue=None, check_expire=False, in_band=True):
     """
     Create a flow message
 
     Match on packet with given wildcards.  
     See flow_match_test for other parameter descriptoins
     @param egr_queue if not None, make the output an enqueue action
+    @param in_band if True, do not wildcard ingress port
     """
     match = parse.packet_to_flow_match(pkt)
     parent.assertTrue(match is not None, "Flow match from pkt failed")
+    if in_band:
+        wildcards &= ~ofp.OFPFW_IN_PORT
     match.wildcards = wildcards
     match.in_port = ing_port
 
@@ -592,7 +606,6 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
 
     new_actions = []
 
-
     base_pkt_params = {}
     base_pkt_params['pktlen'] = 100
     base_pkt_params['dl_dst'] = '00:DE:F0:12:34:56'
@@ -667,7 +680,19 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
     expected_pkt = simple_tcp_packet(**base_pkt_params)
 
     return (ingress_pkt, expected_pkt, new_actions)
-        
+
+# Generate a simple "drop" flow mod
+# If in_band is true, then only drop from first test port
+def flow_mod_gen(port_map, in_band):
+    request = message.flow_mod()
+    request.match.wildcards = ofp.OFPFW_ALL
+    if in_band:
+        request.match.wildcards = ofp.OFPFW_ALL - ofp.OFPFW_IN_PORT
+        for of_port, ifname in port_map.items(): # Grab first port
+            break
+        request.match.in_port = of_port
+    request.buffer_id = 0xffffffff
+    return request
 
 def skip_message_emit(parent, s):
     """
@@ -684,3 +709,4 @@ def skip_message_emit(parent, s):
         sys.stderr.write("(skipped) ")
     else:
         sys.stderr.write("(S)")
+

@@ -166,12 +166,13 @@ class Controller(Thread):
                 return
 
             # Extract the raw message bytes
-            if (offset + hdr.length) > len( pkt[offset:]):
+            if (offset + hdr.length) > len(pkt):
                 break
             rawmsg = pkt[offset : offset + hdr.length]
 
             self.logger.debug("Msg in: len %d. offset %d. type %s. hdr.len %d" %
                 (len(pkt), offset, ofp_type_map[hdr.type], hdr.length))
+            offset += hdr.length
             if hdr.version != OFP_VERSION:
                 self.logger.error("Version %d does not match OFTest version %d"
                                   % (hdr.version, OFP_VERSION))
@@ -226,7 +227,6 @@ class Controller(Thread):
                     rep.header.xid = hdr.xid
                     # Ignoring additional data
                     self.message_send(rep.pack(), zero_xid=True)
-                    offset += hdr.length
                     continue
 
             # Now check for message handlers; preference is given to
@@ -249,7 +249,6 @@ class Controller(Thread):
                 self.logger.debug("Message handled by callback")
 
             self.sync.release()
-            offset += hdr.length
         # end of 'while offset < len(pkt)'
         #   note that if offset = len(pkt), this is
         #   appends a harmless empty string
@@ -264,8 +263,7 @@ class Controller(Thread):
 
         if s == self.listen_socket:
             if self.switch_socket:
-                self.logger.error("Multiple switch cxns not supported")
-                sys.exit(1)
+                return False
 
             (self.switch_socket, self.switch_addr) = \
                 self.listen_socket.accept()

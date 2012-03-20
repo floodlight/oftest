@@ -35,6 +35,8 @@ def test_set_init(config):
     @param config The configuration dictionary; see oft
     """
 
+    basic.test_set_init(config)
+
     global caps_port_map
     global caps_logger
     global caps_config
@@ -161,3 +163,5 @@ class FillTableWC(basic.SimpleProtocol):
     def runTest(self):
         caps_logger.info("Running " + str(self))
         flow_caps_common(self, is_exact=False)
+
+test_prio["FillTableWC"] = -1
