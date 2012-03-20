@@ -166,7 +166,7 @@ class Controller(Thread):
                 return
 
             # Extract the raw message bytes
-            if (offset + hdr.length) > len( pkt[offset:]):
+            if (offset + hdr.length) > len(pkt):
                 break
             rawmsg = pkt[offset : offset + hdr.length]
 
