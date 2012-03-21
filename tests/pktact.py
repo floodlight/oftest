@@ -667,7 +667,12 @@ class SingleWildcardMatch(BaseMatchCase):
     """
     def runTest(self):
         for wc in WILDCARD_VALUES:
-            flow_match_test(self, pa_port_map, wildcards=wc, max_test=10)
+            if wc & ofp.OFPFW_DL_VLAN:
+                dl_vlan = 0
+            else:
+                dl_vlan = -1
+            flow_match_test(self, pa_port_map, wildcards=wc, 
+                            dl_vlan=dl_vlan, max_test=10)
 
 class SingleWildcardMatchTagged(BaseMatchCase):
     """
@@ -693,7 +698,12 @@ class AllExceptOneWildcardMatch(BaseMatchCase):
     def runTest(self):
         for wc in WILDCARD_VALUES:
             all_exp_one_wildcard = ofp.OFPFW_ALL ^ wc
-            flow_match_test(self, pa_port_map, wildcards=all_exp_one_wildcard)
+            if all_exp_one_wildcard & ofp.OFPFW_DL_VLAN:
+                dl_vlan = 0
+            else:
+                dl_vlan = -1
+            flow_match_test(self, pa_port_map, wildcards=all_exp_one_wildcard,
+                            dl_vlan=dl_vlan)
 
 class AllExceptOneWildcardMatchTagged(BaseMatchCase):
     """
