@@ -377,7 +377,7 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
                                str(byte_count))
 
 def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=0,
-               egr_port=None, egr_queue=None, check_expire=False, in_band=True):
+               egr_port=None, egr_queue=None, check_expire=False, in_band=False):
     """
     Create a flow message
 
