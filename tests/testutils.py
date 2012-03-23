@@ -532,12 +532,16 @@ def flow_match_test(parent, port_map, wildcards=0, dl_vlan=-1, pkt=None,
     @param exp_pkt If not None, use this as the expected output pkt; els use pkt
     @param action_list Additional actions to add to flow mod
     @param check_expire Check for flow expiration message
+    @param egr_count Number of egress ports; -1 means get from config w/ dflt 2
     """
     of_ports = port_map.keys()
     of_ports.sort()
     parent.assertTrue(len(of_ports) > 1, "Not enough ports for test")
     test_count = 0
 
+    if egr_count == -1:
+        egr_count = test_param_get(parent.config, 'egr_count', default=2)
+    
     for ing_idx in range(len(of_ports)):
         ingress_port = of_ports[ing_idx]
         egr_ports = get_egr_list(parent, of_ports, egr_count, 

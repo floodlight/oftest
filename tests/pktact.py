@@ -953,62 +953,72 @@ class ModifyTOS(BaseMatchCase):
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['ip_tos'],
                                                 check_test_params=True)
         flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
-                        action_list=acts, max_test=2)
+                        action_list=acts, max_test=2, egr_count=-1)
 
 class ModifyL2DstMC(BaseMatchCase):
     """
     Modify the L2 dest and send to 2 ports
-
-    Uses egr_count test parameter; defaults to 2
     """
     def runTest(self):
         sup_acts = supported_actions_get(self)
         if not (sup_acts & 1 << ofp.OFPAT_SET_DL_DST):
-            skip_message_emit(self, "ModifyL2dst test")
+            skip_message_emit(self, "ModifyL2dstMC test")
             return
 
-        egr_count = test_param_get(self.config, 'egr_count', default=2)
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_dst'],
                                                 check_test_params=True)
         flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
-                        action_list=acts, max_test=2, egr_count=egr_count)
+                        action_list=acts, max_test=2, egr_count=-1)
 
 class ModifyL2SrcMC(BaseMatchCase):
     """
     Modify the source MAC address (TP1) and send to multiple
-
-    Uses egr_count test parameter; defaults to 2
     """
     def runTest(self):
         sup_acts = supported_actions_get(self)
         if not (sup_acts & 1 << ofp.OFPAT_SET_DL_SRC):
-            skip_message_emit(self, "ModifyL2Src test")
+            skip_message_emit(self, "ModifyL2SrcMC test")
             return
 
-        egr_count = test_param_get(self.config, 'egr_count', default=2)
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_src'],
                                                 check_test_params=True)
         flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
-                        action_list=acts, max_test=2, egr_count=egr_count)
+                        action_list=acts, max_test=2, egr_count=-1)
 
 class ModifyL2SrcDstMC(BaseMatchCase):
     """
     Modify the L2 source and dest and send to 2 ports
-
-    Uses egr_count test parameter; defaults to 2
     """
     def runTest(self):
         sup_acts = supported_actions_get(self)
-        if not (sup_acts & 1 << ofp.OFPAT_SET_DL_DST):
-            skip_message_emit(self, "ModifyL2dst test")
+        if (not (sup_acts & 1 << ofp.OFPAT_SET_DL_DST) or
+                not (sup_acts & 1 << ofp.OFPAT_SET_DL_SRC)):
+            skip_message_emit(self, "ModifyL2SrcDstMC test")
             return
 
-        egr_count = test_param_get(self.config, 'egr_count', default=2)
         mod_fields = ['dl_dst', 'dl_src']
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=mod_fields,
                                                 check_test_params=True)
         flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
-                        action_list=acts, max_test=2, egr_count=egr_count)
+                        action_list=acts, max_test=2, egr_count=-1)
+
+class ModifyL2DstVIDMC(BaseMatchCase):
+    """
+    Modify the L2 dest and send to 2 ports
+    """
+    def runTest(self):
+        sup_acts = supported_actions_get(self)
+        if (not (sup_acts & 1 << ofp.OFPAT_SET_DL_DST) or
+                not (sup_acts & 1 << ofp.OFPAT_SET_VLAN_VID)):
+            skip_message_emit(self, "ModifyL2DstVIDMC test")
+            return
+
+        mod_fields = ['dl_dst', 'dl_vlan']
+        (pkt, exp_pkt, acts) = pkt_action_setup(self, 
+             start_field_vals={'dl_vlan_enable':True}, mod_fields=mod_fields,
+                                                check_test_params=True)
+        flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+                        action_list=acts, max_test=2, egr_count=-1)
 
 
 #@todo Need to implement tagged versions of the above tests
