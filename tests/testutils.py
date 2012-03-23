@@ -246,7 +246,7 @@ def receive_pkt_check(dataplane, pkt, yes_ports, no_ports, assert_if, logger,
                              "Unexpected pkt on port " + str(ofport))
 
 
-def receive_pkt_verify(parent, egr_ports, exp_pkt):
+def receive_pkt_verify(parent, egr_ports, exp_pkt, ing_port):
     """
     Receive a packet and verify it matches an expected value
     @param egr_port A single port or list of ports
@@ -264,6 +264,8 @@ def receive_pkt_verify(parent, egr_ports, exp_pkt):
 
     # Expect a packet from each port on egr port list
     for egr_port in egr_port_list:
+        if egr_port == ofp.OFPP_IN_PORT:
+            egr_port = ing_port
         (rcv_port, rcv_pkt, pkt_time) = parent.dataplane.poll(
             port_number=egr_port, timeout=1, exp_pkt=exp_pkt_arg)
 
@@ -490,7 +492,7 @@ def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=0,
 
     if exp_pkt is None:
         exp_pkt = pkt
-    receive_pkt_verify(parent, egr_ports, exp_pkt)
+    receive_pkt_verify(parent, egr_ports, exp_pkt, ing_port)
 
     if check_expire:
         #@todo Not all HW supports both pkt and byte counters
@@ -506,6 +508,9 @@ def get_egr_list(parent, of_ports, how_many, exclude_list=[]):
     @returns An empty list if unable to find enough ports
     """
 
+    if how_many == 0:
+        return []
+
     count = 0
     egr_ports = []
     for egr_idx in range(len(of_ports)): 
@@ -519,7 +524,7 @@ def get_egr_list(parent, of_ports, how_many, exclude_list=[]):
     
 def flow_match_test(parent, port_map, wildcards=0, dl_vlan=-1, pkt=None, 
                     exp_pkt=None, action_list=None, check_expire=False, 
-                    max_test=0, egr_count=1):
+                    max_test=0, egr_count=1, ing_port=False):
     """
     Run flow_match_test_port_pair on all port pairs
 
@@ -546,6 +551,8 @@ def flow_match_test(parent, port_map, wildcards=0, dl_vlan=-1, pkt=None,
         ingress_port = of_ports[ing_idx]
         egr_ports = get_egr_list(parent, of_ports, egr_count, 
                                  exclude_list=[ingress_port])
+        if ing_port:
+            egr_ports.append(ofp.OFPP_IN_PORT)
         if len(egr_ports) == 0:
             parent.assertTrue(0, "Failed to generate egress port list")
 
