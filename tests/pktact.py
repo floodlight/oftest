@@ -986,6 +986,22 @@ class ModifyL2DstIngress(BaseMatchCase):
                         action_list=acts, max_test=2, egr_count=0,
                         ing_port=True)
 
+class ModifyL2DstIngressMC(BaseMatchCase):
+    """
+    Modify the L2 dest and send to the ingress port
+    """
+    def runTest(self):
+        sup_acts = supported_actions_get(self)
+        if not (sup_acts & 1 << ofp.OFPAT_SET_DL_DST):
+            skip_message_emit(self, "ModifyL2dstMC test")
+            return
+
+        (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_dst'],
+                                                check_test_params=True)
+        flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+                        action_list=acts, max_test=2, egr_count=-1,
+                        ing_port=True)
+
 class ModifyL2SrcMC(BaseMatchCase):
     """
     Modify the source MAC address (TP1) and send to multiple

@@ -264,16 +264,18 @@ def receive_pkt_verify(parent, egr_ports, exp_pkt, ing_port):
 
     # Expect a packet from each port on egr port list
     for egr_port in egr_port_list:
+        check_port = egr_port
         if egr_port == ofp.OFPP_IN_PORT:
-            egr_port = ing_port
+            check_port = ing_port
         (rcv_port, rcv_pkt, pkt_time) = parent.dataplane.poll(
-            port_number=egr_port, timeout=1, exp_pkt=exp_pkt_arg)
+            port_number=check_port, timeout=1, exp_pkt=exp_pkt_arg)
 
         if rcv_pkt is None:
-            parent.logger.error("ERROR: No packet received from " + str(egr_port))
+            parent.logger.error("ERROR: No packet received from " + 
+                                str(check_port))
 
         parent.assertTrue(rcv_pkt is not None,
-                          "Did not receive packet port " + str(egr_port))
+                          "Did not receive packet port " + str(check_port))
         parent.logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
                             str(rcv_port))
 
@@ -284,7 +286,7 @@ def receive_pkt_verify(parent, egr_ports, exp_pkt, ing_port):
             parent.logger.debug("Received len " + str(len(rcv_pkt)) + ": "
                                 + str(rcv_pkt).encode('hex'))
         parent.assertEqual(str(exp_pkt), str(rcv_pkt),
-                           "Packet match error on port " + str(egr_port))
+                           "Packet match error on port " + str(check_port))
 
 def match_verify(parent, req_match, res_match):
     """
