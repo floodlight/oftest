@@ -246,9 +246,10 @@ def receive_pkt_check(dataplane, pkt, yes_ports, no_ports, assert_if, logger,
                              "Unexpected pkt on port " + str(ofport))
 
 
-def receive_pkt_verify(parent, egr_port, exp_pkt):
+def receive_pkt_verify(parent, egr_ports, exp_pkt):
     """
     Receive a packet and verify it matches an expected value
+    @param egr_port A single port or list of ports
 
     parent must implement dataplane, assertTrue and assertEqual
     """
@@ -256,27 +257,33 @@ def receive_pkt_verify(parent, egr_port, exp_pkt):
     if parent.config["relax"]:
         exp_pkt_arg = exp_pkt
 
-    (rcv_port, rcv_pkt, pkt_time) = parent.dataplane.poll(port_number=egr_port,
-                                                          timeout=1, 
-                                                          exp_pkt=exp_pkt_arg)
+    if type(egr_ports) == type([]):
+        egr_port_list = egr_ports
+    else:
+        egr_port_list = [egr_ports]
 
-    if rcv_pkt is None:
-        parent.logger.error("ERROR: No packet received from " + str(egr_port))
+    # Expect a packet from each port on egr port list
+    for egr_port in egr_port_list:
+        (rcv_port, rcv_pkt, pkt_time) = parent.dataplane.poll(
+            port_number=egr_port, timeout=1, exp_pkt=exp_pkt_arg)
 
-    parent.assertTrue(rcv_pkt is not None,
-                      "Did not receive packet port " + str(egr_port))
-    parent.logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
-                    str(rcv_port))
+        if rcv_pkt is None:
+            parent.logger.error("ERROR: No packet received from " + str(egr_port))
 
-    if str(exp_pkt) != str(rcv_pkt):
-        parent.logger.error("ERROR: Packet match failed.")
-        parent.logger.debug("Expected len " + str(len(exp_pkt)) + ": "
-                        + str(exp_pkt).encode('hex'))
-        parent.logger.debug("Received len " + str(len(rcv_pkt)) + ": "
-                        + str(rcv_pkt).encode('hex'))
-    parent.assertEqual(str(exp_pkt), str(rcv_pkt),
-                       "Packet match error on port " + str(egr_port))
-    
+        parent.assertTrue(rcv_pkt is not None,
+                          "Did not receive packet port " + str(egr_port))
+        parent.logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
+                            str(rcv_port))
+
+        if str(exp_pkt) != str(rcv_pkt):
+            parent.logger.error("ERROR: Packet match failed.")
+            parent.logger.debug("Expected len " + str(len(exp_pkt)) + ": "
+                                + str(exp_pkt).encode('hex'))
+            parent.logger.debug("Received len " + str(len(rcv_pkt)) + ": "
+                                + str(rcv_pkt).encode('hex'))
+        parent.assertEqual(str(exp_pkt), str(rcv_pkt),
+                           "Packet match error on port " + str(egr_port))
+
 def match_verify(parent, req_match, res_match):
     """
     Verify flow matches agree; if they disagree, report where
@@ -377,7 +384,7 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
                                str(byte_count))
 
 def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=0,
-               egr_port=None, egr_queue=None, check_expire=False, in_band=False):
+               egr_ports=None, egr_queue=None, check_expire=False, in_band=False):
     """
     Create a flow message
 
@@ -385,6 +392,7 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=0,
     See flow_match_test for other parameter descriptoins
     @param egr_queue if not None, make the output an enqueue action
     @param in_band if True, do not wildcard ingress port
+    @param egr_ports None (drop), single port or list of ports
     """
     match = parse.packet_to_flow_match(pkt)
     parent.assertTrue(match is not None, "Flow match from pkt failed")
@@ -392,6 +400,11 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=0,
         wildcards &= ~ofp.OFPFW_IN_PORT
     match.wildcards = wildcards
     match.in_port = ing_port
+
+    if type(egr_ports) == type([]):
+        egr_port_list = egr_ports
+    else:
+        egr_port_list = [egr_ports]
 
     request = message.flow_mod()
     request.match = match
@@ -408,18 +421,21 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=0,
 
     # Set up output/enqueue action if directed
     if egr_queue is not None:
-        parent.assertTrue(egr_port is not None, "Egress port not set")
+        parent.assertTrue(egr_ports is not None, "Egress port not set")
         act = action.action_enqueue()
-        act.port = egr_port
-        act.queue_id = egr_queue
-        rv = request.actions.add(act)
-        parent.assertTrue(rv, "Could not add enqueue action " + 
-                          str(egr_port) + " Q: " + str(egr_queue))
-    elif egr_port is not None:
-        act = action.action_output()
-        act.port = egr_port
-        rv = request.actions.add(act)
-        parent.assertTrue(rv, "Could not add output action " + str(egr_port))
+        for egr_port in egr_port_list:
+            act.port = egr_port
+            act.queue_id = egr_queue
+            rv = request.actions.add(act)
+            parent.assertTrue(rv, "Could not add enqueue action " + 
+                              str(egr_port) + " Q: " + str(egr_queue))
+    elif egr_ports is not None:
+        for egr_port in egr_port_list:
+            act = action.action_output()
+            act.port = egr_port
+            rv = request.actions.add(act)
+            parent.assertTrue(rv, "Could not add output action " + 
+                              str(egr_port))
 
     parent.logger.debug(request.show())
 
@@ -444,42 +460,66 @@ def flow_msg_install(parent, request, clear_table=True):
     parent.assertTrue(rv != -1, "Error installing flow mod")
     do_barrier(parent.controller)
 
-def flow_match_test_port_pair(parent, ing_port, egr_port, wildcards=0, 
+def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=0, 
                               dl_vlan=-1, pkt=None, exp_pkt=None,
                               action_list=None, check_expire=False):
     """
     Flow match test on single TCP packet
+    @param egr_ports A single port or list of ports
 
     Run test with packet through switch from ing_port to egr_port
     See flow_match_test for parameter descriptions
     """
 
-    parent.logger.info("Pkt match test: " + str(ing_port) + " to " + str(egr_port))
+    parent.logger.info("Pkt match test: " + str(ing_port) + " to " + 
+                       str(egr_ports))
     parent.logger.debug("  WC: " + hex(wildcards) + " vlan: " + str(dl_vlan) +
                     " expire: " + str(check_expire))
     if pkt is None:
         pkt = simple_tcp_packet(dl_vlan_enable=(dl_vlan >= 0), dl_vlan=dl_vlan)
 
     request = flow_msg_create(parent, pkt, ing_port=ing_port, 
-                              wildcards=wildcards, egr_port=egr_port,
+                              wildcards=wildcards, egr_ports=egr_ports,
                               action_list=action_list)
 
     flow_msg_install(parent, request)
 
-    parent.logger.debug("Send packet: " + str(ing_port) + " to " + str(egr_port))
+    parent.logger.debug("Send packet: " + str(ing_port) + " to " + 
+                        str(egr_ports))
     parent.dataplane.send(ing_port, str(pkt))
 
     if exp_pkt is None:
         exp_pkt = pkt
-    receive_pkt_verify(parent, egr_port, exp_pkt)
+    receive_pkt_verify(parent, egr_ports, exp_pkt)
 
     if check_expire:
         #@todo Not all HW supports both pkt and byte counters
         flow_removed_verify(parent, request, pkt_count=1, byte_count=len(pkt))
 
+def get_egr_list(parent, of_ports, how_many, exclude_list=[]):
+    """
+    Generate a list of ports avoiding those in the exclude list
+    @param parent Supplies logger
+    @param of_ports List of OF port numbers
+    @param how_many Number of ports to be added to the list
+    @param exclude_list List of ports not to be used
+    @returns An empty list if unable to find enough ports
+    """
+
+    count = 0
+    egr_ports = []
+    for egr_idx in range(len(of_ports)): 
+        if of_ports[egr_idx] not in exclude_list:
+            egr_ports.append(of_ports[egr_idx])
+            count += 1
+            if count >= how_many:
+                return egr_ports
+    parent.logger.debug("Could not generate enough egress ports for test")
+    return []
+    
 def flow_match_test(parent, port_map, wildcards=0, dl_vlan=-1, pkt=None, 
                     exp_pkt=None, action_list=None, check_expire=False, 
-                    max_test=0):
+                    max_test=0, egr_count=1):
     """
     Run flow_match_test_port_pair on all port pairs
 
@@ -500,19 +540,20 @@ def flow_match_test(parent, port_map, wildcards=0, dl_vlan=-1, pkt=None,
 
     for ing_idx in range(len(of_ports)):
         ingress_port = of_ports[ing_idx]
-        for egr_idx in range(len(of_ports)):
-            if egr_idx == ing_idx:
-                continue
-            egress_port = of_ports[egr_idx]
-            flow_match_test_port_pair(parent, ingress_port, egress_port, 
-                                      wildcards=wildcards, dl_vlan=dl_vlan, 
-                                      pkt=pkt, exp_pkt=exp_pkt,
-                                      action_list=action_list,
-                                      check_expire=check_expire)
-            test_count += 1
-            if (max_test > 0) and (test_count > max_test):
-                parent.logger.info("Ran " + str(test_count) + " tests; exiting")
-                return
+        egr_ports = get_egr_list(parent, of_ports, egr_count, 
+                                 exclude_list=[ingress_port])
+        if len(egr_ports) == 0:
+            parent.assertTrue(0, "Failed to generate egress port list")
+
+        flow_match_test_port_pair(parent, ingress_port, egr_ports, 
+                                  wildcards=wildcards, dl_vlan=dl_vlan, 
+                                  pkt=pkt, exp_pkt=exp_pkt,
+                                  action_list=action_list,
+                                  check_expire=check_expire)
+        test_count += 1
+        if (max_test > 0) and (test_count > max_test):
+            parent.logger.info("Ran " + str(test_count) + " tests; exiting")
+            return
 
 def test_param_get(config, key, default=None):
     """
@@ -525,6 +566,9 @@ def test_param_get(config, key, default=None):
     If the pair 'key=val' appeared in the string passed to --test-params
     on the command line, return val (as interpreted by exec).  Otherwise
     return default value.
+
+    WARNING: TEST PARAMETERS MUST BE PYTHON IDENTIFIERS; 
+    eg egr_count, not egr-count.
     """
     try:
         exec config["test_params"]

@@ -221,8 +221,8 @@ def config_setup(cfg_dflt):
     parser.add_option("-p", "--port", dest="controller_port",
                       type="int", help="Port number of the test controller")
     test_list_help = """Indicate tests to run.  Valid entries are "all" (the
-        default) or a comma separated list of:
-        module            Run all tests in the named module
+        default) or a comma separated list of:\n
+        module            Run all tests in the named module\n
         testcase          Run tests in all modules with the name testcase
         module.testcase   Run the specific test case
         """
@@ -246,7 +246,9 @@ def config_setup(cfg_dflt):
     parser.add_option("--param", type="int",
                       help="Parameter sent to test (for debugging)")
     parser.add_option("-t", "--test-params",
-                      help="Set test parameters: key=val;... See --list")
+                      help="""Set test parameters: key=val;...
+        NOTE:  key MUST be a valid Python identifier, egr_count not egr-count
+        See --list""")
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
     (options, args) = parser.parse_args()
