@@ -1,5 +1,6 @@
 OpenFlow Testing Framework
 July, 2010
+Last updated March 2012
 
 Copyright (c) 2010 The Board of Trustees of The Leland Stanford 
 Junior University
@@ -30,7 +31,7 @@ Getting OFTest
 
     You can check out OFTest with git with the following command:
 
-    git clone git://openflow.org/oftest
+    git clone git://github.com/floodlight/oftest
 
 Introduction
 ++++++++++++
@@ -62,15 +63,15 @@ Quick Start
 
     Currently, switches must be running version 1.0 of OpenFlow. 
 
-      # git clone yuba:/usr/local/git/openflow-projects/oftest
+      # git clone git://github.com/floodlight/oftest
       # cd oftest/tools/munger
       # make install
       # cd ../../tests
          Make sure the switch you want to test is running --
          see (4) below for the reference switch example.
       # ./oft --list
-      # sudo ./oft
-      # sudo ./oft --verbose --log-file=""    
+      # sudo ./oft --test-spec=Echo
+      # sudo ./oft --verbose --log-file=""
       # sudo ./oft --test-spec=<mod> --platform=remote --host=...
 
 Longer Start
@@ -81,8 +82,8 @@ Longer Start
         * Root privilege on host running oft
         * Switch running OpenFlow 1.0 and attempting to connect 
           to a controller on the machine running oft.
-        * Python 2.5.  You can run platforms using eth interfaces
-          with Python 2.4.
+        * Python 2.5 or 2.6.  You can run platforms using eth interfaces
+          with Python 2.4.  Python 2.7 may work.
         * Python setup tools (e.g.: sudo apt-get install python-setuptools)
         * oftest checked out (called <oftest> here)
         * scapy installed:  http://www.secdev.org/projects/scapy/
@@ -138,6 +139,10 @@ Longer Start
         4E. Use control-C to terminate the switch daemons.
         4F. To clean up the virtual ethernet interfaces, use
             sudo rmmod veth
+
+        New tools allow you to run an OVS instance as well.  See
+        oftest/tools/ovs-ctl.  You will need to install a version of
+        openvswitch.  See http://openvswitch.org/.
 
     5.  Run oft
         See Warning above; requires sudo to control the dataplane
