@@ -209,36 +209,39 @@ class PacketIn(SimpleDataPlane):
         do_barrier(self.controller)
 
         for of_port in basic_port_map.keys():
-            basic_logger.info("PKT IN test, port " + str(of_port))
-            pkt = simple_tcp_packet()
-            self.dataplane.send(of_port, str(pkt))
-            #@todo Check for unexpected messages?
-            count = 0
-            while True:
-                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
-                if not response:  # Timeout
-                    break
-                if str(pkt) == response.data:  # Got match
-                    break
-                if not basic_config["relax"]:  # Only one attempt to match
-                    break
-                count += 1
-                if count > 10:   # Too many tries
-                    break
+            for pkt, pt in [
+               (simple_tcp_packet(), "simple TCP packet"),
+               (simple_eth_packet(), "simple Ethernet packet"),
+               (simple_eth_packet(pktlen=40), "tiny Ethernet packet")]:
 
-            self.assertTrue(response is not None, 
-                            'Packet in message not received on port ' + 
-                            str(of_port))
-            if str(pkt) != response.data:
-                basic_logger.debug("pkt  len " + str(len(str(pkt))) +
-                                   ": " + str(pkt))
-                basic_logger.debug("resp len " + 
-                                   str(len(str(response.data))) + 
-                                   ": " + str(response.data))
+               basic_logger.info("PKT IN test with %s, port %s" % (pt, of_port))
+               self.dataplane.send(of_port, str(pkt))
+               #@todo Check for unexpected messages?
+               count = 0
+               while True:
+                   (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
+                   if not response:  # Timeout
+                       break
+                   if str(pkt) == response.data[:len(str(pkt))]:  # Got match
+                       break
+                   if not basic_config["relax"]:  # Only one attempt to match
+                       break
+                   count += 1
+                   if count > 10:   # Too many tries
+                       break
 
-            self.assertEqual(str(pkt), response.data,
-                             'Response packet does not match send packet' +
-                             ' for port ' + str(of_port))
+               self.assertTrue(response is not None, 
+                               'Packet in message not received on port ' + 
+                               str(of_port))
+               if str(pkt) != response.data[:len(str(pkt))]:
+                   basic_logger.debug("pkt  len " + str(len(str(pkt))) +
+                                      ": " + str(pkt))
+                   basic_logger.debug("resp len " + 
+                                      str(len(str(response.data))) + 
+                                      ": " + str(response.data))
+                   self.assertTrue(False,
+                                   'Response packet does not match send packet' +
+                                   ' for port ' + str(of_port))
 
 class PacketOut(SimpleDataPlane):
     """
@@ -256,35 +259,40 @@ class PacketOut(SimpleDataPlane):
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         # These will get put into function
-        outpkt = simple_tcp_packet()
         of_ports = basic_port_map.keys()
         of_ports.sort()
         for dp_port in of_ports:
-            msg = message.packet_out()
-            msg.data = str(outpkt)
-            act = action.action_output()
-            act.port = dp_port
-            self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
+            for outpkt, opt in [
+               (simple_tcp_packet(), "simple TCP packet"),
+               (simple_eth_packet(), "simple Ethernet packet"),
+               (simple_eth_packet(pktlen=40), "tiny Ethernet packet")]:
 
-            basic_logger.info("PacketOut to: " + str(dp_port))
-            rv = self.controller.message_send(msg)
-            self.assertTrue(rv == 0, "Error sending out message")
+               basic_logger.info("PKT OUT test with %s, port %s" % (opt, dp_port))
+               msg = message.packet_out()
+               msg.data = str(outpkt)
+               act = action.action_output()
+               act.port = dp_port
+               self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
 
-            exp_pkt_arg = None
-            exp_port = None
-            if basic_config["relax"]:
-                exp_pkt_arg = outpkt
-                exp_port = dp_port
-            (of_port, pkt, pkt_time) = self.dataplane.poll(timeout=1, 
-                                                           port_number=exp_port,
-                                                           exp_pkt=exp_pkt_arg)
+               basic_logger.info("PacketOut to: " + str(dp_port))
+               rv = self.controller.message_send(msg)
+               self.assertTrue(rv == 0, "Error sending out message")
 
-            self.assertTrue(pkt is not None, 'Packet not received')
-            basic_logger.info("PacketOut: got pkt from " + str(of_port))
-            if of_port is not None:
-                self.assertEqual(of_port, dp_port, "Unexpected receive port")
-            self.assertEqual(str(outpkt), str(pkt),
-                             'Response packet does not match send packet')
+               exp_pkt_arg = None
+               exp_port = None
+               if basic_config["relax"]:
+                   exp_pkt_arg = outpkt
+                   exp_port = dp_port
+               (of_port, pkt, pkt_time) = self.dataplane.poll(timeout=1, 
+                                                              port_number=exp_port,
+                                                              exp_pkt=exp_pkt_arg)
+
+               self.assertTrue(pkt is not None, 'Packet not received')
+               basic_logger.info("PacketOut: got pkt from " + str(of_port))
+               if of_port is not None:
+                   self.assertEqual(of_port, dp_port, "Unexpected receive port")
+               self.assertEqual(str(outpkt), str(pkt)[:len(str(outpkt))],
+                                'Response packet does not match send packet')
 
 class FlowStatsGet(SimpleProtocol):
     """

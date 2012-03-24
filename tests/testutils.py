@@ -158,6 +158,16 @@ def simple_icmp_packet(pktlen=60,
 
     return pkt
 
+def simple_eth_packet(pktlen=60,
+                      dl_dst='00:01:02:03:04:05',
+                      dl_src='01:80:c2:00:00:00',
+                      dl_type=0x88cc):
+    pkt = scapy.Ether(dst=dl_dst, src=dl_src, type=dl_type)
+
+    pkt = pkt/("0" * (pktlen - len(pkt)))
+
+    return pkt
+
 def do_barrier(ctrl):
     b = message.barrier_request()
     ctrl.transact(b)
