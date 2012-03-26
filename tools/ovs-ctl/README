@@ -1,0 +1,212 @@
+###############################################################################
+#
+# ovs-ctl.py
+#
+###############################################################################
+
+ovs-ctl manages the initialization and execution of OVS instances as targets
+for OFTest execution. 
+
+
+-------------------------------------------------------------------------------
+INSTALLATION
+-------------------------------------------------------------------------------
+
+ovs-ctl requires OVS be built and installed on your local machine. 
+If you are new to OVS, the preferred method is:
+
+1. Download openvswitch-X.Y.Z from http://openvswitch.org/releases
+2. Untar, configure, build, and install openvswitch into a useful location:
+
+   # All OVS installations will go in to /opt/ovs:
+   > mkdir -p /opt/ovs
+   
+   # All OVS Source distributions will live in /opt/ovs/src:
+   > mkdir -p /opt/ovs/src
+
+   # Download and untar source for openvswitch 1.4.0:
+   > curl http://openvswitch.org/releases/openvswitch-1.4.0.tar.gz | tar -xzC /opt/ovs/src
+
+   # build and install:
+   > cd /opt/ovs/openvswitch-1.4.0
+   > ./configure --prefix=/opt/ovs/1.4.0 --with-linux=/lib/modules/`uname -r`/build
+   > make
+   > sudo make install
+
+   # Copy the OVS kernel module out of the build tree into the install tree:
+   > sudo cp /opt/ovs/src/openvswitch-1.4.0/datapath/linux/openvswitch_mod.ko /opt/ovs/1.4.0/sbin
+
+
+3. READ the comments and instructions in ovs-ctl-default.example.conf
+
+4. Copy ovs-ctl-default.example.conf from the local directory to /opt/ovs:
+   
+   > sudo cp ovs-ctl-default.example.conf /opt/ovs/ovs-ctl-default.conf
+
+5. Modify /opt/ovs/ovs-ctl-default.conf to match your existing installation(s). 
+   If you followed the directions and used the paths suggested in Step 2, then the default 
+   configuration file should work without modification. 
+   Otherwise, edit to point to your installation directorie(s). 
+
+
+
+-------------------------------------------------------------------------------
+EXAMPLE USAGE
+-------------------------------------------------------------------------------
+
+You can initialize and run your default configuration (as specified in the config files) as follows:
+
+> ./ovs-ctl
+
+You can stop a running configuration as follows:
+
+> ./ovs-ctl --kill
+
+You can initialize and run any configuration (as specified in the config files) as follows:
+
+> ./ovs-ctl --config 1.3.0
+> ./ovs-ctl --config 1.4.0
+> ./ovs-ctl --config MySomeOtherConfiguration
+
+You can output logging and verbose information with the --log and --verbose options. 
+
+By default, OVS is initialized with 4 veth ports. You can change this with the --port-count option. 
+
+
+
+CONFIG FILES
+------------
+
+The configuration file options are just convenient methods of storing values for the command line
+arguments. Every command line argument can be specified as a key in your configuration file. 
+
+You do not need a configuration file at all -- you can specify all required paths and values
+from the command line -- but this is not recommended for regular usage. 
+
+The precedence for these settings is in the following order:
+
+1. Command Line option, if specified, THEN
+2. The [ConfigName] section of all config files, both default, user, or command-line specified, THEN
+3. The [Defaults] section of all config files
+
+
+Note that you may have a section defined in the ovs-ctl-default.conf file, AND in your ~/.ovs-ctl file. 
+The settings will be merged together, with the values in ~/.ovs-ctl taking precedence:
+
+So, for example, you can have the local installation information for 1.4.0 specified in /opt/ovs/ovs-ctl-default.conf as follows:
+
+    [1.4.0]
+    # ovs-1.4.0, configured and built into /opt/ovs/1.4.0
+    # Can be selected with 'ovs-ctl.py --config 1.4.0'
+    ovs_src_dir:/opt/ovs/src/openvswitch-1.4.0
+    ovs_base_dir:/opt/ovs/1.4.0
+    ovs_runtime_dir:/var/run/ovs/1.4.0
+
+This can be used by everyone. 
+
+You can also have user-specific settings in ~/.ovs-ctl for your own execution:
+
+    [1.4.0]
+    # Put logfiles for my personal runs in my ~/ovs-logfiles directory:
+    ovs_vswitchd_log=~/.ovs-logfiles/vswitchd.log
+
+
+
+-------------------------------------------------------------------------------
+OPTIONS AND HELP
+-------------------------------------------------------------------------------
+
+This documentation is minimal.
+
+Please see ./ovs-ctl --help for a full list of options:
+
+usage: ovs-ctl.py [-h] [-cf FILE [FILE ...]] [-c CONFIG] [-d FILE] [-nd]
+                  [--dump-config] [--ovs-vswitchd-schema OVS_VSWITCHD_SCHEMA]
+                  [--ovs-vswitchd-log OVS_VSWITCHD_LOG]
+                  [--ovs-vswitchd OVS_VSWITCHD] [--ovs-vsctl OVS_VSCTL]
+                  [--ovs-ofctl OVS_OFCTL] [--ovsdb-tool OVSDB_TOOL]
+                  [--ovsdb-server OVSDB_SERVER] [--ovs-kmod OVS_KMOD]
+                  [--ovs-src-dir OVS_SRC_DIR] [--ovs-log-dir OVS_LOG_DIR]
+                  [--ovs-version OVS_VERSION] [--ovs-base-dir OVS_BASE_DIR]
+                  [--ovs-runtime-dir OVS_RUNTIME_DIR]
+                  [--ovs-db-sock OVS_DB_SOCK] [--ovs-db-file OVS_DB_FILE]
+                  [--dry] [--log] [--verbose] [--kill] [--keep-veths]
+                  [--no-kmod] [--vlog] [-p PORT_COUNT] [--bridge BRIDGE]
+                  [--cip CIP] [--cport CPORT] [--max_backoff MAX_BACKOFF]
+                  [--keep-db]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -cf FILE [FILE ...], --config-file FILE [FILE ...]
+                        Load settings from the given config file
+  -c CONFIG, --config CONFIG
+                        Use the specified configuration section
+  -d FILE, --default-config-file FILE
+                        Location of the local default config file
+  -nd, --no-default     Do not load the default config file
+  --dump-config         Dump the loaded configuration settings
+  --ovs-vswitchd-schema OVS_VSWITCHD_SCHEMA
+                        Path to the vswitchd.ovsschema file
+  --ovs-vswitchd-log OVS_VSWITCHD_LOG
+                        Path to the vswitchd log file
+  --ovs-vswitchd OVS_VSWITCHD
+                        Path to the target ovs-vswitchd binary
+  --ovs-vsctl OVS_VSCTL
+                        Path to the target ovs-vsctl binary
+  --ovs-ofctl OVS_OFCTL
+                        Path to the target ovs-ofctl binary
+  --ovsdb-tool OVSDB_TOOL
+                        Path to the target ovsdb-tool binary
+  --ovsdb-server OVSDB_SERVER
+                        Path to the target ovsdb-server binary
+  --ovs-kmod OVS_KMOD   Path to the OVS kernel module
+  --ovs-src-dir OVS_SRC_DIR
+                        Directory for the OVS Source Files
+  --ovs-log-dir OVS_LOG_DIR
+                        Directory for the OVS Runtime Log Files
+  --ovs-version OVS_VERSION
+  --ovs-base-dir OVS_BASE_DIR
+                        OVS Base Installation Directory
+  --ovs-runtime-dir OVS_RUNTIME_DIR
+                        OVS Runtime Directory
+  --ovs-db-sock OVS_DB_SOCK
+                        Domain Socket Location
+  --ovs-db-file OVS_DB_FILE
+                        Location for the OVS database file
+  --dry                 Dry run only. Don't actually do anything
+  --log                 Enable logging
+  --verbose             Enable verbose output information
+  --kill                Kill running OVS
+  --keep-veths          By default, all existing veths will be destroyed and
+                        the veth module removed before initializing. If you
+                        don't want the veth module removed, specify this
+                        argument. Your mileage may vary if you use this.
+  --no-kmod             Do not attempt to insert or remove the OVS kernel
+                        module. Your mileage may vary.
+  --vlog                Tail the running vswitch.log file in a new xterm
+  -p PORT_COUNT, --port-count PORT_COUNT
+                        Number of veth ports to connect.
+  --bridge BRIDGE       Name of OF OVS Bridge
+  --cip CIP             Controller Connection
+  --cport CPORT         Controller Port
+  --max_backoff MAX_BACKOFF
+                        VSwitchD max backoff value
+  --keep-db             By default, a new database is initialized at each
+                        execution. If you want to keep and use the old
+                        database (if it exists), use this option
+
+
+
+
+-------------------------------------------------------------------------------
+TODO
+-------------------------------------------------------------------------------
+
+1. Better documentation. 
+2. Option for automatic downloading, configuration, and installation of OVS. 
+3. Symlinks or alias generation for selecting the correct ovs-* tools for
+   debugging the running configuration. 
+
+
+
+
