@@ -655,18 +655,27 @@ test_prio["ExactMatchTaggedMany"] = -1
 
 
 class SingleWildcardMatchPriority(BaseMatchCase):
+    """
+    SingleWildcardMatchPriority
+    """
 
-    def runTest(self):
+    def _Init(self):
         self.pkt = simple_tcp_packet()
         self.flowMsgs = {}
 
+    def _ClearTable(self):
+        rc = delete_all_flows(self.controller, self.logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+        do_barrier(self.controller)
+
+    def runTest(self):
+        
+        self._Init()
         of_ports = pa_port_map.keys()
         of_ports.sort()
 
         # Delete the initial flow table
-        rc = delete_all_flows(self.controller, self.logger)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
-        do_barrier(self.controller)
+        self._ClearTable()
 
         # Run several combinations, each at lower priority settings. 
         # At the end of each call to runPrioFlows(), the table should
@@ -682,14 +691,21 @@ class SingleWildcardMatchPriority(BaseMatchCase):
         self.runPrioFlows(portA, portC, portB, 994, 993)
 
 
+    
+    def runPrioFlows(self, portA, portB, portC, prioHigher, prioLower, 
+                     clearTable=False):
 
-    def runPrioFlows(self, portA, portB, portC, prioHigher, prioLower):
+        if clearTable:
+            self._ClearTable()
 
         # Sanity check flow at lower priority from pA to pB
         self.logger.info("runPrioFlows(pA=%d,pB=%d,pC=%d,ph=%d,pl=%d"
                          % (portA, portB, portC, prioHigher, prioLower))
 
+        self.installFlow(prioHigher, portA, portC)
         self.installFlow(prioLower, portA, portB)
+
+        return
         self.verifyFlow(portA, portB)
         self.removeFlow(prioLower)
         # Sanity check flow at lower priority from pA to pC
@@ -706,7 +722,6 @@ class SingleWildcardMatchPriority(BaseMatchCase):
         self.verifyFlow(portA, portC)
         # remove pA->pC
         self.removeFlow(prioHigher)
-
         # Old flow pA -> pB @ prioLower should still be active
         self.verifyFlow(portA, portB)
         self.removeFlow(prioLower)
@@ -716,15 +731,16 @@ class SingleWildcardMatchPriority(BaseMatchCase):
 
 
 
-    def installFlow(self, prio, inp, egp, clearTable=False):
+    def installFlow(self, prio, inp, egp):
         request = flow_msg_create(self, self.pkt, ing_port=inp, 
                                   wildcards=ofp.OFPFW_DL_SRC, 
                                   egr_ports=egp)
         request.priority = prio
-        flow_msg_install(self, request, clear_table=clearTable)
+        flow_msg_install(self, request, clear_table_override=False)
         self.flowMsgs[prio] = request
         
     def removeFlow(self, prio):
+        return
         if self.flowMsgs.has_key(prio):
             msg = self.flowMsgs[prio]
             msg.command = ofp.OFPFC_DELETE_STRICT
@@ -732,6 +748,8 @@ class SingleWildcardMatchPriority(BaseMatchCase):
             msg.out_port = ofp.OFPP_NONE
             self.controller.message_send(msg)
             do_barrier(self.controller)
+        else:
+            raise Exception("Not initialized")
 
 
     def verifyFlow(self, inp, egp):
@@ -744,6 +762,32 @@ class SingleWildcardMatchPriority(BaseMatchCase):
 
 
        
+class SingleWildcardMatchPriorityInsertModifyDelete(SingleWildcardMatchPriority):
+
+    def runTest(self):
+
+        self._Init()
+
+        of_ports = pa_port_map.keys()
+        of_ports.sort()
+
+        # Install an entry from 0 -> 1 @ prio 1000
+        self._ClearTable()
+        self.installFlow(1000, of_ports[0], of_ports[1])
+        self.verifyFlow(of_ports[0], of_ports[1])
+        self.installFlow(1000, of_ports[1], of_ports[0])
+        self.verifyFlow(of_ports[1], of_ports[0])
+        self.installFlow(1001, of_ports[0], of_ports[1])
+        self.verifyFlow(of_ports[0], of_ports[1])
+        self.installFlow(1001, of_ports[1], of_ports[0])
+        self.verifyFlow(of_ports[1], of_ports[0])
+        self.removeFlow(1001)
+        self.verifyFlow(of_ports[0], of_ports[1])
+        self.removeFlow(1000)
+
+
+
+        
 class SingleWildcardMatch(BaseMatchCase):
     """
     Exercise wildcard matching for all ports
