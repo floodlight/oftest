@@ -131,6 +131,7 @@ class DirectPacket(basic.SimpleDataPlane):
 
             request = message.flow_mod()
             request.match = match
+
             request.buffer_id = 0xffffffff
             act.port = egress_port
             self.assertTrue(request.actions.add(act), "Could not add action")
@@ -654,6 +655,96 @@ class ExactMatchTaggedMany(BaseMatchCase):
 test_prio["ExactMatchTaggedMany"] = -1
 
 
+class SingleWildcardMatchPriority(BaseMatchCase):
+
+    def runTest(self):
+        self.pkt = simple_tcp_packet()
+        self.flowMsgs = {}
+
+        of_ports = pa_port_map.keys()
+        of_ports.sort()
+
+        # Delete the initial flow table
+        rc = delete_all_flows(self.controller, self.logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+        do_barrier(self.controller)
+
+        # Run several combinations, each at lower priority settings. 
+        # At the end of each call to runPrioFlows(), the table should
+        # be empty. If its not, we'll catch it as the priorities decreases
+        portA = of_ports[0]
+        portB = of_ports[1]
+        portC = of_ports[2]
+
+        # TODO -- these priority numbers should be validated somehow?
+        self.runPrioFlows(portA, portB, portC, 1000, 999)
+        self.runPrioFlows(portB, portC, portA, 998, 997)
+        self.runPrioFlows(portC, portA, portB, 996, 995)
+        self.runPrioFlows(portA, portC, portB, 994, 993)
+
+
+
+    def runPrioFlows(self, portA, portB, portC, prioHigher, prioLower):
+
+        # Sanity check flow at lower priority from pA to pB
+        self.logger.info("runPrioFlows(pA=%d,pB=%d,pC=%d,ph=%d,pl=%d"
+                         % (portA, portB, portC, prioHigher, prioLower))
+
+        self.installFlow(prioLower, portA, portB)
+        self.verifyFlow(portA, portB)
+        self.removeFlow(prioLower)
+        # Sanity check flow at lower priority from pA to pC
+        self.installFlow(prioLower, portA, portC)
+        self.verifyFlow(portA, portC)
+        self.removeFlow(prioLower)
+
+        # Install and verify pA->pB @ prioLower
+        self.installFlow(prioLower, portA, portB)
+        self.verifyFlow(portA, portB)
+
+        # Install and verify pA->pC @ prioHigher, should override pA->pB
+        self.installFlow(prioHigher, portA, portC)
+        self.verifyFlow(portA, portC)
+        # remove pA->pC
+        self.removeFlow(prioHigher)
+
+        # Old flow pA -> pB @ prioLower should still be active
+        self.verifyFlow(portA, portB)
+        self.removeFlow(prioLower)
+
+        # Table should be empty at this point, leave it alone as
+        # an assumption for future test runs
+
+
+
+    def installFlow(self, prio, inp, egp, clearTable=False):
+        request = flow_msg_create(self, self.pkt, ing_port=inp, 
+                                  wildcards=ofp.OFPFW_DL_SRC, 
+                                  egr_ports=egp)
+        request.priority = prio
+        flow_msg_install(self, request, clear_table=clearTable)
+        self.flowMsgs[prio] = request
+        
+    def removeFlow(self, prio):
+        if self.flowMsgs.has_key(prio):
+            msg = self.flowMsgs[prio]
+            msg.command = ofp.OFPFC_DELETE_STRICT
+            # This *must* be set for DELETE
+            msg.out_port = ofp.OFPP_NONE
+            self.controller.message_send(msg)
+            do_barrier(self.controller)
+
+
+    def verifyFlow(self, inp, egp):
+        self.logger.info("Pkt match test: " + str(inp) + 
+                         " to " + str(egp))
+        self.logger.debug("Send packet: " + str(inp) + " to " 
+                            + str(egp))
+        self.dataplane.send(inp, str(self.pkt))
+        receive_pkt_verify(self, egp, self.pkt, inp)
+
+
+       
 class SingleWildcardMatch(BaseMatchCase):
     """
     Exercise wildcard matching for all ports
