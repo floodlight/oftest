@@ -455,7 +455,7 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=0,
 
     return request
 
-def flow_msg_install(parent, request, clear_table=True):
+def flow_msg_install(parent, request):
     """
     Install a flow mod message in the switch
 
@@ -463,6 +463,8 @@ def flow_msg_install(parent, request, clear_table=True):
     @param request The request, all set to go
     @param clear_table If true, clear the flow table before installing
     """
+
+    clear_table = test_param_get(parent.config, 'clear_table', default=True)
     if clear_table:
         parent.logger.debug("Clear flow table")
         rc = delete_all_flows(parent.controller, parent.logger)
@@ -777,3 +779,38 @@ def skip_message_emit(parent, s):
     else:
         sys.stderr.write("(S)")
 
+
+def all_stats_get(parent):
+    """
+    Get the aggregate stats for all flows in the table
+    @param parent Test instance with controller connection and assert
+    @returns dict with keys flows, packets, bytes, active (flows), 
+    lookups, matched
+    """
+    stat_req = message.aggregate_stats_request()
+    stat_req.match = ofp.ofp_match()
+    stat_req.match.wildcards = ofp.OFPFW_ALL
+    stat_req.table_id = 0xff
+    stat_req.out_port = ofp.OFPP_NONE
+
+    rv = {}
+
+    (reply, pkt) = parent.controller.transact(stat_req, timeout=2)
+    parent.assertTrue(len(reply.stats) == 1, "Did not receive flow stats reply")
+
+    for obj in reply.stats:
+        (rv["flows"], rv["packets"], rv["bytes"]) = (obj.flow_count, 
+                                                  obj.packet_count, obj.byte_count)
+        break
+
+    request = message.table_stats_request()
+    (reply , pkt) = parent.controller.transact(request, timeout=2)
+
+    
+    (rv["active"], rv["lookups"], rv["matched"]) = (0,0,0)
+    for obj in reply.stats:
+        rv["active"] += obj.active_count
+        rv["lookups"] += obj.lookup_count
+        rv["matched"] += obj.matched_count
+
+    return rv
