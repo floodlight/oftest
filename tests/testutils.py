@@ -455,7 +455,7 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=0,
 
     return request
 
-def flow_msg_install(parent, request):
+def flow_msg_install(parent, request, clear_table_override=None):
     """
     Install a flow mod message in the switch
 
@@ -465,7 +465,10 @@ def flow_msg_install(parent, request):
     """
 
     clear_table = test_param_get(parent.config, 'clear_table', default=True)
-    if clear_table:
+    if(clear_table_override != None):
+        clear_table = clear_table_override
+
+    if clear_table: 
         parent.logger.debug("Clear flow table")
         rc = delete_all_flows(parent.controller, parent.logger)
         parent.assertEqual(rc, 0, "Failed to delete all flows")
