@@ -90,6 +90,27 @@ class SimpleProtocol(unittest.TestCase):
             sys.exit(1)
         basic_logger.info("Connected " + str(self.controller.switch_addr))
 
+    def inheritSetup(self, parent):
+        """
+        Inherit the setup of a parent
+
+        This allows running at test from within another test.  Do the
+        following:
+
+        sub_test = SomeTestClass()  # Create an instance of the test class
+        sub_test.inheritSetup(self) # Inherit setup of parent
+        sub_test.runTest()          # Run the test
+
+        Normally, only the parent's setUp and tearDown are called and
+        the state after the sub_test is run must be taken into account
+        by subsequent operations.
+        """
+        self.logger = parent.logger
+        self.config = parent.config
+        basic_logger.info("** Setup " + str(self) + " inheriting from "
+                          + str(parent))
+        self.controller = parent.controller
+        
     def tearDown(self):
         basic_logger.info("** END TEST CASE " + str(self))
         self.controller.shutdown()
@@ -119,6 +140,15 @@ class SimpleDataPlane(SimpleProtocol):
         self.dataplane = dataplane.DataPlane()
         for of_port, ifname in basic_port_map.items():
             self.dataplane.port_add(ifname, of_port)
+
+    def inheritSetup(self, parent):
+        """
+        Inherit the setup of a parent
+
+        See SimpleProtocol.inheritSetup
+        """
+        SimpleProtocol.inheritSetup(self, parent)
+        self.dataplane = parent.dataplane
 
     def tearDown(self):
         basic_logger.info("Teardown for simple dataplane test")

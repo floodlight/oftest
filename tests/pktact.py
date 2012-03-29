@@ -28,6 +28,7 @@ import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.parse as parse
 import basic
+import time
 
 from testutils import *
 
@@ -78,8 +79,6 @@ def test_set_init(config):
 
     @param config The configuration dictionary; see oft
     """
-
-    basic.test_set_init(config)
 
     global pa_port_map
     global pa_logger
@@ -1143,6 +1142,57 @@ class ModifyL2DstVIDMC(BaseMatchCase):
         flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2, egr_count=-1)
 
+# You can pick and choose these by commenting tests in or out
+iter_classes = [
+    basic.PacketIn,
+    basic.PacketOut,
+    DirectPacket,
+    DirectTwoPorts,
+    DirectMC,
+    AllWildcardMatch,
+    AllWildcardMatchTagged,
+    SingleWildcardMatch,
+    SingleWildcardMatchTagged,
+    ExactMatch,
+    ExactMatchTagged,
+    SingleWildcardMatch,
+    ModifyL2Src,
+    ModifyL2Dst,
+    ModifyL2SrcMC,
+    ModifyL2DstMC,
+    ModifyL2SrcDstMC
+    ]
+
+class IterCases(BaseMatchCase):
+    def runTest(self):
+        count = test_param_get(self.config, 'iter_count', default=10)
+        tests_done = 0
+        pa_logger.info("Running iteration test " + str(count) + " times")
+        start = time.time()
+        last = start
+        for idx in range(count):
+            pa_logger.info("Iteration " + str(idx + 1))
+            for cls in iter_classes:
+                test = cls()
+                test.inheritSetup(self)
+                test.runTest()
+                tests_done += 1
+                if time.time() - last > 60:
+                    last = time.time()
+                    print("IterCases: Ran %d tests in %d " %
+                          (tests_done, last - start) + 
+                          "seconds so far")
+        stats = all_stats_get(self)
+        last = time.time()
+        pa_logger.info("\nIterCases ran %d tests in %d seconds." %
+                       (tests_done, last - start))
+        pa_logger.info("    flows: %d. packets: %d. bytes: %d" %
+                       (stats["flows"], stats["packets"], stats["bytes"]))
+        pa_logger.info("    active: %d. lookups: %d. matched %d." %
+                       (stats["active"], stats["lookups"], stats["matched"]))
+
+# Don't run by default
+test_prio["IterCases"] = -1
 
 #@todo Need to implement tagged versions of the above tests
 #
