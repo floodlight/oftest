@@ -208,8 +208,9 @@ class Controller(Thread):
             self.expect_msg_cv.acquire()
             if self.expect_msg:
                 if not self.expect_msg_type or (self.expect_msg_type == hdr.type):
-                    self.logger.debug("Matched expected msg type "
-                                       + ofp_type_map[hdr.type])
+                    self.logger.debug("Matched msg; type %s. expected %s " %
+                                      (ofp_type_map[hdr.type], 
+                                       str(self.expected_msg_type)))
                     self.expect_msg_response = (msg, rawmsg)
                     self.expect_msg = False
                     self.expect_msg_cv.notify()
@@ -485,10 +486,10 @@ class Controller(Thread):
         # Careful of race condition releasing sync before message cv
         # Also, this style is ripe for a lockup.
         self.expect_msg_cv.acquire()
-        self.sync.release()
         self.expect_msg_response = None
         self.expect_msg = True
         self.expect_msg_type = exp_msg
+        self.sync.release()
         self.expect_msg_cv.wait(timeout)
         if self.expect_msg_response is not None:
             (msg, pkt) = self.expect_msg_response
