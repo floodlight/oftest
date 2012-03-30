@@ -318,12 +318,12 @@ class PacketOut(SimpleDataPlane):
                basic_logger.info("PacketOut: got pkt from " + str(of_port))
                if of_port is not None:
                    self.assertEqual(of_port, dp_port, "Unexpected receive port")
-               self.assertEqual(str(outpkt), str(pkt)[:len(str(outpkt))],
-                                'Response packet does not match send packet')
                if str(outpkt) != str(pkt)[:len(str(outpkt))]:
                    basic_logger.debug("Sent %s" % format_packet(outpkt))
                    basic_logger.debug("Resp %s" % format_packet(
                            str(pkt)[:len(str(outpkt))]))
+               self.assertEqual(str(outpkt), str(pkt)[:len(str(outpkt))],
+                                'Response packet does not match send packet')
 
 class FlowStatsGet(SimpleProtocol):
     """
