@@ -264,11 +264,8 @@ class PacketIn(SimpleDataPlane):
                                'Packet in message not received on port ' + 
                                str(of_port))
                if str(pkt) != response.data[:len(str(pkt))]:
-                   basic_logger.debug("pkt  len " + str(len(str(pkt))) +
-                                      ": " + str(pkt))
-                   basic_logger.debug("resp len " + 
-                                      str(len(str(response.data))) + 
-                                      ": " + str(response.data))
+                   basic_logger.debug("Sent %s" % format_packet(pkt))
+                   basic_logger.debug("Resp %s" % format_packet(response.data))
                    self.assertTrue(False,
                                    'Response packet does not match send packet' +
                                    ' for port ' + str(of_port))
@@ -323,6 +320,10 @@ class PacketOut(SimpleDataPlane):
                    self.assertEqual(of_port, dp_port, "Unexpected receive port")
                self.assertEqual(str(outpkt), str(pkt)[:len(str(outpkt))],
                                 'Response packet does not match send packet')
+               if str(outpkt) != str(pkt)[:len(str(outpkt))]:
+                   basic_logger.debug("Sent %s" % format_packet(outpkt))
+                   basic_logger.debug("Resp %s" % format_packet(
+                           str(pkt)[:len(str(outpkt))]))
 
 class FlowStatsGet(SimpleProtocol):
     """
