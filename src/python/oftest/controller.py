@@ -210,7 +210,7 @@ class Controller(Thread):
                 if not self.expect_msg_type or (self.expect_msg_type == hdr.type):
                     self.logger.debug("Matched msg; type %s. expected %s " %
                                       (ofp_type_map[hdr.type], 
-                                       str(self.expected_msg_type)))
+                                       str(self.expect_msg_type)))
                     self.expect_msg_response = (msg, rawmsg)
                     self.expect_msg = False
                     self.expect_msg_cv.notify()
