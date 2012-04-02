@@ -368,6 +368,21 @@ class TableStatsGet(SimpleProtocol):
         self.assertTrue(response is not None, "Did not get response")
         basic_logger.debug(response.show())
 
+class DescStatsGet(SimpleProtocol):
+    """
+    Get stats 
+
+    Simply verify stats get transaction
+    """
+    def runTest(self):
+        basic_logger.info("Running DescStatsGet")
+        
+        basic_logger.info("Sending stats request")
+        request = message.desc_stats_request()
+        response, pkt = self.controller.transact(request, timeout=2)
+        self.assertTrue(response is not None, "Did not get response")
+        basic_logger.debug(response.show())
+
 class FlowMod(SimpleProtocol):
     """
     Insert a flow
