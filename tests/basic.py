@@ -252,7 +252,7 @@ class PacketIn(SimpleDataPlane):
                    (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
                    if not response:  # Timeout
                        break
-                   if str(pkt) == response.data[:len(str(pkt))]:  # Got match
+                   if dataplane.match_exp_pkt(pkt, response.data): # Got match
                        break
                    if not basic_config["relax"]:  # Only one attempt to match
                        break
@@ -263,7 +263,7 @@ class PacketIn(SimpleDataPlane):
                self.assertTrue(response is not None, 
                                'Packet in message not received on port ' + 
                                str(of_port))
-               if str(pkt) != response.data[:len(str(pkt))]:
+               if not dataplane.match_exp_pkt(pkt, response.data):
                    basic_logger.debug("Sent %s" % format_packet(pkt))
                    basic_logger.debug("Resp %s" % format_packet(response.data))
                    self.assertTrue(False,
@@ -318,7 +318,7 @@ class PacketOut(SimpleDataPlane):
                basic_logger.info("PacketOut: got pkt from " + str(of_port))
                if of_port is not None:
                    self.assertEqual(of_port, dp_port, "Unexpected receive port")
-               if str(outpkt) != str(pkt)[:len(str(outpkt))]:
+               if not dataplane.match_exp_pkt(outpkt, pkt):
                    basic_logger.debug("Sent %s" % format_packet(outpkt))
                    basic_logger.debug("Resp %s" % format_packet(
                            str(pkt)[:len(str(outpkt))]))

@@ -49,6 +49,8 @@ def test_set_init(config):
     @param config The configuration dictionary; see oft
     """
 
+    basic.test_set_init(config)
+
     global fs_port_map
     global fs_logger
     global fs_config

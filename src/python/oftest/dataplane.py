@@ -31,6 +31,19 @@ RCV_SIZE_DEFAULT = 4096
 ETH_P_ALL = 0x03
 RCV_TIMEOUT = 10000
 
+def match_exp_pkt(exp_pkt, pkt):
+    """
+    Compare the string value of pkt with the string value of exp_pkt,
+    and return True iff they are identical.  If the length of exp_pkt is
+    less than the minimum Ethernet frame size (60 bytes), then padding
+    bytes in pkt are ignored.
+    """
+    e = str(exp_pkt)
+    p = str(pkt)
+    if len(e) < 60:
+        p = p[:len(e)]
+    return e == p
+
 class DataPlanePort(Thread):
     """
     Class defining a port monitoring object.
@@ -140,7 +153,7 @@ class DataPlanePort(Thread):
                 if (not self.parent.want_pkt_port or
                         self.parent.want_pkt_port == self.port_number):
                     if self.parent.exp_pkt:
-                        if str(self.parent.exp_pkt) != str(rcvmsg):
+                        if not match_exp_pkt(self.parent.exp_pkt, rcvmsg):
                             drop_pkt = True
                     if not drop_pkt:
                         self.parent.got_pkt_port = self.port_number
@@ -331,7 +344,7 @@ class DataPlane:
                 pkt, time = self.port_list[port_number].dequeue(use_lock=False)
                 if not exp_pkt:
                     break
-                if str(pkt) == str(exp_pkt):
+                if match_exp_pkt(exp_pkt, pkt):
                     break
                 pkt = None # Discard silently
             if pkt:
