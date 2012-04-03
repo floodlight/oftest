@@ -287,8 +287,7 @@ class Controller(Thread):
                 return False
 
             if len(pkt) == 0:
-                self.logger.info("zero-len pkt in")
-                return True
+                self.logger.warning("Zero-length switch read")
 
             self._pkt_handle(pkt)
         else:
