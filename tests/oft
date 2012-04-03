@@ -134,6 +134,9 @@ except:
     except:
         sys.exit("Need to install scapy for packet parsing")
 
+##@var Profile module
+profile_mod = None
+
 ##@var DEBUG_LEVELS
 # Map from strings to debugging levels
 DEBUG_LEVELS = {
@@ -167,11 +170,13 @@ config_default = {
     "debug"              : _debug_default,
     "dbg_level"          : _debug_level_default,
     "port_map"           : {},
-    "test_params"        : "None"
+    "test_params"        : "None",
+    "profile"            : None
 }
 
 # Default test priority
 TEST_PRIO_DEFAULT=100
+TEST_PRIO_SKIP=-1
 
 #@todo Set up a dict of config params so easier to manage:
 # <param> <cmdline flags> <default value> <help> <optional parser>
@@ -245,6 +250,8 @@ def config_setup(cfg_dflt):
                       help="Relax packet match checks allowing other packets")
     parser.add_option("--param", type="int",
                       help="Parameter sent to test (for debugging)")
+    parser.add_option("--profile", 
+                      help="File listing tests to skip/run")
     parser.add_option("-t", "--test-params",
                       help="""Set test parameters: key=val;...
         NOTE:  key MUST be a valid Python identifier, egr_count not egr-count
@@ -256,6 +263,21 @@ def config_setup(cfg_dflt):
     config = config_get(options)
 
     return (config, args)
+
+def check_profile(config):
+    global profile_mod
+    if "profile" in config and config["profile"]:
+        logging.info("Importing profile: %s.py" % config["profile"])
+        try:
+            profile_mod = __import__(config["profile"])
+        except:
+            logging.info("Could not import profile: %s.py" % 
+                         config["profile"])
+            print "Failed to import profile: %s.py" % config["profile"]
+            profile_mod = None
+    else:
+        logging.info("No profile specified")
+        
 
 def logging_setup(config):
     """
@@ -359,9 +381,16 @@ def _space_to(n, str):
 def test_prio_get(mod, test):
     """
     Return the priority of a test
+
+    If test is in "skip list" from profile, return the skip value
+
     If set in the test_prio variable for the module, return
     that value.  Otherwise return 100 (default)
     """
+    if profile_mod:
+        if profile_mod.skip_test_list and test in profile_mod.skip_test_list:
+            logging.info("Skipping test %s due to profile" % test)
+            return TEST_PRIO_SKIP
     if 'test_prio' in dir(mod):
         if test in mod.test_prio.keys():
             return mod.test_prio[test]
@@ -410,10 +439,13 @@ if config["list"]:
         print "Tests preceded by * are not run by default"
     print "Tests marked (TP1) after name take --test-params including:"
     print "    'vid=N;strip_vlan=bool;add_vlan=bool'"
+    print "Note that --profile may override which tests are run"
     sys.exit(0)
 
 logging_setup(config)
 logging.info("++++++++ " + time.asctime() + " ++++++++")
+
+check_profile(config)
 
 # Generate the test suite
 #@todo Decide if multiple suites are ever needed
