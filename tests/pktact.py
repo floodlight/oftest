@@ -800,9 +800,11 @@ class SingleWildcardMatch(BaseMatchCase):
     Verify flow_expiration message is correct when command option is set
     """
     def runTest(self):
+        vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
         for wc in WILDCARD_VALUES:
             if wc & ofp.OFPFW_DL_VLAN:
-                dl_vlan = 0
+                # Set nonzero VLAN id to avoid sending priority-tagged packet
+                dl_vlan = vid
             else:
                 dl_vlan = -1
             flow_match_test(self, pa_port_map, wildcards=wc, 
@@ -830,10 +832,12 @@ class AllExceptOneWildcardMatch(BaseMatchCase):
     Verify flow_expiration message is correct when command option is set
     """
     def runTest(self):
+        vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
         for wc in WILDCARD_VALUES:
             all_exp_one_wildcard = ofp.OFPFW_ALL ^ wc
             if all_exp_one_wildcard & ofp.OFPFW_DL_VLAN:
-                dl_vlan = 0
+                # Set nonzero VLAN id to avoid sending priority-tagged packet
+                dl_vlan = vid
             else:
                 dl_vlan = -1
             flow_match_test(self, pa_port_map, wildcards=all_exp_one_wildcard,
