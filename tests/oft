@@ -265,15 +265,23 @@ def config_setup(cfg_dflt):
     return (config, args)
 
 def check_profile(config):
+    """
+    Import a profile from the profiles library
+    """
+
     global profile_mod
     if "profile" in config and config["profile"]:
-        logging.info("Importing profile: %s.py" % config["profile"])
+        logging.info("Importing profile: %s" % config["profile"])
+        profile_name = "profiles." + config["profile"]
         try:
-            profile_mod = __import__(config["profile"])
+            top_mod =  __import__(profile_name)
+            profile_mod = eval("top_mod." + config["profile"])
+            logging.info("Imported profile %s.  Dir: %s" % 
+                         (config["profile"], str(dir(profile_mod))))
         except:
             logging.info("Could not import profile: %s.py" % 
                          config["profile"])
-            print "Failed to import profile: %s.py" % config["profile"]
+            print "Failed to import profile: %s" % config["profile"]
             profile_mod = None
     else:
         logging.info("No profile specified")
