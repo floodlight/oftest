@@ -224,11 +224,11 @@ def port_config_set(controller, port_no, config, mask, logger):
     rv = controller.message_send(mod)
     return rv
 
-def receive_pkt_check(dataplane, pkt, yes_ports, no_ports, assert_if, logger,
+def receive_pkt_check(dp, pkt, yes_ports, no_ports, assert_if, logger,
                       config):
     """
     Check for proper receive packets across all ports
-    @param dataplane The dataplane object
+    @param dp The dataplane object
     @param pkt Expected packet; may be None if yes_ports is empty
     @param yes_ports Set or list of ports that should recieve packet
     @param no_ports Set or list of ports that should not receive packet
@@ -240,17 +240,20 @@ def receive_pkt_check(dataplane, pkt, yes_ports, no_ports, assert_if, logger,
 
     for ofport in yes_ports:
         logger.debug("Checking for pkt on port " + str(ofport))
-        (rcv_port, rcv_pkt, pkt_time) = dataplane.poll(
+        (rcv_port, rcv_pkt, pkt_time) = dp.poll(
             port_number=ofport, timeout=1, exp_pkt=exp_pkt_arg)
         assert_if.assertTrue(rcv_pkt is not None, 
                              "Did not receive pkt on " + str(ofport))
-        assert_if.assertEqual(str(pkt), str(rcv_pkt),
-                              "Response packet does not match send packet " +
-                              "on port " + str(ofport))
+        if not dataplane.match_exp_pkt(pkt, rcv_pkt):
+            logger.debug("Sent %s" % format_packet(pkt))
+            logger.debug("Resp %s" % format_packet(rcv_pkt))
+        assert_if.assertTrue(dataplane.match_exp_pkt(pkt, rcv_pkt),
+                             "Response packet does not match send packet " +
+                             "on port " + str(ofport))
 
     for ofport in no_ports:
         logger.debug("Negative check for pkt on port " + str(ofport))
-        (rcv_port, rcv_pkt, pkt_time) = dataplane.poll(
+        (rcv_port, rcv_pkt, pkt_time) = dp.poll(
             port_number=ofport, timeout=1, exp_pkt=exp_pkt_arg)
         assert_if.assertTrue(rcv_pkt is None, 
                              "Unexpected pkt on port " + str(ofport))

@@ -21,6 +21,7 @@ import sys
 import logging
 
 import unittest
+import random
 
 import oftest.controller as controller
 import oftest.cstruct as ofp
@@ -324,6 +325,49 @@ class PacketOut(SimpleDataPlane):
                            str(pkt)[:len(str(outpkt))]))
                self.assertEqual(str(outpkt), str(pkt)[:len(str(outpkt))],
                                 'Response packet does not match send packet')
+
+class PacketOutMC(SimpleDataPlane):
+    """
+    Test packet out to multiple output ports
+
+    Send packet out message to controller for 1 to N dataplane ports and
+    verify the packet appears on the appropriate ports
+    """
+    def runTest(self):
+        # Construct packet to send to dataplane
+        # Send packet to dataplane
+        # Poll controller with expect message type packet in
+
+        rc = delete_all_flows(self.controller, basic_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+
+        # These will get put into function
+        of_ports = basic_port_map.keys()
+        random.shuffle(of_ports)
+        for num_ports in range(1,len(of_ports)+1):
+            for outpkt, opt in [
+               (simple_tcp_packet(), "simple TCP packet"),
+               (simple_eth_packet(), "simple Ethernet packet"),
+               (simple_eth_packet(pktlen=40), "tiny Ethernet packet")]:
+
+               dp_ports = of_ports[0:num_ports]
+               basic_logger.info("PKT OUT test with " + opt +
+                                 ", ports " + str(dp_ports))
+               msg = message.packet_out()
+               msg.data = str(outpkt)
+               act = action.action_output()
+               for i in range(0,num_ports):
+                  act.port = dp_ports[i]
+                  self.assertTrue(msg.actions.add(act),
+                                  'Could not add action to msg')
+
+               basic_logger.info("PacketOut to: " + str(dp_ports))
+               rv = self.controller.message_send(msg)
+               self.assertTrue(rv == 0, "Error sending out message")
+
+               receive_pkt_check(self.dataplane, outpkt, dp_ports,
+                                 set(of_ports).difference(dp_ports),
+                                 self, basic_logger, basic_config)
 
 class FlowStatsGet(SimpleProtocol):
     """
