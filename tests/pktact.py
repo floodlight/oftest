@@ -1197,8 +1197,8 @@ class FlowToggle(BaseMatchCase):
     Add flows to the table and modify them repeatedly
     """
     def runTest(self):
-        flow_count = test_param_get(self.config, 'ft_flow_count', default=200)
-        iter_count = test_param_get(self.config, 'ft_iter_count', default=50)
+        flow_count = test_param_get(self.config, 'ft_flow_count', default=20)
+        iter_count = test_param_get(self.config, 'ft_iter_count', default=10)
 
         pa_logger.info("Running flow toggle with %d flows, %d iterations" %
                        (flow_count, iter_count))
@@ -1217,6 +1217,7 @@ class FlowToggle(BaseMatchCase):
         flows.append([])
         flows.append([])
     
+        wildcards = ofp.OFPFW_DL_SRC | ofp.OFPFW_DL_DST
         # Create up the flows in an array
         for toggle in range(2):
             for f_idx in range(flow_count):
@@ -1224,12 +1225,16 @@ class FlowToggle(BaseMatchCase):
                 msg = message.flow_mod()
                 match = parse.packet_to_flow_match(pkt)
                 match.in_port = of_ports[3]
-                match.wildcards &=  ~(ofp.OFPFW_IN_PORT | ofp.OFPFW_TP_DST)
+                match.wildcards = wildcards
                 msg.match = match
                 msg.buffer_id = 0xffffffff
                 msg.actions.add(acts[toggle])
                 flows[toggle].append(msg)
-    
+
+        # Show two sample flows
+        pa_logger.debug(flows[0][0].show())
+        pa_logger.debug(flows[1][0].show())
+
         # Install the first set of flows
         for f_idx in range(flow_count):
             rv = self.controller.message_send(flows[0][f_idx])
