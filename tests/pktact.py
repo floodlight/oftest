@@ -1117,7 +1117,7 @@ class ModifyL2DstIngress(BaseMatchCase):
     def runTest(self):
         sup_acts = supported_actions_get(self)
         if not (sup_acts & 1 << ofp.OFPAT_SET_DL_DST):
-            skip_message_emit(self, "ModifyL2dstMC test")
+            skip_message_emit(self, "ModifyL2dstIngress test")
             return
 
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_dst'],
@@ -1242,10 +1242,13 @@ class FlowToggle(BaseMatchCase):
         updates = 0
         # Report status about 5 times
         mod_val = (iter_count / 4) + 1
-        for iter in range(iter_count):
-            if not iter % mod_val:
-                pa_logger.info("Flow toggle intr %d of %d. Updates %d" %
-                               (iter, iter_count, updates))
+        start = time.time()
+        for iter_idx in range(iter_count):
+            if not iter_idx % mod_val:
+                pa_logger.info("Flow Toggle: iter %d of %d. " %
+                               (iter_idx, iter_count) + 
+                               "%d updates in %d secs" %
+                               (updates, time.time() - start))
             for toggle in range(2):
                 t_idx = 1 - toggle
                 for f_idx in range(flow_count):
@@ -1254,6 +1257,12 @@ class FlowToggle(BaseMatchCase):
                     self.assertTrue(rv != -1, "Error modifying flow %d" % 
                                     f_idx)
                 do_barrier(self.controller)
+
+        end = time.time()
+        divisor = end - start or (end - start + 1)
+        pa_logger.info("Flow toggle: %d iterations" % iter_count)
+        pa_logger.info("   %d flow mods in %d secs, %d mods/sec" %
+                       (updates, end - start, updates/divisor))
             
 
 # You can pick and choose these by commenting tests in or out
