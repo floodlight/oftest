@@ -1192,13 +1192,78 @@ class ModifyL2DstVIDMC(BaseMatchCase):
         flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2, egr_count=-1)
 
+class FlowToggle(BaseMatchCase):
+    """
+    Add flows to the table and modify them repeatedly
+    """
+    def runTest(self):
+        flow_count = test_param_get(self.config, 'ft_flow_count', default=200)
+        iter_count = test_param_get(self.config, 'ft_iter_count', default=50)
+
+        pa_logger.info("Running flow toggle with %d flows, %d iterations" %
+                       (flow_count, iter_count))
+        acts = []
+        acts.append(action.action_output())
+        acts.append(action.action_output())
+    
+        of_ports = pa_port_map.keys()
+        if len(of_ports) < 3:
+            self.assertTrue(False, "Too few ports for test")
+    
+        for idx in range(2):
+            acts[idx].port = of_ports[idx]
+    
+        flows = []
+        flows.append([])
+        flows.append([])
+    
+        # Create up the flows in an array
+        for toggle in range(2):
+            for f_idx in range(flow_count):
+                pkt = simple_tcp_packet(tcp_sport=f_idx)
+                msg = message.flow_mod()
+                match = parse.packet_to_flow_match(pkt)
+                match.in_port = of_ports[3]
+                match.wildcards &=  ~(ofp.OFPFW_IN_PORT | ofp.OFPFW_TP_DST)
+                msg.match = match
+                msg.buffer_id = 0xffffffff
+                msg.actions.add(acts[toggle])
+                flows[toggle].append(msg)
+    
+        # Install the first set of flows
+        for f_idx in range(flow_count):
+            rv = self.controller.message_send(flows[0][f_idx])
+            self.assertTrue(rv != -1, "Error installing flow %d" % f_idx)
+        do_barrier(self.controller)
+    
+        pa_logger.info("Installed %d flows" % flow_count)
+    
+        # Repeatedly modify all the flows back and forth
+        updates = 0
+        # Report status about 5 times
+        mod_val = (iter_count / 4) + 1
+        for iter in range(iter_count):
+            if not iter % mod_val:
+                pa_logger.info("Flow toggle intr %d of %d. Updates %d" %
+                               (iter, iter_count, updates))
+            for toggle in range(2):
+                t_idx = 1 - toggle
+                for f_idx in range(flow_count):
+                    rv = self.controller.message_send(flows[t_idx][f_idx])
+                    updates += 1
+                    self.assertTrue(rv != -1, "Error modifying flow %d" % 
+                                    f_idx)
+                do_barrier(self.controller)
+            
+
 # You can pick and choose these by commenting tests in or out
 iter_classes = [
     basic.PacketIn,
     basic.PacketOut,
     DirectPacket,
+    FlowToggle,
     DirectTwoPorts,
-    DirectMC,
+    DirectMCNonIngress,
     AllWildcardMatch,
     AllWildcardMatchTagged,
     SingleWildcardMatch,
@@ -1214,6 +1279,12 @@ iter_classes = [
     ]
 
 class IterCases(BaseMatchCase):
+    """
+    Iterate over a bunch of test cases
+
+    The cases come from the list above
+    """
+
     def runTest(self):
         count = test_param_get(self.config, 'iter_count', default=10)
         tests_done = 0
@@ -1227,11 +1298,13 @@ class IterCases(BaseMatchCase):
                 test.inheritSetup(self)
                 test.runTest()
                 tests_done += 1
+                # Report update about every minute, between tests
                 if time.time() - last > 60:
                     last = time.time()
-                    print("IterCases: Ran %d tests in %d " %
-                          (tests_done, last - start) + 
-                          "seconds so far")
+                    pa_logger.info(
+                        "IterCases: Iter %d of %d; Ran %d tests in %d " %
+                        (idx, count, tests_done, last - start) + 
+                        "seconds so far")
         stats = all_stats_get(self)
         last = time.time()
         pa_logger.info("\nIterCases ran %d tests in %d seconds." %
