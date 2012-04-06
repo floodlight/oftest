@@ -53,6 +53,11 @@ def test_set_init(config):
     pa_port_map = config["port_map"]
     pa_config = config
 
+    # TBD - Doesn't seem to take effect at the right time...
+    if test_param_get(pa_config, "dut", "") == "ovs":
+        # Disable this test by default, since the flow capacity reported by OVS is bogus.
+        test_prio["Flow_Add_6"] = -1
+
 
 def flip_coin():
     return random.randint(1, 100) <= 50
@@ -338,23 +343,25 @@ class Flow_Cfg:
             return False
         if self.hard_timeout != x.hard_timeout:
             return False
-        # Compare actions lists as unordered, since Argon may re-order action lists.
-        # This is in apparent violation of the spec.
-        # TBD - Verify, or create option in test to check ordered/unordered
-        aa = copy.deepcopy(x.actions.actions)
-        for a in self.actions.actions:
-            i = 0
-            while i < len(aa):
-                if a == aa[i]:
-                    break
-                i = i + 1
-            if i < len(aa):
-                aa.pop(i)
-            else:
-                return False
-        return aa == []
+        if test_param_get(pa_config, "dut", "") == "argon":
+            # Compare actions lists as unordered, since Argon may re-order action lists.
+            # This is in apparent violation of the spec.
+            aa = copy.deepcopy(x.actions.actions)
+            for a in self.actions.actions:
+                i = 0
+                while i < len(aa):
+                    if a == aa[i]:
+                        break
+                    i = i + 1
+                if i < len(aa):
+                    aa.pop(i)
+                else:
+                    return False
+            return aa == []
+        else:
+            return self.actions == x.actions
         
-    def flow_key_str(self):
+    def key_str(self):
         result = "priority=%d" % self.priority
         # TBD - Would be nice if ofp_match.show() was better behaved
         # (no newlines), and more intuitive (things in hex where approprate), etc.
@@ -407,7 +414,8 @@ class Flow_Cfg:
         return (self.key_equal(x) and self.non_key_equal(x))
 
     def __str__(self):
-        result = self.flow_key_str()
+        result = self.key_str()
+        result = result + (", cookie=%d" % self.cookie)
         result = result + (", idle_timeout=%d" % self.idle_timeout)
         result = result + (", hard_timeout=%d" % self.hard_timeout)
         for a in self.actions.actions:
@@ -460,10 +468,12 @@ class Flow_Cfg:
                 act.vlan_vid = fi.rand_vlan()
                 self.actions.add(act)
             elif a == ofp.OFPAT_SET_VLAN_PCP:
-                # TBD - Temporaily removed, broken in Indigo
-                #act = action.action_set_vlan_pcp()
-                #act.vlan_pcp = random.randint(0, (1 << 3) - 1)
-                pass
+                if test_param_get(pa_config, "dut", "") == "indigo":
+                    # Temporaily removed, broken in Indigo
+                    pass
+                else:
+                    act = action.action_set_vlan_pcp()
+                    act.vlan_pcp = random.randint(0, (1 << 3) - 1)
             elif a == ofp.OFPAT_STRIP_VLAN:
                 act = action.action_strip_vlan()
                 self.actions.add(act)
@@ -609,22 +619,22 @@ class Flow_Cfg:
         else:
             self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_NW_TOS, 1)
 
-# <TBD>
-# Due to a bug in OVS, don't specify nw_proto on it's own.
-# OVS will allow specifying a value for nw_proto, even if dl_type is not
-# specified as IP.
-# REMOVE FOR ARGON TESTING, AND BE SURE ABOUT INDENTATION
-# </TBD>
-#         if wildcard_get(valid_wildcards, ofp.OFPFW_NW_PROTO) == 0 \
-#            or exact \
-#            or flip_coin():
-#             self.match.nw_proto = fi.rand_ip_proto()
-#             # Specifying an IP protocol requires that Ethertype is IP
-#             if flip_coin():
-#                 self.match.dl_type   = 0x0800
-#                 self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_DL_TYPE, 0)
-#         else:            
-        self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_NW_PROTO, 1)
+        if test_param_get(pa_config, "dut", "") == "ovs":
+            # Due to a bug in OVS, don't specify nw_proto on it's own.
+            # OVS will allow specifying a value for nw_proto, even if dl_type is not
+            # specified as IP.
+            self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_NW_PROTO, 1)
+        else:
+            if wildcard_get(valid_wildcards, ofp.OFPFW_NW_PROTO) == 0 \
+                   or exact \
+                   or flip_coin():
+                self.match.nw_proto = fi.rand_ip_proto()
+                # Specifying an IP protocol requires that Ethertype is IP
+                if flip_coin():
+                    self.match.dl_type   = 0x0800
+                    self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_DL_TYPE, 0)
+            else:            
+                self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_NW_PROTO, 1)
             
         if wildcard_get(valid_wildcards, ofp.OFPFW_TP_SRC) == 0 \
            or exact\
@@ -818,13 +828,13 @@ class Flow_Tbl:
         self.clear()
 
     def find(self, f):
-        return self.dict.get(f.flow_key_str(), None)
+        return self.dict.get(f.key_str(), None)
 
     def insert(self, f):
-        self.dict[f.flow_key_str()] = f
+        self.dict[f.key_str()] = f
 
     def delete(self, f):
-        del self.dict[f.flow_key_str()]
+        del self.dict[f.key_str()]
 
     def values(self):
         return self.dict.values()
@@ -1172,9 +1182,6 @@ class Flow_Add_5_1(basic.SimpleProtocol):
         pa_logger.debug("Flow_Add_5_1 TEST PASSED")
 
 
-# Disable this test by default, since the flow capacity reported by OVS is bogus.
-test_prio["Flow_Add_6"] = -1
-
 class Flow_Add_6(basic.SimpleProtocol):
     """
     Test FLOW_ADD_6 from draft top-half test plan
@@ -1200,6 +1207,7 @@ class Flow_Add_6(basic.SimpleProtocol):
         self.assertTrue(sw.features_get(), "Get switch features failed")
         self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
 
+        num_flows = 0
         for ts in sw.tbl_stats.stats:
             num_flows = num_flows + ts.max_entries
 
@@ -1674,9 +1682,8 @@ class Flow_Mod_2(basic.SimpleProtocol):
 
         for fc in ft.values():
             if mfc.overlaps(fc, True):
-                fc.idle_timeout = mfc.idle_timeout
-                fc.hard_timeout = mfc.hard_timeout
-                fc.actions      = mfc.actions
+                fc.cookie  = mfc.cookie
+                fc.actions = mfc.actions
 
         # Verify flow table
 
