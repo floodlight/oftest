@@ -31,6 +31,10 @@ pa_logger = None
 #@var pa_config Local copy of global configuration data
 pa_config = None
 
+# For test priority
+test_prio = {}
+
+
 def test_set_init(config):
     """
     Set up function for packet action test classes
@@ -48,6 +52,10 @@ def test_set_init(config):
     pa_logger.info("Initializing test set")
     pa_port_map = config["port_map"]
     pa_config = config
+
+
+def flip_coin():
+    return random.randint(1, 100) <= 50
 
 
 def shuffle(list):
@@ -80,7 +88,7 @@ def rand_nw_addr():
     return random.randint(0, (1 << 32) - 1)
 
 
-class flow_info:
+class Flow_Info:
     # Members:
     # priorities - list of flow priorities
     # dl_addrs   - list of MAC addresses
@@ -120,11 +128,12 @@ class flow_info:
             self.vlans.append(random.randint(1, 4094))
             i = i + 1
     
-        self.ethertypes = []
+        self.ethertypes = [0x0800, 0x0806]
         i = 0
         while i < n:
             self.ethertypes.append(random.randint(0, (1 << 16) - 1))
             i = i + 1
+        self.ethertypes = shuffle(self.ethertypes)[0 : n]
     
         self.ip_addrs = []
         i = 0
@@ -138,11 +147,12 @@ class flow_info:
             self.ip_tos.append(random.randint(0, (1 << 8) - 1) & ~3)
             i = i + 1
     
-        self.ip_protos = []
+        self.ip_protos = [1, 6, 17]
         i = 0
         while i < n:
             self.ip_protos.append(random.randint(0, (1 << 8) - 1))
             i = i + 1
+        self.ip_protos = shuffle(self.ip_protos)[0 : n]
     
         self.l4_ports = []
         i = 0
@@ -178,18 +188,52 @@ class flow_info:
 # TBD - These don't belong here
 
 all_wildcards_list = [ofp.OFPFW_IN_PORT,
-                      ofp.OFPFW_DL_VLAN,
-                      ofp.OFPFW_DL_SRC,
                       ofp.OFPFW_DL_DST,
+                      ofp.OFPFW_DL_SRC,
+                      ofp.OFPFW_DL_VLAN,
+                      ofp.OFPFW_DL_VLAN_PCP,
                       ofp.OFPFW_DL_TYPE,
+                      ofp.OFPFW_NW_TOS,
                       ofp.OFPFW_NW_PROTO,
-                      ofp.OFPFW_TP_SRC,
-                      ofp.OFPFW_TP_DST,
                       ofp.OFPFW_NW_SRC_MASK,
                       ofp.OFPFW_NW_DST_MASK,
-                      ofp.OFPFW_DL_VLAN_PCP,
-                      ofp.OFPFW_NW_TOS
+                      ofp.OFPFW_TP_SRC,
+                      ofp.OFPFW_TP_DST
                       ]
+
+# TBD - Need this because there are duplicates in ofp.ofp_flow_wildcards_map -- FIX
+all_wildcard_names = {
+    1                               : 'OFPFW_IN_PORT',
+    2                               : 'OFPFW_DL_VLAN',
+    4                               : 'OFPFW_DL_SRC',
+    8                               : 'OFPFW_DL_DST',
+    16                              : 'OFPFW_DL_TYPE',
+    32                              : 'OFPFW_NW_PROTO',
+    64                              : 'OFPFW_TP_SRC',
+    128                             : 'OFPFW_TP_DST',
+    1048576                         : 'OFPFW_DL_VLAN_PCP',
+    2097152                         : 'OFPFW_NW_TOS'
+}
+
+
+def wildcard_set(x, w, val):
+    result = x
+    if w == ofp.OFPFW_NW_SRC_MASK:
+        result = (result & ~ofp.OFPFW_NW_SRC_MASK) | (val << ofp.OFPFW_NW_SRC_SHIFT)
+    elif w == ofp.OFPFW_NW_DST_MASK:
+        result = (result & ~ofp.OFPFW_NW_DST_MASK) | (val << ofp.OFPFW_NW_DST_SHIFT)
+    elif val == 0:
+        result = result & ~w
+    else:
+        result = result | w
+    return result
+
+def wildcard_get(x, w):
+    if w == ofp.OFPFW_NW_SRC_MASK:
+        return (x & ofp.OFPFW_NW_SRC_MASK) >> ofp.OFPFW_NW_SRC_SHIFT
+    if w == ofp.OFPFW_NW_DST_MASK:
+        return (x & ofp.OFPFW_NW_DST_MASK) >> ofp.OFPFW_NW_DST_SHIFT
+    return 1 if (x & w) != 0 else 0
 
 
 all_actions_list = [ofp.OFPAT_OUTPUT,
@@ -210,6 +254,8 @@ def dl_addr_to_str(a):
     return "%x:%x:%x:%x:%x:%x" % tuple(a)
 
 def ip_addr_to_str(a, n):
+    if n is not None:
+        a = a & ~((1 << (32 - n)) - 1)
     result = "%d.%d.%d.%d" % (a >> 24, \
                               (a >> 16) & 0xff, \
                               (a >> 8) & 0xff, \
@@ -220,7 +266,7 @@ def ip_addr_to_str(a, n):
     return result
     
 
-class flow_cfg:
+class Flow_Cfg:
     # Members:
     # - match
     # - idle_timeout
@@ -236,112 +282,133 @@ class flow_cfg:
         self.hard_timeout    = 0
         self.actions         = action_list.action_list()
 
-    def __eq__(self, x):
+    # {pri, match} is considered a flow key
+    def key_equal(self, x):
         if self.priority != x.priority:
             return False
         # TBD - Should this logic be moved to ofp_match.__eq__()?
         if self.match.wildcards != x.match.wildcards:
             return False
-        if (self.match.wildcards & ofp.OFPFW_IN_PORT) == 0 \
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_IN_PORT) == 0 \
            and self.match.in_port != x.match.in_port:
             return False
-        if (self.match.wildcards & ofp.OFPFW_DL_SRC) == 0 \
-           and self.match.dl_src != x.match.dl_src:
-            return False
-        if (self.match.wildcards & ofp.OFPFW_DL_DST) == 0 \
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_DST) == 0 \
            and self.match.dl_dst != x.match.dl_dst:
             return False
-        if (self.match.wildcards & ofp.OFPFW_DL_VLAN) == 0 \
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_SRC) == 0 \
+           and self.match.dl_src != x.match.dl_src:
+            return False
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_VLAN) == 0 \
            and self.match.dl_vlan != x.match.dl_vlan:
             return False
-        if (self.match.wildcards & ofp.OFPFW_DL_VLAN_PCP) == 0 \
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_VLAN_PCP) == 0 \
            and self.match.dl_vlan_pcp != x.match.dl_vlan_pcp:
             return False
-        if (self.match.wildcards & ofp.OFPFW_DL_TYPE) == 0 \
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_TYPE) == 0 \
            and self.match.dl_type != x.match.dl_type:
             return False
-        if (self.match.wildcards & ofp.OFPFW_NW_TOS) == 0 \
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_NW_TOS) == 0 \
            and self.match.nw_tos != x.match.nw_tos:
             return False
-        if (self.match.wildcards & ofp.OFPFW_NW_PROTO) == 0 \
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_NW_PROTO) == 0 \
            and self.match.nw_proto != x.match.nw_proto:
             return False
-        if (self.match.wildcards & ofp.OFPFW_NW_SRC_MASK) \
-               < ofp.OFPFW_NW_SRC_ALL:
-            m = ~((1 << ((self.match.wildcards & ofp.OFPFW_NW_SRC_MASK) \
-                         >> ofp.OFPFW_NW_SRC_SHIFT)) - 1)
+        n = wildcard_get(self.match.wildcards, ofp.OFPFW_NW_SRC_MASK)
+        if n < 32:
+            m = ~((1 << n) - 1)
             if (self.match.nw_src & m) != (x.match.nw_src & m):
                 return False
-        if (self.match.wildcards & ofp.OFPFW_NW_DST_MASK) \
-               < ofp.OFPFW_NW_DST_ALL:
-            m = ~((1 << ((self.match.wildcards & ofp.OFPFW_NW_DST_MASK) \
-                         >> ofp.OFPFW_NW_DST_SHIFT)) - 1)
+        n = wildcard_get(self.match.wildcards, ofp.OFPFW_NW_DST_MASK)
+        if n < 32:
+            m = ~((1 << n) - 1)
             if (self.match.nw_dst & m) != (x.match.nw_dst & m):
                 return False
-        if (self.match.wildcards & ofp.OFPFW_TP_SRC) == 0 \
-           and self.match.tp_src != x.match.tp_src:
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_TP_SRC) == 0 \
+               and self.match.tp_src != x.match.tp_src:
             return False
-        if (self.match.wildcards & ofp.OFPFW_TP_DST) == 0 \
-           and self.match.tp_dst != x.match.tp_dst:
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_TP_DST) == 0 \
+               and self.match.tp_dst != x.match.tp_dst:
+            return False
+        return True
+
+    def non_key_equal(self, x):
+        if self.cookie != x.cookie:
             return False
         if self.idle_timeout != x.idle_timeout:
             return False
         if self.hard_timeout != x.hard_timeout:
             return False
-        return self.actions == x.actions  # N.B. Action lists are ordered
-
-    def __str__(self):
+        # Compare actions lists as unordered, since Argon may re-order action lists.
+        # This is in apparent violation of the spec.
+        # TBD - Verify, or create option in test to check ordered/unordered
+        aa = copy.deepcopy(x.actions.actions)
+        for a in self.actions.actions:
+            i = 0
+            while i < len(aa):
+                if a == aa[i]:
+                    break
+                i = i + 1
+            if i < len(aa):
+                aa.pop(i)
+            else:
+                return False
+        return aa == []
+        
+    def flow_key_str(self):
         result = "priority=%d" % self.priority
         # TBD - Would be nice if ofp_match.show() was better behaved
         # (no newlines), and more intuitive (things in hex where approprate), etc.
-        result = result + ", wildcards={"
+        result = result + (", wildcards=0x%x={" % (self.match.wildcards))
         sep = ""
-        for w in ofp.ofp_flow_wildcards_map:
-            if w == ofp.OFPFW_NW_SRC_SHIFT \
-               or w == ofp.OFPFW_NW_SRC_BITS \
-               or w == ofp.OFPFW_NW_SRC_ALL \
-               or w == ofp.OFPFW_NW_DST_SHIFT \
-               or w == ofp.OFPFW_NW_DST_BITS \
-               or w == ofp.OFPFW_NW_DST_ALL \
-               or w == ofp.OFPFW_ALL \
-               or self.match.wildcards & w == 0:
+        for w in all_wildcards_list:
+            if (self.match.wildcards & w) == 0:
                 continue
             if w == ofp.OFPFW_NW_SRC_MASK:
-                result = result + sep + "OFPFW_NW_SRC"
+                n = wildcard_get(self.match.wildcards, w)
+                if n > 0:
+                    result = result + sep + ("OFPFW_NW_SRC(%d)" % (n))
             elif w == ofp.OFPFW_NW_DST_MASK:
-                result = result + sep + "OFPFW_NW_DST"
+                n = wildcard_get(self.match.wildcards, w)
+                if n > 0:
+                    result = result + sep + ("OFPFW_NW_DST(%d)" % (n))
             else:
-                result = result + sep + ofp.ofp_flow_wildcards_map[w]
+                result = result + sep + all_wildcard_names[w]
             sep = ", "
         result = result +"}"
-        if (self.match.wildcards & ofp.OFPFW_IN_PORT) == 0:
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_IN_PORT) == 0:
             result = result + (", in_port=%d" % (self.match.in_port))
-        if (self.match.wildcards & ofp.OFPFW_DL_SRC) == 0:
-            result = result + (", dl_src=%s" % (dl_addr_to_str(self.match.dl_src)))
-        if (self.match.wildcards & ofp.OFPFW_DL_DST) == 0:
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_DST) == 0:
             result = result + (", dl_dst=%s" % (dl_addr_to_str(self.match.dl_dst)))
-        if (self.match.wildcards & ofp.OFPFW_DL_VLAN) == 0:
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_SRC) == 0:
+            result = result + (", dl_src=%s" % (dl_addr_to_str(self.match.dl_src)))
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_VLAN) == 0:
             result = result + (", dl_vlan=%d" % (self.match.dl_vlan))
-        if (self.match.wildcards & ofp.OFPFW_DL_VLAN_PCP) == 0:
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_VLAN_PCP) == 0:
             result = result + (", dl_vlan_pcp=%d" % (self.match.dl_vlan_pcp))
-        if (self.match.wildcards & ofp.OFPFW_DL_TYPE) == 0:
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_TYPE) == 0:
             result = result + (", dl_type=0x%x" % (self.match.dl_type))
-        if (self.match.wildcards & ofp.OFPFW_NW_TOS) == 0:
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_NW_TOS) == 0:
             result = result + (", nw_tos=0x%x" % (self.match.nw_tos))
-        if (self.match.wildcards & ofp.OFPFW_NW_PROTO) == 0:
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_NW_PROTO) == 0:
             result = result + (", nw_proto=%d" % (self.match.nw_proto))
-        n = (self.match.wildcards & ofp.OFPFW_NW_SRC_MASK) >> ofp.OFPFW_NW_SRC_SHIFT
+        n = wildcard_get(self.match.wildcards, ofp.OFPFW_NW_SRC_MASK)
         if n < 32:
-            result = result + (", nw_src=%s" % (ip_addr_to_str(self.match.nw_src, n)))
-        n = (self.match.wildcards & ofp.OFPFW_NW_DST_MASK) >> ofp.OFPFW_NW_DST_SHIFT
+            result = result + (", nw_src=%s" % (ip_addr_to_str(self.match.nw_src, 32 - n)))
+        n = wildcard_get(self.match.wildcards, ofp.OFPFW_NW_DST_MASK)
         if n < 32:
-            result = result + (", nw_dst=%s" % (ip_addr_to_str(self.match.nw_dst, n)))
-        if (self.match.wildcards & ofp.OFPFW_TP_SRC) == 0:
+            result = result + (", nw_dst=%s" % (ip_addr_to_str(self.match.nw_dst, 32 - n)))
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_TP_SRC) == 0:
             result = result + (", tp_src=%d" % self.match.tp_src)
-        if (self.match.wildcards & ofp.OFPFW_TP_DST) == 0:
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_TP_DST) == 0:
             result = result + (", tp_dst=%d" % self.match.tp_dst)
+        return result
+
+    def __eq__(self, x):
+        return (self.key_equal(x) and self.non_key_equal(x))
+
+    def __str__(self):
+        result = self.flow_key_str()
         result = result + (", idle_timeout=%d" % self.idle_timeout)
-        result = result + (", hard_timeout=%d" % self.hard_timeout)
         result = result + (", hard_timeout=%d" % self.hard_timeout)
         for a in self.actions.actions:
             result = result + (", action=%s" % ofp.ofp_action_type_map[a.type])
@@ -363,155 +430,9 @@ class flow_cfg:
                 result = result + ("(port=%d,queue=%d)" % (a.port, a.queue_id))
         return result
 
-    def rand(self, fi, valid_wildcards, valid_actions, valid_ports):
-        # Start with no wildcards, i.e. everything specified
-        self.match.wildcards = 0
-        
-        # Make approx. 1% of flows exact
-        exact = True if random.randint(1, 100) == 1 else False
-
-        # For each qualifier Q,
-        #   if (wildcarding is not supported for Q,
-        #       or an exact flow is specified
-        #       or a coin toss comes up heads), 
-        #      specify Q
-        #   else
-        #      wildcard Q
-
-        if (ofp.OFPFW_IN_PORT & valid_wildcards) == 0 \
-           or exact \
-           or random.randint(1, 100) <= 50:
-            self.match.in_port = rand_pick(valid_ports)
-        else:
-            self.match.wildcards = self.match.wildcards | ofp.OFPFW_IN_PORT
-            
-        if (ofp.OFPFW_DL_DST & valid_wildcards) == 0 \
-           or exact \
-           or random.randint(1, 100) <= 50:
-            self.match.dl_dst = fi.rand_dl_addr()
-        else:
-            self.match.wildcards = self.match.wildcards | ofp.OFPFW_DL_DST
-
-        if (ofp.OFPFW_DL_SRC & valid_wildcards) == 0 \
-           or exact \
-           or random.randint(1, 100) <= 50:
-            self.match.dl_src = fi.rand_dl_addr()
-        else:
-            self.match.wildcards = self.match.wildcards | ofp.OFPFW_DL_SRC
-
-        if (ofp.OFPFW_DL_VLAN_PCP & valid_wildcards) == 0 \
-           or exact \
-           or random.randint(1, 100) <= 50:
-            self.match.dl_vlan_pcp = random.randint(0, (1 << 3) - 1)
-        else:
-            self.match.wildcards = self.match.wildcards | ofp.OFPFW_DL_VLAN_PCP
-
-        if (ofp.OFPFW_DL_VLAN & valid_wildcards) == 0 \
-           or exact \
-           or random.randint(1, 100) <= 50:
-            self.match.dl_vlan = fi.rand_vlan()
-        else:
-            self.match.wildcards = self.match.wildcards | ofp.OFPFW_DL_VLAN
-
-        if (ofp.OFPFW_DL_TYPE & valid_wildcards) == 0 \
-           or exact \
-           or random.randint(1, 100) <= 50:
-            self.match.dl_type = fi.rand_ethertype()
-        else:
-            self.match.wildcards = self.match.wildcards | ofp.OFPFW_DL_TYPE
-
-        if exact:
-            n = 0
-        else:
-            n = (valid_wildcards & ofp.OFPFW_NW_SRC_MASK) \
-                >> ofp.OFPFW_NW_SRC_SHIFT
-            if n > 32:
-                n = 32
-            n = random.randint(0, n)
-        self.match.wildcards = self.match.wildcards \
-                               | (n << ofp.OFPFW_NW_SRC_SHIFT)
-        if n < 32:
-            self.match.nw_src    = fi.rand_ip_addr() & ~((1 << n) - 1)
-            # Specifying any IP address match other than all bits
-            # don't care requires that Ethertype is one of {IP, ARP}
-            self.match.dl_type   = rand_pick([0x0800, 0x0806])
-            self.match.wildcards = self.match.wildcards & ~ofp.OFPFW_DL_TYPE
-
-        if exact:
-            n = 0
-        else:
-            n = (valid_wildcards & ofp.OFPFW_NW_DST_MASK) \
-                >> ofp.OFPFW_NW_DST_SHIFT
-            if n > 32:
-                n = 32
-            n = random.randint(0, n)
-        self.match.wildcards = self.match.wildcards \
-                               | (n << ofp.OFPFW_NW_DST_SHIFT)
-        if n < 32:
-            self.match.nw_dst    = fi.rand_ip_addr() & ~((1 << n) - 1)
-            # Specifying any IP address match other than all bits
-            # don't care requires that Ethertype is one of {IP, ARP}
-            self.match.dl_type   = rand_pick([0x0800, 0x0806])
-            self.match.wildcards = self.match.wildcards & ~ofp.OFPFW_DL_TYPE
-
-        if (ofp.OFPFW_NW_TOS & valid_wildcards) == 0 \
-           or exact \
-           or random.randint(1, 100) <= 50:
-            self.match.nw_tos = fi.rand_ip_tos()
-            # Specifying a TOS value requires that Ethertype is IP
-            self.match.dl_type   = 0x0800
-            self.match.wildcards = self.match.wildcards & ~ofp.OFPFW_DL_TYPE
-        else:
-            self.match.wildcards = self.match.wildcards | ofp.OFPFW_NW_TOS
-
-        if (ofp.OFPFW_NW_PROTO & valid_wildcards) == 0 \
-           or exact \
-           or random.randint(1, 100) <= 50:
-            self.match.nw_proto = fi.rand_ip_proto()
-            # Specifying an IP protocol requires that Ethertype is IP
-            self.match.dl_type   = 0x0800
-            self.match.wildcards = self.match.wildcards & ~ofp.OFPFW_DL_TYPE
-        else:            
-            self.match.wildcards = self.match.wildcards | ofp.OFPFW_NW_PROTO
-            
-        if (ofp.OFPFW_TP_SRC & valid_wildcards) == 0 \
-           or exact\
-           or random.randint(1, 100) <= 50:
-            self.match.tp_src = fi.rand_l4_port()
-            # Specifying a L4 port requires that IP protcol is
-            # one of {ICMP, TCP, UDP}
-            self.match.nw_proto = rand_pick([1, 6, 17])
-            self.match.wildcards = self.match.wildcards & ~ofp.OFPFW_NW_PROTO
-            # Specifying a L4 port requirues that Ethertype is IP
-            self.match.dl_type   = 0x0800
-            self.match.wildcards = self.match.wildcards & ~ofp.OFPFW_DL_TYPE
-        else:
-            self.match.wildcards = self.match.wildcards | ofp.OFPFW_TP_SRC
-
-        if (ofp.OFPFW_TP_DST & valid_wildcards) == 0 \
-           or exact \
-           or random.randint(1, 100) <= 50:
-            self.match.tp_dst = fi.rand_l4_port()
-            # Specifying a L4 port requires that IP protcol is
-            # one of {ICMP, TCP, UDP}
-            self.match.nw_proto = rand_pick([1, 6, 17])
-            self.match.wildcards = self.match.wildcards & ~ofp.OFPFW_NW_PROTO
-            # Specifying a L4 port requirues that Ethertype is IP
-            self.match.dl_type   = 0x0800
-            self.match.wildcards = self.match.wildcards & ~ofp.OFPFW_DL_TYPE
-        else:
-            self.match.wildcards = self.match.wildcards | ofp.OFPFW_TP_DST
-
-        # N.B. Don't make the timeout too short, else the flow might
-        # disappear before we get a chance to check for it.
-        t = random.randint(0, 65535)
-        self.idle_timeout = 0 if t < 60 else t
-        t = random.randint(0, 65535)
-        self.hard_timeout = 0 if t < 60 else t
-
-        # If nothing is wildcarded, it is an exact flow spec -- some switches
-        # (Open vSwitch, for one) *require* that exact flow specs have priority 65535.
-        self.priority = 65535 if self.match.wildcards == 0 else fi.rand_priority()
+    # Randomize flow data for flow modifies
+    def rand_mod(self, fi, valid_actions, valid_ports):
+        self.cookie = random.randint(0, (1 << 53) - 1)
 
         # Action lists are ordered, so pick an ordered random subset of
         # supported actions
@@ -587,6 +508,200 @@ class flow_cfg:
 
         return self
 
+    # Randomize flow cfg
+    def rand(self, fi, valid_wildcards, valid_actions, valid_ports):
+        # Start with no wildcards, i.e. everything specified
+        self.match.wildcards = 0
+        
+        # Make approx. 5% of flows exact
+        exact = (random.randint(1, 100) <= 5)
+
+        # For each qualifier Q,
+        #   if (wildcarding is not supported for Q,
+        #       or an exact flow is specified
+        #       or a coin toss comes up heads), 
+        #      specify Q
+        #   else
+        #      wildcard Q
+
+        if wildcard_get(valid_wildcards, ofp.OFPFW_IN_PORT) == 0 \
+           or exact \
+           or flip_coin():
+            self.match.in_port = rand_pick(valid_ports)
+        else:
+            self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_IN_PORT, 1)
+            
+        if wildcard_get(valid_wildcards, ofp.OFPFW_DL_DST) == 0 \
+           or exact \
+           or flip_coin():
+            self.match.dl_dst = fi.rand_dl_addr()
+        else:
+            self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_DL_DST, 1)
+
+        if wildcard_get(valid_wildcards, ofp.OFPFW_DL_SRC) == 0 \
+           or exact \
+           or flip_coin():
+            self.match.dl_src = fi.rand_dl_addr()
+        else:
+            self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_DL_SRC, 1)
+
+        if wildcard_get(valid_wildcards, ofp.OFPFW_DL_VLAN_PCP) == 0 \
+           or exact \
+           or flip_coin():
+            self.match.dl_vlan_pcp = random.randint(0, (1 << 3) - 1)
+        else:
+            self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_DL_VLAN_PCP, 1)
+
+        if wildcard_get(valid_wildcards, ofp.OFPFW_DL_VLAN) == 0 \
+           or exact \
+           or flip_coin():
+            self.match.dl_vlan = fi.rand_vlan()
+        else:
+            self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_DL_VLAN, 1)
+
+        if wildcard_get(valid_wildcards, ofp.OFPFW_DL_TYPE) == 0 \
+           or exact \
+           or flip_coin():
+            self.match.dl_type = fi.rand_ethertype()
+        else:
+            self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_DL_TYPE, 1)
+
+        if exact or flip_coin():
+            n = 0
+        else:
+            n = wildcard_get(valid_wildcards, ofp.OFPFW_NW_SRC_MASK)
+            if n > 32:
+                n = 32
+            n = random.randint(0, n)
+        self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_NW_SRC_MASK, n)
+        if n < 32:
+            self.match.nw_src    = fi.rand_ip_addr() & ~((1 << n) - 1)
+            # Specifying any IP address match other than all bits
+            # don't care requires that Ethertype is one of {IP, ARP}
+            if flip_coin():
+                self.match.dl_type   = rand_pick([0x0800, 0x0806])
+                self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_DL_TYPE, 0)
+
+        if exact or flip_coin():
+            n = 0
+        else:
+            n = wildcard_get(valid_wildcards, ofp.OFPFW_NW_DST_MASK)
+            if n > 32:
+                n = 32
+            n = random.randint(0, n)
+        self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_NW_DST_MASK, n)
+        if n < 32:
+            self.match.nw_dst    = fi.rand_ip_addr() & ~((1 << n) - 1)
+            # Specifying any IP address match other than all bits
+            # don't care requires that Ethertype is one of {IP, ARP}
+            if flip_coin():
+                self.match.dl_type   = rand_pick([0x0800, 0x0806])
+                self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_DL_TYPE, 0)
+
+        if wildcard_get(valid_wildcards, ofp.OFPFW_NW_TOS) == 0 \
+           or exact \
+           or flip_coin():
+            self.match.nw_tos = fi.rand_ip_tos()
+            # Specifying a TOS value requires that Ethertype is IP
+            if flip_coin():
+                self.match.dl_type   = 0x0800
+                self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_DL_TYPE, 0)
+        else:
+            self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_NW_TOS, 1)
+
+# <TBD>
+# Due to a bug in OVS, don't specify nw_proto on it's own.
+# OVS will allow specifying a value for nw_proto, even if dl_type is not
+# specified as IP.
+# REMOVE FOR ARGON TESTING, AND BE SURE ABOUT INDENTATION
+# </TBD>
+#         if wildcard_get(valid_wildcards, ofp.OFPFW_NW_PROTO) == 0 \
+#            or exact \
+#            or flip_coin():
+#             self.match.nw_proto = fi.rand_ip_proto()
+#             # Specifying an IP protocol requires that Ethertype is IP
+#             if flip_coin():
+#                 self.match.dl_type   = 0x0800
+#                 self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_DL_TYPE, 0)
+#         else:            
+        self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_NW_PROTO, 1)
+            
+        if wildcard_get(valid_wildcards, ofp.OFPFW_TP_SRC) == 0 \
+           or exact\
+           or flip_coin():
+            self.match.tp_src = fi.rand_l4_port()
+            # Specifying a L4 port requires that IP protcol is
+            # one of {ICMP, TCP, UDP}
+            if flip_coin():
+                self.match.nw_proto = rand_pick([1, 6, 17])
+                self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_NW_PROTO, 0)
+                # Specifying a L4 port requirues that Ethertype is IP
+                self.match.dl_type   = 0x0800
+                self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_DL_TYPE, 0)
+                if self.match.nw_proto == 1:
+                    self.match.tp_src = self.match.tp_src & 0xff
+        else:
+            self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_TP_SRC, 1)
+
+        if wildcard_get(valid_wildcards, ofp.OFPFW_TP_DST) == 0 \
+           or exact \
+           or flip_coin():
+            self.match.tp_dst = fi.rand_l4_port()
+            # Specifying a L4 port requires that IP protcol is
+            # one of {ICMP, TCP, UDP}
+            if flip_coin():
+                self.match.nw_proto = rand_pick([1, 6, 17])
+                self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_NW_PROTO, 0)
+                # Specifying a L4 port requirues that Ethertype is IP
+                self.match.dl_type   = 0x0800
+                self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_DL_TYPE, 0)
+                if self.match.nw_proto == 1:
+                    self.match.tp_dst = self.match.tp_dst & 0xff
+        else:
+            self.match.wildcards = wildcard_set(self.match.wildcards, ofp.OFPFW_TP_DST, 1)
+
+        # If nothing is wildcarded, it is an exact flow spec -- some switches
+        # (Open vSwitch, for one) *require* that exact flow specs have priority 65535.
+        self.priority = 65535 if self.match.wildcards == 0 else fi.rand_priority()
+
+        # N.B. Don't make the timeout too short, else the flow might
+        # disappear before we get a chance to check for it.
+        t = random.randint(0, 65535)
+        self.idle_timeout = 0 if t < 60 else t
+        t = random.randint(0, 65535)
+        self.hard_timeout = 0 if t < 60 else t
+
+        self.rand_mod(fi, valid_actions, valid_ports)
+
+        return self
+
+    # Return flow cfg in canonical form
+    # - There are dependencies between flow qualifiers, e.g. it only makes sense to qualify nw_proto if dl_type is qualified to be 0x0800 (IP).
+    #   The canonical form of flow match criteria will "wildcard out" all such cases.
+    def canonical(self):
+        result = copy.deepcopy(self)
+        if wildcard_get(result.match.wildcards, ofp.OFPFW_DL_TYPE) != 0 \
+               or result.match.dl_type not in [0x0800, 0x0806]:
+            # dl_tyoe is wildcarded, or specified as something other than IP or ARP
+            # => nw_src and nw_dst cannot be specified, must be wildcarded
+            result.match.wildcards = wildcard_set(result.match.wildcards, ofp.OFPFW_NW_SRC_MASK, 32)
+            result.match.wildcards = wildcard_set(result.match.wildcards, ofp.OFPFW_NW_DST_MASK, 32)
+        if wildcard_get(result.match.wildcards, ofp.OFPFW_DL_TYPE) != 0 \
+               or result.match.dl_type != 0x0800:
+            # dl_type is wildcarded, or specified as something other than IP
+            # => nw_proto, nw_tos, tp_src and tp_dst cannot be specified, must be wildcarded
+            result.match.wildcards = wildcard_set(result.match.wildcards, ofp.OFPFW_NW_PROTO, 1)
+            result.match.wildcards = wildcard_set(result.match.wildcards, ofp.OFPFW_NW_TOS,   1)
+            result.match.wildcards = wildcard_set(result.match.wildcards, ofp.OFPFW_TP_SRC,   1)
+            result.match.wildcards = wildcard_set(result.match.wildcards, ofp.OFPFW_TP_DST,   1)
+        if wildcard_get(result.match.wildcards, ofp.OFPFW_NW_PROTO) != 0 \
+               or result.match.nw_proto not in [1, 6, 17]:
+            # nw_proto is wildcarded, or specified as something other than ICMP, TCP or UDP
+            # => tp_src and tp_dst cannot be specified, must be wildcarded
+            result.match.wildcards = wildcard_set(result.match.wildcards, ofp.OFPFW_TP_SRC, 1)
+            result.match.wildcards = wildcard_set(result.match.wildcards, ofp.OFPFW_TP_DST, 1)
+        return result
+
     # Overlap check
     # delf == True <=> Check for delete overlap, else add overlap
     # "Add overlap" is defined as there exists a packet that could match both the
@@ -594,84 +709,78 @@ class flow_cfg:
     # "Delete overlap" is defined as the specificity of the argument flowspec
     # is greater than or equal to the specificity of the receiver flowspec
     def overlaps(self, x, delf):
-        if self.priority != x.priority:
-            return False
-        if (self.match.wildcards & ofp.OFPFW_IN_PORT) == 0:
-            if (x.match.wildcards & ofp.OFPFW_IN_PORT) == 0:
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_IN_PORT) == 0:
+            if wildcard_get(x.match.wildcards, ofp.OFPFW_IN_PORT) == 0:
                 if self.match.in_port != x.match.in_port:
                     return False        # Both specified, and not equal
             elif delf:
                 return False            # Receiver more specific
-        if (self.match.wildcards & ofp.OFPFW_DL_VLAN) == 0:
-            if (x.match.wildcards & ofp.OFPFW_DL_VLAN) == 0:
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_VLAN) == 0:
+            if wildcard_get(x.match.wildcards, ofp.OFPFW_DL_VLAN) == 0:
                 if self.match.dl_vlan != x.match.dl_vlan:
                     return False        # Both specified, and not equal
             elif delf:
                 return False            # Receiver more specific
-        if (self.match.wildcards & ofp.OFPFW_DL_SRC) == 0:
-            if (x.match.wildcards & ofp.OFPFW_DL_SRC) == 0:
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_SRC) == 0:
+            if wildcard_get(x.match.wildcards, ofp.OFPFW_DL_SRC) == 0:
                 if self.match.dl_src != x.match.dl_src:
                     return False        # Both specified, and not equal
             elif delf:
                 return False            # Receiver more specific
-        if (self.match.wildcards & ofp.OFPFW_DL_DST) == 0:
-            if (x.match.wildcards & ofp.OFPFW_DL_DST) == 0:
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_DST) == 0:
+            if wildcard_get(x.match.wildcards, ofp.OFPFW_DL_DST) == 0:
                 if self.match.dl_dst != x.match.dl_dst:
                     return False        # Both specified, and not equal
             elif delf:
                 return False            # Receiver more specific
-        if (self.match.wildcards & ofp.OFPFW_DL_TYPE) == 0:
-            if (x.match.wildcards & ofp.OFPFW_DL_TYPE) == 0:
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_TYPE) == 0:
+            if wildcard_get(x.match.wildcards, ofp.OFPFW_DL_TYPE) == 0:
                 if self.match.dl_type != x.match.dl_type:
                     return False        # Both specified, and not equal
             elif delf:
                 return False            # Recevier more specific
-        if (self.match.wildcards & ofp.OFPFW_NW_PROTO) == 0:
-            if (x.match.wildcards & ofp.OFPFW_NW_PROTO) == 0:
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_NW_PROTO) == 0:
+            if wildcard_get(x.match.wildcards, ofp.OFPFW_NW_PROTO) == 0:
                 if self.match.nw_proto != x.match.nw_proto:
                     return False        # Both specified, and not equal
             elif delf:
                 return False            # Receiver more specific
-        if (self.match.wildcards & ofp.OFPFW_TP_SRC) == 0:
-            if (x.match.wildcards & ofp.OFPFW_TP_SRC) == 0:
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_TP_SRC) == 0:
+            if wildcard_get(x.match.wildcards, ofp.OFPFW_TP_SRC) == 0:
                 if self.match.tp_src != x.match.tp_src:
                     return False        # Both specified, and not equal
             elif delf:
                 return False            # Receiver more specific
-        if (self.match.wildcards & ofp.OFPFW_TP_DST) == 0:
-            if (x.match.wildcards & ofp.OFPFW_TP_DST) == 0:
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_TP_DST) == 0:
+            if wildcard_get(x.match.wildcards, ofp.OFPFW_TP_DST) == 0:
                 if self.match.tp_dst != x.match.tp_dst:
                     return False        # Both specified, and not equal
             elif delf:
                 return False            # Receiver more specific
-        na = (self.match.wildcards & ofp.OFPFW_NW_SRC_MASK) \
-             >> ofp.OFPFW_NW_SRC_SHIFT
-        nb = (x.match.wildcards & ofp.OFPFW_NW_SRC_MASK) \
-             >> ofp.OFPFW_NW_SRC_SHIFT
+        na = wildcard_get(self.match.wildcards, ofp.OFPFW_NW_SRC_MASK)
+        nb = wildcard_get(x.match.wildcards, ofp.OFPFW_NW_SRC_MASK)
         if delf and na < nb:
             return False                # Receiver more specific
         if (na < 32 and nb < 32):
             m = ~((1 << na) - 1) & ~((1 << nb) - 1)
             if (self.match.nw_src & m) != (x.match.nw_src & m):
                 return False            # Overlapping bits not equal
-        na = (self.match.wildcards & ofp.OFPFW_NW_DST_MASK) \
-             >> ofp.OFPFW_NW_DST_SHIFT
-        nb = (x.match.wildcards & ofp.OFPFW_NW_DST_MASK) \
-             >> ofp.OFPFW_NW_DST_SHIFT
+        na = wildcard_get(self.match.wildcards, ofp.OFPFW_NW_DST_MASK)
+        nb = wildcard_get(x.match.wildcards, ofp.OFPFW_NW_DST_MASK)
         if delf and na < nb:
             return False                # Receiver more specific
         if (na < 32 and nb < 32):
             m = ~((1 << na) - 1) & ~((1 << nb) - 1)
             if (self.match.nw_dst & m) != (x.match.nw_dst & m):
-                return False            # Overlapping bit not equal
-        if (self.match.wildcards & ofp.OFPFW_DL_VLAN_PCP) == 0:
-            if (x.match.wildcards & ofp.OFPFW_DL_VLAN_PCP) == 0:
+                return False            # Overlapping bits not equal
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_VLAN_PCP) == 0:
+            if wildcard_get(x.match.wildcards, ofp.OFPFW_DL_VLAN_PCP) == 0:
                 if self.match.dl_vlan_pcp != x.match.dl_vlan_pcp:
                     return False        # Both specified, and not equal
             elif delf:
                 return False            # Receiver more specific
-        if (self.match.wildcards & ofp.OFPFW_NW_TOS) == 0:
-            if (x.match.wildcards & ofp.OFPFW_NW_TOS) == 0:
+        if wildcard_get(self.match.wildcards, ofp.OFPFW_NW_TOS) == 0:
+            if wildcard_get(x.match.wildcards, ofp.OFPFW_NW_TOS) == 0:
                 if self.match.nw_tos != x.match.nw_tos:
                     return False        # Both specified, and not equal
             elif delf:
@@ -680,6 +789,7 @@ class flow_cfg:
 
     def to_flow_mod_msg(self, msg):
         msg.match        = self.match
+        msg.cookie       = self.cookie
         msg.idle_timeout = self.idle_timeout
         msg.hard_timeout = self.hard_timeout
         msg.priority     = self.priority
@@ -688,523 +798,1272 @@ class flow_cfg:
 
     def from_flow_stat(self, msg):
         self.match        = msg.match
+        self.cookie       = msg.cookie
         self.idle_timeout = msg.idle_timeout
         self.hard_timeout = msg.hard_timeout
         self.priority     = msg.priority
         self.actions      = msg.actions
 
+    def from_flow_rem(self, msg):
+        self.match        = msg.match
+        self.idle_timeout = msg.idle_timeout
+        self.priority     = msg.priority
 
-class FlowQuery(basic.SimpleProtocol):
-    """
-    """
 
-    def do_barrier(self):
-        barrier = message.barrier_request()
-        (resp, pkt) = self.controller.transact(barrier, 5)
-        self.assertTrue(resp is not None,
-                        "Did not receive response to barrier request"
-                        )
-    
+class Flow_Tbl:
+    def clear(self):
+        self.dict = {}
 
-    def verify_flows(self,
-                     sw_features,
-                     tbl_flows,
-                     num_flows,
-                     overlapf,
-                     num_overlaps
-                     ):
-        result = True
-        
-        # Check number of flows reported in table stats
+    def __init__(self):
+        self.clear()
 
-        self.logger.debug("Verifying table stats reports correct number of")
-        self.logger.debug("  active flows")
+    def find(self, f):
+        return self.dict.get(f.flow_key_str(), None)
+
+    def insert(self, f):
+        self.dict[f.flow_key_str()] = f
+
+    def delete(self, f):
+        del self.dict[f.flow_key_str()]
+
+    def values(self):
+        return self.dict.values()
+
+    def count(self):
+        return len(self.dict)
+
+    def rand(self, sw, fi, num_flows):
+        self.clear()
+        i = 0
+        tbl = 0
+        j = 0
+        while i < num_flows:
+            fc = Flow_Cfg()
+            fc.rand(fi, \
+                    sw.tbl_stats.stats[tbl].wildcards, \
+                    sw.sw_features.actions, \
+                    sw.valid_ports \
+                    )
+            fc = fc.canonical()
+            if self.find(fc):
+                continue
+            fc.send_rem = False
+            self.insert(fc)
+            i = i + 1
+            j = j + 1
+            if j >= sw.tbl_stats.stats[tbl].max_entries:
+                tbl = tbl + 1
+                j = 0
+
+
+class Switch:
+    # Members:
+    # controller  - switch's test controller
+    # sw_features - switch's OFPT_FEATURES_REPLY message
+    # valid_ports - list of valid port numbers
+    # tbl_stats   - switch's OFPT_STATS_REPLY message, for table stats request
+    # flow_stats  - switch's OFPT_STATS_REPLY message, for flow stats request
+    # flow_tbl    - (test's idea of) switch's flow table
+
+    def __init__(self):
+        self.controller  = None
+        self.sw_features = None
+        self.valid_ports = []
+        self.tbl_stats   = None
+        self.flow_stats  = None
+        self.flow_tbl    = Flow_Tbl()
+
+    def features_get(self):
+        # Get switch features
+        request = message.features_request()
+        (self.sw_features, pkt) = self.controller.transact(request, timeout=2)
+        if self.sw_features is None:
+            return False
+        self.valid_ports = map(lambda x: x.port_no, self.sw_features.ports)
+        return True
+
+    def tbl_stats_get(self):
+        # Get table stats
         request = message.table_stats_request()
-        (tbl_stats_after, pkt) = self.controller.transact(request, timeout=2)
-        self.assertTrue(tbl_stats_after is not None,
-                        "No reply to table_stats_request"
-                        )
+        (self.tbl_stats, pkt) = self.controller.transact(request, timeout=2)
+        return (self.tbl_stats is not None)
 
-        num_flows_reported = 0
-        for ts in tbl_stats_after.stats:
-            num_flows_reported = num_flows_reported + ts.active_count
-
-        num_flows_expected = num_flows
-        if overlapf:
-            num_flows_expected = num_flows_expected - num_overlaps
-
-        self.logger.debug("Number of flows reported = "
-                          + str(num_flows_reported)
-                          )
-        self.logger.debug("Numer of flows expected = "
-                          + str(num_flows_expected)
-                          )
-        if num_flows_reported != num_flows_expected:
-            self.logger.error("Incorrect number of flows returned by table stats")
-            result = False
-
-        # Retrieve all flows from switch
-
-        self.logger.debug("Retrieving all flows from switch")
-        stat_req = message.flow_stats_request()
+    def flow_stats_get(self):
+        request = message.flow_stats_request()
         query_match           = ofp.ofp_match()
         query_match.wildcards = ofp.OFPFW_ALL
-        stat_req.match    = query_match
-        stat_req.table_id = 0xff
-        stat_req.out_port = ofp.OFPP_NONE;
-        flow_stats, pkt = self.controller.transact(stat_req, timeout=2)
-        self.assertTrue(flow_stats is not None, "Get all flow stats failed")
+        request.match    = query_match
+        request.table_id = 0xff
+        request.out_port = ofp.OFPP_NONE;
+        (self.flow_stats, pkt) = self.controller.transact(request, timeout=2)
+        return (self.flow_stats is not None)
 
-        # Verify retrieved flows
-
-        self.logger.debug("Verifying retrieved flows")
-
-        self.assertEqual(flow_stats.type,
-                         ofp.OFPST_FLOW,
-                         "Unexpected type of response message"
-                         )
-
-        num_flows_reported = len(flow_stats.stats)
-
-        self.logger.debug("Number of flows reported = "
-                          + str(num_flows_reported)
-                          )
-        self.logger.debug("Numer of flows expected = "
-                          + str(num_flows_expected)
-                          )
-        if num_flows_reported != num_flows_expected:
-            self.logger.error("Incorrect number of flows returned by table stats")
-            result = False
-
-        for f in tbl_flows:
-            f.resp_matched = False
-
-        num_resp_flows_matched = 0
-        for flow_stat in flow_stats.stats:
-            flow_in = flow_cfg()
-            flow_in.from_flow_stat(flow_stat)
-
-            matched = False
-            for f in tbl_flows:
-                if f.deleted:
-                    continue
-                if not f.resp_matched \
-                   and (not overlapf or not f.overlap) \
-                   and f == flow_in:
-                    f.resp_matched = True
-                    num_resp_flows_matched = num_resp_flows_matched + 1
-                    matched = True
-                    break
-            if not matched:
-                self.logger.error("Response flow")
-                self.logger.error(str(flow_in))
-                self.logger.error("does not match any configured flow")
-                result = False
-
-        self.logger.debug("Number of flows matched in response = "
-                          + str(num_resp_flows_matched)
-                          )
-        self.logger.debug("Number of flows expected = "
-                          + str(num_flows_expected)
-                          )
-        if num_resp_flows_matched != num_flows_expected:
-            for f in tbl_flows:
-                if not f.resp_matched:
-                    self.logger.error("Configured flow")
-                    self.logger.error("tbl_idx=%d, flow_idx=%d, %s" % (f.tbl_idx, f.flow_idx, str(f)))
-                    self.logger.error("missing in flow response")
-                    result = False
-
-        self.assertTrue(result, "Flow verification failed")
-
-    def flow_add(self, flow, overlapf):
+    def flow_add(self, flow_cfg, overlapf = False):
         flow_mod_msg = message.flow_mod()
         flow_mod_msg.command     = ofp.OFPFC_ADD
         flow_mod_msg.buffer_id   = 0xffffffff
-        flow_mod_msg.cookie      = random.randint(0, (1 << 53) - 1)
-        flow.to_flow_mod_msg(flow_mod_msg)
+        flow_cfg.to_flow_mod_msg(flow_mod_msg)
         if overlapf:
             flow_mod_msg.flags = flow_mod_msg.flags | ofp.OFPFF_CHECK_OVERLAP
-        self.logger.debug("Sending flow_mod(add) request to switch")
-        rv = self.controller.message_send(flow_mod_msg)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        if flow_cfg.send_rem:
+            flow_mod_msg.flags = flow_mod_msg.flags | ofp.OFPFF_SEND_FLOW_REM            
+        return (self.controller.message_send(flow_mod_msg) != -1)
 
-        # TBD - Don't poll for each error message
-        if flow.overlap:
-            self.logger.debug("Flow overlaps with tbl_idx=%d flow_idx=%d"
-                              % (flow.overlaps_with[0], flow.overlaps_with[1])
-                              )
-        else:
-            self.logger.debug("Flow does not overlap")
-        self.logger.debug("Checking for error response from switch")
-        (errmsg, pkt) = self.controller.poll(ofp.OFPT_ERROR, 1)
-        if errmsg is not None:
-            # Got ERROR message
-            self.logger.debug("Got ERROR message, type = "
-                              + str(errmsg.type)
-                              + ", code = "
-                              + str(errmsg.code)
-                              )
-            
-            if errmsg.type == ofp.OFPET_FLOW_MOD_FAILED \
-               and errmsg.code == ofp.OFPFMFC_OVERLAP:
-                # Got "overlap" ERROR message
-                self.logger.debug("ERROR is overlap")
-                
-                self.assertTrue(overlapf and flow.overlap,
-                                "Overlap not expected"
-                                )
-            else:
-                self.logger.debug("ERROR is not overlap")
-                self.assertTrue(False,
-                                "Unexpected error message")
-
-        else:
-            # Did not get ERROR message
-            self.logger.debug("No ERROR message received")
-            self.assertTrue(not (overlapf and flow.overlap),
-                            "Did not get expected OVERLAP"
-                            )
-
-
-    def flow_del(self, flow, strictf):
+    def flow_mod(self, flow_cfg, strictf):
         flow_mod_msg = message.flow_mod()
-        flow_mod_msg.command     = ofp.OFPFC_DELETE_STRICT \
-            if strictf else ofp.OFPFC_DELETE
+        flow_mod_msg.command     = ofp.OFPFC_MODIFY_STRICT if strictf else ofp.OFPFC_MODIFY
         flow_mod_msg.buffer_id   = 0xffffffff
-        flow_mod_msg.cookie      = random.randint(0, (1 << 53) - 1)
-        # TBD - Needs to be a test variable
+        flow_cfg.to_flow_mod_msg(flow_mod_msg)
+        return (self.controller.message_send(flow_mod_msg) != -1)
+
+    def flow_del(self, flow_cfg, strictf):
+        flow_mod_msg = message.flow_mod()
+        flow_mod_msg.command     = ofp.OFPFC_DELETE_STRICT if strictf else ofp.OFPFC_DELETE
+        flow_mod_msg.buffer_id   = 0xffffffff
+        # TBD - "out_port" filtering of deletes needs to be tested
         flow_mod_msg.out_port    = ofp.OFPP_NONE
-        flow.to_flow_mod_msg(flow_mod_msg)
-        rv = self.controller.message_send(flow_mod_msg)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-        # TBD - Don't poll for each error message
-        (errmsg, pkt) = self.controller.poll(ofp.OFPT_ERROR, 1)
-        if errmsg is not None:
-            # Got ERROR message
-            self.logger.debug("Got ERROR message, type = "
-                              + str(errmsg.type)
-                              + ", code = "
-                              + str(errmsg.code)
+        flow_cfg.to_flow_mod_msg(flow_mod_msg)
+        return (self.controller.message_send(flow_mod_msg) != -1)
+
+    def barrier(self):
+        barrier = message.barrier_request()
+        (resp, pkt) = self.controller.transact(barrier, 5)
+        return (resp is not None)
+
+    def errors_verify(self, num, type = 0, code = 0):
+        pa_logger.debug("Expecting %d error messages" % (num))
+        if num > 0:
+            pa_logger.debug("with type=%d code=%d" % (type, code))            
+        result = True
+        n = 0
+        while True:
+            (errmsg, pkt) = self.controller.poll(ofp.OFPT_ERROR, 1)
+            if errmsg is None:
+                break
+            pa_logger.debug("Got error message, type=%d, code=%d" \
+                              % (errmsg.type, errmsg.code) \
                               )
-            self.assertTrue(False,
-                            "Unexpected error message"
-                            )
+            if num == 0 or errmsg.type != type or errmsg.code != code:
+                pa_logger.debug("Unexpected error message")
+                result = False
+            n = n + 1
+        if n != num:
+            pa_logger.error("Received %d error messages" % (n))
+            result = False
+        return result
+
+    def flow_tbl_verify(self):
+        result = True
+    
+        # Verify flow count in switch
+        pa_logger.debug("Reading table stats")
+        pa_logger.debug("Expecting %d flows" % (self.flow_tbl.count()))
+        if not self.tbl_stats_get():
+            pa_logger.error("Get table stats failed")
+            return False
+        n = 0
+        for ts in self.tbl_stats.stats:
+            n = n + ts.active_count
+        pa_logger.debug("Table stats reported %d active flows" \
+                          % (n) \
+                          )
+        if n != self.flow_tbl.count():
+            pa_logger.error("Incorrect number of active flows reported")
+            result = False
+    
+        # Read flows from switch
+        pa_logger.debug("Retrieving flows from switch")
+        pa_logger.debug("Expecting %d flows" % (self.flow_tbl.count()))
+        if not self.flow_stats_get():
+            pa_logger.error("Get flow stats failed")
+            return False
+        pa_logger.debug("Retrieved %d flows" % (len(self.flow_stats.stats)))
+    
+        # Verify flows returned by switch
+    
+        if len(self.flow_stats.stats) != self.flow_tbl.count():
+            pa_logger.error("Switch reported incorrect number of flows")
+            result = False
+    
+        pa_logger.debug("Verifying received flows")
+        for fc in self.flow_tbl.values():
+            fc.matched = False
+        for fs in self.flow_stats.stats:
+            flow_in = Flow_Cfg()
+            flow_in.from_flow_stat(fs)
+            pa_logger.debug("Received flow:")
+            pa_logger.debug(str(flow_in))
+            fc = self.flow_tbl.find(flow_in)
+            if fc is None:
+                pa_logger.error("does not match any defined flow")
+                result = False
+            elif fc.matched:
+                pa_logger.error("re-matches defined flow:")
+                pa_logger.debug(str(fc))
+                result = False
+            else:
+                pa_logger.debug("matched")
+                if not flow_in == fc:
+                    pa_logger.error("Non-key portions of flow do not match")
+                    result = False
+                fc.matched = True
+        for fc in self.flow_tbl.values():
+            if not fc.matched:
+                pa_logger.error("Defined flow:")
+                pa_logger.error(str(fc))
+                pa_logger.error("was not returned by switch")
+                result = False
+    
+        return result
 
 
-    # Add flows to capacity, make sure they can be read back, and delete them
+class Flow_Add_5(basic.SimpleProtocol):
+    """
+    Test FLOW_ADD_5 from draft top-half test plan
+    
+    INPUTS
+    num_flows - Number of flows to generate
+    """
 
-    def test1(self,
-              overlapf,                 # True <=> When sending flow adds to
-                                        # switch, include the "check for
-                                        # overlap" flag, and verify that an
-                                        # error message is received
-                                        # if an overlapping flow is defined
-              strictf                   # True <=> When deleting flows, delete
-                                        # them strictly
-              ):
-        """
-        """
+    def runTest(self):
+        pa_logger.debug("Flow_Add_5 TEST BEGIN")
 
+        num_flows = test_param_get(pa_config, "num_flows", 100)
+        
         # Clear all flows from switch
-        self.logger.debug("Deleting all flows from switch")
+
+        pa_logger.debug("Deleting all flows from switch")
         rc = delete_all_flows(self.controller, pa_logger)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        # Get valid port numbers
-        # Get number of tables supported
-        # Get actions supported by switch
+        # Get switch capabilites
 
-        self.logger.debug("Retrieving features from switch")
-        request = message.features_request()
-        (sw_features, pkt) = self.controller.transact(request, timeout=2)
-        self.assertTrue(sw_features is not None, "No reply to features_request")
-        self.logger.debug("Switch features -")
-        self.logger.debug("Number of tables: " + str(sw_features.n_tables))
-        self.logger.debug("Supported actions: " + hex(sw_features.actions))
-        self.logger.debug("Ports: "
-                          + str(map(lambda x: x.port_no, sw_features.ports))
-                          )
+        pa_logger.debug("Getting switch capabilities")        
+        sw = Switch()
+        sw.controller = self.controller
+        self.assertTrue(sw.features_get(), "Get switch features failed")
+        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
 
-        # For each table, get wildcards supported maximum number of flows
+        if num_flows == 0:
+            # Number of flows requested was 0
+            # => Generate max number of flows
 
-        self.logger.debug("Retrieving table stats from switch")
-        request = message.table_stats_request()
-        (tbl_stats, pkt) = self.controller.transact(request, timeout=2)
-        self.assertTrue(tbl_stats is not None,
-                        "No reply to table_stats_request"
-                        )
-        active_count = 0
-        max_entries  = 0
-        tbl_idx = 0
-        while tbl_idx < sw_features.n_tables:
-            self.logger.debug("Table " + str(tbl_idx) + " - ")
-            self.logger.debug("Supported wildcards: "
-                              + hex(tbl_stats.stats[tbl_idx].wildcards)
-                              )
-            self.logger.debug("Max entries: "
-                              + str(tbl_stats.stats[tbl_idx].max_entries)
-                              )
-            self.logger.debug("Active count: "
-                              + str(tbl_stats.stats[tbl_idx].active_count)
-                              )
-            max_entries  = max_entries + tbl_stats.stats[tbl_idx].max_entries
-            active_count = active_count + tbl_stats.stats[tbl_idx].active_count
-            tbl_idx = tbl_idx + 1
+            for ts in sw.tbl_stats.stats:
+                num_flows = num_flows + ts.max_entries
 
-        self.logger.debug("Total active entries = "
-                          + str(active_count)
-                          )
-        self.assertEqual(active_count,
-                         0,
-                         "Delete all flows failed"
-                         )
-
-        # TBD - For testing only, since Open vSWitch reports
-        # ridiculously large capacity; remove
-        sw_features.n_tables = 1
-        tbl_stats.stats[0].max_entries = 10
-        max_entries = tbl_stats.stats[0].max_entries
+        pa_logger.debug("Generating %d flows" % (num_flows))        
 
         # Dream up some flow information, i.e. space to chose from for
         # random flow parameter generation
-        fi = flow_info()
-        n = int(math.log(max_entries))
-        if not overlapf:
-            # Generated space smaller when testing overlaps,
-            # to increase likelihood of some
-            n = 2 * n
-        fi.rand(n)
 
-        # For each table, think up flows to fill it
+        fi = Flow_Info()
+        fi.rand(2 * int(math.log(num_flows)))
 
-        self.logger.debug("Creating flows")
-        num_flows = 0
-        num_overlaps = 0
-        tbl_flows = []
-        tbl_idx = 0
+        # Create a flow table
 
-        while tbl_idx < sw_features.n_tables:
-            flow_idx = 0
-            while flow_idx < tbl_stats.stats[tbl_idx].max_entries:
-                flow_out = flow_cfg()
-                if overlapf and num_flows == 1:
-                    # Make 2nd flow a copy of the first,
-                    # to guarantee at least 1 overlap
-                    flow_out = copy.deepcopy(tbl_flows[0])
-                    flow_out.overlap = True
-                    flow_out.overlaps_with = [0, 0]
-                    num_overlaps = num_overlaps + 1
-                else:
-                    flow_out.rand(fi,
-                                  tbl_stats.stats[tbl_idx].wildcards,
-                                  sw_features.actions,
-                                  map(lambda x: x.port_no, sw_features.ports)
-                                  )
-                    flow_out.overlap  = False
-                    
-                    for f in tbl_flows:
-                        if (not overlapf or not f.overlap) \
-                           and flow_out.overlaps(f, False):
-                            flow_out.overlap = True
-                            flow_out.overlaps_with = [f.tbl_idx, f.flow_idx]
-                            num_overlaps = num_overlaps + 1
+        ft = Flow_Tbl()
+        ft.rand(sw, fi, num_flows)
 
-                flow_out.tbl_idx  = tbl_idx
-                flow_out.flow_idx = flow_idx
+        # Send flow table to switch
 
-                self.logger.debug("tbl_idx=%d, flow_idx=%d, %s" % (tbl_idx, flow_idx, str(flow_out)))
+        pa_logger.debug("Sending flow adds to switch")
+        for fc in ft.values():          # Randomizes order of sending
+            pa_logger.debug("Adding flow:")
+            pa_logger.debug(str(fc));
+            self.assertTrue(sw.flow_add(fc), "Failed to add flow")
 
-                tbl_flows.append(flow_out)
+        # Do barrier, to make sure all flows are in
 
-                num_flows = num_flows + 1
-                flow_idx = flow_idx + 1
-            tbl_idx = tbl_idx + 1
+        self.assertTrue(sw.barrier(), "Barrier failed")
 
-        self.logger.debug("Created " + str(num_flows)
-                          + " flows, with " + str(num_overlaps)
-                          + " overlaps"
-                          )
+        result = True
 
-        # Send all flows to switch
+        # Check for any error messages
 
-        self.logger.debug("Sending flows to switch")
-        for f in tbl_flows:
-            self.flow_add(f, overlapf)
-            f.deleted = False
+        if not sw.errors_verify(0):
+            result = False
 
-        # Send barrier, to make sure all flows are in
-        self.do_barrier()               
+        # Verify flow table
 
-        # Red back all flows from switch, and verify
+        sw.flow_tbl = ft
+        if not sw.flow_tbl_verify():
+            result = False
 
-        self.verify_flows(sw_features,
-                          tbl_flows,
-                          num_flows,
-                          overlapf,
-                          num_overlaps
-                          )
-
-        # Delete a flows from switch
-
-        if strictf:
-            # Strict delete
-            
-            # Delete a few flows, in random order, individually (i.e. strictly)
-            
-            del_flow_idxs = shuffle(range(len(tbl_flows)))
-            # TBD - Limited, for testing only; remove
-            del_flow_idxs = del_flow_idxs[0 : random.randint(3, 3)]
-            for di in del_flow_idxs:
-                f = tbl_flows[di]
-                tbl_idx  = f.tbl_idx
-                flow_idx = f.flow_idx
-                if (overlapf and f.overlap):
-                    self.logger.debug("Flow tbl_idx = " + str(tbl_idx)
-                                      + ", flow_idx = " + str(flow_idx)
-                                      + " was an overlap, skipping delete"
-                                      )
-                else:
-                    self.logger.debug("Deleting flow, tbl_idx = "
-                                      + str(tbl_idx) + ", flow_idx = "
-                                      + str(flow_idx)
-                                      )
-                    self.flow_del(f, True)
-                    f.deleted = True
-                    num_flows = num_flows - 1
-
-            # Send barrier, to make sure all flows are deleted
-            self.do_barrier();
-
-            # Red back all flows from switch, and verify
-
-            self.verify_flows(sw_features,
-                              tbl_flows,
-                              num_flows,
-                              overlapf,
-                              num_overlaps
-                              )
-
-            # Delete all remaining flows, in random order,
-            # individually (i.e. strictly)
-            
-            del_flow_idxs = shuffle(range(len(tbl_flows)))
-            for di in del_flow_idxs:
-                f = tbl_flows[di]
-                if f.deleted:
-                    continue
-                tbl_idx  = f.tbl_idx
-                flow_idx = f.flow_idx
-                if (overlapf and f.overlap):
-                    self.logger.debug("Flow tbl_idx = "
-                                      + str(tbl_idx)
-                                      + ", flow_idx = "
-                                      + str(flow_idx)
-                                      + " was an overlap, skipping delete"
-                                      )
-                else:
-                    self.logger.debug("Deleting flow, tbl_idx = "
-                                      + str(tbl_idx)
-                                      + ", flow_idx = "
-                                      + str(flow_idx)
-                                      )
-                    self.flow_del(f, True)
-                    f.deleted = True
-                    num_flows = num_flows - 1
-
-            # Send barrier, to make sure all flows are deleted
-            self.do_barrier()
-            
-            # Red back all flows from switch (i.e. none), and verify
-            
-            self.verify_flows(sw_features,
-                              tbl_flows,
-                              num_flows,
-                              overlapf,
-                              num_overlaps
-                              )
-
-        else:
-            # Non-strict delete
-
-            # Pick a flow at random that had at least 1 qualifier specified,
-            # wildcard a qualifier that was specified,
-            # and do a non-strict delete
-            # Keep wildcarding specified qualifiers, one by one, and deleteing,
-            # until everything is wildcarded,
-            # and hence all flows should be deleted
-
-            while True:
-                f = tbl_flows[random.randint(0, len(tbl_flows) - 1)]
-                if f.match.wildcards != tbl_stats.stats[f.tbl_idx].wildcards:
-                    self.logger.debug("Choosing flow for basis of non-strict delete")
-                    self.logger.debug("  tbl_idx=%d flow_idx=%d" % (f.tbl_idx, f.flow_idx))
-                    self.logger.debug("  " + str(f))
-                    break
-
-            # For each qualifier, in random order, if it was specified,
-            # wildcard it, do a delete, and check the results
-                
-            wildcard_idxs = shuffle(range(len(all_wildcards_list)))
-            for wi in wildcard_idxs:
-                w = all_wildcards_list[wi]
-                if (f.match.wildcards & w) != 0:
-                    continue
-
-                if w ==  ofp.OFPFW_NW_SRC_MASK:
-                    f.match.wildcards = (f.match.wildcards
-                                         & ~ofp.OFPFW_NW_SRC_MASK
-                                         ) \
-                                        | ofp.OFPFW_NW_SRC_ALL
-                    wn = "OFPFW_NW_SRC"
-                elif w ==  ofp.OFPFW_NW_DST_MASK:
-                    f.match.wildcards = (f.match.wildcards
-                                         & ~ofp.OFPFW_NW_DST_MASK
-                                         ) \
-                                        | ofp.OFPFW_NW_DST_ALL
-                    wn = "OFPFW_NW_DST"
-                else:
-                    f.match.wildcards = f.match.wildcards | w
-                    wn = ofp.ofp_flow_wildcards_map[w]
-
-                self.logger.debug("Adding wildcard %s" % (wn))
-                self.logger.debug(str(f))
-
-                # Mark all flows which would be deleted by this
-                # non-strict delete
-                
-                for ff in tbl_flows:
-                    if not ff.deleted and f.overlaps(ff, True):
-                        self.logger.debug("Deleting flow, tbl_idx = "
-                                          + str(ff.tbl_idx) + ", flow_idx = "
-                                          + str(ff.flow_idx)
-                                          )
-                        ff.deleted = True
-                        num_flows = num_flows - 1
-                        
-                self.flow_del(f, False)
-                
-                # Send barrier, to make sure all flows are deleted
-                self.do_barrier()
-                
-                # Red back all flows from switch, and verify
-                
-                self.verify_flows(sw_features,
-                                  tbl_flows,
-                                  num_flows,
-                                  overlapf,
-                                  num_overlaps
-                                  )
+        self.assertTrue(result, "Flow_Add_5 TEST FAILED")
+        pa_logger.debug("Flow_Add_5 TEST PASSED")
 
 
+class Flow_Add_5_1(basic.SimpleProtocol):
+    """
+    Test FLOW_ADD_5.1 from draft top-half test plan
+
+    INPUTS
+    None
+    """
+    
+    def runTest(self):
+        pa_logger.debug("Flow_Add_5_1 TEST BEGIN")
+
+        num_flows = test_param_get(pa_config, "num_flows", 100)
+        
+        # Clear all flows from switch
+
+        pa_logger.debug("Deleting all flows from switch")
+        rc = delete_all_flows(self.controller, pa_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+
+        # Get switch capabilites
+
+        pa_logger.debug("Getting switch capabilities")        
+        sw = Switch()
+        sw.controller = self.controller
+        self.assertTrue(sw.features_get(), "Get switch features failed")
+        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
+
+        # Dream up some flow information, i.e. space to chose from for
+        # random flow parameter generation
+
+        fi = Flow_Info()
+        fi.rand(10)
+        
+        # Dream up a flow config that will be canonicalized by the switch
+
+        while True:
+            fc = Flow_Cfg()
+            fc.rand(fi, \
+                    sw.tbl_stats.stats[0].wildcards, \
+                    sw.sw_features.actions, \
+                    sw.valid_ports \
+                    )
+            fcc = fc.canonical()
+            if fcc != fc:
+                break
+
+        ft = Flow_Tbl()
+        ft.insert(fcc)
+
+        # Send it to the switch
+
+        pa_logger.debug("Sending flow add to switch:")
+        pa_logger.debug(str(fc))
+        pa_logger.debug("should be canonicalized as:")
+        pa_logger.debug(str(fcc))
+        fc.send_rem = False
+        self.assertTrue(sw.flow_add(fc), "Failed to add flow")
+
+        # Do barrier, to make sure all flows are in
+
+        self.assertTrue(sw.barrier(), "Barrier failed")
+
+        result = True
+
+        # Check for any error messages
+
+        if not sw.errors_verify(0):
+            result = False
+
+        # Verify flow table
+
+        sw.flow_tbl = ft
+        if not sw.flow_tbl_verify():
+            result = False
+
+        self.assertTrue(result, "Flow_Add_5_1 TEST FAILED")
+        pa_logger.debug("Flow_Add_5_1 TEST PASSED")
+
+
+# Disable this test by default, since the flow capacity reported by OVS is bogus.
+test_prio["Flow_Add_6"] = -1
+
+class Flow_Add_6(basic.SimpleProtocol):
+    """
+    Test FLOW_ADD_6 from draft top-half test plan
+    
+    INPUTS
+    num_flows - Number of flows to generate
+    """
 
     def runTest(self):
-        """
-        Run all tests
-        """
+        pa_logger.debug("Flow_Add_6 TEST BEGIN")
 
-        self.test1(False, True)         # Test with no overlaps, strict delete
-        self.test1(True,  True)         # Test with overlaps, strict delete
-#        self.test1(False, False)        # Test with no overlaps, non-strict delete
-#        self.test1(True,  False)        # Test with overlaps, non-strict delete
+        # Clear all flows from switch
 
+        pa_logger.debug("Deleting all flows from switch")
+        rc = delete_all_flows(self.controller, pa_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+
+        # Get switch capabilites
+
+        pa_logger.debug("Getting switch capabilities")        
+        sw = Switch()
+        sw.controller = self.controller
+        self.assertTrue(sw.features_get(), "Get switch features failed")
+        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
+
+        for ts in sw.tbl_stats.stats:
+            num_flows = num_flows + ts.max_entries
+
+        pa_logger.debug("Switch capacity is %d flows" % (num_flows))        
+        pa_logger.debug("Generating %d flows" % (num_flows))        
+
+        # Dream up some flow information, i.e. space to chose from for
+        # random flow parameter generation
+
+        fi = Flow_Info()
+        fi.rand(2 * int(math.log(num_flows)))
+
+        # Create a flow table, to switch's capacity
+
+        ft = Flow_Tbl()
+        ft.rand(sw, fi, num_flows)
+
+        # Send flow table to switch
+
+        pa_logger.debug("Sending flow adds to switch")
+        for fc in ft.values():          # Randomizes order of sending
+            pa_logger.debug("Adding flow:")
+            pa_logger.debug(str(fc));
+            self.assertTrue(sw.flow_add(fc), "Failed to add flow")
+
+        # Do barrier, to make sure all flows are in
+
+        self.assertTrue(sw.barrier(), "Barrier failed")
+
+        result = True
+
+        # Check for any error messages
+
+        if not sw.errors_verify(0):
+            result = False
+
+        # Dream up one more flow
+
+        pa_logger.debug("Creating one more flow")
+        while True:
+            fc = Flow_Cfg()
+            fc.rand(fi, \
+                    sw.tbl_stats.stats[tbl].wildcards, \
+                    sw.sw_features.actions, \
+                    sw.valid_ports \
+                    )
+            fc = fc.canonical()
+            if ft.find(fc):
+                continue
+
+        # Send one-more flow
+
+        fc.send_rem = False
+        pa_logger.debug("Sending flow add switch")
+        pa_logger.debug(str(fc));
+        self.assertTrue(sw.flow_add(fc), "Failed to add flow")
+
+        # Do barrier, to make sure all flows are in
+
+        self.assertTrue(sw.barrier(), "Barrier failed")
+
+        # Check for expected error message
+
+        if not sw.errors_verify(1, \
+                                ofp.OFPET_FLOW_MOD_FAILED, \
+                                ofp.OFPFMFC_ALL_TABLES_FULL \
+                                ):
+            result = False
+
+        # Verify flow table
+
+        sw.flow_tbl = ft
+        if not sw.flow_tbl_verify():
+            result = False
+
+        self.assertTrue(result, "Flow_add_6 TEST FAILED")
+        pa_logger.debug("Flow_add_6 TEST PASSED")
+
+
+class Flow_Add_7(basic.SimpleProtocol):
+    """
+    Test FLOW_ADD_7 from draft top-half test plan
+    
+    INPUTS
+    None
+    """
+
+    def runTest(self):
+        pa_logger.debug("Flow_Add_7 TEST BEGIN")
+
+        # Clear all flows from switch
+
+        pa_logger.debug("Deleting all flows from switch")
+        rc = delete_all_flows(self.controller, pa_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+
+        # Get switch capabilites
+
+        pa_logger.debug("Getting switch capabilities")        
+        sw = Switch()
+        sw.controller = self.controller
+        self.assertTrue(sw.features_get(), "Get switch features failed")
+        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
+
+        # Dream up some flow information, i.e. space to chose from for
+        # random flow parameter generation
+
+        fi = Flow_Info()
+        fi.rand(10)
+        
+        # Dream up a flow config
+
+        fc = Flow_Cfg()
+        fc.rand(fi, \
+                sw.tbl_stats.stats[0].wildcards, \
+                sw.sw_features.actions, \
+                sw.valid_ports \
+                )
+        fc = fc.canonical()
+
+        # Send it to the switch
+
+        pa_logger.debug("Sending flow add to switch:")
+        pa_logger.debug(str(fc))
+        ft = Flow_Tbl()
+        fc.send_rem = False
+        self.assertTrue(sw.flow_add(fc), "Failed to add flow")
+        ft.insert(fc)
+
+        # Dream up some different actions, with the same flow key
+
+        fc2 = copy.deepcopy(fc)
+        while True:
+            fc2.rand_mod(fi, \
+                         sw.sw_features.actions, \
+                         sw.valid_ports \
+                         )
+            if fc2 != fc:
+                break
+
+        # Send that to the switch
+        
+        pa_logger.debug("Sending flow add to switch:")
+        pa_logger.debug(str(fc2))
+        fc2.send_rem = False
+        self.assertTrue(sw.flow_add(fc2), "Failed to add flow")
+        ft.insert(fc2)
+
+        # Do barrier, to make sure all flows are in
+
+        self.assertTrue(sw.barrier(), "Barrier failed")
+
+        result = True
+
+        # Check for any error messages
+
+        if not sw.errors_verify(0):
+            result = False
+
+        # Verify flow table
+
+        sw.flow_tbl = ft
+        if not sw.flow_tbl_verify():
+            result = False
+
+        self.assertTrue(result, "Flow_Add_7 TEST FAILED")
+        pa_logger.debug("Flow_Add_7 TEST PASSED")
+
+
+class Flow_Add_8(basic.SimpleProtocol):
+    """
+    Test FLOW_ADD_8 from draft top-half test plan
+    
+    INPUTS
+    None
+    """
+
+    def runTest(self):
+        pa_logger.debug("Flow_Add_8 TEST BEGIN")
+
+        # Clear all flows from switch
+
+        pa_logger.debug("Deleting all flows from switch")
+        rc = delete_all_flows(self.controller, pa_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+
+        # Get switch capabilites
+
+        pa_logger.debug("Getting switch capabilities")        
+        sw = Switch()
+        sw.controller = self.controller
+        self.assertTrue(sw.features_get(), "Get switch features failed")
+        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
+
+        # Dream up some flow information, i.e. space to chose from for
+        # random flow parameter generation
+
+        fi = Flow_Info()
+        fi.rand(10)
+        
+        # Dream up a flow config, with at least 1 qualifier specified
+
+        fc = Flow_Cfg()
+        while True:
+            fc.rand(fi, \
+                    sw.tbl_stats.stats[0].wildcards, \
+                    sw.sw_features.actions, \
+                    sw.valid_ports \
+                    )
+            fc = fc.canonical()
+            if fc.match.wildcards != ofp.OFPFW_ALL:
+                break
+
+        # Send it to the switch
+
+        pa_logger.debug("Sending flow add to switch:")
+        pa_logger.debug(str(fc))
+        ft = Flow_Tbl()
+        fc.send_rem = False
+        self.assertTrue(sw.flow_add(fc), "Failed to add flow")
+        ft.insert(fc)
+
+        # Wildcard out one qualifier that was specified, to create an
+        # overlapping flow
+
+        fc2 = copy.deepcopy(fc)
+        for wi in shuffle(range(len(all_wildcards_list))):
+            w = all_wildcards_list[wi]
+            if (fc2.match.wildcards & w) == 0:
+                break
+        if w == ofp.OFPFW_NW_SRC_MASK:
+            w  = ofp.OFPFW_NW_SRC_ALL
+            wn = "OFPFW_NW_SRC"
+        elif w == ofp.OFPFW_NW_DST_MASK:
+            w  = ofp.OFPFW_NW_DST_ALL
+            wn = "OFPFW_NW_DST"
+        else:
+            wn = all_wildcard_names[w]
+        pa_logger.debug("Wildcarding out %s" % (wn))
+        fc2.match.wildcards = fc2.match.wildcards | w
+
+        # Send that to the switch, with overlap checking
+        
+        pa_logger.debug("Sending flow add to switch:")
+        pa_logger.debug(str(fc2))
+        fc2.send_rem = False
+        self.assertTrue(sw.flow_add(fc2, True), "Failed to add flow")
+
+        # Do barrier, to make sure all flows are in
+        self.assertTrue(sw.barrier(), "Barrier failed")
+
+        result = True
+
+        # Check for expected error message
+
+        if not sw.errors_verify(1, \
+                                ofp.OFPET_FLOW_MOD_FAILED, \
+                                ofp.OFPFMFC_OVERLAP \
+                                ):
+            result = False
+
+        # Verify flow table
+
+        sw.flow_tbl = ft
+        if not sw.flow_tbl_verify():
+            result = False
+
+        self.assertTrue(result, "Flow_Add_8 TEST FAILED")
+        pa_logger.debug("Flow_Add_8 TEST PASSED")
+
+
+class Flow_Mod_1(basic.SimpleProtocol):
+    """
+    Test FLOW_MOD_1 from draft top-half test plan
+    
+    INPUTS
+    None
+    """
+
+    def runTest(self):
+        pa_logger.debug("Flow_Mod_1 TEST BEGIN")
+
+        # Clear all flows from switch
+
+        pa_logger.debug("Deleting all flows from switch")
+        rc = delete_all_flows(self.controller, pa_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+
+        # Get switch capabilites
+
+        pa_logger.debug("Getting switch capabilities")        
+        sw = Switch()
+        sw.controller = self.controller
+        self.assertTrue(sw.features_get(), "Get switch features failed")
+        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
+
+        # Dream up some flow information, i.e. space to chose from for
+        # random flow parameter generation
+
+        fi = Flow_Info()
+        fi.rand(10)
+        
+        # Dream up a flow config
+
+        fc = Flow_Cfg()
+        fc.rand(fi, \
+                sw.tbl_stats.stats[0].wildcards, \
+                sw.sw_features.actions, \
+                sw.valid_ports \
+                )
+        fc = fc.canonical()
+
+        # Send it to the switch
+
+        pa_logger.debug("Sending flow add to switch:")
+        pa_logger.debug(str(fc))
+        ft = Flow_Tbl()
+        fc.send_rem = False
+        self.assertTrue(sw.flow_add(fc), "Failed to add flow")
+        ft.insert(fc)
+
+        # Dream up some different actions, with the same flow key
+
+        fc2 = copy.deepcopy(fc)
+        while True:
+            fc2.rand_mod(fi, \
+                         sw.sw_features.actions, \
+                         sw.valid_ports \
+                         )
+            if fc2 != fc:
+                break
+
+        # Send that to the switch
+        
+        pa_logger.debug("Sending strict flow mod to switch:")
+        pa_logger.debug(str(fc2))
+        fc2.send_rem = False
+        self.assertTrue(sw.flow_mod(fc2, True), "Failed to modify flow")
+        ft.insert(fc2)
+
+        # Do barrier, to make sure all flows are in
+
+        self.assertTrue(sw.barrier(), "Barrier failed")
+
+        result = True
+
+        # Check for any error messages
+
+        if not sw.errors_verify(0):
+            result = False
+
+        # Verify flow table
+
+        sw.flow_tbl = ft
+        if not sw.flow_tbl_verify():
+            result = False
+
+        self.assertTrue(result, "Flow_Mod_1 TEST FAILED")
+        pa_logger.debug("Flow_Mod_1 TEST PASSED")
+
+        
+class Flow_Mod_2(basic.SimpleProtocol):
+    """
+    Test FLOW_MOD_2 from draft top-half test plan
+    
+    INPUTS
+    None
+    """
+
+    def runTest(self):
+        pa_logger.debug("Flow_Mod_2 TEST BEGIN")
+
+        num_flows = test_param_get(pa_config, "num_flows", 100)
+
+        # Clear all flows from switch
+
+        pa_logger.debug("Deleting all flows from switch")
+        rc = delete_all_flows(self.controller, pa_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+
+        # Get switch capabilites
+
+        pa_logger.debug("Getting switch capabilities")        
+        sw = Switch()
+        sw.controller = self.controller
+        self.assertTrue(sw.features_get(), "Get switch features failed")
+        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
+
+        # Dream up some flow information, i.e. space to chose from for
+        # random flow parameter generation
+
+        fi = Flow_Info()
+        fi.rand(int(math.log(num_flows)) / 2)  # Shrunk, to increase chance of meta-matches
+        
+        # Dream up some flows
+
+        ft = Flow_Tbl()
+        ft.rand(sw, fi, num_flows)
+
+        # Send flow table to switch
+
+        pa_logger.debug("Sending flow adds to switch")
+        for fc in ft.values():          # Randomizes order of sending
+            pa_logger.debug("Adding flow:")
+            pa_logger.debug(str(fc));
+            self.assertTrue(sw.flow_add(fc), "Failed to add flow")
+
+        # Do barrier, to make sure all flows are in
+
+        self.assertTrue(sw.barrier(), "Barrier failed")
+
+        result = True
+
+        # Check for any error messages
+
+        if not sw.errors_verify(0):
+            result = False
+
+        # Verify flow table
+
+        sw.flow_tbl = ft
+        if not sw.flow_tbl_verify():
+            result = False
+
+        # Pick a random flow as a basis
+        
+        mfc = copy.deepcopy(ft.values()[0])
+        mfc.rand_mod(fi, sw.sw_features.actions, sw.valid_ports)
+
+        # Repeatedly wildcard qualifiers
+
+        for wi in shuffle(range(len(all_wildcards_list))):
+            w = all_wildcards_list[wi]
+            if w == ofp.OFPFW_NW_SRC_MASK or w == ofp.OFPFW_NW_DST_MASK:
+                n = wildcard_get(mfc.match.wildcards, w)
+                if n < 32:
+                    mfc.match.wildcards = wildcard_set(mfc.match.wildcards, w, random.randint(n + 1, 32))
+                else:
+                    continue
+            else:
+                if wildcard_get(mfc.match.wildcards, w) == 0:
+                    mfc.match.wildcards = wildcard_set(mfc.match.wildcards, w, 1)
+                else:
+                    continue
+            mfc = mfc.canonical()
+
+            # Count the number of flows that would be modified
+
+            n = 0
+            for fc in ft.values():
+                if mfc.overlaps(fc, True) and not mfc.non_key_equal(fc):
+                    n = n + 1
+
+            # If more than 1, we found our loose delete flow spec
+            if n > 1:
+                break
+                    
+        pa_logger.debug("Modifying %d flows" % (n))
+        pa_logger.debug("Sending flow mod to switch:")
+        pa_logger.debug(str(mfc))
+        self.assertTrue(sw.flow_mod(mfc, False), "Failed to modify flow")
+
+        # Do barrier, to make sure all flows are in
+        self.assertTrue(sw.barrier(), "Barrier failed")
+
+        # Check for error message
+
+        if not sw.errors_verify(0):
+            result = False
+
+        # Apply flow mod to local flow table
+
+        for fc in ft.values():
+            if mfc.overlaps(fc, True):
+                fc.idle_timeout = mfc.idle_timeout
+                fc.hard_timeout = mfc.hard_timeout
+                fc.actions      = mfc.actions
+
+        # Verify flow table
+
+        sw.flow_tbl = ft
+        if not sw.flow_tbl_verify():
+            result = False
+
+        self.assertTrue(result, "Flow_Mod_2 TEST FAILED")
+        pa_logger.debug("Flow_Mod_2 TEST PASSED")
+
+
+class Flow_Mod_3(basic.SimpleProtocol):
+    """
+    Test FLOW_MOD_3 from draft top-half test plan
+    
+    INPUTS
+    None
+    """
+
+    def runTest(self):
+        pa_logger.debug("Flow_Mod_3 TEST BEGIN")
+
+        # Clear all flows from switch
+
+        pa_logger.debug("Deleting all flows from switch")
+        rc = delete_all_flows(self.controller, pa_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+
+        # Get switch capabilites
+
+        pa_logger.debug("Getting switch capabilities")        
+        sw = Switch()
+        sw.controller = self.controller
+        self.assertTrue(sw.features_get(), "Get switch features failed")
+        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
+
+        # Dream up some flow information, i.e. space to chose from for
+        # random flow parameter generation
+
+        fi = Flow_Info()
+        fi.rand(10)
+        
+        # Dream up a flow config
+
+        fc = Flow_Cfg()
+        fc.rand(fi, \
+                sw.tbl_stats.stats[0].wildcards, \
+                sw.sw_features.actions, \
+                sw.valid_ports \
+                )
+        fc = fc.canonical()
+
+        # Send it to the switch
+
+        pa_logger.debug("Sending flow mod to switch:")
+        pa_logger.debug(str(fc))
+        ft = Flow_Tbl()
+        fc.send_rem = False
+        self.assertTrue(sw.flow_mod(fc, True), "Failed to modify flows")
+        ft.insert(fc)
+
+        # Do barrier, to make sure all flows are in
+
+        self.assertTrue(sw.barrier(), "Barrier failed")
+
+        result = True
+
+        # Check for any error messages
+
+        if not sw.errors_verify(0):
+            result = False
+
+        # Verify flow table
+
+        sw.flow_tbl = ft
+        if not sw.flow_tbl_verify():
+            result = False
+
+        self.assertTrue(result, "Flow_Mod_3 TEST FAILED")
+        pa_logger.debug("Flow_Mod_3 TEST PASSED")
+
+
+class Flow_Del_1(basic.SimpleProtocol):
+    """
+    Test FLOW_DEL_1 from draft top-half test plan
+    
+    INPUTS
+    None
+    """
+
+    def runTest(self):
+        pa_logger.debug("Flow_Del_1 TEST BEGIN")
+
+        # Clear all flows from switch
+
+        pa_logger.debug("Deleting all flows from switch")
+        rc = delete_all_flows(self.controller, pa_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+
+        # Get switch capabilites
+
+        pa_logger.debug("Getting switch capabilities")        
+        sw = Switch()
+        sw.controller = self.controller
+        self.assertTrue(sw.features_get(), "Get switch features failed")
+        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
+
+        # Dream up some flow information, i.e. space to chose from for
+        # random flow parameter generation
+
+        fi = Flow_Info()
+        fi.rand(10)
+        
+        # Dream up a flow config
+
+        fc = Flow_Cfg()
+        fc.rand(fi, \
+                sw.tbl_stats.stats[0].wildcards, \
+                sw.sw_features.actions, \
+                sw.valid_ports \
+                )
+        fc = fc.canonical()
+
+        # Send it to the switch
+
+        pa_logger.debug("Sending flow add to switch:")
+        pa_logger.debug(str(fc))
+        ft = Flow_Tbl()
+        fc.send_rem = False
+        self.assertTrue(sw.flow_add(fc), "Failed to add flow")
+        ft.insert(fc)
+
+        # Dream up some different actions, with the same flow key
+
+        fc2 = copy.deepcopy(fc)
+        while True:
+            fc2.rand_mod(fi, \
+                         sw.sw_features.actions, \
+                         sw.valid_ports \
+                         )
+            if fc2 != fc:
+                break
+
+        # Delete strictly
+        
+        pa_logger.debug("Sending strict flow del to switch:")
+        pa_logger.debug(str(fc2))
+        self.assertTrue(sw.flow_del(fc2, True), "Failed to delete flow")
+        ft.delete(fc)
+
+        # Do barrier, to make sure all flows are in
+
+        self.assertTrue(sw.barrier(), "Barrier failed")
+
+        result = True
+
+        # Check for any error messages
+
+        if not sw.errors_verify(0):
+            result = False
+
+        # Verify flow table
+
+        sw.flow_tbl = ft
+        if not sw.flow_tbl_verify():
+            result = False
+
+        self.assertTrue(result, "Flow_Del_1 TEST FAILED")
+        pa_logger.debug("Flow_Del_1 TEST PASSED")
+
+
+class Flow_Del_2(basic.SimpleProtocol):
+    """
+    Test FLOW_DEL_2 from draft top-half test plan
+    
+    INPUTS
+    None
+    """
+
+    def runTest(self):
+        pa_logger.debug("Flow_Del_2 TEST BEGIN")
+
+        num_flows = test_param_get(pa_config, "num_flows", 100)
+
+        # Clear all flows from switch
+
+        pa_logger.debug("Deleting all flows from switch")
+        rc = delete_all_flows(self.controller, pa_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+
+        # Get switch capabilites
+
+        pa_logger.debug("Getting switch capabilities")        
+        sw = Switch()
+        sw.controller = self.controller
+        self.assertTrue(sw.features_get(), "Get switch features failed")
+        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
+
+        # Dream up some flow information, i.e. space to chose from for
+        # random flow parameter generation
+
+        fi = Flow_Info()
+        fi.rand(int(math.log(num_flows)) / 2)  # Shrunk, to increase chance of meta-matches
+        
+        # Dream up some flows
+
+        ft = Flow_Tbl()
+        ft.rand(sw, fi, num_flows)
+
+        # Send flow table to switch
+
+        pa_logger.debug("Sending flow adds to switch")
+        for fc in ft.values():          # Randomizes order of sending
+            pa_logger.debug("Adding flow:")
+            pa_logger.debug(str(fc));
+            self.assertTrue(sw.flow_add(fc), "Failed to add flow")
+
+        # Do barrier, to make sure all flows are in
+
+        self.assertTrue(sw.barrier(), "Barrier failed")
+
+        result = True
+
+        # Check for any error messages
+
+        if not sw.errors_verify(0):
+            result = False
+
+        # Verify flow table
+
+        sw.flow_tbl = ft
+        if not sw.flow_tbl_verify():
+            result = False
+
+        # Pick a random flow as a basis
+        
+        dfc = copy.deepcopy(ft.values()[0])
+        dfc.rand_mod(fi, sw.sw_features.actions, sw.valid_ports)
+
+        # Repeatedly wildcard qualifiers
+
+        for wi in shuffle(range(len(all_wildcards_list))):
+            w = all_wildcards_list[wi]
+            if w == ofp.OFPFW_NW_SRC_MASK or w == ofp.OFPFW_NW_DST_MASK:
+                n = wildcard_get(dfc.match.wildcards, w)
+                if n < 32:
+                    dfc.match.wildcards = wildcard_set(dfc.match.wildcards, w, random.randint(n + 1, 32))
+                else:
+                    continue
+            else:
+                if wildcard_get(dfc.match.wildcards, w) == 0:
+                    dfc.match.wildcards = wildcard_set(dfc.match.wildcards, w, 1)
+                else:
+                    continue
+            dfc = dfc.canonical()
+
+            # Count the number of flows that would be deleted
+
+            n = 0
+            for fc in ft.values():
+                if dfc.overlaps(fc, True):
+                    n = n + 1
+
+            # If more than 1, we found our loose delete flow spec
+            if n > 1:
+                break
+                    
+        pa_logger.debug("Deleting %d flows" % (n))
+        pa_logger.debug("Sending flow del to switch:")
+        pa_logger.debug(str(dfc))
+        self.assertTrue(sw.flow_del(dfc, False), "Failed to delete flows")
+
+        # Do barrier, to make sure all flows are in
+        self.assertTrue(sw.barrier(), "Barrier failed")
+
+        # Check for error message
+
+        if not sw.errors_verify(0):
+            result = False
+
+        # Apply flow mod to local flow table
+
+        for fc in ft.values():
+            if dfc.overlaps(fc, True):
+                ft.delete(fc)
+
+        # Verify flow table
+
+        sw.flow_tbl = ft
+        if not sw.flow_tbl_verify():
+            result = False
+
+        self.assertTrue(result, "Flow_Del_2 TEST FAILED")
+        pa_logger.debug("Flow_Del_2 TEST PASSED")
+
+
+# Disable this test by default, there seems to be an issue with error message reporting
+test_prio["Flow_Del_4"] = -1
+
+class Flow_Del_4(basic.SimpleProtocol):
+    """
+    Test FLOW_DEL_4 from draft top-half test plan
+    
+    INPUTS
+    None
+    """
+
+    def runTest(self):
+        pa_logger.debug("Flow_Del_4 TEST BEGIN")
+
+        # Clear all flows from switch
+
+        pa_logger.debug("Deleting all flows from switch")
+        rc = delete_all_flows(self.controller, pa_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+
+        # Get switch capabilites
+
+        pa_logger.debug("Getting switch capabilities")        
+        sw = Switch()
+        sw.controller = self.controller
+        self.assertTrue(sw.features_get(), "Get switch features failed")
+        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
+
+        # Dream up some flow information, i.e. space to chose from for
+        # random flow parameter generation
+
+        fi = Flow_Info()
+        fi.rand(10)
+        
+        # Dream up a flow config
+
+        fc = Flow_Cfg()
+        fc.rand(fi, \
+                sw.tbl_stats.stats[0].wildcards, \
+                sw.sw_features.actions, \
+                sw.valid_ports \
+                )
+        fc = fc.canonical()
+
+        # Send it to the switch. with "notify on removed"
+
+        pa_logger.debug("Sending flow add to switch:")
+        pa_logger.debug(str(fc))
+        ft = Flow_Tbl()
+        fc.send_rem = True
+        self.assertTrue(sw.flow_add(fc), "Failed to add flow")
+        ft.insert(fc)
+
+        # Dream up some different actions, with the same flow key
+
+        fc2 = copy.deepcopy(fc)
+        while True:
+            fc2.rand_mod(fi, \
+                         sw.sw_features.actions, \
+                         sw.valid_ports \
+                         )
+            if fc2 != fc:
+                break
+
+        # Delete strictly
+        
+        pa_logger.debug("Sending strict flow del to switch:")
+        pa_logger.debug(str(fc2))
+        self.assertTrue(sw.flow_del(fc2, True), "Failed to delete flow")
+        ft.delete(fc)
+
+        # Do barrier, to make sure all flows are in
+
+        self.assertTrue(sw.barrier(), "Barrier failed")
+
+        result = True
+
+        # Check for expected "removed" message
+
+        if not sw.errors_verify(1, \
+                                ofp.OFPT_FLOW_REMOVED, \
+                                ofp.OFPRR_DELETE \
+                                ):
+            result = False
+
+        # Verify flow table
+
+        sw.flow_tbl = ft
+        if not sw.flow_tbl_verify():
+            result = False
+
+        self.assertTrue(result, "Flow_Del_4 TEST FAILED")
+        pa_logger.debug("Flow_Del_4 TEST PASSED")
+        
