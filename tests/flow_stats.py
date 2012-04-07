@@ -30,15 +30,17 @@ fs_config = None
 
 # TODO: ovs has problems with VLAN id?
 WILDCARD_VALUES = [ofp.OFPFW_IN_PORT,
-                   # ofp.OFPFW_DL_VLAN,
+                   # (ofp.OFPFW_DL_VLAN | ofp.OFPFW_DL_VLAN_PCP),
                    ofp.OFPFW_DL_SRC,
                    ofp.OFPFW_DL_DST,
-                   ofp.OFPFW_DL_TYPE,
-                   ofp.OFPFW_NW_PROTO,
+                   (ofp.OFPFW_DL_TYPE | ofp.OFPFW_NW_SRC_ALL |
+                    ofp.OFPFW_NW_DST_ALL | ofp.OFPFW_NW_TOS | ofp.OFPFW_NW_PROTO |
+                    ofp.OFPFW_TP_SRC | ofp.OFPFW_TP_DST),
+                   (ofp.OFPFW_NW_PROTO | ofp.OFPFW_TP_SRC | ofp.OFPFW_TP_DST),
                    ofp.OFPFW_TP_SRC,
                    ofp.OFPFW_TP_DST,
-                   0x3F << ofp.OFPFW_NW_SRC_SHIFT,
-                   0x3F << ofp.OFPFW_NW_DST_SHIFT,
+                   ofp.OFPFW_NW_SRC_MASK,
+                   ofp.OFPFW_NW_DST_MASK,
                    ofp.OFPFW_DL_VLAN_PCP,
                    ofp.OFPFW_NW_TOS]
 
