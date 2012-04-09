@@ -21,6 +21,7 @@ import sys
 import logging
 
 import unittest
+import random
 
 import oftest.controller as controller
 import oftest.cstruct as ofp
@@ -252,7 +253,7 @@ class PacketIn(SimpleDataPlane):
                    (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
                    if not response:  # Timeout
                        break
-                   if str(pkt) == response.data[:len(str(pkt))]:  # Got match
+                   if dataplane.match_exp_pkt(pkt, response.data): # Got match
                        break
                    if not basic_config["relax"]:  # Only one attempt to match
                        break
@@ -263,12 +264,9 @@ class PacketIn(SimpleDataPlane):
                self.assertTrue(response is not None, 
                                'Packet in message not received on port ' + 
                                str(of_port))
-               if str(pkt) != response.data[:len(str(pkt))]:
-                   basic_logger.debug("pkt  len " + str(len(str(pkt))) +
-                                      ": " + str(pkt))
-                   basic_logger.debug("resp len " + 
-                                      str(len(str(response.data))) + 
-                                      ": " + str(response.data))
+               if not dataplane.match_exp_pkt(pkt, response.data):
+                   basic_logger.debug("Sent %s" % format_packet(pkt))
+                   basic_logger.debug("Resp %s" % format_packet(response.data))
                    self.assertTrue(False,
                                    'Response packet does not match send packet' +
                                    ' for port ' + str(of_port))
@@ -321,8 +319,55 @@ class PacketOut(SimpleDataPlane):
                basic_logger.info("PacketOut: got pkt from " + str(of_port))
                if of_port is not None:
                    self.assertEqual(of_port, dp_port, "Unexpected receive port")
+               if not dataplane.match_exp_pkt(outpkt, pkt):
+                   basic_logger.debug("Sent %s" % format_packet(outpkt))
+                   basic_logger.debug("Resp %s" % format_packet(
+                           str(pkt)[:len(str(outpkt))]))
                self.assertEqual(str(outpkt), str(pkt)[:len(str(outpkt))],
                                 'Response packet does not match send packet')
+
+class PacketOutMC(SimpleDataPlane):
+    """
+    Test packet out to multiple output ports
+
+    Send packet out message to controller for 1 to N dataplane ports and
+    verify the packet appears on the appropriate ports
+    """
+    def runTest(self):
+        # Construct packet to send to dataplane
+        # Send packet to dataplane
+        # Poll controller with expect message type packet in
+
+        rc = delete_all_flows(self.controller, basic_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+
+        # These will get put into function
+        of_ports = basic_port_map.keys()
+        random.shuffle(of_ports)
+        for num_ports in range(1,len(of_ports)+1):
+            for outpkt, opt in [
+               (simple_tcp_packet(), "simple TCP packet"),
+               (simple_eth_packet(), "simple Ethernet packet"),
+               (simple_eth_packet(pktlen=40), "tiny Ethernet packet")]:
+
+               dp_ports = of_ports[0:num_ports]
+               basic_logger.info("PKT OUT test with " + opt +
+                                 ", ports " + str(dp_ports))
+               msg = message.packet_out()
+               msg.data = str(outpkt)
+               act = action.action_output()
+               for i in range(0,num_ports):
+                  act.port = dp_ports[i]
+                  self.assertTrue(msg.actions.add(act),
+                                  'Could not add action to msg')
+
+               basic_logger.info("PacketOut to: " + str(dp_ports))
+               rv = self.controller.message_send(msg)
+               self.assertTrue(rv == 0, "Error sending out message")
+
+               receive_pkt_check(self.dataplane, outpkt, dp_ports,
+                                 set(of_ports).difference(dp_ports),
+                                 self, basic_logger, basic_config)
 
 class FlowStatsGet(SimpleProtocol):
     """
@@ -363,6 +408,21 @@ class TableStatsGet(SimpleProtocol):
         
         basic_logger.info("Sending table stats request")
         request = message.table_stats_request()
+        response, pkt = self.controller.transact(request, timeout=2)
+        self.assertTrue(response is not None, "Did not get response")
+        basic_logger.debug(response.show())
+
+class DescStatsGet(SimpleProtocol):
+    """
+    Get stats 
+
+    Simply verify stats get transaction
+    """
+    def runTest(self):
+        basic_logger.info("Running DescStatsGet")
+        
+        basic_logger.info("Sending stats request")
+        request = message.desc_stats_request()
         response, pkt = self.controller.transact(request, timeout=2)
         self.assertTrue(response is not None, "Did not get response")
         basic_logger.debug(response.show())

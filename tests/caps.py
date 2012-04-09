@@ -99,7 +99,7 @@ def flow_caps_common(obj, is_exact=True):
     while True:
         request.match.nw_src += 1
         rv = obj.controller.message_send(request)
-#        do_barrier(obj.controller)
+        do_barrier(obj.controller)
         flow_count += 1
         if flow_count % count_check == 0:
             response, pkt = obj.controller.transact(tstats, timeout=2)

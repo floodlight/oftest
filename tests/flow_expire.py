@@ -22,11 +22,11 @@ from time import sleep
 
 #@var port_map Local copy of the configuration map from OF port
 # numbers to OS interfaces
-pa_port_map = None
-#@var pa_logger Local logger object
-pa_logger = None
-#@var pa_config Local copy of global configuration data
-pa_config = None
+fe_port_map = None
+#@var fe_logger Local logger object
+fe_logger = None
+#@var fe_config Local copy of global configuration data
+fe_config = None
 
 def test_set_init(config):
     """
@@ -37,14 +37,14 @@ def test_set_init(config):
 
     basic.test_set_init(config)
 
-    global pa_port_map
-    global pa_logger
-    global pa_config
+    global fe_port_map
+    global fe_logger
+    global fe_config
 
-    pa_logger = logging.getLogger("pkt_act")
-    pa_logger.info("Initializing test set")
-    pa_port_map = config["port_map"]
-    pa_config = config
+    fe_logger = logging.getLogger("flow_expire")
+    fe_logger.info("Initializing test set")
+    fe_port_map = config["port_map"]
+    fe_config = config
 
 class FlowExpire(basic.SimpleDataPlane):
     """
@@ -55,13 +55,16 @@ class FlowExpire(basic.SimpleDataPlane):
     Verify the flow expiration message is received
     """
     def runTest(self):
-        global pa_port_map
+        global fe_port_map
 
-        of_ports = pa_port_map.keys()
+        # TODO: set from command-line parameter
+        test_timeout = 60
+
+        of_ports = fe_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
-        rc = delete_all_flows(self.controller, pa_logger)
+        rc = delete_all_flows(self.controller, fe_logger)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         pkt = simple_tcp_packet()
@@ -71,9 +74,13 @@ class FlowExpire(basic.SimpleDataPlane):
                         "Could not generate flow match from pkt")
         act = action.action_output()
 
-        ingress_port = pa_config["base_of_port"]
-        egress_port  = (pa_config["base_of_port"] + 1) % len(of_ports)
-        pa_logger.info("Ingress " + str(ingress_port) + 
+        of_ports = fe_port_map.keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+
+        ingress_port = of_ports[0]
+        egress_port  = of_ports[1]
+        fe_logger.info("Ingress " + str(ingress_port) + 
                        " to egress " + str(egress_port))
         
         match.in_port = ingress_port
@@ -87,13 +94,14 @@ class FlowExpire(basic.SimpleDataPlane):
         act.port = egress_port
         self.assertTrue(request.actions.add(act), "Could not add action")
         
-        pa_logger.info("Inserting flow")
+        fe_logger.info("Inserting flow")
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Error installing flow mod")
         do_barrier(self.controller)
 
-        (response, raw) = self.controller.poll(ofp.OFPT_FLOW_REMOVED, 2)
-        
+        (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_FLOW_REMOVED,
+                                               timeout=test_timeout)
+
         self.assertTrue(response is not None, 
                         'Did not receive flow removed message ')
 

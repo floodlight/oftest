@@ -49,6 +49,8 @@ def test_set_init(config):
     @param config The configuration dictionary; see oft
     """
 
+    basic.test_set_init(config)
+
     global fs_port_map
     global fs_logger
     global fs_config
@@ -57,6 +59,31 @@ def test_set_init(config):
     fs_logger.info("Initializing test set")
     fs_port_map = config["port_map"]
     fs_config = config
+
+def sendPacket(obj, pkt, ingress_port, egress_port, test_timeout):
+
+    fs_logger.info("Sending packet to dp port " + str(ingress_port) +
+                   ", expecting output on " + str(egress_port))
+    obj.dataplane.send(ingress_port, str(pkt))
+
+    exp_pkt_arg = None
+    exp_port = None
+    if fs_config["relax"]:
+        exp_pkt_arg = pkt
+        exp_port = egress_port
+
+    (rcv_port, rcv_pkt, pkt_time) = obj.dataplane.poll(timeout=1, 
+                                                       port_number=exp_port,
+                                                       exp_pkt=exp_pkt_arg)
+    obj.assertTrue(rcv_pkt is not None,
+                   "Packet not received on port " + str(egress_port))
+    fs_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
+                    str(rcv_port))
+    obj.assertEqual(rcv_port, egress_port,
+                    "Packet received on port " + str(rcv_port) +
+                    ", expected port " + str(egress_port))
+    obj.assertEqual(str(pkt), str(rcv_pkt),
+                    'Response packet does not match send packet')
 
 class SingleFlowStats(basic.SimpleDataPlane):
     """
@@ -151,21 +178,8 @@ class SingleFlowStats(basic.SimpleDataPlane):
         num_sends = random.randint(10,20)
         fs_logger.info("Sending " + str(num_sends) + " test packets")
         for i in range(0,num_sends):
-            fs_logger.info("Sending packet to dp port " + 
-                           str(ingress_port))
-            self.dataplane.send(ingress_port, str(pkt))
-            (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(timeout=
-                                                                test_timeout)
-            self.assertTrue(rcv_pkt is not None, "Did not receive packet")
-            fs_logger.debug("Packet len " + str(len(pkt)) + " in on " + 
-                            str(rcv_port))
-            self.assertEqual(rcv_port, egress_port, "Unexpected receive port")
-            for j in range(0,test_timeout):
-                if str(pkt) == str(rcv_pkt):
-                    break
-                sleep(1)
-            self.assertTrue(j < test_timeout,
-                            'Timeout sending packets for flow stats test')
+            sendPacket(self, pkt, ingress_port, egress_port,
+                       test_timeout)
 
         self.verifyStats(match, ofp.OFPP_NONE, test_timeout, num_sends)
         self.verifyStats(match, egress_port, test_timeout, num_sends)
@@ -209,22 +223,19 @@ class TwoFlowStats(basic.SimpleDataPlane):
 
         return flow_mod_msg
 
-    def sendPacket(self, pkt, ingress_port, egress_port, test_timeout):
-        fs_logger.info("Sending packet to dp port " + 
-                       str(ingress_port))
-        self.dataplane.send(ingress_port, str(pkt))
-        (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(timeout=
-                                                            test_timeout)
-        self.assertTrue(rcv_pkt is not None, "Did not receive packet")
-        fs_logger.debug("Packet len " + str(len(pkt)) + " in on " + 
-                        str(rcv_port))
-        self.assertEqual(rcv_port, egress_port, "Unexpected receive port")
-        for j in range(0,test_timeout):
-            if str(pkt) == str(rcv_pkt):
-                break
-            sleep(1)
-        self.assertTrue(j < test_timeout,
-                        'Timeout sending packets for flow stats test')
+    def sumStatsReplyCounts(self, response):
+        total_packets = 0
+        for obj in response.stats:
+            # TODO: pad1 and pad2 fields may be nonzero, is this a bug?
+            # for now, just clear them so the assert is simpler
+            #obj.match.pad1 = 0
+            #obj.match.pad2 = [0, 0]
+            #self.assertEqual(match, obj.match,
+            #                 "Matches do not match")
+           fs_logger.info("Received " + str(obj.packet_count)
+                          + " packets")
+           total_packets += obj.packet_count
+        return total_packets
 
     def verifyStats(self, match, out_port, test_timeout, packet_count):
         stat_req = message.flow_stats_request()
@@ -235,29 +246,27 @@ class TwoFlowStats(basic.SimpleDataPlane):
         all_packets_received = 0
         for i in range(0,test_timeout):
             fs_logger.info("Sending stats request")
+            # TODO: move REPLY_MORE handling to controller.transact?
             response, pkt = self.controller.transact(stat_req,
                                                      timeout=test_timeout)
             self.assertTrue(response is not None,
                             "No response to stats request")
-            self.assertTrue(len(response.stats) >= 1,
-                            "Did not receive flow stats reply")
-            total_packets = 0
-            for obj in response.stats:
-                # TODO: pad1 and pad2 fields may be nonzero, is this a bug?
-                # for now, just clear them so the assert is simpler
-                #obj.match.pad1 = 0
-                #obj.match.pad2 = [0, 0]
-                #self.assertEqual(match, obj.match,
-                #                 "Matches do not match")
-                fs_logger.info("Received " + str(obj.packet_count) + " packets")
-                total_packets += obj.packet_count
+            total_packets = self.sumStatsReplyCounts(response)
+
+            while response.flags == ofp.OFPSF_REPLY_MORE:
+               response, pkt = self.controller.poll(exp_msg=
+                                                    ofp.OFPT_STATS_REPLY,
+                                                    timeout=test_timeout)
+               total_packets += self.sumStatsReplyCounts(response)
+
             if total_packets == packet_count:
                 all_packets_received = 1
                 break
             sleep(1)
 
         self.assertTrue(all_packets_received,
-                        "Packet count does not match number sent")
+                        "Total stats packet count " + str(total_packets) +
+                        " does not match number sent " + str(packet_count))
 
     def runTest(self):
         global fs_port_map
@@ -294,15 +303,18 @@ class TwoFlowStats(basic.SimpleDataPlane):
         num_pkt2s = random.randint(10,30)
         fs_logger.info("Sending " + str(num_pkt2s) + " pkt2s")
         for i in range(0,num_pkt1s):
-            self.sendPacket(pkt1, ingress_port, egress_port1, test_timeout)
+            sendPacket(self, pkt1, ingress_port, egress_port1, test_timeout)
         for i in range(0,num_pkt2s):
-            self.sendPacket(pkt2, ingress_port, egress_port2, test_timeout)
+            sendPacket(self, pkt2, ingress_port, egress_port2, test_timeout)
             
         match1 = parse.packet_to_flow_match(pkt1)
+        fs_logger.info("Verifying flow1's " + str(num_pkt1s) + " packets")
         self.verifyStats(match1, ofp.OFPP_NONE, test_timeout, num_pkt1s)
         match2 = parse.packet_to_flow_match(pkt2)
+        fs_logger.info("Verifying flow2's " + str(num_pkt2s) + " packets")
         self.verifyStats(match2, ofp.OFPP_NONE, test_timeout, num_pkt2s)
         match1.wildcards |= ofp.OFPFW_DL_SRC
+        fs_logger.info("Verifying combined " + str(num_pkt1s+num_pkt2s) + " packets")
         self.verifyStats(match1, ofp.OFPP_NONE, test_timeout, 
                          num_pkt1s+num_pkt2s)
         # TODO: sweep through the wildcards to verify matching?
@@ -340,23 +352,6 @@ class AggregateStats(basic.SimpleDataPlane):
                        " to egress " + str(egress_port))
 
         return flow_mod_msg
-
-    def sendPacket(self, pkt, ingress_port, egress_port, test_timeout):
-        fs_logger.info("Sending packet to dp port " + 
-                       str(ingress_port))
-        self.dataplane.send(ingress_port, str(pkt))
-        (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(timeout=
-                                                            test_timeout)
-        self.assertTrue(rcv_pkt is not None, "Did not receive packet")
-        fs_logger.debug("Packet len " + str(len(pkt)) + " in on " + 
-                        str(rcv_port))
-        self.assertEqual(rcv_port, egress_port, "Unexpected receive port")
-        for j in range(0,test_timeout):
-            if str(pkt) == str(rcv_pkt):
-                break
-            sleep(1)
-        self.assertTrue(j < test_timeout,
-                        'Timeout sending packets for flow stats test')
 
     def verifyAggFlowStats(self, match, out_port, test_timeout, 
                            flow_count, packet_count):
@@ -424,9 +419,9 @@ class AggregateStats(basic.SimpleDataPlane):
         num_pkt2s = random.randint(10,30)
         fs_logger.info("Sending " + str(num_pkt2s) + " pkt2s")
         for i in range(0,num_pkt1s):
-            self.sendPacket(pkt1, ingress_port, egress_port1, test_timeout)
+            sendPacket(self, pkt1, ingress_port, egress_port1, test_timeout)
         for i in range(0,num_pkt2s):
-            self.sendPacket(pkt2, ingress_port, egress_port2, test_timeout)
+            sendPacket(self, pkt2, ingress_port, egress_port2, test_timeout)
             
         # loop on flow stats request until timeout
         match = parse.packet_to_flow_match(pkt1)
