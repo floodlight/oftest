@@ -90,7 +90,7 @@ def flow_caps_common(obj, is_exact=True):
     caps_logger.info("Inserting initial flow")
     rv = obj.controller.message_send(request)
     obj.assertTrue(rv != -1, "Error installing flow mod")
-    do_barrier(obj.controller)
+    self.assertEqual(do_barrier(obj.controller), 0, "Barrier failed")
     flow_count = 1
 
     caps_logger.info("Table idx: " + str(table_idx))
@@ -99,7 +99,7 @@ def flow_caps_common(obj, is_exact=True):
     while True:
         request.match.nw_src += 1
         rv = obj.controller.message_send(request)
-        do_barrier(obj.controller)
+        self.assertEqual(do_barrier(obj.controller), 0, "Barrier failed")
         flow_count += 1
         if flow_count % count_check == 0:
             response, pkt = obj.controller.transact(tstats, timeout=2)

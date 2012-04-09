@@ -160,7 +160,7 @@ class DirectPacket(basic.SimpleDataPlane):
             pa_logger.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
-            do_barrier(self.controller)
+            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
             pa_logger.info("Sending packet to dp port " + 
                            str(ingress_port))
@@ -243,7 +243,7 @@ class DirectTwoPorts(basic.SimpleDataPlane):
             pa_logger.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
-            do_barrier(self.controller)
+            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
             pa_logger.info("Sending packet to dp port " + 
                            str(ingress_port))
@@ -300,7 +300,7 @@ class DirectMCNonIngress(basic.SimpleDataPlane):
             pa_logger.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
-            do_barrier(self.controller)
+            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
             pa_logger.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
@@ -355,7 +355,7 @@ class DirectMC(basic.SimpleDataPlane):
             pa_logger.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
-            do_barrier(self.controller)
+            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
             pa_logger.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
@@ -402,7 +402,7 @@ class Flood(basic.SimpleDataPlane):
             pa_logger.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
-            do_barrier(self.controller)
+            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
             pa_logger.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
@@ -454,7 +454,7 @@ class FloodPlusIngress(basic.SimpleDataPlane):
             pa_logger.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
-            do_barrier(self.controller)
+            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
             pa_logger.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
@@ -501,7 +501,7 @@ class All(basic.SimpleDataPlane):
             pa_logger.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
-            do_barrier(self.controller)
+            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
             pa_logger.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
@@ -553,7 +553,7 @@ class AllPlusIngress(basic.SimpleDataPlane):
             pa_logger.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
-            do_barrier(self.controller)
+            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
             pa_logger.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
@@ -609,7 +609,7 @@ class FloodMinusPort(basic.SimpleDataPlane):
             pa_logger.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
-            do_barrier(self.controller)
+            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
             pa_logger.info("Sending packet to dp port " + str(ingress_port))
             pa_logger.info("No flood port is " + str(no_flood_port))
@@ -688,7 +688,7 @@ class SingleWildcardMatchPriority(BaseMatchCase):
     def _ClearTable(self):
         rc = delete_all_flows(self.controller, self.logger)
         self.assertEqual(rc, 0, "Failed to delete all flows")
-        do_barrier(self.controller)
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     def runTest(self):
         
@@ -769,7 +769,7 @@ class SingleWildcardMatchPriority(BaseMatchCase):
             # This *must* be set for DELETE
             msg.out_port = ofp.OFPP_NONE
             self.controller.message_send(msg)
-            do_barrier(self.controller)
+            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
         else:
             raise Exception("Not initialized")
 
@@ -1257,7 +1257,7 @@ class FlowToggle(BaseMatchCase):
         for f_idx in range(flow_count):
             rv = self.controller.message_send(flows[0][f_idx])
             self.assertTrue(rv != -1, "Error installing flow %d" % f_idx)
-        do_barrier(self.controller)
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
     
         pa_logger.info("Installed %d flows" % flow_count)
     
@@ -1279,7 +1279,8 @@ class FlowToggle(BaseMatchCase):
                     updates += 1
                     self.assertTrue(rv != -1, "Error modifying flow %d" % 
                                     f_idx)
-                do_barrier(self.controller)
+                self.assertEqual(do_barrier(self.controller), 0,
+                                 "Barrier failed")
 
         end = time.time()
         divisor = end - start or (end - start + 1)

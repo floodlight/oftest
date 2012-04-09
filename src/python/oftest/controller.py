@@ -111,6 +111,7 @@ class Controller(Thread):
         self.port = port
         self.dbg_state = "init"
         self.logger = logging.getLogger("controller")
+        self.barrier_to = 15 # Barrier timeout default value; add to config
 
         # Transaction and message type waiting variables 
         #   xid_cv: Condition variable (semaphore) for packet waiters
@@ -161,7 +162,7 @@ class Controller(Thread):
                 self.parse_errors += 1
                 return
             if hdr.length == 0:
-                self.logger.info("Header length is zero")
+                self.logger.error("Header length is zero; out of sync")
                 self.parse_errors += 1
                 return
 
@@ -287,7 +288,8 @@ class Controller(Thread):
                 return False
 
             if len(pkt) == 0:
-                self.logger.warning("Zero-length switch read")
+                self.logger.warning("Zero-length switch read; closing cxn")
+                return True
 
             self._pkt_handle(pkt)
         else:
@@ -501,7 +503,7 @@ class Controller(Thread):
 
         return (msg, pkt)
 
-    def transact(self, msg, timeout=None, zero_xid=False):
+    def transact(self, msg, timeout=-1, zero_xid=False):
         """
         Run a message transaction with the switch
 
@@ -520,15 +522,19 @@ class Controller(Thread):
         if not zero_xid and msg.header.xid == 0:
             msg.header.xid = gen_xid()
 
+        if timeout == -1:
+            timeout = self.barrier_to
+        self.logger.debug("Running transaction %d" % msg.header.xid)
         self.xid_cv.acquire()
         if self.xid:
             self.xid_cv.release()
             self.logger.error("Can only run one transaction at a time")
-            return None
+            return (None, None)
 
         self.xid = msg.header.xid
         self.xid_response = None
         self.message_send(msg.pack())
+        self.logger.debug("Waiting for transaction %d" % msg.header.xid)
         self.xid_cv.wait(timeout)
         if self.xid_response:
             (resp, pkt) = self.xid_response

@@ -237,7 +237,7 @@ class PacketIn(SimpleDataPlane):
 
         rc = delete_all_flows(self.controller, basic_logger)
         self.assertEqual(rc, 0, "Failed to delete all flows")
-        do_barrier(self.controller)
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         for of_port in basic_port_map.keys():
             for pkt, pt in [

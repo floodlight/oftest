@@ -169,9 +169,16 @@ def simple_eth_packet(pktlen=60,
     return pkt
 
 def do_barrier(ctrl):
+    """
+    Do a barrier command
+    Return 0 on success, -1 on error
+    """
     b = message.barrier_request()
-    ctrl.transact(b)
-
+    (resp, pkt) = ctrl.transact(b, timeout=ctrl.barrier_to)
+    # We'll trust the transaction processing in the controller
+    if not resp:
+        return -1
+    return 0
 
 def port_config_get(controller, port_no, logger):
     """
@@ -475,12 +482,12 @@ def flow_msg_install(parent, request, clear_table_override=None):
         parent.logger.debug("Clear flow table")
         rc = delete_all_flows(parent.controller, parent.logger)
         parent.assertEqual(rc, 0, "Failed to delete all flows")
-        do_barrier(parent.controller)
+        parent.assertEqual(do_barrier(parent.controller), 0, "Barrier failed")
 
     parent.logger.debug("Insert flow")
     rv = parent.controller.message_send(request)
     parent.assertTrue(rv != -1, "Error installing flow mod")
-    do_barrier(parent.controller)
+    parent.assertEqual(do_barrier(parent.controller), 0, "Barrier failed")
 
 def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=0, 
                               dl_vlan=-1, pkt=None, exp_pkt=None,

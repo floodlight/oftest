@@ -171,7 +171,7 @@ class SingleFlowStats(basic.SimpleDataPlane):
         fs_logger.info("Inserting flow")
         rv = self.controller.message_send(flow_mod_msg)
         self.assertTrue(rv != -1, "Error installing flow mod")
-        do_barrier(self.controller)
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         # no packets sent, so zero packet count
         self.verifyStats(match, ofp.OFPP_NONE, test_timeout, 0)
@@ -298,7 +298,7 @@ class TwoFlowStats(basic.SimpleDataPlane):
         fs_logger.info("Inserting flow2")
         rv = self.controller.message_send(flow_mod_msg2)
         self.assertTrue(rv != -1, "Error installing flow mod")
-        do_barrier(self.controller)
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         num_pkt1s = random.randint(10,30)
         fs_logger.info("Sending " + str(num_pkt1s) + " pkt1s")
@@ -414,7 +414,7 @@ class AggregateStats(basic.SimpleDataPlane):
         fs_logger.info("Inserting flow2")
         rv = self.controller.message_send(flow_mod_msg2)
         self.assertTrue(rv != -1, "Error installing flow mod")
-        do_barrier(self.controller)
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         num_pkt1s = random.randint(10,30)
         fs_logger.info("Sending " + str(num_pkt1s) + " pkt1s")
