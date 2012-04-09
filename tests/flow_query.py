@@ -4,6 +4,28 @@ Flow query test case.
 Attempts to fill switch to capacity with randomized flows, and ensure that
 they all are read back correctly.
 """
+
+# COMMON TEST PARAMETERS
+#
+# Name: wildcards
+# Type: number
+# Description:
+# Overrides bitmap of supported wildcards reported by switch
+# Default: none
+#
+# Name: actions
+# Type: number
+# Description:
+# Overrides bitmap of supported actions reported by switch
+# Default: none
+#
+# Name: conservative_ordered_actions
+# Type: boolean (True or False)
+# Description:
+# Compare flow actions lists as unordered
+# Default: True
+
+
 import math
 
 import logging
@@ -498,7 +520,7 @@ class Flow_Cfg:
                 self.actions.add(act)
                 
         p = random.randint(1, 100)
-        if p <= 33:
+        if p <= 33 and ofp.OFPAT_ENQUEUE in supported_actions:
             # One third of the time, include ENQUEUE actions at end of list
             # At most 1 ENQUEUE action
             act = action.action_enqueue()
@@ -507,7 +529,7 @@ class Flow_Cfg:
             act.queue_id = random.randint(0, 7)
             act.max_len = ACTION_MAX_LEN
             self.actions.add(act)
-        elif p <= 66:
+        if p > 33 and p <= 66 and ofp.OFPAT_OUTPUT in supported_actions:
             # One third of the time, include OUTPUT actions at end of list
             port_idxs = shuffle(range(len(valid_ports)))
             # Only 1 output action allowed if IN_PORT wildcarded
@@ -840,11 +862,19 @@ class Flow_Cfg:
     #   all such cases.
     def canonical(self):
         result = copy.deepcopy(self)
+        
+        if wildcard_get(result.match.wildcards, ofp.OFPFW_DL_VLAN) != 0:
+            result.match.wildcards = wildcard_set(result.match.wildcards, \
+                                                  ofp.OFPFW_DL_VLAN_PCP, \
+                                                  1 \
+                                                  )
+
         if wildcard_get(result.match.wildcards, ofp.OFPFW_DL_TYPE) != 0 \
                or result.match.dl_type not in [0x0800, 0x0806]:
             # dl_tyoe is wildcarded, or specified as something other
             # than IP or ARP
-            # => nw_src and nw_dst cannot be specified, must be wildcarded
+            # => nw_src, nw_dst, nw_proto cannot be specified,
+            # must be wildcarded
             result.match.wildcards = wildcard_set(result.match.wildcards, \
                                                   ofp.OFPFW_NW_SRC_MASK, \
                                                   32 \
@@ -853,15 +883,16 @@ class Flow_Cfg:
                                                   ofp.OFPFW_NW_DST_MASK, \
                                                   32 \
                                                   )
-        if wildcard_get(result.match.wildcards, ofp.OFPFW_DL_TYPE) != 0 \
-               or result.match.dl_type != 0x0800:
-            # dl_type is wildcarded, or specified as something other than IP
-            # => nw_proto, nw_tos, tp_src and tp_dst cannot be specified,
-            #    must be wildcarded
             result.match.wildcards = wildcard_set(result.match.wildcards, \
                                                   ofp.OFPFW_NW_PROTO, \
                                                   1 \
                                                   )
+
+        if wildcard_get(result.match.wildcards, ofp.OFPFW_DL_TYPE) != 0 \
+               or result.match.dl_type != 0x0800:
+            # dl_type is wildcarded, or specified as something other than IP
+            # => nw_tos, tp_src and tp_dst cannot be specified,
+            #    must be wildcarded
             result.match.wildcards = wildcard_set(result.match.wildcards, \
                                                   ofp.OFPFW_NW_TOS, \
                                                   1 \
@@ -874,6 +905,19 @@ class Flow_Cfg:
                                                   ofp.OFPFW_TP_DST, \
                                                   1 \
                                                   )
+            result.match.wildcards = wildcard_set(result.match.wildcards, \
+                                                  ofp.OFPFW_NW_SRC_MASK, \
+                                                  32 \
+                                                  )
+            result.match.wildcards = wildcard_set(result.match.wildcards, \
+                                                  ofp.OFPFW_NW_DST_MASK, \
+                                                  32 \
+                                                  )
+            result.match.wildcards = wildcard_set(result.match.wildcards, \
+                                                  ofp.OFPFW_NW_PROTO, \
+                                                  1 \
+                                                  )
+            
         if wildcard_get(result.match.wildcards, ofp.OFPFW_NW_PROTO) != 0 \
                or result.match.nw_proto not in [1, 6, 17]:
             # nw_proto is wildcarded, or specified as something other than ICMP,
@@ -1050,12 +1094,16 @@ def error_handler(self, msg, rawmsg):
     fq_logger.debug("Got an ERROR message, type=%d, code=%d" \
                     % (msg.type, msg.code) \
                     )
+    fq_logger.debug("Message header:")
+    fq_logger.debug(msg.header.show())
     global error_msgs
     error_msgs.append(msg)
     pass
 
 def removed_handler(self, msg, rawmsg):
     fq_logger.debug("Got a REMOVED message")
+    fq_logger.debug("Message header:")
+    fq_logger.debug(msg.header.show())
     global removed_msgs
     removed_msgs.append(msg)
     pass
@@ -1105,13 +1153,23 @@ class Switch:
 #                                  ofp.OFPP_CONTROLLER \
 #                                  ] \
 #                                 )
+        actions_override = test_param_get(fq_config, "actions", -1)
+        if actions_override != -1:
+            self.sw_features.actions = actions_override
+
         return True
 
     def tbl_stats_get(self):
         # Get table stats
         request = message.table_stats_request()
         (self.tbl_stats, pkt) = self.controller.transact(request, timeout=2)
-        return (self.tbl_stats is not None)
+        if self.tbl_stats is None:
+            return False
+        for ts in self.tbl_stats.stats:
+            wildcards_override = test_param_get(fq_config, "wildcards", -1)
+            if wildcards_override != -1:
+                ts.wildcards = wildcards_override
+        return True
 
     def flow_stats_get(self):
         request = message.flow_stats_request()
@@ -1130,7 +1188,7 @@ class Switch:
         n = 0
         while True:
             # TBD - Check for "more" flag
-            (resp, pkt) = self.controller.poll(ofp.OFPT_STATS_REPLY, 1)
+            (resp, pkt) = self.controller.poll(ofp.OFPT_STATS_REPLY, 4)
             if resp is None:
                 break
             if n == 0:
@@ -1149,6 +1207,8 @@ class Switch:
             flow_mod_msg.flags = flow_mod_msg.flags | ofp.OFPFF_CHECK_OVERLAP
         if flow_cfg.send_rem:
             flow_mod_msg.flags = flow_mod_msg.flags | ofp.OFPFF_SEND_FLOW_REM
+        flow_mod_msg.header.xid = random.randrange(1,0xffffffff)
+        fq_logger.debug("Sending flow_mod(add), xid=%d" % (flow_mod_msg.header.xid))
         return (self.controller.message_send(flow_mod_msg) != -1)
 
     def flow_mod(self, flow_cfg, strictf):
@@ -1157,6 +1217,8 @@ class Switch:
                                    else ofp.OFPFC_MODIFY
         flow_mod_msg.buffer_id   = 0xffffffff
         flow_cfg.to_flow_mod_msg(flow_mod_msg)
+        flow_mod_msg.header.xid = random.randrange(1,0xffffffff)
+        fq_logger.debug("Sending flow_mod(mod), xid=%d" % (flow_mod_msg.header.xid))
         return (self.controller.message_send(flow_mod_msg) != -1)
 
     def flow_del(self, flow_cfg, strictf):
@@ -1167,11 +1229,13 @@ class Switch:
         # TBD - "out_port" filtering of deletes needs to be tested
         flow_mod_msg.out_port    = ofp.OFPP_NONE
         flow_cfg.to_flow_mod_msg(flow_mod_msg)
+        flow_mod_msg.header.xid = random.randrange(1,0xffffffff)
+        fq_logger.debug("Sending flow_mod(del), xid=%d" % (flow_mod_msg.header.xid))
         return (self.controller.message_send(flow_mod_msg) != -1)
 
     def barrier(self):
         barrier = message.barrier_request()
-        (resp, pkt) = self.controller.transact(barrier, 5)
+        (resp, pkt) = self.controller.transact(barrier, 20)
         return (resp is not None)
 
     def errors_verify(self, num_exp, type = 0, code = 0):
@@ -1302,6 +1366,35 @@ class Switch:
     
         return result
 
+# FLOW ADD 5
+#
+# OVERVIEW
+# Add flows to switch, read back and verify flow configurations
+#
+# PURPOSE
+# - Test acceptance of flow adds
+# - Test ability of switch to process additions to flow table in random
+#   priority order
+# - Test correctness of flow configuration responses
+#
+# PARAMETERS
+#
+# Name: num_flows
+# Type: number
+# Description:
+# Number of flows to define; 0 => maximum number of flows, as determined
+# from switch capabilities
+# Default: 100
+#
+# PROCESS
+# 1. Delete all flows from switch
+# 2. Generate <num_flows> distinct flow configurations
+# 3. Send <num_flows> flow adds to switch, for flows generated in step 2 above
+# 4. Verify that no OFPT_ERROR responses were generated by switch
+# 5. Retrieve flow stats from switch
+# 6. Compare flow configurations returned by switch
+# 7. Test PASSED iff all flows sent to switch in step 3 above are returned
+#    in step 5 above; else test FAILED
 
 class Flow_Add_5(basic.SimpleProtocol):
     """
@@ -1343,7 +1436,7 @@ class Flow_Add_5(basic.SimpleProtocol):
         # random flow parameter generation
 
         fi = Flow_Info()
-        fi.rand(2 * int(math.log(num_flows)))
+        fi.rand(max(2 * int(math.log(num_flows)), 1))
 
         # Create a flow table
 
@@ -1378,6 +1471,31 @@ class Flow_Add_5(basic.SimpleProtocol):
         self.assertTrue(result, "Flow_Add_5 TEST FAILED")
         fq_logger.debug("Flow_Add_5 TEST PASSED")
 
+
+# FLOW ADD 5_1
+#
+# OVERVIEW
+# Verify handling of non-canonical flows
+#
+# PURPOSE
+# - Test that switch detects and correctly responds to a non-canonical flow
+#   definition.  A canonical flow is one that satisfies all match qualifier
+#   dependencies; a non-canonical flow is one that does not.
+#
+# PARAMETERS
+# - None
+#
+# PROCESS
+# 1. Delete all flows from switch
+# 2. Generate 1 flow definition, which is different from its canonicalization
+# 3. Send flow to switch
+# 4. Retrieve flow from switch
+# 5. Compare returned flow to canonical form of defined flow
+# 7. Test PASSED iff flow received in step 4 above is identical to canonical form of flow defined in step 3 above
+
+# Disabled.
+# Should be DUT dependent.
+test_prio["Flow_Add_5_1"] = -1
 
 class Flow_Add_5_1(basic.SimpleProtocol):
     """
@@ -1422,7 +1540,7 @@ class Flow_Add_5_1(basic.SimpleProtocol):
                     sw.valid_ports \
                     )
             fcc = fc.canonical()
-            if fcc != fc:
+            if fcc.match != fc.match:
                 break
 
         ft = Flow_Tbl()
@@ -1457,6 +1575,37 @@ class Flow_Add_5_1(basic.SimpleProtocol):
         self.assertTrue(result, "Flow_Add_5_1 TEST FAILED")
         fq_logger.debug("Flow_Add_5_1 TEST PASSED")
 
+
+# FLOW ADD 6
+#
+# OVERVIEW
+# Test flow table capacity
+#
+# PURPOSE
+# - Test switch can accept as many flow definitions as it claims
+# - Test generation of OFPET_FLOW_MOD_FAILED/OFPFMFC_ALL_TABLES_FULL
+# - Test that attempting to create flows beyond capacity does not corrupt
+#   flow table
+#
+# PARAMETERS
+# None
+#
+# PROCESS
+# 1. Delete all flows from switch
+# 2. Send OFPT_FEATURES_REQUEST and OFPT_STATS_REQUEST/OFPST_TABLE enquiries
+#    to determine flow table size, N
+# 3. Generate (N + 1) distinct flow configurations
+# 4. Send N flow adds to switch, for flows generated in step 3 above
+# 5. Verify flow table in switch
+# 6. Send one more flow add to switch
+# 7. Verify that OFPET_FLOW_MOD_FAILED/OFPFMFC_ALL_TABLES_FULL error
+#    response was generated by switch, for last flow mod sent
+# 7. Retrieve flow stats from switch
+# 8. Verify flow table in switch
+# 9. Test PASSED iff:
+#    - error message received, for correct flow
+#    - last flow definition sent to switch is not in flow table
+#    else test FAILED
 
 # Disabled because of bogus capacity reported by OVS.
 # Should be DUT dependent.
@@ -1498,7 +1647,7 @@ class Flow_Add_6(basic.SimpleProtocol):
         # random flow parameter generation
 
         fi = Flow_Info()
-        fi.rand(2 * int(math.log(num_flows)))
+        fi.rand(max(2 * int(math.log(num_flows)), 1))
 
         # Create a flow table, to switch's capacity
 
@@ -1530,13 +1679,13 @@ class Flow_Add_6(basic.SimpleProtocol):
         while True:
             fc = Flow_Cfg()
             fc.rand(fi, \
-                    sw.tbl_stats.stats[tbl].wildcards, \
+                    sw.tbl_stats.stats[0].wildcards, \
                     sw.sw_features.actions, \
                     sw.valid_ports \
                     )
             fc = fc.canonical()
-            if ft.find(fc):
-                continue
+            if not ft.find(fc):
+                break
 
         # Send one-more flow
 
@@ -1566,6 +1715,28 @@ class Flow_Add_6(basic.SimpleProtocol):
         self.assertTrue(result, "Flow_add_6 TEST FAILED")
         fq_logger.debug("Flow_add_6 TEST PASSED")
 
+
+# FLOW ADD 7
+#
+# OVERVIEW
+# Test flow redefinition
+#
+# PURPOSE
+# Verify that successive flow adds with same priority and match criteria
+# overwrite in flow table
+#
+# PARAMETERS
+# None
+#
+# PROCESS
+# 1. Delete all flows from switch
+# 2. Generate flow definition F1
+# 3. Generate flow definition F2, with same key (priority and match) as F1,
+#    but with different actions
+# 4. Send flow adds for F1 and F2 to switch
+# 5. Verify flow definitions in switch
+# 6. Test PASSED iff 1 flow returned by switch, matching configuration of F2;
+#    else test FAILED
 
 class Flow_Add_7(basic.SimpleProtocol):
     """
@@ -1657,6 +1828,34 @@ class Flow_Add_7(basic.SimpleProtocol):
         fq_logger.debug("Flow_Add_7 TEST PASSED")
 
 
+# FLOW ADD 8
+#
+# OVERVIEW
+# Add overlapping flows to switch, verify that overlapping flows are rejected
+#
+# PURPOSE
+# - Test detection of overlapping flows by switch
+# - Test generation of OFPET_FLOW_MOD_FAILED/OFPFMFC_OVERLAP messages
+# - Test rejection of overlapping flows
+# - Test defining overlapping flows does not corrupt flow table
+#
+# PARAMETERS
+# None
+#
+# PROCESS
+# 1. Delete all flows from switch
+# 2. Generate flow definition F1
+# 3. Generate flow definition F2, with key overlapping F1
+# 4. Send flow add to switch, for F1
+# 5. Send flow add to switch, for F2, with OFPFF_CHECK_OVERLAP set
+# 6. Verify that OFPET_FLOW_MOD_FAILED/OFPFMFC_OVERLAP error response
+#    was generated by switch
+# 7. Verifiy flows configured in swtich
+# 8. Test PASSED iff:
+#    - error message received, for overlapping flow
+#    - overlapping flow is not in flow table
+#    else test FAILED
+
 class Flow_Add_8(basic.SimpleProtocol):
     """
     Test FLOW_ADD_8 from draft top-half test plan
@@ -1728,6 +1927,7 @@ class Flow_Add_8(basic.SimpleProtocol):
             wn = all_wildcard_names[w]
         fq_logger.debug("Wildcarding out %s" % (wn))
         fc2.match.wildcards = fc2.match.wildcards | w
+        fc2 = fc2.canonical()
 
         # Send that to the switch, with overlap checking
         
@@ -1758,6 +1958,27 @@ class Flow_Add_8(basic.SimpleProtocol):
         self.assertTrue(result, "Flow_Add_8 TEST FAILED")
         fq_logger.debug("Flow_Add_8 TEST PASSED")
 
+
+# FLOW MODIFY 1
+#
+# OVERVIEW
+# Strict modify of single existing flow
+#
+# PURPOSE
+# - Verify that strict flow modify operates only on specified flow
+# - Verify that flow is correctly modified
+#
+# PARAMETERS
+# None
+#
+# PROCESS
+# 1. Delete all flows from switch
+# 2. Generate 1 flow F
+# 3. Send flow add to switch, for flow F
+# 4. Generate new action list for flow F, yielding F'
+# 5. Send strict flow modify to switch, for flow F'
+# 6. Verify flow table in switch
+# 7. Test PASSED iff flow returned by switch is F'; else FAILED
 
 class Flow_Mod_1(basic.SimpleProtocol):
     """
@@ -1820,6 +2041,8 @@ class Flow_Mod_1(basic.SimpleProtocol):
             if fc2 != fc:
                 break
 
+        fc2.cookie = fc.cookie
+
         # Send that to the switch
         
         fq_logger.debug("Sending strict flow mod to switch:")
@@ -1848,6 +2071,37 @@ class Flow_Mod_1(basic.SimpleProtocol):
         self.assertTrue(result, "Flow_Mod_1 TEST FAILED")
         fq_logger.debug("Flow_Mod_1 TEST PASSED")
 
+
+# FLOW MODIFY 2
+#
+# OVERVIEW
+# Loose modify of mutiple flows
+#
+# PURPOSE
+# - Verify that loose flow modify operates only on matching flows
+# - Verify that matching flows are correctly modified
+#
+# PARAMETERS
+# Name: num_flows
+# Type: number
+# Description:
+# Number of flows to define
+# Default: 100
+#
+# PROCESS
+# 1. Delete all flows from switch
+# 2. Generate <num_flows> distinct flow configurations
+# 3. Send <num_flows> flow adds to switch
+# 4. Pick 1 defined flow F at random
+# 5. Create overlapping loose flow mod match criteria by repeatedly
+#    wildcarding out qualifiers in match of F => F',
+#    and create new actions list A' for F'
+# 6. Send loose flow modify for F' to switch
+# 7. Verify flow table in swtich
+# 8. Test PASSED iff all flows sent to switch in steps 3 and 6 above,
+#    are returned in step 7 above, each with correct (original or modified)
+#    action list;
+#    else test FAILED
         
 class Flow_Mod_2(basic.SimpleProtocol):
     """
@@ -1881,7 +2135,7 @@ class Flow_Mod_2(basic.SimpleProtocol):
 
         fi = Flow_Info()
         # Shrunk, to increase chance of meta-matches
-        fi.rand(int(math.log(num_flows)) / 2)
+        fi.rand(max(int(math.log(num_flows)) / 2, 1))
         
         # Dream up some flows
 
@@ -1966,7 +2220,6 @@ class Flow_Mod_2(basic.SimpleProtocol):
 
         for fc in ft.values():
             if mfc.overlaps(fc, True):
-                fc.cookie  = mfc.cookie
                 fc.actions = mfc.actions
 
         # Verify flow table
@@ -1978,6 +2231,23 @@ class Flow_Mod_2(basic.SimpleProtocol):
         self.assertTrue(result, "Flow_Mod_2 TEST FAILED")
         fq_logger.debug("Flow_Mod_2 TEST PASSED")
 
+
+# FLOW MODIFY 3
+
+# OVERVIEW
+# Strict modify of non-existent flow
+#
+# PURPOSE
+# Verify that strict modify of a non-existent flow is equivalent to a flow add
+#
+# PARAMETERS
+# None
+#
+# PROCESS
+# 1. Delete all flows from switch
+# 2. Send single flow mod, as strict modify, to switch
+# 3. Verify flow table in switch
+# 4. Test PASSED iff flow defined in step 2 above verified; else FAILED
 
 class Flow_Mod_3(basic.SimpleProtocol):
     """
@@ -2049,6 +2319,26 @@ class Flow_Mod_3(basic.SimpleProtocol):
         self.assertTrue(result, "Flow_Mod_3 TEST FAILED")
         fq_logger.debug("Flow_Mod_3 TEST PASSED")
 
+
+# FLOW DELETE 1
+#
+# OVERVIEW
+# Strict delete of single flow
+#
+# PURPOSE
+# Verify correct operation of strict delete of single defined flow
+#
+# PARAMETERS
+# None
+#
+# PROCESS
+# 1. Delete all flows from switch
+# 2. Send flow F to switch
+# 3. Send strict flow delete for F to switch
+# 4. Verify flow table in swtich
+# 6. Test PASSED iff all flows sent to switch in step 2 above,
+#    less flow removed in step 3 above, are returned in step 4 above;
+#    else test FAILED
 
 class Flow_Del_1(basic.SimpleProtocol):
     """
@@ -2139,6 +2429,35 @@ class Flow_Del_1(basic.SimpleProtocol):
         fq_logger.debug("Flow_Del_1 TEST PASSED")
 
 
+# FLOW DELETE 2
+#
+# OVERVIEW
+# Loose delete of multiple flows
+#
+# PURPOSE
+# - Verify correct operation of loose delete of multiple flows
+#
+# PARAMETERS
+# Name: num_flows
+# Type: number
+# Description:
+# Number of flows to define
+# Default: 100
+#
+# PROCESS
+# 1. Delete all flows from switch
+# 2. Generate <num_flows> distinct flow configurations
+# 3. Send <num_flows> flow adds to switch, for flows generated in step 2 above
+# 4. Pick 1 defined flow F at random
+# 5. Repeatedly wildcard out qualifiers in match of F, creating F', such that
+#    F' will match more than 1 existing flow key
+# 6. Send loose flow delete for F' to switch
+# 7. Verify flow table in switch
+# 8. Test PASSED iff all flows sent to switch in step 3 above, less flows
+#    removed in step 6 above (i.e. those that match F'), are returned
+#    in step 7 above;
+#    else test FAILED
+
 class Flow_Del_2(basic.SimpleProtocol):
     """
     Test FLOW_DEL_2 from draft top-half test plan
@@ -2171,7 +2490,7 @@ class Flow_Del_2(basic.SimpleProtocol):
 
         fi = Flow_Info()
         # Shrunk, to increase chance of meta-matches
-        fi.rand(int(math.log(num_flows)) / 2)
+        fi.rand(max(int(math.log(num_flows)) / 2, 1))
         
         # Dream up some flows
 
@@ -2266,6 +2585,29 @@ class Flow_Del_2(basic.SimpleProtocol):
 
         self.assertTrue(result, "Flow_Del_2 TEST FAILED")
         fq_logger.debug("Flow_Del_2 TEST PASSED")
+
+
+# FLOW DELETE 4
+#
+# OVERVIEW
+# Flow removed messages
+#
+# PURPOSE
+# Verify that switch generates OFPT_FLOW_REMOVED/OFPRR_DELETE response
+# messages when deleting flows that were added with OFPFF_SEND_FLOW_REM flag
+#
+# PARAMETERS
+# None
+#
+# PROCESS
+# 1. Delete all flows from switch
+# 2. Send flow add to switch, with OFPFF_SEND_FLOW_REM set
+# 3. Send strict flow delete of flow to switch
+# 4. Verify that OFPT_FLOW_REMOVED/OFPRR_DELETE message is received from switch
+# 5. Verify flow table in switch
+# 6. Test PASSED iff all flows sent to switch in step 2 above, less flow
+#    removed in step 3 above, are returned in step 5 above, and that
+#    asynch message was received; else test FAILED
 
 
 class Flow_Del_4(basic.SimpleProtocol):
