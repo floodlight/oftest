@@ -210,7 +210,7 @@ class Controller(Thread):
                 if not self.expect_msg_type or (self.expect_msg_type == hdr.type):
                     self.logger.debug("Matched msg; type %s. expected %s " %
                                       (ofp_type_map[hdr.type], 
-                                       ofp_type_map[self.expect_msg_type]))
+                                       str(self.expect_msg_type)))
                     self.expect_msg_response = (msg, rawmsg)
                     self.expect_msg = False
                     self.expect_msg_cv.notify()
@@ -287,8 +287,7 @@ class Controller(Thread):
                 return False
 
             if len(pkt) == 0:
-                self.logger.info("zero-len pkt in")
-                return True
+                self.logger.warning("Zero-length switch read")
 
             self._pkt_handle(pkt)
         else:
@@ -493,7 +492,6 @@ class Controller(Thread):
         self.expect_msg_cv.wait(timeout)
         if self.expect_msg_response is not None:
             (msg, pkt) = self.expect_msg_response
-        self.expect_msg = False # Check this -- only 1 thread?
         self.expect_msg_cv.release()
 
         if msg is None:
