@@ -45,17 +45,37 @@ pa_config = None
 test_prio = {}
 
 WILDCARD_VALUES = [ofp.OFPFW_IN_PORT,
-                   ofp.OFPFW_DL_VLAN,
+                   ofp.OFPFW_DL_VLAN | ofp.OFPFW_DL_VLAN_PCP,
                    ofp.OFPFW_DL_SRC,
                    ofp.OFPFW_DL_DST,
-                   ofp.OFPFW_DL_TYPE,
-                   ofp.OFPFW_NW_PROTO,
+                   (ofp.OFPFW_DL_TYPE | ofp.OFPFW_NW_SRC_ALL |
+                    ofp.OFPFW_NW_DST_ALL | ofp.OFPFW_NW_TOS | ofp.OFPFW_NW_PROTO |
+                    ofp.OFPFW_TP_SRC | ofp.OFPFW_TP_DST),
+                   (ofp.OFPFW_NW_PROTO | ofp.OFPFW_TP_SRC | ofp.OFPFW_TP_DST),
                    ofp.OFPFW_TP_SRC,
                    ofp.OFPFW_TP_DST,
-                   0x3F << ofp.OFPFW_NW_SRC_SHIFT,
-                   0x3F << ofp.OFPFW_NW_DST_SHIFT,
+                   ofp.OFPFW_NW_SRC_MASK,
+                   ofp.OFPFW_NW_DST_MASK,
                    ofp.OFPFW_DL_VLAN_PCP,
                    ofp.OFPFW_NW_TOS]
+
+NO_WILDCARD_VALUES = [(ofp.OFPFW_ALL ^ ofp.OFPFW_IN_PORT),
+                      (ofp.OFPFW_ALL ^ ofp.OFPFW_DL_VLAN),
+                      (ofp.OFPFW_ALL ^ ofp.OFPFW_DL_SRC),
+                      (ofp.OFPFW_ALL ^ ofp.OFPFW_DL_DST),
+                      (ofp.OFPFW_ALL ^ ofp.OFPFW_DL_TYPE),
+                      (ofp.OFPFW_ALL ^ ofp.OFPFW_DL_TYPE ^ ofp.OFPFW_NW_PROTO),
+                      (ofp.OFPFW_ALL ^ ofp.OFPFW_DL_TYPE ^ ofp.OFPFW_NW_PROTO ^
+                       ofp.OFPFW_TP_SRC),
+                      (ofp.OFPFW_ALL ^ ofp.OFPFW_DL_TYPE ^ ofp.OFPFW_NW_PROTO ^
+                       ofp.OFPFW_TP_DST),
+                      (ofp.OFPFW_ALL ^ ofp.OFPFW_DL_TYPE ^ ofp.OFPFW_NW_PROTO ^
+                       ofp.OFPFW_NW_SRC_MASK),
+                      (ofp.OFPFW_ALL ^ ofp.OFPFW_DL_TYPE ^ ofp.OFPFW_NW_PROTO ^
+                       ofp.OFPFW_NW_DST_MASK),
+                      (ofp.OFPFW_ALL ^ ofp.OFPFW_DL_VLAN ^ ofp.OFPFW_DL_VLAN_PCP),
+                      (ofp.OFPFW_ALL ^ ofp.OFPFW_DL_TYPE ^ ofp.OFPFW_NW_PROTO ^
+                       ofp.OFPFW_NW_TOS)]
 
 MODIFY_ACTION_VALUES =  [ofp.OFPAT_SET_VLAN_VID,
                          ofp.OFPAT_SET_VLAN_PCP,
@@ -835,8 +855,7 @@ class AllExceptOneWildcardMatch(BaseMatchCase):
     """
     def runTest(self):
         vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
-        for wc in WILDCARD_VALUES:
-            all_exp_one_wildcard = ofp.OFPFW_ALL ^ wc
+        for all_exp_one_wildcard in NO_WILDCARD_VALUES:
             if all_exp_one_wildcard & ofp.OFPFW_DL_VLAN:
                 # Set nonzero VLAN id to avoid sending priority-tagged packet
                 dl_vlan = vid
@@ -851,8 +870,7 @@ class AllExceptOneWildcardMatchTagged(BaseMatchCase):
     """
     def runTest(self):
         vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
-        for wc in WILDCARD_VALUES:
-            all_exp_one_wildcard = ofp.OFPFW_ALL ^ wc
+        for all_exp_one_wildcard in NO_WILDCARD_VALUES:
             flow_match_test(self, pa_port_map, wildcards=all_exp_one_wildcard,
                             dl_vlan=vid)
 
