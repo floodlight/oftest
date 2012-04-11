@@ -13,10 +13,28 @@ they all are read back correctly.
 # Overrides bitmap of supported wildcards reported by switch
 # Default: none
 #
+# Name: wildcards_force
+# Type: number
+# Description:
+# Bitmap of wildcards to always be set
+# Default: none
+#
 # Name: actions
 # Type: number
 # Description:
 # Overrides bitmap of supported actions reported by switch
+# Default: none
+#
+# Name: actions_force
+# Type: number
+# Description:
+# Bitmap of actions to always be used
+# Default: none
+#
+# Name: ports
+# Type: list of OF port numbers
+# Description:
+# Override list of OF port numbers reported by switch
 # Default: none
 #
 # Name: conservative_ordered_actions
@@ -469,18 +487,26 @@ class Flow_Cfg:
     def rand_actions_ordered(self, fi, valid_actions, valid_ports):
         # Action lists are ordered, so pick an ordered random subset of
         # supported actions
+
+        actions_force = test_param_get(fq_config, "actions_force", 0)
+
         ACTION_MAX_LEN = 65535 # @fixme Should be test param?
         supported_actions = []
         for a in all_actions_list:
             if ((1 << a) & valid_actions) != 0:
                 supported_actions.append(a)
 
-        supported_actions = shuffle(supported_actions)
-        supported_actions \
-            = supported_actions[0 : random.randint(1, len(supported_actions))]
+        actions \
+            = shuffle(supported_actions)[0 : random.randint(1, len(supported_actions))]
+
+        for a in all_actions_list:
+            if ((1 << a) & actions_force) != 0:
+                actions.append(a)
+
+        actions = shuffle(actions)
 
         self.actions = action_list.action_list()
-        for a in supported_actions:
+        for a in actions:
             act = None
             if a == ofp.OFPAT_OUTPUT:
                 pass                    # OUTPUT actions must come last
@@ -520,8 +546,10 @@ class Flow_Cfg:
                 self.actions.add(act)
                 
         p = random.randint(1, 100)
-        if p <= 33 and ofp.OFPAT_ENQUEUE in supported_actions:
-            # One third of the time, include ENQUEUE actions at end of list
+        if (((1 << ofp.OFPAT_ENQUEUE) & actions_force) != 0 or p <= 33) \
+               and ofp.OFPAT_ENQUEUE in actions:
+            # In not forecd, one third of the time, include ENQUEUE actions
+            # at end of list
             # At most 1 ENQUEUE action
             act = action.action_enqueue()
             act.port = rand_pick(valid_ports)
@@ -529,7 +557,10 @@ class Flow_Cfg:
             act.queue_id = random.randint(0, 7)
             act.max_len = ACTION_MAX_LEN
             self.actions.add(act)
-        if p > 33 and p <= 66 and ofp.OFPAT_OUTPUT in supported_actions:
+        if (((1 << ofp.OFPAT_OUTPUT) & actions_force) != 0 \
+            or (p > 33 and p <= 66) \
+            ) \
+            and ofp.OFPAT_OUTPUT in actions:
             # One third of the time, include OUTPUT actions at end of list
             port_idxs = shuffle(range(len(valid_ports)))
             # Only 1 output action allowed if IN_PORT wildcarded
@@ -559,19 +590,25 @@ class Flow_Cfg:
             self.rand_actions_ordered(fi, valid_actions, valid_ports)
             return self
 
-        # Action lists are ordered, so pick an ordered random subset of
-        # supported actions
+        actions_force = test_param_get(fq_config, "actions_force", 0)
+
+        ACTION_MAX_LEN = 65535 # @fixme Should be test param?
         supported_actions = []
         for a in all_actions_list:
             if ((1 << a) & valid_actions) != 0:
                 supported_actions.append(a)
 
-        supported_actions = shuffle(supported_actions)
-        supported_actions \
-            = supported_actions[0 : random.randint(1, len(supported_actions))]
+        actions \
+            = shuffle(supported_actions)[0 : random.randint(1, len(supported_actions))]
+
+        for a in all_actions_list:
+            if ((1 << a) & actions_force) != 0:
+                actions.append(a)
+
+        actions = shuffle(actions)
 
         self.actions = action_list.action_list()
-        for a in supported_actions:
+        for a in actions:
             if a == ofp.OFPAT_OUTPUT:
                 # TBD - Output actions are clustered in list, spread them out?
                 port_idxs = shuffle(range(len(valid_ports)))
@@ -633,11 +670,16 @@ class Flow_Cfg:
 
     # Randomize flow cfg
     def rand(self, fi, valid_wildcards, valid_actions, valid_ports):
+        wildcards_force = test_param_get(fq_config, "wildcards_force", 0)
+        
         # Start with no wildcards, i.e. everything specified
         self.match.wildcards = 0
-        
-        # Make approx. 5% of flows exact
-        exact = (random.randint(1, 100) <= 5)
+
+        if wildcards_force != 0:
+            exact = False
+        else:
+            # Make approx. 5% of flows exact
+            exact = (random.randint(1, 100) <= 5)
 
         # For each qualifier Q,
         #   if (wildcarding is not supported for Q,
@@ -647,9 +689,11 @@ class Flow_Cfg:
         #   else
         #      wildcard Q
 
-        if wildcard_get(valid_wildcards, ofp.OFPFW_IN_PORT) == 0 \
-           or exact \
-           or flip_coin():
+        if wildcard_get(wildcards_force, ofp.OFPFW_IN_PORT) == 0 \
+               and (wildcard_get(valid_wildcards, ofp.OFPFW_IN_PORT) == 0 \
+                    or exact \
+                    or flip_coin() \
+                    ):
             self.match.in_port = rand_pick(valid_ports)
         else:
             self.match.wildcards = wildcard_set(self.match.wildcards, \
@@ -657,9 +701,11 @@ class Flow_Cfg:
                                                 1 \
                                                 )
             
-        if wildcard_get(valid_wildcards, ofp.OFPFW_DL_DST) == 0 \
-           or exact \
-           or flip_coin():
+        if wildcard_get(wildcards_force, ofp.OFPFW_DL_DST) == 0 \
+               and (wildcard_get(valid_wildcards, ofp.OFPFW_DL_DST) == 0 \
+                    or exact \
+                    or flip_coin() \
+                    ):
             self.match.dl_dst = fi.rand_dl_addr()
         else:
             self.match.wildcards = wildcard_set(self.match.wildcards, \
@@ -667,9 +713,11 @@ class Flow_Cfg:
                                                 1 \
                                                 )
 
-        if wildcard_get(valid_wildcards, ofp.OFPFW_DL_SRC) == 0 \
-           or exact \
-           or flip_coin():
+        if wildcard_get(wildcards_force, ofp.OFPFW_DL_SRC) == 0 \
+               and (wildcard_get(valid_wildcards, ofp.OFPFW_DL_SRC) == 0 \
+                    or exact \
+                    or flip_coin() \
+                    ):
             self.match.dl_src = fi.rand_dl_addr()
         else:
             self.match.wildcards = wildcard_set(self.match.wildcards, \
@@ -677,19 +725,11 @@ class Flow_Cfg:
                                                 1 \
                                                 )
 
-        if wildcard_get(valid_wildcards, ofp.OFPFW_DL_VLAN_PCP) == 0 \
-           or exact \
-           or flip_coin():
-            self.match.dl_vlan_pcp = random.randint(0, (1 << 3) - 1)
-        else:
-            self.match.wildcards = wildcard_set(self.match.wildcards, \
-                                                ofp.OFPFW_DL_VLAN_PCP, \
-                                                1 \
-                                                )
-
-        if wildcard_get(valid_wildcards, ofp.OFPFW_DL_VLAN) == 0 \
-           or exact \
-           or flip_coin():
+        if wildcard_get(wildcards_force, ofp.OFPFW_DL_VLAN) == 0 \
+               and (wildcard_get(valid_wildcards, ofp.OFPFW_DL_VLAN) == 0 \
+                    or exact \
+                    or flip_coin() \
+                    ):
             self.match.dl_vlan = fi.rand_vlan()
         else:
             self.match.wildcards = wildcard_set(self.match.wildcards, \
@@ -697,9 +737,23 @@ class Flow_Cfg:
                                                 1 \
                                                 )
 
-        if wildcard_get(valid_wildcards, ofp.OFPFW_DL_TYPE) == 0 \
-           or exact \
-           or flip_coin():
+        if wildcard_get(wildcards_force, ofp.OFPFW_DL_VLAN_PCP) == 0 \
+               and (wildcard_get(valid_wildcards, ofp.OFPFW_DL_VLAN_PCP) == 0 \
+                    or exact \
+                    or flip_coin() \
+                    ):
+            self.match.dl_vlan_pcp = random.randint(0, (1 << 3) - 1)
+        else:
+            self.match.wildcards = wildcard_set(self.match.wildcards, \
+                                                ofp.OFPFW_DL_VLAN_PCP, \
+                                                1 \
+                                                )
+
+        if wildcard_get(wildcards_force, ofp.OFPFW_DL_TYPE) == 0 \
+               and (wildcard_get(valid_wildcards, ofp.OFPFW_DL_TYPE) == 0 \
+                    or exact \
+                    or flip_coin() \
+                    ):
             self.match.dl_type = fi.rand_ethertype()
         else:
             self.match.wildcards = wildcard_set(self.match.wildcards, \
@@ -707,13 +761,15 @@ class Flow_Cfg:
                                                 1 \
                                                 )
 
-        if exact or flip_coin():
-            n = 0
-        else:
-            n = wildcard_get(valid_wildcards, ofp.OFPFW_NW_SRC_MASK)
-            if n > 32:
-                n = 32
-            n = random.randint(0, n)
+        n = wildcard_get(wildcards_force, ofp.OFPFW_NW_SRC_MASK)
+        if n == 0:
+            if exact or flip_coin():
+                n = 0
+            else:
+                n = wildcard_get(valid_wildcards, ofp.OFPFW_NW_SRC_MASK)
+                if n > 32:
+                    n = 32
+                n = random.randint(0, n)
         self.match.wildcards = wildcard_set(self.match.wildcards, \
                                             ofp.OFPFW_NW_SRC_MASK, \
                                             n \
@@ -729,13 +785,15 @@ class Flow_Cfg:
                                                     0 \
                                                     )
 
-        if exact or flip_coin():
-            n = 0
-        else:
-            n = wildcard_get(valid_wildcards, ofp.OFPFW_NW_DST_MASK)
-            if n > 32:
-                n = 32
-            n = random.randint(0, n)
+        n = wildcard_get(wildcards_force, ofp.OFPFW_NW_DST_MASK)
+        if n == 0:
+            if exact or flip_coin():
+                n = 0
+            else:
+                n = wildcard_get(valid_wildcards, ofp.OFPFW_NW_DST_MASK)
+                if n > 32:
+                    n = 32
+                n = random.randint(0, n)
         self.match.wildcards = wildcard_set(self.match.wildcards, \
                                             ofp.OFPFW_NW_DST_MASK, \
                                             n \
@@ -751,9 +809,11 @@ class Flow_Cfg:
                                                     0 \
                                                     )
 
-        if wildcard_get(valid_wildcards, ofp.OFPFW_NW_TOS) == 0 \
-           or exact \
-           or flip_coin():
+        if wildcard_get(wildcards_force, ofp.OFPFW_NW_TOS) == 0 \
+               and (wildcard_get(valid_wildcards, ofp.OFPFW_NW_TOS) == 0 \
+                    or exact \
+                    or flip_coin() \
+                    ):
             self.match.nw_tos = fi.rand_ip_tos()
             # Specifying a TOS value requires that Ethertype is IP
             if flip_coin():
@@ -769,9 +829,11 @@ class Flow_Cfg:
                                                 )
 
         # Known issue on OVS with specifying nw_proto w/o dl_type as IP
-        if wildcard_get(valid_wildcards, ofp.OFPFW_NW_PROTO) == 0 \
-               or exact \
-               or flip_coin():
+        if wildcard_get(wildcards_force, ofp.OFPFW_NW_PROTO) == 0 \
+               and (wildcard_get(valid_wildcards, ofp.OFPFW_NW_PROTO) == 0 \
+                    or exact \
+                    or flip_coin() \
+                    ):
             self.match.nw_proto = fi.rand_ip_proto()
             # Specifying an IP protocol requires that Ethertype is IP
             if flip_coin():
@@ -786,9 +848,11 @@ class Flow_Cfg:
                                                 1 \
                                                 )
 
-        if wildcard_get(valid_wildcards, ofp.OFPFW_TP_SRC) == 0 \
-           or exact\
-           or flip_coin():
+        if wildcard_get(wildcards_force, ofp.OFPFW_TP_SRC) == 0 \
+               and (wildcard_get(valid_wildcards, ofp.OFPFW_TP_SRC) == 0 \
+                    or exact\
+                    or flip_coin() \
+                    ):
             self.match.tp_src = fi.rand_l4_port()
             # Specifying a L4 port requires that IP protcol is
             # one of {ICMP, TCP, UDP}
@@ -812,9 +876,11 @@ class Flow_Cfg:
                                                 1 \
                                                 )
 
-        if wildcard_get(valid_wildcards, ofp.OFPFW_TP_DST) == 0 \
-           or exact \
-           or flip_coin():
+        if wildcard_get(wildcards_force, ofp.OFPFW_TP_DST) == 0 \
+               and (wildcard_get(valid_wildcards, ofp.OFPFW_TP_DST) == 0 \
+                    or exact \
+                    or flip_coin() \
+                    ):
             self.match.tp_dst = fi.rand_l4_port()
             # Specifying a L4 port requires that IP protcol is
             # one of {ICMP, TCP, UDP}
@@ -1156,6 +1222,9 @@ class Switch:
         actions_override = test_param_get(fq_config, "actions", -1)
         if actions_override != -1:
             self.sw_features.actions = actions_override
+        ports_override = test_param_get(fq_config, "ports", [])
+        if ports_override != []:
+            self.valid_ports = ports_override
 
         return True
 
@@ -1171,7 +1240,7 @@ class Switch:
                 ts.wildcards = wildcards_override
         return True
 
-    def flow_stats_get(self):
+    def flow_stats_get(self, limit = 10000):
         request = message.flow_stats_request()
         query_match           = ofp.ofp_match()
         query_match.wildcards = ofp.OFPFW_ALL
@@ -1187,15 +1256,19 @@ class Switch:
         # </TBD>
         n = 0
         while True:
-            # TBD - Check for "more" flag
             (resp, pkt) = self.controller.poll(ofp.OFPT_STATS_REPLY, 4)
             if resp is None:
-                break
+                return False            # Did not get expected response
             if n == 0:
                 self.flow_stats = resp
             else:
                 self.flow_stats.stats.extend(resp.stats)
             n = n + 1
+            if len(self.flow_stats.stats) > limit:
+                fq_logger.error("Too many flows returned")
+                return False
+            if (resp.flags & 1) == 0:
+                break                   # No more responses expected
         return (n > 0)
 
     def flow_add(self, flow_cfg, overlapf = False):
@@ -1208,7 +1281,9 @@ class Switch:
         if flow_cfg.send_rem:
             flow_mod_msg.flags = flow_mod_msg.flags | ofp.OFPFF_SEND_FLOW_REM
         flow_mod_msg.header.xid = random.randrange(1,0xffffffff)
-        fq_logger.debug("Sending flow_mod(add), xid=%d" % (flow_mod_msg.header.xid))
+        fq_logger.debug("Sending flow_mod(add), xid=%d"
+                        % (flow_mod_msg.header.xid)
+                        )
         return (self.controller.message_send(flow_mod_msg) != -1)
 
     def flow_mod(self, flow_cfg, strictf):
@@ -1218,7 +1293,9 @@ class Switch:
         flow_mod_msg.buffer_id   = 0xffffffff
         flow_cfg.to_flow_mod_msg(flow_mod_msg)
         flow_mod_msg.header.xid = random.randrange(1,0xffffffff)
-        fq_logger.debug("Sending flow_mod(mod), xid=%d" % (flow_mod_msg.header.xid))
+        fq_logger.debug("Sending flow_mod(mod), xid=%d"
+                        % (flow_mod_msg.header.xid)
+                        )
         return (self.controller.message_send(flow_mod_msg) != -1)
 
     def flow_del(self, flow_cfg, strictf):
@@ -1230,7 +1307,9 @@ class Switch:
         flow_mod_msg.out_port    = ofp.OFPP_NONE
         flow_cfg.to_flow_mod_msg(flow_mod_msg)
         flow_mod_msg.header.xid = random.randrange(1,0xffffffff)
-        fq_logger.debug("Sending flow_mod(del), xid=%d" % (flow_mod_msg.header.xid))
+        fq_logger.debug("Sending flow_mod(del), xid=%d"
+                        % (flow_mod_msg.header.xid)
+                        )
         return (self.controller.message_send(flow_mod_msg) != -1)
 
     def barrier(self):

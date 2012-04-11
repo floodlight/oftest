@@ -1048,6 +1048,27 @@ class ModifyVID(BaseMatchCase):
         flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt,
                         action_list=[vid_act])
 
+class ModifyVlanPcp(BaseMatchCase):
+    """
+    Modify the priority field of the VLAN tag of a tagged packet
+    """
+    def runTest(self):
+        vid          = 123
+        old_vlan_pcp = 2
+        new_vlan_pcp = 3
+        sup_acts = supported_actions_get(self)
+        if not (sup_acts & 1 << ofp.OFPAT_SET_VLAN_VID):
+            skip_message_emit(self, "Modify VLAN tag test")
+            return
+
+        pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vid, dl_vlan_pcp=old_vlan_pcp)
+        exp_pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vid, dl_vlan_pcp=new_vlan_pcp)
+        vid_act = action.action_set_vlan_pcp()
+        vid_act.vlan_pcp = new_vlan_pcp
+
+        flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt,
+                        action_list=[vid_act])
+
 class StripVLANTag(BaseMatchCase):
     """
     Strip the VLAN tag from a tagged packet
