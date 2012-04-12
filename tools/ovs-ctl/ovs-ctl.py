@@ -481,14 +481,16 @@ if gArgs.cli:
             args = cmd.split(" ")
             if args[0] == "vsctl" or args[0] == "ovs-vsctl":
                 vsctl(args[1:])
-            if args[0] == "ofctl" or args[0] == "ovs-ofctl":
+            elif args[0] == "ofctl" or args[0] == "ovs-ofctl":
                 ofctl(args[1:])
-            if args[0] == "exit" or args[0] == "quit":
+            elif args[0] == "exit" or args[0] == "quit":
                 break; 
-            if args[0] == "kill":
+            elif args[0] == "kill":
                 gArgs.teardown = True
                 break
-
+            else:
+                print "unknown command '%s'" % args[0]
+            
 
 if gArgs.teardown:
     print "Killing OVS"
