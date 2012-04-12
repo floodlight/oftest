@@ -179,6 +179,13 @@ use this option""",
                      action='store_true', default=False)
 
 
+gParser.add_argument("--cli", 
+                     help="Run the ovs-ctl cli after initialization", 
+                     action='store_true', default=False)
+
+gParser.add_argument("--teardown", 
+                     help="Kill OVS instance after CLI exits", 
+                     action='store_true', default=False)
 
 #
 # Reset defaults based on config files and override
@@ -374,22 +381,26 @@ if os.path.exists(gServerPid):
     print gServerPid
     vsctl(["del-br", gArgs.bridge])
 
-# Kill existing DB/vswitchd
-killp(gSwitchPid)
-killp(gServerPid)
-killp(gLogPid)
 
-# Remove old logpid file, since this does not happen automagically
-if os.path.exists(gLogPid):
-    os.remove(gLogPid)
+def killall():
+    # Kill existing DB/vswitchd
+    killp(gSwitchPid)
+    killp(gServerPid)
+    killp(gLogPid)
 
-if gArgs.keep_veths == False:
-    lcall(['/sbin/rmmod', 'veth'])
-    lcall(['/sbin/modprobe', 'veth'])
+    # Remove old logpid file, since this does not happen automagically
+    if os.path.exists(gLogPid):
+        os.remove(gLogPid)
 
-# Remove kmod
-lcall(['/sbin/rmmod', gArgs.ovs_kmod])
+    if gArgs.keep_veths == False:
+        lcall(['/sbin/rmmod', 'veth'])
+        lcall(['/sbin/modprobe', 'veth'])
 
+    # Remove kmod
+    lcall(['/sbin/rmmod', gArgs.ovs_kmod])
+
+
+killall()
 if gArgs.kill == True:
     # Don't do anything else
     sys.exit()
@@ -463,3 +474,28 @@ vsctl(["set", "Controller", gArgs.bridge,
 ofctl(["show", gArgs.bridge])
 
 
+if gArgs.cli:
+    while True:
+        cmd = raw_input("[%s] ovs-ctl> " % gConfigSection)
+        if cmd and cmd != "":
+            args = cmd.split(" ")
+            if args[0] == "vsctl" or args[0] == "ovs-vsctl":
+                vsctl(args[1:])
+            if args[0] == "ofctl" or args[0] == "ovs-ofctl":
+                ofctl(args[1:])
+            if args[0] == "exit" or args[0] == "quit":
+                break; 
+            if args[0] == "kill":
+                gArgs.teardown = True
+                break
+
+
+if gArgs.teardown:
+    print "Killing OVS"
+    killall()
+
+
+
+
+                        
+            
