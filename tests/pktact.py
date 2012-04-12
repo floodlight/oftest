@@ -831,9 +831,10 @@ class SingleWildcardMatchPriority(BaseMatchCase):
 
 
 
-    def installFlow(self, prio, inp, egp):
+    def installFlow(self, prio, inp, egp, 
+                    wildcards=ofp.OFPFW_DL_SRC):
         request = flow_msg_create(self, self.pkt, ing_port=inp, 
-                                  wildcards=ofp.OFPFW_DL_SRC, 
+                                  wildcards=wildcards,
                                   egr_ports=egp)
         request.priority = prio
         flow_msg_install(self, request, clear_table_override=False)
@@ -852,13 +853,16 @@ class SingleWildcardMatchPriority(BaseMatchCase):
             raise Exception("Not initialized")
 
 
-    def verifyFlow(self, inp, egp):
+    def verifyFlow(self, inp, egp, pkt=None):
+        if pkt == None:
+            pkt = self.pkt
+
         self.logger.info("Pkt match test: " + str(inp) + 
                          " to " + str(egp))
         self.logger.debug("Send packet: " + str(inp) + " to " 
                             + str(egp))
-        self.dataplane.send(inp, str(self.pkt))
-        receive_pkt_verify(self, egp, self.pkt, inp)
+        self.dataplane.send(inp, str(pkt))
+        receive_pkt_verify(self, egp, pkt, inp)
 
 
        
@@ -887,7 +891,26 @@ class SingleWildcardMatchPriorityInsertModifyDelete(SingleWildcardMatchPriority)
 
 
 
+class WildcardPriority(SingleWildcardMatchPriority):
+
+    def runTest(self):
         
+        self._Init()
+
+        of_ports = pa_port_map.keys()
+        of_ports.sort()
+
+        self._ClearTable()
+        # Install a flow with no wildcards for our packet:
+        self.installFlow(1000, of_ports[0], of_ports[1], wildcards=0)
+        self.verifyFlow(of_ports[0], of_ports[1])
+        # Install a flow with wildcards for our packet with higher
+        # priority. 
+        self.installFlow(1001, of_ports[0], of_ports[2])
+        self.verifyFlow(of_ports[0], of_ports[2])
+        
+
+
 class SingleWildcardMatch(BaseMatchCase):
     """
     Exercise wildcard matching for all ports
