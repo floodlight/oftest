@@ -174,8 +174,8 @@ def do_barrier(ctrl):
     Return 0 on success, -1 on error
     """
     b = message.barrier_request()
-    (resp, pkt) = ctrl.transact(b, timeout=ctrl.barrier_to)
-    # We'll trust the transaction processing in the controller
+    (resp, pkt) = ctrl.transact(b)
+    # We'll trust the transaction processing in the controller that xid matched
     if not resp:
         return -1
     return 0
