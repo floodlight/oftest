@@ -178,6 +178,10 @@ execution. If you want to keep and use the old database (if it exists),
 use this option""", 
                      action='store_true', default=False)
 
+gParser.add_argument('-lb', '--loopback',
+                     help="Create a loopback pair.  The port numbers are port_count+1 and port_count+2.", 
+                     default=False, action='store_true')
+
 
 gParser.add_argument("--cli", 
                      help="Run the ovs-ctl cli after initialization", 
@@ -411,8 +415,11 @@ lcall(['/sbin/rmmod', 'bridge'])
 # Insert openvswitch module
 lcall(['/sbin/insmod', gArgs.ovs_kmod])
 
-createVeths(gArgs.port_count)
-vethsUp(gArgs.port_count)
+port_count = gArgs.port_count
+if gArgs.loopback:
+    port_count += 1
+createVeths(port_count)
+vethsUp(port_count)
 
 if not os.path.exists(gArgs.ovs_db_file) or gArgs.keep_db == False:
     print "Initializing DB @ %s" % (gArgs.ovs_db_file)
@@ -461,6 +468,11 @@ ofctl(["show", gArgs.bridge])
 for idx in range(0, gArgs.port_count):
     vsctl(["add-port", gArgs.bridge, "veth%s" % (idx*2)])
 
+# Check if loopback port added
+if gArgs.loopback:
+    lb_idx = gArgs.port_count * 2
+    vsctl(["add-port", gArgs.bridge, "veth%d" % (lb_idx)])
+    vsctl(["add-port", gArgs.bridge, "veth%d" % (lb_idx+1)])
 
 # Set controller
 vsctl(["set-controller", gArgs.bridge, "tcp:%s:%s" % (
