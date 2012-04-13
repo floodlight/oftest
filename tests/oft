@@ -417,11 +417,14 @@ oft_config = config
 # Check if test list is requested; display and exit if so
 if config["list"]:
     did_print = False
+    mod_count = 0
+    test_count = 0
     print "\nTest List:"
     for mod in config["all_tests"].keys():
         if config["test_spec"] != "all" and \
                 config["test_spec"] != mod.__name__:
             continue
+        mod_count += 1
         did_print = True
         desc = mod.__doc__.strip()
         desc = desc.split('\n')[0]
@@ -440,10 +443,14 @@ if config["list"]:
             if len(start_str) > 22:
                 desc = "\n" + _space_to(22, "") + desc
             print start_str + _space_to(22, start_str) + desc
+            test_count += 1
         print
     if not did_print:
         print "No tests found for " + config["test_spec"]
     else:
+        print "%d modules shown with a total of %d tests" % \
+            (mod_count, test_count)
+        print
         print "Tests preceded by * are not run by default"
     print "Tests marked (TP1) after name take --test-params including:"
     print "    'vid=N;strip_vlan=bool;add_vlan=bool'"

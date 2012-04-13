@@ -174,8 +174,8 @@ def do_barrier(ctrl):
     Return 0 on success, -1 on error
     """
     b = message.barrier_request()
-    (resp, pkt) = ctrl.transact(b, timeout=ctrl.barrier_to)
-    # We'll trust the transaction processing in the controller
+    (resp, pkt) = ctrl.transact(b)
+    # We'll trust the transaction processing in the controller that xid matched
     if not resp:
         return -1
     return 0
@@ -838,7 +838,7 @@ def hex_dump_buffer(src, length=16):
     @param length The number of bytes shown in each line
     @returns A string showing the hex dump
     """
-    result = []
+    result = ["\n"]
     for i in xrange(0, len(src), length):
        chars = src[i:i+length]
        hex = ' '.join(["%02x" % ord(x) for x in chars])

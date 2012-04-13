@@ -178,7 +178,18 @@ execution. If you want to keep and use the old database (if it exists),
 use this option""", 
                      action='store_true', default=False)
 
+gParser.add_argument('-lb', '--loopback',
+                     help="Create a loopback pair.  The port numbers are port_count+1 and port_count+2.", 
+                     default=False, action='store_true')
 
+
+gParser.add_argument("--cli", 
+                     help="Run the ovs-ctl cli after initialization", 
+                     action='store_true', default=False)
+
+gParser.add_argument("--teardown", 
+                     help="Kill OVS instance after CLI exits", 
+                     action='store_true', default=False)
 
 #
 # Reset defaults based on config files and override
@@ -374,22 +385,26 @@ if os.path.exists(gServerPid):
     print gServerPid
     vsctl(["del-br", gArgs.bridge])
 
-# Kill existing DB/vswitchd
-killp(gSwitchPid)
-killp(gServerPid)
-killp(gLogPid)
 
-# Remove old logpid file, since this does not happen automagically
-if os.path.exists(gLogPid):
-    os.remove(gLogPid)
+def killall():
+    # Kill existing DB/vswitchd
+    killp(gSwitchPid)
+    killp(gServerPid)
+    killp(gLogPid)
 
-if gArgs.keep_veths == False:
-    lcall(['/sbin/rmmod', 'veth'])
-    lcall(['/sbin/modprobe', 'veth'])
+    # Remove old logpid file, since this does not happen automagically
+    if os.path.exists(gLogPid):
+        os.remove(gLogPid)
 
-# Remove kmod
-lcall(['/sbin/rmmod', gArgs.ovs_kmod])
+    if gArgs.keep_veths == False:
+        lcall(['/sbin/rmmod', 'veth'])
+        lcall(['/sbin/modprobe', 'veth'])
 
+    # Remove kmod
+    lcall(['/sbin/rmmod', gArgs.ovs_kmod])
+
+
+killall()
 if gArgs.kill == True:
     # Don't do anything else
     sys.exit()
@@ -400,8 +415,11 @@ lcall(['/sbin/rmmod', 'bridge'])
 # Insert openvswitch module
 lcall(['/sbin/insmod', gArgs.ovs_kmod])
 
-createVeths(gArgs.port_count)
-vethsUp(gArgs.port_count)
+port_count = gArgs.port_count
+if gArgs.loopback:
+    port_count += 1
+createVeths(port_count)
+vethsUp(port_count)
 
 if not os.path.exists(gArgs.ovs_db_file) or gArgs.keep_db == False:
     print "Initializing DB @ %s" % (gArgs.ovs_db_file)
@@ -450,6 +468,11 @@ ofctl(["show", gArgs.bridge])
 for idx in range(0, gArgs.port_count):
     vsctl(["add-port", gArgs.bridge, "veth%s" % (idx*2)])
 
+# Check if loopback port added
+if gArgs.loopback:
+    lb_idx = gArgs.port_count * 2
+    vsctl(["add-port", gArgs.bridge, "veth%d" % (lb_idx)])
+    vsctl(["add-port", gArgs.bridge, "veth%d" % (lb_idx+1)])
 
 # Set controller
 vsctl(["set-controller", gArgs.bridge, "tcp:%s:%s" % (
@@ -463,3 +486,30 @@ vsctl(["set", "Controller", gArgs.bridge,
 ofctl(["show", gArgs.bridge])
 
 
+if gArgs.cli:
+    while True:
+        cmd = raw_input("[%s] ovs-ctl> " % gConfigSection)
+        if cmd and cmd != "":
+            args = cmd.split(" ")
+            if args[0] == "vsctl" or args[0] == "ovs-vsctl":
+                vsctl(args[1:])
+            elif args[0] == "ofctl" or args[0] == "ovs-ofctl":
+                ofctl(args[1:])
+            elif args[0] == "exit" or args[0] == "quit":
+                break; 
+            elif args[0] == "kill":
+                gArgs.teardown = True
+                break
+            else:
+                print "unknown command '%s'" % args[0]
+            
+
+if gArgs.teardown:
+    print "Killing OVS"
+    killall()
+
+
+
+
+                        
+            
