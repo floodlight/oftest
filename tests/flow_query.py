@@ -375,15 +375,10 @@ class Flow_Cfg:
             return False
         return True
 
-    def non_key_equal(self, x):
-        if self.cookie != x.cookie:
-            return False
-        if self.idle_timeout != x.idle_timeout:
-            return False
-        if self.hard_timeout != x.hard_timeout:
-            return False
-        if True:
-            # For now, compare actions lists as unordered
+    def actions_equal(self, x):
+        if test_param_get(fq_config, "conservative_ordered_actions", True):
+            # Compare actions lists as unordered
+            
             aa = copy.deepcopy(x.actions.actions)
             for a in self.actions.actions:
                 i = 0
@@ -398,6 +393,15 @@ class Flow_Cfg:
             return aa == []
         else:
             return self.actions == x.actions
+
+    def non_key_equal(self, x):
+        if self.cookie != x.cookie:
+            return False
+        if self.idle_timeout != x.idle_timeout:
+            return False
+        if self.hard_timeout != x.hard_timeout:
+            return False
+        return self.actions_equal(x)
         
     def key_str(self):
         result = "priority=%d" % self.priority
@@ -1157,19 +1161,19 @@ error_msgs   = []
 removed_msgs = []
 
 def error_handler(self, msg, rawmsg):
-    fq_logger.debug("Got an ERROR message, type=%d, code=%d" \
+    fq_logger.info("Got an ERROR message, type=%d, code=%d" \
                     % (msg.type, msg.code) \
                     )
-    fq_logger.debug("Message header:")
-    fq_logger.debug(msg.header.show())
+    fq_logger.info("Message header:")
+    fq_logger.info(msg.header.show())
     global error_msgs
     error_msgs.append(msg)
     pass
 
 def removed_handler(self, msg, rawmsg):
-    fq_logger.debug("Got a REMOVED message")
-    fq_logger.debug("Message header:")
-    fq_logger.debug(msg.header.show())
+    fq_logger.info("Got a REMOVED message")
+    fq_logger.info("Message header:")
+    fq_logger.info(msg.header.show())
     global removed_msgs
     removed_msgs.append(msg)
     pass
@@ -1281,7 +1285,7 @@ class Switch:
         if flow_cfg.send_rem:
             flow_mod_msg.flags = flow_mod_msg.flags | ofp.OFPFF_SEND_FLOW_REM
         flow_mod_msg.header.xid = random.randrange(1,0xffffffff)
-        fq_logger.debug("Sending flow_mod(add), xid=%d"
+        fq_logger.info("Sending flow_mod(add), xid=%d"
                         % (flow_mod_msg.header.xid)
                         )
         return (self.controller.message_send(flow_mod_msg) != -1)
@@ -1293,7 +1297,7 @@ class Switch:
         flow_mod_msg.buffer_id   = 0xffffffff
         flow_cfg.to_flow_mod_msg(flow_mod_msg)
         flow_mod_msg.header.xid = random.randrange(1,0xffffffff)
-        fq_logger.debug("Sending flow_mod(mod), xid=%d"
+        fq_logger.info("Sending flow_mod(mod), xid=%d"
                         % (flow_mod_msg.header.xid)
                         )
         return (self.controller.message_send(flow_mod_msg) != -1)
@@ -1307,7 +1311,7 @@ class Switch:
         flow_mod_msg.out_port    = ofp.OFPP_NONE
         flow_cfg.to_flow_mod_msg(flow_mod_msg)
         flow_mod_msg.header.xid = random.randrange(1,0xffffffff)
-        fq_logger.debug("Sending flow_mod(del), xid=%d"
+        fq_logger.info("Sending flow_mod(del), xid=%d"
                         % (flow_mod_msg.header.xid)
                         )
         return (self.controller.message_send(flow_mod_msg) != -1)
@@ -1320,22 +1324,22 @@ class Switch:
     def errors_verify(self, num_exp, type = 0, code = 0):
         result = True
         global error_msgs
-        fq_logger.debug("Expecting %d error messages" % (num_exp))
+        fq_logger.info("Expecting %d error messages" % (num_exp))
         num_got = len(error_msgs)
-        fq_logger.debug("Got %d error messages" % (num_got))
+        fq_logger.info("Got %d error messages" % (num_got))
         if num_got != num_exp:
             fq_logger.error("Incorrect number of error messages received")
             result = False
         if num_exp == 0:
             return result
         elif num_exp == 1:
-            fq_logger.debug("Expecting error message, type=%d, code=%d" \
+            fq_logger.info("Expecting error message, type=%d, code=%d" \
                             % (type, code) \
                             )
             f = False
             for e in error_msgs:
                 if e.type == type and e.code == code:
-                    fq_logger.debug("Got it")
+                    fq_logger.info("Got it")
                     f = True
             if not f:
                 fq_logger.error("Did not get it")
@@ -1348,9 +1352,9 @@ class Switch:
     def removed_verify(self, num_exp):
         result = True
         global removed_msgs
-        fq_logger.debug("Expecting %d removed messages" % (num_exp))
+        fq_logger.info("Expecting %d removed messages" % (num_exp))
         num_got = len(removed_msgs)
-        fq_logger.debug("Got %d removed messages" % (num_got))
+        fq_logger.info("Got %d removed messages" % (num_got))
         if num_got != num_exp:
             fq_logger.error("Incorrect number of removed messages received")
             result = False
@@ -1359,41 +1363,20 @@ class Switch:
         fq_logger.error("Can't expect more than 1 error message type")
         return False
 
-        
-#         fq_logger.debug("Expecting %d error messages" % (num))
-#         if num > 0:
-#             fq_logger.debug("with type=%d code=%d" % (type, code))            
-#         result = True
-#         n = 0
-#         while True:
-#             (errmsg, pkt) = self.controller.poll(ofp.OFPT_ERROR, 1)
-#             if errmsg is None:
-#                 break
-#             fq_logger.debug("Got error message, type=%d, code=%d" \
-#                               % (errmsg.type, errmsg.code) \
-#                               )
-#             if num == 0 or errmsg.type != type or errmsg.code != code:
-#                 fq_logger.debug("Unexpected error message")
-#                 result = False
-#             n = n + 1
-#         if n != num:
-#             fq_logger.error("Received %d error messages" % (n))
-#             result = False
-#         return result
-
-    def flow_tbl_verify(self):
+    # modf == True <=> Verify for flow modify, else for add/delete
+    def flow_tbl_verify(self, modf = False):
         result = True
     
         # Verify flow count in switch
-        fq_logger.debug("Reading table stats")
-        fq_logger.debug("Expecting %d flows" % (self.flow_tbl.count()))
+        fq_logger.info("Reading table stats")
+        fq_logger.info("Expecting %d flows" % (self.flow_tbl.count()))
         if not self.tbl_stats_get():
             fq_logger.error("Get table stats failed")
             return False
         n = 0
         for ts in self.tbl_stats.stats:
             n = n + ts.active_count
-        fq_logger.debug("Table stats reported %d active flows" \
+        fq_logger.info("Table stats reported %d active flows" \
                           % (n) \
                           )
         if n != self.flow_tbl.count():
@@ -1401,12 +1384,12 @@ class Switch:
             result = False
     
         # Read flows from switch
-        fq_logger.debug("Retrieving flows from switch")
-        fq_logger.debug("Expecting %d flows" % (self.flow_tbl.count()))
+        fq_logger.info("Retrieving flows from switch")
+        fq_logger.info("Expecting %d flows" % (self.flow_tbl.count()))
         if not self.flow_stats_get():
             fq_logger.error("Get flow stats failed")
             return False
-        fq_logger.debug("Retrieved %d flows" % (len(self.flow_stats.stats)))
+        fq_logger.info("Retrieved %d flows" % (len(self.flow_stats.stats)))
     
         # Verify flows returned by switch
     
@@ -1414,27 +1397,53 @@ class Switch:
             fq_logger.error("Switch reported incorrect number of flows")
             result = False
     
-        fq_logger.debug("Verifying received flows")
+        fq_logger.info("Verifying received flows")
         for fc in self.flow_tbl.values():
             fc.matched = False
         for fs in self.flow_stats.stats:
             flow_in = Flow_Cfg()
             flow_in.from_flow_stat(fs)
-            fq_logger.debug("Received flow:")
-            fq_logger.debug(str(flow_in))
+            fq_logger.info("Received flow:")
+            fq_logger.info(str(flow_in))
             fc = self.flow_tbl.find(flow_in)
             if fc is None:
+                fq_logger.error("Received flow:")
+                fq_logger.error(str(flow_in))
                 fq_logger.error("does not match any defined flow")
                 result = False
             elif fc.matched:
+                fq_logger.error("Received flow:")
+                fq_logger.error(str(flow_in))
                 fq_logger.error("re-matches defined flow:")
-                fq_logger.debug(str(fc))
+                fq_logger.info(str(fc))
                 result = False
             else:
-                fq_logger.debug("matched")
-                if not flow_in == fc:
-                    fq_logger.error("Non-key portions of flow do not match")
-                    result = False
+                fq_logger.info("matched")
+                if modf:
+                    # Check for modify
+                    
+                    if flow_in.cookie != fc.cookie:
+                        fq_logger.warning("Defined flow:")
+                        fq_logger.warning(str(fc))
+                        fq_logger.warning("Received flow:")
+                        fq_logger.warning(str(flow_in))
+                        fq_logger.warning("cookies do not match")
+                    if not flow_in.actions_equal(fc):
+                        fq_logger.error("Defined flow:")
+                        fq_logger.error(str(fc))
+                        fq_logger.error("Received flow:")
+                        fq_logger.error(str(flow_in))
+                        fq_logger.error("actions do not match")
+                else:
+                    # Check for add/delete
+                    
+                    if not flow_in == fc:
+                        fq_logger.error("Defined flow:")
+                        fq_logger.error(str(fc))
+                        fq_logger.error("Received flow:")
+                        fq_logger.error(str(flow_in))
+                        fq_logger.error("non-key portions of flow do not match")
+                        result = False
                 fc.matched = True
         for fc in self.flow_tbl.values():
             if not fc.matched:
@@ -1484,19 +1493,19 @@ class Flow_Add_5(basic.SimpleProtocol):
     """
 
     def runTest(self):
-        fq_logger.debug("Flow_Add_5 TEST BEGIN")
+        fq_logger.info("Flow_Add_5 TEST BEGIN")
 
         num_flows = test_param_get(fq_config, "num_flows", 100)
 
         # Clear all flows from switch
 
-        fq_logger.debug("Deleting all flows from switch")
+        fq_logger.info("Deleting all flows from switch")
         rc = delete_all_flows(self.controller, fq_logger)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         # Get switch capabilites
 
-        fq_logger.debug("Getting switch capabilities")        
+        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
         sw.controller_set(self.controller)
         self.assertTrue(sw.features_get(), "Get switch features failed")
@@ -1509,7 +1518,7 @@ class Flow_Add_5(basic.SimpleProtocol):
             for ts in sw.tbl_stats.stats:
                 num_flows = num_flows + ts.max_entries
 
-        fq_logger.debug("Generating %d flows" % (num_flows))        
+        fq_logger.info("Generating %d flows" % (num_flows))        
 
         # Dream up some flow information, i.e. space to chose from for
         # random flow parameter generation
@@ -1524,10 +1533,10 @@ class Flow_Add_5(basic.SimpleProtocol):
 
         # Send flow table to switch
 
-        fq_logger.debug("Sending flow adds to switch")
+        fq_logger.info("Sending flow adds to switch")
         for fc in ft.values():          # Randomizes order of sending
-            fq_logger.debug("Adding flow:")
-            fq_logger.debug(str(fc));
+            fq_logger.info("Adding flow:")
+            fq_logger.info(str(fc));
             self.assertTrue(sw.flow_add(fc), "Failed to add flow")
 
         # Do barrier, to make sure all flows are in
@@ -1548,7 +1557,7 @@ class Flow_Add_5(basic.SimpleProtocol):
             result = False
 
         self.assertTrue(result, "Flow_Add_5 TEST FAILED")
-        fq_logger.debug("Flow_Add_5 TEST PASSED")
+        fq_logger.info("Flow_Add_5 TEST PASSED")
 
 
 # FLOW ADD 5_1
@@ -1585,19 +1594,19 @@ class Flow_Add_5_1(basic.SimpleProtocol):
     """
     
     def runTest(self):
-        fq_logger.debug("Flow_Add_5_1 TEST BEGIN")
+        fq_logger.info("Flow_Add_5_1 TEST BEGIN")
 
         num_flows = test_param_get(fq_config, "num_flows", 100)
         
         # Clear all flows from switch
 
-        fq_logger.debug("Deleting all flows from switch")
+        fq_logger.info("Deleting all flows from switch")
         rc = delete_all_flows(self.controller, fq_logger)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         # Get switch capabilites
 
-        fq_logger.debug("Getting switch capabilities")        
+        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
         sw.controller_set(self.controller)
         self.assertTrue(sw.features_get(), "Get switch features failed")
@@ -1627,10 +1636,10 @@ class Flow_Add_5_1(basic.SimpleProtocol):
 
         # Send it to the switch
 
-        fq_logger.debug("Sending flow add to switch:")
-        fq_logger.debug(str(fc))
-        fq_logger.debug("should be canonicalized as:")
-        fq_logger.debug(str(fcc))
+        fq_logger.info("Sending flow add to switch:")
+        fq_logger.info(str(fc))
+        fq_logger.info("should be canonicalized as:")
+        fq_logger.info(str(fcc))
         fc.send_rem = False
         self.assertTrue(sw.flow_add(fc), "Failed to add flow")
 
@@ -1652,7 +1661,7 @@ class Flow_Add_5_1(basic.SimpleProtocol):
             result = False
 
         self.assertTrue(result, "Flow_Add_5_1 TEST FAILED")
-        fq_logger.debug("Flow_Add_5_1 TEST PASSED")
+        fq_logger.info("Flow_Add_5_1 TEST PASSED")
 
 
 # FLOW ADD 6
@@ -1699,17 +1708,17 @@ class Flow_Add_6(basic.SimpleProtocol):
     """
 
     def runTest(self):
-        fq_logger.debug("Flow_Add_6 TEST BEGIN")
+        fq_logger.info("Flow_Add_6 TEST BEGIN")
 
         # Clear all flows from switch
 
-        fq_logger.debug("Deleting all flows from switch")
+        fq_logger.info("Deleting all flows from switch")
         rc = delete_all_flows(self.controller, fq_logger)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         # Get switch capabilites
 
-        fq_logger.debug("Getting switch capabilities")        
+        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
         sw.controller_set(self.controller)
         self.assertTrue(sw.features_get(), "Get switch features failed")
@@ -1719,8 +1728,8 @@ class Flow_Add_6(basic.SimpleProtocol):
         for ts in sw.tbl_stats.stats:
             num_flows = num_flows + ts.max_entries
 
-        fq_logger.debug("Switch capacity is %d flows" % (num_flows))        
-        fq_logger.debug("Generating %d flows" % (num_flows))        
+        fq_logger.info("Switch capacity is %d flows" % (num_flows))        
+        fq_logger.info("Generating %d flows" % (num_flows))        
 
         # Dream up some flow information, i.e. space to chose from for
         # random flow parameter generation
@@ -1735,10 +1744,10 @@ class Flow_Add_6(basic.SimpleProtocol):
 
         # Send flow table to switch
 
-        fq_logger.debug("Sending flow adds to switch")
+        fq_logger.info("Sending flow adds to switch")
         for fc in ft.values():          # Randomizes order of sending
-            fq_logger.debug("Adding flow:")
-            fq_logger.debug(str(fc));
+            fq_logger.info("Adding flow:")
+            fq_logger.info(str(fc));
             self.assertTrue(sw.flow_add(fc), "Failed to add flow")
 
         # Do barrier, to make sure all flows are in
@@ -1754,7 +1763,7 @@ class Flow_Add_6(basic.SimpleProtocol):
 
         # Dream up one more flow
 
-        fq_logger.debug("Creating one more flow")
+        fq_logger.info("Creating one more flow")
         while True:
             fc = Flow_Cfg()
             fc.rand(fi, \
@@ -1769,8 +1778,8 @@ class Flow_Add_6(basic.SimpleProtocol):
         # Send one-more flow
 
         fc.send_rem = False
-        fq_logger.debug("Sending flow add switch")
-        fq_logger.debug(str(fc));
+        fq_logger.info("Sending flow add switch")
+        fq_logger.info(str(fc));
         self.assertTrue(sw.flow_add(fc), "Failed to add flow")
 
         # Do barrier, to make sure all flows are in
@@ -1792,7 +1801,7 @@ class Flow_Add_6(basic.SimpleProtocol):
             result = False
 
         self.assertTrue(result, "Flow_add_6 TEST FAILED")
-        fq_logger.debug("Flow_add_6 TEST PASSED")
+        fq_logger.info("Flow_add_6 TEST PASSED")
 
 
 # FLOW ADD 7
@@ -1826,17 +1835,17 @@ class Flow_Add_7(basic.SimpleProtocol):
     """
 
     def runTest(self):
-        fq_logger.debug("Flow_Add_7 TEST BEGIN")
+        fq_logger.info("Flow_Add_7 TEST BEGIN")
 
         # Clear all flows from switch
 
-        fq_logger.debug("Deleting all flows from switch")
+        fq_logger.info("Deleting all flows from switch")
         rc = delete_all_flows(self.controller, fq_logger)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         # Get switch capabilites
 
-        fq_logger.debug("Getting switch capabilities")        
+        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
         sw.controller_set(self.controller)
         self.assertTrue(sw.features_get(), "Get switch features failed")
@@ -1860,8 +1869,8 @@ class Flow_Add_7(basic.SimpleProtocol):
 
         # Send it to the switch
 
-        fq_logger.debug("Sending flow add to switch:")
-        fq_logger.debug(str(fc))
+        fq_logger.info("Sending flow add to switch:")
+        fq_logger.info(str(fc))
         ft = Flow_Tbl()
         fc.send_rem = False
         self.assertTrue(sw.flow_add(fc), "Failed to add flow")
@@ -1880,8 +1889,8 @@ class Flow_Add_7(basic.SimpleProtocol):
 
         # Send that to the switch
         
-        fq_logger.debug("Sending flow add to switch:")
-        fq_logger.debug(str(fc2))
+        fq_logger.info("Sending flow add to switch:")
+        fq_logger.info(str(fc2))
         fc2.send_rem = False
         self.assertTrue(sw.flow_add(fc2), "Failed to add flow")
         ft.insert(fc2)
@@ -1904,7 +1913,7 @@ class Flow_Add_7(basic.SimpleProtocol):
             result = False
 
         self.assertTrue(result, "Flow_Add_7 TEST FAILED")
-        fq_logger.debug("Flow_Add_7 TEST PASSED")
+        fq_logger.info("Flow_Add_7 TEST PASSED")
 
 
 # FLOW ADD 8
@@ -1944,17 +1953,17 @@ class Flow_Add_8(basic.SimpleProtocol):
     """
 
     def runTest(self):
-        fq_logger.debug("Flow_Add_8 TEST BEGIN")
+        fq_logger.info("Flow_Add_8 TEST BEGIN")
 
         # Clear all flows from switch
 
-        fq_logger.debug("Deleting all flows from switch")
+        fq_logger.info("Deleting all flows from switch")
         rc = delete_all_flows(self.controller, fq_logger)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         # Get switch capabilites
 
-        fq_logger.debug("Getting switch capabilities")        
+        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
         sw.controller_set(self.controller)
         self.assertTrue(sw.features_get(), "Get switch features failed")
@@ -1981,8 +1990,8 @@ class Flow_Add_8(basic.SimpleProtocol):
 
         # Send it to the switch
 
-        fq_logger.debug("Sending flow add to switch:")
-        fq_logger.debug(str(fc))
+        fq_logger.info("Sending flow add to switch:")
+        fq_logger.info(str(fc))
         ft = Flow_Tbl()
         fc.send_rem = False
         self.assertTrue(sw.flow_add(fc), "Failed to add flow")
@@ -2004,14 +2013,14 @@ class Flow_Add_8(basic.SimpleProtocol):
             wn = "OFPFW_NW_DST"
         else:
             wn = all_wildcard_names[w]
-        fq_logger.debug("Wildcarding out %s" % (wn))
+        fq_logger.info("Wildcarding out %s" % (wn))
         fc2.match.wildcards = fc2.match.wildcards | w
         fc2 = fc2.canonical()
 
         # Send that to the switch, with overlap checking
         
-        fq_logger.debug("Sending flow add to switch:")
-        fq_logger.debug(str(fc2))
+        fq_logger.info("Sending flow add to switch:")
+        fq_logger.info(str(fc2))
         fc2.send_rem = False
         self.assertTrue(sw.flow_add(fc2, True), "Failed to add flow")
 
@@ -2035,7 +2044,7 @@ class Flow_Add_8(basic.SimpleProtocol):
             result = False
 
         self.assertTrue(result, "Flow_Add_8 TEST FAILED")
-        fq_logger.debug("Flow_Add_8 TEST PASSED")
+        fq_logger.info("Flow_Add_8 TEST PASSED")
 
 
 # FLOW MODIFY 1
@@ -2068,17 +2077,17 @@ class Flow_Mod_1(basic.SimpleProtocol):
     """
 
     def runTest(self):
-        fq_logger.debug("Flow_Mod_1 TEST BEGIN")
+        fq_logger.info("Flow_Mod_1 TEST BEGIN")
 
         # Clear all flows from switch
 
-        fq_logger.debug("Deleting all flows from switch")
+        fq_logger.info("Deleting all flows from switch")
         rc = delete_all_flows(self.controller, fq_logger)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         # Get switch capabilites
 
-        fq_logger.debug("Getting switch capabilities")        
+        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
         sw.controller_set(self.controller)
         self.assertTrue(sw.features_get(), "Get switch features failed")
@@ -2102,8 +2111,8 @@ class Flow_Mod_1(basic.SimpleProtocol):
 
         # Send it to the switch
 
-        fq_logger.debug("Sending flow add to switch:")
-        fq_logger.debug(str(fc))
+        fq_logger.info("Sending flow add to switch:")
+        fq_logger.info(str(fc))
         ft = Flow_Tbl()
         fc.send_rem = False
         self.assertTrue(sw.flow_add(fc), "Failed to add flow")
@@ -2120,12 +2129,10 @@ class Flow_Mod_1(basic.SimpleProtocol):
             if fc2 != fc:
                 break
 
-        fc2.cookie = fc.cookie
-
         # Send that to the switch
         
-        fq_logger.debug("Sending strict flow mod to switch:")
-        fq_logger.debug(str(fc2))
+        fq_logger.info("Sending strict flow mod to switch:")
+        fq_logger.info(str(fc2))
         fc2.send_rem = False
         self.assertTrue(sw.flow_mod(fc2, True), "Failed to modify flow")
         ft.insert(fc2)
@@ -2144,11 +2151,11 @@ class Flow_Mod_1(basic.SimpleProtocol):
         # Verify flow table
 
         sw.flow_tbl = ft
-        if not sw.flow_tbl_verify():
+        if not sw.flow_tbl_verify(True):
             result = False
 
         self.assertTrue(result, "Flow_Mod_1 TEST FAILED")
-        fq_logger.debug("Flow_Mod_1 TEST PASSED")
+        fq_logger.info("Flow_Mod_1 TEST PASSED")
 
 
 # FLOW MODIFY 2
@@ -2191,19 +2198,19 @@ class Flow_Mod_2(basic.SimpleProtocol):
     """
 
     def runTest(self):
-        fq_logger.debug("Flow_Mod_2 TEST BEGIN")
+        fq_logger.info("Flow_Mod_2 TEST BEGIN")
 
         num_flows = test_param_get(fq_config, "num_flows", 100)
 
         # Clear all flows from switch
 
-        fq_logger.debug("Deleting all flows from switch")
+        fq_logger.info("Deleting all flows from switch")
         rc = delete_all_flows(self.controller, fq_logger)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         # Get switch capabilites
 
-        fq_logger.debug("Getting switch capabilities")        
+        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
         sw.controller_set(self.controller)
         self.assertTrue(sw.features_get(), "Get switch features failed")
@@ -2223,10 +2230,10 @@ class Flow_Mod_2(basic.SimpleProtocol):
 
         # Send flow table to switch
 
-        fq_logger.debug("Sending flow adds to switch")
+        fq_logger.info("Sending flow adds to switch")
         for fc in ft.values():          # Randomizes order of sending
-            fq_logger.debug("Adding flow:")
-            fq_logger.debug(str(fc));
+            fq_logger.info("Adding flow:")
+            fq_logger.info(str(fc));
             self.assertTrue(sw.flow_add(fc), "Failed to add flow")
 
         # Do barrier, to make sure all flows are in
@@ -2247,8 +2254,8 @@ class Flow_Mod_2(basic.SimpleProtocol):
             result = False
 
         # Pick a random flow as a basis
-        
-        mfc = copy.deepcopy(ft.values()[0])
+
+        mfc = copy.deepcopy((ft.values())[0])
         mfc.rand_mod(fi, sw.sw_features.actions, sw.valid_ports)
 
         # Repeatedly wildcard qualifiers
@@ -2282,9 +2289,9 @@ class Flow_Mod_2(basic.SimpleProtocol):
             if n > 1:
                 break
                     
-        fq_logger.debug("Modifying %d flows" % (n))
-        fq_logger.debug("Sending flow mod to switch:")
-        fq_logger.debug(str(mfc))
+        fq_logger.info("Modifying %d flows" % (n))
+        fq_logger.info("Sending flow mod to switch:")
+        fq_logger.info(str(mfc))
         self.assertTrue(sw.flow_mod(mfc, False), "Failed to modify flow")
 
         # Do barrier, to make sure all flows are in
@@ -2304,11 +2311,11 @@ class Flow_Mod_2(basic.SimpleProtocol):
         # Verify flow table
 
         sw.flow_tbl = ft
-        if not sw.flow_tbl_verify():
+        if not sw.flow_tbl_verify(True):
             result = False
 
         self.assertTrue(result, "Flow_Mod_2 TEST FAILED")
-        fq_logger.debug("Flow_Mod_2 TEST PASSED")
+        fq_logger.info("Flow_Mod_2 TEST PASSED")
 
 
 # FLOW MODIFY 3
@@ -2337,17 +2344,17 @@ class Flow_Mod_3(basic.SimpleProtocol):
     """
 
     def runTest(self):
-        fq_logger.debug("Flow_Mod_3 TEST BEGIN")
+        fq_logger.info("Flow_Mod_3 TEST BEGIN")
 
         # Clear all flows from switch
 
-        fq_logger.debug("Deleting all flows from switch")
+        fq_logger.info("Deleting all flows from switch")
         rc = delete_all_flows(self.controller, fq_logger)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         # Get switch capabilites
 
-        fq_logger.debug("Getting switch capabilities")        
+        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
         sw.controller_set(self.controller)
         self.assertTrue(sw.features_get(), "Get switch features failed")
@@ -2371,8 +2378,8 @@ class Flow_Mod_3(basic.SimpleProtocol):
 
         # Send it to the switch
 
-        fq_logger.debug("Sending flow mod to switch:")
-        fq_logger.debug(str(fc))
+        fq_logger.info("Sending flow mod to switch:")
+        fq_logger.info(str(fc))
         ft = Flow_Tbl()
         fc.send_rem = False
         self.assertTrue(sw.flow_mod(fc, True), "Failed to modify flows")
@@ -2396,7 +2403,7 @@ class Flow_Mod_3(basic.SimpleProtocol):
             result = False
 
         self.assertTrue(result, "Flow_Mod_3 TEST FAILED")
-        fq_logger.debug("Flow_Mod_3 TEST PASSED")
+        fq_logger.info("Flow_Mod_3 TEST PASSED")
 
 
 # FLOW DELETE 1
@@ -2428,17 +2435,17 @@ class Flow_Del_1(basic.SimpleProtocol):
     """
 
     def runTest(self):
-        fq_logger.debug("Flow_Del_1 TEST BEGIN")
+        fq_logger.info("Flow_Del_1 TEST BEGIN")
 
         # Clear all flows from switch
 
-        fq_logger.debug("Deleting all flows from switch")
+        fq_logger.info("Deleting all flows from switch")
         rc = delete_all_flows(self.controller, fq_logger)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         # Get switch capabilites
 
-        fq_logger.debug("Getting switch capabilities")        
+        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
         sw.controller_set(self.controller)
         self.assertTrue(sw.features_get(), "Get switch features failed")
@@ -2462,8 +2469,8 @@ class Flow_Del_1(basic.SimpleProtocol):
 
         # Send it to the switch
 
-        fq_logger.debug("Sending flow add to switch:")
-        fq_logger.debug(str(fc))
+        fq_logger.info("Sending flow add to switch:")
+        fq_logger.info(str(fc))
         ft = Flow_Tbl()
         fc.send_rem = False
         self.assertTrue(sw.flow_add(fc), "Failed to add flow")
@@ -2482,8 +2489,8 @@ class Flow_Del_1(basic.SimpleProtocol):
 
         # Delete strictly
         
-        fq_logger.debug("Sending strict flow del to switch:")
-        fq_logger.debug(str(fc2))
+        fq_logger.info("Sending strict flow del to switch:")
+        fq_logger.info(str(fc2))
         self.assertTrue(sw.flow_del(fc2, True), "Failed to delete flow")
         ft.delete(fc)
 
@@ -2505,7 +2512,7 @@ class Flow_Del_1(basic.SimpleProtocol):
             result = False
 
         self.assertTrue(result, "Flow_Del_1 TEST FAILED")
-        fq_logger.debug("Flow_Del_1 TEST PASSED")
+        fq_logger.info("Flow_Del_1 TEST PASSED")
 
 
 # FLOW DELETE 2
@@ -2546,19 +2553,19 @@ class Flow_Del_2(basic.SimpleProtocol):
     """
 
     def runTest(self):
-        fq_logger.debug("Flow_Del_2 TEST BEGIN")
+        fq_logger.info("Flow_Del_2 TEST BEGIN")
 
         num_flows = test_param_get(fq_config, "num_flows", 100)
 
         # Clear all flows from switch
 
-        fq_logger.debug("Deleting all flows from switch")
+        fq_logger.info("Deleting all flows from switch")
         rc = delete_all_flows(self.controller, fq_logger)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         # Get switch capabilites
 
-        fq_logger.debug("Getting switch capabilities")        
+        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
         sw.controller_set(self.controller)
         self.assertTrue(sw.features_get(), "Get switch features failed")
@@ -2578,10 +2585,10 @@ class Flow_Del_2(basic.SimpleProtocol):
 
         # Send flow table to switch
 
-        fq_logger.debug("Sending flow adds to switch")
+        fq_logger.info("Sending flow adds to switch")
         for fc in ft.values():          # Randomizes order of sending
-            fq_logger.debug("Adding flow:")
-            fq_logger.debug(str(fc));
+            fq_logger.info("Adding flow:")
+            fq_logger.info(str(fc));
             self.assertTrue(sw.flow_add(fc), "Failed to add flow")
 
         # Do barrier, to make sure all flows are in
@@ -2637,9 +2644,9 @@ class Flow_Del_2(basic.SimpleProtocol):
             if n > 1:
                 break
                     
-        fq_logger.debug("Deleting %d flows" % (n))
-        fq_logger.debug("Sending flow del to switch:")
-        fq_logger.debug(str(dfc))
+        fq_logger.info("Deleting %d flows" % (n))
+        fq_logger.info("Sending flow del to switch:")
+        fq_logger.info(str(dfc))
         self.assertTrue(sw.flow_del(dfc, False), "Failed to delete flows")
 
         # Do barrier, to make sure all flows are in
@@ -2663,7 +2670,7 @@ class Flow_Del_2(basic.SimpleProtocol):
             result = False
 
         self.assertTrue(result, "Flow_Del_2 TEST FAILED")
-        fq_logger.debug("Flow_Del_2 TEST PASSED")
+        fq_logger.info("Flow_Del_2 TEST PASSED")
 
 
 # FLOW DELETE 4
@@ -2698,17 +2705,17 @@ class Flow_Del_4(basic.SimpleProtocol):
     """
 
     def runTest(self):
-        fq_logger.debug("Flow_Del_4 TEST BEGIN")
+        fq_logger.info("Flow_Del_4 TEST BEGIN")
 
         # Clear all flows from switch
 
-        fq_logger.debug("Deleting all flows from switch")
+        fq_logger.info("Deleting all flows from switch")
         rc = delete_all_flows(self.controller, fq_logger)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         # Get switch capabilites
 
-        fq_logger.debug("Getting switch capabilities")        
+        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
         sw.controller_set(self.controller)
         self.assertTrue(sw.features_get(), "Get switch features failed")
@@ -2732,8 +2739,8 @@ class Flow_Del_4(basic.SimpleProtocol):
 
         # Send it to the switch. with "notify on removed"
 
-        fq_logger.debug("Sending flow add to switch:")
-        fq_logger.debug(str(fc))
+        fq_logger.info("Sending flow add to switch:")
+        fq_logger.info(str(fc))
         ft = Flow_Tbl()
         fc.send_rem = True
         self.assertTrue(sw.flow_add(fc), "Failed to add flow")
@@ -2752,8 +2759,8 @@ class Flow_Del_4(basic.SimpleProtocol):
 
         # Delete strictly
         
-        fq_logger.debug("Sending strict flow del to switch:")
-        fq_logger.debug(str(fc2))
+        fq_logger.info("Sending strict flow del to switch:")
+        fq_logger.info(str(fc2))
         self.assertTrue(sw.flow_del(fc2, True), "Failed to delete flow")
         ft.delete(fc)
 
@@ -2778,5 +2785,5 @@ class Flow_Del_4(basic.SimpleProtocol):
             result = False
 
         self.assertTrue(result, "Flow_Del_4 TEST FAILED")
-        fq_logger.debug("Flow_Del_4 TEST PASSED")
+        fq_logger.info("Flow_Del_4 TEST PASSED")
         
