@@ -838,7 +838,7 @@ def hex_dump_buffer(src, length=16):
     @param length The number of bytes shown in each line
     @returns A string showing the hex dump
     """
-    result = []
+    result = ["\n"]
     for i in xrange(0, len(src), length):
        chars = src[i:i+length]
        hex = ' '.join(["%02x" % ord(x) for x in chars])
