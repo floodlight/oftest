@@ -196,6 +196,14 @@ class DirectPacketQueue(basic.SimpleDataPlane):
     def runTest(self):
         self.handleFlow()
 
+    def portQueuesGet(self, queue_stats, port_num):
+        result = []
+        for qs in queue_stats.stats:
+            if qs.port_no != port_num:
+                continue
+            result.append(qs.queue_id)
+        return result
+
     def handleFlow(self, pkttype='TCP'):
         of_ports = pa_port_map.keys()
         of_ports.sort()
@@ -210,54 +218,89 @@ class DirectPacketQueue(basic.SimpleDataPlane):
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
 
-        act             = action.action_enqueue()
-        egress_queue_id = 0             # For the time being, always queue 0
+        # Get queue stats from switch
+        
+        request = message.queue_stats_request()
+        request.port_no  = ofp.OFPP_ALL
+        request.queue_id = ofp.OFPQ_ALL
+        (queue_stats, pkt) = self.controller.transact(request, timeout=2)
+        self.assertNotEqual(queue_stats, None, "Queue stats request failed")
+
+        act = action.action_enqueue()
 
         for idx in range(len(of_ports)):
-            rv = delete_all_flows(self.controller, pa_logger)
-            self.assertEqual(rv, 0, "Failed to delete all flows")
-
             ingress_port = of_ports[idx]
             egress_port = of_ports[(idx + 1) % len(of_ports)]
-            pa_logger.info("Ingress " + str(ingress_port)
-                           + " to egress " + str(egress_port)
-                           + " queue " + str(egress_queue_id)
-                           )
 
-            match.in_port = ingress_port
+            for egress_queue_id in self.portQueuesGet(queue_stats, egress_port):
+                pa_logger.info("Ingress " + str(ingress_port)
+                               + " to egress " + str(egress_port)
+                               + " queue " + str(egress_queue_id)
+                               )
 
-            request = message.flow_mod()
-            request.match = match
+                rv = delete_all_flows(self.controller, pa_logger)
+                self.assertEqual(rv, 0, "Failed to delete all flows")
 
-            request.buffer_id = 0xffffffff
-            act.port     = egress_port
-            act.queue_id = egress_queue_id
-            self.assertTrue(request.actions.add(act), "Could not add action")
+                match.in_port = ingress_port
+                
+                request = message.flow_mod()
+                request.match = match
 
-            pa_logger.info("Inserting flow")
-            rv = self.controller.message_send(request)
-            self.assertTrue(rv != -1, "Error installing flow mod")
-            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+                request.buffer_id = 0xffffffff
+                act.port     = egress_port
+                act.queue_id = egress_queue_id
+                self.assertTrue(request.actions.add(act), "Could not add action")
 
-            pa_logger.info("Sending packet to dp port " + 
-                           str(ingress_port))
-            self.dataplane.send(ingress_port, str(pkt))
+                pa_logger.info("Inserting flow")
+                rv = self.controller.message_send(request)
+                self.assertTrue(rv != -1, "Error installing flow mod")
+                self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-            exp_pkt_arg = None
-            exp_port = None
-            if pa_config["relax"]:
-                exp_pkt_arg = pkt
-                exp_port = egress_port
+                # Get current stats for selected egress queue
 
-            (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(timeout=1, 
-                                                                port_number=exp_port,
-                                                                exp_pkt=exp_pkt_arg)
-            self.assertTrue(rcv_pkt is not None, "Did not receive packet")
-            pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
-                         str(rcv_port))
-            self.assertEqual(rcv_port, egress_port, "Unexpected receive port")
-            self.assertEqual(str(pkt), str(rcv_pkt),
-                             'Response packet does not match send packet')
+                request = message.queue_stats_request()
+                request.port_no  = egress_port
+                request.queue_id = egress_queue_id
+                (qs_before, pkt) = self.controller.transact(request, timeout=2)
+                self.assertNotEqual(qs_before, None, "Queue stats request failed")
+
+                pa_logger.info("Sending packet to dp port " + 
+                               str(ingress_port))
+                self.dataplane.send(ingress_port, str(pkt))
+                
+                exp_pkt_arg = None
+                exp_port = None
+                if pa_config["relax"]:
+                    exp_pkt_arg = pkt
+                    exp_port = egress_port
+                    
+                    (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(timeout=1, 
+                                                                        port_number=exp_port,
+                                                                        exp_pkt=exp_pkt_arg)
+                    self.assertTrue(rcv_pkt is not None, "Did not receive packet")
+                    pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
+                                    str(rcv_port))
+                    self.assertEqual(rcv_port, egress_port, "Unexpected receive port")
+                    self.assertEqual(str(pkt), str(rcv_pkt),
+                                     'Response packet does not match send packet')
+
+                # Get current stats for selected egress queue again
+
+                request = message.queue_stats_request()
+                request.port_no  = egress_port
+                request.queue_id = egress_queue_id
+                (qs_after, pkt) = self.controller.transact(request, timeout=2)
+                self.assertNotEqual(qs_after, None, "Queue stats request failed")
+
+                # Make sure that tx packet counter for selected egress queue was
+                # incremented
+
+                self.assertEqual(qs_after.stats.stats[0].tx_packets, \
+                                 qs_before.stats.stats[0].tx_packets + 1, \
+                                 "Verification of egress queue tx packet count failed"
+                                 )
+                    
+
 
 
 class DirectPacketICMP(DirectPacket):
