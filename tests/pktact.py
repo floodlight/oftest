@@ -295,8 +295,8 @@ class DirectPacketQueue(basic.SimpleDataPlane):
                 # Make sure that tx packet counter for selected egress queue was
                 # incremented
 
-                self.assertEqual(qs_after.stats.stats[0].tx_packets, \
-                                 qs_before.stats.stats[0].tx_packets + 1, \
+                self.assertEqual(qs_after.stats[0].tx_packets, \
+                                 qs_before.stats[0].tx_packets + 1, \
                                  "Verification of egress queue tx packet count failed"
                                  )
                     
