@@ -284,6 +284,11 @@ class DirectPacketQueue(basic.SimpleDataPlane):
                     self.assertEqual(str(pkt), str(rcv_pkt),
                                      'Response packet does not match send packet')
 
+                # FIXME: instead of sleeping, keep requesting queue stats until
+                # the expected queue counter increases or some large timeout is
+                # reached
+                time.sleep(2)
+
                 # Get current stats for selected egress queue again
 
                 request = message.queue_stats_request()
