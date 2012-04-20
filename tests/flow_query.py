@@ -37,6 +37,12 @@ they all are read back correctly.
 # Override list of OF port numbers reported by switch
 # Default: none
 #
+# Name: queues
+# Type: list of OF (port-number, queue-id) pairs
+# Description:
+# Override list of OF (port-number, queue-id) pairs returned by switch
+# Default: none
+#
 # Name: conservative_ordered_actions
 # Type: boolean (True or False)
 # Description:
@@ -257,7 +263,6 @@ all_wildcard_names = {
     2097152                         : 'OFPFW_NW_TOS'
 }
 
-
 def wildcard_set(x, w, val):
     result = x
     if w == ofp.OFPFW_NW_SRC_MASK:
@@ -279,6 +284,25 @@ def wildcard_get(x, w):
         return (x & ofp.OFPFW_NW_DST_MASK) >> ofp.OFPFW_NW_DST_SHIFT
     return 1 if (x & w) != 0 else 0
 
+def wildcards_to_str(wildcards):
+    result = "{"
+    sep = ""
+    for w in all_wildcards_list:
+        if (wildcards & w) == 0:
+            continue
+        if w == ofp.OFPFW_NW_SRC_MASK:
+            n = wildcard_get(wildcards, w)
+            if n > 0:
+                result = result + sep + ("OFPFW_NW_SRC(%d)" % (n))
+        elif w == ofp.OFPFW_NW_DST_MASK:
+            n = wildcard_get(wildcards, w)
+            if n > 0:
+                result = result + sep + ("OFPFW_NW_DST(%d)" % (n))
+        else:
+            result = result + sep + all_wildcard_names[w]
+        sep = ", "
+    result = result +"}"
+    return result
 
 all_actions_list = [ofp.OFPAT_OUTPUT,
                     ofp.OFPAT_SET_VLAN_VID,
@@ -293,6 +317,16 @@ all_actions_list = [ofp.OFPAT_OUTPUT,
                     ofp.OFPAT_SET_TP_DST,
                     ofp.OFPAT_ENQUEUE
                     ]
+
+def actions_bmap_to_str(bm):
+    result = "{"
+    sep    = ""
+    for a in all_actions_list:
+        if ((1 << a) & bm) != 0:
+            result = result + sep + ofp.ofp_action_type_map[a]
+            sep = ", "
+    result = result + "}"
+    return result
 
 def dl_addr_to_str(a):
     return "%x:%x:%x:%x:%x:%x" % tuple(a)
@@ -407,23 +441,11 @@ class Flow_Cfg:
         result = "priority=%d" % self.priority
         # TBD - Would be nice if ofp_match.show() was better behaved
         # (no newlines), and more intuitive (things in hex where approprate), etc.
-        result = result + (", wildcards=0x%x={" % (self.match.wildcards))
-        sep = ""
-        for w in all_wildcards_list:
-            if (self.match.wildcards & w) == 0:
-                continue
-            if w == ofp.OFPFW_NW_SRC_MASK:
-                n = wildcard_get(self.match.wildcards, w)
-                if n > 0:
-                    result = result + sep + ("OFPFW_NW_SRC(%d)" % (n))
-            elif w == ofp.OFPFW_NW_DST_MASK:
-                n = wildcard_get(self.match.wildcards, w)
-                if n > 0:
-                    result = result + sep + ("OFPFW_NW_DST(%d)" % (n))
-            else:
-                result = result + sep + all_wildcard_names[w]
-            sep = ", "
-        result = result +"}"
+        result = result + (", wildcards=0x%x=%s" \
+                           % (self.match.wildcards, \
+                              wildcards_to_str(self.match.wildcards) \
+                              )
+                           )
         if wildcard_get(self.match.wildcards, ofp.OFPFW_IN_PORT) == 0:
             result = result + (", in_port=%d" % (self.match.in_port))
         if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_DST) == 0:
@@ -488,11 +510,14 @@ class Flow_Cfg:
                 result = result + ("(port=%d,queue=%d)" % (a.port, a.queue_id))
         return result
 
-    def rand_actions_ordered(self, fi, valid_actions, valid_ports):
+    def rand_actions_ordered(self, fi, valid_actions, valid_ports, valid_queues):
         # Action lists are ordered, so pick an ordered random subset of
         # supported actions
 
         actions_force = test_param_get(fq_config, "actions_force", 0)
+        if actions_force != 0:
+            fq_logger.info("Forced actions:")
+            fq_logger.info(actions_bmap_to_str(actions_force))
 
         ACTION_MAX_LEN = 65535 # @fixme Should be test param?
         supported_actions = []
@@ -551,19 +576,19 @@ class Flow_Cfg:
                 
         p = random.randint(1, 100)
         if (((1 << ofp.OFPAT_ENQUEUE) & actions_force) != 0 or p <= 33) \
-               and ofp.OFPAT_ENQUEUE in actions:
+           and len(valid_queues) > 0 \
+           and ofp.OFPAT_ENQUEUE in actions:
             # In not forecd, one third of the time, include ENQUEUE actions
             # at end of list
             # At most 1 ENQUEUE action
             act = action.action_enqueue()
-            act.port = rand_pick(valid_ports)
-            # TBD - Limits for queue number?
-            act.queue_id = random.randint(0, 7)
+            (act.port, act.queue_id) = rand_pick(valid_queues)
             act.max_len = ACTION_MAX_LEN
             self.actions.add(act)
         if (((1 << ofp.OFPAT_OUTPUT) & actions_force) != 0 \
             or (p > 33 and p <= 66) \
             ) \
+            and len(valid_ports) > 0 \
             and ofp.OFPAT_OUTPUT in actions:
             # One third of the time, include OUTPUT actions at end of list
             port_idxs = shuffle(range(len(valid_ports)))
@@ -585,16 +610,19 @@ class Flow_Cfg:
 
 
     # Randomize flow data for flow modifies (i.e. cookie and actions)
-    def rand_mod(self, fi, valid_actions, valid_ports):
+    def rand_mod(self, fi, valid_actions, valid_ports, valid_queues):
         self.cookie = random.randint(0, (1 << 53) - 1)
 
         # By default, test with conservative ordering conventions
         # This should probably be indicated in a profile
         if test_param_get(fq_config, "conservative_ordered_actions", True):
-            self.rand_actions_ordered(fi, valid_actions, valid_ports)
+            self.rand_actions_ordered(fi, valid_actions, valid_ports, valid_queues)
             return self
 
         actions_force = test_param_get(fq_config, "actions_force", 0)
+        if actions_force != 0:
+            fq_logger.info("Forced actions:")
+            fq_logger.info(actions_bmap_to_str(actions_force))
 
         ACTION_MAX_LEN = 65535 # @fixme Should be test param?
         supported_actions = []
@@ -615,6 +643,8 @@ class Flow_Cfg:
         for a in actions:
             if a == ofp.OFPAT_OUTPUT:
                 # TBD - Output actions are clustered in list, spread them out?
+                if len(valid_ports) == 0:
+                    continue
                 port_idxs = shuffle(range(len(valid_ports)))
                 port_idxs = port_idxs[0 : random.randint(1, len(valid_ports))]
                 for pi in port_idxs:
@@ -661,20 +691,23 @@ class Flow_Cfg:
                 self.actions.add(act)
             elif a == ofp.OFPAT_ENQUEUE:
                 # TBD - Enqueue actions are clustered in list, spread them out?
-                port_idxs = shuffle(range(len(valid_ports)))
-                port_idxs = port_idxs[0 : random.randint(1, len(valid_ports))]
-                for pi in port_idxs:
+                if len(valid_queues) == 0:
+                    continue
+                qidxs = shuffle(range(len(valid_queues)))
+                qidxs = qidxs[0 : random.randint(1, len(valid_queues))]
+                for qi in qidxs:
                     act = action.action_enqueue()
-                    act.port = valid_ports[pi]
-                    # TBD - Limits for queue number?
-                    act.queue_id = random.randint(0, 7)
+                    (act.port, act.queue_id) = valid_queues[qi]
                     self.actions.add(act)
 
         return self
 
     # Randomize flow cfg
-    def rand(self, fi, valid_wildcards, valid_actions, valid_ports):
+    def rand(self, fi, valid_wildcards, valid_actions, valid_ports, valid_queues):
         wildcards_force = test_param_get(fq_config, "wildcards_force", 0)
+        if wildcards_force != 0:
+            fq_logger.info("Wildcards forced:")
+            fq_logger.info(wildcards_to_str(wildcards_force))
         
         # Start with no wildcards, i.e. everything specified
         self.match.wildcards = 0
@@ -921,7 +954,7 @@ class Flow_Cfg:
         t = random.randint(0, 65535)
         self.hard_timeout = 0 if t < 60 else t
 
-        self.rand_mod(fi, valid_actions, valid_ports)
+        self.rand_mod(fi, valid_actions, valid_ports, valid_queues)
 
         return self
 
@@ -1143,7 +1176,8 @@ class Flow_Tbl:
             fc.rand(fi, \
                     sw.tbl_stats.stats[tbl].wildcards, \
                     sw.sw_features.actions, \
-                    sw.valid_ports \
+                    sw.valid_ports, \
+                    sw.valid_queues \
                     )
             fc = fc.canonical()
             if self.find(fc):
@@ -1180,20 +1214,23 @@ def removed_handler(self, msg, rawmsg):
 
 class Switch:
     # Members:
-    # controller  - switch's test controller
-    # sw_features - switch's OFPT_FEATURES_REPLY message
-    # valid_ports - list of valid port numbers
-    # tbl_stats   - switch's OFPT_STATS_REPLY message, for table stats request
-    # flow_stats  - switch's OFPT_STATS_REPLY message, for flow stats request
-    # flow_tbl    - (test's idea of) switch's flow table
+    # controller   - switch's test controller
+    # sw_features  - switch's OFPT_FEATURES_REPLY message
+    # valid_ports  - list of valid port numbers
+    # valid_queues - list of valid [port, queue] pairs
+    # tbl_stats    - switch's OFPT_STATS_REPLY message, for table stats request
+    # queue_stats  - switch's OFPT_STATS_REPLY message, for queue stats request
+    # flow_stats   - switch's OFPT_STATS_REPLY message, for flow stats request
+    # flow_tbl     - (test's idea of) switch's flow table
 
     def __init__(self):
-        self.controller  = None
-        self.sw_features = None
-        self.valid_ports = []
-        self.tbl_stats   = None
-        self.flow_stats  = None
-        self.flow_tbl    = Flow_Tbl()
+        self.controller   = None
+        self.sw_features  = None
+        self.valid_ports  = []
+        self.valid_queues = []
+        self.tbl_stats    = None
+        self.flow_stats   = None
+        self.flow_tbl     = Flow_Tbl()
 
     def controller_set(self, controller):
         self.controller = controller
@@ -1208,8 +1245,17 @@ class Switch:
         request = message.features_request()
         (self.sw_features, pkt) = self.controller.transact(request, timeout=2)
         if self.sw_features is None:
+            fq_logger.error("Get switch features failed")
             return False
         self.valid_ports = map(lambda x: x.port_no, self.sw_features.ports)
+        fq_logger.info("Ports reported by switch:")
+        fq_logger.info(self.valid_ports)
+        ports_override = test_param_get(fq_config, "ports", [])
+        if ports_override != []:
+            fq_logger.info("Overriding ports to:")
+            fq_logger.info(ports_override)
+            self.valid_ports = ports_override
+        
         # TBD - OFPP_LOCAL is returned by OVS is switch features --
         # is that universal?
 
@@ -1223,13 +1269,17 @@ class Switch:
 #                                  ofp.OFPP_CONTROLLER \
 #                                  ] \
 #                                 )
+        fq_logger.info("Supported actions reported by switch:")
+        fq_logger.info("0x%x=%s" \
+                       % (self.sw_features.actions, \
+                          actions_bmap_to_str(self.sw_features.actions) \
+                          ) \
+                       )
         actions_override = test_param_get(fq_config, "actions", -1)
         if actions_override != -1:
+            fq_logger.info("Overriding supported actions to:")
+            fq_logger.info(actions_bmap_to_str(actions_override))
             self.sw_features.actions = actions_override
-        ports_override = test_param_get(fq_config, "ports", [])
-        if ports_override != []:
-            self.valid_ports = ports_override
-
         return True
 
     def tbl_stats_get(self):
@@ -1237,12 +1287,56 @@ class Switch:
         request = message.table_stats_request()
         (self.tbl_stats, pkt) = self.controller.transact(request, timeout=2)
         if self.tbl_stats is None:
+            fq_logger.error("Get table stats failed")
             return False
+        i = 0
         for ts in self.tbl_stats.stats:
+            fq_logger.info("Supported wildcards for table %d reported by switch:"
+                           % (i)
+                           )
+            fq_logger.info("0x%x=%s" \
+                           % (ts.wildcards, \
+                              wildcards_to_str(ts.wildcards) \
+                              ) \
+                           )
             wildcards_override = test_param_get(fq_config, "wildcards", -1)
             if wildcards_override != -1:
+                fq_logger.info("Overriding supported wildcards for table %d to:"
+                               % (i)
+                               )
+                fq_logger.info(wildcards_to_str(wildcards_override))
                 ts.wildcards = wildcards_override
+            i = i + 1
         return True
+
+    def queue_stats_get(self):
+        # Get queue stats
+        request = message.queue_stats_request()
+        request.port_no  = ofp.OFPP_ALL
+        request.queue_id = ofp.OFPQ_ALL
+        (self.queue_stats, pkt) = self.controller.transact(request, timeout=2)
+        if self.queue_stats is None:
+            fq_logger.error("Get queue stats failed")
+            return False
+        self.valid_queues = map(lambda x: (x.port_no, x.queue_id), \
+                                self.queue_stats.stats \
+                                )
+        fq_logger.info("(Port, queue) pairs reported by switch:")
+        fq_logger.info(self.valid_queues)
+        queues_override = test_param_get(fq_config, "queues", [])
+        if queues_override != []:
+            fq_logger.info("Overriding (port, queue) pairs to:")
+            fq_logger.info(queues_override)
+            self.valid_queues = queues_override
+        return True
+
+    def connect(self, controller):
+        # Connect to controller, and get all switch capabilities
+        self.controller_set(controller)
+        return (self.features_get() \
+                and self.tbl_stats_get() \
+                and self.queue_stats_get() \
+                )
 
     def flow_stats_get(self, limit = 10000):
         request = message.flow_stats_request()
@@ -1505,11 +1599,10 @@ class Flow_Add_5(basic.SimpleProtocol):
 
         # Get switch capabilites
 
-        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
-        sw.controller_set(self.controller)
-        self.assertTrue(sw.features_get(), "Get switch features failed")
-        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
+        self.assertTrue(sw.connect(self.controller), \
+                        "Failed to connect to switch" \
+                        )
 
         if num_flows == 0:
             # Number of flows requested was 0
@@ -1606,11 +1699,10 @@ class Flow_Add_5_1(basic.SimpleProtocol):
 
         # Get switch capabilites
 
-        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
-        sw.controller_set(self.controller)
-        self.assertTrue(sw.features_get(), "Get switch features failed")
-        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
+        self.assertTrue(sw.connect(self.controller), \
+                        "Failed to connect to switch" \
+                        )
 
         # Dream up some flow information, i.e. space to chose from for
         # random flow parameter generation
@@ -1625,7 +1717,8 @@ class Flow_Add_5_1(basic.SimpleProtocol):
             fc.rand(fi, \
                     sw.tbl_stats.stats[0].wildcards, \
                     sw.sw_features.actions, \
-                    sw.valid_ports \
+                    sw.valid_ports, \
+                    sw.valid_queues \
                     )
             fcc = fc.canonical()
             if fcc.match != fc.match:
@@ -1718,11 +1811,10 @@ class Flow_Add_6(basic.SimpleProtocol):
 
         # Get switch capabilites
 
-        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
-        sw.controller_set(self.controller)
-        self.assertTrue(sw.features_get(), "Get switch features failed")
-        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
+        self.assertTrue(sw.connect(self.controller), \
+                        "Failed to connect to switch" \
+                        )
 
         num_flows = 0
         for ts in sw.tbl_stats.stats:
@@ -1769,7 +1861,8 @@ class Flow_Add_6(basic.SimpleProtocol):
             fc.rand(fi, \
                     sw.tbl_stats.stats[0].wildcards, \
                     sw.sw_features.actions, \
-                    sw.valid_ports \
+                    sw.valid_ports, \
+                    sw.valid_queues \
                     )
             fc = fc.canonical()
             if not ft.find(fc):
@@ -1845,11 +1938,10 @@ class Flow_Add_7(basic.SimpleProtocol):
 
         # Get switch capabilites
 
-        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
-        sw.controller_set(self.controller)
-        self.assertTrue(sw.features_get(), "Get switch features failed")
-        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
+        self.assertTrue(sw.connect(self.controller), \
+                        "Failed to connect to switch" \
+                        )
 
         # Dream up some flow information, i.e. space to chose from for
         # random flow parameter generation
@@ -1863,7 +1955,8 @@ class Flow_Add_7(basic.SimpleProtocol):
         fc.rand(fi, \
                 sw.tbl_stats.stats[0].wildcards, \
                 sw.sw_features.actions, \
-                sw.valid_ports \
+                sw.valid_ports, \
+                sw.valid_queues \
                 )
         fc = fc.canonical()
 
@@ -1882,7 +1975,8 @@ class Flow_Add_7(basic.SimpleProtocol):
         while True:
             fc2.rand_mod(fi, \
                          sw.sw_features.actions, \
-                         sw.valid_ports \
+                         sw.valid_ports, \
+                         sw.valid_queues \
                          )
             if fc2 != fc:
                 break
@@ -1963,11 +2057,10 @@ class Flow_Add_8(basic.SimpleProtocol):
 
         # Get switch capabilites
 
-        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
-        sw.controller_set(self.controller)
-        self.assertTrue(sw.features_get(), "Get switch features failed")
-        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
+        self.assertTrue(sw.connect(self.controller), \
+                        "Failed to connect to switch" \
+                        )
 
         # Dream up some flow information, i.e. space to chose from for
         # random flow parameter generation
@@ -1982,7 +2075,8 @@ class Flow_Add_8(basic.SimpleProtocol):
             fc.rand(fi, \
                     sw.tbl_stats.stats[0].wildcards, \
                     sw.sw_features.actions, \
-                    sw.valid_ports \
+                    sw.valid_ports, \
+                    sw.valid_queues \
                     )
             fc = fc.canonical()
             if fc.match.wildcards != ofp.OFPFW_ALL:
@@ -2087,11 +2181,10 @@ class Flow_Mod_1(basic.SimpleProtocol):
 
         # Get switch capabilites
 
-        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
-        sw.controller_set(self.controller)
-        self.assertTrue(sw.features_get(), "Get switch features failed")
-        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
+        self.assertTrue(sw.connect(self.controller), \
+                        "Failed to connect to switch" \
+                        )
 
         # Dream up some flow information, i.e. space to chose from for
         # random flow parameter generation
@@ -2105,7 +2198,8 @@ class Flow_Mod_1(basic.SimpleProtocol):
         fc.rand(fi, \
                 sw.tbl_stats.stats[0].wildcards, \
                 sw.sw_features.actions, \
-                sw.valid_ports \
+                sw.valid_ports, \
+                sw.valid_queues \
                 )
         fc = fc.canonical()
 
@@ -2124,7 +2218,8 @@ class Flow_Mod_1(basic.SimpleProtocol):
         while True:
             fc2.rand_mod(fi, \
                          sw.sw_features.actions, \
-                         sw.valid_ports \
+                         sw.valid_ports, \
+                         sw.valid_queues \
                          )
             if fc2 != fc:
                 break
@@ -2210,11 +2305,10 @@ class Flow_Mod_2(basic.SimpleProtocol):
 
         # Get switch capabilites
 
-        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
-        sw.controller_set(self.controller)
-        self.assertTrue(sw.features_get(), "Get switch features failed")
-        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
+        self.assertTrue(sw.connect(self.controller), \
+                        "Failed to connect to switch" \
+                        )
 
         # Dream up some flow information, i.e. space to chose from for
         # random flow parameter generation
@@ -2256,7 +2350,11 @@ class Flow_Mod_2(basic.SimpleProtocol):
         # Pick a random flow as a basis
 
         mfc = copy.deepcopy((ft.values())[0])
-        mfc.rand_mod(fi, sw.sw_features.actions, sw.valid_ports)
+        mfc.rand_mod(fi, \
+                     sw.sw_features.actions, \
+                     sw.valid_ports, \
+                     sw.valid_queues \
+                     )
 
         # Repeatedly wildcard qualifiers
 
@@ -2354,11 +2452,10 @@ class Flow_Mod_3(basic.SimpleProtocol):
 
         # Get switch capabilites
 
-        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
-        sw.controller_set(self.controller)
-        self.assertTrue(sw.features_get(), "Get switch features failed")
-        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
+        self.assertTrue(sw.connect(self.controller), \
+                        "Failed to connect to switch" \
+                        )
 
         # Dream up some flow information, i.e. space to chose from for
         # random flow parameter generation
@@ -2372,7 +2469,8 @@ class Flow_Mod_3(basic.SimpleProtocol):
         fc.rand(fi, \
                 sw.tbl_stats.stats[0].wildcards, \
                 sw.sw_features.actions, \
-                sw.valid_ports \
+                sw.valid_ports, \
+                sw.valid_queues \
                 )
         fc = fc.canonical()
 
@@ -2404,6 +2502,116 @@ class Flow_Mod_3(basic.SimpleProtocol):
 
         self.assertTrue(result, "Flow_Mod_3 TEST FAILED")
         fq_logger.info("Flow_Mod_3 TEST PASSED")
+
+
+# FLOW MODIFY 3_1
+
+# OVERVIEW
+# No-op modify
+#
+# PURPOSE
+# Verify that modify of a flow with new actions same as old ones operates correctly
+#
+# PARAMETERS
+# None
+#
+# PROCESS
+# 1. Delete all flows from switch
+# 2. Send single flow mod, as strict modify, to switch
+# 3. Verify flow table in switch
+# 4. Send same flow mod, as strict modify, to switch
+# 5. Verify flow table in switch
+# 6. Test PASSED iff flow defined in step 2 and 4 above verified; else FAILED
+
+class Flow_Mod_3_1(basic.SimpleProtocol):
+    """
+    Test FLOW_MOD_3_1 from draft top-half test plan
+    
+    INPUTS
+    None
+    """
+
+    def runTest(self):
+        fq_logger.info("Flow_Mod_3_1 TEST BEGIN")
+
+        # Clear all flows from switch
+
+        fq_logger.info("Deleting all flows from switch")
+        rc = delete_all_flows(self.controller, fq_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+
+        # Get switch capabilites
+
+        sw = Switch()
+        self.assertTrue(sw.connect(self.controller), \
+                        "Failed to connect to switch" \
+                        )
+
+        # Dream up some flow information, i.e. space to chose from for
+        # random flow parameter generation
+
+        fi = Flow_Info()
+        fi.rand(10)
+        
+        # Dream up a flow config
+
+        fc = Flow_Cfg()
+        fc.rand(fi, \
+                sw.tbl_stats.stats[0].wildcards, \
+                sw.sw_features.actions, \
+                sw.valid_ports, \
+                sw.valid_queues \
+                )
+        fc = fc.canonical()
+
+        # Send it to the switch
+
+        fq_logger.info("Sending flow mod to switch:")
+        fq_logger.info(str(fc))
+        ft = Flow_Tbl()
+        fc.send_rem = False
+        self.assertTrue(sw.flow_mod(fc, True), "Failed to modify flows")
+        ft.insert(fc)
+
+        # Do barrier, to make sure all flows are in
+
+        self.assertTrue(sw.barrier(), "Barrier failed")
+
+        result = True
+
+        # Check for any error messages
+
+        if not sw.errors_verify(0):
+            result = False
+
+        # Verify flow table
+
+        sw.flow_tbl = ft
+        if not sw.flow_tbl_verify():
+            result = False
+
+        # Send same flow to the switch again
+
+        fq_logger.info("Sending flow mod to switch:")
+        fq_logger.info(str(fc))
+        self.assertTrue(sw.flow_mod(fc, True), "Failed to modify flows")
+
+        # Do barrier, to make sure all flows are in
+
+        self.assertTrue(sw.barrier(), "Barrier failed")
+
+        # Check for any error messages
+
+        if not sw.errors_verify(0):
+            result = False
+
+        # Verify flow table
+
+        if not sw.flow_tbl_verify():
+            result = False
+
+        self.assertTrue(result, "Flow_Mod_3_1 TEST FAILED")
+        fq_logger.info("Flow_Mod_3_1 TEST PASSED")
 
 
 # FLOW DELETE 1
@@ -2445,11 +2653,10 @@ class Flow_Del_1(basic.SimpleProtocol):
 
         # Get switch capabilites
 
-        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
-        sw.controller_set(self.controller)
-        self.assertTrue(sw.features_get(), "Get switch features failed")
-        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
+        self.assertTrue(sw.connect(self.controller), \
+                        "Failed to connect to switch" \
+                        )
 
         # Dream up some flow information, i.e. space to chose from for
         # random flow parameter generation
@@ -2463,7 +2670,8 @@ class Flow_Del_1(basic.SimpleProtocol):
         fc.rand(fi, \
                 sw.tbl_stats.stats[0].wildcards, \
                 sw.sw_features.actions, \
-                sw.valid_ports \
+                sw.valid_ports, \
+                sw.valid_queues \
                 )
         fc = fc.canonical()
 
@@ -2482,7 +2690,8 @@ class Flow_Del_1(basic.SimpleProtocol):
         while True:
             fc2.rand_mod(fi, \
                          sw.sw_features.actions, \
-                         sw.valid_ports \
+                         sw.valid_ports, \
+                         sw.valid_queues \
                          )
             if fc2 != fc:
                 break
@@ -2565,11 +2774,10 @@ class Flow_Del_2(basic.SimpleProtocol):
 
         # Get switch capabilites
 
-        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
-        sw.controller_set(self.controller)
-        self.assertTrue(sw.features_get(), "Get switch features failed")
-        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
+        self.assertTrue(sw.connect(self.controller), \
+                        "Failed to connect to switch" \
+                        )
 
         # Dream up some flow information, i.e. space to chose from for
         # random flow parameter generation
@@ -2611,7 +2819,11 @@ class Flow_Del_2(basic.SimpleProtocol):
         # Pick a random flow as a basis
         
         dfc = copy.deepcopy(ft.values()[0])
-        dfc.rand_mod(fi, sw.sw_features.actions, sw.valid_ports)
+        dfc.rand_mod(fi, \
+                     sw.sw_features.actions, \
+                     sw.valid_ports, \
+                     sw.valid_queues \
+                     )
 
         # Repeatedly wildcard qualifiers
 
@@ -2715,11 +2927,10 @@ class Flow_Del_4(basic.SimpleProtocol):
 
         # Get switch capabilites
 
-        fq_logger.info("Getting switch capabilities")        
         sw = Switch()
-        sw.controller_set(self.controller)
-        self.assertTrue(sw.features_get(), "Get switch features failed")
-        self.assertTrue(sw.tbl_stats_get(), "Get table stats failed")
+        self.assertTrue(sw.connect(self.controller), \
+                        "Failed to connect to switch" \
+                        )
 
         # Dream up some flow information, i.e. space to chose from for
         # random flow parameter generation
@@ -2733,7 +2944,8 @@ class Flow_Del_4(basic.SimpleProtocol):
         fc.rand(fi, \
                 sw.tbl_stats.stats[0].wildcards, \
                 sw.sw_features.actions, \
-                sw.valid_ports \
+                sw.valid_ports, \
+                sw.valid_queues \
                 )
         fc = fc.canonical()
 
@@ -2752,7 +2964,8 @@ class Flow_Del_4(basic.SimpleProtocol):
         while True:
             fc2.rand_mod(fi, \
                          sw.sw_features.actions, \
-                         sw.valid_ports \
+                         sw.valid_ports, \
+                         sw.valid_queues \
                          )
             if fc2 != fc:
                 break
