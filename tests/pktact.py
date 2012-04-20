@@ -1114,6 +1114,52 @@ class ModifyVID(BaseMatchCase):
         flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt,
                         action_list=[vid_act])
 
+class ModifyVIDWithTagMatchWildcarded(BaseMatchCase):
+    """
+    With vlan ID and priority wildcarded, perform SET_VLAN_VID action.
+    The same flow should match on both untagged and tagged packets.
+    """
+    def runTest(self):
+        old_vid = 2
+        new_vid = 3
+        sup_acts = supported_actions_get(self)
+        if not (sup_acts & 1 << ofp.OFPAT_SET_VLAN_VID):
+            skip_message_emit(self, "ModifyVIDWithTagWildcarded test")
+            return
+
+        of_ports = pa_port_map.keys()
+        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+        ing_port = of_ports[0]
+        egr_ports = of_ports[1]
+        
+        rv = delete_all_flows(self.controller, pa_logger)
+        self.assertEqual(rv, 0, "Failed to delete all flows")
+
+        len_untagged = 100
+        len_w_vid = 104
+        untagged_pkt = simple_tcp_packet(pktlen=len_untagged)
+        tagged_pkt = simple_tcp_packet(pktlen=len_w_vid, 
+                                       dl_vlan_enable=True, dl_vlan=old_vid)
+        exp_pkt = simple_tcp_packet(pktlen=len_w_vid, dl_vlan_enable=True,
+                                    dl_vlan=new_vid)
+        wildcards=ofp.OFPFW_DL_VLAN|ofp.OFPFW_DL_VLAN_PCP
+        vid_act = action.action_set_vlan_vid()
+        vid_act.vlan_vid = new_vid
+        request = flow_msg_create(self, untagged_pkt, ing_port=ing_port, 
+                                  wildcards=wildcards, egr_ports=egr_ports,
+                                  action_list=[vid_act])
+        flow_msg_install(self, request)
+
+        pa_logger.debug("Send untagged packet: " + str(ing_port) + " to " + 
+                        str(egr_ports))
+        self.dataplane.send(ing_port, str(untagged_pkt))
+        receive_pkt_verify(self, egr_ports, exp_pkt, ing_port)
+
+        pa_logger.debug("Send tagged packet: " + str(ing_port) + " to " + 
+                        str(egr_ports))
+        self.dataplane.send(ing_port, str(tagged_pkt))
+        receive_pkt_verify(self, egr_ports, exp_pkt, ing_port)
+
 class ModifyVlanPcp(BaseMatchCase):
     """
     Modify the priority field of the VLAN tag of a tagged packet
@@ -1154,6 +1200,30 @@ class StripVLANTag(BaseMatchCase):
         vid_act = action.action_strip_vlan()
 
         flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt,
+                        action_list=[vid_act])
+
+class StripVLANTagWithTagMatchWildcarded(BaseMatchCase):
+    """
+    Strip the VLAN tag from a tagged packet.
+    Differs from StripVLANTag in that VID and PCP are both wildcarded.
+    """
+    def runTest(self):
+        old_vid = 2
+        sup_acts = supported_actions_get(self)
+        if not (sup_acts & 1 << ofp.OFPAT_STRIP_VLAN):
+            skip_message_emit(self, "StripVLANTagWithTagWildcarded test")
+            return
+
+        len_w_vid = 104
+        len_untagged = 100
+        pkt = simple_tcp_packet(pktlen=len_w_vid, dl_vlan_enable=True, 
+                                dl_vlan=old_vid)
+        exp_pkt = simple_tcp_packet(pktlen=len_untagged)
+        vid_act = action.action_strip_vlan()
+
+        flow_match_test(self, pa_port_map, 
+                        wildcards=ofp.OFPFW_DL_VLAN|ofp.OFPFW_DL_VLAN_PCP,
+                        pkt=pkt, exp_pkt=exp_pkt,
                         action_list=[vid_act])
 
 def init_pkt_args():
