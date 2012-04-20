@@ -223,7 +223,7 @@ class DirectPacketQueue(basic.SimpleDataPlane):
         request = message.queue_stats_request()
         request.port_no  = ofp.OFPP_ALL
         request.queue_id = ofp.OFPQ_ALL
-        (queue_stats, pkt) = self.controller.transact(request, timeout=2)
+        (queue_stats, p) = self.controller.transact(request, timeout=2)
         self.assertNotEqual(queue_stats, None, "Queue stats request failed")
 
         act = action.action_enqueue()
@@ -261,7 +261,7 @@ class DirectPacketQueue(basic.SimpleDataPlane):
                 request = message.queue_stats_request()
                 request.port_no  = egress_port
                 request.queue_id = egress_queue_id
-                (qs_before, pkt) = self.controller.transact(request, timeout=2)
+                (qs_before, p) = self.controller.transact(request, timeout=2)
                 self.assertNotEqual(qs_before, None, "Queue stats request failed")
 
                 pa_logger.info("Sending packet to dp port " + 
@@ -284,19 +284,24 @@ class DirectPacketQueue(basic.SimpleDataPlane):
                     self.assertEqual(str(pkt), str(rcv_pkt),
                                      'Response packet does not match send packet')
 
+                # FIXME: instead of sleeping, keep requesting queue stats until
+                # the expected queue counter increases or some large timeout is
+                # reached
+                time.sleep(2)
+
                 # Get current stats for selected egress queue again
 
                 request = message.queue_stats_request()
                 request.port_no  = egress_port
                 request.queue_id = egress_queue_id
-                (qs_after, pkt) = self.controller.transact(request, timeout=2)
+                (qs_after, p) = self.controller.transact(request, timeout=2)
                 self.assertNotEqual(qs_after, None, "Queue stats request failed")
 
                 # Make sure that tx packet counter for selected egress queue was
                 # incremented
 
-                self.assertEqual(qs_after.stats.stats[0].tx_packets, \
-                                 qs_before.stats.stats[0].tx_packets + 1, \
+                self.assertEqual(qs_after.stats[0].tx_packets, \
+                                 qs_before.stats[0].tx_packets + 1, \
                                  "Verification of egress queue tx packet count failed"
                                  )
                     
