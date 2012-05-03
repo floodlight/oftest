@@ -271,6 +271,36 @@ class PacketIn(SimpleDataPlane):
                                    'Response packet does not match send packet' +
                                    ' for port ' + str(of_port))
 
+class PacketInBroadcastCheck(SimpleDataPlane):
+    """
+    Check if bcast pkts leak when no flows are present
+
+    Clear the flow table
+    Send in a broadcast pkt
+    Look for the packet on other dataplane ports.
+    """
+    def runTest(self):
+        # Need at least two ports
+        self.assertTrue(len(basic_port_map) > 1, "Too few ports for test")
+
+        rc = delete_all_flows(self.controller, basic_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        of_ports = basic_port_map.keys()
+        d_port = of_ports[0]
+        pkt = simple_eth_packet(dl_dst='ff:ff:ff:ff:ff:ff')
+
+        basic_logger.info("BCast Leak Test, send to port %s" % d_port)
+        self.dataplane.send(d_port, str(pkt))
+
+        (of_port, pkt_in, pkt_time) = self.dataplane.poll(timeout=2, 
+                                                          exp_pkt=pkt)
+        self.assertTrue(pkt_in is None,
+                        'BCast packet received on port ' + str(of_port))
+
+test_prio["PacketInBroadcastCheck"] = -1
+
 class PacketOut(SimpleDataPlane):
     """
     Test packet out function
