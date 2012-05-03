@@ -323,20 +323,25 @@ class DataPlane:
         If port_number is given, get the oldest packet from that port.
         Otherwise, find the port with the oldest packet and return
         that packet.
+
+        If exp_pkt is true, discard all packets until that one is found
+
         @param port_number If set, get packet from this port
         @param timeout If positive and no packet is available, block
         until a packet is received or for this many seconds
         @param exp_pkt If not None, look for this packet and ignore any
-        others received.  Requires port_number to be specified
+        others received.  Note that if port_number is None, all packets
+        from all ports will be discarded until the exp_pkt is found
         @return The triple port_number, packet, pkt_time where packet
         is received from port_number at time pkt_time.  If a timeout
         occurs, return None, None, None
         """
 
-        self.pkt_sync.acquire()
 
         if exp_pkt and not port_number:
-            print "WARNING: Dataplane poll: exp_pkt without port number"
+            self.logger.warn("Dataplane poll with exp_pkt but no port number")
+
+        self.pkt_sync.acquire()
 
         # Check if requested specific port and it has a packet
         if port_number and len(self.port_list[port_number].packets) != 0:
@@ -354,12 +359,14 @@ class DataPlane:
                 return port_number, pkt, time
 
         # Check if requested any port and some packet pending
-        if not port_number and self.packets_pending != 0:
-            port = self._oldest_packet_find()
-            pkt, time = self.port_list[port].dequeue(use_lock=False)
-            self.pkt_sync.release()
-            oft_assert(pkt, "Poll: oldest packet not found")
-            return port, pkt, time
+        if not port_number:
+            while self.packets_pending != 0:
+                port = self._oldest_packet_find(exp_pkt)
+                pkt, time = self.port_list[port].dequeue(use_lock=False)
+                self.pkt_sync.release()
+                oft_assert(pkt, "Poll: oldest packet not found")
+                if not exp_pkt or match_exp_pkt(exp_pkt, pkt):
+                    return port, pkt, time
 
         # No packet pending; blocking call requested?
         if not timeout:
