@@ -306,7 +306,142 @@ class DirectPacketQueue(basic.SimpleDataPlane):
                                  )
                     
 
+class DirectPacketControllerQueue(basic.SimpleDataPlane):
+    """
+    Send a packet from each of the openflow ports
+    to each of the queues configured on the controller port.
+    If no queues have been configured, no packets are sent.
 
+    Generate a packet
+    Generate and install a matching flow
+    Add action to direct the packet to one of the controller port queues
+    Send the packet to ingress dataplane port
+    Verify the packet is received on the controller port queue
+    """
+    def runTest(self):
+        self.handleFlow()
+
+    def portQueuesGet(self, queue_stats, port_num):
+        result = []
+        for qs in queue_stats.stats:
+            if qs.port_no != port_num:
+                continue
+            result.append(qs.queue_id)
+        return result
+
+    def handleFlow(self, pkttype='TCP'):
+        of_ports = pa_port_map.keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+
+        if (pkttype == 'ICMP'):
+            pkt = simple_icmp_packet()
+        else:
+            pkt = simple_tcp_packet()
+        match = parse.packet_to_flow_match(pkt)
+        match.wildcards &= ~ofp.OFPFW_IN_PORT
+        self.assertTrue(match is not None, 
+                        "Could not generate flow match from pkt")
+
+        # Get queue stats from switch
+        
+        request = message.queue_stats_request()
+        request.port_no  = ofp.OFPP_CONTROLLER
+        request.queue_id = ofp.OFPQ_ALL
+        (queue_stats, p) = self.controller.transact(request, timeout=2)
+        self.assertNotEqual(queue_stats, None, "Queue stats request failed")
+
+        act = action.action_enqueue()
+
+        for idx in range(len(of_ports)):
+            ingress_port = of_ports[idx]
+            egress_port = ofp.OFPP_CONTROLLER
+
+            pa_logger.info("Ingress port " + str(ingress_port)
+                           + ", controller port queues " 
+                           + str(self.portQueuesGet(queue_stats, egress_port)))
+
+            for egress_queue_id in self.portQueuesGet(queue_stats, egress_port):
+                pa_logger.info("Ingress " + str(ingress_port)
+                               + " to egress " + str(egress_port)
+                               + " queue " + str(egress_queue_id)
+                               )
+
+                rv = delete_all_flows(self.controller, pa_logger)
+                self.assertEqual(rv, 0, "Failed to delete all flows")
+
+                match.in_port = ingress_port
+                
+                request = message.flow_mod()
+                request.match = match
+
+                request.buffer_id = 0xffffffff
+                act.port     = egress_port
+                act.queue_id = egress_queue_id
+                self.assertTrue(request.actions.add(act), "Could not add action")
+
+                pa_logger.info("Inserting flow")
+                rv = self.controller.message_send(request)
+                self.assertTrue(rv != -1, "Error installing flow mod")
+                self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+                # Get current stats for selected egress queue
+
+                request = message.queue_stats_request()
+                request.port_no  = egress_port
+                request.queue_id = egress_queue_id
+                (qs_before, p) = self.controller.transact(request, timeout=2)
+                self.assertNotEqual(qs_before, None, "Queue stats request failed")
+
+                pa_logger.info("Sending packet to dp port " + 
+                               str(ingress_port))
+                self.dataplane.send(ingress_port, str(pkt))
+                
+                exp_pkt_arg = None
+                exp_port = None
+
+                while True:
+                    (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
+                    if not response:  # Timeout
+                        break
+                    if dataplane.match_exp_pkt(pkt, response.data): # Got match
+                        break
+                    if not basic_config["relax"]:  # Only one attempt to match
+                        break
+                    count += 1
+                    if count > 10:   # Too many tries
+                        break
+
+                self.assertTrue(response is not None, 
+                               'Packet in message not received by controller')
+                if not dataplane.match_exp_pkt(pkt, response.data):
+                    basic_logger.debug("Sent %s" % format_packet(pkt))
+                    basic_logger.debug("Resp %s" % format_packet(response.data))
+                    self.assertTrue(False,
+                                    'Response packet does not match send packet' +
+                                    ' for controller port')
+
+                # FIXME: instead of sleeping, keep requesting queue stats until
+                # the expected queue counter increases or some large timeout is
+                # reached
+                time.sleep(2)
+
+                # Get current stats for selected egress queue again
+
+                request = message.queue_stats_request()
+                request.port_no  = egress_port
+                request.queue_id = egress_queue_id
+                (qs_after, p) = self.controller.transact(request, timeout=2)
+                self.assertNotEqual(qs_after, None, "Queue stats request failed")
+
+                # Make sure that tx packet counter for selected egress queue was
+                # incremented
+
+                self.assertEqual(qs_after.stats[0].tx_packets, \
+                                 qs_before.stats[0].tx_packets + 1, \
+                                 "Verification of egress queue tx packet count failed"
+                                 )
+                    
 
 class DirectPacketICMP(DirectPacket):
     """
