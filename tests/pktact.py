@@ -1106,7 +1106,7 @@ class WildcardPriority(SingleWildcardMatchPriority):
         self.verifyFlow(of_ports[0], of_ports[3])
         
 
-class WildcardPriority2(SingleWildcardMatchPriority):
+class WildcardPriorityWithDelete(SingleWildcardMatchPriority):
     """
     1. Add exact match flow, verify packet received.
     2. Add wildcard flow with higher priority, verify packet received on port

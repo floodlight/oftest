@@ -361,7 +361,7 @@ class DataPlane:
         # Check if requested any port and some packet pending
         if not port_number:
             while self.packets_pending != 0:
-                port = self._oldest_packet_find(exp_pkt)
+                port = self._oldest_packet_find()
                 pkt, time = self.port_list[port].dequeue(use_lock=False)
                 self.pkt_sync.release()
                 oft_assert(pkt, "Poll: oldest packet not found")
