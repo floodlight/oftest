@@ -1361,8 +1361,8 @@ class ModifyVlanPcp(BaseMatchCase):
         old_vlan_pcp = 2
         new_vlan_pcp = 3
         sup_acts = supported_actions_get(self)
-        if not (sup_acts & 1 << ofp.OFPAT_SET_VLAN_VID):
-            skip_message_emit(self, "Modify VLAN tag test")
+        if not (sup_acts & 1 << ofp.OFPAT_SET_VLAN_PCP):
+            skip_message_emit(self, "Modify VLAN priority test")
             return
 
         pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vid, dl_vlan_pcp=old_vlan_pcp)
