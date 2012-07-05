@@ -55,6 +55,12 @@ Note: the test suite contains test cases for port queues. As the OpenFlow
 protocol does not enable configuring switch queues (only using them), you
 must set up the queues before running the tests on a switch-specific way.
 
+Notes
+-----------------
+Don't run the code auto generation tools! It was removed from make install
+because the fields that contain a match field were changed to conform with
+the new flexible nature of the match. 
+The intention is to change the code generation scripts to adapt the changes.
 
 Contribute
 ----------
