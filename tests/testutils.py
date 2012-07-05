@@ -1088,19 +1088,6 @@ def do_echo_request_reply_test(test,controller):
 
 def match_all_generate():
     match = ofp.ofp_match()
-    match.type = ofp.OFPMT_STANDARD
-    match.length = ofp.OFPMT_STANDARD_LENGTH
-    match.wildcards = ofp.OFPFW_ALL
-    match.dl_dst = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
-    match.dl_dst_mask = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
-    match.dl_src = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
-    match.dl_src_mask = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
-    match.nw_src = 0x00000000
-    match.nw_src_mask = 0xffffffff
-    match.nw_dst = 0x00000000
-    match.nw_dst_mask = 0xffffffff
-    match.metadata = 0x0000000000000000
-    match.metadata_mask = 0xffffffffffffffff
     return match
 
 def simple_tcp_packet_w_mpls(
@@ -1389,7 +1376,7 @@ def flow_match_test_mpls(parent, port_map, wildcards=0,
                 parent.logger.info("Ran " + str(test_count) + " tests; exiting")
                 return
 
-def flow_stats_get(parent, match=None):
+def flow_stats_get(parent, match_list = None):
     """ Get the flow_stats from the switch
     Test the response to make sure it's really a flow_stats object
     """
@@ -1397,9 +1384,8 @@ def flow_stats_get(parent, match=None):
     request.out_port = ofp.OFPP_ANY
     request.out_group = ofp.OFPG_ANY
     request.table_id = 0xff
-    if match is None:
-        match = match_all_generate()
-    request.match = match
+    if match_list != None:
+        request.match_fields = match_list
     response, _ = parent.controller.transact(request, timeout=2)
     parent.assertTrue(response is not None, "Did not get response")
     parent.assertTrue(isinstance(response,message.flow_stats_reply),

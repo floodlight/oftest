@@ -992,7 +992,7 @@ class flow_mod(ofp_flow_mod):
         self.out_group = OFPG_ANY
         self.match_fields = match_list()
         self.instructions = instruction_list()
-        
+
 
     def pack(self):
         """
@@ -1001,24 +1001,26 @@ class flow_mod(ofp_flow_mod):
         @return The packed string which can go on the wire
 
         """
-        self.header.length = roundup(len(self) + len(self.match_fields),8)
-        if len(self.match_fields) < 4:
-            tlv_pad = oxm_tlv(0,0,0,0)
+        self.header.length = len(self)
+        if not len(self.match_fields):
+            tlv_pad = oxm_tlv(0,0,0,0,0)
             self.match.length += 4
-            self.match_fields.tlvs.append(tlv_pad) 
+            self.match_fields.tlvs.append(tlv_pad)
         else:
-            self.match.length +=  len(self.match_fields)  
-        packed = self.header.pack()
+            if len(self.match_fields) > 4:
+                self.match.length +=  len(self.match_fields)
+        packed = self.header.pack() 
         packed += ofp_flow_mod.pack(self)
         self.match_fields.tlvs.sort(key=lambda x : x.field)
         packed += self.match_fields.pack()
-        padding_size = self.header.length - (len(self) + len(self.match_fields) )
-        print len(self) + 4 + len(self.match_fields)
-        padding = [0] * padding_size 
-        if padding_size: 
-            packed += struct.pack("!" + str(padding_size) + "B", *padding) 
+        padding_size = roundup( len(self.match) + len(self.match_fields),8) - (len(self.match) + len(self.match_fields))
+        padding = [0] * padding_size
+        if padding_size:
+            packed += struct.pack("!" + str(padding_size) + "B", *padding)
         packed += self.instructions.pack()
         return packed
+
+
 
     def unpack(self, binary_string):
         """
@@ -1030,9 +1032,12 @@ class flow_mod(ofp_flow_mod):
 
         """
         binary_string = self.header.unpack(binary_string)
-
         binary_string = ofp_flow_mod.unpack(self, binary_string)
-        ai_len = self.header.length - (OFP_FLOW_MOD_BYTES + OFP_HEADER_BYTES)
+        binary_string = self.match_fields.unpack(binary_string, bytes = self.match.length - 4)
+        padding = roundup(OFP_FLOW_MOD_BYTES + len(self.match_fields),8) - (OFP_FLOW_MOD_BYTES + len(self.match_fields))
+        if padding:
+            binary_string = binary_string[padding:]
+        ai_len = self.length - roundup(OFP_FLOW_MOD_BYTES + len(self.match_fields),8)
         binary_string = self.instructions.unpack(binary_string, bytes=ai_len)
         # Fixme: If no self.data, add check for data remaining
         return binary_string
@@ -1048,6 +1053,7 @@ class flow_mod(ofp_flow_mod):
         length = OFP_HEADER_BYTES
 
         length += ofp_flow_mod.__len__(self)
+        length = roundup(length + len(self.match_fields), 8)
         length += len(self.instructions)
         return length
 
@@ -1065,6 +1071,7 @@ class flow_mod(ofp_flow_mod):
         outstr += prefix + 'ofp header\n'
         outstr += self.header.show(prefix + '  ')
         outstr += ofp_flow_mod.show(self, prefix)
+        outstr += self.match_fields.show(prefix + '  ')
         outstr += prefix + "List instructions\n"
         outstr += self.instructions.show(prefix + '  ')
         return outstr
@@ -1080,6 +1087,7 @@ class flow_mod(ofp_flow_mod):
         if not self.header.__eq__(other.header): return False
 
         if not ofp_flow_mod.__eq__(self, other): return False
+        if self.match_fields != other.match_fields: return False
         if self.instructions != other.instructions: return False
         return True
 
@@ -1133,11 +1141,20 @@ class flow_removed(ofp_flow_removed):
 
         """
         self.header.length = len(self)
+        if not len(self.match_fields):
+            tlv_pad = oxm_tlv(0,0,0,0,0)
+            self.match.length += 4
+            self.match_fields.tlvs.append(tlv_pad)
+        else:
+            if len(self.match_fields) > 4:
+                self.match.length +=  len(self.match_fields)
         packed = self.header.pack()
-
         packed += ofp_flow_removed.pack(self)
         packed += self.match_fields.pack()
-        self.match.length = len(self.match_fields)
+        padding_size = roundup( len(self.match) + len(self.match_fields),8) - (len(self.match) + len(self.match_fields))
+        padding = [0] * padding_size
+        if padding_size:
+            packed += struct.pack("!" + str(padding_size) + "B", *padding)
         return packed
 
     def unpack(self, binary_string):
@@ -1150,8 +1167,11 @@ class flow_removed(ofp_flow_removed):
 
         """
         binary_string = self.header.unpack(binary_string)
-
         binary_string = ofp_flow_removed.unpack(self, binary_string)
+        binary_string = self.match_fields.unpack(binary_string, bytes = self.match.length - 4)
+        padding = roundup(OFP_FLOW_REMOVED_BYTES + len(self.match_fields),8) - (OFP_FLOW_REMOVED_BYTES + len(self.match_fields))
+        if padding:
+            binary_string = binary_string[padding:]
         # Fixme: If no self.data, add check for data remaining
         return binary_string
 
@@ -1164,8 +1184,7 @@ class flow_removed(ofp_flow_removed):
 
         """
         length = OFP_HEADER_BYTES
-
-        length += ofp_flow_removed.__len__(self)
+        length += roundup(ofp_flow_removed.__len__(self) + len(self.match_fields),8)
         return length
 
     def show(self, prefix=''):
@@ -1182,6 +1201,7 @@ class flow_removed(ofp_flow_removed):
         outstr += prefix + 'ofp header\n'
         outstr += self.header.show(prefix + '  ')
         outstr += ofp_flow_removed.show(self, prefix)
+        outstr += self.match_fields.show(prefix + '  ')
         return outstr
 
     def __eq__(self, other):
@@ -1193,8 +1213,8 @@ class flow_removed(ofp_flow_removed):
         """
         if type(self) != type(other): return False
         if not self.header.__eq__(other.header): return False
-
         if not ofp_flow_removed.__eq__(self, other): return False
+        if self.match_fields != other.match_fields: return False
         return True
 
     def __ne__(self, other):
@@ -1644,6 +1664,7 @@ class packet_in(ofp_packet_in):
         ofp_packet_in.__init__(self)
         self.header = ofp_header()
         self.header.type = OFPT_PACKET_IN
+        self.match_fields =  match_list()
         self.data = ""
 
 
@@ -1655,9 +1676,20 @@ class packet_in(ofp_packet_in):
 
         """
         self.header.length = len(self)
+        if len(self.match_fields) < 4:
+            tlv_pad = oxm_tlv(0,0,0,0,0)
+            self.match.length += 4
+            self.match_fields.tlvs.append(tlv_pad)
+        else:
+            if len(self.match_fields) > 4:
+                self.match.length +=  len(self.match_fields)
         packed = self.header.pack()
-
         packed += ofp_packet_in.pack(self)
+        packed += self.match_fields.pack()
+        padding_size = roundup( len(self.match) + len(self.match_fields),8) - (len(self.match) + len(self.match_fields))
+        padding = [0] * padding_size
+        if padding_size:
+            packed += struct.pack("!" + str(padding_size) + "B", *padding)
         packed += self.data
         return packed
 
@@ -1671,8 +1703,12 @@ class packet_in(ofp_packet_in):
 
         """
         binary_string = self.header.unpack(binary_string)
-
         binary_string = ofp_packet_in.unpack(self, binary_string)
+        binary_string = self.match_fields.unpack(binary_string, bytes = self.match.length - 4)
+        padding = roundup(OFP_PACKET_IN_BYTES + len(self.match_fields),8) - (OFP_PACKET_IN_BYTES + len(self.match_fields))
+        if padding:
+            binary_string = binary_string[padding:]
+        binary_string = binary_string[2:]
         self.data = binary_string
         binary_string = ''
         return binary_string
@@ -1687,7 +1723,7 @@ class packet_in(ofp_packet_in):
         """
         length = OFP_HEADER_BYTES
 
-        length += ofp_packet_in.__len__(self)
+        length += roundup(ofp_packet_in.__len__(self) + len(self.match_fields),8)
         length += len(self.data)
         return length
 
@@ -2798,8 +2834,19 @@ class flow_stats_entry(ofp_flow_stats):
 
     def pack(self, assertstruct=True):
         self.length = len(self)
+        if not len(self.match_fields):
+            tlv_pad = oxm_tlv(0,0,0,0,0)
+            self.match.length += 4
+            self.match_fields.tlvs.append(tlv_pad)
+        else:
+            if len(self.match_fields) > 4:
+                self.match.length +=  len(self.match_fields)      
         packed = ofp_flow_stats.pack(self, assertstruct)
         packed += self.match_fields.pack()
+        padding_size = roundup(len(self.match) + len(self.match_fields),8) - (len(self.match) + len(self.match_fields))
+        padding = [0] * padding_size
+        if padding_size:
+            packed += struct.pack("!" + str(padding_size) + "B", *padding)
         packed += self.instructions.pack()
         if len(packed) != self.length:
             print("ERROR: flow_stats_entry pack length not equal",
@@ -2808,7 +2855,11 @@ class flow_stats_entry(ofp_flow_stats):
 
     def unpack(self, binary_string):
         binary_string = ofp_flow_stats.unpack(self, binary_string)
-        ai_len = self.length - OFP_FLOW_STATS_BYTES
+        binary_string = self.match_fields.unpack(binary_string, bytes = self.match.length - 4)
+        padding = roundup((OFP_FLOW_STATS_BYTES -4) + self.match.length,8) - ((OFP_FLOW_STATS_BYTES - 4) + self.match.length)
+        if padding:
+            binary_string = binary_string[padding:]
+        ai_len = self.length - roundup(OFP_FLOW_STATS_BYTES + len(self.match_fields),8)
         if ai_len < 0:
             print("ERROR: flow_stats_entry unpack length too small",
                   self.length)
@@ -2816,12 +2867,12 @@ class flow_stats_entry(ofp_flow_stats):
         return binary_string
 
     def __len__(self):
-        return OFP_FLOW_STATS_BYTES + len(self.match_fields) + len(self.instructions)
+        return roundup(OFP_FLOW_STATS_BYTES + len(self.match_fields),8) + len(self.instructions)
 
     def show(self, prefix=''):
         outstr = prefix + "flow_stats_entry\n"
         outstr += ofp_flow_stats.show(self, prefix + '  ')
-        outstr += self.match_fields.show(self, prefix + '  ')
+        outstr += self.match_fields.show(prefix + '  ')
         outstr += self.instructions.show(prefix + '  ')
         return outstr
 
@@ -3051,25 +3102,46 @@ class flow_stats_request(ofp_stats_request, ofp_flow_stats_request):
         ofp_flow_stats_request.__init__(self)
         self.header.type = OFPT_STATS_REQUEST
         self.type = OFPST_FLOW
+        self.match_fields = match_list()
 
-    def pack(self, assertstruct=True):
+    def pack(self):
         self.header.length = len(self)
         packed = self.header.pack()
         packed += ofp_stats_request.pack(self)
+        if not len(self.match_fields):
+            tlv_pad = oxm_tlv(0,0,0,0,0)
+            self.match.length += 4
+            self.match_fields.tlvs.append(tlv_pad)
+        else:
+            if len(self.match_fields) > 4:
+                self.match.length +=  len(self.match_fields)       
         packed += ofp_flow_stats_request.pack(self)
+        packed += self.match_fields.pack()
+        padding_size = roundup(len(self.match) + len(self.match_fields),8) - (len(self.match) + len(self.match_fields))
+        padding = [0] * padding_size
+        if padding_size:
+            packed += struct.pack("!" + str(padding_size) + "B", *padding)  
         return packed
 
     def unpack(self, binary_string):
         binary_string = self.header.unpack(binary_string)
         binary_string = ofp_stats_request.unpack(self, binary_string)
         binary_string = ofp_flow_stats_request.unpack(self, binary_string)
+        binary_string = self.match_fields.unpack(binary_string, bytes = self.match.length - 4)
+        padding = roundup(OFP_FLOW_STATS_REQUEST_BYTES + len(self.match_fields),8) - (OFP_FLOW_STATS_REQUEST_BYTES + len(self.match_fields))
+        if padding:
+            binary_string = binary_string[padding:]
         if len(binary_string) != 0:
             print "ERROR unpacking flow: extra data"
         return binary_string
 
     def __len__(self):
-        return len(self.header) + OFP_STATS_REQUEST_BYTES + \
-               OFP_FLOW_STATS_REQUEST_BYTES
+            length = len(self.header) + OFP_STATS_REQUEST_BYTES + \
+                     OFP_FLOW_STATS_REQUEST_BYTES
+            if not len(self.match_fields):
+               return length + 4            
+            else:
+               return  roundup(length + len(self.match_fields),8) 
 
     def show(self, prefix=''):
         outstr = prefix + "flow_stats_request\n"
@@ -3077,13 +3149,15 @@ class flow_stats_request(ofp_stats_request, ofp_flow_stats_request):
         outstr += self.header.show(prefix + '  ')
         outstr += ofp_stats_request.show(self)
         outstr += ofp_flow_stats_request.show(self)
+        outstr += self.match_fields.show(prefix + '  ')
         return outstr
 
     def __eq__(self, other):
         if type(self) != type(other): return False
         return (self.header == other.header and
                 ofp_stats_request.__eq__(self, other) and
-                ofp_flow_stats_request.__eq__(self, other))
+                ofp_flow_stats_request.__eq__(self, other) and
+                self.match_fields != other.match_fields)
 
     def __ne__(self, other): return not self.__eq__(other)
 

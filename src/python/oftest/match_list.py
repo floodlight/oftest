@@ -17,6 +17,8 @@ class match_list(ofp_base_list):
         return sum([len(i) for i in self])
 
     def unpack(self, binary_string, bytes=None):
+        if bytes <= 4:
+            return binary_string[4:]
         if bytes == None:
             bytes = len(binary_string)
         offset = 0
