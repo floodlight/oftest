@@ -1,0 +1,76 @@
+OFTest for OpenFlow 1.2
+-----------------------
+
+OFTest if a test suite for testing OpenFlow 1.2 [1] compatible switches.
+This version is based on the modified OFTest for OpenFlow 1.1 code [2], with fixes for 1.2
+compatibility.
+
+[1] https://www.opennetworking.org/images/stories/downloads/openflow/openflow-spec-v1.2.pdf
+[2] https://github.com/TrafficLab/oftest11
+
+
+Getting Started
+---------------
+
+This setup describes how to set-up an environment to run both the switch under
+test and oftest itself on the same machine. For other environments, please
+refer to the documentation and the source code.
+
+In order to control datapath communication, virtual links must be set up on
+the system. For now this will be four virtual ethernet links. To establish
+the links, run the following command four times:
+
+    sudo ip link add veth
+
+This created eight virtual network adapters: veth0 - veth7. By default oftest
+uses veth 1, 3, 5 and 7, while the switch should connect to 0, 2, 4 and 6.
+First enable the interfaces:
+
+    sudo ifconfig veth0 up
+    ...
+    sudo ifconfig veth7 up
+
+
+To install oftest, run the following commands:
+
+    cd tools/munger
+    sudo make install
+
+
+To run a specific test, run the following command. Note that at this point the
+switch must already be running, and should try connecting to localhost:6633.
+
+    sudo ./oft --platform=local --verbose --log-file="" --test-spec=<spec>
+
+To run all available tests, simply run:
+
+    sudo ./oft
+
+To get a list of all testcases, run:
+
+    ./oft --list
+
+
+Note: the test suite contains test cases for port queues. As the OpenFlow
+protocol does not enable configuring switch queues (only using them), you
+must set up the queues before running the tests on a switch-specific way.
+
+
+Contribute
+----------
+
+Please submit your bug reports, fixes and suggestions as pull requests on
+github, or by contacting us directly.
+
+
+References
+----------
+
+[1] OpenFlow: http://www.openflow.org/
+[2] ONF:      http://www.opennetworkingfoundation.org/
+
+
+Repo
+-------
+
+https://github.com/CPqD/oftest12
