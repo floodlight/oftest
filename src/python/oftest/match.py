@@ -262,7 +262,7 @@ class ip_proto(oxm_tlv):
 
     """
     def __init__(self, value, hasmask = False):
-        oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[10], hasmask, 1, value)
+        oxm_tlv.__init__(self, OFPXMT_OFB_IP_PROTO, hasmask, 1, value)
     def show(self, prefix=''):
         outstr = prefix + "ip_proto\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -281,9 +281,9 @@ class ipv4_src(oxm_tlv):
     """
     def __init__(self, value, hasmask = False):
         if not hasmask:
-            oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[11], hasmask, 4, value)
+            oxm_tlv.__init__(self, OFPXMT_OFB_IPv4_SRC, hasmask, 4, value)
         else: 
-            oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[11], hasmask, 4, value, mask)
+            oxm_tlv.__init__(self, OFPXMT_OFB_IPv4_SRC, hasmask, 4, value, mask)
     def show(self, prefix=''):
         outstr = prefix + "ipv4_src\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -302,9 +302,9 @@ class ipv4_dst(oxm_tlv):
     """
     def __init__(self, value, hasmask = False):
         if not hasmask:
-            oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[12], hasmask, 4, value)
+            oxm_tlv.__init__(self, OFPXMT_OFB_IPv4_DST, hasmask, 4, value)
         else:
-            oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[11], hasmask, 4, value, mask)
+            oxm_tlv.__init__(self, OFPXMT_OFB_IPv4_DST, hasmask, 4, value, mask)
     def show(self, prefix=''):
         outstr = prefix + "ipv4_dst\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -322,7 +322,7 @@ class tcp_src(oxm_tlv):
 
     """
     def __init__(self, value, hasmask = False):
-        oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[13], hasmask, 2, value)
+        oxm_tlv.__init__(self, OFPXMT_OFB_TCP_SRC, hasmask, 2, value)
     def show(self, prefix=''):
         outstr = prefix + "tcp_src\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -340,7 +340,7 @@ class tcp_dst(oxm_tlv):
 
     """
     def __init__(self, value, hasmask = False):
-        oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[14], hasmask, 2, value)
+        oxm_tlv.__init__(self, OFPXMT_OFB_TCP_DST, hasmask, 2, value)
     def show(self, prefix=''):
         outstr = prefix + "tcp_dst\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -358,7 +358,7 @@ class udp_src(oxm_tlv):
 
     """
     def __init__(self, value, hasmask = False):
-        oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[15], hasmask, 2, value)
+        oxm_tlv.__init__(self, OFPXMT_OFB_UDP_SRC, hasmask, 2, value)
     def show(self, prefix=''):
         outstr = prefix + "udp_src\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -376,7 +376,7 @@ class udp_dst(oxm_tlv):
 
     """
     def __init__(self, value, hasmask = False):
-        oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[16], hasmask, 2, value)
+        oxm_tlv.__init__(self, OFPXMT_OFB_UDP_DST, hasmask, 2, value)
     def show(self, prefix=''):
         outstr = prefix + "udp_dst\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -394,7 +394,7 @@ class sctp_src(oxm_tlv):
 
     """
     def __init__(self, value, hasmask = False):
-        oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[17], hasmask, 2, value)
+        oxm_tlv.__init__(self, OFPXMT_OFB_SCTP_SRC, hasmask, 2, value)
     def show(self, prefix=''):
         outstr = prefix + "sctp_src\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -413,7 +413,7 @@ class sctp_dst(oxm_tlv):
 
     """
     def __init__(self, value, hasmask = False):
-        oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[18], hasmask, 2, value)
+        oxm_tlv.__init__(self, OFPXMT_OFB_SCTP_DST, hasmask, 2, value)
     def show(self, prefix=''):
         outstr = prefix + "sctp_dst\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -431,7 +431,7 @@ class icmpv4_type(oxm_tlv):
 
     """
     def __init__(self, value, hasmask = False):
-        oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[19], hasmask, 1, value)
+        oxm_tlv.__init__(self, OFPXMT_OFB_ICMPV4_TYPE, hasmask, 1, value)
     def show(self, prefix=''):
         outstr = prefix + "icmpv4_type\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -449,7 +449,7 @@ class icmpv4_code(oxm_tlv):
 
     """
     def __init__(self, value, hasmask = False):
-        oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[20], hasmask, 1, value)
+        oxm_tlv.__init__(self, OFPXMT_OFB_ICMPV4_CODE, hasmask, 1, value)
     def show(self, prefix=''):
         outstr = prefix + "icmpv4_code\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -467,7 +467,7 @@ class arp_op(oxm_tlv):
 
     """
     def __init__(self, value, hasmask = False):
-        oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[21], hasmask, 2, value)
+        oxm_tlv.__init__(self, OFPXMT_OFB_ARP_OP, hasmask, 2, value)
     def show(self, prefix=''):
         outstr = prefix + "arp_op\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -486,9 +486,9 @@ class arp_spa(oxm_tlv):
     """
     def __init__(self, value, hasmask = False):
         if not hasmask:
-            oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[22], hasmask, 4, value)
+            oxm_tlv.__init__(self, OFPXMT_OFB_ARP_SPA, hasmask, 4, value)
         else: 
-            oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[22], hasmask, 4, value, mask)
+            oxm_tlv.__init__(self, OFPXMT_OFB_ARP_SPA, hasmask, 4, value, mask)
     def show(self, prefix=''):
         outstr = prefix + "arp_spa\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -507,9 +507,9 @@ class arp_tpa(oxm_tlv):
     """
     def __init__(self, value, hasmask = False):
         if not hasmask:
-            oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[23], hasmask, 4, value)
+            oxm_tlv.__init__(self, OFPXMT_OFB_ARP_TPA, hasmask, 4, value)
         else: 
-            oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[23], hasmask, 4, value, mask)
+            oxm_tlv.__init__(self, OFPXMT_OFB_ARP_TPA, hasmask, 4, value, mask)
     def show(self, prefix=''):
         outstr = prefix + "arp_tpa\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -529,9 +529,9 @@ class arp_sha(oxm_tlv):
     """
     def __init__(self, value, hasmask = False):
         if not hasmask:
-            oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[24], hasmask, 6, value)
+            oxm_tlv.__init__(self, OFPXMT_OFB_ARP_SHA, hasmask, 6, value)
         else:
-            oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[24], hasmask, 12, value)            
+            oxm_tlv.__init__(self, OFPXMT_OFB_ARP_SHA, hasmask, 12, value)            
     def show(self, prefix=''):
         outstr = prefix + "arp_sha\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -550,9 +550,9 @@ class arp_tha(oxm_tlv):
     """
     def __init__(self, value, hasmask = False):
         if not hasmask:
-            oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[25], hasmask, 6, value)
+            oxm_tlv.__init__(self, OFPXMT_OFB_ARP_THA, hasmask, 6, value)
         else:
-            oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[25], hasmask, 12, value)            
+            oxm_tlv.__init__(self, OFPXMT_OFB_ARP_THA, hasmask, 12, value)            
     def show(self, prefix=''):
         outstr = prefix + "arp_tha\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -613,9 +613,9 @@ class ipv6_flabel(oxm_tlv):
     """
     def __init__(self, value, hasmask = False):
         if not hasmask:
-            oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[28], hasmask, 4, value)
+            oxm_tlv.__init__(self, OFPXMT_OFB_IPV6_FLABEL, hasmask, 4, value)
         else:
-            oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[28], hasmask, 8, value)            
+            oxm_tlv.__init__(self, OFPXMT_OFB_IPV6_FLABEL, hasmask, 8, value)            
     def show(self, prefix=''):
         outstr = prefix + "ipv6_flabel\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -633,7 +633,7 @@ class icmpv6_type(oxm_tlv):
 
     """
     def __init__(self, value, hasmask = False):
-        oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[29], hasmask, 1, value)
+        oxm_tlv.__init__(self, OFPXMT_OFB_ICMPV6_TYPE, hasmask, 1, value)
     def show(self, prefix=''):
         outstr = prefix + "icmpv6_type\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -651,7 +651,7 @@ class icmpv6_code(oxm_tlv):
 
     """
     def __init__(self, value, hasmask = False):
-        oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[30], hasmask, 1, value)
+        oxm_tlv.__init__(self, OFPXMT_OFB_ICMPV6_CODE, hasmask, 1, value)
     def show(self, prefix=''):
         outstr = prefix + "icmpv6_code\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -669,7 +669,7 @@ class ipv6_nd_target(oxm_tlv):
 
     """
     def __init__(self, value, hasmask = False):
-        oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[31], hasmask, 16, value)
+        oxm_tlv.__init__(self, OFPXMT_OFB_IPV6_ND_TARGET, hasmask, 16, value)
     def show(self, prefix=''):
         outstr = prefix + "ipv6_nd_target\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -687,7 +687,7 @@ class ipv6_nd_sll(oxm_tlv):
 
     """
     def __init__(self, value, hasmask = False):
-        oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[32], hasmask, 6, value)
+        oxm_tlv.__init__(self, OFPXMT_OFB_IPV6_ND_SLL, hasmask, 6, value)
     def show(self, prefix=''):
         outstr = prefix + "ipv6_nd_sll\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -705,7 +705,7 @@ class ipv6_nd_tll(oxm_tlv):
 
     """
     def __init__(self, value, hasmask = False):
-        oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[33], hasmask, 6, value)          
+        oxm_tlv.__init__(self, OFPXMT_OFB_IPV6_ND_TLL, hasmask, 6, value)          
     def show(self, prefix=''):
         outstr = prefix + "ipv6_nd_tll\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -723,7 +723,7 @@ class mpls_label(oxm_tlv):
 
     """
     def __init__(self, value, hasmask = False):
-        oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[34], hasmask, 4, value)
+        oxm_tlv.__init__(self, OFPXMT_OFB_MPLS_LABEL, hasmask, 4, value)
     def show(self, prefix=''):
         outstr = prefix + "mpls_label\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -741,7 +741,7 @@ class mpls_tc(oxm_tlv):
 
     """
     def __init__(self, value, hasmask = False):
-        oxm_tlv.__init__(self, oxm_tlv_ofb_match_fields_map[35], hasmask, 1, value)
+        oxm_tlv.__init__(self, OFPXMT_OFB_MPLS_TC, hasmask, 1, value)
     def show(self, prefix=''):
         outstr = prefix + "mpls_tc\n"
         outstr += oxm_tlv.__str__(self, prefix)
