@@ -6,7 +6,7 @@ from cstruct import *
 
 
 class oxm_tlv:
-    def __init__(self, field, hasmask, length, value, class_ = 0x8000, mask=None):
+    def __init__(self, field, hasmask, length, value, mask=None, class_ = 0x8000):
         self.class_ = class_
         self.field = field
         self.hasmask = hasmask

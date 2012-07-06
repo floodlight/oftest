@@ -27,10 +27,14 @@ skipped_test_count = 0
 
 # Some useful defines
 IP_ETHERTYPE = 0x800
+IPV6_ETHERTYPE = 0x86dd
 ETHERTYPE_VLAN = 0x8100
 ETHERTYPE_MPLS = 0x8847
 TCP_PROTOCOL = 0x6
 UDP_PROTOCOL = 0x11
+ICMPV6_PROTOCOL = 0x3a
+
+
 
 def clear_switch(parent, port_list, logger):
     """
@@ -233,6 +237,129 @@ def simple_icmp_packet(dl_dst='00:01:02:03:04:05',
     pkt = pkt / ("D" * payload_len)
 
     return pkt
+
+def simple_ipv6_packet(pktlen=100, 
+                      dl_dst='00:01:02:03:04:05',
+                      dl_src='00:06:07:08:09:0a',
+                      dl_vlan_enable=False,
+                      dl_vlan=0,
+                      dl_vlan_pcp=0,
+                      dl_vlan_cfi=0,
+                      ip_src='fe80::2420:52ff:fe8f:5189',
+                      ip_dst='fe80::2420:52ff:fe8f:5190',
+                      ip_tos=0,
+                      tcp_sport=0,
+                      tcp_dport=0, 
+                      EH = False, 
+                      EHpkt = IPv6ExtHdrDestOpt()
+                      ):
+
+    """
+    Return a simple IPv6 packet 
+
+    Supports a few parameters:
+    @param len Length of packet in bytes w/o CRC
+    @param dl_dst Destinatino MAC
+    @param dl_src Source MAC
+    @param dl_vlan_enable True if the packet is with vlan, False otherwise
+    @param dl_vlan VLAN ID
+    @param dl_vlan_pcp VLAN priority
+    @param ip_src IPv6 source
+    @param ip_dst IPv6 destination
+    @param ip_tos IP ToS
+    @param tcp_dport TCP destination port
+    @param ip_sport TCP source port
+
+    """
+    # Note Dot1Q.id is really CFI
+    if (dl_vlan_enable):
+        pkt = Ether(dst=dl_dst, src=dl_src)/ \
+            Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi, vlan=dl_vlan)/ \
+            IPv6(src=ip_src, dst=ip_dst)
+
+    else:
+        pkt = Ether(dst=dl_dst, src=dl_src)/ \
+            IPv6(src=ip_src, dst=ip_dst)
+
+    # Add IPv6 Extension Headers 
+    if EH:
+        pkt = pkt / EHpkt
+
+    if (tcp_sport >0 and tcp_dport >0):
+        pkt = pkt / TCP(sport=tcp_sport, dport=tcp_dport)
+
+    if pktlen > len(pkt) :
+        pkt = pkt/("D" * (pktlen - len(pkt)))
+
+    return pkt
+
+def simple_icmpv6_packet(pktlen=100, 
+                      dl_dst='00:01:02:03:04:05',
+                      dl_src='00:06:07:08:09:0a',
+                      dl_vlan_enable=False,
+                      dl_vlan=0,
+                      dl_vlan_pcp=0,
+                      dl_vlan_cfi=0,
+                      ip_src='fe80::2420:52ff:fe8f:5189',
+                      ip_dst='fe80::2420:52ff:fe8f:5190',
+                      ip_tos=0,
+                      tcp_sport=0,
+                      tcp_dport=0, 
+                      EH = False, 
+                      EHpkt = IPv6ExtHdrDestOpt(),
+                      route_adv = False,
+                      sll_enabled = False
+                      ):
+
+    """
+    Return a simple dataplane ICMPv6 packet 
+
+    Supports a few parameters:
+    @param len Length of packet in bytes w/o CRC
+    @param dl_dst Destinatino MAC
+    @param dl_src Source MAC
+    @param dl_vlan_enable True if the packet is with vlan, False otherwise
+    @param dl_vlan VLAN ID
+    @param dl_vlan_pcp VLAN priority
+    @param ip_src IPv6 source
+    @param ip_dst IPv6 destination
+    @param ip_tos IP ToS
+    @param tcp_dport TCP destination port
+    @param ip_sport TCP source port
+    
+    """
+    if (dl_vlan_enable):
+        pkt = Ether(dst=dl_dst, src=dl_src)/ \
+            Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi, vlan=dl_vlan)/ \
+            IPv6(src=ip_src, dst=ip_dst)
+
+    else:
+        pkt = Ether(dst=dl_dst, src=dl_src)/ \
+            IPv6(src=ip_src, dst=ip_dst)
+            
+            
+    # Add IPv6 Extension Headers 
+    if EH:
+        pkt = pkt / EHpkt
+
+    if route_adv:
+        pkt = pkt/ \
+        ICMPv6ND_RA(chlim=255, H=0L, M=0L, O=1L, routerlifetime=1800, P=0L, retranstimer=0, prf=0L, res=0L)/ \
+        ICMPv6NDOptPrefixInfo(A=1L, res2=0, res1=0L, L=1L, len=4, prefix='fd00:141:64:1::', R=0L, validlifetime=1814400, prefixlen=64, preferredlifetime=604800, type=3)
+        if sll_enabled :
+            pkt = pkt/ \
+            ICMPv6NDOptSrcLLAddr(type=1, len=1, lladdr='66:6f:df:2d:7c:9c')
+    else :
+        pkt = pkt/ \
+            ICMPv6EchoRequest()
+    if (tcp_sport >0 and tcp_dport >0):
+        pkt = pkt / TCP(sport=tcp_sport, dport=tcp_dport)
+
+    if pktlen > len(pkt) :
+        pkt = pkt/("D" * (pktlen - len(pkt)))
+
+    return pkt
+
 
 def do_barrier(ctrl):
     b = message.barrier_request()
