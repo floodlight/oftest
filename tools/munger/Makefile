@@ -44,7 +44,7 @@ LINT_FILES := $(subst ${TARGET_DIR}/,lint/,${LINT_FILES})
 
 all: ${GEN_FILES}
 
-install: all
+install: 
 	(cd ${SETUP_DIR} && $(PYTHON) setup.py install)
 
 # The core OpenFlow libraries generated from openflow.h
