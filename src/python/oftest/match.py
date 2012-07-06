@@ -6,7 +6,7 @@ from cstruct import *
 
 
 class oxm_tlv:
-    def __init__(self, field, hasmask, length, value, class_ = 0x8000, mask=None):
+    def __init__(self, field, hasmask, length, value, mask=None, class_ = 0x8000):
         self.class_ = class_
         self.field = field
         self.hasmask = hasmask
@@ -47,13 +47,13 @@ class oxm_tlv:
     def __len__(self):
         return self.length + 4
     
-    def show(self, prefix=''):
+    def __str__(self, prefix=''):
         return "\n".join(
         ("oxm_tlv_class=" + hex(self.class_),
         "oxm_tlv_field=" + hex(self.field),
         "oxm_tlv_hasmask=" + str(bool(self.hasmask)),
         "oxm_tlv_length: " + hex(self.length),
-        "value: " + self.value,))
+        "value: " + str(self.value),))
 
 
 def roundup (x,y): 
@@ -244,7 +244,7 @@ class ip_ecn(oxm_tlv):
 
     """
     def __init__(self, value, hasmask = False):
-        oxm_tlv.__init__(self, OFPXMT_OFB_IP_ECN, hasmask, 2, value)
+        oxm_tlv.__init__(self, OFPXMT_OFB_IP_ECN, hasmask, 1, value)
     def show(self, prefix=''):
         outstr = prefix + "ip_ecn\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -281,9 +281,9 @@ class ipv4_src(oxm_tlv):
     """
     def __init__(self, value, hasmask = False):
         if not hasmask:
-            oxm_tlv.__init__(self, OFPXMT_OFB_IPv4_SRC, hasmask, 4, value)
+            oxm_tlv.__init__(self, OFPXMT_OFB_IPV4_SRC, hasmask, 4, value)
         else: 
-            oxm_tlv.__init__(self, OFPXMT_OFB_IPv4_SRC, hasmask, 4, value, mask)
+            oxm_tlv.__init__(self, OFPXMT_OFB_IPV4_SRC, hasmask, 4, value, mask)
     def show(self, prefix=''):
         outstr = prefix + "ipv4_src\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -302,9 +302,9 @@ class ipv4_dst(oxm_tlv):
     """
     def __init__(self, value, hasmask = False):
         if not hasmask:
-            oxm_tlv.__init__(self, OFPXMT_OFB_IPv4_DST, hasmask, 4, value)
+            oxm_tlv.__init__(self, OFPXMT_OFB_IPV4_DST, hasmask, 4, value)
         else:
-            oxm_tlv.__init__(self, OFPXMT_OFB_IPv4_DST, hasmask, 4, value, mask)
+            oxm_tlv.__init__(self, OFPXMT_OFB_IPV4_DST, hasmask, 4, value, mask)
     def show(self, prefix=''):
         outstr = prefix + "ipv4_dst\n"
         outstr += oxm_tlv.__str__(self, prefix)
@@ -760,6 +760,8 @@ match_class_list = (
     ip_ecn,
     ip_proto,
     ipv4_src,
+    ipv4_dst,
+    tcp_src,
     tcp_dst,
     udp_src,
     udp_dst,

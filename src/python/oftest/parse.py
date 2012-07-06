@@ -5,10 +5,15 @@ OpenFlow message parsing functions
 #import sys
 import logging
 from oftest import message
+from match_list import match_list
+import oftest.match as match
 #from error import *
 #from action import *
 #from action_list import action_list
 import oftest.cstruct as ofp
+
+
+
 
 try:
     logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
@@ -247,101 +252,91 @@ def packet_to_flow_match(packet):
 
     @todo check min length of packet
     @todo Check if packet is other than L2 format
-    @todo Implement ICMP and ARP fields
+    @todo implement other fields covered by OpenFlow 1.2 
     """
-    match = ofp.ofp_match()
-    match.type = ofp.OFPMT_STANDARD
-    match.length = ofp.OFPMT_STANDARD_LENGTH
-    match.wildcards = ofp.OFPFW_ALL
-    match.dl_dst = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
-    match.dl_dst_mask = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
-    match.dl_src = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
-    match.dl_src_mask = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
-    match.nw_src = 0x00000000
-    match.nw_src_mask = 0xffffffff
-    match.nw_dst = 0x00000000
-    match.nw_dst_mask = 0xffffffff
-    match.metadata = 0x0000000000000000
-    match.metadata_mask = 0xffffffffffffffff
+    match_ls = match_list()
     
     if Ether in packet:
         ether = packet[Ether]
-        match.dl_dst = parse_mac(ether.dst)
-        match.dl_dst_mask = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
-        match.dl_src = parse_mac(ether.src)
-        match.dl_src_mask = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
-        match.dl_type = ether.type
-        match.wildcards &= ~ofp.OFPFW_DL_TYPE
+        eth_type = match.eth_type(ether.type)
+        eth_dst = match.eth_dst(parse_mac(ether.dst))
+        eth_src = match.eth_src(parse_mac(ether.src))
+        match_ls.add(eth_type)
+        match_ls.add(eth_dst)
+        match_ls.add(eth_src)
     else:
-        return match
+        return match_ls
 
     if Dot1Q in packet:
         #TODO: nicer way to get last vlan tag?
         vlan = packet[Dot1Q:0]
-        match.dl_vlan = vlan.vlan
-        match.dl_vlan_pcp = vlan.prio
-
+        vlan_vid = match.vlan_vid(vlan.vlan)
+        vlan_pcp = match.vlan_pcp(vlan.prio)
+        match_ls.add(vlan_vid)
+        match_ls.add(vlan_pcp)
         vlan_pl = vlan.payload
         while vlan_pl is not None and vlan_pl.name == Dot1Q.name:
             vlan = vlan_pl
             vlan_pl = vlan.payload
-
-        match.dl_type = vlan.type
+        #We need to overwrite the already
+        # inserted eth_type    
+        eth_index = match.tlvs.index()
+        eth_type = match.eth_type(vlan.type)
+        match_ls.tlvs.insert(vlan.type,eth_index)
     else:
-        match.dl_vlan = ofp.OFP_VLAN_NONE
-        match.wildcards &= ~ofp.OFPFW_DL_VLAN
-        match.dl_vlan_pcp = 0
-        match.wildcards &= ~ofp.OFPFW_DL_VLAN_PCP
-
+        vlan_vid = match.vlan_vid(ofp.OFPVID_NONE)
+        vlan_pcp = match.vlan_pcp(0)
+        match_ls.add(vlan_vid)
     #TODO ARP
 
     if MPLS in packet:
         mpls = packet[MPLS:0]
-        match.mpls_label = mpls.label
-        match.wildcards &= ~ofp.OFPFW_MPLS_LABEL
-        match.mpls_tc = mpls.cos
-        match.wildcards &= ~ofp.OFPFW_MPLS_TC
-        return match
+        mpls_label = match.mpls_label(mpls.label)
+        mpls_tc =  match.mpls_tc(mpls.cos)
+        match_ls.add(mpls_label)
+        match_ls.add(mpls_tc)
+        return match_ls
 
     if IP in packet:
         ip = packet[IP]
-        match.nw_src = parse_ip(ip.src)
-        match.nw_src_mask = 0x00000000
-        match.nw_dst = parse_ip(ip.dst)
-        match.nw_dst_mask = 0x00000000
-        match.nw_tos = ip.tos
-        match.wildcards &= ~ofp.OFPFW_NW_TOS
+        ipv4_src = match.ipv4_src(parse_ip(ip.src))
+        ipv4_dst = match.ipv4_dst(parse_ip(ip.dst))
+        ip_dscp =  match.ip_dscp(ip.tos >> 2) 
+        ip_ecn =   match.ip_ecn(ip.tos & 0x03)
+        match_ls.add(ipv4_src)
+        match_ls.add(ipv4_dst)
+        match_ls.add(ip_dscp)
+        match_ls.add(ip_ecn)
     else:
-        return match
+        return match_ls
     
     if TCP in packet:
         tcp = packet[TCP]
-        match.nw_proto = 6
-        match.wildcards &= ~ofp.OFPFW_NW_PROTO
-        match.tp_src = tcp.sport
-        match.wildcards &= ~ofp.OFPFW_TP_SRC
-        match.tp_dst = tcp.dport
-        match.wildcards &= ~ofp.OFPFW_TP_DST
-        return match
+        ip_proto = match.ip_proto(6)
+        tcp_src = match.tcp_src(tcp.sport)
+        tcp_dst = match.tcp_dst(tcp.dport)
+        match_ls.add(ip_proto)
+        match_ls.add(tcp_src)
+        match_ls.add(tcp_dst)
+        return match_ls
 
     if UDP in packet:
         udp = packet[UDP]
-        match.nw_proto = 17
-        match.wildcards &= ~ofp.OFPFW_NW_PROTO
-        match.tp_src = udp.sport
-        match.wildcards &= ~ofp.OFPFW_TP_SRC
-        match.tp_dst = udp.dport
-        match.wildcards &= ~ofp.OFPFW_TP_DST
-        return match
+        ip_proto = match.ip_proto(17)
+        udp_src = match.tcp_src(udp.sport)
+        udp_dst = match.tcp_dst(udp.dport)
+        match_ls.add(ip_proto)
+        match_ls.add(udp_src)
+        match_ls.add(udp_dst)        
+        returnmatch_ls
 
     if ICMP in packet:
         icmp = packet[ICMP]
-        match.nw_proto = 1
-        match.wildcards &= ~ofp.OFPFW_NW_PROTO
-        match.tp_src = icmp.type
-        match.wildcards &= ~ofp.OFPFW_TP_SRC
-        match.tp_dst = icmp.code
-        match.wildcards &= ~ofp.OFPFW_TP_DST
-        return match
+        ip_proto = match.ip_proto(1)
+        icmp_type = match.icmp_type(icmp.type)
+        icmp_code = match.icmp_code(icmp.code)
+        match_ls.add(icmp_type)
+        match_ls.add(icmp_code)        
+        return match_ls
 
-    return match
+    return match_ls

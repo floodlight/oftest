@@ -6,12 +6,14 @@ from cStringIO import StringIO
 
 #import oftest.controller as controller
 from oftest import cstruct as ofp
+import oftest.match as oxm_field
 import oftest.message as message
 #import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.parse as parse
 from oftest import instruction
 from oftest.packet import Packet
+
 
 try:
     logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
@@ -477,7 +479,7 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
                                str(response.byte_count) + " != " + 
                                str(byte_count))
 def flow_msg_create(parent, pkt, ing_port=0, match_list=None, instruction_list=None, 
-                    action_list=None, match=None, wildcards=0, egr_port=None, 
+                    action_list=None,wildcards=0, egr_port=None, 
                     egr_queue=None, table_id=0, check_expire=False):
     """
     Multi-purpose flow_mod creation utility
@@ -497,16 +499,16 @@ def flow_msg_create(parent, pkt, ing_port=0, match_list=None, instruction_list=N
     @param table_id Table ID for writing a flow_mod
     """
 
-    if match is None:
-        match = parse.packet_to_flow_match(pkt)
-    parent.assertTrue(match is not None, "Flow match from pkt failed")
-    match.wildcards = wildcards & ofp.OFPFW_ALL # mask out anything out of range
-    match.in_port = ing_port
-
+    if match_list is None:
+        match_list = parse.packet_to_flow_match(pkt)
+    parent.assertTrue(match_list is not None, "Flow match from pkt failed")
+    in_port = oxm_field.in_port(ing_port)
+    match_list.add(in_port) 
     request = message.flow_mod()
-    request.match = match
+    request.match_fields = match_list
     request.buffer_id = 0xffffffff
     request.table_id = table_id
+    
     if check_expire:
         request.flags |= ofp.OFPFF_SEND_FLOW_REM
         request.hard_timeout = 1    
@@ -553,7 +555,6 @@ def flow_msg_create(parent, pkt, ing_port=0, match_list=None, instruction_list=N
 
  
     parent.logger.debug(request.show())
-
     return request
 
 def flow_msg_install(parent, request, clear_table=True):
