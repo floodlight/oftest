@@ -49,7 +49,8 @@ class oxm_tlv:
     
     def __str__(self, prefix=''):
         return "\n".join(
-        ("oxm_tlv_class=" + hex(self.class_),
+#        ("oxm_tlv_class=" + hex(self.class_),
+        ("oxm_tlv_class=" + str(self.class_),
         "oxm_tlv_field=" + hex(self.field),
         "oxm_tlv_hasmask=" + str(bool(self.hasmask)),
         "oxm_tlv_length: " + hex(self.length),
