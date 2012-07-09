@@ -360,15 +360,13 @@ def test_list_generate(config):
         except:
             logging.warning("Could not import file " + file)
             raise
-        mod_name_map[modname] = mod
-        added_fn = False
-        for fn in dir(mod):
-            if 'runTest' in dir(eval("mod." + fn)):
-                if not added_fn:
-                    mod_name_map[modname] = mod
-                    all_tests[mod] = []
-                    added_fn = True
-                all_tests[mod].append(fn)
+
+        tests = [k for k in dir(mod) if type(getattr(mod, k)) == type and
+                                        issubclass(getattr(mod, k), unittest.TestCase)]
+        if tests:
+            mod_name_map[modname] = mod
+            all_tests[mod] = tests
+
     config["all_tests"] = all_tests
     config["mod_name_map"] = mod_name_map
 
