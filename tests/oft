@@ -353,19 +353,19 @@ def test_list_generate(config):
     for file in filelist:
         if file[-1:] == '~' or file[0] == '#':
             continue
-        modfile = file.lstrip('./')[:-3]
+        modname = os.path.splitext(os.path.basename(file))[0]
 
         try:
-            mod = __import__(modfile)
+            mod = __import__(modname)
         except:
             logging.warning("Could not import file " + file)
             raise
-        mod_name_map[modfile] = mod
+        mod_name_map[modname] = mod
         added_fn = False
         for fn in dir(mod):
             if 'runTest' in dir(eval("mod." + fn)):
                 if not added_fn:
-                    mod_name_map[modfile] = mod
+                    mod_name_map[modname] = mod
                     all_tests[mod] = []
                     added_fn = True
                 all_tests[mod].append(fn)
