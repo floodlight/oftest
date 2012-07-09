@@ -124,6 +124,11 @@ import unittest
 import time
 import os
 
+pydir = os.path.join(os.path.dirname(__file__), '..', 'src', 'python')
+if os.path.exists(os.path.join(pydir, 'oftest')):
+    # Running from source tree
+    sys.path.insert(0, pydir)
+
 import testutils
 
 try:
