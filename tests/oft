@@ -287,7 +287,7 @@ def check_profile(config):
             logging.info("Could not import profile: %s.py" % 
                          config["profile"])
             print "Failed to import profile: %s" % config["profile"]
-            profile_mod = None
+            raise
     else:
         logging.info("No profile specified")
         
@@ -359,7 +359,7 @@ def test_list_generate(config):
             mod = __import__(modfile)
         except:
             logging.warning("Could not import file " + file)
-            continue
+            raise
         mod_name_map[modfile] = mod
         added_fn = False
         for fn in dir(mod):
@@ -518,11 +518,13 @@ if config["platform"]:
         exec(_imp_string)
     except:
         logging.warn("Failed to import " + config["platform"] + " file")
+        raise
 
 try:
     platform_config_update(config)
 except:
     logging.warn("Could not run platform host configuration")
+    raise
 
 if not config["port_map"]:
     # Try to set up default port mapping if not done by platform
@@ -540,6 +542,7 @@ for (modname,mod) in config["mod_name_map"].items():
         mod.test_set_init(config)
     except:
         logging.warning("Could not run test_set_init for " + modname)
+        raise
 
 if config["dbg_level"] == logging.CRITICAL:
     _verb = 0
