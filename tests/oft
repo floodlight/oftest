@@ -123,6 +123,7 @@ import logging
 import unittest
 import time
 import os
+import imp
 
 pydir = os.path.join(os.path.dirname(__file__), '..', 'src', 'python')
 if os.path.exists(os.path.join(pydir, 'oftest')):
@@ -356,7 +357,10 @@ def test_list_generate(config):
         modname = os.path.splitext(os.path.basename(file))[0]
 
         try:
-            mod = __import__(modname)
+            if sys.modules.has_key(modname):
+                mod = sys.modules[modname]
+            else:
+                mod = imp.load_module(modname, *imp.find_module(modname, [os.path.dirname(file)]))
         except:
             logging.warning("Could not import file " + file)
             raise
