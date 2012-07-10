@@ -170,7 +170,7 @@ config_default = {
     "base_if_index"      : 1,
     "relax"              : False,
     "test_spec"          : "all",
-    "test_dir"           : ".",
+    "test_dir"           : os.path.dirname(__file__),
     "log_file"           : "oft.log",
     "list"               : False,
     "debug"              : _debug_default,
