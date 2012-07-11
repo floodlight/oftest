@@ -138,7 +138,7 @@ class SimpleDataPlane(SimpleProtocol):
     """
     def setUp(self):
         SimpleProtocol.setUp(self)
-        self.dataplane = dataplane.DataPlane()
+        self.dataplane = dataplane.DataPlane(self.config)
         for of_port, ifname in basic_port_map.items():
             self.dataplane.port_add(ifname, of_port)
 
@@ -181,7 +181,7 @@ class DataPlaneOnly(unittest.TestCase):
         self.config = basic_config
         signal.signal(signal.SIGINT, self.sig_handler)
         basic_logger.info("** START DataPlaneOnly CASE " + str(self))
-        self.dataplane = dataplane.DataPlane()
+        self.dataplane = dataplane.DataPlane(self.config)
         for of_port, ifname in basic_port_map.items():
             self.dataplane.port_add(ifname, of_port)
 
@@ -270,6 +270,7 @@ class PacketIn(SimpleDataPlane):
                    self.assertTrue(False,
                                    'Response packet does not match send packet' +
                                    ' for port ' + str(of_port))
+
 
 class PacketInBroadcastCheck(SimpleDataPlane):
     """
