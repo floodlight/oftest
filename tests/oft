@@ -561,12 +561,12 @@ if os.getuid() != 0:
 
 if __name__ == "__main__":
     logging.info("*** TEST RUN START: " + time.asctime())
-    unittest.TextTestRunner(verbosity=_verb).run(suite)
+    result = unittest.TextTestRunner(verbosity=_verb).run(suite)
     if testutils.skipped_test_count > 0:
         ts = " tests"
         if testutils.skipped_test_count == 1: ts = " test"
         logging.info("Skipped " + str(testutils.skipped_test_count) + ts)
         print("Skipped " + str(testutils.skipped_test_count) + ts)
     logging.info("*** TEST RUN END  : " + time.asctime())
-        
-
+    if result.failures:
+        exit(1)
