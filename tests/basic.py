@@ -67,7 +67,7 @@ class SimpleProtocol(unittest.TestCase):
         print "Received interrupt signal; exiting"
         self.clean_shutdown = False
         self.tearDown()
-        sys.exit(1)
+        raise KeyboardInterrupt
 
     def setUp(self):
         self.logger = basic_logger
@@ -84,11 +84,9 @@ class SimpleProtocol(unittest.TestCase):
         # compatibilty?
         self.controller.connect(timeout=20)
         if not self.controller.active:
-            print "Controller startup failed; exiting"
-            sys.exit(1)
+            raise Exception("Controller startup failed")
         if self.controller.switch_addr is None: 
-            print "Controller startup failed (no switch addr); exiting"
-            sys.exit(1)
+            raise Exception("Controller startup failed (no switch addr)")
         basic_logger.info("Connected " + str(self.controller.switch_addr))
 
     def inheritSetup(self, parent):
@@ -154,7 +152,8 @@ class SimpleDataPlane(SimpleProtocol):
     def tearDown(self):
         basic_logger.info("Teardown for simple dataplane test")
         SimpleProtocol.tearDown(self)
-        self.dataplane.kill(join_threads=self.clean_shutdown)
+        if hasattr(self, 'dataplane'):
+            self.dataplane.kill(join_threads=self.clean_shutdown)
         basic_logger.info("Teardown done")
 
     def runTest(self):
@@ -173,7 +172,7 @@ class DataPlaneOnly(unittest.TestCase):
         print "Received interrupt signal; exiting"
         self.clean_shutdown = False
         self.tearDown()
-        sys.exit(1)
+        raise KeyboardInterrupt
 
     def setUp(self):
         self.clean_shutdown = False
