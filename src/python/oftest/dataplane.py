@@ -44,6 +44,7 @@ def match_exp_pkt(exp_pkt, pkt):
         p = p[:len(e)]
     return e == p
 
+
 class DataPlanePort(Thread):
     """
     Class defining a port monitoring object.
@@ -250,7 +251,7 @@ class DataPlane:
     Class defining access primitives to the data plane
     Controls a list of DataPlanePort objects
     """
-    def __init__(self):
+    def __init__(self, config=None):
         self.port_list = {}
         # pkt_sync serves double duty as a regular top level lock and
         # as a condition variable
@@ -264,6 +265,36 @@ class DataPlane:
         self.packets_pending = 0 # Total pkts in all port queues
         self.logger = logging.getLogger("dataplane")
 
+        if config is None:
+            self.config = {}
+        else:
+            self.config = config; 
+
+        ############################################################
+        #
+        # We use the DataPlanePort class defined here by 
+        # default for all port traffic:
+        #
+        self.dppclass = DataPlanePort
+
+        ############################################################
+        #
+        # The platform/config can provide a custom DataPlanePort class
+        # here if you have a custom implementation with different
+        # behavior. 
+        #
+        # Set config.dataplane.portclass = MyDataPlanePortClass
+        # where MyDataPlanePortClass has the same interface as the class
+        # DataPlanePort defined here. 
+        #
+        if "dataplane" in self.config:
+            if "portclass" in self.config["dataplane"]:
+                self.dppclass = self.config["dataplane"]["portclass"]
+
+        if self.dppclass == None:
+            raise Exception("Problem determining DataPlanePort class.")
+
+
     def port_add(self, interface_name, port_number):
         """
         Add a port to the dataplane
@@ -272,9 +303,12 @@ class DataPlane:
         @param port_number The port number used to refer to the port
         """
 
-        self.port_list[port_number] = DataPlanePort(interface_name,
-                                                    port_number, self)
+        self.port_list[port_number] = self.dppclass(interface_name, 
+                                                    port_number, self); 
+
         self.port_list[port_number].start()
+
+
 
     def send(self, port_number, packet):
         """
