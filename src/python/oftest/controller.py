@@ -292,9 +292,8 @@ class Controller(Thread):
             self.logger.info("Got cxn to " + str(self.switch_addr))
             self.socs.append(self.switch_socket)
             # Notify anyone waiting
-            self.connect_cv.acquire()
-            self.connect_cv.notify()
-            self.connect_cv.release()
+            with self.connect_cv:
+                self.connect_cv.notify()
             if self.initial_hello:
                 self.message_send(hello())
                 ## @fixme Check return code
@@ -394,9 +393,8 @@ class Controller(Thread):
             return self.switch_socket is not None
         if self.switch_socket is not None:
             return True
-        self.connect_cv.acquire()
-        self.connect_cv.wait(timeout)
-        self.connect_cv.release()
+        with self.connect_cv:
+            self.connect_cv.wait(timeout)
 
         return self.switch_socket is not None
         
@@ -429,14 +427,12 @@ class Controller(Thread):
             self.logger.info("Ignoring listen soc shutdown error")
         self.listen_socket = None
 
-        # Release condition variables on which controller may be wait
-        self.xid_cv.acquire()
-        self.xid_cv.notifyAll()
-        self.xid_cv.release()
+        # Wakeup condition variables on which controller may be wait
+        with self.xid_cv:
+            self.xid_cv.notifyAll()
 
-        self.connect_cv.acquire()
-        self.connect_cv.notifyAll()
-        self.connect_cv.release()
+        with self.connect_cv:
+            self.connect_cv.notifyAll()
 
         self.dbg_state = "down"
 
