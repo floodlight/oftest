@@ -118,7 +118,7 @@ class MatchIPv6Simple(basic.SimpleDataPlane):
         self.assertTrue(rv != -1, "Failed to insert test flow")
 
         #Send packet
-        pkt = testutils.simple_ipv6_packet(dl_dst='00:01:02:03:04:05')
+        pkt = testutils.simple_ipv6_packet(dl_dst='00:01:02:03:04:05',ip_src='fe80::2420:52ff:fe8f:5189')
         ipv6_logger.info("Sending IPv6 packet to " + str(ing_port))
         ipv6_logger.debug("Data: " + str(pkt).encode('hex'))
         self.dataplane.send(ing_port, str(pkt))
@@ -162,7 +162,6 @@ class MatchICMPv6Simple(basic.SimpleDataPlane):
         
         request.match_fields.tlvs.append(port)
         request.match_fields.tlvs.append(eth_type)
-#        request.match_fields.tlvs.append(eth_dst)
         request.match_fields.tlvs.append(ipv6_src)
         request.match_fields.tlvs.append(ip_proto)
         request.match_fields.tlvs.append(icmpv6_type)
@@ -199,134 +198,139 @@ class MatchICMPv6Simple(basic.SimpleDataPlane):
         self.assertEqual(rc, 0, "Failed to delete all flows")    
 
 
-#class IPv6SetField(basic.SimpleDataPlane):
+class IPv6SetField(basic.SimpleDataPlane):
 
-#    def runTest(self):
-#        of_ports = ipv6_port_map.keys()
-#        of_ports.sort()
-#        ing_port = of_ports[0]
-#        egr_port = of_ports[3]
-#        
-#        # Remove all entries Add entry match all
-#        rc = testutils.delete_all_flows(self.controller, ipv6_logger)
-#        self.assertEqual(rc, 0, "Failed to delete all flows")
+    def runTest(self):
+        of_ports = ipv6_port_map.keys()
+        of_ports.sort()
+        ing_port = of_ports[0]
+        egr_port = of_ports[3]
+        
+        # Remove all entries Add entry match all
+        rc = testutils.delete_all_flows(self.controller, ipv6_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
 
-#        # Add entry match 
+        # Add entry match 
 
-#        request = message.flow_mod()
-#        request.match.type = ofp.OFPMT_OXM
-#        port = match.in_port(of_ports[0])
-#        eth_type = match.eth_type(IPV6_ETHERTYPE)
-#        ipv6_src = match.ipv6_src(ipaddr.IPv6Address('fe80::2420:52ff:fe8f:5189'))
-#        ip_proto = match.ip_proto(ICMPV6_PROTOCOL)
-#        icmpv6_type = match.icmpv6_type(128)
-#        
-#        request.match_fields.tlvs.append(port)
-#        request.match_fields.tlvs.append(eth_type)
-##        request.match_fields.tlvs.append(eth_dst)
-#        request.match_fields.tlvs.append(ipv6_src)
-#        request.match_fields.tlvs.append(ip_proto)
-#        request.match_fields.tlvs.append(icmpv6_type)
-#        
-#        field_2b_set = match.ipv6_dst(ipaddr.IPv6Address('fe80::2420:52ff:fe8f:DDDD'))
-#        act_setfield = action.action_set_field()
-#        act_setfield.field = field_2b_set
-#        
-##       TODO: insert action set field properly
-#        act_out = action.action_output()
-#        act_out.port = of_ports[3]
-#        
-#        
-#        inst = instruction.instruction_apply_actions()
-#        inst.actions.add(act_setfield)
-#        inst.actions.add(act_out)
-#        request.instructions.add(inst)
-#        request.buffer_id = 0xffffffff
-#        
-#        request.priority = 1000
-#        ipv6_logger.debug("Adding flow ")
-#        
-#        rv = self.controller.message_send(request)
-#        self.assertTrue(rv != -1, "Failed to insert test flow")
+        request = message.flow_mod()
+        request.match.type = ofp.OFPMT_OXM
+        port = match.in_port(of_ports[0])
+        eth_type = match.eth_type(IPV6_ETHERTYPE)
+        ipv6_src = match.ipv6_src(ipaddr.IPv6Address('fe80::2420:52ff:fe8f:5189'))
+        ip_proto = match.ip_proto(ICMPV6_PROTOCOL)
+        icmpv6_type = match.icmpv6_type(128)
+        
+        request.match_fields.tlvs.append(port)
+        request.match_fields.tlvs.append(eth_type)
+#        request.match_fields.tlvs.append(eth_dst)
+        request.match_fields.tlvs.append(ipv6_src)
+        request.match_fields.tlvs.append(ip_proto)
+        request.match_fields.tlvs.append(icmpv6_type)
+        
+        field_2b_set = match.ipv6_dst(ipaddr.IPv6Address('fe80::2420:52ff:fe8f:DDDD'))
+        act_setfield = action.action_set_field()
+        act_setfield.field = field_2b_set
+        
+#       TODO: insert action set field properly
+        act_out = action.action_output()
+        act_out.port = of_ports[3]
+        
+        
+        inst = instruction.instruction_apply_actions()
+        inst.actions.add(act_setfield)
+        inst.actions.add(act_out)
+        request.instructions.add(inst)
+        request.buffer_id = 0xffffffff
+        
+        request.priority = 1000
+        ipv6_logger.debug("Adding flow ")
+        
+        rv = self.controller.message_send(request)
+        self.assertTrue(rv != -1, "Failed to insert test flow")
 
-#        #Send packet
-#        pkt = simple_ipv6_packet()
-#        ipv6_logger.info("Sending IPv6 packet to " + str(ing_port))
-#        ipv6_logger.debug("Data: " + str(pkt).encode('hex'))
-#        self.dataplane.send(ing_port, str(pkt))
-#        
-#        #Receive packet
-#        exp_pkt = simple_ipv6_packet(ip_dst='fe80::2420:52ff:fe8f:DDDD')
-#        testutils.receive_pkt_verify(self, egr_port, exp_pkt)
+        #Send packet
+        pkt = simple_ipv6_packet()
+        ipv6_logger.info("Sending IPv6 packet to " + str(ing_port))
+        ipv6_logger.debug("Data: " + str(pkt).encode('hex'))
+        self.dataplane.send(ing_port, str(pkt))
+        
+        #Receive packet
+        exp_pkt = simple_ipv6_packet(ip_dst='fe80::2420:52ff:fe8f:DDDD')
+        testutils.receive_pkt_verify(self, egr_port, exp_pkt)
 
-#        #See flow match
-#        response = testutils.flow_stats_get(self)
-#        ipv6_logger.debug("Response" + response.show())
-#        
-#        #Remove flows
-#        rc = testutils.delete_all_flows(self.controller, ipv6_logger)
-#        self.assertEqual(rc, 0, "Failed to delete all flows")    
+        #See flow match
+        response = testutils.flow_stats_get(self)
+        ipv6_logger.debug("Response" + response.show())
+        
+        #Remove flows
+        rc = testutils.delete_all_flows(self.controller, ipv6_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")    
 
 
-#class MatchIPv6TCP(basic.SimpleDataPlane):
+class MatchIPv6TCP(basic.SimpleDataPlane):
 
-#    def runTest(self):
-#       	# Config
-#        of_ports = ipv6_port_map.keys()
-#        of_ports.sort()
-#        ing_port = of_ports[0]
-#        egr_port =   of_ports[3]
-#        
-#        # Remove flows
-#        rc = testutils.delete_all_flows(self.controller, ipv6_logger)
-#        self.assertEqual(rc, 0, "Failed to delete all flows")
+    def runTest(self):
+       	# Config
+        of_ports = ipv6_port_map.keys()
+        of_ports.sort()
+        ing_port = of_ports[0]
+        egr_port =   of_ports[3]
+        
+        # Remove flows
+        rc = testutils.delete_all_flows(self.controller, ipv6_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
 
-#        # Add entry match 
+        # Add entry match 
 
-#        request = message.flow_mod()
-#        request.match.type = ofp.OFPMT_OXM
-#        port = match.in_port(of_ports[0])
-#        eth_type = match.eth_type(IPV6_ETHERTYPE)
-#        ipv6_src = match.ipv6_src(ipaddr.IPv6Address('fe80::2420:52ff:fe8f:5189'))        
-#        ip_proto = match.ip_proto(TCP_PROTOCOL)
-#        
-#        request.match_fields.tlvs.append(port)
-#        request.match_fields.tlvs.append(eth_type)
-#        request.match_fields.tlvs.append(ipv6_src)
-#        request.match_fields.tlvs.append(ip_proto)
-#        
-#        act = action.action_output()
-#        act.port = of_ports[3]
-#        inst = instruction.instruction_apply_actions()
-#        inst.actions.add(act)
-#        request.instructions.add(inst)
-#        request.buffer_id = 0xffffffff
-#        
-#        request.priority = 1000
-#        ipv6_logger.debug("Adding flow ")
-#        
-#        rv = self.controller.message_send(request)
-#        self.assertTrue(rv != -1, "Failed to send test flow")
+        request = message.flow_mod()
+        request.match.type = ofp.OFPMT_OXM
+        port = match.in_port(of_ports[0])
+        eth_type = match.eth_type(IPV6_ETHERTYPE)
+        ipv6_src = match.ipv6_src(ipaddr.IPv6Address('fe80::2420:52ff:fe8f:5189'))        
+        ip_proto = match.ip_proto(TCP_PROTOCOL)
+        tcp_port = match.tcp_src(80)
+        
+        
+        request.match_fields.tlvs.append(port)
+        request.match_fields.tlvs.append(eth_type)
+        request.match_fields.tlvs.append(ipv6_src)
+        request.match_fields.tlvs.append(ip_proto)
+        request.match_fields.tlvs.append(tcp_port)
+        
+        act = action.action_output()
+        act.port = of_ports[3]
+        inst = instruction.instruction_apply_actions()
+        inst.actions.add(act)
+        request.instructions.add(inst)
+        request.buffer_id = 0xffffffff
+        
+        request.priority = 1000
+        ipv6_logger.debug("Adding flow ")
+        
+        rv = self.controller.message_send(request)
+        self.assertTrue(rv != -1, "Failed to send test flow")
 
-#        #Send packet
-#        pkt = testutils.simple_ipv6_packet(tcp_sport=80, tcp_dport=8080) 
+        #Send packet
+        pkt = testutils.simple_ipv6_packet(tcp_sport=80, tcp_dport=8080) 
 
-#        ipv6_logger.info("Sending IPv6 packet to " + str(ing_port))
-#        ipv6_logger.debug("Data: " + str(pkt).encode('hex'))
-#        
-#        self.dataplane.send(ing_port, str(pkt))
+        ipv6_logger.info("Sending IPv6 packet to " + str(ing_port))
+        ipv6_logger.debug("Data: " + str(pkt).encode('hex'))
+        
+        self.dataplane.send(ing_port, str(pkt))
 
-#        #Receive packet
-#        exp_pkt = testutils.simple_ipv6_packet(tcp_sport=80, tcp_dport=8080) 
+        #Receive packet
+        exp_pkt = testutils.simple_ipv6_packet(tcp_sport=80, tcp_dport=8080) 
 
-#        testutils.receive_pkt_verify(self, egr_port, exp_pkt)
+        testutils.receive_pkt_verify(self, egr_port, exp_pkt)
 
-#        #See flow match
-##        request_flow_stats()
-#        
-#        #Remove flows
-#        rc = testutils.delete_all_flows(self.controller, ipv6_logger)
-#        self.assertEqual(rc, 0, "Failed to delete all flows")
+        #See flow match
+#        request_flow_stats()
+        
+        #Remove flows
+        rc = testutils.delete_all_flows(self.controller, ipv6_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
 
+# Receive and verify pkt
+# testutils.receive_pkt_verify(self, egr_port, exp_pkt)
 if __name__ == "__main__":
     print "Please run through oft script:  ./oft --test-spec=ipv6"
