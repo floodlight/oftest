@@ -217,15 +217,10 @@ class IPv6SetField(basic.SimpleDataPlane):
         port = match.in_port(of_ports[0])
         eth_type = match.eth_type(IPV6_ETHERTYPE)
         ipv6_src = match.ipv6_src(ipaddr.IPv6Address('fe80::2420:52ff:fe8f:5189'))
-        ip_proto = match.ip_proto(ICMPV6_PROTOCOL)
-        icmpv6_type = match.icmpv6_type(128)
         
         request.match_fields.tlvs.append(port)
         request.match_fields.tlvs.append(eth_type)
-#        request.match_fields.tlvs.append(eth_dst)
         request.match_fields.tlvs.append(ipv6_src)
-        request.match_fields.tlvs.append(ip_proto)
-        request.match_fields.tlvs.append(icmpv6_type)
         
         field_2b_set = match.ipv6_dst(ipaddr.IPv6Address('fe80::2420:52ff:fe8f:DDDD'))
         act_setfield = action.action_set_field()
@@ -249,13 +244,13 @@ class IPv6SetField(basic.SimpleDataPlane):
         self.assertTrue(rv != -1, "Failed to insert test flow")
 
         #Send packet
-        pkt = simple_ipv6_packet()
+        pkt = testutils.simple_ipv6_packet(ip_src='fe80::2420:52ff:fe8f:5189')
         ipv6_logger.info("Sending IPv6 packet to " + str(ing_port))
         ipv6_logger.debug("Data: " + str(pkt).encode('hex'))
         self.dataplane.send(ing_port, str(pkt))
         
         #Receive packet
-        exp_pkt = simple_ipv6_packet(ip_dst='fe80::2420:52ff:fe8f:DDDD')
+        exp_pkt = testutils.simple_ipv6_packet(ip_dst='fe80::2420:52ff:fe8f:DDDD')
         testutils.receive_pkt_verify(self, egr_port, exp_pkt)
 
         #See flow match
