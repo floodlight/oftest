@@ -544,28 +544,33 @@ class Controller(Thread):
 
         if timeout == -1:
             timeout = self.transact_to
+        if timeout == None:
+            timeout = 60
         self.logger.debug("Running transaction %d" % msg.header.xid)
-        self.xid_cv.acquire()
-        if self.xid:
-            self.xid_cv.release()
-            self.logger.error("Can only run one transaction at a time")
-            return (None, None)
 
-        self.xid = msg.header.xid
-        self.xid_response = None
-        if self.message_send(msg.pack()) < 0:
-            self.logger.error("Error sending pkt for transaction %d" %
-                              msg.header.xid)
-            return (None, None)
+        with self.xid_cv:
+            if self.xid:
+                self.logger.error("Can only run one transaction at a time")
+                return (None, None)
 
-        self.logger.debug("Waiting for transaction %d" % msg.header.xid)
-        self.xid_cv.wait(timeout)
-        if self.xid_response:
-            (resp, pkt) = self.xid_response
+            self.xid = msg.header.xid
             self.xid_response = None
-        else:
-            (resp, pkt) = (None, None)
-        self.xid_cv.release()
+            if self.message_send(msg.pack()) < 0:
+                self.logger.error("Error sending pkt for transaction %d" %
+                                  msg.header.xid)
+                return (None, None)
+
+            self.logger.debug("Waiting %fs for transaction %d" % (timeout, msg.header.xid))
+            end_time = time.time() + timeout
+            while (not self.xid_response) and (time.time() < end_time):
+                self.xid_cv.wait(timeout)
+
+            if self.xid_response:
+                (resp, pkt) = self.xid_response
+                self.xid_response = None
+            else:
+                (resp, pkt) = (None, None)
+
         if resp is None:
             self.logger.warning("No response for xid " + str(self.xid))
         return (resp, pkt)
