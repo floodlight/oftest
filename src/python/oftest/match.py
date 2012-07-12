@@ -47,7 +47,7 @@ class oxm_tlv:
     def __len__(self):
         return self.length + 4
     
-    def __str__(self, prefix=''):
+    def show(self, prefix=''):
         return "\n".join(
         ("oxm_tlv_class=" + hex(self.class_),
         "oxm_tlv_field=" + hex(self.field),
