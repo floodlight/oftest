@@ -2,8 +2,8 @@
 # Python OpenFlow action wrapper classes
 
 from cstruct import *
-
-
+from match import roundup
+from match_list import match_list
 
 class action_pop_mpls(ofp_action_pop_mpls):
     """
@@ -216,11 +216,42 @@ class action_set_field(ofp_action_set_field):
         ofp_action_set_field.__init__(self)
         self.type = OFPAT_SET_FIELD
         self.len = self.__len__()
+        self.field = match_list()
+        
+    def pack(self):
+        packed = ""
+        if len(self.field) <= 4:
+            packed += ofp_action_set_field.pack()
+        else:
+            self.len = len(self)
+            packed += struct.pack("!HH", self.type, self.len)
+            packed += self.field.pack()
+            padding_size = roundup(len(self.field) -4,8) -  (len(self.field) -4)
+            if padding_size:
+                padding = [0] * padding_size
+                packed += struct.pack("!" + str(padding_size) + "B", *padding)
+        return packed
+    
+    def unpack(self, binary_string):
+        if len(binary_string) <= 8:
+            binary_string = ofp_action_set_field.unpack(self)
+        else: 
+            (self.type, self.len) = struct.unpack("!HH",  binary_string[0:4])
+            binary_string = binary_string[4:]
+            binary_string = self.field.unpack(binary_string, bytes = self.len - 4)
+            padding_size = roundup(len(self.field) -4,8) -  (len(self.field) -4) 
+            if padding_size:
+                binary_string = binary_string[padding_size:]
+        return binary_string
+        
     def show(self, prefix=''):
         outstr = prefix + "action_set_field\n"
         outstr += ofp_action_set_field.show(self, prefix)
         return outstr
-
+    
+    def __len__(self):
+        return roundup(4 + len(self.field),8)
+         
 
 class action_set_mpls_ttl(ofp_action_mpls_ttl):
     """

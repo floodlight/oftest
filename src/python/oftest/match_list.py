@@ -15,7 +15,7 @@ class match_list(ofp_base_list):
 
     def __len__(self):
         return sum([len(i) for i in self])
-
+    
     def unpack(self, binary_string, bytes=None):
         if bytes <= 4:
             return binary_string[4:]
@@ -26,6 +26,9 @@ class match_list(ofp_base_list):
         while offset < bytes:
             read = 0
             oxm_class, oxm_fieldhm, oxm_length = struct.unpack("!HBB", cur_string[read:read+4])   
+            #Found padding bytes?
+            if not oxm_class:
+                break
             oxm_field = oxm_fieldhm >> 1
             oxm_hasmask = oxm_fieldhm & 0x00000001
             payload = struct.unpack("!" + str(oxm_length) + "s", cur_string[read+4:read+4+oxm_length])[0]
@@ -33,7 +36,7 @@ class match_list(ofp_base_list):
                 value, mask = payload[:oxm_length/2], payload[oxm_length/2:]    
             else: 
                 value, mask = payload, None
-            oxm = oxm_tlv(oxm_field, oxm_hasmask, oxm_length, value,oxm_class, mask)
+            oxm = oxm_tlv(oxm_field, oxm_hasmask, oxm_length, value,mask, oxm_class)
             self.tlvs.append(oxm)
             read = 4 + oxm_length
             offset += read
