@@ -177,7 +177,8 @@ config_default = {
     "dbg_level"          : _debug_level_default,
     "port_map"           : {},
     "test_params"        : "None",
-    "profile"            : None
+    "profile"            : None,
+    "allow_user"         : False,
 }
 
 # Default test priority
@@ -262,6 +263,8 @@ def config_setup(cfg_dflt):
                       help="""Set test parameters: key=val;...
         NOTE:  key MUST be a valid Python identifier, egr_count not egr-count
         See --list""")
+    parser.add_option("--allow-user", action="store_true",
+                      help="Proceed even if oftest is not run as root")
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
     (options, args) = parser.parse_args()
@@ -553,7 +556,7 @@ elif config["dbg_level"] >= logging.WARNING:
 else:
     _verb = 2
 
-if os.getuid() != 0:
+if os.getuid() != 0 and not config["allow_user"]:
     print "ERROR: Super-user privileges required. Please re-run with " \
           "sudo or as root."
     exit(1)
