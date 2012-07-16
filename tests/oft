@@ -571,5 +571,5 @@ if __name__ == "__main__":
         logging.info("Skipped " + str(testutils.skipped_test_count) + ts)
         print("Skipped " + str(testutils.skipped_test_count) + ts)
     logging.info("*** TEST RUN END  : " + time.asctime())
-    if result.failures:
+    if result.failures or result.errors:
         exit(1)
