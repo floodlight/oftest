@@ -167,6 +167,7 @@ gParser.add_argument("--cip", help="Controller Connection",
 
 gParser.add_argument("--cport", type=int, help="Controller Port", 
                      default=6633)
+gParser.add_argument("--dpid", help="DPID")
 
 gParser.add_argument("--max_backoff", help="VSwitchD max backoff value", 
                      default=1000, type=int)
@@ -474,6 +475,10 @@ if gArgs.loopback:
     vsctl(["add-port", gArgs.bridge, "veth%d" % (lb_idx)])
     vsctl(["add-port", gArgs.bridge, "veth%d" % (lb_idx+1)])
 
+if gArgs.dpid:
+    vsctl(["set", "bridge", gArgs.bridge, "other-config:datapath-id=%s" % (
+                gArgs.dpid)])
+
 # Set controller
 vsctl(["set-controller", gArgs.bridge, "tcp:%s:%s" % (
         gArgs.cip, gArgs.cport)])
@@ -495,6 +500,8 @@ if gArgs.cli:
                 vsctl(args[1:])
             elif args[0] == "ofctl" or args[0] == "ovs-ofctl":
                 ofctl(args[1:])
+            elif args[0] == "dumpflows" or args[0] == "flowtable":
+                ofctl(["dump-flows", "%s" % gArgs.bridge])
             elif args[0] == "exit" or args[0] == "quit":
                 break; 
             elif args[0] == "kill":
