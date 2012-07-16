@@ -30,7 +30,7 @@ Getting OFTest
 
     You can check out OFTest with git with the following command:
 
-    git clone git://openflow.org/oftest
+    git clone git://github.com/CPqD/oftest12.git
 
 Introduction
 ++++++++++++
@@ -52,7 +52,7 @@ Introduction
 Quick Start
 +++++++++++
 
-    You need to have Python setup tools installed on your
+    You need to have Python setup tools and ip_addr installed on your
     system.  See 'Pre-requisites' below.
 
     Make sure your switch is running and trying to connect to a
@@ -60,11 +60,11 @@ Quick Start
     6633).  See below regarding run_switch.py for a script that starts 
     up a software switch on the test host.
 
-    Currently, switches must be running version 1.0 of OpenFlow. 
+    Currently, switches must be running version 1.2 of OpenFlow. 
 
-      # git clone yuba:/usr/local/git/openflow-projects/oftest
+      # git clone git://github.com/CPqD/oftest12.git
       # cd oftest/tools/munger
-      # make install
+      # sudo make install
       # cd ../../tests
          Make sure the switch you want to test is running --
          see (4) below for the reference switch example.
@@ -79,23 +79,20 @@ Longer Start
     1.  Pre-requisites:
         * An OF switch instance to test (see 4 below)
         * Root privilege on host running oft
-        * Switch running OpenFlow 1.0 and attempting to connect 
+        * Switch running OpenFlow 1.2 and attempting to connect 
           to a controller on the machine running oft.
         * Python 2.5.  You can run platforms using eth interfaces
           with Python 2.4.
         * Python setup tools (e.g.: sudo apt-get install python-setuptools)
+        * Python ipadrr (e.g.: sudo apt-get install python-ipaddr)
         * oftest checked out (called <oftest> here)
         * Doxygen and doxypy for document generation (optional)
         * lint for source checking (optional)
 
-    2.  Build the OpenFlow Python message classes
-
-        Important:  The OF version used by the controller is based on 
-        the file in <oftest>/tools/pylibopenflow/include/openflow.h
-        This is currently the 1.0 release file.
+    2. Install OpenFlow Python message classes
 
         cd <oftest>/tools/munger
-        make install
+        sudo make install
 
         This places files in <oftest>/src/python/oftest/src and then
         calls setuptools to install on the local host
@@ -123,8 +120,8 @@ Longer Start
         is best done in a window separate from where you will run oft.
  
         4A. Check out openflow (preferably at the same level as oftest):
-            git clone git://openflowswitch.org/openflow.git
-        4B. cd openflow; ./boot.sh; ./configure; make
+            git clone git://github.com/CPqD/of12softswitch.git
+        4B. cd of12softswitch; ./boot.sh; ./configure; make
         4C. cd ../oftest/tests
         4D. Run the switch startup script:
             sudo ./run_switch.py; Now you can run oft (see below).
@@ -315,16 +312,3 @@ Other Info
       + make lint
     Places results in <oftest>/lint/*.log
     The file controller.log currently has some errors indicated
-
-
-To Do
-+++++
-
-    * Need to have an overview of the components of the test, how they
-      connect and how they are managed by the test framework.
-    * See the Regression Test component on trac:
-      http://www.openflowswitch.org/bugs/openflow
-      http://www.openflowswitch.org/bugs/openflow/query?component=Regression+test+suite
-
-    * Make the framework work with OF versions other than 1.0?
-
