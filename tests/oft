@@ -179,6 +179,7 @@ config_default = {
     "test_params"        : "None",
     "profile"            : None,
     "allow_user"         : False,
+    "fail_skipped"       : False,
 }
 
 # Default test priority
@@ -265,6 +266,8 @@ def config_setup(cfg_dflt):
         See --list""")
     parser.add_option("--allow-user", action="store_true",
                       help="Proceed even if oftest is not run as root")
+    parser.add_option("--fail-skipped", action="store_true",
+                      help="Return failure if any test was skipped")
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
     (options, args) = parser.parse_args()
@@ -572,4 +575,6 @@ if __name__ == "__main__":
         print("Skipped " + str(testutils.skipped_test_count) + ts)
     logging.info("*** TEST RUN END  : " + time.asctime())
     if result.failures or result.errors:
+        exit(1)
+    if testutils.skipped_test_count > 0 and config["fail_skipped"]:
         exit(1)
