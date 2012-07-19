@@ -88,8 +88,8 @@ class MatchIPv6Simple(basic.SimpleDataPlane):
         egr_port = of_ports[3]
         
         # Remove all entries Add entry match all
-#        rc = testutils.delete_all_flows(self.controller, ipv6_logger)
-#        self.assertEqual(rc, 0, "Failed to delete all flows")
+        rc = testutils.delete_all_flows(self.controller, ipv6_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
 
         # Add entry match 
 
@@ -127,10 +127,6 @@ class MatchIPv6Simple(basic.SimpleDataPlane):
         exp_pkt = testutils.simple_ipv6_packet()
         testutils.receive_pkt_verify(self, egr_port, exp_pkt)
 
-        #See flow match
-#        response = testutils.flow_stats_get(self)
-#        ipv6_logger.debug(response.show())
-        
         #Remove flows
         rc = testutils.delete_all_flows(self.controller, ipv6_logger)
         self.assertEqual(rc, 0, "Failed to delete all flows")
@@ -189,10 +185,6 @@ class MatchICMPv6Simple(basic.SimpleDataPlane):
         exp_pkt = testutils.simple_icmpv6_packet()
         testutils.receive_pkt_verify(self, egr_port, exp_pkt)
 
-        #See flow match
-#        response = testutils.flow_stats_get(self)
-#        ipv6_logger.debug("Response" + response.show())
-        
         #Remove flows
         rc = testutils.delete_all_flows(self.controller, ipv6_logger)
         self.assertEqual(rc, 0, "Failed to delete all flows")    
@@ -244,7 +236,7 @@ class IPv6SetField(basic.SimpleDataPlane):
         self.assertTrue(rv != -1, "Failed to insert test flow")
 
         #Send packet
-        pkt = testutils.simple_ipv6_packet(ip_src='fe80::2420:52ff:fe8f:5189')
+        pkt = testutils.simple_ipv6_packet(ip_src='fe80::2420:52ff:fe8f:5189',ip_dst='fe80::2420:52ff:fe8f:5190')
         ipv6_logger.info("Sending IPv6 packet to " + str(ing_port))
         ipv6_logger.debug("Data: " + str(pkt).encode('hex'))
         self.dataplane.send(ing_port, str(pkt))
@@ -318,14 +310,9 @@ class MatchIPv6TCP(basic.SimpleDataPlane):
 
         testutils.receive_pkt_verify(self, egr_port, exp_pkt)
 
-        #See flow match
-#        request_flow_stats()
-        
         #Remove flows
         rc = testutils.delete_all_flows(self.controller, ipv6_logger)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-# Receive and verify pkt
-# testutils.receive_pkt_verify(self, egr_port, exp_pkt)
 if __name__ == "__main__":
     print "Please run through oft script:  ./oft --test-spec=ipv6"

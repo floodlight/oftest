@@ -2894,25 +2894,48 @@ class aggregate_stats_request(ofp_stats_request, ofp_aggregate_stats_request):
         ofp_aggregate_stats_request.__init__(self)
         self.header.type = OFPT_STATS_REQUEST
         self.type = OFPST_AGGREGATE
-
+        self.match_fields = match_list()
+        
     def pack(self, assertstruct=True):
         self.header.length = len(self)
         packed = self.header.pack()
         packed += ofp_stats_request.pack(self)
-        packed += ofp_aggregate_stats_request.pack(self)
+        if not len(self.match_fields):
+            tlv_pad = oxm_tlv(0,0,0,0,0)
+            self.match.length += 4
+            self.match_fields.tlvs.append(tlv_pad)
+        else:
+            if len(self.match_fields) > 4:
+                self.match.length +=  len(self.match_fields)      
+        packed += ofp_aggregate_stats_request.pack(self, assertstruct)
+        packed += self.match_fields.pack()
+        padding_size = roundup(len(self.match) + len(self.match_fields),8) - (len(self.match) + len(self.match_fields))
+        padding = [0] * padding_size
+        
+        if padding_size:
+            packed += struct.pack("!" + str(padding_size) + "B", *padding)
         return packed
 
     def unpack(self, binary_string):
         binary_string = self.header.unpack(binary_string)
         binary_string = ofp_stats_request.unpack(self, binary_string)
         binary_string = ofp_aggregate_stats_request.unpack(self, binary_string)
+        binary_string = self.match_fields.unpack(binary_string, bytes = self.match.length - 4)
+        padding = roundup(OFP_AGGREGATE_STATS_REQUEST_BYTES + len(self.match_fields),8) - (OFP_AGGREGATE_STATS_REQUEST_BYTES + len(self.match_fields))
+        if padding:
+            binary_string = binary_string[padding:]
         if len(binary_string) != 0:
-            print "ERROR unpacking aggregate: extra data"
+            print "ERROR unpacking flow: extra data"
         return binary_string
-
+    
+    
     def __len__(self):
-        return len(self.header) + OFP_STATS_REQUEST_BYTES + \
-               OFP_AGGREGATE_STATS_REQUEST_BYTES
+        length = len(self.header) + OFP_STATS_REQUEST_BYTES + \
+                     OFP_AGGREGATE_STATS_REQUEST_BYTES
+        if not len(self.match_fields):
+            return length + 4            
+        else:
+            return  roundup(length + len(self.match_fields),8) 
 
     def show(self, prefix=''):
         outstr = prefix + "aggregate_stats_request\n"

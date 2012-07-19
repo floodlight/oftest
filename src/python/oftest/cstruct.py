@@ -1332,10 +1332,10 @@ class ofp_aggregate_stats_request(object):
         Declare members and default values
         """
         self.table_id = 0
-        self.pad= [0,0,0]
+        self.pad_asr= [0,0,0]
         self.out_port = 0
         self.out_group = 0
-        self.pad2= [0,0,0,0]
+        self.pad_asr2= [0,0,0,0]
         self.cookie = 0
         self.cookie_mask = 0
         self.match = ofp_match()
@@ -1344,14 +1344,14 @@ class ofp_aggregate_stats_request(object):
     def __assert(self):
         """Sanity check
         """
-        if(not isinstance(self.pad, list)):
-            return (False, "self.pad is not list as expected.")
-        if(len(self.pad) != 3):
-            return (False, "self.pad is not of size 3 as expected.")
-        if(not isinstance(self.pad2, list)):
-            return (False, "self.pad2 is not list as expected.")
-        if(len(self.pad2) != 4):
-            return (False, "self.pad2 is not of size 4 as expected.")
+        if(not isinstance(self.pad_asr, list)):
+            return (False, "self.pad_asr is not list as expected.")
+        if(len(self.pad_asr) != 3):
+            return (False, "self.pad_asr is not of size 3 as expected.")
+        if(not isinstance(self.pad_asr2, list)):
+            return (False, "self.pad_asr2 is not list as expected.")
+        if(len(self.pad_asr2) != 4):
+            return (False, "self.pad_asr2 is not of size 4 as expected.")
         if(not isinstance(self.match, ofp_match)):
             return (False, "self.match is not class ofp_match as expected.")
         return (True, None)
@@ -1365,9 +1365,9 @@ class ofp_aggregate_stats_request(object):
                 return None
         packed = ""
         packed += struct.pack("!B", self.table_id)
-        packed += struct.pack("!BBB", self.pad[0], self.pad[1], self.pad[2])
+        packed += struct.pack("!BBB", self.pad_asr[0], self.pad_asr[1], self.pad_asr[2])
         packed += struct.pack("!LL", self.out_port, self.out_group)
-        packed += struct.pack("!BBBB", self.pad2[0], self.pad2[1], self.pad2[2], self.pad2[3])
+        packed += struct.pack("!BBBB", self.pad_asr2[0], self.pad_asr2[1], self.pad_asr2[2], self.pad_asr2[3])
         packed += struct.pack("!QQ", self.cookie, self.cookie_mask)
         packed += self.match.pack()
         return packed
@@ -1386,7 +1386,7 @@ class ofp_aggregate_stats_request(object):
         fmt = '!BBB'
         start = 1
         end = start + struct.calcsize(fmt)
-        (self.pad[0], self.pad[1], self.pad[2]) = struct.unpack(fmt, binaryString[start:end])
+        (self.pad[0], self.pad_asr[1], self.pad_asr[2]) = struct.unpack(fmt, binaryString[start:end])
         fmt = '!LL'
         start = 4
         end = start + struct.calcsize(fmt)
@@ -1394,7 +1394,7 @@ class ofp_aggregate_stats_request(object):
         fmt = '!BBBB'
         start = 12
         end = start + struct.calcsize(fmt)
-        (self.pad2[0], self.pad2[1], self.pad2[2], self.pad2[3]) = struct.unpack(fmt, binaryString[start:end])
+        (self.pad2[0], self.pad_asr2[1], self.pad_asr2[2], self.pad_asr2[3]) = struct.unpack(fmt, binaryString[start:end])
         fmt = '!QQ'
         start = 16
         end = start + struct.calcsize(fmt)

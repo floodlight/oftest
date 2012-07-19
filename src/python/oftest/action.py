@@ -141,6 +141,8 @@ class action_group(ofp_action_group):
         outstr = prefix + "action_group\n"
         outstr += ofp_action_group.show(self, prefix)
         return outstr
+    def __len__(self):
+        return roundup(4 + 4,8)
 
 
 class action_set_queue(ofp_action_set_queue):

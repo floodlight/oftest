@@ -283,10 +283,6 @@ def packet_to_flow_match(packet):
         eth_index = match.tlvs.index()
         eth_type = match.eth_type(vlan.type)
         match_ls.tlvs.insert(vlan.type,eth_index)
-    else:
-        vlan_vid = match.vlan_vid(ofp.OFPVID_NONE)
-        vlan_pcp = match.vlan_pcp(0)
-        match_ls.add(vlan_vid)
     #TODO ARP
 
     if MPLS in packet:
