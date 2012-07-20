@@ -605,7 +605,7 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
                                'Flow removed failed, byte count: ' + 
                                str(response.byte_count) + " != " + 
                                str(byte_count))
-def flow_msg_create(parent, pkt, ing_port=0, match_list=None, instruction_list=None, 
+def flow_msg_create(parent, pkt, ing_port=0, match_fields=None, instruction_list=None, 
                     action_list=None,wildcards=0, egr_port=None, 
                     egr_queue=None, table_id=0, check_expire=False):
     """
@@ -626,13 +626,13 @@ def flow_msg_create(parent, pkt, ing_port=0, match_list=None, instruction_list=N
     @param table_id Table ID for writing a flow_mod
     """
 
-    if match_list is None:
-        match_list = parse.packet_to_flow_match(pkt)
-    parent.assertTrue(match_list is not None, "Flow match from pkt failed")
+    if match_fields is None:
+        match_fields = parse.packet_to_flow_match(pkt)
+    parent.assertTrue(match_fields is not None, "Flow match from pkt failed")
     in_port = oxm_field.in_port(ing_port)
-    match_list.add(in_port) 
+    match_fields.add(in_port) 
     request = message.flow_mod()
-    request.match_fields = match_list
+    request.match_fields = match_fields
     request.buffer_id = 0xffffffff
     request.table_id = table_id
     
@@ -1504,7 +1504,7 @@ def flow_match_test_mpls(parent, port_map, wildcards=0,
                 parent.logger.info("Ran " + str(test_count) + " tests; exiting")
                 return
 
-def flow_stats_get(parent, match_list = None):
+def flow_stats_get(parent, match_fields = None):
     """ Get the flow_stats from the switch
     Test the response to make sure it's really a flow_stats object
     """
@@ -1512,8 +1512,8 @@ def flow_stats_get(parent, match_list = None):
     request.out_port = ofp.OFPP_ANY
     request.out_group = ofp.OFPG_ANY
     request.table_id = 0xff
-    if match_list != None:
-        request.match_fields = match_list
+    if match_fields != None:
+        request.match_fields = match_fields
     response, _ = parent.controller.transact(request, timeout=2)
     parent.assertTrue(response is not None, "Did not get response")
     parent.assertTrue(isinstance(response,message.flow_stats_reply),
