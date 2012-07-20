@@ -1669,7 +1669,7 @@ class FlowToggle(BaseMatchCase):
                 pkt = simple_tcp_packet(tcp_sport=f_idx)
                 msg = message.flow_mod()
                 match = parse.packet_to_flow_match(pkt)
-                match.in_port = of_ports[3]
+                match.in_port = of_ports[2]
                 match.wildcards = wildcards
                 msg.match = match
                 msg.buffer_id = 0xffffffff
