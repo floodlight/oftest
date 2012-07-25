@@ -239,7 +239,7 @@ def config_setup(cfg_dflt):
         testcase          Run tests in all modules with the name testcase
         module.testcase   Run the specific test case
         """
-    parser.add_option("--test-spec", "--test-list", help=test_list_help)
+    parser.add_option("-T", "--test-spec", "--test-list", help=test_list_help)
     parser.add_option("--log-file", 
                       help="Name of log file, empty string to log to console")
     parser.add_option("--debug",
