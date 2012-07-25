@@ -1640,6 +1640,13 @@ class ModifyL2DstVIDMC(BaseMatchCase):
 class FlowToggle(BaseMatchCase):
     """
     Add flows to the table and modify them repeatedly
+
+    This is done by using only "add" flow messages.  Since the check overlap
+    flag is not set, the switch is supposed to modify the existing flow if
+    the match already exists.
+
+    Would probably be better to exercise more of the flow modify commands
+    (add, modify, delete +/- strict).
     """
     def runTest(self):
         flow_count = test_param_get(self.config, 'ft_flow_count', default=20)
@@ -1673,6 +1680,7 @@ class FlowToggle(BaseMatchCase):
                 match.wildcards = wildcards
                 msg.match = match
                 msg.buffer_id = 0xffffffff
+                msg.command = ofp.OFPFC_ADD
                 msg.actions.add(acts[toggle])
                 flows[toggle].append(msg)
 
