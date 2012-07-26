@@ -285,15 +285,17 @@ class Controller(Thread):
 
         if s and s == self.listen_socket:
             if self.switch_socket:
-                return 0 # Ignore listen socket while connected to switch
+                self.logger.warning("Ignoring incoming connection; already connected to switch")
+                return 0
 
-            (self.switch_socket, self.switch_addr) = \
-                self.listen_socket.accept()
-            self.logger.info("Got cxn to " + str(self.switch_addr))
-            self.socs.append(self.switch_socket)
-            # Notify anyone waiting
+            (sock, addr) = self.listen_socket.accept()
+            self.socs.append(sock)
+            self.logger.info("Incoming connection from %s" % str(addr))
+
             with self.connect_cv:
-                self.connect_cv.notify()
+                (self.switch_socket, self.switch_addr) = (sock, addr)
+                self.connect_cv.notify() # Notify anyone waiting
+
             if self.initial_hello:
                 self.message_send(hello())
                 ## @fixme Check return code
@@ -391,11 +393,9 @@ class Controller(Thread):
 
         if timeout == 0:
             return self.switch_socket is not None
-        if self.switch_socket is not None:
-            return True
-        with self.connect_cv:
-            self.connect_cv.wait(timeout)
 
+        with self.connect_cv:
+            timed_wait(self.connect_cv, lambda: self.switch_socket, timeout=timeout)
         return self.switch_socket is not None
         
     def kill(self):
@@ -519,8 +519,7 @@ class Controller(Thread):
         received message handling.
 
         @param msg The message object to send; must not be a string
-        @param timeout The timeout in seconds; if -1 use default. if None
-        blocks without time out
+        @param timeout The timeout in seconds; if -1 use default.
         @param zero_xid Normally, if the XID is 0 an XID will be generated
         for the message.  Set xero_xid to override this behavior
         @return The matching message object or None if unsuccessful
@@ -549,9 +548,7 @@ class Controller(Thread):
                 return (None, None)
 
             self.logger.debug("Waiting %fs for transaction %d" % (timeout, msg.header.xid))
-            end_time = time.time() + timeout
-            while (not self.xid_response) and (time.time() < end_time):
-                self.xid_cv.wait(timeout)
+            timed_wait(self.xid_cv, lambda: self.xid_response, timeout=timeout)
 
             if self.xid_response:
                 (resp, pkt) = self.xid_response
