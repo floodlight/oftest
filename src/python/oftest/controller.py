@@ -457,14 +457,15 @@ class Controller(Thread):
             return
         self.handlers[msg_type] = handler
 
-    def poll(self, exp_msg=None, timeout=None):
+    def poll(self, exp_msg=None, timeout=-1):
         """
         Wait for the next OF message received from the switch.
 
         @param exp_msg If set, return only when this type of message 
         is received (unless timeout occurs).
-        @param timeout If None, do not block.  Otherwise, sleep in
-        intervals of 1 second until message is received.
+
+        @param timeout Maximum number of seconds to wait for the message.
+        Pass -1 for the default timeout.
 
         @retval A pair (msg, pkt) where msg is a message object and pkt
         the string representing the packet as received from the socket.
@@ -472,14 +473,15 @@ class Controller(Thread):
 
         The data members in the message are in host endian order.
         If an error occurs, (None, None) is returned
-
-        The current queue is searched for a message of the desired type
-        before sleeping on message in events.
         """
 
-        self.logger.debug("Poll for " + ofp_type_map[exp_msg])
+        # TODO make this configurable
+        if timeout == -1:
+            timeout = 1
 
-        # Looks for the packet in the queue
+        self.logger.debug("Poll for %s, timeout %fs" % (ofp_type_map[exp_msg], timeout))
+
+        # Take the packet from the queue
         def grab():
             if len(self.packets) > 0:
                 if not exp_msg:
@@ -496,31 +498,17 @@ class Controller(Thread):
                             return (msg, pkt)
             # Not found
             self.logger.debug("Packet not in queue")
-            return (None, None)
+            return None
 
-        # Non-blocking case
-        if timeout is None or timeout <= 0:
-            return grab()
-
-        msg = pkt = None
-        self.logger.debug("Entering timeout (%fs)" % timeout)
-        end_time = time.time() + timeout
         with self.packets_cv:
-            while True:
-                if time.time() > end_time:
-                    self.logger.debug("Poll time out")
-                    return (None, None)
+            ret = timed_wait(self.packets_cv, grab)
 
-                (msg, pkt) = grab()
-                if msg != None:
-                    self.logger.debug("Got msg " + str(msg))
-                    return (msg, pkt)
-
-                # Go to sleep
-                remaining_time = end_time - time.time()
-                self.packets_cv.wait(remaining_time)
-
-        return (msg, pkt)
+        if ret != None:
+            (msg, pkt) = ret
+            self.logger.debug("Got message %s" % str(msg))
+            return (msg, pkt)
+        else:
+            return (None, None)
 
     def transact(self, msg, timeout=-1, zero_xid=False):
         """
