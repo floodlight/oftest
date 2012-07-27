@@ -6,6 +6,8 @@ Utilities for the OpenFlow test framework
 import random
 import time
 
+default_timeout = None # set by oft
+
 def gen_xid():
     return random.randrange(1,0xffffffff)
 
@@ -19,7 +21,7 @@ TODO: get the default timeout from configuration
 def timed_wait(cv, fn, timeout=-1):
     if timeout == -1:
         # TODO make this configurable
-        timeout = 2
+        timeout = default_timeout
 
     end_time = time.time() + timeout
     while True:

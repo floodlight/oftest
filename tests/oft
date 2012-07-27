@@ -131,6 +131,7 @@ if os.path.exists(os.path.join(pydir, 'oftest')):
     sys.path.insert(0, pydir)
 
 import testutils
+import oftest.ofutils
 
 try:
     import scapy.all as scapy
@@ -180,6 +181,7 @@ config_default = {
     "profile"            : None,
     "allow_user"         : False,
     "fail_skipped"       : False,
+    "default_timeout"    : 2,
 }
 
 # Default test priority
@@ -269,6 +271,8 @@ def config_setup(cfg_dflt):
                       help="Proceed even if oftest is not run as root")
     parser.add_option("--fail-skipped", action="store_true",
                       help="Return failure if any test was skipped")
+    parser.add_option("--default-timeout", type="int",
+                      help="Timeout in seconds for most operations")
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
     (options, args) = parser.parse_args()
@@ -559,6 +563,8 @@ elif config["dbg_level"] >= logging.WARNING:
     _verb = 1
 else:
     _verb = 2
+
+oftest.ofutils.default_timeout = config["default_timeout"]
 
 if os.getuid() != 0 and not config["allow_user"]:
     print "ERROR: Super-user privileges required. Please re-run with " \
