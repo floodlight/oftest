@@ -334,7 +334,7 @@ class DataPlane:
             pkt, time = port.packets.pop(0)
             yield (port, pkt, time)
 
-    def poll(self, port_number=None, timeout=None, exp_pkt=None):
+    def poll(self, port_number=None, timeout=-1, exp_pkt=None):
         """
         Poll one or all dataplane ports for a packet
 

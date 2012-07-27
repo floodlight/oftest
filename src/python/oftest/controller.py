@@ -382,17 +382,13 @@ class Controller(Thread):
         self.logger.info("Exiting controller thread")
         self.shutdown()
 
-    def connect(self, timeout=None):
+    def connect(self, timeout=-1):
         """
         Connect to the switch
 
-        @param timeout If None, block until connected.  If 0, return 
-        immedidately.  Otherwise, block for up to timeout seconds
+        @param timeout Block for up to timeout seconds. Pass -1 for the default.
         @return Boolean, True if connected
         """
-
-        if timeout == 0:
-            return self.switch_socket is not None
 
         with self.connect_cv:
             timed_wait(self.connect_cv, lambda: self.switch_socket, timeout=timeout)
@@ -475,11 +471,7 @@ class Controller(Thread):
         If an error occurs, (None, None) is returned
         """
 
-        # TODO make this configurable
-        if timeout == -1:
-            timeout = 1
-
-        self.logger.debug("Poll for %s, timeout %fs" % (ofp_type_map[exp_msg], timeout))
+        self.logger.debug("Poll for %s" % ofp_type_map[exp_msg])
 
         # Take the packet from the queue
         def grab():
@@ -501,7 +493,7 @@ class Controller(Thread):
             return None
 
         with self.packets_cv:
-            ret = timed_wait(self.packets_cv, grab)
+            ret = timed_wait(self.packets_cv, grab, timeout=timeout)
 
         if ret != None:
             (msg, pkt) = ret
@@ -529,10 +521,6 @@ class Controller(Thread):
         if not zero_xid and msg.header.xid == 0:
             msg.header.xid = gen_xid()
 
-        if timeout == -1:
-            timeout = self.transact_to
-        if timeout == None:
-            timeout = 60
         self.logger.debug("Running transaction %d" % msg.header.xid)
 
         with self.xid_cv:
@@ -547,7 +535,7 @@ class Controller(Thread):
                                   msg.header.xid)
                 return (None, None)
 
-            self.logger.debug("Waiting %fs for transaction %d" % (timeout, msg.header.xid))
+            self.logger.debug("Waiting for transaction %d" % msg.header.xid)
             timed_wait(self.xid_cv, lambda: self.xid_response, timeout=timeout)
 
             if self.xid_response:
