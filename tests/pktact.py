@@ -172,8 +172,7 @@ class DirectPacket(basic.SimpleDataPlane):
                 exp_pkt_arg = pkt
                 exp_port = egress_port
 
-            (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(timeout=1, 
-                                                                port_number=exp_port,
+            (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(port_number=exp_port,
                                                                 exp_pkt=exp_pkt_arg)
             self.assertTrue(rcv_pkt is not None, "Did not receive packet")
             pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
@@ -223,7 +222,7 @@ class DirectPacketQueue(basic.SimpleDataPlane):
         request = message.queue_stats_request()
         request.port_no  = ofp.OFPP_ALL
         request.queue_id = ofp.OFPQ_ALL
-        (queue_stats, p) = self.controller.transact(request, timeout=2)
+        (queue_stats, p) = self.controller.transact(request)
         self.assertNotEqual(queue_stats, None, "Queue stats request failed")
 
         act = action.action_enqueue()
@@ -261,7 +260,7 @@ class DirectPacketQueue(basic.SimpleDataPlane):
                 request = message.queue_stats_request()
                 request.port_no  = egress_port
                 request.queue_id = egress_queue_id
-                (qs_before, p) = self.controller.transact(request, timeout=2)
+                (qs_before, p) = self.controller.transact(request)
                 self.assertNotEqual(qs_before, None, "Queue stats request failed")
 
                 pa_logger.info("Sending packet to dp port " + 
@@ -274,8 +273,7 @@ class DirectPacketQueue(basic.SimpleDataPlane):
                     exp_pkt_arg = pkt
                     exp_port = egress_port
                     
-                    (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(timeout=1, 
-                                                                        port_number=exp_port,
+                    (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(port_number=exp_port,
                                                                         exp_pkt=exp_pkt_arg)
                     self.assertTrue(rcv_pkt is not None, "Did not receive packet")
                     pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
@@ -294,7 +292,7 @@ class DirectPacketQueue(basic.SimpleDataPlane):
                 request = message.queue_stats_request()
                 request.port_no  = egress_port
                 request.queue_id = egress_queue_id
-                (qs_after, p) = self.controller.transact(request, timeout=2)
+                (qs_after, p) = self.controller.transact(request)
                 self.assertNotEqual(qs_after, None, "Queue stats request failed")
 
                 # Make sure that tx packet counter for selected egress queue was
@@ -348,7 +346,7 @@ class DirectPacketControllerQueue(basic.SimpleDataPlane):
         request = message.queue_stats_request()
         request.port_no  = ofp.OFPP_CONTROLLER
         request.queue_id = ofp.OFPQ_ALL
-        (queue_stats, p) = self.controller.transact(request, timeout=2)
+        (queue_stats, p) = self.controller.transact(request)
         self.assertNotEqual(queue_stats, None, "Queue stats request failed")
 
         act = action.action_enqueue()
@@ -390,7 +388,7 @@ class DirectPacketControllerQueue(basic.SimpleDataPlane):
                 request = message.queue_stats_request()
                 request.port_no  = egress_port
                 request.queue_id = egress_queue_id
-                (qs_before, p) = self.controller.transact(request, timeout=2)
+                (qs_before, p) = self.controller.transact(request)
                 self.assertNotEqual(qs_before, None, "Queue stats request failed")
 
                 pa_logger.info("Sending packet to dp port " + 
@@ -431,7 +429,7 @@ class DirectPacketControllerQueue(basic.SimpleDataPlane):
                 request = message.queue_stats_request()
                 request.port_no  = egress_port
                 request.queue_id = egress_queue_id
-                (qs_after, p) = self.controller.transact(request, timeout=2)
+                (qs_after, p) = self.controller.transact(request)
                 self.assertNotEqual(qs_after, None, "Queue stats request failed")
 
                 # Make sure that tx packet counter for selected egress queue was
@@ -1824,7 +1822,7 @@ def supported_actions_get(parent, use_cache=True):
     global cached_supported_actions
     if cached_supported_actions is None or not use_cache:
         request = message.features_request()
-        (reply, pkt) = parent.controller.transact(request, timeout=2)
+        (reply, pkt) = parent.controller.transact(request)
         parent.assertTrue(reply is not None, "Did not get response to ftr req")
         cached_supported_actions = reply.actions
         pa_logger.info("Supported actions: " + hex(cached_supported_actions))

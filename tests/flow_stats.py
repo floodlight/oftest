@@ -74,8 +74,7 @@ def sendPacket(obj, pkt, ingress_port, egress_port, test_timeout):
         exp_pkt_arg = pkt
         exp_port = egress_port
 
-    (rcv_port, rcv_pkt, pkt_time) = obj.dataplane.poll(timeout=1, 
-                                                       port_number=exp_port,
+    (rcv_port, rcv_pkt, pkt_time) = obj.dataplane.poll(port_number=exp_port,
                                                        exp_pkt=exp_pkt_arg)
     obj.assertTrue(rcv_pkt is not None,
                    "Packet not received on port " + str(egress_port))

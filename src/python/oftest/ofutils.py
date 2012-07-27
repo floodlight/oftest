@@ -19,7 +19,7 @@ TODO: get the default timeout from configuration
 def timed_wait(cv, fn, timeout=-1):
     if timeout == -1:
         # TODO make this configurable
-        timeout = 5
+        timeout = 2
 
     end_time = time.time() + timeout
     while True:

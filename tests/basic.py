@@ -294,8 +294,7 @@ class PacketInBroadcastCheck(SimpleDataPlane):
         basic_logger.info("BCast Leak Test, send to port %s" % d_port)
         self.dataplane.send(d_port, str(pkt))
 
-        (of_port, pkt_in, pkt_time) = self.dataplane.poll(timeout=2, 
-                                                          exp_pkt=pkt)
+        (of_port, pkt_in, pkt_time) = self.dataplane.poll(exp_pkt=pkt)
         self.assertTrue(pkt_in is None,
                         'BCast packet received on port ' + str(of_port))
 
@@ -341,8 +340,7 @@ class PacketOut(SimpleDataPlane):
                if basic_config["relax"]:
                    exp_pkt_arg = outpkt
                    exp_port = dp_port
-               (of_port, pkt, pkt_time) = self.dataplane.poll(timeout=1, 
-                                                              port_number=exp_port,
+               (of_port, pkt, pkt_time) = self.dataplane.poll(port_number=exp_port,
                                                               exp_pkt=exp_pkt_arg)
 
                self.assertTrue(pkt is not None, 'Packet not received')
@@ -417,7 +415,7 @@ class FlowStatsGet(SimpleProtocol):
         request.out_port = ofp.OFPP_NONE
         request.table_id = 0xff
         request.match.wildcards = 0 # ofp.OFPFW_ALL
-        response, pkt = self.controller.transact(request, timeout=2)
+        response, pkt = self.controller.transact(request)
         self.assertTrue(response is not None, "Did not get response")
         basic_logger.debug(response.show())
 
@@ -438,7 +436,7 @@ class TableStatsGet(SimpleProtocol):
         
         basic_logger.info("Sending table stats request")
         request = message.table_stats_request()
-        response, pkt = self.controller.transact(request, timeout=2)
+        response, pkt = self.controller.transact(request)
         self.assertTrue(response is not None, "Did not get response")
         basic_logger.debug(response.show())
 
@@ -453,7 +451,7 @@ class DescStatsGet(SimpleProtocol):
         
         basic_logger.info("Sending stats request")
         request = message.desc_stats_request()
-        response, pkt = self.controller.transact(request, timeout=2)
+        response, pkt = self.controller.transact(request)
         self.assertTrue(response is not None, "Did not get response")
         basic_logger.debug(response.show())
 

@@ -1243,7 +1243,7 @@ class Switch:
     def features_get(self):
         # Get switch features
         request = message.features_request()
-        (self.sw_features, pkt) = self.controller.transact(request, timeout=2)
+        (self.sw_features, pkt) = self.controller.transact(request)
         if self.sw_features is None:
             fq_logger.error("Get switch features failed")
             return False
@@ -1285,7 +1285,7 @@ class Switch:
     def tbl_stats_get(self):
         # Get table stats
         request = message.table_stats_request()
-        (self.tbl_stats, pkt) = self.controller.transact(request, timeout=2)
+        (self.tbl_stats, pkt) = self.controller.transact(request)
         if self.tbl_stats is None:
             fq_logger.error("Get table stats failed")
             return False
@@ -1314,7 +1314,7 @@ class Switch:
         request = message.queue_stats_request()
         request.port_no  = ofp.OFPP_ALL
         request.queue_id = ofp.OFPQ_ALL
-        (self.queue_stats, pkt) = self.controller.transact(request, timeout=2)
+        (self.queue_stats, pkt) = self.controller.transact(request)
         if self.queue_stats is None:
             fq_logger.error("Get queue stats failed")
             return False

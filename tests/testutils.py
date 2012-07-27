@@ -191,7 +191,7 @@ def port_config_get(controller, port_no, logger):
     advertised values
     """
     request = message.features_request()
-    reply, pkt = controller.transact(request, timeout=2)
+    reply, pkt = controller.transact(request)
     logger.debug(reply.show())
     if reply is None:
         logger.warn("Get feature request failed")
@@ -213,7 +213,7 @@ def port_config_set(controller, port_no, config, mask, logger):
     """
     logger.info("Setting port " + str(port_no) + " to config " + str(config))
     request = message.features_request()
-    reply, pkt = controller.transact(request, timeout=2)
+    reply, pkt = controller.transact(request)
     if reply is None:
         return -1
     logger.debug(reply.show())
@@ -248,7 +248,7 @@ def receive_pkt_check(dp, pkt, yes_ports, no_ports, assert_if, logger,
     for ofport in yes_ports:
         logger.debug("Checking for pkt on port " + str(ofport))
         (rcv_port, rcv_pkt, pkt_time) = dp.poll(
-            port_number=ofport, timeout=1, exp_pkt=exp_pkt_arg)
+            port_number=ofport, exp_pkt=exp_pkt_arg)
         assert_if.assertTrue(rcv_pkt is not None, 
                              "Did not receive pkt on " + str(ofport))
         if not dataplane.match_exp_pkt(pkt, rcv_pkt):
@@ -288,7 +288,7 @@ def receive_pkt_verify(parent, egr_ports, exp_pkt, ing_port):
         if egr_port == ofp.OFPP_IN_PORT:
             check_port = ing_port
         (rcv_port, rcv_pkt, pkt_time) = parent.dataplane.poll(
-            port_number=check_port, timeout=1, exp_pkt=exp_pkt_arg)
+            port_number=check_port, exp_pkt=exp_pkt_arg)
 
         if rcv_pkt is None:
             parent.logger.error("ERROR: No packet received from " + 
@@ -808,7 +808,7 @@ def all_stats_get(parent):
 
     rv = {}
 
-    (reply, pkt) = parent.controller.transact(stat_req, timeout=2)
+    (reply, pkt) = parent.controller.transact(stat_req)
     parent.assertTrue(len(reply.stats) == 1, "Did not receive flow stats reply")
 
     for obj in reply.stats:
@@ -817,7 +817,7 @@ def all_stats_get(parent):
         break
 
     request = message.table_stats_request()
-    (reply , pkt) = parent.controller.transact(request, timeout=2)
+    (reply , pkt) = parent.controller.transact(request)
 
     
     (rv["active"], rv["lookups"], rv["matched"]) = (0,0,0)
