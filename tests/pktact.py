@@ -181,6 +181,68 @@ class DirectPacket(basic.SimpleDataPlane):
             self.assertEqual(str(pkt), str(rcv_pkt),
                              'Response packet does not match send packet')
 
+class DirectPacketController(basic.SimpleDataPlane):
+    """
+    Send packet to the controller port
+
+    Generate a packet
+    Generate and install a matching flow
+    Add action to direct the packet to the controller port
+    Send the packet to ingress dataplane port
+    Verify the packet is received at the controller port
+    """
+    def runTest(self):
+        self.handleFlow()
+
+    def handleFlow(self, pkttype='TCP'):
+        of_ports = pa_port_map.keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 0, "Not enough ports for test")
+
+        if (pkttype == 'ICMP'):
+            pkt = simple_icmp_packet()
+        else:
+            pkt = simple_tcp_packet()
+        match = parse.packet_to_flow_match(pkt)
+        match.wildcards &= ~ofp.OFPFW_IN_PORT
+        self.assertTrue(match is not None,
+                        "Could not generate flow match from pkt")
+        act = action.action_output()
+
+        rv = delete_all_flows(self.controller, pa_logger)
+        self.assertEqual(rv, 0, "Failed to delete all flows")
+
+        ingress_port = of_ports[0]
+        match.in_port = ingress_port
+
+        request = message.flow_mod()
+        request.match = match
+
+        request.buffer_id = 0xffffffff
+        act.port = ofp.OFPP_CONTROLLER
+        act.max_len = 65535
+        self.assertTrue(request.actions.add(act), "Could not add action")
+
+        pa_logger.info("Inserting flow")
+        rv = self.controller.message_send(request)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        pa_logger.info("Sending packet to dp port " +
+                        str(ingress_port))
+        self.dataplane.send(ingress_port, str(pkt))
+
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN)
+
+        self.assertTrue(response is not None,
+                        'Packet in message not received by controller')
+        if not dataplane.match_exp_pkt(pkt, response.data):
+            pa_logger.debug("Sent %s" % format_packet(pkt))
+            pa_logger.debug("Resp %s" % format_packet(response.data))
+            self.assertTrue(False,
+                            'Response packet does not match send packet' +
+                             ' for controller port')
+
 
 class DirectPacketQueue(basic.SimpleDataPlane):
     """
