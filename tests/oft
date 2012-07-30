@@ -164,7 +164,7 @@ _debug_level_default = DEBUG_LEVELS[_debug_default]
 config_default = {
     "param"              : None,
     "platform"           : "local",
-    "controller_host"    : "127.0.0.1",
+    "controller_host"    : "0.0.0.0",
     "controller_port"    : 6633,
     "port_count"         : 4,
     "base_of_port"       : 1,
