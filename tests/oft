@@ -164,6 +164,7 @@ _debug_level_default = DEBUG_LEVELS[_debug_default]
 config_default = {
     "param"              : None,
     "platform"           : "local",
+    "platform_args"      : None,
     "controller_host"    : "0.0.0.0",
     "controller_port"    : 6633,
     "port_count"         : 4,
@@ -230,7 +231,7 @@ def config_setup(cfg_dflt):
         remote:  Remote embedded Broadcom based switch
         Create a new_plat.py file and use --platform=new_plat on the command line
         """
-    parser.add_option("--platform-args", help="Custom arguments per platform.")
+    parser.add_option("-a", "--platform-args", help="Custom arguments per platform.")
     parser.add_option("-P", "--platform", help=plat_help)
     parser.add_option("-H", "--host", dest="controller_host",
                       help="The IP/name of the test controller host")
