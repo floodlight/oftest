@@ -583,6 +583,7 @@ if __name__ == "__main__":
         print("Skipped " + str(testutils.skipped_test_count) + ts)
     logging.info("*** TEST RUN END  : " + time.asctime())
     if result.failures or result.errors:
-        exit(1)
+        # exit(1) hangs sometimes
+        os._exit(1)
     if testutils.skipped_test_count > 0 and config["fail_skipped"]:
-        exit(1)
+        os._exit(1)
