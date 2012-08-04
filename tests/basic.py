@@ -175,7 +175,7 @@ class DataPlaneOnly(unittest.TestCase):
         raise KeyboardInterrupt
 
     def setUp(self):
-        self.clean_shutdown = False
+        self.clean_shutdown = True
         self.logger = basic_logger
         self.config = basic_config
         signal.signal(signal.SIGINT, self.sig_handler)
