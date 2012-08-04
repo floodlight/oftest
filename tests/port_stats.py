@@ -91,9 +91,9 @@ class SingleFlowStats(basic.SimpleDataPlane):
     Verify flow stats are properly retrieved.
 
     Generate a packet
-    Generate and install a matching flow
+    Generate and install a flow from port 1 to 2
     Send the packet
-    Send a flow stats request to match the flow and retrieve stats
+    Send port stats request to port 1 & 2
     Verify that the packet counter has incremented
     """
 
@@ -183,3 +183,110 @@ class SingleFlowStats(basic.SimpleDataPlane):
 
         self.verifyStats(ingress_port, test_timeout, 0, num_sends)
         self.verifyStats(egress_port, test_timeout, num_sends, 0)
+
+
+class MultiFlowStats(basic.SimpleDataPlane):
+    """
+    Verify flow stats are properly retrieved.
+
+    Generate two packets and install two matching flows
+    Send some number of packets
+    Send a port stats request to get packet count
+    Verify that the packet counter has incremented
+    """
+
+    def buildFlowModMsg(self, pkt, ingress_port, egress_port):
+        match = parse.packet_to_flow_match(pkt)
+        match.wildcards &= ~ofp.OFPFW_IN_PORT
+        self.assertTrue(match is not None, 
+                        "Could not generate flow match from pkt")
+        match.in_port = ingress_port
+        
+        flow_mod_msg = message.flow_mod()
+        flow_mod_msg.match = match
+        flow_mod_msg.cookie = random.randint(0,9007199254740992)
+        flow_mod_msg.buffer_id = 0xffffffff
+        flow_mod_msg.idle_timeout = 0
+        flow_mod_msg.hard_timeout = 0
+        act = action.action_output()
+        act.port = egress_port
+        self.assertTrue(flow_mod_msg.actions.add(act), "Could not add action")
+
+        fs_logger.info("Ingress " + str(ingress_port) + 
+                       " to egress " + str(egress_port))
+
+        return flow_mod_msg
+
+    def verifyStats(self, port, test_timeout, packet_sent, packet_recv):
+        stat_req = message.port_stats_request()
+        stat_req.port_no = port
+
+        all_packets_received = 0
+        all_packets_sent = 0
+        for i in range(0,test_timeout):
+            fs_logger.info("Sending stats request")
+            response, pkt = self.controller.transact(stat_req,
+                                                     timeout=test_timeout)
+            self.assertTrue(response is not None,
+                            "No response to stats request")
+            self.assertTrue(len(response.stats) == 1,
+                            "Did not receive port stats reply")
+            for obj in response.stats:
+                fs_logger.info("Sent " + str(obj.tx_packets) + " packets")
+                if obj.tx_packets == packet_sent:
+                    all_packets_sent = 1
+                fs_logger.info("Received " + str(obj.rx_packets) + " packets")
+                if obj.rx_packets == packet_recv:
+                    all_packets_received = 1
+
+            if all_packets_received and all_packets_sent:
+                break
+            sleep(1)
+
+        self.assertTrue(all_packets_sent,
+                        "Packet sent does not match number sent")
+        self.assertTrue(all_packets_received,
+                        "Packet received does not match number sent")
+
+    def runTest(self):
+        global fs_port_map
+
+        # TODO: set from command-line parameter
+        test_timeout = 60
+
+        of_ports = fs_port_map.keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) >= 3, "Not enough ports for test")
+        ingress_port = of_ports[0];
+        egress_port1 = of_ports[1];
+        egress_port2 = of_ports[2];
+
+        rc = delete_all_flows(self.controller, fs_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+
+        pkt1 = simple_tcp_packet()
+        flow_mod_msg1 = self.buildFlowModMsg(pkt1, ingress_port, egress_port1)
+       
+        pkt2 = simple_tcp_packet(dl_src='0:7:7:7:7:7')
+        flow_mod_msg2 = self.buildFlowModMsg(pkt2, ingress_port, egress_port2)
+       
+        fs_logger.info("Inserting flow1")
+        rv = self.controller.message_send(flow_mod_msg1)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        fs_logger.info("Inserting flow2")
+        rv = self.controller.message_send(flow_mod_msg2)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        num_pkt1s = random.randint(10,30)
+        fs_logger.info("Sending " + str(num_pkt1s) + " pkt1s")
+        num_pkt2s = random.randint(10,30)
+        fs_logger.info("Sending " + str(num_pkt2s) + " pkt2s")
+        for i in range(0,num_pkt1s):
+            sendPacket(self, pkt1, ingress_port, egress_port1, test_timeout)
+        for i in range(0,num_pkt2s):
+            sendPacket(self, pkt2, ingress_port, egress_port2, test_timeout)
+            
+        self.verifyStats(ingress_port, test_timeout, 0, num_pkt1s + num_pkt2s)
+        self.verifyStats(egress_port1, test_timeout, num_pkt1s, 0)
+        self.verifyStats(egress_port2, test_timeout, num_pkt2s, 0)
