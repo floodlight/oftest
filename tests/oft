@@ -175,6 +175,7 @@ config_default = {
     "test_dir"           : os.path.dirname(__file__),
     "log_file"           : "oft.log",
     "list"               : False,
+    "list_test_names"    : False, 
     "debug"              : _debug_default,
     "dbg_level"          : _debug_level_default,
     "port_map"           : {},
@@ -254,6 +255,8 @@ def config_setup(cfg_dflt):
                       help="Base OpenFlow port number (optional)")
     parser.add_option("--base-if-index", type="int",
                       help="Base interface index number (optional)")
+    parser.add_option("--list-test-names", action='store_true',
+                      help="List only test names.", default=False)
     parser.add_option("--list", action="store_true",
                       help="List all tests and exit")
     parser.add_option("--verbose", action="store_true",
@@ -474,6 +477,18 @@ if config["list"]:
     print "Tests marked (TP1) after name take --test-params including:"
     print "    'vid=N;strip_vlan=bool;add_vlan=bool'"
     print "Note that --profile may override which tests are run"
+    sys.exit(0)
+
+# Check if test list is requested; display and exit if so
+if config["list_test_names"]:
+    for mod in config["all_tests"].keys():
+        if config["test_spec"] != "all" and \
+                config["test_spec"] != mod.__name__:
+            continue
+        desc = mod.__doc__.strip()
+        desc = desc.split('\n')[0]
+        for test in config["all_tests"][mod]:
+            print "%s.%s" % (mod.__name__, test)
     sys.exit(0)
 
 logging_setup(config)
