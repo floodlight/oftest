@@ -27,6 +27,8 @@ IP_ETHERTYPE = 0x800
 TCP_PROTOCOL = 0x6
 UDP_PROTOCOL = 0x11
 
+MINSIZE = 0
+
 def clear_switch(parent, port_list, logger):
     """
     Clear the switch configuration
@@ -97,6 +99,10 @@ def simple_tcp_packet(pktlen=100,
     shouldn't assume anything about this packet other than that
     it is a valid ethernet/IP/TCP frame.
     """
+
+    if MINSIZE > pktlen:
+        pktlen = MINSIZE
+
     # Note Dot1Q.id is really CFI
     if (dl_vlan_enable):
         pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
@@ -144,6 +150,10 @@ def simple_icmp_packet(pktlen=60,
     shouldn't assume anything about this packet other than that
     it is a valid ethernet/ICMP frame.
     """
+
+    if MINSIZE > pktlen:
+        pktlen = MINSIZE
+
     if (dl_vlan_enable):
         pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
             scapy.Dot1Q(prio=dl_vlan_pcp, id=0, vlan=dl_vlan)/ \
@@ -162,6 +172,10 @@ def simple_eth_packet(pktlen=60,
                       dl_dst='00:01:02:03:04:05',
                       dl_src='01:80:c2:00:00:00',
                       dl_type=0x88cc):
+
+    if MINSIZE > pktlen:
+        pktlen = MINSIZE
+
     pkt = scapy.Ether(dst=dl_dst, src=dl_src, type=dl_type)
 
     pkt = pkt/("0" * (pktlen - len(pkt)))
