@@ -43,6 +43,12 @@ they all are read back correctly.
 # Override list of OF (port-number, queue-id) pairs returned by switch
 # Default: none
 #
+# Name: vlans
+# Type: list of VLAN ids
+# Description:
+# Override VLAN ids used in tests to given list
+# Default: []
+#
 # Name: conservative_ordered_actions
 # Type: boolean (True or False)
 # Description:
@@ -169,11 +175,17 @@ class Flow_Info:
             self.dl_addrs.append(rand_dl_addr())
             i = i + 1
     
-        self.vlans = []
-        i = 0
-        while i < n:
-            self.vlans.append(random.randint(1, 4094))
-            i = i + 1
+        if test_param_get(fq_config, "vlans", []) != []:
+           self.vlans = test_param_get(fq_config, "vlans", [])
+
+           fq_logger.info("Overriding VLAN ids to:")
+           fq_logger.info(self.vlans)
+        else:
+           self.vlans = []
+           i = 0
+           while i < n:
+              self.vlans.append(random.randint(1, 4094))
+              i = i + 1
     
         self.ethertypes = [0x0800, 0x0806]
         i = 0
