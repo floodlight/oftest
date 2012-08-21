@@ -546,19 +546,27 @@ class Flow_Cfg:
 
         actions = shuffle(actions)
 
+        set_vlanf   = False
+        strip_vlanf = False
         self.actions = action_list.action_list()
         for a in actions:
             act = None
             if a == ofp.OFPAT_OUTPUT:
                 pass                    # OUTPUT actions must come last
             elif a == ofp.OFPAT_SET_VLAN_VID:
-                act = action.action_set_vlan_vid()
-                act.vlan_vid = fi.rand_vlan()
+               if not strip_vlanf:
+                  act = action.action_set_vlan_vid()
+                  act.vlan_vid = fi.rand_vlan()
+                  set_vlanf = True
             elif a == ofp.OFPAT_SET_VLAN_PCP:
-                act = action.action_set_vlan_pcp()
-                act.vlan_pcp = random.randint(0, (1 << 3) - 1)
+               if not strip_vlanf:
+                  act = action.action_set_vlan_pcp()
+                  act.vlan_pcp = random.randint(0, (1 << 3) - 1)
+                  set_vlanf = True
             elif a == ofp.OFPAT_STRIP_VLAN:
-                act = action.action_strip_vlan()
+               if not set_vlanf:
+                  act = action.action_strip_vlan()
+                  strip_vlanf = True
             elif a == ofp.OFPAT_SET_DL_SRC:
                 act = action.action_set_dl_src()
                 act.dl_addr = fi.rand_dl_addr()
