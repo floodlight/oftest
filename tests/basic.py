@@ -93,6 +93,10 @@ class SimpleProtocol(unittest.TestCase):
         if self.controller.switch_addr is None: 
             raise Exception("Controller startup failed (no switch addr)")
         basic_logger.info("Connected " + str(self.controller.switch_addr))
+        request = message.features_request()
+        reply, pkt = self.controller.transact(request, timeout=10)
+        self.supported_actions = reply.actions
+        basic_logger.info("Supported actions: " + hex(self.supported_actions))
 
     def inheritSetup(self, parent):
         """
