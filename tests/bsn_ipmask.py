@@ -92,6 +92,10 @@ class BSNConfigIPMask(basic.SimpleDataPlane):
         return x[5]
 
     def runTest(self):
+        self.assertFalse(required_wildcards(self) & ofp.OFPFW_NW_DST_ALL,
+                         "IP dst must be wildcarded")
+        self.assertFalse(required_wildcards(self) & ofp.OFPFW_NW_SRC_ALL,
+                         "IP src must be wildcarded")
         for index in range(0, 64):
             mask = self.bsn_get_ip_mask(index)
             im_logger.info("Index %d mask is %s" %

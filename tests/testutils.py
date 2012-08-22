@@ -66,6 +66,14 @@ def clear_port_config(parent, port, logger):
                          0, ofp.OFPPC_NO_FLOOD, logger)
     self.assertEqual(rv, 0, "Failed to reset port config")
 
+def required_wildcards(parent):
+    w = test_param_get(parent.config, 'required_wildcards', default='default')
+    if w == 'l3-l4':
+        return (ofp.OFPFW_NW_SRC_ALL | ofp.OFPFW_NW_DST_ALL | ofp.OFPFW_NW_TOS
+                | ofp.OFPFW_NW_PROTO | ofp.OFPFW_TP_SRC | ofp.OFPFW_TP_DST)
+    else:
+        return 0
+
 def simple_tcp_packet(pktlen=100, 
                       dl_dst='00:01:02:03:04:05',
                       dl_src='00:06:07:08:09:0a',
@@ -421,7 +429,12 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
                                str(response.byte_count) + " != " + 
                                str(byte_count))
 
-def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=0,
+def packet_to_flow_match(parent, packet):
+    match = parse.packet_to_flow_match(packet)
+    match.wildcards |= required_wildcards(parent)
+    return match
+
+def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None,
                egr_ports=None, egr_queue=None, check_expire=False, in_band=False):
     """
     Create a flow message
@@ -434,6 +447,8 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=0,
     """
     match = parse.packet_to_flow_match(pkt)
     parent.assertTrue(match is not None, "Flow match from pkt failed")
+    if wildcards is None:
+        wildcards = required_wildcards(parent)
     if in_band:
         wildcards &= ~ofp.OFPFW_IN_PORT
     match.wildcards = wildcards
@@ -503,7 +518,7 @@ def flow_msg_install(parent, request, clear_table_override=None):
     parent.assertTrue(rv != -1, "Error installing flow mod")
     parent.assertEqual(do_barrier(parent.controller), 0, "Barrier failed")
 
-def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=0, 
+def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=None,
                               dl_vlan=-1, pkt=None, exp_pkt=None,
                               action_list=None, check_expire=False):
     """
@@ -514,6 +529,8 @@ def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=0,
     See flow_match_test for parameter descriptions
     """
 
+    if wildcards is None:
+        wildcards = required_wildcards(parent)
     parent.logger.info("Pkt match test: " + str(ing_port) + " to " + 
                        str(egr_ports))
     parent.logger.debug("  WC: " + hex(wildcards) + " vlan: " + str(dl_vlan) +
@@ -563,7 +580,7 @@ def get_egr_list(parent, of_ports, how_many, exclude_list=[]):
     parent.logger.debug("Could not generate enough egress ports for test")
     return []
     
-def flow_match_test(parent, port_map, wildcards=0, dl_vlan=-1, pkt=None, 
+def flow_match_test(parent, port_map, wildcards=None, dl_vlan=-1, pkt=None, 
                     exp_pkt=None, action_list=None, check_expire=False, 
                     max_test=0, egr_count=1, ing_port=False):
     """
@@ -580,6 +597,8 @@ def flow_match_test(parent, port_map, wildcards=0, dl_vlan=-1, pkt=None,
     @param check_expire Check for flow expiration message
     @param egr_count Number of egress ports; -1 means get from config w/ dflt 2
     """
+    if wildcards is None:
+        wildcards = required_wildcards(parent)
     of_ports = port_map.keys()
     of_ports.sort()
     parent.assertTrue(len(of_ports) > 1, "Not enough ports for test")

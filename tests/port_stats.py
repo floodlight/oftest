@@ -165,7 +165,7 @@ class SingleFlowStats(basic.SimpleDataPlane):
 
         # build packet
         pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -218,7 +218,7 @@ class MultiFlowStats(basic.SimpleDataPlane):
     """
 
     def buildFlowModMsg(self, pkt, ingress_port, egress_port):
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")

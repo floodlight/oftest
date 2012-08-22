@@ -72,7 +72,12 @@ class SimpleProtocol(unittest.TestCase):
     def setUp(self):
         self.logger = basic_logger
         self.config = basic_config
-        signal.signal(signal.SIGINT, self.sig_handler)
+        #@todo Test cases shouldn't monkey with signals; move SIGINT handler
+        # to top-level oft
+        try:
+           signal.signal(signal.SIGINT, self.sig_handler)
+        except ValueError, e:
+           basic_logger.info("Could not set SIGINT handler: %s" % e)
         basic_logger.info("** START TEST CASE " + str(self))
         self.controller = controller.Controller(
             host=basic_config["controller_host"],
@@ -88,6 +93,10 @@ class SimpleProtocol(unittest.TestCase):
         if self.controller.switch_addr is None: 
             raise Exception("Controller startup failed (no switch addr)")
         basic_logger.info("Connected " + str(self.controller.switch_addr))
+        request = message.features_request()
+        reply, pkt = self.controller.transact(request, timeout=10)
+        self.supported_actions = reply.actions
+        basic_logger.info("Supported actions: " + hex(self.supported_actions))
 
     def inheritSetup(self, parent):
         """
@@ -178,7 +187,12 @@ class DataPlaneOnly(unittest.TestCase):
         self.clean_shutdown = True
         self.logger = basic_logger
         self.config = basic_config
-        signal.signal(signal.SIGINT, self.sig_handler)
+        #@todo Test cases shouldn't monkey with signals; move SIGINT handler
+        # to top-level oft
+        try:
+           signal.signal(signal.SIGINT, self.sig_handler)
+        except ValueError, e:
+           basic_logger.info("Could not set SIGINT handler: %s" % e)
         basic_logger.info("** START DataPlaneOnly CASE " + str(self))
         self.dataplane = dataplane.DataPlane(self.config)
         for of_port, ifname in basic_port_map.items():
@@ -269,6 +283,40 @@ class PacketIn(SimpleDataPlane):
                    self.assertTrue(False,
                                    'Response packet does not match send packet' +
                                    ' for port ' + str(of_port))
+
+class PacketInDefaultDrop(SimpleDataPlane):
+    """
+    Test packet in function
+
+    Send a packet to each dataplane port and verify that a packet
+    in message is received from the controller for each
+    """
+    def runTest(self):
+        rc = delete_all_flows(self.controller, basic_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        for of_port in basic_port_map.keys():
+            pkt = simple_tcp_packet()
+            self.dataplane.send(of_port, str(pkt))
+            count = 0
+            while True:
+                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
+                if not response:  # Timeout
+                    break
+                if dataplane.match_exp_pkt(pkt, response.data): # Got match
+                    break
+                if not basic_config["relax"]:  # Only one attempt to match
+                    break
+                count += 1
+                if count > 10:   # Too many tries
+                    break
+
+            self.assertTrue(response is None, 
+                            'Packet in message received on port ' + 
+                            str(of_port))
+
+test_prio["PacketInDefaultDrop"] = -1
 
 
 class PacketInBroadcastCheck(SimpleDataPlane):

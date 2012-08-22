@@ -68,7 +68,7 @@ class FlowExpire(basic.SimpleDataPlane):
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")

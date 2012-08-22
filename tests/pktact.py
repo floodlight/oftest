@@ -88,9 +88,6 @@ MODIFY_ACTION_VALUES =  [ofp.OFPAT_SET_VLAN_VID,
                          ofp.OFPAT_SET_TP_SRC,
                          ofp.OFPAT_SET_TP_DST]
 
-# Cache supported features to avoid transaction overhead
-cached_supported_actions = None
-
 TEST_VID_DEFAULT = 2
 
 def test_set_init(config):
@@ -133,7 +130,7 @@ class DirectPacket(basic.SimpleDataPlane):
             pkt = simple_icmp_packet()
         else:
             pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -203,7 +200,7 @@ class DirectPacketController(basic.SimpleDataPlane):
             pkt = simple_icmp_packet()
         else:
             pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None,
                         "Could not generate flow match from pkt")
@@ -274,7 +271,7 @@ class DirectPacketQueue(basic.SimpleDataPlane):
             pkt = simple_icmp_packet()
         else:
             pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -398,7 +395,7 @@ class DirectPacketControllerQueue(basic.SimpleDataPlane):
             pkt = simple_icmp_packet()
         else:
             pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -533,7 +530,7 @@ class DirectTwoPorts(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
         pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -593,7 +590,7 @@ class DirectMCNonIngress(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
         pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -648,7 +645,7 @@ class DirectMC(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
         pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -699,7 +696,7 @@ class Flood(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -748,7 +745,7 @@ class FloodPlusIngress(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -798,7 +795,7 @@ class All(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -847,7 +844,7 @@ class AllPlusIngress(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -899,7 +896,7 @@ class FloodMinusPort(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
         pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -1045,12 +1042,6 @@ class SingleWildcardMatchPriority(BaseMatchCase):
         self.logger.info("runPrioFlows(pA=%d,pB=%d,pC=%d,ph=%d,pl=%d"
                          % (portA, portB, portC, prioHigher, prioLower))
 
-        self.installFlow(prioHigher, portA, portC)
-        self.installFlow(prioLower, portA, portB)
-
-        return
-        self.verifyFlow(portA, portB)
-        self.removeFlow(prioLower)
         # Sanity check flow at lower priority from pA to pC
         self.installFlow(prioLower, portA, portC)
         self.verifyFlow(portA, portC)
@@ -1074,8 +1065,9 @@ class SingleWildcardMatchPriority(BaseMatchCase):
 
 
 
-    def installFlow(self, prio, inp, egp, 
+    def installFlow(self, prio, inp, egp,
                     wildcards=ofp.OFPFW_DL_SRC):
+        wildcards |= required_wildcards(self)
         request = flow_msg_create(self, self.pkt, ing_port=inp, 
                                   wildcards=wildcards,
                                   egr_ports=egp)
@@ -1220,6 +1212,7 @@ class SingleWildcardMatch(BaseMatchCase):
     def runTest(self):
         vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
         for wc in WILDCARD_VALUES:
+            wc |= required_wildcards(self)
             if wc & ofp.OFPFW_DL_VLAN:
                 # Set nonzero VLAN id to avoid sending priority-tagged packet
                 dl_vlan = vid
@@ -1235,6 +1228,7 @@ class SingleWildcardMatchTagged(BaseMatchCase):
     def runTest(self):
         vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
         for wc in WILDCARD_VALUES:
+            wc |= required_wildcards(self)
             flow_match_test(self, pa_port_map, wildcards=wc, dl_vlan=vid,
                             max_test=10)
 
@@ -1252,6 +1246,7 @@ class AllExceptOneWildcardMatch(BaseMatchCase):
     def runTest(self):
         vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
         for all_exp_one_wildcard in NO_WILDCARD_VALUES:
+            all_exp_one_wildcard |= required_wildcards(self)
             if all_exp_one_wildcard & ofp.OFPFW_DL_VLAN:
                 # Set nonzero VLAN id to avoid sending priority-tagged packet
                 dl_vlan = vid
@@ -1267,6 +1262,7 @@ class AllExceptOneWildcardMatchTagged(BaseMatchCase):
     def runTest(self):
         vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
         for all_exp_one_wildcard in NO_WILDCARD_VALUES:
+            all_exp_one_wildcard |= required_wildcards(self)
             flow_match_test(self, pa_port_map, wildcards=all_exp_one_wildcard,
                             dl_vlan=vid)
 
@@ -1300,7 +1296,7 @@ class AddVLANTag(BaseMatchCase):
     """
     def runTest(self):
         new_vid = 2
-        sup_acts = supported_actions_get(self)
+        sup_acts = self.supported_actions
         if not(sup_acts & 1<<ofp.OFPAT_SET_VLAN_VID):
             skip_message_emit(self, "Add VLAN tag test")
             return
@@ -1353,7 +1349,7 @@ class ModifyVID(BaseMatchCase):
     def runTest(self):
         old_vid = 2
         new_vid = 3
-        sup_acts = supported_actions_get(self)
+        sup_acts = self.supported_actions
         if not (sup_acts & 1 << ofp.OFPAT_SET_VLAN_VID):
             skip_message_emit(self, "Modify VLAN tag test")
             return
@@ -1374,7 +1370,7 @@ class ModifyVIDWithTagMatchWildcarded(BaseMatchCase):
     def runTest(self):
         old_vid = 2
         new_vid = 3
-        sup_acts = supported_actions_get(self)
+        sup_acts = self.supported_actions
         if not (sup_acts & 1 << ofp.OFPAT_SET_VLAN_VID):
             skip_message_emit(self, "ModifyVIDWithTagWildcarded test")
             return
@@ -1394,7 +1390,8 @@ class ModifyVIDWithTagMatchWildcarded(BaseMatchCase):
                                        dl_vlan_enable=True, dl_vlan=old_vid)
         exp_pkt = simple_tcp_packet(pktlen=len_w_vid, dl_vlan_enable=True,
                                     dl_vlan=new_vid)
-        wildcards=ofp.OFPFW_DL_VLAN|ofp.OFPFW_DL_VLAN_PCP
+        wildcards = (required_wildcards(self) | ofp.OFPFW_DL_VLAN |
+                     ofp.OFPFW_DL_VLAN_PCP)
         vid_act = action.action_set_vlan_vid()
         vid_act.vlan_vid = new_vid
         request = flow_msg_create(self, untagged_pkt, ing_port=ing_port, 
@@ -1420,7 +1417,7 @@ class ModifyVlanPcp(BaseMatchCase):
         vid          = 123
         old_vlan_pcp = 2
         new_vlan_pcp = 3
-        sup_acts = supported_actions_get(self)
+        sup_acts = self.supported_actions
         if not (sup_acts & 1 << ofp.OFPAT_SET_VLAN_PCP):
             skip_message_emit(self, "Modify VLAN priority test")
             return
@@ -1439,7 +1436,7 @@ class StripVLANTag(BaseMatchCase):
     """
     def runTest(self):
         old_vid = 2
-        sup_acts = supported_actions_get(self)
+        sup_acts = self.supported_actions
         if not (sup_acts & 1 << ofp.OFPAT_STRIP_VLAN):
             skip_message_emit(self, "Strip VLAN tag test")
             return
@@ -1461,7 +1458,7 @@ class StripVLANTagWithTagMatchWildcarded(BaseMatchCase):
     """
     def runTest(self):
         old_vid = 2
-        sup_acts = supported_actions_get(self)
+        sup_acts = self.supported_actions
         if not (sup_acts & 1 << ofp.OFPAT_STRIP_VLAN):
             skip_message_emit(self, "StripVLANTagWithTagWildcarded test")
             return
@@ -1471,10 +1468,12 @@ class StripVLANTagWithTagMatchWildcarded(BaseMatchCase):
         pkt = simple_tcp_packet(pktlen=len_w_vid, dl_vlan_enable=True, 
                                 dl_vlan=old_vid)
         exp_pkt = simple_tcp_packet(pktlen=len_untagged)
+        wildcards = (required_wildcards(self) | ofp.OFPFW_DL_VLAN |
+                     ofp.OFPFW_DL_VLAN_PCP)
         vid_act = action.action_strip_vlan()
 
         flow_match_test(self, pa_port_map, 
-                        wildcards=ofp.OFPFW_DL_VLAN|ofp.OFPFW_DL_VLAN_PCP,
+                        wildcards=wildcards,
                         pkt=pkt, exp_pkt=exp_pkt,
                         action_list=[vid_act])
 
@@ -1500,7 +1499,7 @@ class ModifyL2Src(BaseMatchCase):
     Modify the source MAC address (TP1)
     """
     def runTest(self):
-        sup_acts = supported_actions_get(self)
+        sup_acts = self.supported_actions
         if not (sup_acts & 1 << ofp.OFPAT_SET_DL_SRC):
             skip_message_emit(self, "ModifyL2Src test")
             return
@@ -1515,7 +1514,7 @@ class ModifyL2Dst(BaseMatchCase):
     Modify the dest MAC address (TP1)
     """
     def runTest(self):
-        sup_acts = supported_actions_get(self)
+        sup_acts = self.supported_actions
         if not (sup_acts & 1 << ofp.OFPAT_SET_DL_DST):
             skip_message_emit(self, "ModifyL2dst test")
             return
@@ -1530,7 +1529,7 @@ class ModifyL3Src(BaseMatchCase):
     Modify the source IP address of an IP packet (TP1)
     """
     def runTest(self):
-        sup_acts = supported_actions_get(self)
+        sup_acts = self.supported_actions
         if not (sup_acts & 1 << ofp.OFPAT_SET_NW_SRC):
             skip_message_emit(self, "ModifyL3Src test")
             return
@@ -1545,7 +1544,7 @@ class ModifyL3Dst(BaseMatchCase):
     Modify the dest IP address of an IP packet (TP1)
     """
     def runTest(self):
-        sup_acts = supported_actions_get(self)
+        sup_acts = self.supported_actions
         if not (sup_acts & 1 << ofp.OFPAT_SET_NW_DST):
             skip_message_emit(self, "ModifyL3Dst test")
             return
@@ -1560,7 +1559,7 @@ class ModifyL4Src(BaseMatchCase):
     Modify the source TCP port of a TCP packet (TP1)
     """
     def runTest(self):
-        sup_acts = supported_actions_get(self)
+        sup_acts = self.supported_actions
         if not (sup_acts & 1 << ofp.OFPAT_SET_TP_SRC):
             skip_message_emit(self, "ModifyL4Src test")
             return
@@ -1575,7 +1574,7 @@ class ModifyL4Dst(BaseMatchCase):
     Modify the dest TCP port of a TCP packet (TP1)
     """
     def runTest(self):
-        sup_acts = supported_actions_get(self)
+        sup_acts = self.supported_actions
         if not (sup_acts & 1 << ofp.OFPAT_SET_TP_DST):
             skip_message_emit(self, "ModifyL4Dst test")
             return
@@ -1590,7 +1589,7 @@ class ModifyTOS(BaseMatchCase):
     Modify the IP type of service of an IP packet (TP1)
     """
     def runTest(self):
-        sup_acts = supported_actions_get(self)
+        sup_acts = self.supported_actions
         if not (sup_acts & 1 << ofp.OFPAT_SET_NW_TOS):
             skip_message_emit(self, "ModifyTOS test")
             return
@@ -1605,7 +1604,7 @@ class ModifyL2DstMC(BaseMatchCase):
     Modify the L2 dest and send to 2 ports
     """
     def runTest(self):
-        sup_acts = supported_actions_get(self)
+        sup_acts = self.supported_actions
         if not (sup_acts & 1 << ofp.OFPAT_SET_DL_DST):
             skip_message_emit(self, "ModifyL2dstMC test")
             return
@@ -1620,7 +1619,7 @@ class ModifyL2DstIngress(BaseMatchCase):
     Modify the L2 dest and send to the ingress port
     """
     def runTest(self):
-        sup_acts = supported_actions_get(self)
+        sup_acts = self.supported_actions
         if not (sup_acts & 1 << ofp.OFPAT_SET_DL_DST):
             skip_message_emit(self, "ModifyL2dstIngress test")
             return
@@ -1636,7 +1635,7 @@ class ModifyL2DstIngressMC(BaseMatchCase):
     Modify the L2 dest and send to the ingress port
     """
     def runTest(self):
-        sup_acts = supported_actions_get(self)
+        sup_acts = self.supported_actions
         if not (sup_acts & 1 << ofp.OFPAT_SET_DL_DST):
             skip_message_emit(self, "ModifyL2dstMC test")
             return
@@ -1652,7 +1651,7 @@ class ModifyL2SrcMC(BaseMatchCase):
     Modify the source MAC address (TP1) and send to multiple
     """
     def runTest(self):
-        sup_acts = supported_actions_get(self)
+        sup_acts = self.supported_actions
         if not (sup_acts & 1 << ofp.OFPAT_SET_DL_SRC):
             skip_message_emit(self, "ModifyL2SrcMC test")
             return
@@ -1667,7 +1666,7 @@ class ModifyL2SrcDstMC(BaseMatchCase):
     Modify the L2 source and dest and send to 2 ports
     """
     def runTest(self):
-        sup_acts = supported_actions_get(self)
+        sup_acts = self.supported_actions
         if (not (sup_acts & 1 << ofp.OFPAT_SET_DL_DST) or
                 not (sup_acts & 1 << ofp.OFPAT_SET_DL_SRC)):
             skip_message_emit(self, "ModifyL2SrcDstMC test")
@@ -1684,7 +1683,7 @@ class ModifyL2DstVIDMC(BaseMatchCase):
     Modify the L2 dest and send to 2 ports
     """
     def runTest(self):
-        sup_acts = supported_actions_get(self)
+        sup_acts = self.supported_actions
         if (not (sup_acts & 1 << ofp.OFPAT_SET_DL_DST) or
                 not (sup_acts & 1 << ofp.OFPAT_SET_VLAN_VID)):
             skip_message_emit(self, "ModifyL2DstVIDMC test")
@@ -1729,13 +1728,14 @@ class FlowToggle(BaseMatchCase):
         flows.append([])
         flows.append([])
     
-        wildcards = ofp.OFPFW_DL_SRC | ofp.OFPFW_DL_DST
+        wildcards = (required_wildcards(self) | ofp.OFPFW_DL_SRC |
+                     ofp.OFPFW_DL_DST)
         # Create up the flows in an array
         for toggle in range(2):
             for f_idx in range(flow_count):
                 pkt = simple_tcp_packet(tcp_sport=f_idx)
                 msg = message.flow_mod()
-                match = parse.packet_to_flow_match(pkt)
+                match = packet_to_flow_match(self, pkt)
                 match.in_port = of_ports[2]
                 match.wildcards = wildcards
                 msg.match = match
@@ -1876,20 +1876,5 @@ class MixedVLAN(BaseMatchCase):
 
 test_prio["MixedVLAN"] = -1
  
-def supported_actions_get(parent, use_cache=True):
-    """
-    Get the bitmap of supported actions from the switch
-    If use_cache is false, the cached value will be updated
-    """
-    global cached_supported_actions
-    if cached_supported_actions is None or not use_cache:
-        request = message.features_request()
-        (reply, pkt) = parent.controller.transact(request)
-        parent.assertTrue(reply is not None, "Did not get response to ftr req")
-        cached_supported_actions = reply.actions
-        pa_logger.info("Supported actions: " + hex(cached_supported_actions))
-
-    return cached_supported_actions
-
 if __name__ == "__main__":
     print "Please run through oft script:  ./oft --test_spec=basic"

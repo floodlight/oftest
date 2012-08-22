@@ -471,7 +471,10 @@ class Controller(Thread):
         If an error occurs, (None, None) is returned
         """
 
-        self.logger.debug("Poll for %s" % ofp_type_map[exp_msg])
+        if exp_msg:
+            self.logger.debug("Poll for %s" % ofp_type_map[exp_msg])
+        else:
+            self.logger.debug("Poll for any OF message")
 
         # Take the packet from the queue
         def grab():
@@ -513,7 +516,7 @@ class Controller(Thread):
         @param msg The message object to send; must not be a string
         @param timeout The timeout in seconds; if -1 use default.
         @param zero_xid Normally, if the XID is 0 an XID will be generated
-        for the message.  Set xero_xid to override this behavior
+        for the message.  Set zero_xid to override this behavior
         @return The matching message object or None if unsuccessful
 
         """
@@ -556,36 +559,29 @@ class Controller(Thread):
         the switch.
         @param zero_xid If msg is an OpenFlow object (not a string) and if
         the XID in the header is 0, then an XID will be generated
-        for the message.  Set xero_xid to override this behavior (and keep an
+        for the message.  Set zero_xid to override this behavior (and keep an
         existing 0 xid)
 
-        @return -1 if error, 0 on success
+        @return 0 on success
 
         """
 
         if not self.switch_socket:
             # Sending a string indicates the message is ready to go
-            self.logger.info("message_send: no socket")
-            return -1
+            raise Exception("no socket")
         #@todo If not string, try to pack
         if type(msg) != type(""):
-            try:
-                if msg.header.xid == 0 and not zero_xid:
-                    msg.header.xid = gen_xid()
-                outpkt = msg.pack()
-            except:
-                self.logger.error(
-                         "message_send: not an OF message or string?")
-                return -1
+            if msg.header.xid == 0 and not zero_xid:
+                msg.header.xid = gen_xid()
+            outpkt = msg.pack()
         else:
             outpkt = msg
 
         self.logger.debug("Sending pkt of len " + str(len(outpkt)))
-        if self.switch_socket.sendall(outpkt) is None:
-            return 0
+        if self.switch_socket.sendall(outpkt) is not None:
+            raise Exception("unknown error on sendall")
 
-        self.logger.error("Unknown error on sendall")
-        return -1
+        return 0
 
     def __str__(self):
         string = "Controller:\n"
