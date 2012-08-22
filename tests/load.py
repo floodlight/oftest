@@ -87,7 +87,7 @@ class LoadBarrier(basic.SimpleProtocol):
         self.controller.pkt_in_filter_limit = 10
 
         pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         match.in_port = lb_port
         act = action.action_output()

@@ -133,7 +133,7 @@ class DirectPacket(basic.SimpleDataPlane):
             pkt = simple_icmp_packet()
         else:
             pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -203,7 +203,7 @@ class DirectPacketController(basic.SimpleDataPlane):
             pkt = simple_icmp_packet()
         else:
             pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None,
                         "Could not generate flow match from pkt")
@@ -274,7 +274,7 @@ class DirectPacketQueue(basic.SimpleDataPlane):
             pkt = simple_icmp_packet()
         else:
             pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -398,7 +398,7 @@ class DirectPacketControllerQueue(basic.SimpleDataPlane):
             pkt = simple_icmp_packet()
         else:
             pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -533,7 +533,7 @@ class DirectTwoPorts(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
         pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -593,7 +593,7 @@ class DirectMCNonIngress(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
         pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -648,7 +648,7 @@ class DirectMC(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
         pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -699,7 +699,7 @@ class Flood(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -748,7 +748,7 @@ class FloodPlusIngress(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -798,7 +798,7 @@ class All(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -847,7 +847,7 @@ class AllPlusIngress(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -899,7 +899,7 @@ class FloodMinusPort(basic.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
         pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -1068,8 +1068,9 @@ class SingleWildcardMatchPriority(BaseMatchCase):
 
 
 
-    def installFlow(self, prio, inp, egp, 
+    def installFlow(self, prio, inp, egp,
                     wildcards=ofp.OFPFW_DL_SRC):
+        wildcards |= required_wildcards(self)
         request = flow_msg_create(self, self.pkt, ing_port=inp, 
                                   wildcards=wildcards,
                                   egr_ports=egp)
@@ -1214,6 +1215,7 @@ class SingleWildcardMatch(BaseMatchCase):
     def runTest(self):
         vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
         for wc in WILDCARD_VALUES:
+            wc |= required_wildcards(self)
             if wc & ofp.OFPFW_DL_VLAN:
                 # Set nonzero VLAN id to avoid sending priority-tagged packet
                 dl_vlan = vid
@@ -1229,6 +1231,7 @@ class SingleWildcardMatchTagged(BaseMatchCase):
     def runTest(self):
         vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
         for wc in WILDCARD_VALUES:
+            wc |= required_wildcards(self)
             flow_match_test(self, pa_port_map, wildcards=wc, dl_vlan=vid,
                             max_test=10)
 
@@ -1246,6 +1249,7 @@ class AllExceptOneWildcardMatch(BaseMatchCase):
     def runTest(self):
         vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
         for all_exp_one_wildcard in NO_WILDCARD_VALUES:
+            all_exp_one_wildcard |= required_wildcards(self)
             if all_exp_one_wildcard & ofp.OFPFW_DL_VLAN:
                 # Set nonzero VLAN id to avoid sending priority-tagged packet
                 dl_vlan = vid
@@ -1261,6 +1265,7 @@ class AllExceptOneWildcardMatchTagged(BaseMatchCase):
     def runTest(self):
         vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
         for all_exp_one_wildcard in NO_WILDCARD_VALUES:
+            all_exp_one_wildcard |= required_wildcards(self)
             flow_match_test(self, pa_port_map, wildcards=all_exp_one_wildcard,
                             dl_vlan=vid)
 
@@ -1388,7 +1393,8 @@ class ModifyVIDWithTagMatchWildcarded(BaseMatchCase):
                                        dl_vlan_enable=True, dl_vlan=old_vid)
         exp_pkt = simple_tcp_packet(pktlen=len_w_vid, dl_vlan_enable=True,
                                     dl_vlan=new_vid)
-        wildcards=ofp.OFPFW_DL_VLAN|ofp.OFPFW_DL_VLAN_PCP
+        wildcards = (required_wildcards(self) | ofp.OFPFW_DL_VLAN |
+                     ofp.OFPFW_DL_VLAN_PCP)
         vid_act = action.action_set_vlan_vid()
         vid_act.vlan_vid = new_vid
         request = flow_msg_create(self, untagged_pkt, ing_port=ing_port, 
@@ -1465,10 +1471,12 @@ class StripVLANTagWithTagMatchWildcarded(BaseMatchCase):
         pkt = simple_tcp_packet(pktlen=len_w_vid, dl_vlan_enable=True, 
                                 dl_vlan=old_vid)
         exp_pkt = simple_tcp_packet(pktlen=len_untagged)
+        wildcards = (required_wildcards(self) | ofp.OFPFW_DL_VLAN |
+                     ofp.OFPFW_DL_VLAN_PCP)
         vid_act = action.action_strip_vlan()
 
         flow_match_test(self, pa_port_map, 
-                        wildcards=ofp.OFPFW_DL_VLAN|ofp.OFPFW_DL_VLAN_PCP,
+                        wildcards=wildcards,
                         pkt=pkt, exp_pkt=exp_pkt,
                         action_list=[vid_act])
 
@@ -1723,13 +1731,14 @@ class FlowToggle(BaseMatchCase):
         flows.append([])
         flows.append([])
     
-        wildcards = ofp.OFPFW_DL_SRC | ofp.OFPFW_DL_DST
+        wildcards = (required_wildcards(self) | ofp.OFPFW_DL_SRC |
+                     ofp.OFPFW_DL_DST)
         # Create up the flows in an array
         for toggle in range(2):
             for f_idx in range(flow_count):
                 pkt = simple_tcp_packet(tcp_sport=f_idx)
                 msg = message.flow_mod()
-                match = parse.packet_to_flow_match(pkt)
+                match = packet_to_flow_match(self, pkt)
                 match.in_port = of_ports[2]
                 match.wildcards = wildcards
                 msg.match = match

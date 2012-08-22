@@ -63,7 +63,7 @@ def flow_caps_common(obj, is_exact=True):
     obj.assertEqual(rv, 0, "Failed to delete all flows")
 
     pkt = simple_tcp_packet()
-    match = parse.packet_to_flow_match(pkt)
+    match = packet_to_flow_match(self, pkt)
     obj.assertTrue(match is not None, "Could not generate flow match from pkt")
     for port in of_ports:
         break;

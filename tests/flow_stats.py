@@ -145,7 +145,7 @@ class SingleFlowStats(basic.SimpleDataPlane):
 
         # build packet
         pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -185,7 +185,7 @@ class SingleFlowStats(basic.SimpleDataPlane):
         self.verifyStats(match, ofp.OFPP_NONE, test_timeout, num_sends)
         self.verifyStats(match, egress_port, test_timeout, num_sends)
         for wc in WILDCARD_VALUES:
-            match.wildcards = wc
+            match.wildcards = required_wildcards(self) | wc
             self.verifyStats(match, egress_port, test_timeout, num_sends)
 
 
@@ -203,7 +203,7 @@ class TwoFlowStats(basic.SimpleDataPlane):
     """
 
     def buildFlowModMsg(self, pkt, ingress_port, egress_port):
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -308,10 +308,10 @@ class TwoFlowStats(basic.SimpleDataPlane):
         for i in range(0,num_pkt2s):
             sendPacket(self, pkt2, ingress_port, egress_port2, test_timeout)
             
-        match1 = parse.packet_to_flow_match(pkt1)
+        match1 = packet_to_flow_match(self, pkt1)
         fs_logger.info("Verifying flow1's " + str(num_pkt1s) + " packets")
         self.verifyStats(match1, ofp.OFPP_NONE, test_timeout, num_pkt1s)
-        match2 = parse.packet_to_flow_match(pkt2)
+        match2 = packet_to_flow_match(self, pkt2)
         fs_logger.info("Verifying flow2's " + str(num_pkt2s) + " packets")
         self.verifyStats(match2, ofp.OFPP_NONE, test_timeout, num_pkt2s)
         match1.wildcards |= ofp.OFPFW_DL_SRC
@@ -333,7 +333,7 @@ class AggregateStats(basic.SimpleDataPlane):
     """
 
     def buildFlowModMsg(self, pkt, ingress_port, egress_port):
-        match = parse.packet_to_flow_match(pkt)
+        match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
@@ -425,7 +425,7 @@ class AggregateStats(basic.SimpleDataPlane):
             sendPacket(self, pkt2, ingress_port, egress_port2, test_timeout)
             
         # loop on flow stats request until timeout
-        match = parse.packet_to_flow_match(pkt1)
+        match = packet_to_flow_match(self, pkt1)
         match.wildcards |= ofp.OFPFW_DL_SRC
         self.verifyAggFlowStats(match, ofp.OFPP_NONE, test_timeout, 
                                 2, num_pkt1s+num_pkt2s)

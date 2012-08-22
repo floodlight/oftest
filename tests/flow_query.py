@@ -723,8 +723,8 @@ class Flow_Cfg:
         return self
 
     # Randomize flow cfg
-    def rand(self, fi, valid_wildcards, valid_actions, valid_ports, valid_queues):
-        wildcards_force = test_param_get(fq_config, "wildcards_force", 0)
+    def rand(self, fi, wildcards_force, valid_wildcards, valid_actions, valid_ports,
+             valid_queues):
         if wildcards_force != 0:
             fq_logger.info("Wildcards forced:")
             fq_logger.info(wildcards_to_str(wildcards_force))
@@ -1186,7 +1186,7 @@ class Flow_Tbl:
     def count(self):
         return len(self.dict)
 
-    def rand(self, sw, fi, num_flows):
+    def rand(self, wildcards_force, sw, fi, num_flows):
         self.clear()
         i = 0
         tbl = 0
@@ -1194,6 +1194,7 @@ class Flow_Tbl:
         while i < num_flows:
             fc = Flow_Cfg()
             fc.rand(fi, \
+                    wildcards_force, \
                     sw.tbl_stats.stats[tbl].wildcards, \
                     sw.sw_features.actions, \
                     sw.valid_ports, \
@@ -1210,27 +1211,6 @@ class Flow_Tbl:
                 tbl = tbl + 1
                 j = 0
 
-
-error_msgs   = []
-removed_msgs = []
-
-def error_handler(self, msg, rawmsg):
-    fq_logger.info("Got an ERROR message, type=%d, code=%d" \
-                    % (msg.type, msg.code) \
-                    )
-    fq_logger.info("Message header:")
-    fq_logger.info(msg.header.show())
-    global error_msgs
-    error_msgs.append(msg)
-    pass
-
-def removed_handler(self, msg, rawmsg):
-    fq_logger.info("Got a REMOVED message")
-    fq_logger.info("Message header:")
-    fq_logger.info(msg.header.show())
-    global removed_msgs
-    removed_msgs.append(msg)
-    pass
 
 class Switch:
     # Members:
@@ -1251,14 +1231,30 @@ class Switch:
         self.tbl_stats    = None
         self.flow_stats   = None
         self.flow_tbl     = Flow_Tbl()
+        self.error_msgs   = []
+        self.removed_msgs = []
+
+    def error_handler(self, controller, msg, rawmsg):
+        fq_logger.info("Got an ERROR message, type=%d, code=%d" \
+                          % (msg.type, msg.code) \
+                          )
+        fq_logger.info("Message header:")
+        fq_logger.info(msg.header.show())
+        self.error_msgs.append(msg)
+
+    def removed_handler(self, controller, msg, rawmsg):
+        fq_logger.info("Got a REMOVED message")
+        fq_logger.info("Message header:")
+        fq_logger.info(msg.header.show())
+        self.removed_msgs.append(msg)
 
     def controller_set(self, controller):
         self.controller = controller
         # Register error message handler
-        global error_msgs
-        error_msgs = []
-        controller.register(ofp.OFPT_ERROR, error_handler)
-        controller.register(ofp.OFPT_FLOW_REMOVED, removed_handler)
+        self.error_msgs = []
+        self.removed_msgs = []
+        controller.register(ofp.OFPT_ERROR, self.error_handler)
+        controller.register(ofp.OFPT_FLOW_REMOVED, self.removed_handler)
 
     def features_get(self):
         # Get switch features
@@ -1437,9 +1433,8 @@ class Switch:
 
     def errors_verify(self, num_exp, type = 0, code = 0):
         result = True
-        global error_msgs
         fq_logger.info("Expecting %d error messages" % (num_exp))
-        num_got = len(error_msgs)
+        num_got = len(self.error_msgs)
         fq_logger.info("Got %d error messages" % (num_got))
         if num_got != num_exp:
             fq_logger.error("Incorrect number of error messages received")
@@ -1451,7 +1446,7 @@ class Switch:
                             % (type, code) \
                             )
             f = False
-            for e in error_msgs:
+            for e in self.error_msgs:
                 if e.type == type and e.code == code:
                     fq_logger.info("Got it")
                     f = True
@@ -1465,9 +1460,8 @@ class Switch:
 
     def removed_verify(self, num_exp):
         result = True
-        global removed_msgs
         fq_logger.info("Expecting %d removed messages" % (num_exp))
-        num_got = len(removed_msgs)
+        num_got = len(self.removed_msgs)
         fq_logger.info("Got %d removed messages" % (num_got))
         if num_got != num_exp:
             fq_logger.error("Incorrect number of removed messages received")
@@ -1642,7 +1636,7 @@ class Flow_Add_5(basic.SimpleProtocol):
         # Create a flow table
 
         ft = Flow_Tbl()
-        ft.rand(sw, fi, num_flows)
+        ft.rand(required_wildcards(self), sw, fi, num_flows)
 
         # Send flow table to switch
 
@@ -1735,6 +1729,7 @@ class Flow_Add_5_1(basic.SimpleProtocol):
         while True:
             fc = Flow_Cfg()
             fc.rand(fi, \
+                    required_wildcards(self), \
                     sw.tbl_stats.stats[0].wildcards, \
                     sw.sw_features.actions, \
                     sw.valid_ports, \
@@ -1852,7 +1847,7 @@ class Flow_Add_6(basic.SimpleProtocol):
         # Create a flow table, to switch's capacity
 
         ft = Flow_Tbl()
-        ft.rand(sw, fi, num_flows)
+        ft.rand(required_wildcards(self), sw, fi, num_flows)
 
         # Send flow table to switch
 
@@ -1879,6 +1874,7 @@ class Flow_Add_6(basic.SimpleProtocol):
         while True:
             fc = Flow_Cfg()
             fc.rand(fi, \
+                    required_wildcards(self), \
                     sw.tbl_stats.stats[0].wildcards, \
                     sw.sw_features.actions, \
                     sw.valid_ports, \
@@ -1973,6 +1969,7 @@ class Flow_Add_7(basic.SimpleProtocol):
 
         fc = Flow_Cfg()
         fc.rand(fi, \
+                required_wildcards(self), \
                 sw.tbl_stats.stats[0].wildcards, \
                 sw.sw_features.actions, \
                 sw.valid_ports, \
@@ -2093,6 +2090,7 @@ class Flow_Add_8(basic.SimpleProtocol):
         fc = Flow_Cfg()
         while True:
             fc.rand(fi, \
+                    required_wildcards(self), \
                     sw.tbl_stats.stats[0].wildcards, \
                     sw.sw_features.actions, \
                     sw.valid_ports, \
@@ -2216,6 +2214,7 @@ class Flow_Mod_1(basic.SimpleProtocol):
 
         fc = Flow_Cfg()
         fc.rand(fi, \
+                required_wildcards(self), \
                 sw.tbl_stats.stats[0].wildcards, \
                 sw.sw_features.actions, \
                 sw.valid_ports, \
@@ -2340,7 +2339,7 @@ class Flow_Mod_2(basic.SimpleProtocol):
         # Dream up some flows
 
         ft = Flow_Tbl()
-        ft.rand(sw, fi, num_flows)
+        ft.rand(required_wildcards(self), sw, fi, num_flows)
 
         # Send flow table to switch
 
@@ -2487,6 +2486,7 @@ class Flow_Mod_3(basic.SimpleProtocol):
 
         fc = Flow_Cfg()
         fc.rand(fi, \
+                required_wildcards(self), \
                 sw.tbl_stats.stats[0].wildcards, \
                 sw.sw_features.actions, \
                 sw.valid_ports, \
@@ -2577,6 +2577,7 @@ class Flow_Mod_3_1(basic.SimpleProtocol):
 
         fc = Flow_Cfg()
         fc.rand(fi, \
+                required_wildcards(self), \
                 sw.tbl_stats.stats[0].wildcards, \
                 sw.sw_features.actions, \
                 sw.valid_ports, \
@@ -2688,6 +2689,7 @@ class Flow_Del_1(basic.SimpleProtocol):
 
         fc = Flow_Cfg()
         fc.rand(fi, \
+                required_wildcards(self), \
                 sw.tbl_stats.stats[0].wildcards, \
                 sw.sw_features.actions, \
                 sw.valid_ports, \
@@ -2809,7 +2811,7 @@ class Flow_Del_2(basic.SimpleProtocol):
         # Dream up some flows
 
         ft = Flow_Tbl()
-        ft.rand(sw, fi, num_flows)
+        ft.rand(required_wildcards(self), sw, fi, num_flows)
 
         # Send flow table to switch
 
@@ -2962,6 +2964,7 @@ class Flow_Del_4(basic.SimpleProtocol):
 
         fc = Flow_Cfg()
         fc.rand(fi, \
+                required_wildcards(self), \
                 sw.tbl_stats.stats[0].wildcards, \
                 sw.sw_features.actions, \
                 sw.valid_ports, \
