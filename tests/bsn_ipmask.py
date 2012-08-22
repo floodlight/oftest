@@ -68,6 +68,7 @@ class BSNConfigIPMask(basic.SimpleDataPlane):
         Use the BSN_SET_IP_MASK vendor command to change the IP mask for the
         given wildcard index
         """
+        im_logger.info("Setting index %d to mask is %s" % (index, mask))
         m = message.vendor()
         m.vendor = 0x005c16c7
         m.data = struct.pack("!LBBBBL", 0, index, 0, 0, 0, mask)
@@ -87,7 +88,8 @@ class BSNConfigIPMask(basic.SimpleDataPlane):
         m, r = self.controller.poll(ofp.OFPT_VENDOR, 2)
         self.assertEqual(m.vendor, 0x005c16c7, "Wrong vendor ID")
         x = struct.unpack("!LBBBBL", m.data)
-        self.assertEqual(x[0], 1, "Wrong subtype")
+        # FIXME:  For now, accept 1 or 2 as subtype; will become 2
+        self.assertTrue(x[0] == 1 or x[0] == 2, "Wrong subtype")
         self.assertEqual(x[1], index, "Wrong index")
         return x[5]
 
