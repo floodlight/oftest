@@ -280,6 +280,40 @@ class PacketIn(SimpleDataPlane):
                                    'Response packet does not match send packet' +
                                    ' for port ' + str(of_port))
 
+class PacketInDefaultDrop(SimpleDataPlane):
+    """
+    Test packet in function
+
+    Send a packet to each dataplane port and verify that a packet
+    in message is received from the controller for each
+    """
+    def runTest(self):
+        rc = delete_all_flows(self.controller, basic_logger)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        for of_port in basic_port_map.keys():
+            pkt = simple_tcp_packet()
+            self.dataplane.send(of_port, str(pkt))
+            count = 0
+            while True:
+                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
+                if not response:  # Timeout
+                    break
+                if dataplane.match_exp_pkt(pkt, response.data): # Got match
+                    break
+                if not basic_config["relax"]:  # Only one attempt to match
+                    break
+                count += 1
+                if count > 10:   # Too many tries
+                    break
+
+            self.assertTrue(response is None, 
+                            'Packet in message received on port ' + 
+                            str(of_port))
+
+test_prio["PacketInDefaultDrop"] = -1
+
 
 class PacketInBroadcastCheck(SimpleDataPlane):
     """
