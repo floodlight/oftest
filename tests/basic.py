@@ -72,7 +72,12 @@ class SimpleProtocol(unittest.TestCase):
     def setUp(self):
         self.logger = basic_logger
         self.config = basic_config
-        signal.signal(signal.SIGINT, self.sig_handler)
+        #@todo Test cases shouldn't monkey with signals; move SIGINT handler
+        # to top-level oft
+        try:
+           signal.signal(signal.SIGINT, self.sig_handler)
+        except ValueError, e:
+           basic_logger.info("Could not set SIGINT handler: %s" % e)
         basic_logger.info("** START TEST CASE " + str(self))
         self.controller = controller.Controller(
             host=basic_config["controller_host"],
@@ -178,7 +183,12 @@ class DataPlaneOnly(unittest.TestCase):
         self.clean_shutdown = True
         self.logger = basic_logger
         self.config = basic_config
-        signal.signal(signal.SIGINT, self.sig_handler)
+        #@todo Test cases shouldn't monkey with signals; move SIGINT handler
+        # to top-level oft
+        try:
+           signal.signal(signal.SIGINT, self.sig_handler)
+        except ValueError, e:
+           basic_logger.info("Could not set SIGINT handler: %s" % e)
         basic_logger.info("** START DataPlaneOnly CASE " + str(self))
         self.dataplane = dataplane.DataPlane(self.config)
         for of_port, ifname in basic_port_map.items():

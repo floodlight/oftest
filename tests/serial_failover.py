@@ -141,7 +141,12 @@ class SerialFailover(unittest.TestCase):
     def setUp(self):
         self.logger = serial_failover_logger
         self.config = serial_failover_config
-        signal.signal(signal.SIGINT, self.sig_handler)
+        #@todo Test cases shouldn't monkey with signals; move SIGINT handler
+        # to top-level oft
+        try:
+           signal.signal(signal.SIGINT, self.sig_handler)
+        except ValueError, e:
+           serial_failover_logger.info("Could not set SIGINT handler: %s" % e)
         serial_failover_logger.info("** START TEST CASE " + str(self))
 
         self.test_timeout = test_param_get(serial_failover_config,
