@@ -1045,12 +1045,6 @@ class SingleWildcardMatchPriority(BaseMatchCase):
         self.logger.info("runPrioFlows(pA=%d,pB=%d,pC=%d,ph=%d,pl=%d"
                          % (portA, portB, portC, prioHigher, prioLower))
 
-        self.installFlow(prioHigher, portA, portC)
-        self.installFlow(prioLower, portA, portB)
-
-        return
-        self.verifyFlow(portA, portB)
-        self.removeFlow(prioLower)
         # Sanity check flow at lower priority from pA to pC
         self.installFlow(prioLower, portA, portC)
         self.verifyFlow(portA, portC)
