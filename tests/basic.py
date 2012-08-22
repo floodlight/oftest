@@ -118,6 +118,7 @@ class SimpleProtocol(unittest.TestCase):
         basic_logger.info("** Setup " + str(self) + " inheriting from "
                           + str(parent))
         self.controller = parent.controller
+        self.supported_actions = parent.supported_actions
         
     def tearDown(self):
         basic_logger.info("** END TEST CASE " + str(self))
