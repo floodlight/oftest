@@ -41,6 +41,8 @@ basic_config = None
 
 test_prio = {}
 
+TEST_VID_DEFAULT = 2
+
 def test_set_init(config):
     """
     Set up function for basic test classes
@@ -253,9 +255,13 @@ class PacketIn(SimpleDataPlane):
         self.assertEqual(rc, 0, "Failed to delete all flows")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
+        vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
+
         for of_port in basic_port_map.keys():
             for pkt, pt in [
                (simple_tcp_packet(), "simple TCP packet"),
+               (simple_tcp_packet(dl_vlan_enable=True,dl_vlan=vid,pktlen=108), 
+                "simple tagged TCP packet"),
                (simple_eth_packet(), "simple Ethernet packet"),
                (simple_eth_packet(pktlen=40), "tiny Ethernet packet")]:
 
@@ -556,6 +562,45 @@ class PortConfigMod(SimpleProtocol):
         rv = port_config_set(self.controller, of_port, config, 
                              ofp.OFPPC_NO_FLOOD, basic_logger)
         self.assertTrue(rv != -1, "Error sending port mod")
+
+class PortConfigModErr(SimpleProtocol):
+    """
+    Modify a bit in port config on an invalid port and verify
+    error message is received.
+    """
+
+    def runTest(self):
+        basic_logger.info("Running " + str(self))
+
+        # pick a random bad port number
+        bad_port = random.randint(1, ofp.OFPP_MAX)
+        count = 0
+        while (count < 50) and (bad_port in basic_port_map.keys()):
+            bad_port = random.randint(1, ofp.OFPP_MAX)
+            count = count + 1
+        self.assertTrue(count < 50, "Error selecting bad port")
+        basic_logger.info("Select " + str(bad_port) + " as invalid port")
+
+        rv = port_config_set(self.controller, bad_port,
+                             ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD,
+                             basic_logger)
+        self.assertTrue(rv != -1, "Error sending port mod")
+
+        # poll for error message
+        while True:
+            (response, raw) = self.controller.poll(ofp.OFPT_ERROR, 2)
+            if not response:  # Timeout
+                break
+            if response.code == ofp.OFPPMFC_BAD_PORT:
+                basic_logger.info("Received error message with OFPPMFC_BAD_PORT code")
+                break
+            if not basic_config["relax"]:  # Only one attempt to match
+                break
+            count += 1
+            if count > 10:   # Too many tries
+                break
+
+        self.assertTrue(response is not None, 'Did not receive error message')
 
 if __name__ == "__main__":
     print "Please run through oft script:  ./oft --test_spec=basic"
