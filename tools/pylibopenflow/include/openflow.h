@@ -898,7 +898,7 @@ struct ofp_table_stats {
                                 can be set with OFPIT_WRITE_ACTIONS. */
 	uint64_t apply_setfields;/* Bitmap of (1 << OFPXMT_*) header fields that
                                 uint64_t metadata_match;*/ 
-    /* Bits of metadata table can match. */
+    uint64_t metadata_match; /* Bits of metadata table can match. */
 	uint64_t metadata_write; /* Bits of metadata table can write. */
 	uint32_t instructions;   /* Bitmap of OFPIT_* values supported. */
 	uint32_t config;         /* Bitmap of OFPTC_* values */

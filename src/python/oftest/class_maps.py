@@ -19,6 +19,7 @@ class_to_members_map = {
                                        'apply_actions',
                                        'write_setfields',
                                        'apply_setfields',
+                                       'metadata_match',
                                        'metadata_write',
                                        'instructions',
                                        'config',

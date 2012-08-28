@@ -248,6 +248,7 @@ class ofp_table_stats(object):
         self.apply_actions = 0
         self.write_setfields = 0
         self.apply_setfields = 0
+        self.metadata_match = 0
         self.metadata_write = 0
         self.instructions = 0
         self.config = 0
@@ -280,7 +281,7 @@ class ofp_table_stats(object):
         packed += struct.pack("!B", self.table_id)
         packed += struct.pack("!BBBBBBB", self.pad[0], self.pad[1], self.pad[2], self.pad[3], self.pad[4], self.pad[5], self.pad[6])
         packed += self.name.ljust(32,'\0')
-        packed += struct.pack("!QQLLQQQLLLLQQ", self.match, self.wildcards, self.write_actions, self.apply_actions, self.write_setfields, self.apply_setfields, self.metadata_write, self.instructions, self.config, self.max_entries, self.active_count, self.lookup_count, self.matched_count)
+        packed += struct.pack("!QQLLQQQQLLLLQQ", self.match, self.wildcards, self.write_actions, self.apply_actions, self.write_setfields, self.apply_setfields, self.metadata_match, self.metadata_write, self.instructions, self.config, self.max_entries, self.active_count, self.lookup_count, self.matched_count)
         return packed
 
     def unpack(self, binaryString):
@@ -288,7 +289,7 @@ class ofp_table_stats(object):
         Do not unpack empty array used as placeholder
         since they can contain heterogeneous type
         """
-        if (len(binaryString) < 120):
+        if (len(binaryString) < 128):
             return binaryString
         fmt = '!B'
         start = 0
@@ -299,16 +300,16 @@ class ofp_table_stats(object):
         end = start + struct.calcsize(fmt)
         (self.pad[0], self.pad[1], self.pad[2], self.pad[3], self.pad[4], self.pad[5], self.pad[6]) = struct.unpack(fmt, binaryString[start:end])
         self.name = binaryString[8:40].replace("\0","")
-        fmt = '!QQLLQQQLLLLQQ'
+        fmt = '!QQLLQQQQLLLLQQ'
         start = 40
         end = start + struct.calcsize(fmt)
-        (self.match, self.wildcards, self.write_actions, self.apply_actions, self.write_setfields, self.apply_setfields, self.metadata_write, self.instructions, self.config, self.max_entries, self.active_count, self.lookup_count, self.matched_count) = struct.unpack(fmt,  binaryString[start:end])
-        return binaryString[120:]
+        (self.match, self.wildcards, self.write_actions, self.apply_actions, self.write_setfields, self.apply_setfields, self.metadata_match, self.metadata_write, self.instructions, self.config, self.max_entries, self.active_count, self.lookup_count, self.matched_count) = struct.unpack(fmt,  binaryString[start:end])
+        return binaryString[128:]
 
     def __len__(self):
         """Return length of message
         """
-        l = 120
+        l = 128
         return l
 
     def __eq__(self, other):
@@ -324,6 +325,7 @@ class ofp_table_stats(object):
         if self.apply_actions !=  other.apply_actions: return False
         if self.write_setfields !=  other.write_setfields: return False
         if self.apply_setfields !=  other.apply_setfields: return False
+        if self.metadata_write !=  other.metadata_match: return False        
         if self.metadata_write !=  other.metadata_write: return False
         if self.instructions !=  other.instructions: return False
         if self.config !=  other.config: return False
@@ -347,6 +349,7 @@ class ofp_table_stats(object):
         outstr += prefix + 'apply_actions: ' + str(self.apply_actions) + '\n'
         outstr += prefix + 'write_setfields: ' + str(self.write_setfields) + '\n'
         outstr += prefix + 'apply_setfields: ' + str(self.apply_setfields) + '\n'
+        outstr += prefix + 'metadata_match: ' + str(self.metadata_match) + '\n'
         outstr += prefix + 'metadata_write: ' + str(self.metadata_write) + '\n'
         outstr += prefix + 'instructions: ' + str(self.instructions) + '\n'
         outstr += prefix + 'config: ' + str(self.config) + '\n'
@@ -5920,5 +5923,5 @@ OFP_STATS_REQUEST_BYTES = 8
 OFP_SWITCH_CONFIG_BYTES = 4
 OFP_SWITCH_FEATURES_BYTES = 24
 OFP_TABLE_MOD_BYTES = 8
-OFP_TABLE_STATS_BYTES = 120
+OFP_TABLE_STATS_BYTES = 128
 
