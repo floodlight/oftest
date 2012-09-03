@@ -124,6 +124,7 @@ import unittest
 import time
 import os
 import imp
+import random
 
 pydir = os.path.join(os.path.dirname(__file__), '..', 'src', 'python')
 if os.path.exists(os.path.join(pydir, 'oftest')):
@@ -185,6 +186,7 @@ config_default = {
     "fail_skipped"       : False,
     "default_timeout"    : 2,
     "minsize"            : 0,
+    "random_seed"        : None,
 }
 
 # Default test priority
@@ -281,6 +283,9 @@ def config_setup(cfg_dflt):
     parser.add_option("--minsize", type="int", 
                       help="Minimum allowable packet size on the dataplane.", 
                       default=0)
+    parser.add_option("--random-seed", type="int",
+                      help="Random number generator seed",
+                      default=None)
 
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
@@ -592,6 +597,10 @@ if os.getuid() != 0 and not config["allow_user"]:
     print "ERROR: Super-user privileges required. Please re-run with " \
           "sudo or as root."
     exit(1)
+
+if config["random_seed"] is not None:
+    logging.info("Random seed: %d" % config["random_seed"])
+    random.seed(config["random_seed"])
 
 
 if __name__ == "__main__":
