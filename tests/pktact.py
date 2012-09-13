@@ -1346,6 +1346,10 @@ class ModifyVID(BaseMatchCase):
     """
     Modify the VLAN ID in the VLAN tag of a tagged packet
     """
+    def setUp(self):
+        BaseMatchCase.setUp(self)
+        self.ing_port=False
+
     def runTest(self):
         old_vid = 2
         new_vid = 3
@@ -1360,7 +1364,16 @@ class ModifyVID(BaseMatchCase):
         vid_act.vlan_vid = new_vid
 
         flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt,
-                        action_list=[vid_act])
+                        action_list=[vid_act], ing_port=self.ing_port)
+
+class ModifyVIDToIngress(ModifyVID):
+    """
+    Modify the VLAN ID in the VLAN tag of a tagged packet and send to
+    ingress port
+    """
+    def setUp(self):
+        BaseMatchCase.setUp(self)
+        self.ing_port=True
 
 class ModifyVIDWithTagMatchWildcarded(BaseMatchCase):
     """
