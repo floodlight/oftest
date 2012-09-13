@@ -62,6 +62,7 @@ import logging
 
 import unittest
 import random
+import time
 
 import oftest.controller  as controller
 import oftest.cstruct     as ofp
@@ -1562,6 +1563,9 @@ class Switch:
     
         return result
 
+    def settle(self):
+        time.sleep(2)
+
 # FLOW ADD 5
 #
 # OVERVIEW
@@ -1652,6 +1656,8 @@ class Flow_Add_5(basic.SimpleProtocol):
 
         result = True
 
+        sw.settle()  # Allow switch to settle and generate any notifications
+        
         # Check for any error messages
 
         if not sw.errors_verify(0):
@@ -1756,6 +1762,8 @@ class Flow_Add_5_1(basic.SimpleProtocol):
         self.assertTrue(sw.barrier(), "Barrier failed")
 
         result = True
+
+        sw.settle()  # Allow switch to settle and generate any notifications
 
         # Check for any error messages
 
@@ -1863,6 +1871,8 @@ class Flow_Add_6(basic.SimpleProtocol):
 
         result = True
 
+        sw.settle()  # Allow switch to settle and generate any notifications
+
         # Check for any error messages
 
         if not sw.errors_verify(0):
@@ -1894,6 +1904,8 @@ class Flow_Add_6(basic.SimpleProtocol):
         # Do barrier, to make sure all flows are in
 
         self.assertTrue(sw.barrier(), "Barrier failed")
+
+        sw.settle()  # Allow switch to settle and generate any notifications
 
         # Check for expected error message
 
@@ -2011,6 +2023,8 @@ class Flow_Add_7(basic.SimpleProtocol):
         self.assertTrue(sw.barrier(), "Barrier failed")
 
         result = True
+
+        sw.settle()  # Allow switch to settle and generate any notifications
 
         # Check for any error messages
 
@@ -2141,6 +2155,8 @@ class Flow_Add_8(basic.SimpleProtocol):
 
         result = True
 
+        sw.settle()  # Allow switch to settle and generate any notifications
+
         # Check for expected error message
 
         if not sw.errors_verify(1, \
@@ -2257,6 +2273,8 @@ class Flow_Mod_1(basic.SimpleProtocol):
 
         result = True
 
+        sw.settle()  # Allow switch to settle and generate any notifications
+
         # Check for any error messages
 
         if not sw.errors_verify(0):
@@ -2355,6 +2373,8 @@ class Flow_Mod_2(basic.SimpleProtocol):
 
         result = True
 
+        sw.settle()  # Allow switch to settle and generate any notifications
+
         # Check for any error messages
 
         if not sw.errors_verify(0):
@@ -2413,6 +2433,8 @@ class Flow_Mod_2(basic.SimpleProtocol):
 
         # Do barrier, to make sure all flows are in
         self.assertTrue(sw.barrier(), "Barrier failed")
+
+        sw.settle()  # Allow switch to settle and generate any notifications
 
         # Check for error message
 
@@ -2509,6 +2531,8 @@ class Flow_Mod_3(basic.SimpleProtocol):
 
         result = True
 
+        sw.settle()  # Allow switch to settle and generate any notifications
+
         # Check for any error messages
 
         if not sw.errors_verify(0):
@@ -2600,6 +2624,8 @@ class Flow_Mod_3_1(basic.SimpleProtocol):
 
         result = True
 
+        sw.settle()  # Allow switch to settle and generate any notifications
+
         # Check for any error messages
 
         if not sw.errors_verify(0):
@@ -2620,6 +2646,8 @@ class Flow_Mod_3_1(basic.SimpleProtocol):
         # Do barrier, to make sure all flows are in
 
         self.assertTrue(sw.barrier(), "Barrier failed")
+
+        sw.settle()  # Allow switch to settle and generate any notifications
 
         # Check for any error messages
 
@@ -2731,6 +2759,8 @@ class Flow_Del_1(basic.SimpleProtocol):
 
         result = True
 
+        sw.settle()  # Allow switch to settle and generate any notifications
+
         # Check for any error messages
 
         if not sw.errors_verify(0):
@@ -2827,6 +2857,8 @@ class Flow_Del_2(basic.SimpleProtocol):
 
         result = True
 
+        sw.settle()  # Allow switch to settle and generate any notifications
+
         # Check for any error messages
 
         if not sw.errors_verify(0):
@@ -2885,6 +2917,8 @@ class Flow_Del_2(basic.SimpleProtocol):
 
         # Do barrier, to make sure all flows are in
         self.assertTrue(sw.barrier(), "Barrier failed")
+
+        sw.settle()  # Allow switch to settle and generate any notifications
 
         # Check for error message
 
@@ -3005,6 +3039,8 @@ class Flow_Del_4(basic.SimpleProtocol):
         self.assertTrue(sw.barrier(), "Barrier failed")
 
         result = True
+
+        sw.settle()  # Allow switch to settle and generate any notifications
 
         # Check for expected "removed" message
 
