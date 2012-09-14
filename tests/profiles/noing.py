@@ -15,5 +15,6 @@ skip_test_list = [
     "ModifyL2DstIngress",
     "DirectMC",
     "AllPlusIngress",
+    "ModifyVIDToIngress",
     "FloodPlusIngress"
 ]
