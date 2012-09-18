@@ -97,6 +97,8 @@ class SimpleProtocol(unittest.TestCase):
         basic_logger.info("Connected " + str(self.controller.switch_addr))
         request = message.features_request()
         reply, pkt = self.controller.transact(request, timeout=10)
+        self.assertTrue(reply is not None,
+                        "Did not complete features_request for handshake")
         self.supported_actions = reply.actions
         basic_logger.info("Supported actions: " + hex(self.supported_actions))
 
@@ -218,6 +220,8 @@ class Echo(SimpleProtocol):
     def runTest(self):
         request = message.echo_request()
         response, pkt = self.controller.transact(request)
+        self.assertTrue(response is not None,
+                        "Did not get echo reply")
         self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,
                          'response is not echo_reply')
         self.assertEqual(request.header.xid, response.header.xid,
@@ -232,6 +236,8 @@ class EchoWithData(SimpleProtocol):
         request = message.echo_request()
         request.data = 'OpenFlow Will Rule The World'
         response, pkt = self.controller.transact(request)
+        self.assertTrue(response is not None,
+                        "Did not get echo reply (with data)")
         self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,
                          'response is not echo_reply')
         self.assertEqual(request.header.xid, response.header.xid,
@@ -471,7 +477,8 @@ class FlowStatsGet(SimpleProtocol):
         request.table_id = 0xff
         request.match.wildcards = 0 # ofp.OFPFW_ALL
         response, pkt = self.controller.transact(request)
-        self.assertTrue(response is not None, "Did not get response")
+        self.assertTrue(response is not None,
+                        "Did not get response for flow stats")
         basic_logger.debug(response.show())
 
 test_prio["FlowStatsGet"] = -1
@@ -492,7 +499,8 @@ class TableStatsGet(SimpleProtocol):
         basic_logger.info("Sending table stats request")
         request = message.table_stats_request()
         response, pkt = self.controller.transact(request)
-        self.assertTrue(response is not None, "Did not get response")
+        self.assertTrue(response is not None,
+                        "Did not get reply for table stats")
         basic_logger.debug(response.show())
 
 class DescStatsGet(SimpleProtocol):
@@ -507,7 +515,8 @@ class DescStatsGet(SimpleProtocol):
         basic_logger.info("Sending stats request")
         request = message.desc_stats_request()
         response, pkt = self.controller.transact(request)
-        self.assertTrue(response is not None, "Did not get response")
+        self.assertTrue(response is not None,
+                        "Did not get reply for desc stats")
         basic_logger.debug(response.show())
 
 class FlowMod(SimpleProtocol):
