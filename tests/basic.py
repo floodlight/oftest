@@ -29,6 +29,8 @@ import oftest.message as message
 import oftest.dataplane as dataplane
 import oftest.action as action
 
+import oftest.illegal_message as illegal_message
+
 from testutils import *
 
 #@var basic_port_map Local copy of the configuration map from OF port
@@ -610,6 +612,24 @@ class PortConfigModErr(SimpleProtocol):
                 break
 
         self.assertTrue(response is not None, 'Did not receive error message')
+
+class BadMessage(SimpleProtocol):
+    """
+    Send a message with a bad type and verify an error is returned
+    """
+
+    def runTest(self):
+        basic_logger.info("Running " + str(self))
+        request = illegal_message.illegal_message_type()
+
+        reply, pkt = self.controller.transact(request, timeout=10)
+        self.assertTrue(reply is not None, "Did not get response to bad req")
+        self.assertTrue(reply.header.type == ofp.OFPT_ERROR,
+                        "reply not an error message")
+        self.assertTrue(reply.type == ofp.OFPET_BAD_REQUEST,
+                        "reply error type is not bad request")
+        self.assertTrue(reply.code == ofp.OFPBRC_BAD_TYPE,
+                        "reply error code is not bad type")
 
 if __name__ == "__main__":
     print "Please run through oft script:  ./oft --test_spec=basic"
