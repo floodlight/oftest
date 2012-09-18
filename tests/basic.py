@@ -215,6 +215,8 @@ class DataPlaneOnly(unittest.TestCase):
         # self.dataplane.show()
         # Would like an assert that checks the data plane
 
+test_prio["DataPlaneOnly"] = -1
+
 class Echo(SimpleProtocol):
     """
     Test echo response with no data
