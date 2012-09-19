@@ -92,6 +92,10 @@ class SimpleProtocol(unittest.TestCase):
         #@todo Add an option to wait for a pkt transaction to ensure version
         # compatibilty?
         self.controller.connect(timeout=20)
+
+        # By default, respond to echo requests
+        self.controller.keep_alive = True
+        
         if not self.controller.active:
             raise Exception("Controller startup failed")
         if self.controller.switch_addr is None: 
