@@ -80,11 +80,15 @@ class SerialFailover(unittest.TestCase):
         self.controller.start()
         #@todo Add an option to wait for a pkt transaction to ensure version
         # compatibilty?
-        self.controller.connect()
+        self.controller.connect(timeout=10)
         self.assertTrue(self.controller.active,
                         "Controller startup failed, not active")
         self.assertTrue(self.controller.switch_addr is not None,
                         "Controller startup failed, no switch addr")
+        request = message.features_request()
+        reply, pkt = self.controller.transact(request, timeout=10)
+        self.assertTrue(reply is not None,
+                        "Did not complete features_request for handshake")
         serial_failover_logger.info("Connected " + 
                                     str(self.controller.switch_addr))
 
@@ -117,7 +121,7 @@ class SerialFailover(unittest.TestCase):
         # controller_list is list of ip/port tuples
         partial_list = test_param_get(serial_failover_config,
                                       'controller_list')
-        serial_failover_logger.debug(str(partial_list))
+        serial_failover_logger.debug("ctrl list: " + str(partial_list))
         self.controller_list = [(serial_failover_config["controller_host"],
                                  serial_failover_config["controller_port"])]
         if partial_list is not None:
