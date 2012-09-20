@@ -14,6 +14,7 @@ import logging
 import types
 import basic
 from testutils import *
+from time import sleep
 
 #################### Functions for various types of flow_mod  ##########################################################################################
 
@@ -82,13 +83,15 @@ def Wildcard_All(self,of_ports,priority=0):
         match2 = parse.packet_to_flow_match(Pkt_Wildcard)
         self.assertTrue(match2 is not None, "Could not generate flow match from pkt")
         match2.wildcards=ofp.OFPFW_ALL
+        match2.in_port = of_ports[0]
+
         msg2 = message.flow_mod()
         msg2.out_port = ofp.OFPP_NONE
         msg2.command = ofp.OFPFC_ADD
         msg2.buffer_id = 0xffffffff
         msg2.match = match2
         act2 = action.action_output()
-        act2.port = of_ports[2]
+        act2.port = of_ports[1]
         self.assertTrue(msg2.actions.add(act2), "could not add action")
         if priority != 0 :
                 msg2.priority = priority
@@ -181,7 +184,7 @@ def Modify_Flow_Action(self,of_ports,match,priority=0):
 
 ###########################   Verify Stats Functions   ###########################################################################################
 
-def Verify_TableStats(self,active_entries=0):
+def Verify_TableStats(self,active_entries=0,):
 #Verify Table_Stats
         
         #Send Table_Stats_Request        
@@ -196,27 +199,31 @@ def Verify_TableStats(self,active_entries=0):
         self.assertTrue(active_entries == active_count,"Incorrect no. of flows in Table")
 
 
-def Verify_FlowStats(self,match,stats_byte_count=0,stats_packet_count=0):
-# Verify Flow_Stats
+def Verify_FlowStats(self,match,byte_count=0,packet_count=0):
+# Verify flow counters : byte_count and packet_count
 
-        # Send Flow_Stats_Request       
-        request = message.flow_stats_request()
-        request.out_port = ofp.OFPP_NONE
-        request.table_id = 0xff
-        request.match = match
-        response, pkt = self.controller.transact(request, timeout=1)
-        self.assertTrue(response is not None, "Did not get response")
-        byte_count = 0 
-        packet_count = 0
+        stat_req = message.flow_stats_request()
+        stat_req.match = match
+        stat_req.table_id = 0xff
+        stat_req.out_port = ofp.OFPP_NONE
+        test_timeout = 10
+        all_packets_received = 0
+        for i in range(0,test_timeout):
+            
+            response, pkt = self.controller.transact(stat_req,
+                                                     timeout=test_timeout)
+            self.assertTrue(response is not None, 
+                            "No response to stats request")
+            for obj in response.stats:
+                if ( obj.packet_count == packet_count and obj.byte_count == byte_count ) :
+                    all_packets_received = 1
 
-        #Verify byte_count and packet_count in the reply
-        for stat in response.stats:
-            byte_count += stat.byte_count
-            packet_count += stat.packet_count
-            self.assertEqual(stats_byte_count,byte_count,
-                        "Byte counter is incorrect")
-            self.assertEqual(stats_packet_count,packet_count,
-                        "Packet counter is incorrect")
+            if all_packets_received:
+                break
+            sleep(1)
+
+        self.assertTrue(all_packets_received,
+                        "Flow counters are incorrect")
 
 
 ############################## Various delete commands #############################################################################################
