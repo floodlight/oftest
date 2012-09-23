@@ -245,8 +245,10 @@ def packet_type_classify(ether):
     except:
         icmp = None
 
-    # @todo arp is not yet supported
-    arp = None
+    try:
+        arp = ether[scapy.ARP]
+    except:
+        arp = None
     return (dot1q, ip, tcp, udp, icmp, arp)
 
 def packet_to_flow_match(packet, pkt_format="L2"):
@@ -328,7 +330,14 @@ def packet_to_flow_match(packet, pkt_format="L2"):
         match.nw_proto = 1
         match.tp_src = icmp.type
         match.tp_dst = icmp.code
+        match.wildcards &= ~OFPFW_NW_PROTO
 
-    #@todo Implement ARP fields
+    if arp:
+        match.nw_proto = arp.op
+        match.wildcards &= ~OFPFW_NW_PROTO
+        match.nw_src = parse_ip(arp.psrc)
+        match.wildcards &= ~OFPFW_NW_SRC_MASK
+        match.nw_dst = parse_ip(arp.pdst)
+        match.wildcards &= ~OFPFW_NW_DST_MASK
 
     return match
