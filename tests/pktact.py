@@ -1888,6 +1888,88 @@ class MixedVLAN(BaseMatchCase):
     """   
 
 test_prio["MixedVLAN"] = -1
- 
+
+class MatchEach(basic.SimpleDataPlane):
+    """
+    Check that each match field is actually matched on.
+    Installs two flows that differ in one field. The flow that should not
+    match has a higher priority, so if that field is ignored during matching
+    the packet will be sent out the wrong port.
+
+    TODO test UDP, ARP, ICMP, etc.
+    """
+    def runTest(self):
+        of_ports = pa_port_map.keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+
+        delete_all_flows(self.controller, pa_logger)
+
+        pkt = simple_tcp_packet()
+        ingress_port = of_ports[0]
+        egress_port = of_ports[1]
+
+        def testField(field, mask):
+            pa_logger.info("Testing field %s" % field)
+
+            def addFlow(matching, priority, output_port):
+                match = packet_to_flow_match(self, pkt)
+                self.assertTrue(match is not None, "Could not generate flow match from pkt")
+                match.wildcards &= ~ofp.OFPFW_IN_PORT
+                match.in_port = ingress_port
+                if not matching:
+                    # Make sure flow doesn't match
+                    orig = getattr(match, field)
+                    if isinstance(orig, list):
+                        new = map(lambda a: ~a[0] & a[1], zip(orig, mask))
+                    else:
+                        new = ~orig & mask
+                    setattr(match, field, new)
+                request = message.flow_mod()
+                request.match = match
+                request.buffer_id = 0xffffffff
+                request.priority = priority
+                act = action.action_output()
+                act.port = output_port
+                self.assertTrue(request.actions.add(act), "Could not add action")
+                pa_logger.info("Inserting flow")
+                self.controller.message_send(request)
+
+            # This flow should match.
+            addFlow(matching=True, priority=0, output_port=egress_port)
+            # This flow should not match, but it has a higher priority.
+            addFlow(matching=False, priority=1, output_port=ofp.OFPP_IN_PORT)
+
+            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+            pa_logger.info("Sending packet to dp port " + str(ingress_port))
+            self.dataplane.send(ingress_port, str(pkt))
+
+            exp_pkt_arg = None
+            exp_port = None
+            if pa_config["relax"]:
+                exp_pkt_arg = pkt
+                exp_port = egress_port
+
+            (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(port_number=exp_port,
+                                                                exp_pkt=exp_pkt_arg)
+            self.assertTrue(rcv_pkt is not None, "Did not receive packet")
+            pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + str(rcv_port))
+            self.assertEqual(rcv_port, egress_port, "Unexpected receive port")
+            self.assertEqual(str(pkt), str(rcv_pkt), 'Response packet does not match send packet')
+
+        # TODO in_port
+        testField("dl_src", [0xff]*6)
+        testField("dl_dst", [0xff]*6)
+        testField("dl_type", 0xffff)
+        testField("dl_vlan", 0xfff)
+        # TODO dl_vlan_pcp
+        testField("nw_src", 0xffffffff)
+        testField("nw_dst", 0xffffffff)
+        testField("nw_tos", 0x3f)
+        testField("nw_proto", 0xff)
+        testField("tp_src", 0xffff)
+        testField("tp_dst", 0xffff)
+
 if __name__ == "__main__":
     print "Please run through oft script:  ./oft --test_spec=basic"
