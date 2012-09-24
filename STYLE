@@ -1,0 +1,10 @@
+OFTest Coding Style
+-------------------
+
+See the Python standard style guide, PEP-8: http://www.python.org/dev/peps/pep-0008/.
+
+Some important style points:
+ - Test file names should be lowercase with underscores and short. Test case
+   class names are CamelCased.
+ - Any additional documentation added to the repository should be in plain text
+   or Markdown.
