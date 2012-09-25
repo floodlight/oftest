@@ -286,6 +286,8 @@ class Controller(Thread):
         if s and s == self.listen_socket:
             if self.switch_socket:
                 self.logger.warning("Ignoring incoming connection; already connected to switch")
+                (sock, addr) = self.listen_socket.accept()
+                sock.close()
                 return 0
 
             (sock, addr) = self.listen_socket.accept()
