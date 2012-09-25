@@ -286,6 +286,8 @@ def config_setup(cfg_dflt):
     parser.add_option("--random-seed", type="int",
                       help="Random number generator seed",
                       default=None)
+    parser.add_option("--test-dir", type="string",
+                      help="Directory containing tests")
 
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
