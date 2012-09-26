@@ -15,9 +15,6 @@ significance.
     platform          : String identifying the target platform
     controller_host   : Host on which test controller is running (for sockets)
     controller_port   : Port on which test controller listens for switch cxn
-    port_count        : (Optional) Number of ports in dataplane
-    base_of_port      : (Optional) Base OpenFlow port number in dataplane
-    base_if_index     : (Optional) Base OS network interface for dataplane
     test_dir          : (TBD) Directory to search for test files (default .)
     test_spec         : (TBD) Specification of test(s) to run
     log_file          : Filename for test logging
@@ -70,15 +67,10 @@ takes a configuration dictionary as an argument and updates it for the
 current run.  In particular, it should set up config["port_map"] with
 the proper map from OF port numbers to OF interface names.
 
-You can add your own platform, say gp104, by adding a file gp104.py
-that defines the function platform_config_update and then use the
-parameter --platform=gp104 on the command line.
-
-If platform_config_update does not set config["port_map"], an attempt
-is made to generate a default map via the function default_port_map_setup.
-This will use "local" and "remote" for platform names if available
-and generate a sequential map based on the values of base_of_port and
-base_if_index in the configuration structure.
+You can add your own platform, say gp104, by adding a file gp104.py to the
+platforms directory that defines the function platform_config_update and then
+use the parameter --platform=gp104 on the command line. You can also use the
+--platform-dir option to change which directory is searched.
 
 The current model for test sets is basic.py.  The current convention is
 that the test set should implement a function test_set_init which takes
@@ -105,9 +97,8 @@ Examine oft.log if things don't work.
 @todo Consider moving oft up a level
 
 Current test case setup:
-    Files in this or sub directories (or later, directory specified on 
-command line) that contain a function test_set_init are considered test
-files.
+    Files in the tests direcoty that contain a function test_set_init are
+considered test files.
     The function test_set_init examines the test_spec config variable
 and generates a suite of tests.
     Support a command line option --test_mod so that all tests in that
@@ -160,6 +151,8 @@ DEBUG_LEVELS = {
 _debug_default = "warning"
 _debug_level_default = DEBUG_LEVELS[_debug_default]
 
+root_dir = os.path.join(os.path.dirname(__file__), "..")
+
 ##@var config_default
 # The default configuration dictionary for OFT
 config_default = {
@@ -168,9 +161,6 @@ config_default = {
     "platform_args"      : None,
     "controller_host"    : "0.0.0.0",
     "controller_port"    : 6633,
-    "port_count"         : 4,
-    "base_of_port"       : 1,
-    "base_if_index"      : 1,
     "relax"              : False,
     "test_spec"          : "all",
     "test_dir"           : os.path.dirname(__file__),
@@ -187,6 +177,7 @@ config_default = {
     "default_timeout"    : 2,
     "minsize"            : 0,
     "random_seed"        : None,
+    "platform_dir"       : os.path.join(root_dir, "platforms"),
 }
 
 # Default test priority
@@ -288,6 +279,8 @@ def config_setup(cfg_dflt):
                       default=None)
     parser.add_option("--test-dir", type="string",
                       help="Directory containing tests")
+    parser.add_option("--platform-dir", type="string",
+                      help="Directory containing platform modules")
 
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
@@ -329,31 +322,6 @@ def logging_setup(config):
     logging.basicConfig(filename=config["log_file"],
                         level=config["dbg_level"],
                         format=_format, datefmt=_datefmt)
-
-def default_port_map_setup(config):
-    """
-    Setup the OF port mapping based on config
-    @param config The OFT configuration structure
-    @return Port map dictionary
-    """
-    if (config["base_of_port"] is None) or not config["port_count"]:
-        return None
-    port_map = {}
-    if config["platform"] == "local":
-        # For local, use every other veth port
-        for idx in range(config["port_count"]):
-            port_map[config["base_of_port"] + idx] = "veth" + \
-                str(config["base_if_index"] + (2 * idx))
-    elif config["platform"] == "remote":
-        # For remote, use eth ports
-        for idx in range(config["port_count"]):
-            port_map[config["base_of_port"] + idx] = "eth" + \
-                str(config["base_if_index"] + idx)
-    else:
-        return None
-
-    logging.info("Built default port map")
-    return port_map
 
 def test_list_generate(config):
     """Generate the list of all known tests indexed by module name
@@ -551,28 +519,24 @@ else:
         else:
             die("Bad test spec: " + ts_entry)
 
-# Check if platform specified
-if config["platform"]:
-    _imp_string = "from " + config["platform"] + " import *"
-    logging.info("Importing platform: " + _imp_string)
-    try:
-        exec(_imp_string)
-    except:
-        logging.warn("Failed to import " + config["platform"] + " file")
-        raise
+# Load the platform module
+platform_name = config["platform"]
+logging.info("Importing platform: " + platform_name)
+platform_mod = None
+try:
+    platform_mod = imp.load_module(platform_name, *imp.find_module(platform_name, [config["platform_dir"], config["test_dir"]]))
+except:
+    logging.warn("Failed to import " + platform_name + " platform module")
+    raise
 
 try:
-    platform_config_update(config)
+    platform_mod.platform_config_update(config)
 except:
     logging.warn("Could not run platform host configuration")
     raise
 
 if not config["port_map"]:
-    # Try to set up default port mapping if not done by platform
-    config["port_map"] = default_port_map_setup(config)
-
-if not config["port_map"]:
-    die("Interface port map is not defined.  Exiting")
+    die("Interface port map was not defined by the platform. Exiting.")
 
 logging.debug("Configuration: " + str(config))
 logging.info("OF port map: " + str(config["port_map"]))
