@@ -1,7 +1,7 @@
 """
 Sample profile
 
-A profile determines run specific behavior.  It is meant to capture 
+A profile determines run specific behavior.  It is meant to capture
 variations between different switch targets.
 
 A profile defines two target specific variables.
@@ -12,9 +12,6 @@ TO BE IMPLEMENTED:
 
 2. A set of tests to run (overriding the default "skip" priority)
 optionally specifying a test parameters specific to the test run
-
-This file should be imported "as profile" so references to the 
-module will properly map.
 
 @todo Allow a test to be run multiple times with different params
 """

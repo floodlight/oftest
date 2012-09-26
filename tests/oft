@@ -171,13 +171,14 @@ config_default = {
     "dbg_level"          : _debug_level_default,
     "port_map"           : {},
     "test_params"        : "None",
-    "profile"            : None,
+    "profile"            : "default",
     "allow_user"         : False,
     "fail_skipped"       : False,
     "default_timeout"    : 2,
     "minsize"            : 0,
     "random_seed"        : None,
     "platform_dir"       : os.path.join(root_dir, "platforms"),
+    "profile_dir"        : os.path.join(root_dir, "profiles"),
 }
 
 # Default test priority
@@ -281,6 +282,8 @@ def config_setup(cfg_dflt):
                       help="Directory containing tests")
     parser.add_option("--platform-dir", type="string",
                       help="Directory containing platform modules")
+    parser.add_option("--profile-dir", type="string",
+                      help="Directory containing profile modules")
 
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
@@ -290,28 +293,21 @@ def config_setup(cfg_dflt):
 
     return (config, args)
 
-def check_profile(config):
+def load_profile(config):
     """
     Import a profile from the profiles library
     """
 
     global profile_mod
-    if "profile" in config and config["profile"]:
-        logging.info("Importing profile: %s" % config["profile"])
-        profile_name = "profiles." + config["profile"]
-        try:
-            top_mod =  __import__(profile_name)
-            profile_mod = eval("top_mod." + config["profile"])
-            logging.info("Imported profile %s.  Dir: %s" % 
-                         (config["profile"], str(dir(profile_mod))))
-        except:
-            logging.info("Could not import profile: %s.py" % 
-                         config["profile"])
-            print "Failed to import profile: %s" % config["profile"]
-            raise
-    else:
-        logging.info("No profile specified")
-        
+    logging.info("Importing profile: %s" % config["profile"])
+    try:
+        profile_mod = imp.load_module(config["profile"], *imp.find_module(config["profile"], [config["profile_dir"]]))
+        if not "skip_test_list" in dir(profile_mod):
+            die("Profile did not define skip_test_list")
+    except:
+        logging.info("Could not import profile: %s.py" % config["profile"])
+        print "Failed to import profile: %s" % config["profile"]
+        raise
 
 def logging_setup(config):
     """
@@ -397,10 +393,9 @@ def test_prio_get(mod, test):
     If set in the test_prio variable for the module, return
     that value.  Otherwise return 100 (default)
     """
-    if profile_mod:
-        if profile_mod.skip_test_list and test in profile_mod.skip_test_list:
-            logging.info("Skipping test %s due to profile" % test)
-            return TEST_PRIO_SKIP
+    if test in profile_mod.skip_test_list:
+        logging.info("Skipping test %s due to profile" % test)
+        return TEST_PRIO_SKIP
     if 'test_prio' in dir(mod):
         if test in mod.test_prio.keys():
             return mod.test_prio[test]
@@ -474,7 +469,7 @@ if config["list_test_names"]:
 logging_setup(config)
 logging.info("++++++++ " + time.asctime() + " ++++++++")
 
-check_profile(config)
+load_profile(config)
 
 # Generate the test suite
 #@todo Decide if multiple suites are ever needed
