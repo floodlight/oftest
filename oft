@@ -94,7 +94,6 @@ Next, run oft:
 Examine oft.log if things don't work.
 
 @todo Support per-component debug levels (esp controller vs dataplane)
-@todo Consider moving oft up a level
 
 Current test case setup:
     Files in the tests direcoty that contain a function test_set_init are
@@ -117,12 +116,13 @@ import os
 import imp
 import random
 
-pydir = os.path.join(os.path.dirname(__file__), '..', 'src', 'python')
+root_dir = os.path.dirname(os.path.realpath(__file__))
+pydir = os.path.join(root_dir, 'src', 'python')
 if os.path.exists(os.path.join(pydir, 'oftest')):
     # Running from source tree
     sys.path.insert(0, pydir)
 
-import testutils
+import oftest.testutils
 import oftest.ofutils
 
 try:
@@ -151,8 +151,6 @@ DEBUG_LEVELS = {
 _debug_default = "warning"
 _debug_level_default = DEBUG_LEVELS[_debug_default]
 
-root_dir = os.path.join(os.path.dirname(__file__), "..")
-
 ##@var config_default
 # The default configuration dictionary for OFT
 config_default = {
@@ -163,7 +161,6 @@ config_default = {
     "controller_port"    : 6633,
     "relax"              : False,
     "test_spec"          : "all",
-    "test_dir"           : os.path.dirname(__file__),
     "log_file"           : "oft.log",
     "list"               : False,
     "list_test_names"    : False, 
@@ -177,6 +174,7 @@ config_default = {
     "default_timeout"    : 2,
     "minsize"            : 0,
     "random_seed"        : None,
+    "test_dir"           : os.path.join(root_dir, "tests"),
     "platform_dir"       : os.path.join(root_dir, "platforms"),
     "profile_dir"        : os.path.join(root_dir, "profiles"),
 }
@@ -408,6 +406,9 @@ def test_prio_get(mod, test):
 # Get configuration, set up logging, import platform from file
 (config, args) = config_setup(config_default)
 
+# Allow modules to import each other.
+sys.path.insert(0, config["test_dir"])
+
 test_list_generate(config)
 oft_config = config
 
@@ -552,7 +553,7 @@ else:
     _verb = 2
 
 oftest.ofutils.default_timeout = config["default_timeout"]
-testutils.MINSIZE = config['minsize']
+oftest.testutils.MINSIZE = config['minsize']
 
 if os.getuid() != 0 and not config["allow_user"]:
     print "ERROR: Super-user privileges required. Please re-run with " \
@@ -567,14 +568,15 @@ if config["random_seed"] is not None:
 if __name__ == "__main__":
     logging.info("*** TEST RUN START: " + time.asctime())
     result = unittest.TextTestRunner(verbosity=_verb).run(suite)
-    if testutils.skipped_test_count > 0:
+    skipped_test_count = oftest.testutils.skipped_test_count
+    if skipped_test_count > 0:
         ts = " tests"
-        if testutils.skipped_test_count == 1: ts = " test"
-        logging.info("Skipped " + str(testutils.skipped_test_count) + ts)
-        print("Skipped " + str(testutils.skipped_test_count) + ts)
+        if skipped_test_count == 1: ts = " test"
+        logging.info("Skipped " + str(skipped_test_count) + ts)
+        print("Skipped " + str(skipped_test_count) + ts)
     logging.info("*** TEST RUN END  : " + time.asctime())
     if result.failures or result.errors:
         # exit(1) hangs sometimes
         os._exit(1)
-    if testutils.skipped_test_count > 0 and config["fail_skipped"]:
+    if skipped_test_count > 0 and config["fail_skipped"]:
         os._exit(1)
