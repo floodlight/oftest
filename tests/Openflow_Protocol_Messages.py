@@ -42,7 +42,7 @@ def test_set_init(config):
     of_config = config
 
 
-class Features_Request(basic.SimpleProtocol): 
+class features_request(basic.SimpleProtocol): 
 
     """Verify Features_Request-Reply is implemented 
     a) Send OFPT_FEATURES_REQUEST
@@ -71,7 +71,7 @@ class Features_Request(basic.SimpleProtocol):
                         'Did not receive Features Reply')
 
 
-class Configuration_Request(basic.SimpleProtocol):
+class configuration_request(basic.SimpleProtocol):
     
     """Check basic Get Config request is implemented
     a) Send OFPT_GET_CONFIG_REQUEST
@@ -100,7 +100,7 @@ class Configuration_Request(basic.SimpleProtocol):
         self.assertTrue(response is not None, 
                         'Did not receive OFPT_GET_CONFIG_REPLY')
 
-class Modify_State_Add(basic.SimpleProtocol):
+class modify_state_add(basic.SimpleProtocol):
     
     """Check basic Flow Add request is implemented
     a) Send  OFPT_FLOW_MOD , command = OFPFC_ADD 
@@ -127,7 +127,7 @@ class Modify_State_Add(basic.SimpleProtocol):
         Verify_TableStats(self,active_entries=1)
 
 
-class Modify_State_Delete(basic.SimpleProtocol):
+class modify_state_delete(basic.SimpleProtocol):
     
     """Check Basic Flow Delete request is implemented
     a) Send OFPT_FLOW_MOD, command = OFPFC_ADD
@@ -163,7 +163,7 @@ class Modify_State_Delete(basic.SimpleProtocol):
 
       
 
-class Modify_State_Modify(basic.SimpleDataPlane):
+class modify_state_modify(basic.SimpleDataPlane):
     
     """Verify basic Flow Modify request is implemented
     a) Send OFPT_FLOW_MOD, command = OFPFC_ADD, Action A 
@@ -194,7 +194,7 @@ class Modify_State_Modify(basic.SimpleDataPlane):
         SendPacket(self, pkt, of_ports[0],of_ports[2])
                        
 
-class Read_State(basic.SimpleProtocol):
+class read_state(basic.SimpleProtocol):
     
     """Test that a basic Read state request (like flow_stats_get request) does not generate an error
     a) Send OFPT_FLOW_MOD, command = OFPFC_ADD
@@ -221,7 +221,7 @@ class Read_State(basic.SimpleProtocol):
         #Verify Flow_Stats request does not generate errors
         Verify_FlowStats(self,match)
         
-class Send_Packet(basic.SimpleDataPlane):
+class send_packet(basic.SimpleDataPlane):
     
     """Test packet out function
     a) Send packet out message for each dataplane port.
@@ -278,7 +278,7 @@ class Send_Packet(basic.SimpleDataPlane):
                                     'Response packet does not match send packet')
 
         
-class Packet_In(basic.SimpleDataPlane):
+class packet_in(basic.SimpleDataPlane):
     
     """Test basic packet_in function
     a) Send a simple tcp packet to a dataplane port, without any flow-entry 
@@ -312,7 +312,7 @@ class Packet_In(basic.SimpleDataPlane):
                                'Packet in event is not sent to the controller') 
 
 
-class Hello(basic.SimpleDataPlane):
+class hello(basic.SimpleDataPlane):
     
     """Test Hello messages are implemented
     a) Create Hello messages from controller
@@ -336,7 +336,7 @@ class Hello(basic.SimpleDataPlane):
 
 
 
-class EchoWithoutBody(basic.SimpleProtocol):
+class echo_without_body(basic.SimpleProtocol):
     
     """Test basic echo-reply is implemented
     a)  Send echo-request from the controller side, note echo body is empty here.
@@ -359,7 +359,7 @@ class EchoWithoutBody(basic.SimpleProtocol):
         self.assertEqual(len(response.data), 0, 'response data non-empty')
 
 
-class BarrierRequestReply(basic.SimpleProtocol):
+class barrier_request_reply(basic.SimpleProtocol):
 
     """ Check basic Barrier request is implemented
     a) Send OFPT_BARRIER_REQUEST
