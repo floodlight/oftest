@@ -191,7 +191,7 @@ class ModifyStateModify(basic.SimpleDataPlane):
         Modify_Flow_Action(self,of_ports,match)
         
         # Send the Test Packet and verify action implemented is A' (output to of_port[2])
-        SendPacket(self, pkt, of_ports[0],of_ports[2])
+        SendPacket(self,pkt,of_ports[0],of_ports[2])
                        
 
 class ReadState(basic.SimpleProtocol):
@@ -221,7 +221,7 @@ class ReadState(basic.SimpleProtocol):
         #Verify Flow_Stats request does not generate errors
         Verify_FlowStats(self,match)
         
-class SendPacket(basic.SimpleDataPlane):
+class PacketOut(basic.SimpleDataPlane):
     
     """Test packet out function
     a) Send packet out message for each dataplane port.
@@ -229,7 +229,7 @@ class SendPacket(basic.SimpleDataPlane):
     
     def runTest(self):
 
-        of_logger.info("Running Send_Packet test")
+        of_logger.info("Running Packet_Out test")
 
         of_ports = of_port_map.keys()
         of_ports.sort()
