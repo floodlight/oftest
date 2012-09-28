@@ -458,7 +458,7 @@ class DirectPacketControllerQueue(basic.SimpleDataPlane):
                 exp_port = None
 
                 while True:
-                    (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
+                    (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN)
                     if not response:  # Timeout
                         break
                     if dataplane.match_exp_pkt(pkt, response.data): # Got match

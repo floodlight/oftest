@@ -86,7 +86,7 @@ class SerialFailover(unittest.TestCase):
         self.assertTrue(self.controller.switch_addr is not None,
                         "Controller startup failed, no switch addr")
         request = message.features_request()
-        reply, pkt = self.controller.transact(request, timeout=10)
+        reply, pkt = self.controller.transact(request, timeout=20)
         self.assertTrue(reply is not None,
                         "Did not complete features_request for handshake")
         serial_failover_logger.info("Connected " + 

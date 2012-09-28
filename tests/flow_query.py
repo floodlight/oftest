@@ -1371,7 +1371,7 @@ class Switch:
         # </TBD>
         n = 0
         while True:
-            (resp, pkt) = self.controller.poll(ofp.OFPT_STATS_REPLY, 4)
+            (resp, pkt) = self.controller.poll(ofp.OFPT_STATS_REPLY)
             if resp is None:
                 return False            # Did not get expected response
             if n == 0:
@@ -1429,7 +1429,7 @@ class Switch:
 
     def barrier(self):
         barrier = message.barrier_request()
-        (resp, pkt) = self.controller.transact(barrier, 20)
+        (resp, pkt) = self.controller.transact(barrier, 30)
         return (resp is not None)
 
     def errors_verify(self, num_exp, type = 0, code = 0):

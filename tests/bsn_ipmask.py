@@ -85,7 +85,7 @@ class BSNConfigIPMask(basic.SimpleDataPlane):
         m.data = struct.pack( "!LBBBBL", 1, index, 0, 0, 0, 0 )
         rc = self.controller.message_send(m)
         self.assertNotEqual(rc, -1, "Error sending get IP mask command")
-        m, r = self.controller.poll(ofp.OFPT_VENDOR, 2)
+        m, r = self.controller.poll(ofp.OFPT_VENDOR)
         self.assertEqual(m.vendor, 0x005c16c7, "Wrong vendor ID")
         x = struct.unpack("!LBBBBL", m.data)
         self.assertEqual(x[0], 2, "Wrong subtype")

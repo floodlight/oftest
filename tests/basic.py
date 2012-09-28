@@ -102,7 +102,7 @@ class SimpleProtocol(unittest.TestCase):
             raise Exception("Controller startup failed (no switch addr)")
         basic_logger.info("Connected " + str(self.controller.switch_addr))
         request = message.features_request()
-        reply, pkt = self.controller.transact(request, timeout=10)
+        reply, pkt = self.controller.transact(request)
         self.assertTrue(reply is not None,
                         "Did not complete features_request for handshake")
         self.supported_actions = reply.actions
@@ -284,7 +284,7 @@ class PacketIn(SimpleDataPlane):
                #@todo Check for unexpected messages?
                count = 0
                while True:
-                   (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
+                   (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN)
                    if not response:  # Timeout
                        break
                    if dataplane.match_exp_pkt(pkt, response.data): # Got match
@@ -322,7 +322,7 @@ class PacketInDefaultDrop(SimpleDataPlane):
             self.dataplane.send(of_port, str(pkt))
             count = 0
             while True:
-                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
+                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN)
                 if not response:  # Timeout
                     break
                 if dataplane.match_exp_pkt(pkt, response.data): # Got match
@@ -605,7 +605,7 @@ class PortConfigModErr(SimpleProtocol):
 
         # poll for error message
         while True:
-            (response, raw) = self.controller.poll(ofp.OFPT_ERROR, 2)
+            (response, raw) = self.controller.poll(ofp.OFPT_ERROR)
             if not response:  # Timeout
                 break
             if response.code == ofp.OFPPMFC_BAD_PORT:
@@ -628,7 +628,7 @@ class BadMessage(SimpleProtocol):
         basic_logger.info("Running " + str(self))
         request = illegal_message.illegal_message_type()
 
-        reply, pkt = self.controller.transact(request, timeout=10)
+        reply, pkt = self.controller.transact(request)
         self.assertTrue(reply is not None, "Did not get response to bad req")
         self.assertTrue(reply.header.type == ofp.OFPT_ERROR,
                         "reply not an error message")
