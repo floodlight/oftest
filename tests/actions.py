@@ -81,7 +81,8 @@ class NoAction(basic.SimpleDataPlane):
         msg.match = match
         rv = self.controller.message_send(msg)
         self.assertTrue(rv != -1, "Error installing flow mod")
-        
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
         #Sending N packets matching the flow inserted
         for pkt_cnt in range(5):
             self.dataplane.send(of_ports[0],str(pkt))
