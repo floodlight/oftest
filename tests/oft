@@ -411,6 +411,8 @@ def test_prio_get(mod, test):
 test_list_generate(config)
 oft_config = config
 
+load_profile(config)
+
 # Check if test list is requested; display and exit if so
 if config["list"]:
     did_print = False
@@ -468,8 +470,6 @@ if config["list_test_names"]:
 
 logging_setup(config)
 logging.info("++++++++ " + time.asctime() + " ++++++++")
-
-load_profile(config)
 
 # Generate the test suite
 #@todo Decide if multiple suites are ever needed
