@@ -408,6 +408,9 @@ def test_prio_get(mod, test):
 # Get configuration, set up logging, import platform from file
 (config, args) = config_setup(config_default)
 
+logging_setup(config)
+logging.info("++++++++ " + time.asctime() + " ++++++++")
+
 test_list_generate(config)
 oft_config = config
 
@@ -467,9 +470,6 @@ if config["list_test_names"]:
         for test in config["all_tests"][mod]:
             print "%s.%s" % (mod.__name__, test)
     sys.exit(0)
-
-logging_setup(config)
-logging.info("++++++++ " + time.asctime() + " ++++++++")
 
 # Generate the test suite
 #@todo Decide if multiple suites are ever needed
