@@ -451,7 +451,7 @@ class ForwardTable(basic.SimpleDataPlane):
         self.assertTrue(pkt is not None, 'Packet not received')
 
 
-class AddvlanTag(basic.SimpleDataPlane):
+class AddVlanTag(basic.SimpleDataPlane):
     
     """AddVlanTag : Adds VLAN Tag to untagged packet."""
 
