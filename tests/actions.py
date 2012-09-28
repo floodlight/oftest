@@ -90,7 +90,7 @@ class NoAction(basic.SimpleDataPlane):
         #Verify packets not recieved on any of the dataplane ports 
         (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(timeout=1,exp_pkt=pkt)
         self.assertTrue(rcv_pkt is None,
-                "Packet received on port " + str(any_port))
+                "Packet received on port " + str(rcv_port))
 
         #Verify packets not sent on control plane either
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=1)
