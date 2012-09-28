@@ -296,7 +296,7 @@ def SendPacket(obj, pkt, ingress_port, egress_port):
                     'Response packet does not match send packet')
 
 
-def sw_supported_actions(parent,use_cache="false"):
+def sw_supported_actions(parent,use_cache=False):
 #Returns the switch's supported actions
 
     cache_supported_actions = None
