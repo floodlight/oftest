@@ -47,13 +47,13 @@ def test_set_init(config):
 
    
 
-class no_action_drop(basic.SimpleDataPlane):
+class NoAction(basic.SimpleDataPlane):
 
     """NoActionDrop : no action added to flow , drops the packet."""
 
     def runTest(self):
         
-        ac_logger.info("Running no_action_drop test")
+        ac_logger.info("Running No_Action test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
@@ -98,14 +98,14 @@ class no_action_drop(basic.SimpleDataPlane):
                         'Packets not received on control plane')
 
 
-class announcement(basic.SimpleDataPlane):
+class Announcement(basic.SimpleDataPlane):
     
     """Announcement : Get all supported actions by the switch.
     Send OFPT_FEATURES_REQUEST to get features supported by sw."""
 
     def runTest(self):
 
-        ac_logger.info("Running announcement test")
+        ac_logger.info("Running Announcement test")
 
         ac_logger.info("Sending Features_Request")
         ac_logger.info("Expecting Features Reply with supported actions")
@@ -145,14 +145,14 @@ class announcement(basic.SimpleDataPlane):
         ac_logger.info(supported_actions)
         
 
-class forward_all(basic.SimpleDataPlane):
+class ForwardAll(basic.SimpleDataPlane):
     
     """ForwardAll : Packet is sent to all dataplane ports
     except ingress port when output action.port = OFPP_ALL"""
 
     def runTest(self):
 
-        ac_logger.info("Running forward all test")
+        ac_logger.info("Running Forward_All test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
@@ -199,14 +199,14 @@ class forward_all(basic.SimpleDataPlane):
                       self, ac_logger, ac_config)
 
 
-class forward_controller(basic.SimpleDataPlane):
+class ForwardController(basic.SimpleDataPlane):
     
     """ForwardController : Packet is sent to controller 
     output.port = OFPP_CONTROLLER"""
 
     def runTest(self):
         
-        ac_logger.info("Running forward_controller test")
+        ac_logger.info("Running Forward_Controller test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
@@ -254,14 +254,14 @@ class forward_controller(basic.SimpleDataPlane):
     
 
 
-class forward_local(basic.SimpleDataPlane):
+class ForwardLocal(basic.SimpleDataPlane):
    
     """ForwardLocal : Packet is sent to  OFPP_LOCAL port . 
         TBD : To verify packet recieved in the local networking stack of switch"""
 
     def runTest(self):
 
-        ac_logger.info("Running Forward Local test")
+        ac_logger.info("Running Forward_Local test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
@@ -304,7 +304,7 @@ class forward_local(basic.SimpleDataPlane):
             #TBD: Verification of packets being recieved.
 
 
-class forward_flood(basic.SimpleDataPlane):
+class ForwardFlood(basic.SimpleDataPlane):
     
     """Forward:Flood : Packet is sent to all dataplane ports
     except ingress port when output action.port = OFPP_FLOOD 
@@ -313,7 +313,7 @@ class forward_flood(basic.SimpleDataPlane):
     
     def runTest(self):
 
-        ac_logger.info("Running forward flood tests")
+        ac_logger.info("Running Forward_Flood test")
         of_ports = ac_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
@@ -358,14 +358,14 @@ class forward_flood(basic.SimpleDataPlane):
         receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
                       self, ac_logger, ac_config)
 
-class forward_inport(basic.SimpleDataPlane):
+class ForwardInport(basic.SimpleDataPlane):
     
     """ ForwardInPort : Packet sent to virtual port IN_PORT
     If the output.port = OFPP.INPORT then the packet is sent to the input port itself"""
 
     def runTest(self):
 
-        ac_logger.info("Running forward_inport test")
+        ac_logger.info("Running Forward_Inport test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
@@ -410,7 +410,7 @@ class forward_inport(basic.SimpleDataPlane):
         receive_pkt_check(self.dataplane, pkt, yes_ports,set(of_ports).difference([ingress_port]),
                             self, ac_logger, ac_config)      
 
-class forward_table(basic.SimpleDataPlane):
+class ForwardTable(basic.SimpleDataPlane):
    
     """ForwardTable : Perform actions in flow table. Only for packet-out messages.
         If the output action.port in the packetout message = OFP.TABLE , then 
@@ -418,7 +418,7 @@ class forward_table(basic.SimpleDataPlane):
 
     def runTest(self):
 
-        ac_logger.info("Running Forward Table test")
+        ac_logger.info("Running Forward_Table test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
@@ -451,13 +451,13 @@ class forward_table(basic.SimpleDataPlane):
         self.assertTrue(pkt is not None, 'Packet not received')
 
 
-class add_vlan_tag(basic.SimpleDataPlane):
+class AddvlanTag(basic.SimpleDataPlane):
     
     """AddVlanTag : Adds VLAN Tag to untagged packet."""
 
     def runTest(self):
 
-        ac_logger.info("Running add_vlan_tag test")
+        ac_logger.info("Running Add_vlan_tag test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
@@ -491,13 +491,13 @@ class add_vlan_tag(basic.SimpleDataPlane):
         flow_match_test(self, ac_port_map, pkt=pkt, 
                         exp_pkt=exp_pkt, action_list=[vid_act])
 
-class modify_vlan_tag(basic.SimpleDataPlane):
+class ModifyVlanTag(basic.SimpleDataPlane):
 
     """ModifyVlanTag : Modifies VLAN Tag to tagged packet."""
     
     def runTest(self):
 
-        ac_logger.info("Running modify_vlan_tag test")
+        ac_logger.info("Running Modify_Vlan_Tag test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
@@ -529,13 +529,13 @@ class modify_vlan_tag(basic.SimpleDataPlane):
         flow_match_test(self, ac_port_map, pkt=pkt, exp_pkt=exp_pkt,
                         action_list=[vid_act])
         
-class vlan_prio_untagged(basic.SimpleDataPlane):
+class VlanPrio1(basic.SimpleDataPlane):
    
     """AddVlanPrioUntaggedPkt : Add VLAN priority to untagged packet."""
     
     def runTest(self):
 
-        ac_logger.info("Running vlan_prio_untagged test")
+        ac_logger.info("Running vlan_Prio_1 test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
@@ -566,13 +566,13 @@ class vlan_prio_untagged(basic.SimpleDataPlane):
                                 action_list=[act])
 
 
-class modify_vlan_prio(basic.SimpleDataPlane):
+class VlanPrio2(basic.SimpleDataPlane):
     
     """ModifyVlanPrio : Modify VLAN priority to tagged packet."""
     
     def runTest(self):
         
-        ac_logger.info("Running modify_vlan_prio test")
+        ac_logger.info("Running Vlan_Prio_2 test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
@@ -606,13 +606,13 @@ class modify_vlan_prio(basic.SimpleDataPlane):
                         action_list=[vid_act])
 
 
-class modify_l2_src(basic.SimpleDataPlane):
+class ModifyL2Src(basic.SimpleDataPlane):
     
     """ModifyL2Src :Modify the source MAC address"""
 
     def runTest(self):
 
-        ac_logger.info("Running modify_l2_src test")
+        ac_logger.info("Running Modify_L2_Src test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
@@ -641,13 +641,13 @@ class modify_l2_src(basic.SimpleDataPlane):
                         action_list=acts, max_test=2)
 
 
-class modify_l2_dst(basic.SimpleDataPlane):
+class ModifyL2Dst(basic.SimpleDataPlane):
     
     """ModifyL2SDSt :Modify the dest MAC address"""
 
     def runTest(self):
 
-        ac_logger.info("Running modify_l2_dst test")
+        ac_logger.info("Running Modify_L2_Dst test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
@@ -675,13 +675,13 @@ class modify_l2_dst(basic.SimpleDataPlane):
         flow_match_test(self, ac_port_map, pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
-class modify_l3_src(basic.SimpleDataPlane):
+class ModifyL3Src(basic.SimpleDataPlane):
     
     """ModifyL3Src : Modify the source IP address of an IP packet """
 
     def runTest(self):
 
-        ac_logger.info("Running modify_l3_src test")
+        ac_logger.info("Running Modify_L3_Src test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
@@ -709,13 +709,13 @@ class modify_l3_src(basic.SimpleDataPlane):
         flow_match_test(self, ac_port_map, pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
-class modify_l3_dst(basic.SimpleDataPlane):
+class ModifyL3Dst(basic.SimpleDataPlane):
     
     """ModifyL3Dst :Modify the dest IP address of an IP packet"""
     
     def runTest(self):
 
-        ac_logger.info("Running modify_l3_dst test")
+        ac_logger.info("Running Modify_L3_Dst test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
@@ -744,13 +744,13 @@ class modify_l3_dst(basic.SimpleDataPlane):
                         action_list=acts, max_test=2)
 
 
-class modify_l4_src(basic.SimpleDataPlane):
+class ModifyL4Src(basic.SimpleDataPlane):
     
     """ModifyL4Src : Modify the source TCP port of a TCP packet"""
     
     def runTest(self):
 
-        ac_logger.info("Running modify_l4_src test")
+        ac_logger.info("Running Modify_L4_Src test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
@@ -778,13 +778,13 @@ class modify_l4_src(basic.SimpleDataPlane):
         flow_match_test(self, ac_port_map, pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
-class modify_l4_dst(basic.SimpleDataPlane):
+class ModifyL4Dst(basic.SimpleDataPlane):
     
-    """ ModifyL4Dst: Modify the dest TCP port of a TCP packet (TP1)"""
+    """ ModifyL4Dst: Modify the dest TCP port of a TCP packet """
 
     def runTest(self):
 
-        ac_logger.info("Running modify_l4_dst test")
+        ac_logger.info("Running Modify_L4_Dst test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
@@ -812,13 +812,13 @@ class modify_l4_dst(basic.SimpleDataPlane):
         flow_match_test(self, ac_port_map, pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
-class modify_tos(basic.SimpleDataPlane):
+class ModifyTos(basic.SimpleDataPlane):
     
     """ModifyTOS :Modify the IP type of service of an IP packet"""
    
     def runTest(self):
 
-        ac_logger.info("Running modify_tos test")
+        ac_logger.info("Running Modify_Tos test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
