@@ -87,10 +87,9 @@ class NoAction(basic.SimpleDataPlane):
             self.dataplane.send(of_ports[0],str(pkt))
         
         #Verify packets not recieved on any of the dataplane ports 
-        for any_port in of_ports:
-            (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(timeout=1, port_number=any_port,exp_pkt=pkt)
-            self.assertTrue(rcv_pkt is None,
-                   "Packet received on port " + str(any_port))
+        (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(timeout=1,exp_pkt=pkt)
+        self.assertTrue(rcv_pkt is None,
+                "Packet received on port " + str(any_port))
 
         #Verify packets not sent on control plane either
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=1)
