@@ -127,6 +127,10 @@ class BaseHandshake(unittest.TestCase):
 test_prio["BaseHandshake"] = -1
 
 class HandshakeNoHello(BaseHandshake):
+    """
+    TCP connect to switch, but do not sent hello,
+    and wait for disconnect.
+    """
     def runTest(self):
         self.controllerSetup(cxn_config["controller_host"],
                              cxn_config["controller_port"])
@@ -144,6 +148,10 @@ class HandshakeNoHello(BaseHandshake):
                         "Expected controller disconnect, but still active")
 
 class HandshakeNoFeaturesRequest(BaseHandshake):
+    """
+    TCP connect to switch, send hello, but do not send features request,
+    and wait for disconnect.
+    """
     def runTest(self):
         self.controllerSetup(cxn_config["controller_host"],
                              cxn_config["controller_port"])
@@ -162,4 +170,36 @@ class HandshakeNoFeaturesRequest(BaseHandshake):
             count = count + 1
         self.assertTrue(not self.controller.active, 
                         "Expected controller disconnect, but still active")
+
+class HandshakeAndKeepalive(BaseHandshake):
+    """
+    Complete handshake and respond to echo request, but otherwise do nothing.
+    Good for manual testing.
+    """
+    def runTest(self):
+        self.controllerSetup(cxn_config["controller_host"],
+                             cxn_config["controller_port"])
+
+        cxn_logger.info("TCP Connected " + 
+                                    str(self.controller.switch_addr))
+        cxn_logger.info("Sending hello")
+        self.controller.message_send(message.hello())
+
+        request = message.features_request()
+        reply, pkt = self.controller.transact(request, timeout=20)
+        self.assertTrue(reply is not None,
+                        "Did not complete features_request for handshake")
+        cxn_logger.info("Handshake complete with " + 
+                        str(self.controller.switch_addr))
+
+        self.controller.keep_alive = True
+
+        # keep controller up forever
+        while self.controller.active:
+            time.sleep(1)
+
+        self.assertTrue(not self.controller.active, 
+                        "Expected controller disconnect, but still active")
+
+test_prio["HandshakeAndKeepalive"] = -1
 
