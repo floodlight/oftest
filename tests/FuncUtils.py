@@ -225,6 +225,16 @@ def Verify_FlowStats(self,match,byte_count=0,packet_count=0):
         self.assertTrue(all_packets_received,
                         "Flow counters are incorrect")
 
+def Verify_PortStats(self,in_port,rx_dropped):
+#Verify Port counters like rx_dropped
+
+        port_stats_req = message.port_stats_request()
+        port_stats_req.port_no = in_port   
+        resp,pkt = self.controller.transact(port_stats_req)
+        self.assertTrue(resp is not None,"No response received for port stats request")        
+        self.assertTrue(resp.rx_dropped == rx_dropped, "Packets not dropped")
+
+
 
 ############################## Various delete commands #############################################################################################
 
@@ -284,3 +294,16 @@ def SendPacket(obj, pkt, ingress_port, egress_port):
                     ", expected port " + str(egress_port))
     obj.assertEqual(str(pkt), str(rcv_pkt),
                     'Response packet does not match send packet')
+
+
+def sw_supported_actions(parent,use_cache=False):
+#Returns the switch's supported actions
+
+    cache_supported_actions = None
+    if cache_supported_actions is None or not use_cache:
+        request = message.features_request()
+        (reply, pkt) = parent.controller.transact(request)
+        parent.assertTrue(reply is not None, "Did not get response to ftr req")
+        cache_supported_actions = reply.actions
+    return cache_supported_actions
+

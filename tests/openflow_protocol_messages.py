@@ -42,7 +42,7 @@ def test_set_init(config):
     of_config = config
 
 
-class Features_Request(basic.SimpleProtocol): 
+class FeaturesRequest(basic.SimpleProtocol): 
 
     """Verify Features_Request-Reply is implemented 
     a) Send OFPT_FEATURES_REQUEST
@@ -71,7 +71,7 @@ class Features_Request(basic.SimpleProtocol):
                         'Did not receive Features Reply')
 
 
-class Configuration_Request(basic.SimpleProtocol):
+class ConfigurationRequest(basic.SimpleProtocol):
     
     """Check basic Get Config request is implemented
     a) Send OFPT_GET_CONFIG_REQUEST
@@ -100,7 +100,7 @@ class Configuration_Request(basic.SimpleProtocol):
         self.assertTrue(response is not None, 
                         'Did not receive OFPT_GET_CONFIG_REPLY')
 
-class Modify_State_Add(basic.SimpleProtocol):
+class ModifyStateAdd(basic.SimpleProtocol):
     
     """Check basic Flow Add request is implemented
     a) Send  OFPT_FLOW_MOD , command = OFPFC_ADD 
@@ -127,7 +127,7 @@ class Modify_State_Add(basic.SimpleProtocol):
         Verify_TableStats(self,active_entries=1)
 
 
-class Modify_State_Delete(basic.SimpleProtocol):
+class ModifyStateDelete(basic.SimpleProtocol):
     
     """Check Basic Flow Delete request is implemented
     a) Send OFPT_FLOW_MOD, command = OFPFC_ADD
@@ -163,7 +163,7 @@ class Modify_State_Delete(basic.SimpleProtocol):
 
       
 
-class Modify_State_Modify(basic.SimpleDataPlane):
+class ModifyStateModify(basic.SimpleDataPlane):
     
     """Verify basic Flow Modify request is implemented
     a) Send OFPT_FLOW_MOD, command = OFPFC_ADD, Action A 
@@ -172,7 +172,7 @@ class Modify_State_Modify(basic.SimpleDataPlane):
 
     def runTest(self):
 
-        of_logger.info("Running Modify_State_modify test")
+        of_logger.info("Running Modify_State_Modify test")
 
         of_ports = of_port_map.keys()
         of_ports.sort()
@@ -191,10 +191,10 @@ class Modify_State_Modify(basic.SimpleDataPlane):
         Modify_Flow_Action(self,of_ports,match)
         
         # Send the Test Packet and verify action implemented is A' (output to of_port[2])
-        SendPacket(self, pkt, of_ports[0],of_ports[2])
+        SendPacket(self,pkt,of_ports[0],of_ports[2])
                        
 
-class Read_State(basic.SimpleProtocol):
+class ReadState(basic.SimpleProtocol):
     
     """Test that a basic Read state request (like flow_stats_get request) does not generate an error
     a) Send OFPT_FLOW_MOD, command = OFPFC_ADD
@@ -221,7 +221,7 @@ class Read_State(basic.SimpleProtocol):
         #Verify Flow_Stats request does not generate errors
         Verify_FlowStats(self,match)
         
-class Send_Packet(basic.SimpleDataPlane):
+class PacketOut(basic.SimpleDataPlane):
     
     """Test packet out function
     a) Send packet out message for each dataplane port.
@@ -229,7 +229,7 @@ class Send_Packet(basic.SimpleDataPlane):
     
     def runTest(self):
 
-        of_logger.info("Running Send_Packet test")
+        of_logger.info("Running Packet_Out test")
 
         of_ports = of_port_map.keys()
         of_ports.sort()
@@ -278,7 +278,7 @@ class Send_Packet(basic.SimpleDataPlane):
                                     'Response packet does not match send packet')
 
         
-class Packet_In(basic.SimpleDataPlane):
+class PacketIn(basic.SimpleDataPlane):
     
     """Test basic packet_in function
     a) Send a simple tcp packet to a dataplane port, without any flow-entry 
@@ -344,7 +344,7 @@ class EchoWithoutBody(basic.SimpleProtocol):
     
     def runTest(self):
 
-        of_logger.info("Running EchoWithoutBody test")
+        of_logger.info("Running Echo_Without_Body test")
 
         of_logger.info("Sending Echo Request")
         of_logger.info("Expecting a Echo Reply with version--1.0.0 and same xid")
@@ -367,7 +367,7 @@ class BarrierRequestReply(basic.SimpleProtocol):
     
     def runTest(self):
 
-        of_logger.info("Running BarrierRequestReply test")
+        of_logger.info("Running Barrier_Request_Reply test")
 
         of_logger.info("Sending Barrier Request")
         of_logger.info("Expecting a Barrier Reply with same xid")

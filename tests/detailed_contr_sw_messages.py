@@ -40,7 +40,7 @@ def test_set_init(config):
     cs_config = config
 
 
-class Overlap_Checking(basic.SimpleDataPlane):
+class OverlapChecking(basic.SimpleDataPlane):
     
     """Verify that if overlap check flag is set in the flow entry and an overlapping flow is inserted then an error 
         is generated and switch refuses flow entry"""
@@ -101,7 +101,7 @@ class Overlap_Checking(basic.SimpleDataPlane):
                                'Error Message code is not overlap')
 
 
-class No_Overlap_Checking(basic.SimpleDataPlane):
+class NoOverlapChecking(basic.SimpleDataPlane):
 
     """Verify that without overlap check flag set, overlapping flows can be created."""  
     
@@ -133,7 +133,7 @@ class No_Overlap_Checking(basic.SimpleDataPlane):
         Verify_TableStats(self,active_entries=2)
 
 
-class Identical_Flows(basic.SimpleDataPlane):
+class IdenticalFlows(basic.SimpleDataPlane):
     
     """Verify that adding two identical flows overwrites the existing one and clears counters"""
 
@@ -174,13 +174,13 @@ class Identical_Flows(basic.SimpleDataPlane):
         Verify_FlowStats(self,match,byte_count=0,packet_count=0)
 
    
-class Emer_Flow_With_Timeout(basic.SimpleProtocol): 
+class EmerFlowTimeout(basic.SimpleProtocol): 
 
     """Timeout values are not allowed for emergency flows"""
 
     def runTest(self):
 
-        cs_logger.info("Running Emergency flow with timeout values test")
+        cs_logger.info("Running Emergency_Flow_Timeout test")
         
         of_ports = cs_port_map.keys()
         of_ports.sort()
@@ -226,7 +226,7 @@ class Emer_Flow_With_Timeout(basic.SimpleProtocol):
                                'Error Message code is not bad emergency timeout')
 
 
-class Missing_Modify_Add(basic.SimpleDataPlane):
+class MissingModifyAdd(basic.SimpleDataPlane):
 
     """If a modify does not match an existing flow, the flow gets added """
     
@@ -266,7 +266,7 @@ class Missing_Modify_Add(basic.SimpleDataPlane):
         Verify_TableStats(self,active_entries=1)
 
 
-class Modify_Action(basic.SimpleDataPlane):
+class ModifyAction(basic.SimpleDataPlane):
 
     """A modified flow preserves counters"""
     
@@ -304,7 +304,7 @@ class Modify_Action(basic.SimpleDataPlane):
         Verify_FlowStats(self,match,byte_count=(2*len(str(pkt))),packet_count=2)
 
 
-class Strict_Modify_Action(basic.SimpleDataPlane):
+class StrictModifyAction(basic.SimpleDataPlane):
 
     """Strict Modify Flow also changes action preserves counters"""
 
@@ -348,7 +348,7 @@ class Strict_Modify_Action(basic.SimpleDataPlane):
         Verify_FlowStats(self,match,byte_count=(2*len(str(pkt))),packet_count=2)
 
 
-class Delete_NonExisting_Flow(basic.SimpleDataPlane):
+class DeleteNonexistingFlow(basic.SimpleDataPlane):
     
     """Request deletion of non-existing flow"""
     
@@ -382,7 +382,7 @@ class Delete_NonExisting_Flow(basic.SimpleDataPlane):
 
 
         
-class Send_Flow_Rem(basic.SimpleDataPlane):
+class SendFlowRem(basic.SimpleDataPlane):
     
     """Check deletion of flows happens and generates messages as configured.
     If Send Flow removed message Flag is set in the flow entry, the flow deletion of that respective flow should generate the flow removed message, 
@@ -390,7 +390,7 @@ class Send_Flow_Rem(basic.SimpleDataPlane):
 
     def runTest(self):
 
-        cs_logger.info("Running Send Flow removed message test begins")
+        cs_logger.info("Running Send_Flow_Rem test ")
 
         of_ports = cs_port_map.keys()
         of_ports.sort()
@@ -443,14 +443,14 @@ class Send_Flow_Rem(basic.SimpleDataPlane):
                         'Did not receive flow removed message for this flow')
 
 
-class Delete_Emer_Flow(basic.SimpleProtocol):
+class DeleteEmerFlow(basic.SimpleProtocol):
 
     """Delete emergency flow and verify no message is generated.An emergency flow deletion will not generate flow-removed messages even if 
     Send Flow removed message flag was set during the emergency flow entry"""
 
     def runTest(self):
 
-        cs_logger.info("Running Delete Emergency flow")
+        cs_logger.info("Running Delete_Emer_Flow")
 
         of_ports = cs_port_map.keys()
         of_ports.sort()
@@ -486,14 +486,14 @@ class Delete_Emer_Flow(basic.SimpleProtocol):
                         'Test Failed ')
 
 
-class Delete_Strict_NonStrict(basic.SimpleDataPlane):
+class StrictVsNonstrict(basic.SimpleDataPlane):
 
     """Delete and verify strict and non-strict behaviors
     This test compares the behavior of delete strict and non-strict"""
 
     def runTest(self):
         
-        cs_logger.info("Delete_Strict_NonStrict test begins")
+        cs_logger.info("Strict_Vs_Nonstrict test begins")
         
         of_ports = cs_port_map.keys()
         of_ports.sort()
@@ -573,14 +573,14 @@ class Delete_Strict_NonStrict(basic.SimpleDataPlane):
 
         
    
-class Delete_With_Outport(basic.SimpleDataPlane):
+class Outport1(basic.SimpleDataPlane):
 
     """Delete flows filtered by action outport.If the out_port field in the delete command contains a value other than OFPP_NONE,
     it introduces a constraint when matching. This constraint is that the rule must contain an output action directed at that port."""
 
     def runTest(self):
         
-        cs_logger.info("Delete_Filter_Outport test begins")
+        cs_logger.info("Outport1 test begins")
 
         of_ports = cs_port_map.keys()
         of_ports.sort()
@@ -632,7 +632,7 @@ class Delete_With_Outport(basic.SimpleDataPlane):
         Verify_TableStats(self,active_entries=0)
 
 
-class Idle_Timeout(basic.SimpleDataPlane):
+class IdleTimeout(basic.SimpleDataPlane):
 
     """ Verify that idle timeout is implemented"""
 
@@ -676,13 +676,13 @@ class Idle_Timeout(basic.SimpleDataPlane):
                          'Flow was not alive for 1 sec')
 
 
-class Add_Modify_With_Outport(basic.SimpleDataPlane):
+class Outport2(basic.SimpleDataPlane):
 
     """Add, modify flows with outport set. This field is ignored by ADD, MODIFY, and MODIFY STRICT messages."""
 
     def runTest(self):
         
-        cs_logger.info("Running Add_Modify_With_Outport ")
+        cs_logger.info("Running Outport2 test ")
 
         of_ports = cs_port_map.keys()
         of_ports.sort()
@@ -716,13 +716,13 @@ class Add_Modify_With_Outport(basic.SimpleDataPlane):
 
 
 
-class Hard_Timeout(basic.SimpleDataPlane):
+class HardTimeout(basic.SimpleDataPlane):
 
     """ Verify that hard timeout is implemented """
 
     def runTest(self):
 
-        cs_logger.info("Running Idle_Timeout test ")
+        cs_logger.info("Running Hard_Timeout test ")
         
         of_ports = cs_port_map.keys()
         of_ports.sort()
@@ -760,7 +760,7 @@ class Hard_Timeout(basic.SimpleDataPlane):
                          'Flow was not alive for 1 sec')
 
 
-class Flow_Timeout(basic.SimpleDataPlane):
+class FlowTimeout(basic.SimpleDataPlane):
   
     """Verify that Flow removed messages are generated as expected
     Flow removed messages being generated when flag is set, is already tested in the above tests 
