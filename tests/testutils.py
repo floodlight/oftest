@@ -18,6 +18,7 @@ import oftest.action as action
 import oftest.parse as parse
 import logging
 import types
+import time
 
 global skipped_test_count
 skipped_test_count = 0
@@ -279,7 +280,8 @@ def receive_pkt_check(dp, pkt, yes_ports, no_ports, assert_if, logger,
         assert_if.assertTrue(dataplane.match_exp_pkt(pkt, rcv_pkt),
                              "Response packet does not match send packet " +
                              "on port " + str(ofport))
-
+    if len(no_ports) > 0:
+        time.sleep(1)
     for ofport in no_ports:
         logger.debug("Negative check for pkt on port " + str(ofport))
         (rcv_port, rcv_pkt, pkt_time) = dp.poll(
