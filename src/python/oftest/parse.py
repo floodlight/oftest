@@ -2,7 +2,7 @@
 OpenFlow message parsing functions
 """
 
-#import sys
+import sys
 import logging
 from oftest import message
 from match_list import match_list
