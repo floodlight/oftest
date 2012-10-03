@@ -17,7 +17,7 @@ import oftest.action as action
 import oftest.parse as parse
 import basic
 
-from testutils import *
+from oftest.testutils import *
 from time import sleep
 
 #@var port_map Local copy of the configuration map from OF port

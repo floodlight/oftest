@@ -9,7 +9,7 @@ import oftest.cstruct as ofp
 import oftest.message as message
 import basic
 
-from testutils import *
+from oftest.testutils import *
 
 #@var port_map Local copy of the configuration map from OF port
 # numbers to OS interfaces

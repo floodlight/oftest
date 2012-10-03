@@ -18,7 +18,7 @@ import oftest.action as action
 import oftest.parse as parse
 import basic
 
-from testutils import *
+from oftest.testutils import *
 from time import sleep
 from FuncUtils import *
 
