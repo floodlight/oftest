@@ -468,7 +468,8 @@ if config["list_test_names"]:
         desc = mod.__doc__.strip()
         desc = desc.split('\n')[0]
         for test in config["all_tests"][mod]:
-            print "%s.%s" % (mod.__name__, test)
+            if test_prio_get(mod, test) >= 0:
+                print "%s.%s" % (mod.__name__, test)
     sys.exit(0)
 
 # Generate the test suite
