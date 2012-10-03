@@ -122,7 +122,7 @@ if os.path.exists(os.path.join(pydir, 'oftest')):
     # Running from source tree
     sys.path.insert(0, pydir)
 
-import testutils
+import oftest.testutils
 import oftest.ofutils
 
 try:
@@ -553,7 +553,7 @@ else:
     _verb = 2
 
 oftest.ofutils.default_timeout = config["default_timeout"]
-testutils.MINSIZE = config['minsize']
+oftest.testutils.MINSIZE = config['minsize']
 
 if os.getuid() != 0 and not config["allow_user"]:
     print "ERROR: Super-user privileges required. Please re-run with " \
@@ -568,14 +568,14 @@ if config["random_seed"] is not None:
 if __name__ == "__main__":
     logging.info("*** TEST RUN START: " + time.asctime())
     result = unittest.TextTestRunner(verbosity=_verb).run(suite)
-    if testutils.skipped_test_count > 0:
+    if oftest.testutils.skipped_test_count > 0:
         ts = " tests"
-        if testutils.skipped_test_count == 1: ts = " test"
-        logging.info("Skipped " + str(testutils.skipped_test_count) + ts)
-        print("Skipped " + str(testutils.skipped_test_count) + ts)
+        if oftest.testutils.skipped_test_count == 1: ts = " test"
+        logging.info("Skipped " + str(oftest.testutils.skipped_test_count) + ts)
+        print("Skipped " + str(oftest.testutils.skipped_test_count) + ts)
     logging.info("*** TEST RUN END  : " + time.asctime())
     if result.failures or result.errors:
         # exit(1) hangs sometimes
         os._exit(1)
-    if testutils.skipped_test_count > 0 and config["fail_skipped"]:
+    if oftest.testutils.skipped_test_count > 0 and config["fail_skipped"]:
         os._exit(1)

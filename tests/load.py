@@ -31,7 +31,7 @@ import oftest.parse as parse
 import basic
 import time
 
-from testutils import *
+from oftest.testutils import *
 
 #@var load_port_map Local copy of the configuration map from OF port
 # numbers to OS interfaces

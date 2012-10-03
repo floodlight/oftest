@@ -31,7 +31,7 @@ import oftest.action as action
 
 import oftest.illegal_message as illegal_message
 
-from testutils import *
+from oftest.testutils import *
 
 #@var basic_port_map Local copy of the configuration map from OF port
 # numbers to OS interfaces
