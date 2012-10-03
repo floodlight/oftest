@@ -117,7 +117,9 @@ import os
 import imp
 import random
 
-pydir = os.path.join(os.path.dirname(__file__), 'src', 'python')
+root_dir = os.path.dirname(os.path.realpath(__file__))
+
+pydir = os.path.join(root_dir, 'src', 'python')
 if os.path.exists(os.path.join(pydir, 'oftest')):
     # Running from source tree
     sys.path.insert(0, pydir)
@@ -150,8 +152,6 @@ DEBUG_LEVELS = {
 
 _debug_default = "warning"
 _debug_level_default = DEBUG_LEVELS[_debug_default]
-
-root_dir = os.path.dirname(__file__)
 
 ##@var config_default
 # The default configuration dictionary for OFT
