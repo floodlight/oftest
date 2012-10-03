@@ -117,7 +117,7 @@ import os
 import imp
 import random
 
-pydir = os.path.join(os.path.dirname(__file__), '..', 'src', 'python')
+pydir = os.path.join(os.path.dirname(__file__), 'src', 'python')
 if os.path.exists(os.path.join(pydir, 'oftest')):
     # Running from source tree
     sys.path.insert(0, pydir)
@@ -151,7 +151,7 @@ DEBUG_LEVELS = {
 _debug_default = "warning"
 _debug_level_default = DEBUG_LEVELS[_debug_default]
 
-root_dir = os.path.join(os.path.dirname(__file__), "..")
+root_dir = os.path.dirname(__file__)
 
 ##@var config_default
 # The default configuration dictionary for OFT
@@ -163,7 +163,6 @@ config_default = {
     "controller_port"    : 6633,
     "relax"              : False,
     "test_spec"          : "all",
-    "test_dir"           : os.path.dirname(__file__),
     "log_file"           : "oft.log",
     "list"               : False,
     "list_test_names"    : False, 
@@ -177,6 +176,7 @@ config_default = {
     "default_timeout"    : 2,
     "minsize"            : 0,
     "random_seed"        : None,
+    "test_dir"           : os.path.join(root_dir, "tests"),
     "platform_dir"       : os.path.join(root_dir, "platforms"),
     "profile_dir"        : os.path.join(root_dir, "profiles"),
 }
@@ -410,6 +410,9 @@ def test_prio_get(mod, test):
 
 logging_setup(config)
 logging.info("++++++++ " + time.asctime() + " ++++++++")
+
+# Allow tests to import each other
+sys.path.append(config["test_dir"])
 
 test_list_generate(config)
 oft_config = config
