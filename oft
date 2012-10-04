@@ -124,6 +124,11 @@ if os.path.exists(os.path.join(pydir, 'oftest')):
     # Running from source tree
     sys.path.insert(0, pydir)
 
+try:
+    import oftest.message
+except:
+    sys.exit("Missing OpenFlow message classes: please run \"make -C tools/munger\"")
+
 import oftest.testutils
 import oftest.ofutils
 
