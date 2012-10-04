@@ -64,9 +64,8 @@ Quick Start
     Currently, switches must be running version 1.0 of OpenFlow. 
 
       # git clone git://github.com/floodlight/oftest
-      # cd oftest/tools/munger
-      # make install
-      # cd ../../tests
+      # cd oftest
+      # make -C tools/munger install
          Make sure the switch you want to test is running --
          see (4) below for the reference switch example.
       # ./oft --list
@@ -146,7 +145,7 @@ Longer Start
 
     5.  Run oft
         See Warning above; requires sudo to control the dataplane
-        cd <oftest>/tests
+        cd <oftest>
         sudo ./oft --help
 
 Helpful Note: Rebuilding
@@ -219,12 +218,13 @@ Overview
 
      <oftest>
          `
+         |-- oft
          |-- doc
          |-- src
          |   `-- python
          |       `-- oftest
          |-- tests
-         |   `-- oft and files with test cases
+         |   `-- test cases
          `-- tools
              |-- munger
              `-- pylibopenflow
@@ -249,6 +249,7 @@ Overview
         netutils.py:     e.g., set promisc on sockets
         ofutils.py:      Utilities related to OpenFlow messages
         oft_assert.py:   Test framework level assertion
+        testutils.py:    Test utilities
 
     Tests are run from the tests directory.  The file oft is the
     top level entry point for tests.  Try ./oft --help for some more.

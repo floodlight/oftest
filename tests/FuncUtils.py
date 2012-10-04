@@ -13,7 +13,7 @@ import oftest.parse as parse
 import logging
 import types
 import basic
-from testutils import *
+from oftest.testutils import *
 from time import sleep
 
 #################### Functions for various types of flow_mod  ##########################################################################################

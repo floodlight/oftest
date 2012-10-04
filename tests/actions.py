@@ -20,7 +20,7 @@ import oftest.parse as parse
 import basic
 import time
 
-from testutils import *
+from oftest.testutils import *
 from time import sleep
 from FuncUtils import *
 

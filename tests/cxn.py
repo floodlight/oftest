@@ -17,7 +17,7 @@ import oftest.message as message
 import oftest.dataplane as dataplane
 import oftest.action as action
 
-from testutils import *
+from oftest.testutils import *
 
 #@var cxn_port_map Local copy of the configuration map from OF port
 # numbers to OS interfaces
