@@ -12,7 +12,6 @@ TESTS_DIR = ${TOP_DIR}/tests
 PYLIBOF_DIR = ${TOOLS_DIR}/pylibopenflow
 
 TARGET_DIR = ${TOP_DIR}/src/python/oftest
-SETUP_DIR = ${TOP_DIR}/src/python/
 
 # Relative to pyopenflow-pythonize exec location
 OF_HEADER = include/openflow.h
@@ -40,9 +39,6 @@ LINT_FILES := $(subst .py,.log,${LINT_SOURCE})
 LINT_FILES := $(subst ${TARGET_DIR}/,lint/,${LINT_FILES})
 
 all: ${GEN_FILES}
-
-install: all
-	(cd ${SETUP_DIR} && sudo python setup.py install)
 
 # The core OpenFlow libraries generated from openflow.h
 ${TARGET_DIR}/cstruct.py: ${CSTRUCT_DEP}
@@ -83,7 +79,6 @@ help:
 	@echo "   all:     Puts generated .py in ${TARGET_DIR}"
 	@echo "   lint:    Puts error report in lint/*.log"
 	@echo "   doc:     Runs doxygen on generated files in ../../doc"
-	@echo "   install: Run setup tools for generated python	source"
 	@echo "   clean:   Removes generated files"
 	@echo
 	@echo "Debug info:"

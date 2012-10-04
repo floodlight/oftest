@@ -53,8 +53,8 @@ Introduction
 Quick Start
 +++++++++++
 
-    You need to have Python setup tools and Scapy installed on your
-    system.  See 'Pre-requisites' below.
+    You need to have Python and Scapy installed on your system.
+    See 'Pre-requisites' below.
 
     Make sure your switch is running and trying to connect to a
     controller on the machine where you're running oft (normally port
@@ -65,7 +65,7 @@ Quick Start
 
       # git clone git://github.com/floodlight/oftest
       # cd oftest
-      # make -C tools/munger install
+      # make -C tools/munger
          Make sure the switch you want to test is running --
          see (4) below for the reference switch example.
       # ./oft --list
@@ -83,7 +83,6 @@ Longer Start
           to a controller on the machine running oft.
         * Python 2.5 or 2.6.  You can run platforms using eth interfaces
           with Python 2.4.  Python 2.7 may work.
-        * Python setup tools (e.g.: sudo apt-get install python-setuptools)
         * oftest checked out (called <oftest> here)
         * scapy installed:  http://www.secdev.org/projects/scapy/
           'sudo apt-get install scapy' should work on Debian.
@@ -98,11 +97,9 @@ Longer Start
         the file in <oftest>/tools/pylibopenflow/include/openflow.h
         This is currently the 1.0 release file.
 
-        cd <oftest>/tools/munger
-        make install
+        make -C <oftest>/tools/munger
 
-        This places files in <oftest>/src/python/oftest/src and then
-        calls setuptools to install on the local host
+        This places files in <oftest>/src/python/oftest/src.
 
     3.  Edit configuration if necessary
         Local platforms work with veth interface pairs and default to
@@ -147,21 +144,6 @@ Longer Start
         See Warning above; requires sudo to control the dataplane
         cd <oftest>
         sudo ./oft --help
-
-Helpful Note: Rebuilding
-++++++++++++++++++++++++
-
-    If you ever make a change to the code in src/oftest/python...
-    you must rebuild and reinstall the source code.  See Step (2)
-    in the Longer Start above.
-
-    If you see
-
-        WARNING:..:Could not import file ...
-
-    There is likely a Python error in the file.  Try invoking the
-    Python cli directly and importing the file to get more
-    information.
 
 Helpful Note: Recovering From Crash
 +++++++++++++++++++++++++++++++++++
@@ -257,9 +239,9 @@ Overview
 Important Notes
 +++++++++++++++
 
-    1.  If you edit any of the files in src/python/oftest or any of the
-    scripts in tools/munger/scripts, you MUST re-run make install.  This
-    is easy to forget.
+    1.  If you change any of the code generation scripts in
+    tools/munger/scripts you must re-run make -C tools/munger to
+    regenerate the OpenFlow message classes.
 
     2.  If your running into issues with transactions, and it appears that
     OpenFlow messages aren't quite right, start by looking at any length
