@@ -38,10 +38,6 @@ pa_port_map = None
 #@var pa_config Local copy of global configuration data
 pa_config = None
 
-# For test priority
-#@var test_prio Set test priority for local tests
-test_prio = {}
-
 WILDCARD_VALUES = [ofp.OFPFW_IN_PORT,
                    ofp.OFPFW_DL_VLAN | ofp.OFPFW_DL_VLAN_PCP,
                    ofp.OFPFW_DL_SRC,
@@ -972,16 +968,14 @@ class ExactMatchTaggedMany(BaseMatchCase):
     ExactMatchTagged with many VLANS
     """
 
+    priority = -1
+
     def runTest(self):
         for vid in range(2,100,10):
             flow_match_test(self, pa_port_map, dl_vlan=vid, max_test=5)
         for vid in range(100,4000,389):
             flow_match_test(self, pa_port_map, dl_vlan=vid, max_test=5)
         flow_match_test(self, pa_port_map, dl_vlan=4094, max_test=5)
-
-# Don't run by default
-test_prio["ExactMatchTaggedMany"] = -1
-
 
 class SingleWildcardMatchPriority(BaseMatchCase):
     """
@@ -1303,6 +1297,9 @@ class PacketOnly(basic.DataPlaneOnly):
     """
     Just send a packet thru the switch
     """
+
+    priority = -1
+
     def runTest(self):
         pkt = simple_tcp_packet()
         of_ports = pa_port_map.keys()
@@ -1316,6 +1313,9 @@ class PacketOnlyTagged(basic.DataPlaneOnly):
     """
     Just send a packet thru the switch
     """
+
+    priority = -1
+
     def runTest(self):
         vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
         pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vid)
@@ -1325,9 +1325,6 @@ class PacketOnlyTagged(basic.DataPlaneOnly):
         logging.info("Sending packet to " + str(ing_port))
         logging.debug("Data: " + str(pkt).encode('hex'))
         self.dataplane.send(ing_port, str(pkt))
-
-test_prio["PacketOnly"] = -1
-test_prio["PacketOnlyTagged"] = -1
 
 class ModifyVID(BaseMatchCase):
     """
@@ -1813,6 +1810,8 @@ class IterCases(BaseMatchCase):
     The cases come from the list above
     """
 
+    priority = -1
+
     def runTest(self):
         count = test_param_get(self.config, 'iter_count', default=10)
         tests_done = 0
@@ -1841,9 +1840,6 @@ class IterCases(BaseMatchCase):
                        (stats["flows"], stats["packets"], stats["bytes"]))
         logging.info("    active: %d. lookups: %d. matched %d." %
                        (stats["active"], stats["lookups"], stats["matched"]))
-
-# Don't run by default
-test_prio["IterCases"] = -1
 
 #@todo Need to implement tagged versions of the above tests
 #
@@ -1874,7 +1870,7 @@ class MixedVLAN(BaseMatchCase):
     If only VID 5 distinguishes pkt, this will fail on some platforms
     """   
 
-test_prio["MixedVLAN"] = -1
+    priority = -1
 
 class MatchEach(basic.SimpleDataPlane):
     """

@@ -83,9 +83,6 @@ fq_port_map = None
 #@var fq_config Local copy of global configuration data
 fq_config = None
 
-# For test priority
-test_prio = {}
-
 
 def test_set_init(config):
     """
@@ -1691,7 +1688,6 @@ class Flow_Add_5(basic.SimpleProtocol):
 
 # Disabled.
 # Should be DUT dependent.
-test_prio["Flow_Add_5_1"] = -1
 
 class Flow_Add_5_1(basic.SimpleProtocol):
     """
@@ -1700,6 +1696,8 @@ class Flow_Add_5_1(basic.SimpleProtocol):
     INPUTS
     None
     """
+
+    priority = -1
     
     def runTest(self):
         logging.info("Flow_Add_5_1 TEST BEGIN")
@@ -1808,7 +1806,6 @@ class Flow_Add_5_1(basic.SimpleProtocol):
 
 # Disabled because of bogus capacity reported by OVS.
 # Should be DUT dependent.
-test_prio["Flow_Add_6"] = -1
 
 class Flow_Add_6(basic.SimpleProtocol):
     """
@@ -1817,6 +1814,8 @@ class Flow_Add_6(basic.SimpleProtocol):
     INPUTS
     num_flows - Number of flows to generate
     """
+
+    priority = -1
 
     def runTest(self):
         logging.info("Flow_Add_6 TEST BEGIN")

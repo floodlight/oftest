@@ -24,8 +24,6 @@ serial_failover_port_map = None
 #@var serial_failover_config Local copy of global configuration data
 serial_failover_config = None
 
-test_prio = {}
-
 def test_set_init(config):
     """
     Set up function for serial failover test classes
@@ -50,6 +48,8 @@ class SerialFailover(unittest.TestCase):
     Multiple test params are specified by
     --test-params="param1=val1;param2=val2"
     """
+
+    priority = -1
 
     # populated by buildControllerList()
     controller_list = []
@@ -193,14 +193,10 @@ class SerialFailover(unittest.TestCase):
             logging.error("** FAILED ASSERTION: " + msg)
         unittest.TestCase.assertTrue(self, cond, msg)
 
-test_prio["SerialFailover"] = -1
-
 
 class SerialFailoverNoEcho(SerialFailover):
+    priority = -1
 
     def runTest(self):
         for i in range(0,self.test_iterations):
             self.doFailover('no_echo')
-
-test_prio["SerialFailoverNoEcho"] = -1
-

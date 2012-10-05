@@ -23,9 +23,6 @@ caps_port_map = None
 #@var caps_config Local copy of global configuration data
 caps_config = None
 
-# For test priority
-test_prio = {}
-
 def test_set_init(config):
     """
     Set up function for caps test classes
@@ -130,11 +127,12 @@ class FillTableExact(basic.SimpleProtocol):
     the parameter "caps_table_idx" in the configuration array,
     you can control which table to check.
     """
+
+    priority = -1
+
     def runTest(self):
         logging.info("Running " + str(self))
         flow_caps_common(self)
-
-test_prio["FillTableExact"] = -1
 
 class FillTableWC(basic.SimpleProtocol):
     """
@@ -155,8 +153,9 @@ class FillTableWC(basic.SimpleProtocol):
     you can control which table to check.
 
     """
+
+    priority = -1
+
     def runTest(self):
         logging.info("Running " + str(self))
         flow_caps_common(self, is_exact=False)
-
-test_prio["FillTableWC"] = -1

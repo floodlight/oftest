@@ -38,8 +38,6 @@ basic_port_map = None
 #@var basic_config Local copy of global configuration data
 basic_config = None
 
-test_prio = {}
-
 TEST_VID_DEFAULT = 2
 
 def test_set_init(config):
@@ -59,6 +57,8 @@ class SimpleProtocol(unittest.TestCase):
     """
     Root class for setting up the controller
     """
+
+    priority = 1
 
     def setUp(self):
         self.config = basic_config
@@ -127,8 +127,6 @@ class SimpleProtocol(unittest.TestCase):
             logging.error("** FAILED ASSERTION: " + msg)
         unittest.TestCase.assertTrue(self, cond, msg)
 
-test_prio["SimpleProtocol"] = 1
-
 class SimpleDataPlane(SimpleProtocol):
     """
     Root class that sets up the controller and dataplane
@@ -166,6 +164,8 @@ class DataPlaneOnly(unittest.TestCase):
     Root class that sets up only the dataplane
     """
 
+    priority = -1
+
     def setUp(self):
         self.clean_shutdown = True
         self.config = basic_config
@@ -183,8 +183,6 @@ class DataPlaneOnly(unittest.TestCase):
         logging.info("DataPlaneOnly")
         # self.dataplane.show()
         # Would like an assert that checks the data plane
-
-test_prio["DataPlaneOnly"] = -1
 
 class Echo(SimpleProtocol):
     """
@@ -277,6 +275,9 @@ class PacketInDefaultDrop(SimpleDataPlane):
     Send a packet to each dataplane port and verify that a packet
     in message is received from the controller for each
     """
+
+    priority = -1
+
     def runTest(self):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
@@ -302,9 +303,6 @@ class PacketInDefaultDrop(SimpleDataPlane):
                             'Packet in message received on port ' + 
                             str(of_port))
 
-test_prio["PacketInDefaultDrop"] = -1
-
-
 class PacketInBroadcastCheck(SimpleDataPlane):
     """
     Check if bcast pkts leak when no flows are present
@@ -313,6 +311,9 @@ class PacketInBroadcastCheck(SimpleDataPlane):
     Send in a broadcast pkt
     Look for the packet on other dataplane ports.
     """
+
+    priority = -1
+
     def runTest(self):
         # Need at least two ports
         self.assertTrue(len(basic_port_map) > 1, "Too few ports for test")
@@ -331,8 +332,6 @@ class PacketInBroadcastCheck(SimpleDataPlane):
         (of_port, pkt_in, pkt_time) = self.dataplane.poll(exp_pkt=pkt)
         self.assertTrue(pkt_in is None,
                         'BCast packet received on port ' + str(of_port))
-
-test_prio["PacketInBroadcastCheck"] = -1
 
 class PacketOut(SimpleDataPlane):
     """
@@ -437,6 +436,9 @@ class FlowStatsGet(SimpleProtocol):
 
     Simply verify stats get transaction
     """
+
+    priority = -1
+
     def runTest(self):
         logging.info("Running StatsGet")
         logging.info("Inserting trial flow")
@@ -453,8 +455,6 @@ class FlowStatsGet(SimpleProtocol):
         self.assertTrue(response is not None,
                         "Did not get response for flow stats")
         logging.debug(response.show())
-
-test_prio["FlowStatsGet"] = -1
 
 class TableStatsGet(SimpleProtocol):
     """

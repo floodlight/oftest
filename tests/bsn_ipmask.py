@@ -17,10 +17,6 @@ im_port_map = None
 #@var im_config Local copy of global configuration data
 im_config = None
 
-# For test priority
-#@var test_prio Set test priority for local tests
-test_prio = {}
-
 def test_set_init(config):
     basic.test_set_init(config)
 
@@ -58,6 +54,9 @@ class BSNConfigIPMask(basic.SimpleDataPlane):
     """
     Exercise BSN vendor extension for configuring IP source/dest match mask
     """
+
+    priority = -1
+
     def bsn_set_ip_mask(self, index, mask):
         """
         Use the BSN_SET_IP_MASK vendor command to change the IP mask for the
@@ -190,6 +189,3 @@ class BSNConfigIPMask(basic.SimpleDataPlane):
         msg(ip3)
         self.dataplane.send(ports[0], str(pkt3))
         receive_pkt_verify(self, [ports[2]], pkt3, ports[0])
-
-# Don't run by default
-test_prio["BSNConfigIPMask"] = -1

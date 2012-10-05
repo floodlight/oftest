@@ -24,8 +24,6 @@ cxn_port_map = None
 #@var cxn_config Local copy of global configuration data
 cxn_config = None
 
-test_prio = {}
-
 def test_set_init(config):
     """
     Set up function for connection test classes
@@ -43,6 +41,8 @@ class BaseHandshake(unittest.TestCase):
     """
     Base handshake case to set up controller, but do not send hello.
     """
+
+    priority = -1
 
     def controllerSetup(self, host, port):
         self.controller = controller.Controller(host=host,port=port)
@@ -103,8 +103,6 @@ class BaseHandshake(unittest.TestCase):
             logging.error("** FAILED ASSERTION: " + msg)
         unittest.TestCase.assertTrue(self, cond, msg)
 
-test_prio["BaseHandshake"] = -1
-
 class HandshakeNoHello(BaseHandshake):
     """
     TCP connect to switch, but do not sent hello,
@@ -155,6 +153,9 @@ class HandshakeAndKeepalive(BaseHandshake):
     Complete handshake and respond to echo request, but otherwise do nothing.
     Good for manual testing.
     """
+
+    priority = -1
+
     def runTest(self):
         self.controllerSetup(cxn_config["controller_host"],
                              cxn_config["controller_port"])
@@ -179,6 +180,4 @@ class HandshakeAndKeepalive(BaseHandshake):
 
         self.assertTrue(not self.controller.active, 
                         "Expected controller disconnect, but still active")
-
-test_prio["HandshakeAndKeepalive"] = -1
 

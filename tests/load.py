@@ -39,10 +39,6 @@ load_port_map = None
 #@var load_config Local copy of global configuration data
 load_config = None
 
-# For test priority
-#@var test_prio Set test priority for local tests
-test_prio = {}
-
 
 def test_set_init(config):
     """
@@ -70,6 +66,9 @@ class LoadBarrier(basic.SimpleProtocol):
     The test succeeds if the barrier response is received.  Otherwise
     the test fails.
     """
+
+    priority = -1
+
     def runTest(self):
         # Set up flow to send from port 1 to port 2 and copy to CPU
         # Test parameter gives LB port base (assumes consecutive)
@@ -124,6 +123,3 @@ class LoadBarrier(basic.SimpleProtocol):
         logging.debug("Deleting all flows from switch")
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
-
-# Do not run by default; still mysterious disconnects often
-test_prio["LoadBarrier"] = -1

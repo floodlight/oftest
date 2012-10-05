@@ -32,10 +32,10 @@ configurable through the command line.
     port_map          : Map of dataplane OpenFlow port to OS interface names
 </pre>
 
-Each test may be assigned a priority by setting test_prio["TestName"] in 
-the respective module.  For now, the only use of this is to avoid 
+Each test may be assigned a priority by setting the "priority" property
+in the class definition.  For now, the only use of this is to avoid
 automatic inclusion of tests into the default list.  This is done by
-setting the test_prio value less than 0.  Eventually we may add ordering
+setting the priority value less than 0.  Eventually we may add ordering
 of test execution by test priority.
 
 To add a test to the system, either: edit an existing test case file (like
@@ -426,22 +426,19 @@ def _space_to(n, str):
         return " " * spaces
     return " "
 
-def test_prio_get(mod, test):
+def test_prio_get(test):
     """
     Return the priority of a test
 
     If test is in "skip list" from profile, return the skip value
 
-    If set in the test_prio variable for the module, return
+    If the priority property is set in the class, return
     that value.  Otherwise return 100 (default)
     """
-    if test in profile_mod.skip_test_list:
-        logging.info("Skipping test %s due to profile" % test)
+    if test.__name__ in profile_mod.skip_test_list:
+        logging.info("Skipping test %s due to profile" % test.__name__)
         return TEST_PRIO_SKIP
-    if 'test_prio' in dir(mod):
-        if test in mod.test_prio.keys():
-            return mod.test_prio[test]
-    return TEST_PRIO_DEFAULT
+    return getattr(test, "priority", TEST_PRIO_DEFAULT)
 
 #
 # Main script
@@ -478,7 +475,7 @@ if config["list"]:
                 desc = desc.split('\n')[0]
             except:
                 desc = "No description"
-            if test_prio_get(mod, testname) < 0:
+            if test_prio_get(test) < 0:
                 start_str = "  * " + testname + ":"
             else:
                 start_str = "    " + testname + ":"
@@ -500,7 +497,7 @@ if config["list"]:
 if config["list_test_names"]:
     for (modname, (mod, tests)) in test_modules.items():
         for (testname, test) in tests.items():
-            if test_prio_get(mod, testname) >= 0:
+            if test_prio_get(test) >= 0:
                 print "%s.%s" % (modname, testname)
     sys.exit(0)
 
@@ -510,7 +507,7 @@ suite = unittest.TestSuite()
 
 for (modname, (mod, tests)) in test_modules.items():
     for (testname, test) in tests.items():
-        if test_prio_get(mod, testname) >= 0:
+        if test_prio_get(test) >= 0:
             logging.info("Adding test " + modname + "." + testname)
             suite.addTest(test())
 
@@ -557,7 +554,7 @@ oftest.testutils.MINSIZE = config['minsize']
 if os.getuid() != 0 and not config["allow_user"]:
     print "ERROR: Super-user privileges required. Please re-run with " \
           "sudo or as root."
-    exit(1)
+    sys.exit(1)
 
 if config["random_seed"] is not None:
     logging.info("Random seed: %d" % config["random_seed"])
