@@ -507,7 +507,7 @@ platform_name = config["platform"]
 logging.info("Importing platform: " + platform_name)
 platform_mod = None
 try:
-    platform_mod = imp.load_module(platform_name, *imp.find_module(platform_name, [config["platform_dir"], config["test_dir"]]))
+    platform_mod = imp.load_module(platform_name, *imp.find_module(platform_name, [config["platform_dir"]]))
 except:
     logging.warn("Failed to import " + platform_name + " platform module")
     raise
