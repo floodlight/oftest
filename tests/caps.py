@@ -20,8 +20,6 @@ from oftest.testutils import *
 #@var caps_port_map Local copy of the configuration map from OF port
 # numbers to OS interfaces
 caps_port_map = None
-#@var caps_logger Local logger object
-caps_logger = None
 #@var caps_config Local copy of global configuration data
 caps_config = None
 
@@ -38,11 +36,8 @@ def test_set_init(config):
     basic.test_set_init(config)
 
     global caps_port_map
-    global caps_logger
     global caps_config
 
-    caps_logger = logging.getLogger("caps")
-    caps_logger.info("Initializing caps test set")
     caps_port_map = config["port_map"]
     caps_config = config
 
@@ -59,7 +54,7 @@ def flow_caps_common(obj, is_exact=True):
     of_ports = caps_port_map.keys()
     of_ports.sort()
 
-    rv = delete_all_flows(obj.controller, caps_logger)
+    rv = delete_all_flows(obj.controller)
     obj.assertEqual(rv, 0, "Failed to delete all flows")
 
     pkt = simple_tcp_packet()
@@ -78,7 +73,7 @@ def flow_caps_common(obj, is_exact=True):
 
     request.match = match
     request.buffer_id = 0xffffffff      # set to NONE
-    caps_logger.info(request.show())
+    logging.info(request.show())
 
     tstats = message.table_stats_request()
     try:  # Determine the table index to check (or "all")
@@ -87,14 +82,14 @@ def flow_caps_common(obj, is_exact=True):
         table_idx = -1  # Accumulate all table counts
 
     # Make sure we can install at least one flow
-    caps_logger.info("Inserting initial flow")
+    logging.info("Inserting initial flow")
     rv = obj.controller.message_send(request)
     obj.assertTrue(rv != -1, "Error installing flow mod")
     obj.assertEqual(do_barrier(obj.controller), 0, "Barrier failed")
     flow_count = 1
 
-    caps_logger.info("Table idx: " + str(table_idx))
-    caps_logger.info("Check every " + str(count_check) + " inserts")
+    logging.info("Table idx: " + str(table_idx))
+    logging.info("Check every " + str(count_check) + " inserts")
 
     while True:
         request.match.nw_src += 1
@@ -104,7 +99,7 @@ def flow_caps_common(obj, is_exact=True):
             obj.assertEqual(do_barrier(obj.controller), 0, "Barrier failed")
             response, pkt = obj.controller.transact(tstats)
             obj.assertTrue(response is not None, "Get tab stats failed")
-            caps_logger.info(response.show())
+            logging.info(response.show())
             if table_idx == -1:  # Accumulate for all tables
                 active_flows = 0
                 for stats in response.stats:
@@ -114,8 +109,8 @@ def flow_caps_common(obj, is_exact=True):
             if active_flows != flow_count:
                 break
 
-    caps_logger.error("RESULT: " + str(flow_count) + " flows inserted")
-    caps_logger.error("RESULT: " + str(active_flows) + " flows reported")
+    logging.error("RESULT: " + str(flow_count) + " flows inserted")
+    logging.error("RESULT: " + str(active_flows) + " flows reported")
 
 
 class FillTableExact(basic.SimpleProtocol):
@@ -136,7 +131,7 @@ class FillTableExact(basic.SimpleProtocol):
     you can control which table to check.
     """
     def runTest(self):
-        caps_logger.info("Running " + str(self))
+        logging.info("Running " + str(self))
         flow_caps_common(self)
 
 test_prio["FillTableExact"] = -1
@@ -161,7 +156,7 @@ class FillTableWC(basic.SimpleProtocol):
 
     """
     def runTest(self):
-        caps_logger.info("Running " + str(self))
+        logging.info("Running " + str(self))
         flow_caps_common(self, is_exact=False)
 
 test_prio["FillTableWC"] = -1

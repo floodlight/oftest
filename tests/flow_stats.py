@@ -23,8 +23,6 @@ from time import sleep
 #@var fs_port_map Local copy of the configuration map from OF port
 # numbers to OS interfaces
 fs_port_map = None
-#@var fs_logger Local logger object
-fs_logger = None
 #@var fs_config Local copy of global configuration data
 fs_config = None
 
@@ -54,17 +52,14 @@ def test_set_init(config):
     basic.test_set_init(config)
 
     global fs_port_map
-    global fs_logger
     global fs_config
 
-    fs_logger = logging.getLogger("flow_stats")
-    fs_logger.info("Initializing test set")
     fs_port_map = config["port_map"]
     fs_config = config
 
 def sendPacket(obj, pkt, ingress_port, egress_port, test_timeout):
 
-    fs_logger.info("Sending packet to dp port " + str(ingress_port) +
+    logging.info("Sending packet to dp port " + str(ingress_port) +
                    ", expecting output on " + str(egress_port))
     obj.dataplane.send(ingress_port, str(pkt))
 
@@ -78,7 +73,7 @@ def sendPacket(obj, pkt, ingress_port, egress_port, test_timeout):
                                                        exp_pkt=exp_pkt_arg)
     obj.assertTrue(rcv_pkt is not None,
                    "Packet not received on port " + str(egress_port))
-    fs_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
+    logging.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
                     str(rcv_port))
     obj.assertEqual(rcv_port, egress_port,
                     "Packet received on port " + str(rcv_port) +
@@ -105,7 +100,7 @@ class SingleFlowStats(basic.SimpleDataPlane):
 
         all_packets_received = 0
         for i in range(0,test_timeout):
-            fs_logger.info("Sending stats request")
+            logging.info("Sending stats request")
             response, pkt = self.controller.transact(stat_req,
                                                      timeout=test_timeout)
             self.assertTrue(response is not None, 
@@ -119,7 +114,7 @@ class SingleFlowStats(basic.SimpleDataPlane):
                 #obj.match.pad2 = [0, 0]
                 #self.assertEqual(match, obj.match,
                 #                 "Matches do not match")
-                fs_logger.info("Received " + str(obj.packet_count) + " packets")
+                logging.info("Received " + str(obj.packet_count) + " packets")
                 if obj.packet_count == packet_count:
                     all_packets_received = 1
 
@@ -140,7 +135,7 @@ class SingleFlowStats(basic.SimpleDataPlane):
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
-        rc = delete_all_flows(self.controller, fs_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         # build packet
@@ -154,7 +149,7 @@ class SingleFlowStats(basic.SimpleDataPlane):
         # build flow
         ingress_port = of_ports[0];
         egress_port = of_ports[1];
-        fs_logger.info("Ingress " + str(ingress_port) + 
+        logging.info("Ingress " + str(ingress_port) + 
                        " to egress " + str(egress_port))
         match.in_port = ingress_port
         flow_mod_msg = message.flow_mod()
@@ -167,7 +162,7 @@ class SingleFlowStats(basic.SimpleDataPlane):
         self.assertTrue(flow_mod_msg.actions.add(act), "Could not add action")
        
         # send flow
-        fs_logger.info("Inserting flow")
+        logging.info("Inserting flow")
         rv = self.controller.message_send(flow_mod_msg)
         self.assertTrue(rv != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
@@ -177,7 +172,7 @@ class SingleFlowStats(basic.SimpleDataPlane):
 
         # send packet N times
         num_sends = random.randint(10,20)
-        fs_logger.info("Sending " + str(num_sends) + " test packets")
+        logging.info("Sending " + str(num_sends) + " test packets")
         for i in range(0,num_sends):
             sendPacket(self, pkt, ingress_port, egress_port,
                        test_timeout)
@@ -219,7 +214,7 @@ class TwoFlowStats(basic.SimpleDataPlane):
         act.port = egress_port
         self.assertTrue(flow_mod_msg.actions.add(act), "Could not add action")
 
-        fs_logger.info("Ingress " + str(ingress_port) + 
+        logging.info("Ingress " + str(ingress_port) + 
                        " to egress " + str(egress_port))
 
         return flow_mod_msg
@@ -233,7 +228,7 @@ class TwoFlowStats(basic.SimpleDataPlane):
             #obj.match.pad2 = [0, 0]
             #self.assertEqual(match, obj.match,
             #                 "Matches do not match")
-           fs_logger.info("Received " + str(obj.packet_count)
+           logging.info("Received " + str(obj.packet_count)
                           + " packets")
            total_packets += obj.packet_count
         return total_packets
@@ -246,7 +241,7 @@ class TwoFlowStats(basic.SimpleDataPlane):
 
         all_packets_received = 0
         for i in range(0,test_timeout):
-            fs_logger.info("Sending stats request")
+            logging.info("Sending stats request")
             # TODO: move REPLY_MORE handling to controller.transact?
             response, pkt = self.controller.transact(stat_req,
                                                      timeout=test_timeout)
@@ -282,7 +277,7 @@ class TwoFlowStats(basic.SimpleDataPlane):
         egress_port1 = of_ports[1];
         egress_port2 = of_ports[2];
 
-        rc = delete_all_flows(self.controller, fs_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         pkt1 = simple_tcp_packet()
@@ -291,31 +286,31 @@ class TwoFlowStats(basic.SimpleDataPlane):
         pkt2 = simple_tcp_packet(dl_src='0:7:7:7:7:7')
         flow_mod_msg2 = self.buildFlowModMsg(pkt2, ingress_port, egress_port2)
        
-        fs_logger.info("Inserting flow1")
+        logging.info("Inserting flow1")
         rv = self.controller.message_send(flow_mod_msg1)
         self.assertTrue(rv != -1, "Error installing flow mod")
-        fs_logger.info("Inserting flow2")
+        logging.info("Inserting flow2")
         rv = self.controller.message_send(flow_mod_msg2)
         self.assertTrue(rv != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         num_pkt1s = random.randint(10,30)
-        fs_logger.info("Sending " + str(num_pkt1s) + " pkt1s")
+        logging.info("Sending " + str(num_pkt1s) + " pkt1s")
         num_pkt2s = random.randint(10,30)
-        fs_logger.info("Sending " + str(num_pkt2s) + " pkt2s")
+        logging.info("Sending " + str(num_pkt2s) + " pkt2s")
         for i in range(0,num_pkt1s):
             sendPacket(self, pkt1, ingress_port, egress_port1, test_timeout)
         for i in range(0,num_pkt2s):
             sendPacket(self, pkt2, ingress_port, egress_port2, test_timeout)
             
         match1 = packet_to_flow_match(self, pkt1)
-        fs_logger.info("Verifying flow1's " + str(num_pkt1s) + " packets")
+        logging.info("Verifying flow1's " + str(num_pkt1s) + " packets")
         self.verifyStats(match1, ofp.OFPP_NONE, test_timeout, num_pkt1s)
         match2 = packet_to_flow_match(self, pkt2)
-        fs_logger.info("Verifying flow2's " + str(num_pkt2s) + " packets")
+        logging.info("Verifying flow2's " + str(num_pkt2s) + " packets")
         self.verifyStats(match2, ofp.OFPP_NONE, test_timeout, num_pkt2s)
         match1.wildcards |= ofp.OFPFW_DL_SRC
-        fs_logger.info("Verifying combined " + str(num_pkt1s+num_pkt2s) + " packets")
+        logging.info("Verifying combined " + str(num_pkt1s+num_pkt2s) + " packets")
         self.verifyStats(match1, ofp.OFPP_NONE, test_timeout, 
                          num_pkt1s+num_pkt2s)
         # TODO: sweep through the wildcards to verify matching?
@@ -349,7 +344,7 @@ class AggregateStats(basic.SimpleDataPlane):
         act.port = egress_port
         self.assertTrue(flow_mod_msg.actions.add(act), "Could not add action")
 
-        fs_logger.info("Ingress " + str(ingress_port) + 
+        logging.info("Ingress " + str(ingress_port) + 
                        " to egress " + str(egress_port))
 
         return flow_mod_msg
@@ -363,7 +358,7 @@ class AggregateStats(basic.SimpleDataPlane):
 
         all_packets_received = 0
         for i in range(0,test_timeout):
-            fs_logger.info("Sending stats request")
+            logging.info("Sending stats request")
             response, pkt = self.controller.transact(stat_req,
                                                      timeout=test_timeout)
             self.assertTrue(response is not None, 
@@ -374,7 +369,7 @@ class AggregateStats(basic.SimpleDataPlane):
                 self.assertTrue(obj.flow_count == flow_count,
                                 "Flow count " + str(obj.flow_count) +
                                 " does not match expected " + str(flow_count))
-                fs_logger.info("Received " + str(obj.packet_count) + " packets")
+                logging.info("Received " + str(obj.packet_count) + " packets")
                 if obj.packet_count == packet_count:
                     all_packets_received = 1
 
@@ -398,7 +393,7 @@ class AggregateStats(basic.SimpleDataPlane):
         egress_port1 = of_ports[1];
         egress_port2 = of_ports[2];
 
-        rc = delete_all_flows(self.controller, fs_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         pkt1 = simple_tcp_packet()
@@ -407,18 +402,18 @@ class AggregateStats(basic.SimpleDataPlane):
         pkt2 = simple_tcp_packet(dl_src='0:7:7:7:7:7')
         flow_mod_msg2 = self.buildFlowModMsg(pkt2, ingress_port, egress_port2)
        
-        fs_logger.info("Inserting flow1")
+        logging.info("Inserting flow1")
         rv = self.controller.message_send(flow_mod_msg1)
         self.assertTrue(rv != -1, "Error installing flow mod")
-        fs_logger.info("Inserting flow2")
+        logging.info("Inserting flow2")
         rv = self.controller.message_send(flow_mod_msg2)
         self.assertTrue(rv != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         num_pkt1s = random.randint(10,30)
-        fs_logger.info("Sending " + str(num_pkt1s) + " pkt1s")
+        logging.info("Sending " + str(num_pkt1s) + " pkt1s")
         num_pkt2s = random.randint(10,30)
-        fs_logger.info("Sending " + str(num_pkt2s) + " pkt2s")
+        logging.info("Sending " + str(num_pkt2s) + " pkt2s")
         for i in range(0,num_pkt1s):
             sendPacket(self, pkt1, ingress_port, egress_port1, test_timeout)
         for i in range(0,num_pkt2s):

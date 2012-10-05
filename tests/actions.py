@@ -25,7 +25,6 @@ from time import sleep
 from FuncUtils import *
 
 ac_port_map = None
-ac_logger = None
 ac_config = None
 of_ports = None
 
@@ -33,12 +32,9 @@ def test_set_init(config):
     basic.test_set_init(config)
     
     global ac_port_map
-    global ac_logger
     global ac_config
     global of_ports
 
-    ac_logger = logging.getLogger("Running Actions test-suite")
-    ac_logger.info("Initializing test set")
     ac_port_map = config["port_map"]
     ac_config = config
     
@@ -53,19 +49,19 @@ class NoAction(basic.SimpleDataPlane):
 
     def runTest(self):
         
-        ac_logger.info("Running No_Action test")
+        logging.info("Running No_Action test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller, ac_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
         
-        ac_logger.info("Install a flow without action")
-        ac_logger.info("Send packets matching that flow")
-        ac_logger.info("Expecting switch to drop all packets")
+        logging.info("Install a flow without action")
+        logging.info("Send packets matching that flow")
+        logging.info("Expecting switch to drop all packets")
 
         # Insert a flow wildcard all without any action 
         pkt = simple_tcp_packet()
@@ -105,10 +101,10 @@ class Announcement(basic.SimpleDataPlane):
 
     def runTest(self):
 
-        ac_logger.info("Running Announcement test")
+        logging.info("Running Announcement test")
 
-        ac_logger.info("Sending Features_Request")
-        ac_logger.info("Expecting Features Reply with supported actions")
+        logging.info("Sending Features_Request")
+        logging.info("Expecting Features Reply with supported actions")
 
         # Sending Features_Request
         request = message.features_request()
@@ -142,7 +138,7 @@ class Announcement(basic.SimpleDataPlane):
         if(reply.actions &1<<ofp.OFPAT_ENQUEUE):
             supported_actions.append('OFPAT_ENQUEUE')
         
-        ac_logger.info(supported_actions)
+        logging.info(supported_actions)
         
 
 class ForwardAll(basic.SimpleDataPlane):
@@ -152,19 +148,19 @@ class ForwardAll(basic.SimpleDataPlane):
 
     def runTest(self):
 
-        ac_logger.info("Running Forward_All test")
+        logging.info("Running Forward_All test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller, ac_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
         
-        ac_logger.info("Insert a flow with output action port OFPP_ALL")
-        ac_logger.info("Send packet matching the flow")
-        ac_logger.info("Expecting packet on all dataplane ports except ingress_port")
+        logging.info("Insert a flow with output action port OFPP_ALL")
+        logging.info("Send packet matching the flow")
+        logging.info("Expecting packet on all dataplane ports except ingress_port")
         
         #Create a packet
         pkt = simple_tcp_packet()
@@ -172,7 +168,7 @@ class ForwardAll(basic.SimpleDataPlane):
         act = action.action_output()
 
         #Delete all flows 
-        rv = delete_all_flows(self.controller, ac_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
         ingress_port=of_ports[0]
         match.in_port = ingress_port
@@ -184,19 +180,19 @@ class ForwardAll(basic.SimpleDataPlane):
         act.port = ofp.OFPP_ALL
         request.actions.add(act)
         
-        ac_logger.info("Inserting flow")
+        logging.info("Inserting flow")
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         #Send Packet matching the flow
-        ac_logger.info("Sending packet to dp port " + str(ingress_port))
+        logging.info("Sending packet to dp port " + str(ingress_port))
         self.dataplane.send(ingress_port, str(pkt))
 
         #Verifying packets recieved on expected dataplane ports
         yes_ports = set(of_ports).difference([ingress_port])
         receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
-                      self, ac_logger, ac_config)
+                      self, ac_config)
 
 
 class ForwardController(basic.SimpleDataPlane):
@@ -206,19 +202,19 @@ class ForwardController(basic.SimpleDataPlane):
 
     def runTest(self):
         
-        ac_logger.info("Running Forward_Controller test")
+        logging.info("Running Forward_Controller test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller, ac_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
         
-        ac_logger.info("Insert a flow with output action port OFPP_CONTROLLER")
-        ac_logger.info("Send packet matching the flow")
-        ac_logger.info("Expecting packet on the control plane")
+        logging.info("Insert a flow with output action port OFPP_CONTROLLER")
+        logging.info("Send packet matching the flow")
+        logging.info("Expecting packet on the control plane")
         
         #Create packet
         pkt = simple_tcp_packet()
@@ -227,7 +223,7 @@ class ForwardController(basic.SimpleDataPlane):
 
         for ingress_port in of_ports:
             #Delete all flows 
-            rv = delete_all_flows(self.controller, ac_logger)
+            rv = delete_all_flows(self.controller)
             self.assertEqual(rv, 0, "Failed to delete all flows")
 
             match.in_port = ingress_port
@@ -238,13 +234,13 @@ class ForwardController(basic.SimpleDataPlane):
             act.port = ofp.OFPP_CONTROLLER
             request.actions.add(act)
 
-            ac_logger.info("Inserting flow")
+            logging.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
             
             #Send packet matching the flow
-            ac_logger.info("Sending packet to dp port " + str(ingress_port))
+            logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
 
             #Verifying packet recieved on the control plane port
@@ -261,19 +257,19 @@ class ForwardLocal(basic.SimpleDataPlane):
 
     def runTest(self):
 
-        ac_logger.info("Running Forward_Local test")
+        logging.info("Running Forward_Local test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller, ac_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
         
-        ac_logger.info("Insert a flow with output action port OFPP_LOCAL")
-        ac_logger.info("Send packet matching the flow")
-        ac_logger.info("Expecting packet in the local networking stack of switch")
+        logging.info("Insert a flow with output action port OFPP_LOCAL")
+        logging.info("Send packet matching the flow")
+        logging.info("Expecting packet in the local networking stack of switch")
         
         #Clear switch state
         pkt = simple_tcp_packet()
@@ -282,7 +278,7 @@ class ForwardLocal(basic.SimpleDataPlane):
 
         for ingress_port in of_ports:
             #Delete the flows
-            rv = delete_all_flows(self.controller, ac_logger)
+            rv = delete_all_flows(self.controller)
             self.assertEqual(rv, 0, "Failed to delete all flows")
 
             match.in_port = ingress_port
@@ -292,13 +288,13 @@ class ForwardLocal(basic.SimpleDataPlane):
             act.port = ofp.OFPP_LOCAL
             request.actions.add(act)
 
-            ac_logger.info("Inserting flow")
+            logging.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
             #Send packet matching the flow
-            ac_logger.info("Sending packet to dp port " + str(ingress_port))
+            logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
 
             #TBD: Verification of packets being recieved.
@@ -313,18 +309,18 @@ class ForwardFlood(basic.SimpleDataPlane):
     
     def runTest(self):
 
-        ac_logger.info("Running Forward_Flood test")
+        logging.info("Running Forward_Flood test")
         of_ports = ac_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller, ac_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
         
-        ac_logger.info("Insert a flow with output action port OFPP_FORWARD")
-        ac_logger.info("Send packet matching the flow")
-        ac_logger.info("Expecting packet on all the ports except the input port")
+        logging.info("Insert a flow with output action port OFPP_FORWARD")
+        logging.info("Send packet matching the flow")
+        logging.info("Expecting packet on all the ports except the input port")
         
         #Create a packet
         pkt = simple_tcp_packet()
@@ -332,7 +328,7 @@ class ForwardFlood(basic.SimpleDataPlane):
         act = action.action_output()
 
         #Delete all flows 
-        rv = delete_all_flows(self.controller, ac_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
         ingress_port=of_ports[0]
         match.in_port = ingress_port
@@ -344,19 +340,19 @@ class ForwardFlood(basic.SimpleDataPlane):
         act.port = ofp.OFPP_FLOOD
         request.actions.add(act)
         
-        ac_logger.info("Inserting flow")
+        logging.info("Inserting flow")
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         #Send Packet matching the flow
-        ac_logger.info("Sending packet to dp port " + str(ingress_port))
+        logging.info("Sending packet to dp port " + str(ingress_port))
         self.dataplane.send(ingress_port, str(pkt))
 
         #Verifying packets recieved on expected dataplane ports
         yes_ports = set(of_ports).difference([ingress_port])
         receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
-                      self, ac_logger, ac_config)
+                      self, ac_config)
 
 class ForwardInport(basic.SimpleDataPlane):
     
@@ -365,19 +361,19 @@ class ForwardInport(basic.SimpleDataPlane):
 
     def runTest(self):
 
-        ac_logger.info("Running Forward_Inport test")
+        logging.info("Running Forward_Inport test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller, ac_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
         
-        ac_logger.info("Insert a flow with output action port OFPP_INPORT")
-        ac_logger.info("Send packet matching the flow")
-        ac_logger.info("Expecting packet on the input port")
+        logging.info("Insert a flow with output action port OFPP_INPORT")
+        logging.info("Send packet matching the flow")
+        logging.info("Expecting packet on the input port")
         
         #Create a packet
         pkt = simple_tcp_packet()
@@ -385,7 +381,7 @@ class ForwardInport(basic.SimpleDataPlane):
         act = action.action_output()
 
         #Delete the flows
-        rv = delete_all_flows(self.controller, ac_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
         ingress_port=of_ports[0]
         match.in_port = ingress_port
@@ -396,19 +392,19 @@ class ForwardInport(basic.SimpleDataPlane):
         act.port = ofp.OFPP_IN_PORT
             
         request.actions.add(act)
-        ac_logger.info("Inserting flow")
+        logging.info("Inserting flow")
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         #Send packet matching the flow
-        ac_logger.info("Sending packet to dp port " + str(ingress_port))
+        logging.info("Sending packet to dp port " + str(ingress_port))
         self.dataplane.send(ingress_port, str(pkt))
         yes_ports = [ingress_port]
 
         #Verfying packet recieved on expected dataplane ports
         receive_pkt_check(self.dataplane, pkt, yes_ports,set(of_ports).difference([ingress_port]),
-                            self, ac_logger, ac_config)      
+                            self, ac_config)      
 
 class ForwardTable(basic.SimpleDataPlane):
    
@@ -418,19 +414,19 @@ class ForwardTable(basic.SimpleDataPlane):
 
     def runTest(self):
 
-        ac_logger.info("Running Forward_Table test")
+        logging.info("Running Forward_Table test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller, ac_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
         
-        ac_logger.info("Insert a flow F with output action port set to some egress_port")
-        ac_logger.info("Send packet out message (matching flow F) with action.port = OFP.TABLE")
-        ac_logger.info("Expecting packet on the egress_port")
+        logging.info("Insert a flow F with output action port set to some egress_port")
+        logging.info("Send packet out message (matching flow F) with action.port = OFP.TABLE")
+        logging.info("Expecting packet on the egress_port")
         
         #Insert a all wildcarded flow
         (pkt,match) = Wildcard_All(self,of_ports)
@@ -457,19 +453,19 @@ class AddVlanTag(basic.SimpleDataPlane):
 
     def runTest(self):
 
-        ac_logger.info("Running Add_vlan_tag test")
+        logging.info("Running Add_vlan_tag test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller, ac_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-        ac_logger.info("Verify if switch supports the action -- set vlan id, if not skip the test")
-        ac_logger.info("Insert a flow with set vid action")
-        ac_logger.info("Send packet matching the flow , verify recieved packet has vid set")
+        logging.info("Verify if switch supports the action -- set vlan id, if not skip the test")
+        logging.info("Insert a flow with set vid action")
+        logging.info("Send packet matching the flow , verify recieved packet has vid set")
         
         #Verify set_vlan_id is a supported action
         sup_acts = sw_supported_actions(self)
@@ -497,19 +493,19 @@ class ModifyVlanTag(basic.SimpleDataPlane):
     
     def runTest(self):
 
-        ac_logger.info("Running Modify_Vlan_Tag test")
+        logging.info("Running Modify_Vlan_Tag test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller, ac_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-        ac_logger.info("Verify if switch supports the action -- modify vlan id, if not skip the test")
-        ac_logger.info("Insert a flow with action --set vid ")
-        ac_logger.info("Send tagged packet matching the flow , verify recieved packet has vid rewritten")
+        logging.info("Verify if switch supports the action -- modify vlan id, if not skip the test")
+        logging.info("Insert a flow with action --set vid ")
+        logging.info("Send tagged packet matching the flow , verify recieved packet has vid rewritten")
         
         #Verify set_vlan_id is a supported action
         sup_acts = sw_supported_actions(self)
@@ -535,19 +531,19 @@ class VlanPrio1(basic.SimpleDataPlane):
     
     def runTest(self):
 
-        ac_logger.info("Running vlan_Prio_1 test")
+        logging.info("Running vlan_Prio_1 test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller, ac_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-        ac_logger.info("Verify if switch supports the action -- set vlan priority, if not skip the test")
-        ac_logger.info("Insert a flow with action -- set vlan priority ")
-        ac_logger.info("Send untagged packet matching the flow , verify recieved packet has specified VLAN priority and has vid set tO 0 ")
+        logging.info("Verify if switch supports the action -- set vlan priority, if not skip the test")
+        logging.info("Insert a flow with action -- set vlan priority ")
+        logging.info("Send untagged packet matching the flow , verify recieved packet has specified VLAN priority and has vid set tO 0 ")
         
         #Verify set_vlan_priority is a supported action
         sup_acts = sw_supported_actions(self)
@@ -574,19 +570,19 @@ class VlanPrio2(basic.SimpleDataPlane):
     
     def runTest(self):
         
-        ac_logger.info("Running Vlan_Prio_2 test")
+        logging.info("Running Vlan_Prio_2 test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller, ac_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-        ac_logger.info("Verify if switch supports the action -- set vlan priority, if not skip the test")
-        ac_logger.info("Insert a flow with action -- set vlan priority ")
-        ac_logger.info("Send tagged packet matching the flow, verify recieved packet has vlan priority rewritten")
+        logging.info("Verify if switch supports the action -- set vlan priority, if not skip the test")
+        logging.info("Insert a flow with action -- set vlan priority ")
+        logging.info("Send tagged packet matching the flow, verify recieved packet has vlan priority rewritten")
         
         #Verify set_vlan_priority is a supported action
         sup_acts = sw_supported_actions(self,"true")
@@ -614,19 +610,19 @@ class ModifyL2Src(basic.SimpleDataPlane):
 
     def runTest(self):
 
-        ac_logger.info("Running Modify_L2_Src test")
+        logging.info("Running Modify_L2_Src test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller, ac_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-        ac_logger.info("Verify if switch supports the action -- modify_l2_src, if not skip the test")
-        ac_logger.info("Insert a flow with action -- set etherent src address")
-        ac_logger.info("Send packet matching the flow, verify recieved packet src address rewritten ")
+        logging.info("Verify if switch supports the action -- modify_l2_src, if not skip the test")
+        logging.info("Insert a flow with action -- set etherent src address")
+        logging.info("Send packet matching the flow, verify recieved packet src address rewritten ")
 
         #Verify set_dl_src is a supported action
         sup_acts = sw_supported_actions(self,use_cache="true")
@@ -649,19 +645,19 @@ class ModifyL2Dst(basic.SimpleDataPlane):
 
     def runTest(self):
 
-        ac_logger.info("Running Modify_L2_Dst test")
+        logging.info("Running Modify_L2_Dst test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller, ac_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-        ac_logger.info("Verify if switch supports the action -- modify_l2_dst, if not skip the test")
-        ac_logger.info("Insert a flow with action -- set etherent dst address ")
-        ac_logger.info("Send packet matching the flow, verify recieved packet dst address rewritten ")
+        logging.info("Verify if switch supports the action -- modify_l2_dst, if not skip the test")
+        logging.info("Insert a flow with action -- set etherent dst address ")
+        logging.info("Send packet matching the flow, verify recieved packet dst address rewritten ")
 
         #Verify set_dl_dst is a supported action
         sup_acts = sw_supported_actions(self)
@@ -683,19 +679,19 @@ class ModifyL3Src(basic.SimpleDataPlane):
 
     def runTest(self):
 
-        ac_logger.info("Running Modify_L3_Src test")
+        logging.info("Running Modify_L3_Src test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller, ac_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-        ac_logger.info("Verify if switch supports the action -- modify_l3_src, if not skip the test")
-        ac_logger.info("Insert a flow with action -- set network src address ")
-        ac_logger.info("Send packet matching the flow, verify recieved packet network src address rewritten ")
+        logging.info("Verify if switch supports the action -- modify_l3_src, if not skip the test")
+        logging.info("Insert a flow with action -- set network src address ")
+        logging.info("Send packet matching the flow, verify recieved packet network src address rewritten ")
         
         #Verify set_nw_src is a supported action
         sup_acts = sw_supported_actions(self)
@@ -717,19 +713,19 @@ class ModifyL3Dst(basic.SimpleDataPlane):
     
     def runTest(self):
 
-        ac_logger.info("Running Modify_L3_Dst test")
+        logging.info("Running Modify_L3_Dst test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller, ac_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-        ac_logger.info("Verify if switch supports the action -- modify_l3_dst, if not skip the test")
-        ac_logger.info("Insert a flow with action -- set network dst address ")
-        ac_logger.info("Send packet matching the flow, verify recieved packet network dst address rewritten ")
+        logging.info("Verify if switch supports the action -- modify_l3_dst, if not skip the test")
+        logging.info("Insert a flow with action -- set network dst address ")
+        logging.info("Send packet matching the flow, verify recieved packet network dst address rewritten ")
 
         #Verify set_nw_dst is a supported action
         sup_acts = sw_supported_actions(self,use_cache="true")
@@ -752,19 +748,19 @@ class ModifyL4Src(basic.SimpleDataPlane):
     
     def runTest(self):
 
-        ac_logger.info("Running Modify_L4_Src test")
+        logging.info("Running Modify_L4_Src test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller, ac_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-        ac_logger.info("Verify if switch supports the action -- modify_l4_src, if not skip the test")
-        ac_logger.info("Insert a flow with action -- set src tcp port")
-        ac_logger.info("Send packet matching the flow, verify recieved packet src tcp port is rewritten ")
+        logging.info("Verify if switch supports the action -- modify_l4_src, if not skip the test")
+        logging.info("Insert a flow with action -- set src tcp port")
+        logging.info("Send packet matching the flow, verify recieved packet src tcp port is rewritten ")
         
         #Verify set_tp_src is a supported action
         sup_acts = sw_supported_actions(self,use_cache="true")
@@ -786,19 +782,19 @@ class ModifyL4Dst(basic.SimpleDataPlane):
 
     def runTest(self):
 
-        ac_logger.info("Running Modify_L4_Dst test")
+        logging.info("Running Modify_L4_Dst test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller, ac_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-        ac_logger.info("Verify if switch supports the action -- modify_l4_dst, if not skip the test")
-        ac_logger.info("Insert a flow with action -- set dst tcp port")
-        ac_logger.info("Send packet matching the flow, verify recieved packet dst tcp port is rewritten ")
+        logging.info("Verify if switch supports the action -- modify_l4_dst, if not skip the test")
+        logging.info("Insert a flow with action -- set dst tcp port")
+        logging.info("Send packet matching the flow, verify recieved packet dst tcp port is rewritten ")
        
         #Verify set_tp_dst is a supported action
         sup_acts = sw_supported_actions(self,use_cache="true")
@@ -820,19 +816,19 @@ class ModifyTos(basic.SimpleDataPlane):
    
     def runTest(self):
 
-        ac_logger.info("Running Modify_Tos test")
+        logging.info("Running Modify_Tos test")
 
         of_ports = ac_port_map.keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller, ac_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-        ac_logger.info("Verify if switch supports the action -- modify_tos, if not skip the test")
-        ac_logger.info("Insert a flow with action -- set type of service ")
-        ac_logger.info("Send packet matching the flow, verify recieved packet has TOS rewritten ")
+        logging.info("Verify if switch supports the action -- modify_tos, if not skip the test")
+        logging.info("Insert a flow with action -- set type of service ")
+        logging.info("Send packet matching the flow, verify recieved packet has TOS rewritten ")
        
         #Verify set_tos is a supported action
         sup_acts = sw_supported_actions(self,use_cache="true")

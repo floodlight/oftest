@@ -22,8 +22,6 @@ from oftest.testutils import *
 #@var cxn_port_map Local copy of the configuration map from OF port
 # numbers to OS interfaces
 cxn_port_map = None
-#@var cxn_logger Local logger object
-cxn_logger = None
 #@var cxn_config Local copy of global configuration data
 cxn_config = None
 
@@ -37,11 +35,8 @@ def test_set_init(config):
     """
 
     global cxn_port_map
-    global cxn_logger
     global cxn_config
 
-    cxn_logger = logging.getLogger("cxn")
-    cxn_logger.info("Initializing test set")
     cxn_port_map = config["port_map"]
     cxn_config = config
 
@@ -51,7 +46,7 @@ class BaseHandshake(unittest.TestCase):
     """
 
     def sig_handler(self, v1, v2):
-        cxn_logger.critical("Received interrupt signal; exiting")
+        logging.critical("Received interrupt signal; exiting")
         print "Received interrupt signal; exiting"
         self.clean_shutdown = False
         self.tearDown()
@@ -75,15 +70,14 @@ class BaseHandshake(unittest.TestCase):
                         "Controller startup failed, no switch addr")
 
     def setUp(self):
-        self.logger = cxn_logger
         self.config = cxn_config
         #@todo Test cases shouldn't monkey with signals; move SIGINT handler
         # to top-level oft
         try:
            signal.signal(signal.SIGINT, self.sig_handler)
         except ValueError, e:
-           cxn_logger.info("Could not set SIGINT handler: %s" % e)
-        cxn_logger.info("** START TEST CASE " + str(self))
+           logging.info("Could not set SIGINT handler: %s" % e)
+        logging.info("** START TEST CASE " + str(self))
 
         self.test_timeout = test_param_get(cxn_config,
                                            'handshake_timeout') or 60
@@ -103,14 +97,13 @@ class BaseHandshake(unittest.TestCase):
         the state after the sub_test is run must be taken into account
         by subsequent operations.
         """
-        self.logger = parent.logger
         self.config = parent.config
-        cxn_logger.info("** Setup " + str(self) + 
+        logging.info("** Setup " + str(self) + 
                                     " inheriting from " + str(parent))
         self.controller = parent.controller
         
     def tearDown(self):
-        cxn_logger.info("** END TEST CASE " + str(self))
+        logging.info("** END TEST CASE " + str(self))
         self.controller.shutdown()
         if self.clean_shutdown:
             self.controller.join()
@@ -121,7 +114,7 @@ class BaseHandshake(unittest.TestCase):
 
     def assertTrue(self, cond, msg):
         if not cond:
-            cxn_logger.error("** FAILED ASSERTION: " + msg)
+            logging.error("** FAILED ASSERTION: " + msg)
         unittest.TestCase.assertTrue(self, cond, msg)
 
 test_prio["BaseHandshake"] = -1
@@ -135,9 +128,9 @@ class HandshakeNoHello(BaseHandshake):
         self.controllerSetup(cxn_config["controller_host"],
                              cxn_config["controller_port"])
 
-        cxn_logger.info("TCP Connected " + 
+        logging.info("TCP Connected " + 
                         str(self.controller.switch_addr))
-        cxn_logger.info("Hello not sent, waiting for timeout")
+        logging.info("Hello not sent, waiting for timeout")
 
         # wait for controller to die
         count = 0
@@ -156,12 +149,12 @@ class HandshakeNoFeaturesRequest(BaseHandshake):
         self.controllerSetup(cxn_config["controller_host"],
                              cxn_config["controller_port"])
 
-        cxn_logger.info("TCP Connected " + 
+        logging.info("TCP Connected " + 
                                     str(self.controller.switch_addr))
-        cxn_logger.info("Sending hello")
+        logging.info("Sending hello")
         self.controller.message_send(message.hello())
 
-        cxn_logger.info("Features request not sent, waiting for timeout")
+        logging.info("Features request not sent, waiting for timeout")
 
         # wait for controller to die
         count = 0
@@ -180,16 +173,16 @@ class HandshakeAndKeepalive(BaseHandshake):
         self.controllerSetup(cxn_config["controller_host"],
                              cxn_config["controller_port"])
 
-        cxn_logger.info("TCP Connected " + 
+        logging.info("TCP Connected " + 
                                     str(self.controller.switch_addr))
-        cxn_logger.info("Sending hello")
+        logging.info("Sending hello")
         self.controller.message_send(message.hello())
 
         request = message.features_request()
         reply, pkt = self.controller.transact(request, timeout=20)
         self.assertTrue(reply is not None,
                         "Did not complete features_request for handshake")
-        cxn_logger.info("Handshake complete with " + 
+        logging.info("Handshake complete with " + 
                         str(self.controller.switch_addr))
 
         self.controller.keep_alive = True

@@ -36,8 +36,6 @@ from oftest.testutils import *
 #@var basic_port_map Local copy of the configuration map from OF port
 # numbers to OS interfaces
 basic_port_map = None
-#@var basic_logger Local logger object
-basic_logger = None
 #@var basic_config Local copy of global configuration data
 basic_config = None
 
@@ -53,11 +51,8 @@ def test_set_init(config):
     """
 
     global basic_port_map
-    global basic_logger
     global basic_config
 
-    basic_logger = logging.getLogger("basic")
-    basic_logger.info("Initializing test set")
     basic_port_map = config["port_map"]
     basic_config = config
 
@@ -67,22 +62,21 @@ class SimpleProtocol(unittest.TestCase):
     """
 
     def sig_handler(self, v1, v2):
-        basic_logger.critical("Received interrupt signal; exiting")
+        logging.critical("Received interrupt signal; exiting")
         print "Received interrupt signal; exiting"
         self.clean_shutdown = False
         self.tearDown()
         raise KeyboardInterrupt
 
     def setUp(self):
-        self.logger = basic_logger
         self.config = basic_config
         #@todo Test cases shouldn't monkey with signals; move SIGINT handler
         # to top-level oft
         try:
            signal.signal(signal.SIGINT, self.sig_handler)
         except ValueError, e:
-           basic_logger.info("Could not set SIGINT handler: %s" % e)
-        basic_logger.info("** START TEST CASE " + str(self))
+           logging.info("Could not set SIGINT handler: %s" % e)
+        logging.info("** START TEST CASE " + str(self))
         self.controller = controller.Controller(
             host=basic_config["controller_host"],
             port=basic_config["controller_port"])
@@ -100,13 +94,13 @@ class SimpleProtocol(unittest.TestCase):
             raise Exception("Controller startup failed")
         if self.controller.switch_addr is None: 
             raise Exception("Controller startup failed (no switch addr)")
-        basic_logger.info("Connected " + str(self.controller.switch_addr))
+        logging.info("Connected " + str(self.controller.switch_addr))
         request = message.features_request()
         reply, pkt = self.controller.transact(request)
         self.assertTrue(reply is not None,
                         "Did not complete features_request for handshake")
         self.supported_actions = reply.actions
-        basic_logger.info("Supported actions: " + hex(self.supported_actions))
+        logging.info("Supported actions: " + hex(self.supported_actions))
 
     def inheritSetup(self, parent):
         """
@@ -123,15 +117,14 @@ class SimpleProtocol(unittest.TestCase):
         the state after the sub_test is run must be taken into account
         by subsequent operations.
         """
-        self.logger = parent.logger
         self.config = parent.config
-        basic_logger.info("** Setup " + str(self) + " inheriting from "
+        logging.info("** Setup " + str(self) + " inheriting from "
                           + str(parent))
         self.controller = parent.controller
         self.supported_actions = parent.supported_actions
         
     def tearDown(self):
-        basic_logger.info("** END TEST CASE " + str(self))
+        logging.info("** END TEST CASE " + str(self))
         self.controller.shutdown()
         #@todo Review if join should be done on clean_shutdown
         if self.clean_shutdown:
@@ -139,13 +132,13 @@ class SimpleProtocol(unittest.TestCase):
 
     def runTest(self):
         # Just a simple sanity check as illustration
-        basic_logger.info("Running simple proto test")
+        logging.info("Running simple proto test")
         self.assertTrue(self.controller.switch_socket is not None,
                         str(self) + 'No connection to switch')
 
     def assertTrue(self, cond, msg):
         if not cond:
-            basic_logger.error("** FAILED ASSERTION: " + msg)
+            logging.error("** FAILED ASSERTION: " + msg)
         unittest.TestCase.assertTrue(self, cond, msg)
 
 test_prio["SimpleProtocol"] = 1
@@ -170,11 +163,11 @@ class SimpleDataPlane(SimpleProtocol):
         self.dataplane = parent.dataplane
 
     def tearDown(self):
-        basic_logger.info("Teardown for simple dataplane test")
+        logging.info("Teardown for simple dataplane test")
         SimpleProtocol.tearDown(self)
         if hasattr(self, 'dataplane'):
             self.dataplane.kill(join_threads=self.clean_shutdown)
-        basic_logger.info("Teardown done")
+        logging.info("Teardown done")
 
     def runTest(self):
         self.assertTrue(self.controller.switch_socket is not None,
@@ -188,7 +181,7 @@ class DataPlaneOnly(unittest.TestCase):
     """
 
     def sig_handler(self, v1, v2):
-        basic_logger.critical("Received interrupt signal; exiting")
+        logging.critical("Received interrupt signal; exiting")
         print "Received interrupt signal; exiting"
         self.clean_shutdown = False
         self.tearDown()
@@ -196,26 +189,25 @@ class DataPlaneOnly(unittest.TestCase):
 
     def setUp(self):
         self.clean_shutdown = True
-        self.logger = basic_logger
         self.config = basic_config
         #@todo Test cases shouldn't monkey with signals; move SIGINT handler
         # to top-level oft
         try:
            signal.signal(signal.SIGINT, self.sig_handler)
         except ValueError, e:
-           basic_logger.info("Could not set SIGINT handler: %s" % e)
-        basic_logger.info("** START DataPlaneOnly CASE " + str(self))
+           logging.info("Could not set SIGINT handler: %s" % e)
+        logging.info("** START DataPlaneOnly CASE " + str(self))
         self.dataplane = dataplane.DataPlane(self.config)
         for of_port, ifname in basic_port_map.items():
             self.dataplane.port_add(ifname, of_port)
 
     def tearDown(self):
-        basic_logger.info("Teardown for simple dataplane test")
+        logging.info("Teardown for simple dataplane test")
         self.dataplane.kill(join_threads=self.clean_shutdown)
-        basic_logger.info("Teardown done")
+        logging.info("Teardown done")
 
     def runTest(self):
-        basic_logger.info("DataPlaneOnly")
+        logging.info("DataPlaneOnly")
         # self.dataplane.show()
         # Would like an assert that checks the data plane
 
@@ -265,7 +257,7 @@ class PacketIn(SimpleDataPlane):
         # Send packet to dataplane, once to each port
         # Poll controller with expect message type packet in
 
-        rc = delete_all_flows(self.controller, basic_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
@@ -279,7 +271,7 @@ class PacketIn(SimpleDataPlane):
                (simple_eth_packet(), "simple Ethernet packet"),
                (simple_eth_packet(pktlen=40), "tiny Ethernet packet")]:
 
-               basic_logger.info("PKT IN test with %s, port %s" % (pt, of_port))
+               logging.info("PKT IN test with %s, port %s" % (pt, of_port))
                self.dataplane.send(of_port, str(pkt))
                #@todo Check for unexpected messages?
                count = 0
@@ -299,8 +291,8 @@ class PacketIn(SimpleDataPlane):
                                'Packet in message not received on port ' + 
                                str(of_port))
                if not dataplane.match_exp_pkt(pkt, response.data):
-                   basic_logger.debug("Sent %s" % format_packet(pkt))
-                   basic_logger.debug("Resp %s" % format_packet(response.data))
+                   logging.debug("Sent %s" % format_packet(pkt))
+                   logging.debug("Resp %s" % format_packet(response.data))
                    self.assertTrue(False,
                                    'Response packet does not match send packet' +
                                    ' for port ' + str(of_port))
@@ -313,7 +305,7 @@ class PacketInDefaultDrop(SimpleDataPlane):
     in message is received from the controller for each
     """
     def runTest(self):
-        rc = delete_all_flows(self.controller, basic_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
@@ -352,7 +344,7 @@ class PacketInBroadcastCheck(SimpleDataPlane):
         # Need at least two ports
         self.assertTrue(len(basic_port_map) > 1, "Too few ports for test")
 
-        rc = delete_all_flows(self.controller, basic_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
@@ -360,7 +352,7 @@ class PacketInBroadcastCheck(SimpleDataPlane):
         d_port = of_ports[0]
         pkt = simple_eth_packet(dl_dst='ff:ff:ff:ff:ff:ff')
 
-        basic_logger.info("BCast Leak Test, send to port %s" % d_port)
+        logging.info("BCast Leak Test, send to port %s" % d_port)
         self.dataplane.send(d_port, str(pkt))
 
         (of_port, pkt_in, pkt_time) = self.dataplane.poll(exp_pkt=pkt)
@@ -381,7 +373,7 @@ class PacketOut(SimpleDataPlane):
         # Send packet to dataplane
         # Poll controller with expect message type packet in
 
-        rc = delete_all_flows(self.controller, basic_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         # These will get put into function
@@ -393,14 +385,14 @@ class PacketOut(SimpleDataPlane):
                (simple_eth_packet(), "simple Ethernet packet"),
                (simple_eth_packet(pktlen=40), "tiny Ethernet packet")]:
 
-               basic_logger.info("PKT OUT test with %s, port %s" % (opt, dp_port))
+               logging.info("PKT OUT test with %s, port %s" % (opt, dp_port))
                msg = message.packet_out()
                msg.data = str(outpkt)
                act = action.action_output()
                act.port = dp_port
                self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
 
-               basic_logger.info("PacketOut to: " + str(dp_port))
+               logging.info("PacketOut to: " + str(dp_port))
                rv = self.controller.message_send(msg)
                self.assertTrue(rv == 0, "Error sending out message")
 
@@ -413,12 +405,12 @@ class PacketOut(SimpleDataPlane):
                                                               exp_pkt=exp_pkt_arg)
 
                self.assertTrue(pkt is not None, 'Packet not received')
-               basic_logger.info("PacketOut: got pkt from " + str(of_port))
+               logging.info("PacketOut: got pkt from " + str(of_port))
                if of_port is not None:
                    self.assertEqual(of_port, dp_port, "Unexpected receive port")
                if not dataplane.match_exp_pkt(outpkt, pkt):
-                   basic_logger.debug("Sent %s" % format_packet(outpkt))
-                   basic_logger.debug("Resp %s" % format_packet(
+                   logging.debug("Sent %s" % format_packet(outpkt))
+                   logging.debug("Resp %s" % format_packet(
                            str(pkt)[:len(str(outpkt))]))
                self.assertEqual(str(outpkt), str(pkt)[:len(str(outpkt))],
                                 'Response packet does not match send packet')
@@ -435,7 +427,7 @@ class PacketOutMC(SimpleDataPlane):
         # Send packet to dataplane
         # Poll controller with expect message type packet in
 
-        rc = delete_all_flows(self.controller, basic_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         # These will get put into function
@@ -448,7 +440,7 @@ class PacketOutMC(SimpleDataPlane):
                (simple_eth_packet(pktlen=40), "tiny Ethernet packet")]:
 
                dp_ports = of_ports[0:num_ports]
-               basic_logger.info("PKT OUT test with " + opt +
+               logging.info("PKT OUT test with " + opt +
                                  ", ports " + str(dp_ports))
                msg = message.packet_out()
                msg.data = str(outpkt)
@@ -458,13 +450,13 @@ class PacketOutMC(SimpleDataPlane):
                   self.assertTrue(msg.actions.add(act),
                                   'Could not add action to msg')
 
-               basic_logger.info("PacketOut to: " + str(dp_ports))
+               logging.info("PacketOut to: " + str(dp_ports))
                rv = self.controller.message_send(msg)
                self.assertTrue(rv == 0, "Error sending out message")
 
                receive_pkt_check(self.dataplane, outpkt, dp_ports,
                                  set(of_ports).difference(dp_ports),
-                                 self, basic_logger, basic_config)
+                                 self, basic_config)
 
 class FlowStatsGet(SimpleProtocol):
     """
@@ -473,13 +465,13 @@ class FlowStatsGet(SimpleProtocol):
     Simply verify stats get transaction
     """
     def runTest(self):
-        basic_logger.info("Running StatsGet")
-        basic_logger.info("Inserting trial flow")
+        logging.info("Running StatsGet")
+        logging.info("Inserting trial flow")
         request = flow_mod_gen(basic_port_map, True)
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Failed to insert test flow")
         
-        basic_logger.info("Sending flow request")
+        logging.info("Sending flow request")
         request = message.flow_stats_request()
         request.out_port = ofp.OFPP_NONE
         request.table_id = 0xff
@@ -487,7 +479,7 @@ class FlowStatsGet(SimpleProtocol):
         response, pkt = self.controller.transact(request)
         self.assertTrue(response is not None,
                         "Did not get response for flow stats")
-        basic_logger.debug(response.show())
+        logging.debug(response.show())
 
 test_prio["FlowStatsGet"] = -1
 
@@ -498,18 +490,18 @@ class TableStatsGet(SimpleProtocol):
     Simply verify table stats get transaction
     """
     def runTest(self):
-        basic_logger.info("Running TableStatsGet")
-        basic_logger.info("Inserting trial flow")
+        logging.info("Running TableStatsGet")
+        logging.info("Inserting trial flow")
         request = flow_mod_gen(basic_port_map, True)
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Failed to insert test flow")
         
-        basic_logger.info("Sending table stats request")
+        logging.info("Sending table stats request")
         request = message.table_stats_request()
         response, pkt = self.controller.transact(request)
         self.assertTrue(response is not None,
                         "Did not get reply for table stats")
-        basic_logger.debug(response.show())
+        logging.debug(response.show())
 
 class DescStatsGet(SimpleProtocol):
     """
@@ -518,14 +510,14 @@ class DescStatsGet(SimpleProtocol):
     Simply verify stats get transaction
     """
     def runTest(self):
-        basic_logger.info("Running DescStatsGet")
+        logging.info("Running DescStatsGet")
         
-        basic_logger.info("Sending stats request")
+        logging.info("Sending stats request")
         request = message.desc_stats_request()
         response, pkt = self.controller.transact(request)
         self.assertTrue(response is not None,
                         "Did not get reply for desc stats")
-        basic_logger.debug(response.show())
+        logging.debug(response.show())
 
 class FlowMod(SimpleProtocol):
     """
@@ -535,7 +527,7 @@ class FlowMod(SimpleProtocol):
     """
 
     def runTest(self):
-        basic_logger.info("Running " + str(self))
+        logging.info("Running " + str(self))
         request = flow_mod_gen(basic_port_map, True)
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Error installing flow mod")
@@ -550,26 +542,25 @@ class PortConfigMod(SimpleProtocol):
     """
 
     def runTest(self):
-        basic_logger.info("Running " + str(self))
+        logging.info("Running " + str(self))
         for of_port, ifname in basic_port_map.items(): # Grab first port
             break
 
         (hw_addr, config, advert) = \
-            port_config_get(self.controller, of_port, basic_logger)
+            port_config_get(self.controller, of_port)
         self.assertTrue(config is not None, "Did not get port config")
 
-        basic_logger.debug("No flood bit port " + str(of_port) + " is now " + 
+        logging.debug("No flood bit port " + str(of_port) + " is now " + 
                            str(config & ofp.OFPPC_NO_FLOOD))
 
         rv = port_config_set(self.controller, of_port,
-                             config ^ ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD,
-                             basic_logger)
+                             config ^ ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD)
         self.assertTrue(rv != -1, "Error sending port mod")
 
         # Verify change took place with same feature request
         (hw_addr, config2, advert) = \
-            port_config_get(self.controller, of_port, basic_logger)
-        basic_logger.debug("No flood bit port " + str(of_port) + " is now " + 
+            port_config_get(self.controller, of_port)
+        logging.debug("No flood bit port " + str(of_port) + " is now " + 
                            str(config2 & ofp.OFPPC_NO_FLOOD))
         self.assertTrue(config2 is not None, "Did not get port config2")
         self.assertTrue(config2 & ofp.OFPPC_NO_FLOOD !=
@@ -577,7 +568,7 @@ class PortConfigMod(SimpleProtocol):
                         "Bit change did not take")
         # Set it back
         rv = port_config_set(self.controller, of_port, config, 
-                             ofp.OFPPC_NO_FLOOD, basic_logger)
+                             ofp.OFPPC_NO_FLOOD)
         self.assertTrue(rv != -1, "Error sending port mod")
 
 class PortConfigModErr(SimpleProtocol):
@@ -587,7 +578,7 @@ class PortConfigModErr(SimpleProtocol):
     """
 
     def runTest(self):
-        basic_logger.info("Running " + str(self))
+        logging.info("Running " + str(self))
 
         # pick a random bad port number
         bad_port = random.randint(1, ofp.OFPP_MAX)
@@ -596,11 +587,10 @@ class PortConfigModErr(SimpleProtocol):
             bad_port = random.randint(1, ofp.OFPP_MAX)
             count = count + 1
         self.assertTrue(count < 50, "Error selecting bad port")
-        basic_logger.info("Select " + str(bad_port) + " as invalid port")
+        logging.info("Select " + str(bad_port) + " as invalid port")
 
         rv = port_config_set(self.controller, bad_port,
-                             ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD,
-                             basic_logger)
+                             ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD)
         self.assertTrue(rv != -1, "Error sending port mod")
 
         # poll for error message
@@ -609,7 +599,7 @@ class PortConfigModErr(SimpleProtocol):
             if not response:  # Timeout
                 break
             if response.code == ofp.OFPPMFC_BAD_PORT:
-                basic_logger.info("Received error message with OFPPMFC_BAD_PORT code")
+                logging.info("Received error message with OFPPMFC_BAD_PORT code")
                 break
             if not basic_config["relax"]:  # Only one attempt to match
                 break
@@ -625,7 +615,7 @@ class BadMessage(SimpleProtocol):
     """
 
     def runTest(self):
-        basic_logger.info("Running " + str(self))
+        logging.info("Running " + str(self))
         request = illegal_message.illegal_message_type()
 
         reply, pkt = self.controller.transact(request)

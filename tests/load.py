@@ -36,8 +36,6 @@ from oftest.testutils import *
 #@var load_port_map Local copy of the configuration map from OF port
 # numbers to OS interfaces
 load_port_map = None
-#@var load_logger Local logger object
-load_logger = None
 #@var load_config Local copy of global configuration data
 load_config = None
 
@@ -54,11 +52,8 @@ def test_set_init(config):
     """
 
     global load_port_map
-    global load_logger
     global load_config
 
-    load_logger = logging.getLogger("load")
-    load_logger.info("Initializing test set")
     load_port_map = config["port_map"]
     load_config = config
 
@@ -114,20 +109,20 @@ class LoadBarrier(basic.SimpleProtocol):
         act = action.action_output()
         act.port = lb_port + 1
         self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
-        load_logger.info("Sleeping before starting storm")
+        logging.info("Sleeping before starting storm")
         time.sleep(1) # Root causing issue with fast disconnects
-        load_logger.info("Sending packet out to %d" % (lb_port + 1))
+        logging.info("Sending packet out to %d" % (lb_port + 1))
         rv = self.controller.message_send(msg)
         self.assertTrue(rv == 0, "Error sending out message")
 
         for idx in range(0, barrier_count):
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
             # To do:  Add some interesting functionality here
-            load_logger.info("Barrier %d completed" % idx)
+            logging.info("Barrier %d completed" % idx)
 
         # Clear the flow table when done
-        load_logger.debug("Deleting all flows from switch")
-        rc = delete_all_flows(self.controller, load_logger)
+        logging.debug("Deleting all flows from switch")
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
 # Do not run by default; still mysterious disconnects often

@@ -22,8 +22,6 @@ from oftest.testutils import *
 #@var serial_failover_port_map Local copy of the configuration map from OF port
 # numbers to OS interfaces
 serial_failover_port_map = None
-#@var serial_failover_logger Local logger object
-serial_failover_logger = None
 #@var serial_failover_config Local copy of global configuration data
 serial_failover_config = None
 
@@ -37,11 +35,8 @@ def test_set_init(config):
     """
 
     global serial_failover_port_map
-    global serial_failover_logger
     global serial_failover_config
 
-    serial_failover_logger = logging.getLogger("serial_failover")
-    serial_failover_logger.info("Initializing test set")
     serial_failover_port_map = config["port_map"]
     serial_failover_config = config
 
@@ -65,7 +60,7 @@ class SerialFailover(unittest.TestCase):
     test_iterations = 0
 
     def sig_handler(self, v1, v2):
-        serial_failover_logger.critical("Received interrupt signal; exiting")
+        logging.critical("Received interrupt signal; exiting")
         print "Received interrupt signal; exiting"
         self.clean_shutdown = False
         self.tearDown()
@@ -89,7 +84,7 @@ class SerialFailover(unittest.TestCase):
         reply, pkt = self.controller.transact(request, timeout=20)
         self.assertTrue(reply is not None,
                         "Did not complete features_request for handshake")
-        serial_failover_logger.info("Connected " + 
+        logging.info("Connected " + 
                                     str(self.controller.switch_addr))
 
         # send echo request and wait for reply
@@ -103,10 +98,10 @@ class SerialFailover(unittest.TestCase):
 
     def connectionKill(self, kill_method):
         if kill_method == 'controller_shutdown':
-            serial_failover_logger.info("Shutting down controller")
+            logging.info("Shutting down controller")
             self.controller.shutdown()
         elif kill_method == 'no_echo':
-            serial_failover_logger.info("Disabling controller keep alive")
+            logging.info("Disabling controller keep alive")
             self.controller.keep_alive = False
 
             # wait for controller to die
@@ -121,7 +116,7 @@ class SerialFailover(unittest.TestCase):
         # controller_list is list of ip/port tuples
         partial_list = test_param_get(serial_failover_config,
                                       'controller_list')
-        serial_failover_logger.debug("ctrl list: " + str(partial_list))
+        logging.debug("ctrl list: " + str(partial_list))
         self.controller_list = [(serial_failover_config["controller_host"],
                                  serial_failover_config["controller_port"])]
         if partial_list is not None:
@@ -143,15 +138,14 @@ class SerialFailover(unittest.TestCase):
         return self.controller_list[self.controller_idx]
 
     def setUp(self):
-        self.logger = serial_failover_logger
         self.config = serial_failover_config
         #@todo Test cases shouldn't monkey with signals; move SIGINT handler
         # to top-level oft
         try:
            signal.signal(signal.SIGINT, self.sig_handler)
         except ValueError, e:
-           serial_failover_logger.info("Could not set SIGINT handler: %s" % e)
-        serial_failover_logger.info("** START TEST CASE " + str(self))
+           logging.info("Could not set SIGINT handler: %s" % e)
+        logging.info("** START TEST CASE " + str(self))
 
         self.test_timeout = test_param_get(serial_failover_config,
                                            'failover_timeout') or 60
@@ -178,27 +172,26 @@ class SerialFailover(unittest.TestCase):
         the state after the sub_test is run must be taken into account
         by subsequent operations.
         """
-        self.logger = parent.logger
         self.config = parent.config
-        serial_failover_logger.info("** Setup " + str(self) + 
+        logging.info("** Setup " + str(self) + 
                                     " inheriting from " + str(parent))
         self.controller = parent.controller
         
     def tearDown(self):
-        serial_failover_logger.info("** END TEST CASE " + str(self))
+        logging.info("** END TEST CASE " + str(self))
         self.controller.shutdown()
         if self.clean_shutdown:
             self.controller.join()
 
     def doFailover(self, killmethod):
-        serial_failover_logger.info("Starting serial failover test")
+        logging.info("Starting serial failover test")
         self.assertTrue(self.controller.switch_socket is not None,
                         str(self) + 'No connection to switch')
         # kill controller connection
         self.connectionKill(killmethod)
         # establish new controller connection
         controller = self.getNextController()
-        serial_failover_logger.debug("** Next controller (%u/%u)%s:%u" % 
+        logging.debug("** Next controller (%u/%u)%s:%u" % 
                                      (self.controller_idx,
                                       len(self.controller_list),
                                       controller[0],
@@ -211,7 +204,7 @@ class SerialFailover(unittest.TestCase):
 
     def assertTrue(self, cond, msg):
         if not cond:
-            serial_failover_logger.error("** FAILED ASSERTION: " + msg)
+            logging.error("** FAILED ASSERTION: " + msg)
         unittest.TestCase.assertTrue(self, cond, msg)
 
 test_prio["SerialFailover"] = -1

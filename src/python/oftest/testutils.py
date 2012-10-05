@@ -30,25 +30,23 @@ UDP_PROTOCOL = 0x11
 
 MINSIZE = 0
 
-def clear_switch(parent, port_list, logger):
+def clear_switch(parent, port_list):
     """
     Clear the switch configuration
 
     @param parent Object implementing controller and assert equal
-    @param logger Logging object
     """
     for port in port_list:
-        clear_port_config(parent, port, logger)
-    delete_all_flows(parent.controller, logger)
+        clear_port_config(parent, port)
+    delete_all_flows(parent.controller)
 
-def delete_all_flows(ctrl, logger):
+def delete_all_flows(ctrl):
     """
     Delete all flows on the switch
     @param ctrl The controller object for the test
-    @param logger Logging object
     """
 
-    logger.info("Deleting all flows")
+    logging.info("Deleting all flows")
     msg = message.flow_mod()
     msg.match.wildcards = ofp.OFPFW_ALL
     msg.out_port = ofp.OFPP_NONE
@@ -56,15 +54,14 @@ def delete_all_flows(ctrl, logger):
     msg.buffer_id = 0xffffffff
     return ctrl.message_send(msg)
 
-def clear_port_config(parent, port, logger):
+def clear_port_config(parent, port):
     """
     Clear the port configuration (currently only no flood setting)
 
     @param parent Object implementing controller and assert equal
-    @param logger Logging object
     """
     rv = port_config_set(parent.controller, port,
-                         0, ofp.OFPPC_NO_FLOOD, logger)
+                         0, ofp.OFPPC_NO_FLOOD)
     self.assertEqual(rv, 0, "Failed to reset port config")
 
 def required_wildcards(parent):
@@ -203,7 +200,7 @@ def do_barrier(ctrl):
         return -1
     return 0
 
-def port_config_get(controller, port_no, logger):
+def port_config_get(controller, port_no):
     """
     Get a port's configuration
 
@@ -215,31 +212,31 @@ def port_config_get(controller, port_no, logger):
     """
     request = message.features_request()
     reply, pkt = controller.transact(request)
-    logger.debug(reply.show())
+    logging.debug(reply.show())
     if reply is None:
-        logger.warn("Get feature request failed")
+        logging.warn("Get feature request failed")
         return None, None, None
     for idx in range(len(reply.ports)):
         if reply.ports[idx].port_no == port_no:
             return (reply.ports[idx].hw_addr, reply.ports[idx].config,
                     reply.ports[idx].advertised)
     
-    logger.warn("Did not find port number for port config")
+    logging.warn("Did not find port number for port config")
     return None, None, None
 
-def port_config_set(controller, port_no, config, mask, logger):
+def port_config_set(controller, port_no, config, mask):
     """
     Set the port configuration according the given parameters
 
     Gets the switch feature configuration and updates one port's
     configuration value according to config and mask
     """
-    logger.info("Setting port " + str(port_no) + " to config " + str(config))
+    logging.info("Setting port " + str(port_no) + " to config " + str(config))
     request = message.features_request()
     reply, pkt = controller.transact(request)
     if reply is None:
         return -1
-    logger.debug(reply.show())
+    logging.debug(reply.show())
     for idx in range(len(reply.ports)):
         if reply.ports[idx].port_no == port_no:
             break
@@ -254,8 +251,7 @@ def port_config_set(controller, port_no, config, mask, logger):
     rv = controller.message_send(mod)
     return rv
 
-def receive_pkt_check(dp, pkt, yes_ports, no_ports, assert_if, logger,
-                      config):
+def receive_pkt_check(dp, pkt, yes_ports, no_ports, assert_if, config):
     """
     Check for proper receive packets across all ports
     @param dp The dataplane object
@@ -269,21 +265,21 @@ def receive_pkt_check(dp, pkt, yes_ports, no_ports, assert_if, logger,
         exp_pkt_arg = pkt
 
     for ofport in yes_ports:
-        logger.debug("Checking for pkt on port " + str(ofport))
+        logging.debug("Checking for pkt on port " + str(ofport))
         (rcv_port, rcv_pkt, pkt_time) = dp.poll(
             port_number=ofport, exp_pkt=exp_pkt_arg)
         assert_if.assertTrue(rcv_pkt is not None, 
                              "Did not receive pkt on " + str(ofport))
         if not dataplane.match_exp_pkt(pkt, rcv_pkt):
-            logger.debug("Sent %s" % format_packet(pkt))
-            logger.debug("Resp %s" % format_packet(rcv_pkt))
+            logging.debug("Sent %s" % format_packet(pkt))
+            logging.debug("Resp %s" % format_packet(rcv_pkt))
         assert_if.assertTrue(dataplane.match_exp_pkt(pkt, rcv_pkt),
                              "Response packet does not match send packet " +
                              "on port " + str(ofport))
     if len(no_ports) > 0:
         time.sleep(1)
     for ofport in no_ports:
-        logger.debug("Negative check for pkt on port " + str(ofport))
+        logging.debug("Negative check for pkt on port " + str(ofport))
         (rcv_port, rcv_pkt, pkt_time) = dp.poll(
             port_number=ofport, timeout=1, exp_pkt=exp_pkt_arg)
         assert_if.assertTrue(rcv_pkt is None, 
@@ -315,19 +311,19 @@ def receive_pkt_verify(parent, egr_ports, exp_pkt, ing_port):
             port_number=check_port, exp_pkt=exp_pkt_arg)
 
         if rcv_pkt is None:
-            parent.logger.error("ERROR: No packet received from " + 
+            logging.error("ERROR: No packet received from " + 
                                 str(check_port))
 
         parent.assertTrue(rcv_pkt is not None,
                           "Did not receive packet port " + str(check_port))
-        parent.logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
+        logging.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
                             str(rcv_port))
 
         if str(exp_pkt) != str(rcv_pkt):
-            parent.logger.error("ERROR: Packet match failed.")
-            parent.logger.debug("Expected len " + str(len(exp_pkt)) + ": "
+            logging.error("ERROR: Packet match failed.")
+            logging.debug("Expected len " + str(len(exp_pkt)) + ": "
                                 + str(exp_pkt).encode('hex'))
-            parent.logger.debug("Received len " + str(len(rcv_pkt)) + ": "
+            logging.debug("Received len " + str(len(rcv_pkt)) + ": "
                                 + str(rcv_pkt).encode('hex'))
         parent.assertEqual(str(exp_pkt), str(rcv_pkt),
                            "Packet match error on port " + str(check_port))
@@ -470,7 +466,7 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None
 
     if action_list is not None:
         for act in action_list:
-            parent.logger.debug("Adding action " + act.show())
+            logging.debug("Adding action " + act.show())
             rv = request.actions.add(act)
             parent.assertTrue(rv, "Could not add action" + act.show())
 
@@ -492,7 +488,7 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None
             parent.assertTrue(rv, "Could not add output action " + 
                               str(egr_port))
 
-    parent.logger.debug(request.show())
+    logging.debug(request.show())
 
     return request
 
@@ -510,12 +506,12 @@ def flow_msg_install(parent, request, clear_table_override=None):
         clear_table = clear_table_override
 
     if clear_table: 
-        parent.logger.debug("Clear flow table")
-        rc = delete_all_flows(parent.controller, parent.logger)
+        logging.debug("Clear flow table")
+        rc = delete_all_flows(parent.controller)
         parent.assertEqual(rc, 0, "Failed to delete all flows")
         parent.assertEqual(do_barrier(parent.controller), 0, "Barrier failed")
 
-    parent.logger.debug("Insert flow")
+    logging.debug("Insert flow")
     rv = parent.controller.message_send(request)
     parent.assertTrue(rv != -1, "Error installing flow mod")
     parent.assertEqual(do_barrier(parent.controller), 0, "Barrier failed")
@@ -533,9 +529,9 @@ def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=None,
 
     if wildcards is None:
         wildcards = required_wildcards(parent)
-    parent.logger.info("Pkt match test: " + str(ing_port) + " to " + 
+    logging.info("Pkt match test: " + str(ing_port) + " to " + 
                        str(egr_ports))
-    parent.logger.debug("  WC: " + hex(wildcards) + " vlan: " + str(dl_vlan) +
+    logging.debug("  WC: " + hex(wildcards) + " vlan: " + str(dl_vlan) +
                     " expire: " + str(check_expire))
     if pkt is None:
         pkt = simple_tcp_packet(dl_vlan_enable=(dl_vlan >= 0), dl_vlan=dl_vlan)
@@ -546,7 +542,7 @@ def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=None,
 
     flow_msg_install(parent, request)
 
-    parent.logger.debug("Send packet: " + str(ing_port) + " to " + 
+    logging.debug("Send packet: " + str(ing_port) + " to " + 
                         str(egr_ports))
     parent.dataplane.send(ing_port, str(pkt))
 
@@ -561,7 +557,7 @@ def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=None,
 def get_egr_list(parent, of_ports, how_many, exclude_list=[]):
     """
     Generate a list of ports avoiding those in the exclude list
-    @param parent Supplies logger
+    @param parent Supplies logging
     @param of_ports List of OF port numbers
     @param how_many Number of ports to be added to the list
     @param exclude_list List of ports not to be used
@@ -579,7 +575,7 @@ def get_egr_list(parent, of_ports, how_many, exclude_list=[]):
             count += 1
             if count >= how_many:
                 return egr_ports
-    parent.logger.debug("Could not generate enough egress ports for test")
+    logging.debug("Could not generate enough egress ports for test")
     return []
     
 def flow_match_test(parent, port_map, wildcards=None, dl_vlan=-1, pkt=None, 
@@ -590,7 +586,7 @@ def flow_match_test(parent, port_map, wildcards=None, dl_vlan=-1, pkt=None,
 
     @param max_test If > 0 no more than this number of tests are executed.
     @param parent Must implement controller, dataplane, assertTrue, assertEqual
-    and logger
+    and logging
     @param pkt If not None, use this packet for ingress
     @param wildcards For flow match entry
     @param dl_vlan If not -1, and pkt is None, create a pkt w/ VLAN tag
@@ -625,7 +621,7 @@ def flow_match_test(parent, port_map, wildcards=None, dl_vlan=-1, pkt=None,
                                   check_expire=check_expire)
         test_count += 1
         if (max_test > 0) and (test_count > max_test):
-            parent.logger.info("Ran " + str(test_count) + " tests; exiting")
+            logging.info("Ran " + str(test_count) + " tests; exiting")
             return
 
 def test_param_get(config, key, default=None):
@@ -711,7 +707,7 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
     """
     Set up the ingress and expected packet and action list for a test
 
-    @param parent Must implement, assertTrue, config hash and logger
+    @param parent Must implement, assertTrue, and config hash
     @param start_field_values Field values to use for ingress packet (optional)
     @param mod_field_values Field values to use for modified packet (optional)
     @param mod_fields The list of fields to be modified by the switch in the test.
@@ -816,12 +812,12 @@ def skip_message_emit(parent, s):
     Print out a 'skipped' message to stderr
 
     @param s The string to print out to the log file
-    @param parent Must implement config and logger objects
+    @param parent Must implement config object
     """
     global skipped_test_count
 
     skipped_test_count += 1
-    parent.logger.info("Skipping: " + s)
+    logging.info("Skipping: " + s)
     if parent.config["dbg_level"] < logging.WARNING:
         sys.stderr.write("(skipped) ")
     else:

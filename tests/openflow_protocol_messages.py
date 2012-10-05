@@ -24,7 +24,6 @@ from FuncUtils import *
 
 
 of_port_map = None
-of_logger = None
 of_config = None
 
 def test_set_init(config):
@@ -33,11 +32,8 @@ def test_set_init(config):
     basic.test_set_init(config)
 
     global of_port_map
-    global of_logger
     global of_config
 
-    of_logger = logging.getLogger("Start Openflow_Protocol_Messages Conformance Test-suite")
-    of_logger.info("Initializing test set")
     of_port_map = config["port_map"]
     of_config = config
 
@@ -49,17 +45,17 @@ class FeaturesRequest(basic.SimpleProtocol):
 	b) Verify OFPT_FEATURES_REPLY is received without errors"""
 
     def runTest(self):
-        of_logger.info("Running Features_Request test")
+        logging.info("Running Features_Request test")
         
         of_ports = of_port_map.keys()
         of_ports.sort()
         
         #Clear switch state
-        rc = delete_all_flows(self.controller, of_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
         
-        of_logger.info("Sending Features_Request")
-        of_logger.info("Expecting Features_Reply")
+        logging.info("Sending Features_Request")
+        logging.info("Expecting Features_Reply")
 
         request = message.features_request()
         rv = self.controller.message_send(request)
@@ -79,17 +75,17 @@ class ConfigurationRequest(basic.SimpleProtocol):
 
     def runTest(self):
 
-        of_logger.info("Running Configuration_Request test ")
+        logging.info("Running Configuration_Request test ")
         
         of_ports = of_port_map.keys()
         of_ports.sort()
 
         #Clear switch state
-        rc = delete_all_flows(self.controller, of_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        of_logger.info("Sending OFPT_GET_CONFIG_REQUEST ")
-        of_logger.info("Expecting OFPT_GET_CONFIG_REPLY ")
+        logging.info("Sending OFPT_GET_CONFIG_REQUEST ")
+        logging.info("Expecting OFPT_GET_CONFIG_REPLY ")
 
         request = message.get_config_request()
         rv = self.controller.message_send(request)
@@ -108,17 +104,17 @@ class ModifyStateAdd(basic.SimpleProtocol):
 
     def runTest(self):
 
-        of_logger.info("Running Modify_State_Add test")
+        logging.info("Running Modify_State_Add test")
 
         of_ports = of_port_map.keys()
         of_ports.sort()
         
         #Clear switch state
-        rc = delete_all_flows(self.controller,of_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        of_logger.info("Inserting a flow entry")
-        of_logger.info("Expecting active_count=1 in table_stats_reply")
+        logging.info("Inserting a flow entry")
+        logging.info("Expecting active_count=1 in table_stats_reply")
 
         #Insert a flow entry matching on ingress_port
         (Pkt,match) = Wildcard_All_Except_Ingress(self,of_ports)
@@ -137,17 +133,17 @@ class ModifyStateDelete(basic.SimpleProtocol):
 
     def runTest(self):
 
-        of_logger.info("Running Modify_State_Delete test")
+        logging.info("Running Modify_State_Delete test")
 
         of_ports = of_port_map.keys()
         of_ports.sort()
 
         #Clear switch state
-        rc = delete_all_flows(self.controller,of_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        of_logger.info("Inserting a flow entry and then deleting it")
-        of_logger.info("Expecting the active_count=0 in table_stats_reply")
+        logging.info("Inserting a flow entry and then deleting it")
+        logging.info("Expecting the active_count=0 in table_stats_reply")
 
         #Insert a flow matching on ingress_port 
         (Pkt,match) = Wildcard_All_Except_Ingress(self,of_ports)
@@ -172,17 +168,17 @@ class ModifyStateModify(basic.SimpleDataPlane):
 
     def runTest(self):
 
-        of_logger.info("Running Modify_State_Modify test")
+        logging.info("Running Modify_State_Modify test")
 
         of_ports = of_port_map.keys()
         of_ports.sort()
 
         #Clear switch state
-        rc = delete_all_flows(self.controller, of_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        of_logger.info("Inserting a flow entry and then modifying it")
-        of_logger.info("Expecting the Test Packet to implement the modified action")
+        logging.info("Inserting a flow entry and then modifying it")
+        logging.info("Expecting the Test Packet to implement the modified action")
 
         # Insert a flow matching on ingress_port with action A (output to of_port[1])    
         (pkt,match) = Wildcard_All_Except_Ingress(self,of_ports)
@@ -203,17 +199,17 @@ class ReadState(basic.SimpleProtocol):
 
     def runTest(self):
 
-        of_logger.info("Running Read_State test")
+        logging.info("Running Read_State test")
 
         of_ports = of_port_map.keys()
         of_ports.sort()
 
         #Clear switch state
-        rc = delete_all_flows(self.controller, of_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        of_logger.info("Inserting a flow entry and then sending flow_stats request")
-        of_logger.info("Expecting the a flow_stats_reply without errors")
+        logging.info("Inserting a flow entry and then sending flow_stats request")
+        logging.info("Expecting the a flow_stats_reply without errors")
 
         # Insert a flow with match on ingress_port
         (pkt,match ) = Wildcard_All_Except_Ingress(self,of_ports)
@@ -229,17 +225,17 @@ class PacketOut(basic.SimpleDataPlane):
     
     def runTest(self):
 
-        of_logger.info("Running Packet_Out test")
+        logging.info("Running Packet_Out test")
 
         of_ports = of_port_map.keys()
         of_ports.sort()
        
         #Clear Switch state
-        rc = delete_all_flows(self.controller, of_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        of_logger.info("Sending a packet-out for each dataplane port")
-        of_logger.info("Expecting the packet on appropriate dataplane port")
+        logging.info("Sending a packet-out for each dataplane port")
+        logging.info("Expecting the packet on appropriate dataplane port")
 
         for dp_port in of_ports:
             for outpkt, opt in [
@@ -253,7 +249,7 @@ class PacketOut(basic.SimpleDataPlane):
                 act.port = dp_port
                 self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
 
-                of_logger.info("PacketOut to: " + str(dp_port))
+                logging.info("PacketOut to: " + str(dp_port))
                 rv = self.controller.message_send(msg)
                 self.assertTrue(rv == 0, "Error sending out message")
 
@@ -267,12 +263,12 @@ class PacketOut(basic.SimpleDataPlane):
                                                                 exp_pkt=exp_pkt_arg)
                 
                 self.assertTrue(pkt is not None, 'Packet not received')
-                of_logger.info("PacketOut: got pkt from " + str(of_port))
+                logging.info("PacketOut: got pkt from " + str(of_port))
                 if of_port is not None:
                     self.assertEqual(of_port, dp_port, "Unexpected receive port")
                 if not dataplane.match_exp_pkt(outpkt, pkt):
-                    of_logger.debug("Sent %s" % format_packet(outpkt))
-                    of_logger.debug("Resp %s" % format_packet(
+                    logging.debug("Sent %s" % format_packet(outpkt))
+                    logging.debug("Resp %s" % format_packet(
                             str(pkt)[:len(str(outpkt))]))
                 self.assertEqual(str(outpkt), str(pkt)[:len(str(outpkt))],
                                     'Response packet does not match send packet')
@@ -286,24 +282,24 @@ class PacketIn(basic.SimpleDataPlane):
     
     def runTest(self):
         
-        of_logger.info("Running Packet_In test")
+        logging.info("Running Packet_In test")
 
         of_ports = of_port_map.keys()
         of_ports.sort()
         ingress_port = of_ports[0]
 
         #Clear Switch state
-        rc = delete_all_flows(self.controller, of_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-        of_logger.info("Sending a Simple tcp packet a dataplane port")
-        of_logger.info("Expecting a packet_in event on the control plane")
+        logging.info("Sending a Simple tcp packet a dataplane port")
+        logging.info("Expecting a packet_in event on the control plane")
 
         # Send  packet on dataplane port and verify packet_in event gets generated.
         pkt = simple_tcp_packet()
         self.dataplane.send(ingress_port, str(pkt))
-        of_logger.info("Sending packet to dp port " + str(ingress_port) +
+        logging.info("Sending packet to dp port " + str(ingress_port) +
                    ", expecting packet_in on control plane" )
       
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_PACKET_IN,
@@ -321,10 +317,10 @@ class Hello(basic.SimpleDataPlane):
 
     def runTest(self):
         
-        of_logger.info("Running Hello test")
+        logging.info("Running Hello test")
 
-        of_logger.info("Sending Hello")
-        of_logger.info("Expecting a Hello on the control plane with version--1.0.0")
+        logging.info("Sending Hello")
+        logging.info("Expecting a Hello on the control plane with version--1.0.0")
         
         #Send Hello message
         request = message.hello()
@@ -344,10 +340,10 @@ class EchoWithoutBody(basic.SimpleProtocol):
     
     def runTest(self):
 
-        of_logger.info("Running Echo_Without_Body test")
+        logging.info("Running Echo_Without_Body test")
 
-        of_logger.info("Sending Echo Request")
-        of_logger.info("Expecting a Echo Reply with version--1.0.0 and same xid")
+        logging.info("Sending Echo Request")
+        logging.info("Expecting a Echo Reply with version--1.0.0 and same xid")
 
         # Send echo_request
         request = message.echo_request()
@@ -367,10 +363,10 @@ class BarrierRequestReply(basic.SimpleProtocol):
     
     def runTest(self):
 
-        of_logger.info("Running Barrier_Request_Reply test")
+        logging.info("Running Barrier_Request_Reply test")
 
-        of_logger.info("Sending Barrier Request")
-        of_logger.info("Expecting a Barrier Reply with same xid")
+        logging.info("Sending Barrier Request")
+        logging.info("Expecting a Barrier Reply with same xid")
 
         #Send Barrier Request
         request = message.barrier_request()
