@@ -16,7 +16,6 @@ indicated oin oft_config
 """
 
 import time
-import signal
 import sys
 import logging
 
@@ -61,21 +60,8 @@ class SimpleProtocol(unittest.TestCase):
     Root class for setting up the controller
     """
 
-    def sig_handler(self, v1, v2):
-        logging.critical("Received interrupt signal; exiting")
-        print "Received interrupt signal; exiting"
-        self.clean_shutdown = False
-        self.tearDown()
-        raise KeyboardInterrupt
-
     def setUp(self):
         self.config = basic_config
-        #@todo Test cases shouldn't monkey with signals; move SIGINT handler
-        # to top-level oft
-        try:
-           signal.signal(signal.SIGINT, self.sig_handler)
-        except ValueError, e:
-           logging.info("Could not set SIGINT handler: %s" % e)
         logging.info("** START TEST CASE " + str(self))
         self.controller = controller.Controller(
             host=basic_config["controller_host"],
@@ -180,22 +166,9 @@ class DataPlaneOnly(unittest.TestCase):
     Root class that sets up only the dataplane
     """
 
-    def sig_handler(self, v1, v2):
-        logging.critical("Received interrupt signal; exiting")
-        print "Received interrupt signal; exiting"
-        self.clean_shutdown = False
-        self.tearDown()
-        raise KeyboardInterrupt
-
     def setUp(self):
         self.clean_shutdown = True
         self.config = basic_config
-        #@todo Test cases shouldn't monkey with signals; move SIGINT handler
-        # to top-level oft
-        try:
-           signal.signal(signal.SIGINT, self.sig_handler)
-        except ValueError, e:
-           logging.info("Could not set SIGINT handler: %s" % e)
         logging.info("** START DataPlaneOnly CASE " + str(self))
         self.dataplane = dataplane.DataPlane(self.config)
         for of_port, ifname in basic_port_map.items():

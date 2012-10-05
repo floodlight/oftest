@@ -4,7 +4,6 @@ Serial failover test cases
 """
 
 import time
-import signal
 import sys
 import logging
 
@@ -58,13 +57,6 @@ class SerialFailover(unittest.TestCase):
     # populated by setUp()
     test_timeout = 0
     test_iterations = 0
-
-    def sig_handler(self, v1, v2):
-        logging.critical("Received interrupt signal; exiting")
-        print "Received interrupt signal; exiting"
-        self.clean_shutdown = False
-        self.tearDown()
-        sys.exit(1)
 
     def controllerSetup(self, host, port):
         self.controller = controller.Controller(host=host,port=port)
@@ -139,12 +131,6 @@ class SerialFailover(unittest.TestCase):
 
     def setUp(self):
         self.config = serial_failover_config
-        #@todo Test cases shouldn't monkey with signals; move SIGINT handler
-        # to top-level oft
-        try:
-           signal.signal(signal.SIGINT, self.sig_handler)
-        except ValueError, e:
-           logging.info("Could not set SIGINT handler: %s" % e)
         logging.info("** START TEST CASE " + str(self))
 
         self.test_timeout = test_param_get(serial_failover_config,

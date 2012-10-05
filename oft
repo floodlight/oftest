@@ -116,6 +116,7 @@ import time
 import os
 import imp
 import random
+import signal
 
 root_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -572,6 +573,9 @@ if config["random_seed"] is not None:
     logging.info("Random seed: %d" % config["random_seed"])
     random.seed(config["random_seed"])
 
+# Remove python's signal handler which raises KeyboardError. Exiting from an
+# exception waits for all threads to terminate which might not happen.
+signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 if __name__ == "__main__":
     logging.info("*** TEST RUN START: " + time.asctime())
