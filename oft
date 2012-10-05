@@ -199,7 +199,7 @@ def config_get(opts):
     "Convert options class to OFT configuration dictionary"
     cfg = config_default.copy()
     for key in cfg.keys():
-        cfg[key] = eval("opts." + key)
+        cfg[key] = getattr(opts, key)
 
     # Special case checks
     if opts.debug not in DEBUG_LEVELS.keys():
@@ -224,8 +224,7 @@ def config_setup(cfg_dflt):
 
     #@todo parse port map as option?
     # Set up default values
-    for key in cfg_dflt.keys():
-        eval("parser.set_defaults("+key+"=cfg_dflt['"+key+"'])")
+    parser.set_defaults(**cfg_dflt)
 
     #@todo Add options via dictionary
     plat_help = """Set the platform type.  Valid values include:
@@ -378,7 +377,7 @@ def die(msg, exit_val=1):
 
 def add_test(suite, mod, name):
     logging.info("Adding test " + mod.__name__ + "." + name)
-    suite.addTest(eval("mod." + name)())
+    suite.addTest(getattr(mod, name)())
 
 def _space_to(n, str):
     """
@@ -443,7 +442,7 @@ if config["list"]:
         print start_str + _space_to(22, start_str) + desc
         for test in config["all_tests"][mod]:
             try:
-                desc = eval('mod.' + test + '.__doc__.strip()')
+                desc = getattr(mod, test).__doc__.strip()
                 desc = desc.split('\n')[0]
             except:
                 desc = "No description"
