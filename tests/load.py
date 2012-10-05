@@ -5,11 +5,8 @@ It is recommended that these definitions be kept in their own
 namespace as different groups of tests will likely define 
 similar identifiers.
 
-  The function test_set_init is called with a complete configuration
-dictionary prior to the invocation of any tests from this file.
-
-  The switch is actively attempting to contact the controller at the address
-indicated in oft_config
+The switch is actively attempting to contact the controller at the address
+indicated in config.
 
 In general these test cases make some assumption about the external
 configuration of the switch under test.  For now, the assumption is
@@ -22,6 +19,7 @@ import logging
 
 import unittest
 
+from oftest import config
 import oftest.controller as controller
 import oftest.cstruct as ofp
 import oftest.message as message
@@ -32,26 +30,6 @@ import basic
 import time
 
 from oftest.testutils import *
-
-#@var load_port_map Local copy of the configuration map from OF port
-# numbers to OS interfaces
-load_port_map = None
-#@var load_config Local copy of global configuration data
-load_config = None
-
-
-def test_set_init(config):
-    """
-    Set up function for packet action test classes
-
-    @param config The configuration dictionary; see oft
-    """
-
-    global load_port_map
-    global load_config
-
-    load_port_map = config["port_map"]
-    load_config = config
 
 class LoadBarrier(basic.SimpleProtocol):
     """
@@ -72,8 +50,8 @@ class LoadBarrier(basic.SimpleProtocol):
     def runTest(self):
         # Set up flow to send from port 1 to port 2 and copy to CPU
         # Test parameter gives LB port base (assumes consecutive)
-        lb_port = test_param_get(self.config, 'lb_port', default=1)
-        barrier_count = test_param_get(self.config, 'barrier_count', 
+        lb_port = test_param_get(config, 'lb_port', default=1)
+        barrier_count = test_param_get(config, 'barrier_count', 
                                        default=10)
 
         # Set controller to filter packet ins

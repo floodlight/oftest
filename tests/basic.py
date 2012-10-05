@@ -7,11 +7,8 @@ similar identifiers.
 
 Current Assumptions:
 
-  The function test_set_init is called with a complete configuration
-dictionary prior to the invocation of any tests from this file.
-
   The switch is actively attempting to contact the controller at the address
-indicated oin oft_config
+indicated in oftest.config.
 
 """
 
@@ -22,6 +19,7 @@ import logging
 import unittest
 import random
 
+from oftest import config
 import oftest.controller as controller
 import oftest.cstruct as ofp
 import oftest.message as message
@@ -32,26 +30,7 @@ import oftest.illegal_message as illegal_message
 
 from oftest.testutils import *
 
-#@var basic_port_map Local copy of the configuration map from OF port
-# numbers to OS interfaces
-basic_port_map = None
-#@var basic_config Local copy of global configuration data
-basic_config = None
-
 TEST_VID_DEFAULT = 2
-
-def test_set_init(config):
-    """
-    Set up function for basic test classes
-
-    @param config The configuration dictionary; see oft
-    """
-
-    global basic_port_map
-    global basic_config
-
-    basic_port_map = config["port_map"]
-    basic_config = config
 
 class SimpleProtocol(unittest.TestCase):
     """
@@ -61,11 +40,10 @@ class SimpleProtocol(unittest.TestCase):
     priority = 1
 
     def setUp(self):
-        self.config = basic_config
         logging.info("** START TEST CASE " + str(self))
         self.controller = controller.Controller(
-            host=basic_config["controller_host"],
-            port=basic_config["controller_port"])
+            host=config["controller_host"],
+            port=config["controller_port"])
         # clean_shutdown should be set to False to force quit app
         self.clean_shutdown = True
         self.controller.start()
@@ -103,7 +81,6 @@ class SimpleProtocol(unittest.TestCase):
         the state after the sub_test is run must be taken into account
         by subsequent operations.
         """
-        self.config = parent.config
         logging.info("** Setup " + str(self) + " inheriting from "
                           + str(parent))
         self.controller = parent.controller
@@ -133,8 +110,8 @@ class SimpleDataPlane(SimpleProtocol):
     """
     def setUp(self):
         SimpleProtocol.setUp(self)
-        self.dataplane = dataplane.DataPlane(self.config)
-        for of_port, ifname in basic_port_map.items():
+        self.dataplane = dataplane.DataPlane(config)
+        for of_port, ifname in config["port_map"].items():
             self.dataplane.port_add(ifname, of_port)
 
     def inheritSetup(self, parent):
@@ -168,10 +145,9 @@ class DataPlaneOnly(unittest.TestCase):
 
     def setUp(self):
         self.clean_shutdown = True
-        self.config = basic_config
         logging.info("** START DataPlaneOnly CASE " + str(self))
-        self.dataplane = dataplane.DataPlane(self.config)
-        for of_port, ifname in basic_port_map.items():
+        self.dataplane = dataplane.DataPlane(config)
+        for of_port, ifname in config["port_map"].items():
             self.dataplane.port_add(ifname, of_port)
 
     def tearDown(self):
@@ -232,9 +208,9 @@ class PacketIn(SimpleDataPlane):
         self.assertEqual(rc, 0, "Failed to delete all flows")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-        vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
+        vid = test_param_get(config, 'vid', default=TEST_VID_DEFAULT)
 
-        for of_port in basic_port_map.keys():
+        for of_port in config["port_map"].keys():
             for pkt, pt in [
                (simple_tcp_packet(), "simple TCP packet"),
                (simple_tcp_packet(dl_vlan_enable=True,dl_vlan=vid,pktlen=108), 
@@ -252,7 +228,7 @@ class PacketIn(SimpleDataPlane):
                        break
                    if dataplane.match_exp_pkt(pkt, response.data): # Got match
                        break
-                   if not basic_config["relax"]:  # Only one attempt to match
+                   if not config["relax"]:  # Only one attempt to match
                        break
                    count += 1
                    if count > 10:   # Too many tries
@@ -283,7 +259,7 @@ class PacketInDefaultDrop(SimpleDataPlane):
         self.assertEqual(rc, 0, "Failed to delete all flows")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-        for of_port in basic_port_map.keys():
+        for of_port in config["port_map"].keys():
             pkt = simple_tcp_packet()
             self.dataplane.send(of_port, str(pkt))
             count = 0
@@ -293,7 +269,7 @@ class PacketInDefaultDrop(SimpleDataPlane):
                     break
                 if dataplane.match_exp_pkt(pkt, response.data): # Got match
                     break
-                if not basic_config["relax"]:  # Only one attempt to match
+                if not config["relax"]:  # Only one attempt to match
                     break
                 count += 1
                 if count > 10:   # Too many tries
@@ -316,13 +292,13 @@ class PacketInBroadcastCheck(SimpleDataPlane):
 
     def runTest(self):
         # Need at least two ports
-        self.assertTrue(len(basic_port_map) > 1, "Too few ports for test")
+        self.assertTrue(len(config["port_map"]) > 1, "Too few ports for test")
 
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-        of_ports = basic_port_map.keys()
+        of_ports = config["port_map"].keys()
         d_port = of_ports[0]
         pkt = simple_eth_packet(dl_dst='ff:ff:ff:ff:ff:ff')
 
@@ -349,7 +325,7 @@ class PacketOut(SimpleDataPlane):
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         # These will get put into function
-        of_ports = basic_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         for dp_port in of_ports:
             for outpkt, opt in [
@@ -370,7 +346,7 @@ class PacketOut(SimpleDataPlane):
 
                exp_pkt_arg = None
                exp_port = None
-               if basic_config["relax"]:
+               if config["relax"]:
                    exp_pkt_arg = outpkt
                    exp_port = dp_port
                (of_port, pkt, pkt_time) = self.dataplane.poll(port_number=exp_port,
@@ -403,7 +379,7 @@ class PacketOutMC(SimpleDataPlane):
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         # These will get put into function
-        of_ports = basic_port_map.keys()
+        of_ports = config["port_map"].keys()
         random.shuffle(of_ports)
         for num_ports in range(1,len(of_ports)+1):
             for outpkt, opt in [
@@ -428,7 +404,7 @@ class PacketOutMC(SimpleDataPlane):
 
                receive_pkt_check(self.dataplane, outpkt, dp_ports,
                                  set(of_ports).difference(dp_ports),
-                                 self, basic_config)
+                                 self, config)
 
 class FlowStatsGet(SimpleProtocol):
     """
@@ -442,7 +418,7 @@ class FlowStatsGet(SimpleProtocol):
     def runTest(self):
         logging.info("Running StatsGet")
         logging.info("Inserting trial flow")
-        request = flow_mod_gen(basic_port_map, True)
+        request = flow_mod_gen(config["port_map"], True)
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Failed to insert test flow")
         
@@ -465,7 +441,7 @@ class TableStatsGet(SimpleProtocol):
     def runTest(self):
         logging.info("Running TableStatsGet")
         logging.info("Inserting trial flow")
-        request = flow_mod_gen(basic_port_map, True)
+        request = flow_mod_gen(config["port_map"], True)
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Failed to insert test flow")
         
@@ -501,7 +477,7 @@ class FlowMod(SimpleProtocol):
 
     def runTest(self):
         logging.info("Running " + str(self))
-        request = flow_mod_gen(basic_port_map, True)
+        request = flow_mod_gen(config["port_map"], True)
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Error installing flow mod")
 
@@ -516,31 +492,31 @@ class PortConfigMod(SimpleProtocol):
 
     def runTest(self):
         logging.info("Running " + str(self))
-        for of_port, ifname in basic_port_map.items(): # Grab first port
+        for of_port, ifname in config["port_map"].items(): # Grab first port
             break
 
-        (hw_addr, config, advert) = \
+        (hw_addr, port_config, advert) = \
             port_config_get(self.controller, of_port)
-        self.assertTrue(config is not None, "Did not get port config")
+        self.assertTrue(port_config is not None, "Did not get port config")
 
         logging.debug("No flood bit port " + str(of_port) + " is now " + 
-                           str(config & ofp.OFPPC_NO_FLOOD))
+                           str(port_config & ofp.OFPPC_NO_FLOOD))
 
         rv = port_config_set(self.controller, of_port,
-                             config ^ ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD)
+                             port_config ^ ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD)
         self.assertTrue(rv != -1, "Error sending port mod")
 
         # Verify change took place with same feature request
-        (hw_addr, config2, advert) = \
+        (hw_addr, port_config2, advert) = \
             port_config_get(self.controller, of_port)
         logging.debug("No flood bit port " + str(of_port) + " is now " + 
-                           str(config2 & ofp.OFPPC_NO_FLOOD))
-        self.assertTrue(config2 is not None, "Did not get port config2")
-        self.assertTrue(config2 & ofp.OFPPC_NO_FLOOD !=
-                        config & ofp.OFPPC_NO_FLOOD,
+                           str(port_config2 & ofp.OFPPC_NO_FLOOD))
+        self.assertTrue(port_config2 is not None, "Did not get port config2")
+        self.assertTrue(port_config2 & ofp.OFPPC_NO_FLOOD !=
+                        port_config & ofp.OFPPC_NO_FLOOD,
                         "Bit change did not take")
         # Set it back
-        rv = port_config_set(self.controller, of_port, config, 
+        rv = port_config_set(self.controller, of_port, port_config,
                              ofp.OFPPC_NO_FLOOD)
         self.assertTrue(rv != -1, "Error sending port mod")
 
@@ -556,7 +532,7 @@ class PortConfigModErr(SimpleProtocol):
         # pick a random bad port number
         bad_port = random.randint(1, ofp.OFPP_MAX)
         count = 0
-        while (count < 50) and (bad_port in basic_port_map.keys()):
+        while (count < 50) and (bad_port in config["port_map"].keys()):
             bad_port = random.randint(1, ofp.OFPP_MAX)
             count = count + 1
         self.assertTrue(count < 50, "Error selecting bad port")
@@ -574,7 +550,7 @@ class PortConfigModErr(SimpleProtocol):
             if response.code == ofp.OFPPMFC_BAD_PORT:
                 logging.info("Received error message with OFPPMFC_BAD_PORT code")
                 break
-            if not basic_config["relax"]:  # Only one attempt to match
+            if not config["relax"]:  # Only one attempt to match
                 break
             count += 1
             if count > 10:   # Too many tries

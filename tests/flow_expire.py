@@ -9,6 +9,7 @@ import logging
 import unittest
 import random
 
+from oftest import config
 import oftest.controller as controller
 import oftest.cstruct as ofp
 import oftest.message as message
@@ -20,27 +21,6 @@ import basic
 from oftest.testutils import *
 from time import sleep
 
-#@var port_map Local copy of the configuration map from OF port
-# numbers to OS interfaces
-fe_port_map = None
-#@var fe_config Local copy of global configuration data
-fe_config = None
-
-def test_set_init(config):
-    """
-    Set up function for packet action test classes
-
-    @param config The configuration dictionary; see oft
-    """
-
-    basic.test_set_init(config)
-
-    global fe_port_map
-    global fe_config
-
-    fe_port_map = config["port_map"]
-    fe_config = config
-
 class FlowExpire(basic.SimpleDataPlane):
     """
     Verify flow expire messages are properly generated.
@@ -50,12 +30,10 @@ class FlowExpire(basic.SimpleDataPlane):
     Verify the flow expiration message is received
     """
     def runTest(self):
-        global fe_port_map
-
         # TODO: set from command-line parameter
         test_timeout = 60
 
-        of_ports = fe_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -69,7 +47,7 @@ class FlowExpire(basic.SimpleDataPlane):
                         "Could not generate flow match from pkt")
         act = action.action_output()
 
-        of_ports = fe_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 

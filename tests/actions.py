@@ -11,6 +11,7 @@ import logging
 import unittest
 import random
 
+from oftest import config
 import oftest.controller as controller
 import oftest.cstruct as ofp
 import oftest.message as message
@@ -24,25 +25,6 @@ from oftest.testutils import *
 from time import sleep
 from FuncUtils import *
 
-ac_port_map = None
-ac_config = None
-of_ports = None
-
-def test_set_init(config):
-    basic.test_set_init(config)
-    
-    global ac_port_map
-    global ac_config
-    global of_ports
-
-    ac_port_map = config["port_map"]
-    ac_config = config
-    
-    of_ports = ac_port_map.keys()
-    of_ports.sort()
-
-   
-
 class NoAction(basic.SimpleDataPlane):
 
     """NoActionDrop : no action added to flow , drops the packet."""
@@ -51,7 +33,7 @@ class NoAction(basic.SimpleDataPlane):
         
         logging.info("Running No_Action test")
 
-        of_ports = ac_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
@@ -150,7 +132,7 @@ class ForwardAll(basic.SimpleDataPlane):
 
         logging.info("Running Forward_All test")
 
-        of_ports = ac_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
@@ -192,7 +174,7 @@ class ForwardAll(basic.SimpleDataPlane):
         #Verifying packets recieved on expected dataplane ports
         yes_ports = set(of_ports).difference([ingress_port])
         receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
-                      self, ac_config)
+                      self, config)
 
 
 class ForwardController(basic.SimpleDataPlane):
@@ -204,7 +186,7 @@ class ForwardController(basic.SimpleDataPlane):
         
         logging.info("Running Forward_Controller test")
 
-        of_ports = ac_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
@@ -259,7 +241,7 @@ class ForwardLocal(basic.SimpleDataPlane):
 
         logging.info("Running Forward_Local test")
 
-        of_ports = ac_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
@@ -310,7 +292,7 @@ class ForwardFlood(basic.SimpleDataPlane):
     def runTest(self):
 
         logging.info("Running Forward_Flood test")
-        of_ports = ac_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
@@ -352,7 +334,7 @@ class ForwardFlood(basic.SimpleDataPlane):
         #Verifying packets recieved on expected dataplane ports
         yes_ports = set(of_ports).difference([ingress_port])
         receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
-                      self, ac_config)
+                      self, config)
 
 class ForwardInport(basic.SimpleDataPlane):
     
@@ -363,7 +345,7 @@ class ForwardInport(basic.SimpleDataPlane):
 
         logging.info("Running Forward_Inport test")
 
-        of_ports = ac_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
@@ -404,7 +386,7 @@ class ForwardInport(basic.SimpleDataPlane):
 
         #Verfying packet recieved on expected dataplane ports
         receive_pkt_check(self.dataplane, pkt, yes_ports,set(of_ports).difference([ingress_port]),
-                            self, ac_config)      
+                          self, config)
 
 class ForwardTable(basic.SimpleDataPlane):
    
@@ -416,7 +398,7 @@ class ForwardTable(basic.SimpleDataPlane):
 
         logging.info("Running Forward_Table test")
 
-        of_ports = ac_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
@@ -455,7 +437,7 @@ class AddVlanTag(basic.SimpleDataPlane):
 
         logging.info("Running Add_vlan_tag test")
 
-        of_ports = ac_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
@@ -484,7 +466,7 @@ class AddVlanTag(basic.SimpleDataPlane):
         vid_act.vlan_vid = new_vid
 
         #Insert flow with action -- set vid , Send packet matching the flow, Verify recieved packet is expected packet
-        flow_match_test(self, ac_port_map, pkt=pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, 
                         exp_pkt=exp_pkt, action_list=[vid_act])
 
 class ModifyVlanTag(basic.SimpleDataPlane):
@@ -495,7 +477,7 @@ class ModifyVlanTag(basic.SimpleDataPlane):
 
         logging.info("Running Modify_Vlan_Tag test")
 
-        of_ports = ac_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
@@ -522,7 +504,7 @@ class ModifyVlanTag(basic.SimpleDataPlane):
         vid_act.vlan_vid = new_vid
         
         #Insert flow with action -- set vid , Send packet matching the flow.Verify recieved packet is expected packet.
-        flow_match_test(self, ac_port_map, pkt=pkt, exp_pkt=exp_pkt,
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt,
                         action_list=[vid_act])
         
 class VlanPrio1(basic.SimpleDataPlane):
@@ -533,7 +515,7 @@ class VlanPrio1(basic.SimpleDataPlane):
 
         logging.info("Running vlan_Prio_1 test")
 
-        of_ports = ac_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
@@ -560,7 +542,7 @@ class VlanPrio1(basic.SimpleDataPlane):
         act.vlan_pcp = vlan_pcp
 
         #Insert flow with action -- set vLAN priority, Send packet matching the flow, Verify recieved packet is expected packet
-        flow_match_test(self, ac_port_map, pkt=pkt, exp_pkt=exp_pkt,
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt,
                                 action_list=[act])
 
 
@@ -572,7 +554,7 @@ class VlanPrio2(basic.SimpleDataPlane):
         
         logging.info("Running Vlan_Prio_2 test")
 
-        of_ports = ac_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
@@ -600,7 +582,7 @@ class VlanPrio2(basic.SimpleDataPlane):
         vid_act.vlan_pcp = new_vlan_pcp
 
         #Insert flow with action -- set vLAN priority, Send tagged packet matching the flow, Verify recieved packet is expected packet
-        flow_match_test(self, ac_port_map, pkt=pkt, exp_pkt=exp_pkt,
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt,
                         action_list=[vid_act])
 
 
@@ -612,7 +594,7 @@ class ModifyL2Src(basic.SimpleDataPlane):
 
         logging.info("Running Modify_L2_Src test")
 
-        of_ports = ac_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
@@ -635,7 +617,7 @@ class ModifyL2Src(basic.SimpleDataPlane):
                                                 check_test_params=True)
         
         #Insert flow with action -- set src address, Send packet matching the flow, Verify recieved packet is expected packet
-        flow_match_test(self, ac_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
 
@@ -647,7 +629,7 @@ class ModifyL2Dst(basic.SimpleDataPlane):
 
         logging.info("Running Modify_L2_Dst test")
 
-        of_ports = ac_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
@@ -670,7 +652,7 @@ class ModifyL2Dst(basic.SimpleDataPlane):
                                                 check_test_params=True)
         
         #Insert flow with action -- set dst address, Send packet matching the flow, Verify recieved packet is expected packet
-        flow_match_test(self, ac_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
 class ModifyL3Src(basic.SimpleDataPlane):
@@ -681,7 +663,7 @@ class ModifyL3Src(basic.SimpleDataPlane):
 
         logging.info("Running Modify_L3_Src test")
 
-        of_ports = ac_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
@@ -704,7 +686,7 @@ class ModifyL3Src(basic.SimpleDataPlane):
                                                 check_test_params=True)
         
         #Insert flow with action -- set nw src address, Send packet matching the flow, Verify recieved packet is expected packet
-        flow_match_test(self, ac_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
 class ModifyL3Dst(basic.SimpleDataPlane):
@@ -715,7 +697,7 @@ class ModifyL3Dst(basic.SimpleDataPlane):
 
         logging.info("Running Modify_L3_Dst test")
 
-        of_ports = ac_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
@@ -738,7 +720,7 @@ class ModifyL3Dst(basic.SimpleDataPlane):
                                                 check_test_params=True)
         
         #Insert flow with action -- set nw dst address, Send packet matching the flow, Verify recieved packet is expected packet
-        flow_match_test(self, ac_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
 
@@ -750,7 +732,7 @@ class ModifyL4Src(basic.SimpleDataPlane):
 
         logging.info("Running Modify_L4_Src test")
 
-        of_ports = ac_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
@@ -773,7 +755,7 @@ class ModifyL4Src(basic.SimpleDataPlane):
                                                 check_test_params=True)
         
         #Insert flow with action -- set tcp src port, Send packet matching the flow, Verify recieved packet is expected packet
-        flow_match_test(self, ac_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
 class ModifyL4Dst(basic.SimpleDataPlane):
@@ -784,7 +766,7 @@ class ModifyL4Dst(basic.SimpleDataPlane):
 
         logging.info("Running Modify_L4_Dst test")
 
-        of_ports = ac_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
@@ -807,7 +789,7 @@ class ModifyL4Dst(basic.SimpleDataPlane):
                                                 check_test_params=True)
         
         #Insert flow with action -- set tcp dst port, Send packet matching the flow, Verify recieved packet is expected packet
-        flow_match_test(self, ac_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
 class ModifyTos(basic.SimpleDataPlane):
@@ -818,7 +800,7 @@ class ModifyTos(basic.SimpleDataPlane):
 
         logging.info("Running Modify_Tos test")
 
-        of_ports = ac_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
@@ -841,5 +823,5 @@ class ModifyTos(basic.SimpleDataPlane):
                                                 check_test_params=True)
         
         #Insert flow with action -- set TOS, Send packet matching the flow, Verify recieved packet is expected packet
-        flow_match_test(self, ac_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2, egr_count=-1)

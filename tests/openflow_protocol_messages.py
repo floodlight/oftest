@@ -10,6 +10,7 @@ import logging
 import unittest
 import random
 
+from oftest import config
 import oftest.controller as controller
 import oftest.cstruct as ofp
 import oftest.message as message
@@ -22,22 +23,6 @@ from oftest.testutils import *
 from time import sleep
 from FuncUtils import *
 
-
-of_port_map = None
-of_config = None
-
-def test_set_init(config):
-   
-
-    basic.test_set_init(config)
-
-    global of_port_map
-    global of_config
-
-    of_port_map = config["port_map"]
-    of_config = config
-
-
 class FeaturesRequest(basic.SimpleProtocol): 
 
     """Verify Features_Request-Reply is implemented 
@@ -47,7 +32,7 @@ class FeaturesRequest(basic.SimpleProtocol):
     def runTest(self):
         logging.info("Running Features_Request test")
         
-        of_ports = of_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         
         #Clear switch state
@@ -77,7 +62,7 @@ class ConfigurationRequest(basic.SimpleProtocol):
 
         logging.info("Running Configuration_Request test ")
         
-        of_ports = of_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
 
         #Clear switch state
@@ -106,7 +91,7 @@ class ModifyStateAdd(basic.SimpleProtocol):
 
         logging.info("Running Modify_State_Add test")
 
-        of_ports = of_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         
         #Clear switch state
@@ -135,7 +120,7 @@ class ModifyStateDelete(basic.SimpleProtocol):
 
         logging.info("Running Modify_State_Delete test")
 
-        of_ports = of_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
 
         #Clear switch state
@@ -170,7 +155,7 @@ class ModifyStateModify(basic.SimpleDataPlane):
 
         logging.info("Running Modify_State_Modify test")
 
-        of_ports = of_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
 
         #Clear switch state
@@ -201,7 +186,7 @@ class ReadState(basic.SimpleProtocol):
 
         logging.info("Running Read_State test")
 
-        of_ports = of_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
 
         #Clear switch state
@@ -227,7 +212,7 @@ class PacketOut(basic.SimpleDataPlane):
 
         logging.info("Running Packet_Out test")
 
-        of_ports = of_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
        
         #Clear Switch state
@@ -255,7 +240,7 @@ class PacketOut(basic.SimpleDataPlane):
 
                 exp_pkt_arg = None
                 exp_port = None
-                if of_config["relax"]:
+                if config["relax"]:
                     exp_pkt_arg = outpkt
                     exp_port = dp_port
                 (of_port, pkt, pkt_time) = self.dataplane.poll(timeout=2, 
@@ -284,7 +269,7 @@ class PacketIn(basic.SimpleDataPlane):
         
         logging.info("Running Packet_In test")
 
-        of_ports = of_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         ingress_port = of_ports[0]
 

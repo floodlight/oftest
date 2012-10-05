@@ -9,6 +9,7 @@ import logging
 import unittest
 import random
 
+from oftest import config
 import oftest.controller as controller
 import oftest.cstruct as ofp
 import oftest.message as message
@@ -21,21 +22,6 @@ from oftest.testutils import *
 from time import sleep
 from FuncUtils import *
 
-cs_port_map = None
-cs_config = None
-
-def test_set_init(config):
-   
-
-    basic.test_set_init(config)
-
-    global cs_port_map
-    global cs_config
-
-    cs_port_map = config["port_map"]
-    cs_config = config
-
-
 class OverlapChecking(basic.SimpleDataPlane):
     
     """Verify that if overlap check flag is set in the flow entry and an overlapping flow is inserted then an error 
@@ -45,7 +31,7 @@ class OverlapChecking(basic.SimpleDataPlane):
         
         logging.info("Running Overlap_Checking test")
        
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -105,7 +91,7 @@ class NoOverlapChecking(basic.SimpleDataPlane):
      
         logging.info("Running No_Overlap_Checking test")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -137,7 +123,7 @@ class IdenticalFlows(basic.SimpleDataPlane):
         
         logging.info("Running Identical_Flows test ")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -178,7 +164,7 @@ class EmerFlowTimeout(basic.SimpleProtocol):
 
         logging.info("Running Emergency_Flow_Timeout test")
         
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -230,7 +216,7 @@ class MissingModifyAdd(basic.SimpleDataPlane):
         
         logging.info("Running Missing_Modify_Add test")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -270,7 +256,7 @@ class ModifyAction(basic.SimpleDataPlane):
         
         logging.info("Running Modify_Action test ")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -308,7 +294,7 @@ class StrictModifyAction(basic.SimpleDataPlane):
         
         logging.info("Running Strict_Modify_Action test")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -352,7 +338,7 @@ class DeleteNonexistingFlow(basic.SimpleDataPlane):
         
         logging.info("Delete_NonExisting_Flow test begins")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -388,7 +374,7 @@ class SendFlowRem(basic.SimpleDataPlane):
 
         logging.info("Running Send_Flow_Rem test ")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -448,7 +434,7 @@ class DeleteEmerFlow(basic.SimpleProtocol):
 
         logging.info("Running Delete_Emer_Flow")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         
         #Clear switch state        
@@ -491,7 +477,7 @@ class StrictVsNonstrict(basic.SimpleDataPlane):
         
         logging.info("Strict_Vs_Nonstrict test begins")
         
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -578,7 +564,7 @@ class Outport1(basic.SimpleDataPlane):
         
         logging.info("Outport1 test begins")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -636,7 +622,7 @@ class IdleTimeout(basic.SimpleDataPlane):
         
         logging.info("Running Idle_Timeout test ")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
@@ -680,7 +666,7 @@ class Outport2(basic.SimpleDataPlane):
         
         logging.info("Running Outport2 test ")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -720,7 +706,7 @@ class HardTimeout(basic.SimpleDataPlane):
 
         logging.info("Running Hard_Timeout test ")
         
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -767,7 +753,7 @@ class FlowTimeout(basic.SimpleDataPlane):
 
         logging.info("Running Flow_Timeout test ")
         
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 

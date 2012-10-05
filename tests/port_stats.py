@@ -9,6 +9,7 @@ import logging
 import unittest
 import random
 
+from oftest import config
 import oftest.controller as controller
 import oftest.cstruct as ofp
 import oftest.message as message
@@ -19,12 +20,6 @@ import basic
 
 from oftest.testutils import *
 from time import sleep
-
-#@var fs_port_map Local copy of the configuration map from OF port
-# numbers to OS interfaces
-fs_port_map = None
-#@var fs_config Local copy of global configuration data
-fs_config = None
 
 # TODO: ovs has problems with VLAN id?
 WILDCARD_VALUES = [ofp.OFPFW_IN_PORT,
@@ -42,21 +37,6 @@ WILDCARD_VALUES = [ofp.OFPFW_IN_PORT,
                    ofp.OFPFW_DL_VLAN_PCP,
                    ofp.OFPFW_NW_TOS]
 
-def test_set_init(config):
-    """
-    Set up function for packet action test classes
-
-    @param config The configuration dictionary; see oft
-    """
-
-    basic.test_set_init(config)
-
-    global fs_port_map
-    global fs_config
-
-    fs_port_map = config["port_map"]
-    fs_config = config
-
 def sendPacket(obj, pkt, ingress_port, egress_port, test_timeout):
 
     logging.info("Sending packet to dp port " + str(ingress_port) +
@@ -65,7 +45,7 @@ def sendPacket(obj, pkt, ingress_port, egress_port, test_timeout):
 
     exp_pkt_arg = None
     exp_port = None
-    if fs_config["relax"]:
+    if config["relax"]:
         exp_pkt_arg = pkt
         exp_port = egress_port
 
@@ -146,12 +126,10 @@ class SingleFlowStats(basic.SimpleDataPlane):
     """
 
     def runTest(self):
-        global fs_port_map
-
         # TODO: set from command-line parameter
         test_timeout = 60
 
-        of_ports = fs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -235,12 +213,10 @@ class MultiFlowStats(basic.SimpleDataPlane):
         return flow_mod_msg
 
     def runTest(self):
-        global fs_port_map
-
         # TODO: set from command-line parameter
         test_timeout = 60
 
-        of_ports = fs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) >= 3, "Not enough ports for test")
         ingress_port = of_ports[0];

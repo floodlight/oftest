@@ -40,14 +40,10 @@ of test execution by test priority.
 
 To add a test to the system, either: edit an existing test case file (like
 basic.py) to add a test class which inherits from unittest.TestCase (directly
-or indirectly); or add a new file which includes a function definition 
-test_set_init(config).  Preferably the file is in the same directory as existing
-tests, though you can specify the directory on the command line.  The file
-should not be called "all" as that's reserved for the test-spec.
-
-If you add a new file, the test_set_init function should record the port
-map object from the configuration along with whatever other configuration 
-information it may need.
+or indirectly); or add a new file with the test case class.  Preferably the
+file is in the same directory as existing tests, though you can specify the
+directory on the command line.  The file should not be called "all" as that's
+reserved for the test-spec.
 
 TBD:  To add configuration to the system, first add an entry to config_default
 below.  If you want this to be a command line parameter, edit config_setup
@@ -68,10 +64,7 @@ platforms directory that defines the function platform_config_update and then
 use the parameter --platform=gp104 on the command line. You can also use the
 --platform-dir option to change which directory is searched.
 
-The current model for test sets is basic.py.  The current convention is
-that the test set should implement a function test_set_init which takes
-an oft configuration dictionary and returns a unittest.TestSuite object.
-Future test sets should do the same thing.
+The current model for test sets is basic.py.
 
 Default setup:
 
@@ -93,14 +86,9 @@ Examine oft.log if things don't work.
 @todo Allow specification of priority to override prio check
 
 Current test case setup:
-    Files in the tests direcoty that contain a function test_set_init are
-considered test files.
-    The function test_set_init examines the test_spec config variable
-and generates a suite of tests.
-    Support a command line option --test_mod so that all tests in that
-module will be run.
-    Support all to specify all tests from the module.
-
+    File with the .py extension in the test directory are considered test files.
+    Support a command line option --test-spec to choose the tests to run.
+    Support test-spec "all" to specify all tests.
 """
 
 import sys
@@ -121,6 +109,9 @@ pydir = os.path.join(root_dir, 'src', 'python')
 if os.path.exists(os.path.join(pydir, 'oftest')):
     # Running from source tree
     sys.path.insert(0, pydir)
+
+import oftest
+from oftest import config
 
 try:
     import oftest.message
@@ -444,8 +435,9 @@ def test_prio_get(test):
 # Main script
 #
 
-# Get configuration, set up logging, import platform from file
-(config, args) = config_setup(config_default)
+# Setup global configuration
+(new_config, args) = config_setup(config_default)
+oftest.config.update(new_config)
 
 logging_setup(config)
 logging.info("++++++++ " + time.asctime() + " ++++++++")
@@ -454,7 +446,6 @@ logging.info("++++++++ " + time.asctime() + " ++++++++")
 sys.path.append(config["test_dir"])
 
 test_modules = prune_tests(config["test_spec"], load_test_modules(config))
-oft_config = config
 
 load_profile(config)
 
@@ -532,14 +523,6 @@ if not config["port_map"]:
 
 logging.debug("Configuration: " + str(config))
 logging.info("OF port map: " + str(config["port_map"]))
-
-# Init the test sets
-for (modname, (mod, tests)) in test_modules.items():
-    try:
-        mod.test_set_init(config)
-    except:
-        logging.warning("Could not run test_set_init for " + modname)
-        raise
 
 if config["dbg_level"] == logging.CRITICAL:
     _verb = 0

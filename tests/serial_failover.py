@@ -10,6 +10,7 @@ import logging
 import unittest
 import random
 
+from oftest import config
 import oftest.controller as controller
 import oftest.cstruct as ofp
 import oftest.message as message
@@ -17,25 +18,6 @@ import oftest.dataplane as dataplane
 import oftest.action as action
 
 from oftest.testutils import *
-
-#@var serial_failover_port_map Local copy of the configuration map from OF port
-# numbers to OS interfaces
-serial_failover_port_map = None
-#@var serial_failover_config Local copy of global configuration data
-serial_failover_config = None
-
-def test_set_init(config):
-    """
-    Set up function for serial failover test classes
-
-    @param config The configuration dictionary; see oft
-    """
-
-    global serial_failover_port_map
-    global serial_failover_config
-
-    serial_failover_port_map = config["port_map"]
-    serial_failover_config = config
 
 class SerialFailover(unittest.TestCase):
     """
@@ -106,11 +88,11 @@ class SerialFailover(unittest.TestCase):
 
     def buildControllerList(self):
         # controller_list is list of ip/port tuples
-        partial_list = test_param_get(serial_failover_config,
+        partial_list = test_param_get(config,
                                       'controller_list')
         logging.debug("ctrl list: " + str(partial_list))
-        self.controller_list = [(serial_failover_config["controller_host"],
-                                 serial_failover_config["controller_port"])]
+        self.controller_list = [(config["controller_host"],
+                                 config["controller_port"])]
         if partial_list is not None:
             for controller in partial_list:
                 ip,portstr = controller.split(':')
@@ -130,12 +112,11 @@ class SerialFailover(unittest.TestCase):
         return self.controller_list[self.controller_idx]
 
     def setUp(self):
-        self.config = serial_failover_config
         logging.info("** START TEST CASE " + str(self))
 
-        self.test_timeout = test_param_get(serial_failover_config,
+        self.test_timeout = test_param_get(config,
                                            'failover_timeout') or 60
-        self.test_iterations = test_param_get(serial_failover_config,
+        self.test_iterations = test_param_get(config,
                                               'failover_iterations') or 4
 
         self.buildControllerList()
@@ -158,7 +139,6 @@ class SerialFailover(unittest.TestCase):
         the state after the sub_test is run must be taken into account
         by subsequent operations.
         """
-        self.config = parent.config
         logging.info("** Setup " + str(self) + 
                                     " inheriting from " + str(parent))
         self.controller = parent.controller

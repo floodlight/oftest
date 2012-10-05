@@ -64,6 +64,7 @@ import unittest
 import random
 import time
 
+from oftest import config
 import oftest.controller  as controller
 import oftest.cstruct     as ofp
 import oftest.message     as message
@@ -76,28 +77,6 @@ import basic
 
 from oftest.testutils import *
 from time import sleep
-
-#@var port_map Local copy of the configuration map from OF port
-# numbers to OS interfaces
-fq_port_map = None
-#@var fq_config Local copy of global configuration data
-fq_config = None
-
-
-def test_set_init(config):
-    """
-    Set up function for packet action test classes
-
-    @param config The configuration dictionary; see oft
-    """
-
-    basic.test_set_init(config)
-
-    global fq_port_map
-    global fq_config
-
-    fq_port_map = config["port_map"]
-    fq_config = config
 
 
 def flip_coin():
@@ -168,8 +147,8 @@ class Flow_Info:
             self.dl_addrs.append(rand_dl_addr())
             i = i + 1
     
-        if test_param_get(fq_config, "vlans", []) != []:
-           self.vlans = test_param_get(fq_config, "vlans", [])
+        if test_param_get(config, "vlans", []) != []:
+           self.vlans = test_param_get(config, "vlans", [])
 
            logging.info("Overriding VLAN ids to:")
            logging.info(self.vlans)
@@ -415,7 +394,7 @@ class Flow_Cfg:
         return True
 
     def actions_equal(self, x):
-        if test_param_get(fq_config, "conservative_ordered_actions", True):
+        if test_param_get(config, "conservative_ordered_actions", True):
             # Compare actions lists as unordered
             
             aa = copy.deepcopy(x.actions.actions)
@@ -519,7 +498,7 @@ class Flow_Cfg:
         # Action lists are ordered, so pick an ordered random subset of
         # supported actions
 
-        actions_force = test_param_get(fq_config, "actions_force", 0)
+        actions_force = test_param_get(config, "actions_force", 0)
         if actions_force != 0:
             logging.info("Forced actions:")
             logging.info(actions_bmap_to_str(actions_force))
@@ -628,11 +607,11 @@ class Flow_Cfg:
 
         # By default, test with conservative ordering conventions
         # This should probably be indicated in a profile
-        if test_param_get(fq_config, "conservative_ordered_actions", True):
+        if test_param_get(config, "conservative_ordered_actions", True):
             self.rand_actions_ordered(fi, valid_actions, valid_ports, valid_queues)
             return self
 
-        actions_force = test_param_get(fq_config, "actions_force", 0)
+        actions_force = test_param_get(config, "actions_force", 0)
         if actions_force != 0:
             logging.info("Forced actions:")
             logging.info(actions_bmap_to_str(actions_force))
@@ -1259,7 +1238,7 @@ class Switch:
         self.valid_ports = map(lambda x: x.port_no, self.sw_features.ports)
         logging.info("Ports reported by switch:")
         logging.info(self.valid_ports)
-        ports_override = test_param_get(fq_config, "ports", [])
+        ports_override = test_param_get(config, "ports", [])
         if ports_override != []:
             logging.info("Overriding ports to:")
             logging.info(ports_override)
@@ -1284,7 +1263,7 @@ class Switch:
                           actions_bmap_to_str(self.sw_features.actions) \
                           ) \
                        )
-        actions_override = test_param_get(fq_config, "actions", -1)
+        actions_override = test_param_get(config, "actions", -1)
         if actions_override != -1:
             logging.info("Overriding supported actions to:")
             logging.info(actions_bmap_to_str(actions_override))
@@ -1308,7 +1287,7 @@ class Switch:
                               wildcards_to_str(ts.wildcards) \
                               ) \
                            )
-            wildcards_override = test_param_get(fq_config, "wildcards", -1)
+            wildcards_override = test_param_get(config, "wildcards", -1)
             if wildcards_override != -1:
                 logging.info("Overriding supported wildcards for table %d to:"
                                % (i)
@@ -1332,7 +1311,7 @@ class Switch:
                                 )
         logging.info("(Port, queue) pairs reported by switch:")
         logging.info(self.valid_queues)
-        queues_override = test_param_get(fq_config, "queues", [])
+        queues_override = test_param_get(config, "queues", [])
         if queues_override != []:
             logging.info("Overriding (port, queue) pairs to:")
             logging.info(queues_override)
@@ -1599,7 +1578,7 @@ class Flow_Add_5(basic.SimpleProtocol):
     def runTest(self):
         logging.info("Flow_Add_5 TEST BEGIN")
 
-        num_flows = test_param_get(fq_config, "num_flows", 100)
+        num_flows = test_param_get(config, "num_flows", 100)
 
         # Clear all flows from switch
 
@@ -1702,7 +1681,7 @@ class Flow_Add_5_1(basic.SimpleProtocol):
     def runTest(self):
         logging.info("Flow_Add_5_1 TEST BEGIN")
 
-        num_flows = test_param_get(fq_config, "num_flows", 100)
+        num_flows = test_param_get(config, "num_flows", 100)
         
         # Clear all flows from switch
 
@@ -2326,7 +2305,7 @@ class Flow_Mod_2(basic.SimpleProtocol):
     def runTest(self):
         logging.info("Flow_Mod_2 TEST BEGIN")
 
-        num_flows = test_param_get(fq_config, "num_flows", 100)
+        num_flows = test_param_get(config, "num_flows", 100)
 
         # Clear all flows from switch
 
@@ -2810,7 +2789,7 @@ class Flow_Del_2(basic.SimpleProtocol):
     def runTest(self):
         logging.info("Flow_Del_2 TEST BEGIN")
 
-        num_flows = test_param_get(fq_config, "num_flows", 100)
+        num_flows = test_param_get(config, "num_flows", 100)
 
         # Clear all flows from switch
 

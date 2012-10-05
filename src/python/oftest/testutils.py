@@ -10,6 +10,7 @@ except:
     except:
         sys.exit("Need to install scapy for packet parsing")
 
+from oftest import config
 import oftest.controller as controller
 import oftest.cstruct as ofp
 import oftest.message as message
@@ -65,7 +66,7 @@ def clear_port_config(parent, port):
     self.assertEqual(rv, 0, "Failed to reset port config")
 
 def required_wildcards(parent):
-    w = test_param_get(parent.config, 'required_wildcards', default='default')
+    w = test_param_get(config, 'required_wildcards', default='default')
     if w == 'l3-l4':
         return (ofp.OFPFW_NW_SRC_ALL | ofp.OFPFW_NW_DST_ALL | ofp.OFPFW_NW_TOS
                 | ofp.OFPFW_NW_PROTO | ofp.OFPFW_TP_SRC | ofp.OFPFW_TP_DST)
@@ -294,7 +295,7 @@ def receive_pkt_verify(parent, egr_ports, exp_pkt, ing_port):
     parent must implement dataplane, assertTrue and assertEqual
     """
     exp_pkt_arg = None
-    if parent.config["relax"]:
+    if config["relax"]:
         exp_pkt_arg = exp_pkt
 
     if type(egr_ports) == type([]):
@@ -501,7 +502,7 @@ def flow_msg_install(parent, request, clear_table_override=None):
     @param clear_table If true, clear the flow table before installing
     """
 
-    clear_table = test_param_get(parent.config, 'clear_table', default=True)
+    clear_table = test_param_get(config, 'clear_table', default=True)
     if(clear_table_override != None):
         clear_table = clear_table_override
 
@@ -603,7 +604,7 @@ def flow_match_test(parent, port_map, wildcards=None, dl_vlan=-1, pkt=None,
     test_count = 0
 
     if egr_count == -1:
-        egr_count = test_param_get(parent.config, 'egr_count', default=2)
+        egr_count = test_param_get(config, 'egr_count', default=2)
     
     for ing_idx in range(len(of_ports)):
         ingress_port = of_ports[ing_idx]
@@ -752,9 +753,9 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
     # Check for test param modifications
     strip = False
     if check_test_params:
-        add_vlan = test_param_get(parent.config, 'add_vlan')
-        strip_vlan = test_param_get(parent.config, 'strip_vlan')
-        vid = test_param_get(parent.config, 'vid')
+        add_vlan = test_param_get(config, 'add_vlan')
+        strip_vlan = test_param_get(config, 'strip_vlan')
+        vid = test_param_get(config, 'vid')
 
         if add_vlan and strip_vlan:
             parent.assertTrue(0, "Add and strip VLAN both specified")
@@ -818,7 +819,7 @@ def skip_message_emit(parent, s):
 
     skipped_test_count += 1
     logging.info("Skipping: " + s)
-    if parent.config["dbg_level"] < logging.WARNING:
+    if config["dbg_level"] < logging.WARNING:
         sys.stderr.write("(skipped) ")
     else:
         sys.stderr.write("(S)")

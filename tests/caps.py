@@ -7,6 +7,7 @@ import logging
 
 import unittest
 
+from oftest import config
 import oftest.controller as controller
 import oftest.cstruct as ofp
 import oftest.message as message
@@ -17,28 +18,6 @@ import basic
 
 from oftest.testutils import *
 
-#@var caps_port_map Local copy of the configuration map from OF port
-# numbers to OS interfaces
-caps_port_map = None
-#@var caps_config Local copy of global configuration data
-caps_config = None
-
-def test_set_init(config):
-    """
-    Set up function for caps test classes
-
-    @param config The configuration dictionary; see oft
-    """
-
-    basic.test_set_init(config)
-
-    global caps_port_map
-    global caps_config
-
-    caps_port_map = config["port_map"]
-    caps_config = config
-
-
 def flow_caps_common(obj, is_exact=True):
     """
     The common function for 
@@ -47,8 +26,7 @@ def flow_caps_common(obj, is_exact=True):
     @param is_exact If True, checking exact match; else wildcard
     """
 
-    global caps_port_map
-    of_ports = caps_port_map.keys()
+    of_ports = config["port_map"].keys()
     of_ports.sort()
 
     rv = delete_all_flows(obj.controller)
@@ -74,7 +52,7 @@ def flow_caps_common(obj, is_exact=True):
 
     tstats = message.table_stats_request()
     try:  # Determine the table index to check (or "all")
-        table_idx = caps_config["caps_table_idx"]
+        table_idx = config["caps_table_idx"]
     except:
         table_idx = -1  # Accumulate all table counts
 

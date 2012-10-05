@@ -4,27 +4,13 @@ import struct
 
 import logging
 
+from oftest import config
 import oftest.controller as controller
 import oftest.cstruct as ofp
 import oftest.message as message
 import basic
 
 from oftest.testutils import *
-
-#@var port_map Local copy of the configuration map from OF port
-# numbers to OS interfaces
-im_port_map = None
-#@var im_config Local copy of global configuration data
-im_config = None
-
-def test_set_init(config):
-    basic.test_set_init(config)
-
-    global im_port_map
-    global im_config
-
-    im_port_map = config["port_map"]
-    im_config = config
 
 def normal_ip_mask(index):
     """
@@ -125,7 +111,7 @@ class BSNConfigIPMask(basic.SimpleDataPlane):
                 self.check_ip_mask(False, index, mask)
 
     def check_ip_mask(self, source, index, mask):
-        ports = im_port_map.keys()
+        ports = config["port_map"].keys()
 
         # For each mask we install two flow entries, one which matches
         # on IP source or dest addr all-0s (modulo the mask) and
