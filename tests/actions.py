@@ -557,9 +557,11 @@ class VlanPrio1(basic.SimpleDataPlane):
         
         #Create a untagged packet to be sent and an expected packet with vid = 0 , vlan_priority set. 
         vlan_id = 0
-        pkt = simple_tcp_packet()
-        exp_pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vlan_id,dl_vlan_pcp=0)
-        act = action.action_set_vlan_vid()
+        vlan_pcp = 1
+        pkt = simple_tcp_packet(pktlen=60)
+        exp_pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vlan_id,dl_vlan_pcp=vlan_pcp, pktlen=64)
+        act = action.action_set_vlan_pcp()
+        act.vlan_pcp = vlan_pcp
 
         #Insert flow with action -- set vLAN priority, Send packet matching the flow, Verify recieved packet is expected packet
         flow_match_test(self, ac_port_map, pkt=pkt, exp_pkt=exp_pkt,
