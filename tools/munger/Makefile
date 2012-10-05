@@ -40,6 +40,8 @@ LINT_FILES := $(subst ${TARGET_DIR}/,lint/,${LINT_FILES})
 
 all: ${GEN_FILES}
 
+install: all
+
 # The core OpenFlow libraries generated from openflow.h
 ${TARGET_DIR}/cstruct.py: ${CSTRUCT_DEP}
 	${CSTRUCT_GEN_CMD} > ${CSTRUCT_AUX_INFO}
