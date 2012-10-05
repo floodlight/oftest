@@ -30,10 +30,6 @@ configurable through the command line.
 <pre>
     dbg_level         : logging module value of debug level
     port_map          : Map of dataplane OpenFlow port to OS interface names
-    test_mod_map      : Dictionary indexed by module names and whose value
-                        is the module reference
-    all_tests         : Dictionary indexed by module reference and whose
-                        value is a list of functions in that module
 </pre>
 
 Each test may be assigned a priority by setting test_prio["TestName"] in 
@@ -117,6 +113,7 @@ import os
 import imp
 import random
 import signal
+import fnmatch
 
 root_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -324,60 +321,49 @@ def logging_setup(config):
                         level=config["dbg_level"],
                         format=_format, datefmt=_datefmt)
 
-def test_list_generate(config):
-    """Generate the list of all known tests indexed by module name
+def load_test_modules(config):
+    """
+    Load tests from the test_dir directory.
 
-    Conventions:  Test files must implement the function test_set_init
-
-    Test cases are classes that implement runTest
+    Test cases are subclasses of unittest.TestCase
 
     @param config The oft configuration dictionary
-    @returns An array of triples (mod-name, module, [tests]) where 
-    mod-name is the string (filename) of the module, module is the
-    value returned from __import__'ing the module and [tests] is an
-    array of strings giving the test cases from the module.  
+    @returns A dictionary from test module names to tuples of
+    (module, dictionary from test names to test classes).
     """
 
-    # Find and import test files
-    p1 = Popen(["find", config["test_dir"], "-type","f"], stdout = PIPE)
-    p2 = Popen(["xargs", "grep", "-l", "-e", "^def test_set_init"], 
-                stdin=p1.stdout, stdout=PIPE)
+    result = {}
 
-    all_tests = {}
-    mod_name_map = {}
-    # There's an extra empty entry at the end of the list 
-    filelist = p2.communicate()[0].split("\n")[:-1]
-    for file in filelist:
-        if file[-1:] == '~' or file[0] == '#':
-            continue
-        modname = os.path.splitext(os.path.basename(file))[0]
+    for root, dirs, filenames in os.walk(config["test_dir"]):
+        # Iterate over each python file
+        for filename in fnmatch.filter(filenames, '[!.]*.py'):
+            modname = os.path.splitext(os.path.basename(filename))[0]
 
-        try:
-            if sys.modules.has_key(modname):
-                mod = sys.modules[modname]
-            else:
-                mod = imp.load_module(modname, *imp.find_module(modname, [os.path.dirname(file)]))
-        except:
-            logging.warning("Could not import file " + file)
-            raise
+            try:
+                if sys.modules.has_key(modname):
+                    mod = sys.modules[modname]
+                else:
+                    mod = imp.load_module(modname, *imp.find_module(modname, [root]))
+            except:
+                logging.warning("Could not import file " + filename)
+                raise
 
-        tests = [k for k in dir(mod) if type(getattr(mod, k)) == type and
-                                        issubclass(getattr(mod, k), unittest.TestCase)]
-        if tests:
-            mod_name_map[modname] = mod
-            all_tests[mod] = tests
+            # Find all testcases defined in the module
+            tests = dict((k, v) for (k, v) in mod.__dict__.items() if type(v) == type and
+                                                                      issubclass(v, unittest.TestCase))
+            if tests:
+                result[modname] = (mod, tests)
 
-    config["all_tests"] = all_tests
-    config["mod_name_map"] = mod_name_map
+    return result
 
 def die(msg, exit_val=1):
     print msg
     logging.critical(msg)
     sys.exit(exit_val)
 
-def add_test(suite, mod, name):
-    logging.info("Adding test " + mod.__name__ + "." + name)
-    suite.addTest(getattr(mod, name)())
+def add_test(suite, mod, test):
+    logging.info("Adding test " + mod.__name__ + "." + test.__name__)
+    suite.addTest(test())
 
 def _space_to(n, str):
     """
@@ -419,7 +405,7 @@ logging.info("++++++++ " + time.asctime() + " ++++++++")
 # Allow tests to import each other
 sys.path.append(config["test_dir"])
 
-test_list_generate(config)
+test_modules = load_test_modules(config)
 oft_config = config
 
 load_profile(config)
@@ -430,9 +416,9 @@ if config["list"]:
     mod_count = 0
     test_count = 0
     print "\nTest List:"
-    for mod in config["all_tests"].keys():
+    for (modname, (mod, tests)) in test_modules.items():
         if config["test_spec"] != "all" and \
-                config["test_spec"] != mod.__name__:
+                config["test_spec"] != modname:
             continue
         mod_count += 1
         did_print = True
@@ -440,16 +426,16 @@ if config["list"]:
         desc = desc.split('\n')[0]
         start_str = "  Module " + mod.__name__ + ": "
         print start_str + _space_to(22, start_str) + desc
-        for test in config["all_tests"][mod]:
+        for (testname, test) in tests.items():
             try:
-                desc = getattr(mod, test).__doc__.strip()
+                desc = test.__doc__.strip()
                 desc = desc.split('\n')[0]
             except:
                 desc = "No description"
-            if test_prio_get(mod, test) < 0:
-                start_str = "  * " + test + ":"
+            if test_prio_get(mod, testname) < 0:
+                start_str = "  * " + testname + ":"
             else:
-                start_str = "    " + test + ":"
+                start_str = "    " + testname + ":"
             if len(start_str) > 22:
                 desc = "\n" + _space_to(22, "") + desc
             print start_str + _space_to(22, start_str) + desc
@@ -469,15 +455,13 @@ if config["list"]:
 
 # Check if test list is requested; display and exit if so
 if config["list_test_names"]:
-    for mod in config["all_tests"].keys():
+    for (modname, (mod, tests)) in test_modules.items():
         if config["test_spec"] != "all" and \
-                config["test_spec"] != mod.__name__:
+                config["test_spec"] != modname:
             continue
-        desc = mod.__doc__.strip()
-        desc = desc.split('\n')[0]
-        for test in config["all_tests"][mod]:
-            if test_prio_get(mod, test) >= 0:
-                print "%s.%s" % (mod.__name__, test)
+        for (testname, test) in tests.items():
+            if test_prio_get(mod, testname) >= 0:
+                print "%s.%s" % (modname, testname)
     sys.exit(0)
 
 # Generate the test suite
@@ -486,37 +470,39 @@ suite = unittest.TestSuite()
 
 #@todo Allow specification of priority to override prio check
 if config["test_spec"] == "all":
-    for mod in config["all_tests"].keys(): 
-       for test in config["all_tests"][mod]:
-           # For now, a way to avoid tests
-           if test_prio_get(mod, test) >= 0:
-               add_test(suite, mod, test)
+    for (modname, (mod, tests)) in test_modules.items():
+        for (testname, test) in tests:
+            # For now, a way to avoid tests
+            if test_prio_get(mod, testname) >= 0:
+                add_test(suite, mod, test)
 
 else:
     for ts_entry in config["test_spec"].split(","):
         parts = ts_entry.split(".")
 
         if len(parts) == 1: # Either a module or test name
-            if ts_entry in config["mod_name_map"].keys():
-                mod = config["mod_name_map"][ts_entry]
-                for test in config["all_tests"][mod]:
-                    if test_prio_get(mod, test) >= 0:
+            if ts_entry in test_modules:
+                (mod, tests) = test_modules[ts_entry]
+                for testname, test in tests.items():
+                    if test_prio_get(mod, testname) >= 0:
                         add_test(suite, mod, test)
             else: # Search for matching tests
                 test_found = False
-                for mod in config["all_tests"].keys():
-                    if ts_entry in config["all_tests"][mod]:
-                        add_test(suite, mod, ts_entry)
+                for (modname, (mod, tests)) in test_modules.items():
+                    if ts_entry in tests:
+                        add_test(suite, mod, tests[ts_entry])
                         test_found = True
                 if not test_found:
                     die("Could not find module or test: " + ts_entry)
 
         elif len(parts) == 2: # module.test
-            if parts[0] not in config["mod_name_map"]:
+            if parts[0] not in test_modules:
                 die("Unknown module in test spec: " + ts_entry)
-            mod = config["mod_name_map"][parts[0]]
-            if parts[1] in config["all_tests"][mod]:
-                add_test(suite, mod, parts[1])
+            modname = parts[0]
+            testname = parts[1]
+            (mod, tests) = test_modules[modname]
+            if testname in tests:
+                add_test(suite, mod, tests[testname])
             else:
                 die("No known test matches: " + ts_entry)
 
@@ -546,7 +532,7 @@ logging.debug("Configuration: " + str(config))
 logging.info("OF port map: " + str(config["port_map"]))
 
 # Init the test sets
-for (modname,mod) in config["mod_name_map"].items():
+for (modname, (mod, tests)) in test_modules.items():
     try:
         mod.test_set_init(config)
     except:
