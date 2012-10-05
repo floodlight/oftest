@@ -50,6 +50,9 @@ class BaseHandshake(unittest.TestCase):
     Base handshake case to set up controller, but do not send hello.
     """
 
+    controllers = []
+    default_timeout = 2
+
     def sig_handler(self, v1, v2):
         cxn_logger.critical("Received interrupt signal; exiting")
         print "Received interrupt signal; exiting"
@@ -58,21 +61,15 @@ class BaseHandshake(unittest.TestCase):
         sys.exit(1)
 
     def controllerSetup(self, host, port):
-        self.controller = controller.Controller(host=host,port=port)
+        con = controller.Controller(host=host,port=port)
 
         # clean_shutdown should be set to False to force quit app
         self.clean_shutdown = True
         # disable initial hello so hello is under control of test
-        self.controller.initial_hello = False
+        con.initial_hello = False
 
-        self.controller.start()
-        #@todo Add an option to wait for a pkt transaction to ensure version
-        # compatibilty?
-        self.controller.connect(timeout=10)
-        self.assertTrue(self.controller.active,
-                        "Controller startup failed, not active")
-        self.assertTrue(self.controller.switch_addr is not None,
-                        "Controller startup failed, no switch addr")
+        con.start()
+        self.controllers.append(con)
 
     def setUp(self):
         self.logger = cxn_logger
@@ -85,35 +82,15 @@ class BaseHandshake(unittest.TestCase):
            cxn_logger.info("Could not set SIGINT handler: %s" % e)
         cxn_logger.info("** START TEST CASE " + str(self))
 
-        self.test_timeout = test_param_get(cxn_config,
-                                           'handshake_timeout') or 60
+        self.default_timeout = test_param_get(cxn_config,
+                                              'default_timeout') or 2
 
-    def inheritSetup(self, parent):
-        """
-        Inherit the setup of a parent
-
-        This allows running at test from within another test.  Do the
-        following:
-
-        sub_test = SomeTestClass()  # Create an instance of the test class
-        sub_test.inheritSetup(self) # Inherit setup of parent
-        sub_test.runTest()          # Run the test
-
-        Normally, only the parent's setUp and tearDown are called and
-        the state after the sub_test is run must be taken into account
-        by subsequent operations.
-        """
-        self.logger = parent.logger
-        self.config = parent.config
-        cxn_logger.info("** Setup " + str(self) + 
-                                    " inheriting from " + str(parent))
-        self.controller = parent.controller
-        
     def tearDown(self):
         cxn_logger.info("** END TEST CASE " + str(self))
-        self.controller.shutdown()
-        if self.clean_shutdown:
-            self.controller.join()
+        for con in self.controllers:
+            con.shutdown()
+            if self.clean_shutdown:
+                con.join()
 
     def runTest(self):
         # do nothing in the base case
@@ -134,18 +111,15 @@ class HandshakeNoHello(BaseHandshake):
     def runTest(self):
         self.controllerSetup(cxn_config["controller_host"],
                              cxn_config["controller_port"])
-
+        self.controllers[0].connect(self.default_timeout)
         cxn_logger.info("TCP Connected " + 
-                        str(self.controller.switch_addr))
+                        str(self.controllers[0].switch_addr))
         cxn_logger.info("Hello not sent, waiting for timeout")
 
         # wait for controller to die
         count = 0
-        while self.controller.active and count < self.test_timeout:
-            time.sleep(1)
-            count = count + 1
-        self.assertTrue(not self.controller.active, 
-                        "Expected controller disconnect, but still active")
+        self.assertTrue(self.controllers[0].wait_disconnected(timeout=10),
+                        "Not notified of controller disconnect")
 
 class HandshakeNoFeaturesRequest(BaseHandshake):
     """
@@ -155,21 +129,18 @@ class HandshakeNoFeaturesRequest(BaseHandshake):
     def runTest(self):
         self.controllerSetup(cxn_config["controller_host"],
                              cxn_config["controller_port"])
-
+        self.controllers[0].connect(self.default_timeout)
         cxn_logger.info("TCP Connected " + 
-                                    str(self.controller.switch_addr))
+                                    str(self.controllers[0].switch_addr))
         cxn_logger.info("Sending hello")
-        self.controller.message_send(message.hello())
+        self.controllers[0].message_send(message.hello())
 
         cxn_logger.info("Features request not sent, waiting for timeout")
 
         # wait for controller to die
         count = 0
-        while self.controller.active and count < self.test_timeout:
-            time.sleep(1)
-            count = count + 1
-        self.assertTrue(not self.controller.active, 
-                        "Expected controller disconnect, but still active")
+        self.assertTrue(self.controllers[0].wait_disconnected(timeout=10),
+                        "Not notified of controller disconnect")
 
 class HandshakeAndKeepalive(BaseHandshake):
     """
@@ -177,29 +148,55 @@ class HandshakeAndKeepalive(BaseHandshake):
     Good for manual testing.
     """
     def runTest(self):
-        self.controllerSetup(cxn_config["controller_host"],
-                             cxn_config["controller_port"])
+        self.num_controllers = test_param_get(cxn_config, 
+                                              'num_controllers') or 1
 
-        cxn_logger.info("TCP Connected " + 
-                                    str(self.controller.switch_addr))
-        cxn_logger.info("Sending hello")
-        self.controller.message_send(message.hello())
+        for i in range(self.num_controllers):
+            self.controllerSetup(cxn_config["controller_host"],
+                                 cxn_config["controller_port"]+i)
+        for i in range(self.num_controllers):
+            self.controllers[i].handshake_done = False
 
-        request = message.features_request()
-        reply, pkt = self.controller.transact(request, timeout=20)
-        self.assertTrue(reply is not None,
-                        "Did not complete features_request for handshake")
-        cxn_logger.info("Handshake complete with " + 
-                        str(self.controller.switch_addr))
-
-        self.controller.keep_alive = True
-
-        # keep controller up forever
-        while self.controller.active:
-            time.sleep(1)
-
-        self.assertTrue(not self.controller.active, 
-                        "Expected controller disconnect, but still active")
+        # try to maintain switch connections forever
+        count = 0
+        while True:
+            for con in self.controllers:
+                if con.switch_socket and con.handshake_done:
+                    if count < 7:
+                        cxn_logger.info(con.host + ":" + str(con.port) + 
+                                        ": maintaining connection to " +
+                                        str(con.switch_addr))
+                        count = count + 1
+                    else:
+                        cxn_logger.info(con.host + ":" + str(con.port) + 
+                                        ": disconnecting from " +
+                                        str(con.switch_addr))
+                        con.disconnect()
+                        con.handshake_done = False
+                        count = 0
+                    time.sleep(1)
+                else:
+                    #@todo Add an option to wait for a pkt transaction to 
+                    # ensure version compatibilty?
+                    con.connect(self.default_timeout)
+                    if not con.switch_socket:
+                        cxn_logger.info("Did not connect to switch")
+                        continue
+                    cxn_logger.info("TCP Connected " + str(con.switch_addr))
+                    cxn_logger.info("Sending hello")
+                    con.message_send(message.hello())
+                    request = message.features_request()
+                    reply, pkt = con.transact(request, 
+                                              timeout=self.default_timeout)
+                    if reply:
+                        cxn_logger.info("Handshake complete with " + 
+                                        str(con.switch_addr))
+                        con.handshake_done = True
+                        con.keep_alive = True
+                    else:
+                        cxn_logger.info("Did not complete features_request for handshake")
+                        con.disconnect()
+                        con.handshake_done = False
 
 test_prio["HandshakeAndKeepalive"] = -1
 
