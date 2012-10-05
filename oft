@@ -90,7 +90,7 @@ Next, run oft:
 Examine oft.log if things don't work.
 
 @todo Support per-component debug levels (esp controller vs dataplane)
-@todo Consider moving oft up a level
+@todo Allow specification of priority to override prio check
 
 Current test case setup:
     Files in the tests direcoty that contain a function test_set_init are
@@ -356,14 +356,65 @@ def load_test_modules(config):
 
     return result
 
+def prune_tests(test_spec, test_modules):
+    """
+    Return tests matching a given test-spec.
+    @param test_spec A test-spec string.
+    @param test_modules Same format as the output of load_test_modules.
+    @returns Same format as the output of load_test_modules.
+    """
+    result = {}
+    for (spec_modname, spec_testname) in parse_test_spec(test_spec):
+        matched = False
+        for (modname, (mod, tests)) in test_modules.items():
+            if (spec_modname == None or spec_modname == modname):
+                for (testname, test) in tests.items():
+                    if (spec_testname == None or spec_testname == testname):
+                            result.setdefault(modname, (mod, {}))
+                            result[modname][1][testname] = test
+                            matched = True
+        if not matched:
+            if spec_modname and spec_testname:
+                el = "%s.%s" % (spec_modname, spec_testname)
+            else:
+                el = spec_modname or spec_testname or "all"
+            die("test-spec element %s did not match any tests" % el)
+    return result
+
+def parse_test_spec(test_spec):
+    """
+    The input string is split on commas and each element is parsed
+    individually into a module name and test name. Either may be None
+    for a wildcard. The case of the first letter resolves ambiguity
+    of whether a word is a test or module name. The special string
+    "all" results in both fields wildcarded.
+
+    Examples:
+      basic.Echo -> ("basic", "Echo")
+      basic -> ("basic", None)
+      Echo -> (None, "Echo")
+      all -> (None, None)
+    """
+    results = []
+    for ts_entry in test_spec.split(","):
+        parts = ts_entry.split(".")
+        if len(parts) == 1:
+            if ts_entry == "all":
+                results.append((None, None))
+            elif ts_entry[0].isupper():
+                results.append((None, ts_entry))
+            else:
+                results.append((ts_entry, None))
+        elif len(parts) == 2:
+            results.append((parts[0], parts[1]))
+        else:
+            die("Bad test spec: " + ts_entry)
+    return results
+
 def die(msg, exit_val=1):
     print msg
     logging.critical(msg)
     sys.exit(exit_val)
-
-def add_test(suite, mod, test):
-    logging.info("Adding test " + mod.__name__ + "." + test.__name__)
-    suite.addTest(test())
 
 def _space_to(n, str):
     """
@@ -405,23 +456,18 @@ logging.info("++++++++ " + time.asctime() + " ++++++++")
 # Allow tests to import each other
 sys.path.append(config["test_dir"])
 
-test_modules = load_test_modules(config)
+test_modules = prune_tests(config["test_spec"], load_test_modules(config))
 oft_config = config
 
 load_profile(config)
 
 # Check if test list is requested; display and exit if so
 if config["list"]:
-    did_print = False
     mod_count = 0
     test_count = 0
     print "\nTest List:"
     for (modname, (mod, tests)) in test_modules.items():
-        if config["test_spec"] != "all" and \
-                config["test_spec"] != modname:
-            continue
         mod_count += 1
-        did_print = True
         desc = mod.__doc__.strip()
         desc = desc.split('\n')[0]
         start_str = "  Module " + mod.__name__ + ": "
@@ -441,13 +487,10 @@ if config["list"]:
             print start_str + _space_to(22, start_str) + desc
             test_count += 1
         print
-    if not did_print:
-        print "No tests found for " + config["test_spec"]
-    else:
-        print "%d modules shown with a total of %d tests" % \
-            (mod_count, test_count)
-        print
-        print "Tests preceded by * are not run by default"
+    print "%d modules shown with a total of %d tests" % \
+        (mod_count, test_count)
+    print
+    print "Tests preceded by * are not run by default"
     print "Tests marked (TP1) after name take --test-params including:"
     print "    'vid=N;strip_vlan=bool;add_vlan=bool'"
     print "Note that --profile may override which tests are run"
@@ -456,9 +499,6 @@ if config["list"]:
 # Check if test list is requested; display and exit if so
 if config["list_test_names"]:
     for (modname, (mod, tests)) in test_modules.items():
-        if config["test_spec"] != "all" and \
-                config["test_spec"] != modname:
-            continue
         for (testname, test) in tests.items():
             if test_prio_get(mod, testname) >= 0:
                 print "%s.%s" % (modname, testname)
@@ -468,46 +508,11 @@ if config["list_test_names"]:
 #@todo Decide if multiple suites are ever needed
 suite = unittest.TestSuite()
 
-#@todo Allow specification of priority to override prio check
-if config["test_spec"] == "all":
-    for (modname, (mod, tests)) in test_modules.items():
-        for (testname, test) in tests:
-            # For now, a way to avoid tests
-            if test_prio_get(mod, testname) >= 0:
-                add_test(suite, mod, test)
-
-else:
-    for ts_entry in config["test_spec"].split(","):
-        parts = ts_entry.split(".")
-
-        if len(parts) == 1: # Either a module or test name
-            if ts_entry in test_modules:
-                (mod, tests) = test_modules[ts_entry]
-                for testname, test in tests.items():
-                    if test_prio_get(mod, testname) >= 0:
-                        add_test(suite, mod, test)
-            else: # Search for matching tests
-                test_found = False
-                for (modname, (mod, tests)) in test_modules.items():
-                    if ts_entry in tests:
-                        add_test(suite, mod, tests[ts_entry])
-                        test_found = True
-                if not test_found:
-                    die("Could not find module or test: " + ts_entry)
-
-        elif len(parts) == 2: # module.test
-            if parts[0] not in test_modules:
-                die("Unknown module in test spec: " + ts_entry)
-            modname = parts[0]
-            testname = parts[1]
-            (mod, tests) = test_modules[modname]
-            if testname in tests:
-                add_test(suite, mod, tests[testname])
-            else:
-                die("No known test matches: " + ts_entry)
-
-        else:
-            die("Bad test spec: " + ts_entry)
+for (modname, (mod, tests)) in test_modules.items():
+    for (testname, test) in tests.items():
+        if test_prio_get(mod, testname) >= 0:
+            logging.info("Adding test " + modname + "." + testname)
+            suite.addTest(test())
 
 # Load the platform module
 platform_name = config["platform"]
