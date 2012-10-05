@@ -537,7 +537,7 @@ class DirectTwoPorts(base_tests.SimpleDataPlane):
             no_ports = set(of_ports).difference(yes_ports)
 
             receive_pkt_check(self.dataplane, pkt, yes_ports, no_ports,
-                              self, config)
+                              self)
 
 class DirectMCNonIngress(base_tests.SimpleDataPlane):
     """
@@ -591,7 +591,7 @@ class DirectMCNonIngress(base_tests.SimpleDataPlane):
             self.dataplane.send(ingress_port, str(pkt))
             yes_ports = set(of_ports).difference([ingress_port])
             receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
-                              self, config)
+                              self)
 
 
 class DirectMC(base_tests.SimpleDataPlane):
@@ -644,7 +644,7 @@ class DirectMC(base_tests.SimpleDataPlane):
 
             logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
-            receive_pkt_check(self.dataplane, pkt, of_ports, [], self, config)
+            receive_pkt_check(self.dataplane, pkt, of_ports, [], self)
 
 class Flood(base_tests.SimpleDataPlane):
     """
@@ -692,7 +692,7 @@ class Flood(base_tests.SimpleDataPlane):
             self.dataplane.send(ingress_port, str(pkt))
             yes_ports = set(of_ports).difference([ingress_port])
             receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
-                              self, config)
+                              self)
 
 class FloodPlusIngress(base_tests.SimpleDataPlane):
     """
@@ -742,7 +742,7 @@ class FloodPlusIngress(base_tests.SimpleDataPlane):
 
             logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
-            receive_pkt_check(self.dataplane, pkt, of_ports, [], self, config)
+            receive_pkt_check(self.dataplane, pkt, of_ports, [], self)
 
 class All(base_tests.SimpleDataPlane):
     """
@@ -790,7 +790,7 @@ class All(base_tests.SimpleDataPlane):
             self.dataplane.send(ingress_port, str(pkt))
             yes_ports = set(of_ports).difference([ingress_port])
             receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
-                              self, config)
+                              self)
 
 class AllPlusIngress(base_tests.SimpleDataPlane):
     """
@@ -840,7 +840,7 @@ class AllPlusIngress(base_tests.SimpleDataPlane):
 
             logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
-            receive_pkt_check(self.dataplane, pkt, of_ports, [], self, config)
+            receive_pkt_check(self.dataplane, pkt, of_ports, [], self)
             
 class FloodMinusPort(base_tests.SimpleDataPlane):
     """
@@ -897,7 +897,7 @@ class FloodMinusPort(base_tests.SimpleDataPlane):
             self.dataplane.send(ingress_port, str(pkt))
             no_ports = set([ingress_port, no_flood_port])
             yes_ports = set(of_ports).difference(no_ports)
-            receive_pkt_check(self.dataplane, pkt, yes_ports, no_ports, self, config)
+            receive_pkt_check(self.dataplane, pkt, yes_ports, no_ports, self)
 
             # Turn no flood off again
             rv = port_config_set(self.controller, no_flood_port,
@@ -936,7 +936,7 @@ class ExactMatchTagged(BaseMatchCase):
     """
 
     def runTest(self):
-        vid = test_param_get(config, 'vid', default=TEST_VID_DEFAULT)
+        vid = test_param_get('vid', default=TEST_VID_DEFAULT)
         flow_match_test(self, config["port_map"], dl_vlan=vid)
 
 class ExactMatchTaggedMany(BaseMatchCase):
@@ -1167,7 +1167,7 @@ class SingleWildcardMatch(BaseMatchCase):
     Verify flow_expiration message is correct when command option is set
     """
     def runTest(self):
-        vid = test_param_get(config, 'vid', default=TEST_VID_DEFAULT)
+        vid = test_param_get('vid', default=TEST_VID_DEFAULT)
         for wc in WILDCARD_VALUES:
             wc |= required_wildcards(self)
             if wc & ofp.OFPFW_DL_VLAN:
@@ -1183,7 +1183,7 @@ class SingleWildcardMatchTagged(BaseMatchCase):
     SingleWildcardMatch with tagged packets
     """
     def runTest(self):
-        vid = test_param_get(config, 'vid', default=TEST_VID_DEFAULT)
+        vid = test_param_get('vid', default=TEST_VID_DEFAULT)
         for wc in WILDCARD_VALUES:
             wc |= required_wildcards(self)
             flow_match_test(self, config["port_map"], wildcards=wc, dl_vlan=vid,
@@ -1201,7 +1201,7 @@ class AllExceptOneWildcardMatch(BaseMatchCase):
     Verify flow_expiration message is correct when command option is set
     """
     def runTest(self):
-        vid = test_param_get(config, 'vid', default=TEST_VID_DEFAULT)
+        vid = test_param_get('vid', default=TEST_VID_DEFAULT)
         for all_exp_one_wildcard in NO_WILDCARD_VALUES:
             all_exp_one_wildcard |= required_wildcards(self)
             if all_exp_one_wildcard & ofp.OFPFW_DL_VLAN:
@@ -1217,7 +1217,7 @@ class AllExceptOneWildcardMatchTagged(BaseMatchCase):
     Match one field with tagged packets
     """
     def runTest(self):
-        vid = test_param_get(config, 'vid', default=TEST_VID_DEFAULT)
+        vid = test_param_get('vid', default=TEST_VID_DEFAULT)
         for all_exp_one_wildcard in NO_WILDCARD_VALUES:
             all_exp_one_wildcard |= required_wildcards(self)
             flow_match_test(self, config["port_map"], wildcards=all_exp_one_wildcard,
@@ -1242,7 +1242,7 @@ class AllWildcardMatchTagged(BaseMatchCase):
     AllWildcardMatch with tagged packets
     """
     def runTest(self):
-        vid = test_param_get(config, 'vid', default=TEST_VID_DEFAULT)
+        vid = test_param_get('vid', default=TEST_VID_DEFAULT)
         flow_match_test(self, config["port_map"], wildcards=ofp.OFPFW_ALL, 
                         dl_vlan=vid)
 
@@ -1293,7 +1293,7 @@ class PacketOnlyTagged(base_tests.DataPlaneOnly):
     priority = -1
 
     def runTest(self):
-        vid = test_param_get(config, 'vid', default=TEST_VID_DEFAULT)
+        vid = test_param_get('vid', default=TEST_VID_DEFAULT)
         pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vid)
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -1681,8 +1681,8 @@ class FlowToggle(BaseMatchCase):
     (add, modify, delete +/- strict).
     """
     def runTest(self):
-        flow_count = test_param_get(config, 'ft_flow_count', default=20)
-        iter_count = test_param_get(config, 'ft_iter_count', default=10)
+        flow_count = test_param_get('ft_flow_count', default=20)
+        iter_count = test_param_get('ft_iter_count', default=10)
 
         logging.info("Running flow toggle with %d flows, %d iterations" %
                        (flow_count, iter_count))
@@ -1789,7 +1789,7 @@ class IterCases(BaseMatchCase):
     priority = -1
 
     def runTest(self):
-        count = test_param_get(config, 'iter_count', default=10)
+        count = test_param_get('iter_count', default=10)
         tests_done = 0
         logging.info("Running iteration test " + str(count) + " times")
         start = time.time()

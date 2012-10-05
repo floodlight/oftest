@@ -50,8 +50,8 @@ class LoadBarrier(base_tests.SimpleProtocol):
     def runTest(self):
         # Set up flow to send from port 1 to port 2 and copy to CPU
         # Test parameter gives LB port base (assumes consecutive)
-        lb_port = test_param_get(config, 'lb_port', default=1)
-        barrier_count = test_param_get(config, 'barrier_count', 
+        lb_port = test_param_get('lb_port', default=1)
+        barrier_count = test_param_get('barrier_count', 
                                        default=10)
 
         # Set controller to filter packet ins

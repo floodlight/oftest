@@ -88,8 +88,7 @@ class SerialFailover(unittest.TestCase):
 
     def buildControllerList(self):
         # controller_list is list of ip/port tuples
-        partial_list = test_param_get(config,
-                                      'controller_list')
+        partial_list = test_param_get('controller_list')
         logging.debug("ctrl list: " + str(partial_list))
         self.controller_list = [(config["controller_host"],
                                  config["controller_port"])]
@@ -114,10 +113,8 @@ class SerialFailover(unittest.TestCase):
     def setUp(self):
         logging.info("** START TEST CASE " + str(self))
 
-        self.test_timeout = test_param_get(config,
-                                           'failover_timeout') or 60
-        self.test_iterations = test_param_get(config,
-                                              'failover_iterations') or 4
+        self.test_timeout = test_param_get('failover_timeout') or 60
+        self.test_iterations = test_param_get('failover_iterations') or 4
 
         self.buildControllerList()
         self.controller_idx = 0

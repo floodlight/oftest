@@ -66,7 +66,7 @@ def clear_port_config(parent, port):
     self.assertEqual(rv, 0, "Failed to reset port config")
 
 def required_wildcards(parent):
-    w = test_param_get(config, 'required_wildcards', default='default')
+    w = test_param_get('required_wildcards', default='default')
     if w == 'l3-l4':
         return (ofp.OFPFW_NW_SRC_ALL | ofp.OFPFW_NW_DST_ALL | ofp.OFPFW_NW_TOS
                 | ofp.OFPFW_NW_PROTO | ofp.OFPFW_TP_SRC | ofp.OFPFW_TP_DST)
@@ -252,7 +252,7 @@ def port_config_set(controller, port_no, config, mask):
     rv = controller.message_send(mod)
     return rv
 
-def receive_pkt_check(dp, pkt, yes_ports, no_ports, assert_if, config):
+def receive_pkt_check(dp, pkt, yes_ports, no_ports, assert_if):
     """
     Check for proper receive packets across all ports
     @param dp The dataplane object
@@ -262,7 +262,7 @@ def receive_pkt_check(dp, pkt, yes_ports, no_ports, assert_if, config):
     @param assert_if Object that implements assertXXX
     """
     exp_pkt_arg = None
-    if config and config["relax"]:
+    if config["relax"]:
         exp_pkt_arg = pkt
 
     for ofport in yes_ports:
@@ -502,7 +502,7 @@ def flow_msg_install(parent, request, clear_table_override=None):
     @param clear_table If true, clear the flow table before installing
     """
 
-    clear_table = test_param_get(config, 'clear_table', default=True)
+    clear_table = test_param_get('clear_table', default=True)
     if(clear_table_override != None):
         clear_table = clear_table_override
 
@@ -604,7 +604,7 @@ def flow_match_test(parent, port_map, wildcards=None, dl_vlan=-1, pkt=None,
     test_count = 0
 
     if egr_count == -1:
-        egr_count = test_param_get(config, 'egr_count', default=2)
+        egr_count = test_param_get('egr_count', default=2)
     
     for ing_idx in range(len(of_ports)):
         ingress_port = of_ports[ing_idx]
@@ -625,11 +625,10 @@ def flow_match_test(parent, port_map, wildcards=None, dl_vlan=-1, pkt=None,
             logging.info("Ran " + str(test_count) + " tests; exiting")
             return
 
-def test_param_get(config, key, default=None):
+def test_param_get(key, default=None):
     """
     Return value passed via test-params if present
 
-    @param config The configuration structure for OFTest
     @param key The lookup key
     @param default Default value to use if not found
 
@@ -708,7 +707,7 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
     """
     Set up the ingress and expected packet and action list for a test
 
-    @param parent Must implement, assertTrue, and config hash
+    @param parent Must implement assertTrue
     @param start_field_values Field values to use for ingress packet (optional)
     @param mod_field_values Field values to use for modified packet (optional)
     @param mod_fields The list of fields to be modified by the switch in the test.
@@ -753,9 +752,9 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
     # Check for test param modifications
     strip = False
     if check_test_params:
-        add_vlan = test_param_get(config, 'add_vlan')
-        strip_vlan = test_param_get(config, 'strip_vlan')
-        vid = test_param_get(config, 'vid')
+        add_vlan = test_param_get('add_vlan')
+        strip_vlan = test_param_get('strip_vlan')
+        vid = test_param_get('vid')
 
         if add_vlan and strip_vlan:
             parent.assertTrue(0, "Add and strip VLAN both specified")

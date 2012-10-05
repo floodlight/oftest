@@ -46,8 +46,7 @@ class BaseHandshake(unittest.TestCase):
     def setUp(self):
         logging.info("** START TEST CASE " + str(self))
 
-        self.test_timeout = test_param_get(config,
-                                           'handshake_timeout') or 60
+        self.test_timeout = test_param_get('handshake_timeout', default=60)
 
     def inheritSetup(self, parent):
         """

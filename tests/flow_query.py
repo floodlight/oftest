@@ -147,8 +147,8 @@ class Flow_Info:
             self.dl_addrs.append(rand_dl_addr())
             i = i + 1
     
-        if test_param_get(config, "vlans", []) != []:
-           self.vlans = test_param_get(config, "vlans", [])
+        if test_param_get("vlans", []) != []:
+           self.vlans = test_param_get("vlans", [])
 
            logging.info("Overriding VLAN ids to:")
            logging.info(self.vlans)
@@ -394,7 +394,7 @@ class Flow_Cfg:
         return True
 
     def actions_equal(self, x):
-        if test_param_get(config, "conservative_ordered_actions", True):
+        if test_param_get("conservative_ordered_actions", True):
             # Compare actions lists as unordered
             
             aa = copy.deepcopy(x.actions.actions)
@@ -498,7 +498,7 @@ class Flow_Cfg:
         # Action lists are ordered, so pick an ordered random subset of
         # supported actions
 
-        actions_force = test_param_get(config, "actions_force", 0)
+        actions_force = test_param_get("actions_force", 0)
         if actions_force != 0:
             logging.info("Forced actions:")
             logging.info(actions_bmap_to_str(actions_force))
@@ -607,11 +607,11 @@ class Flow_Cfg:
 
         # By default, test with conservative ordering conventions
         # This should probably be indicated in a profile
-        if test_param_get(config, "conservative_ordered_actions", True):
+        if test_param_get("conservative_ordered_actions", True):
             self.rand_actions_ordered(fi, valid_actions, valid_ports, valid_queues)
             return self
 
-        actions_force = test_param_get(config, "actions_force", 0)
+        actions_force = test_param_get("actions_force", 0)
         if actions_force != 0:
             logging.info("Forced actions:")
             logging.info(actions_bmap_to_str(actions_force))
@@ -1238,7 +1238,7 @@ class Switch:
         self.valid_ports = map(lambda x: x.port_no, self.sw_features.ports)
         logging.info("Ports reported by switch:")
         logging.info(self.valid_ports)
-        ports_override = test_param_get(config, "ports", [])
+        ports_override = test_param_get("ports", [])
         if ports_override != []:
             logging.info("Overriding ports to:")
             logging.info(ports_override)
@@ -1263,7 +1263,7 @@ class Switch:
                           actions_bmap_to_str(self.sw_features.actions) \
                           ) \
                        )
-        actions_override = test_param_get(config, "actions", -1)
+        actions_override = test_param_get("actions", -1)
         if actions_override != -1:
             logging.info("Overriding supported actions to:")
             logging.info(actions_bmap_to_str(actions_override))
@@ -1287,7 +1287,7 @@ class Switch:
                               wildcards_to_str(ts.wildcards) \
                               ) \
                            )
-            wildcards_override = test_param_get(config, "wildcards", -1)
+            wildcards_override = test_param_get("wildcards", -1)
             if wildcards_override != -1:
                 logging.info("Overriding supported wildcards for table %d to:"
                                % (i)
@@ -1311,7 +1311,7 @@ class Switch:
                                 )
         logging.info("(Port, queue) pairs reported by switch:")
         logging.info(self.valid_queues)
-        queues_override = test_param_get(config, "queues", [])
+        queues_override = test_param_get("queues", [])
         if queues_override != []:
             logging.info("Overriding (port, queue) pairs to:")
             logging.info(queues_override)
@@ -1578,7 +1578,7 @@ class Flow_Add_5(base_tests.SimpleProtocol):
     def runTest(self):
         logging.info("Flow_Add_5 TEST BEGIN")
 
-        num_flows = test_param_get(config, "num_flows", 100)
+        num_flows = test_param_get("num_flows", 100)
 
         # Clear all flows from switch
 
@@ -1681,7 +1681,7 @@ class Flow_Add_5_1(base_tests.SimpleProtocol):
     def runTest(self):
         logging.info("Flow_Add_5_1 TEST BEGIN")
 
-        num_flows = test_param_get(config, "num_flows", 100)
+        num_flows = test_param_get("num_flows", 100)
         
         # Clear all flows from switch
 
@@ -2305,7 +2305,7 @@ class Flow_Mod_2(base_tests.SimpleProtocol):
     def runTest(self):
         logging.info("Flow_Mod_2 TEST BEGIN")
 
-        num_flows = test_param_get(config, "num_flows", 100)
+        num_flows = test_param_get("num_flows", 100)
 
         # Clear all flows from switch
 
@@ -2789,7 +2789,7 @@ class Flow_Del_2(base_tests.SimpleProtocol):
     def runTest(self):
         logging.info("Flow_Del_2 TEST BEGIN")
 
-        num_flows = test_param_get(config, "num_flows", 100)
+        num_flows = test_param_get("num_flows", 100)
 
         # Clear all flows from switch
 

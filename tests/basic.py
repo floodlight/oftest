@@ -81,7 +81,7 @@ class PacketIn(base_tests.SimpleDataPlane):
         self.assertEqual(rc, 0, "Failed to delete all flows")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-        vid = test_param_get(config, 'vid', default=TEST_VID_DEFAULT)
+        vid = test_param_get('vid', default=TEST_VID_DEFAULT)
 
         for of_port in config["port_map"].keys():
             for pkt, pt in [
@@ -277,7 +277,7 @@ class PacketOutMC(base_tests.SimpleDataPlane):
 
                receive_pkt_check(self.dataplane, outpkt, dp_ports,
                                  set(of_ports).difference(dp_ports),
-                                 self, config)
+                                 self)
 
 class FlowStatsGet(base_tests.SimpleProtocol):
     """

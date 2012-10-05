@@ -174,7 +174,7 @@ class ForwardAll(base_tests.SimpleDataPlane):
         #Verifying packets recieved on expected dataplane ports
         yes_ports = set(of_ports).difference([ingress_port])
         receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
-                      self, config)
+                      self)
 
 
 class ForwardController(base_tests.SimpleDataPlane):
@@ -334,7 +334,7 @@ class ForwardFlood(base_tests.SimpleDataPlane):
         #Verifying packets recieved on expected dataplane ports
         yes_ports = set(of_ports).difference([ingress_port])
         receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
-                      self, config)
+                      self)
 
 class ForwardInport(base_tests.SimpleDataPlane):
     
@@ -386,7 +386,7 @@ class ForwardInport(base_tests.SimpleDataPlane):
 
         #Verfying packet recieved on expected dataplane ports
         receive_pkt_check(self.dataplane, pkt, yes_ports,set(of_ports).difference([ingress_port]),
-                          self, config)
+                          self)
 
 class ForwardTable(base_tests.SimpleDataPlane):
    
