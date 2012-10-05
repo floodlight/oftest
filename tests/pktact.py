@@ -13,9 +13,8 @@ indicated in config.
 """
 
 import copy
-
 import logging
-
+import time
 import unittest
 
 from oftest import config
@@ -25,8 +24,8 @@ import oftest.message as message
 import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.parse as parse
-import basic
-import time
+import oftest.base_tests as base_tests
+import basic # for IterCases
 
 from oftest.testutils import *
 
@@ -76,7 +75,7 @@ MODIFY_ACTION_VALUES =  [ofp.OFPAT_SET_VLAN_VID,
 
 TEST_VID_DEFAULT = 2
 
-class DirectPacket(basic.SimpleDataPlane):
+class DirectPacket(base_tests.SimpleDataPlane):
     """
     Send packet to single egress port
 
@@ -146,7 +145,7 @@ class DirectPacket(basic.SimpleDataPlane):
             self.assertEqual(str(pkt), str(rcv_pkt),
                              'Response packet does not match send packet')
 
-class DirectPacketController(basic.SimpleDataPlane):
+class DirectPacketController(base_tests.SimpleDataPlane):
     """
     Send packet to the controller port
 
@@ -209,7 +208,7 @@ class DirectPacketController(basic.SimpleDataPlane):
                              ' for controller port')
 
 
-class DirectPacketQueue(basic.SimpleDataPlane):
+class DirectPacketQueue(base_tests.SimpleDataPlane):
     """
     Send packet to single queue on single egress port
 
@@ -331,7 +330,7 @@ class DirectPacketQueue(basic.SimpleDataPlane):
                                  )
                     
 
-class DirectPacketControllerQueue(basic.SimpleDataPlane):
+class DirectPacketControllerQueue(base_tests.SimpleDataPlane):
     """
     Send a packet from each of the openflow ports
     to each of the queues configured on the controller port.
@@ -482,7 +481,7 @@ class DirectPacketICMP(DirectPacket):
     def runTest(self):
         self.handleFlow(pkttype='ICMP')
 
-class DirectTwoPorts(basic.SimpleDataPlane):
+class DirectTwoPorts(base_tests.SimpleDataPlane):
     """
     Send packet to two egress ports
 
@@ -540,7 +539,7 @@ class DirectTwoPorts(basic.SimpleDataPlane):
             receive_pkt_check(self.dataplane, pkt, yes_ports, no_ports,
                               self, config)
 
-class DirectMCNonIngress(basic.SimpleDataPlane):
+class DirectMCNonIngress(base_tests.SimpleDataPlane):
     """
     Multicast to all non-ingress ports
 
@@ -595,7 +594,7 @@ class DirectMCNonIngress(basic.SimpleDataPlane):
                               self, config)
 
 
-class DirectMC(basic.SimpleDataPlane):
+class DirectMC(base_tests.SimpleDataPlane):
     """
     Multicast to all ports including ingress
 
@@ -647,7 +646,7 @@ class DirectMC(basic.SimpleDataPlane):
             self.dataplane.send(ingress_port, str(pkt))
             receive_pkt_check(self.dataplane, pkt, of_ports, [], self, config)
 
-class Flood(basic.SimpleDataPlane):
+class Flood(base_tests.SimpleDataPlane):
     """
     Flood to all ports except ingress
 
@@ -695,7 +694,7 @@ class Flood(basic.SimpleDataPlane):
             receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
                               self, config)
 
-class FloodPlusIngress(basic.SimpleDataPlane):
+class FloodPlusIngress(base_tests.SimpleDataPlane):
     """
     Flood to all ports plus send to ingress port
 
@@ -745,7 +744,7 @@ class FloodPlusIngress(basic.SimpleDataPlane):
             self.dataplane.send(ingress_port, str(pkt))
             receive_pkt_check(self.dataplane, pkt, of_ports, [], self, config)
 
-class All(basic.SimpleDataPlane):
+class All(base_tests.SimpleDataPlane):
     """
     Send to OFPP_ALL port
 
@@ -793,7 +792,7 @@ class All(basic.SimpleDataPlane):
             receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
                               self, config)
 
-class AllPlusIngress(basic.SimpleDataPlane):
+class AllPlusIngress(base_tests.SimpleDataPlane):
     """
     Send to OFPP_ALL port and ingress port
 
@@ -843,7 +842,7 @@ class AllPlusIngress(basic.SimpleDataPlane):
             self.dataplane.send(ingress_port, str(pkt))
             receive_pkt_check(self.dataplane, pkt, of_ports, [], self, config)
             
-class FloodMinusPort(basic.SimpleDataPlane):
+class FloodMinusPort(base_tests.SimpleDataPlane):
     """
     Config port with No_Flood and test Flood action
 
@@ -911,9 +910,9 @@ class FloodMinusPort(basic.SimpleDataPlane):
 
 ################################################################
 
-class BaseMatchCase(basic.SimpleDataPlane):
+class BaseMatchCase(base_tests.SimpleDataPlane):
     def setUp(self):
-        basic.SimpleDataPlane.setUp(self)
+        base_tests.SimpleDataPlane.setUp(self)
     def runTest(self):
         logging.info("BaseMatchCase")
 
@@ -1270,7 +1269,7 @@ class AddVLANTag(BaseMatchCase):
         flow_match_test(self, config["port_map"], pkt=pkt, 
                         exp_pkt=exp_pkt, action_list=[vid_act])
 
-class PacketOnly(basic.DataPlaneOnly):
+class PacketOnly(base_tests.DataPlaneOnly):
     """
     Just send a packet thru the switch
     """
@@ -1286,7 +1285,7 @@ class PacketOnly(basic.DataPlaneOnly):
         logging.debug("Data: " + str(pkt).encode('hex'))
         self.dataplane.send(ing_port, str(pkt))
 
-class PacketOnlyTagged(basic.DataPlaneOnly):
+class PacketOnlyTagged(base_tests.DataPlaneOnly):
     """
     Just send a packet thru the switch
     """
@@ -1849,7 +1848,7 @@ class MixedVLAN(BaseMatchCase):
 
     priority = -1
 
-class MatchEach(basic.SimpleDataPlane):
+class MatchEach(base_tests.SimpleDataPlane):
     """
     Check that each match field is actually matched on.
     Installs two flows that differ in one field. The flow that should not

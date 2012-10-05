@@ -26,12 +26,12 @@ import oftest.message as message
 import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.parse as parse
-import basic
+import oftest.base_tests as base_tests
 import time
 
 from oftest.testutils import *
 
-class LoadBarrier(basic.SimpleProtocol):
+class LoadBarrier(base_tests.SimpleProtocol):
     """
     Test barrier under load with loopback
 

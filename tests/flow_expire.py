@@ -16,12 +16,12 @@ import oftest.message as message
 import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.parse as parse
-import basic
+import oftest.base_tests as base_tests
 
 from oftest.testutils import *
 from time import sleep
 
-class FlowExpire(basic.SimpleDataPlane):
+class FlowExpire(base_tests.SimpleDataPlane):
     """
     Verify flow expire messages are properly generated.
 

@@ -16,13 +16,13 @@ import oftest.message as message
 import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.parse as parse
-import basic
+import oftest.base_tests as base_tests
 
 from oftest.testutils import *
 from time import sleep
 from FuncUtils import *
 
-class OverlapChecking(basic.SimpleDataPlane):
+class OverlapChecking(base_tests.SimpleDataPlane):
     
     """Verify that if overlap check flag is set in the flow entry and an overlapping flow is inserted then an error 
         is generated and switch refuses flow entry"""
@@ -83,7 +83,7 @@ class OverlapChecking(basic.SimpleDataPlane):
                                'Error Message code is not overlap')
 
 
-class NoOverlapChecking(basic.SimpleDataPlane):
+class NoOverlapChecking(base_tests.SimpleDataPlane):
 
     """Verify that without overlap check flag set, overlapping flows can be created."""  
     
@@ -115,7 +115,7 @@ class NoOverlapChecking(basic.SimpleDataPlane):
         Verify_TableStats(self,active_entries=2)
 
 
-class IdenticalFlows(basic.SimpleDataPlane):
+class IdenticalFlows(base_tests.SimpleDataPlane):
     
     """Verify that adding two identical flows overwrites the existing one and clears counters"""
 
@@ -156,7 +156,7 @@ class IdenticalFlows(basic.SimpleDataPlane):
         Verify_FlowStats(self,match,byte_count=0,packet_count=0)
 
    
-class EmerFlowTimeout(basic.SimpleProtocol): 
+class EmerFlowTimeout(base_tests.SimpleProtocol): 
 
     """Timeout values are not allowed for emergency flows"""
 
@@ -208,7 +208,7 @@ class EmerFlowTimeout(basic.SimpleProtocol):
                                'Error Message code is not bad emergency timeout')
 
 
-class MissingModifyAdd(basic.SimpleDataPlane):
+class MissingModifyAdd(base_tests.SimpleDataPlane):
 
     """If a modify does not match an existing flow, the flow gets added """
     
@@ -248,7 +248,7 @@ class MissingModifyAdd(basic.SimpleDataPlane):
         Verify_TableStats(self,active_entries=1)
 
 
-class ModifyAction(basic.SimpleDataPlane):
+class ModifyAction(base_tests.SimpleDataPlane):
 
     """A modified flow preserves counters"""
     
@@ -286,7 +286,7 @@ class ModifyAction(basic.SimpleDataPlane):
         Verify_FlowStats(self,match,byte_count=(2*len(str(pkt))),packet_count=2)
 
 
-class StrictModifyAction(basic.SimpleDataPlane):
+class StrictModifyAction(base_tests.SimpleDataPlane):
 
     """Strict Modify Flow also changes action preserves counters"""
 
@@ -330,7 +330,7 @@ class StrictModifyAction(basic.SimpleDataPlane):
         Verify_FlowStats(self,match,byte_count=(2*len(str(pkt))),packet_count=2)
 
 
-class DeleteNonexistingFlow(basic.SimpleDataPlane):
+class DeleteNonexistingFlow(base_tests.SimpleDataPlane):
     
     """Request deletion of non-existing flow"""
     
@@ -364,7 +364,7 @@ class DeleteNonexistingFlow(basic.SimpleDataPlane):
 
 
         
-class SendFlowRem(basic.SimpleDataPlane):
+class SendFlowRem(base_tests.SimpleDataPlane):
     
     """Check deletion of flows happens and generates messages as configured.
     If Send Flow removed message Flag is set in the flow entry, the flow deletion of that respective flow should generate the flow removed message, 
@@ -425,7 +425,7 @@ class SendFlowRem(basic.SimpleDataPlane):
                         'Did not receive flow removed message for this flow')
 
 
-class DeleteEmerFlow(basic.SimpleProtocol):
+class DeleteEmerFlow(base_tests.SimpleProtocol):
 
     """Delete emergency flow and verify no message is generated.An emergency flow deletion will not generate flow-removed messages even if 
     Send Flow removed message flag was set during the emergency flow entry"""
@@ -468,7 +468,7 @@ class DeleteEmerFlow(basic.SimpleProtocol):
                         'Test Failed ')
 
 
-class StrictVsNonstrict(basic.SimpleDataPlane):
+class StrictVsNonstrict(base_tests.SimpleDataPlane):
 
     """Delete and verify strict and non-strict behaviors
     This test compares the behavior of delete strict and non-strict"""
@@ -555,7 +555,7 @@ class StrictVsNonstrict(basic.SimpleDataPlane):
 
         
    
-class Outport1(basic.SimpleDataPlane):
+class Outport1(base_tests.SimpleDataPlane):
 
     """Delete flows filtered by action outport.If the out_port field in the delete command contains a value other than OFPP_NONE,
     it introduces a constraint when matching. This constraint is that the rule must contain an output action directed at that port."""
@@ -614,7 +614,7 @@ class Outport1(basic.SimpleDataPlane):
         Verify_TableStats(self,active_entries=0)
 
 
-class IdleTimeout(basic.SimpleDataPlane):
+class IdleTimeout(base_tests.SimpleDataPlane):
 
     """ Verify that idle timeout is implemented"""
 
@@ -658,7 +658,7 @@ class IdleTimeout(basic.SimpleDataPlane):
                          'Flow was not alive for 1 sec')
 
 
-class Outport2(basic.SimpleDataPlane):
+class Outport2(base_tests.SimpleDataPlane):
 
     """Add, modify flows with outport set. This field is ignored by ADD, MODIFY, and MODIFY STRICT messages."""
 
@@ -698,7 +698,7 @@ class Outport2(basic.SimpleDataPlane):
 
 
 
-class HardTimeout(basic.SimpleDataPlane):
+class HardTimeout(base_tests.SimpleDataPlane):
 
     """ Verify that hard timeout is implemented """
 
@@ -742,7 +742,7 @@ class HardTimeout(basic.SimpleDataPlane):
                          'Flow was not alive for 1 sec')
 
 
-class FlowTimeout(basic.SimpleDataPlane):
+class FlowTimeout(base_tests.SimpleDataPlane):
   
     """Verify that Flow removed messages are generated as expected
     Flow removed messages being generated when flag is set, is already tested in the above tests 

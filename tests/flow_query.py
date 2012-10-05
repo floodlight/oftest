@@ -73,7 +73,7 @@ import oftest.action      as action
 import oftest.action_list as action_list
 import oftest.parse       as parse
 import pktact
-import basic
+import oftest.base_tests as base_tests
 
 from oftest.testutils import *
 from time import sleep
@@ -1567,7 +1567,7 @@ class Switch:
 # 7. Test PASSED iff all flows sent to switch in step 3 above are returned
 #    in step 5 above; else test FAILED
 
-class Flow_Add_5(basic.SimpleProtocol):
+class Flow_Add_5(base_tests.SimpleProtocol):
     """
     Test FLOW_ADD_5 from draft top-half test plan
     
@@ -1668,7 +1668,7 @@ class Flow_Add_5(basic.SimpleProtocol):
 # Disabled.
 # Should be DUT dependent.
 
-class Flow_Add_5_1(basic.SimpleProtocol):
+class Flow_Add_5_1(base_tests.SimpleProtocol):
     """
     Test FLOW_ADD_5.1 from draft top-half test plan
 
@@ -1786,7 +1786,7 @@ class Flow_Add_5_1(basic.SimpleProtocol):
 # Disabled because of bogus capacity reported by OVS.
 # Should be DUT dependent.
 
-class Flow_Add_6(basic.SimpleProtocol):
+class Flow_Add_6(base_tests.SimpleProtocol):
     """
     Test FLOW_ADD_6 from draft top-half test plan
     
@@ -1920,7 +1920,7 @@ class Flow_Add_6(basic.SimpleProtocol):
 # 6. Test PASSED iff 1 flow returned by switch, matching configuration of F2;
 #    else test FAILED
 
-class Flow_Add_7(basic.SimpleProtocol):
+class Flow_Add_7(base_tests.SimpleProtocol):
     """
     Test FLOW_ADD_7 from draft top-half test plan
     
@@ -2042,7 +2042,7 @@ class Flow_Add_7(basic.SimpleProtocol):
 #    - overlapping flow is not in flow table
 #    else test FAILED
 
-class Flow_Add_8(basic.SimpleProtocol):
+class Flow_Add_8(base_tests.SimpleProtocol):
     """
     Test FLOW_ADD_8 from draft top-half test plan
     
@@ -2169,7 +2169,7 @@ class Flow_Add_8(basic.SimpleProtocol):
 # 6. Verify flow table in switch
 # 7. Test PASSED iff flow returned by switch is F'; else FAILED
 
-class Flow_Mod_1(basic.SimpleProtocol):
+class Flow_Mod_1(base_tests.SimpleProtocol):
     """
     Test FLOW_MOD_1 from draft top-half test plan
     
@@ -2294,7 +2294,7 @@ class Flow_Mod_1(basic.SimpleProtocol):
 #    action list;
 #    else test FAILED
         
-class Flow_Mod_2(basic.SimpleProtocol):
+class Flow_Mod_2(base_tests.SimpleProtocol):
     """
     Test FLOW_MOD_2 from draft top-half test plan
     
@@ -2447,7 +2447,7 @@ class Flow_Mod_2(basic.SimpleProtocol):
 # 3. Verify flow table in switch
 # 4. Test PASSED iff flow defined in step 2 above verified; else FAILED
 
-class Flow_Mod_3(basic.SimpleProtocol):
+class Flow_Mod_3(base_tests.SimpleProtocol):
     """
     Test FLOW_MOD_3 from draft top-half test plan
     
@@ -2540,7 +2540,7 @@ class Flow_Mod_3(basic.SimpleProtocol):
 # 5. Verify flow table in switch
 # 6. Test PASSED iff flow defined in step 2 and 4 above verified; else FAILED
 
-class Flow_Mod_3_1(basic.SimpleProtocol):
+class Flow_Mod_3_1(base_tests.SimpleProtocol):
     """
     Test FLOW_MOD_3_1 from draft top-half test plan
     
@@ -2656,7 +2656,7 @@ class Flow_Mod_3_1(basic.SimpleProtocol):
 #    less flow removed in step 3 above, are returned in step 4 above;
 #    else test FAILED
 
-class Flow_Del_1(basic.SimpleProtocol):
+class Flow_Del_1(base_tests.SimpleProtocol):
     """
     Test FLOW_DEL_1 from draft top-half test plan
     
@@ -2778,7 +2778,7 @@ class Flow_Del_1(basic.SimpleProtocol):
 #    in step 7 above;
 #    else test FAILED
 
-class Flow_Del_2(basic.SimpleProtocol):
+class Flow_Del_2(base_tests.SimpleProtocol):
     """
     Test FLOW_DEL_2 from draft top-half test plan
     
@@ -2937,7 +2937,7 @@ class Flow_Del_2(basic.SimpleProtocol):
 #    asynch message was received; else test FAILED
 
 
-class Flow_Del_4(basic.SimpleProtocol):
+class Flow_Del_4(base_tests.SimpleProtocol):
     """
     Test FLOW_DEL_4 from draft top-half test plan
     

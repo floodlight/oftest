@@ -14,7 +14,7 @@ import oftest.message as message
 import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.parse as parse
-import basic
+import oftest.base_tests as base_tests
 
 from oftest.testutils import *
 
@@ -88,7 +88,7 @@ def flow_caps_common(obj, is_exact=True):
     logging.error("RESULT: " + str(active_flows) + " flows reported")
 
 
-class FillTableExact(basic.SimpleProtocol):
+class FillTableExact(base_tests.SimpleProtocol):
     """
     Fill the flow table with exact matches; can take a while
 
@@ -112,7 +112,7 @@ class FillTableExact(basic.SimpleProtocol):
         logging.info("Running " + str(self))
         flow_caps_common(self)
 
-class FillTableWC(basic.SimpleProtocol):
+class FillTableWC(base_tests.SimpleProtocol):
     """
     Fill the flow table with wildcard matches
 

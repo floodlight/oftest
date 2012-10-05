@@ -25,6 +25,7 @@ import oftest.cstruct as ofp
 import oftest.message as message
 import oftest.dataplane as dataplane
 import oftest.action as action
+import oftest.base_tests as base_tests
 
 import oftest.illegal_message as illegal_message
 
@@ -32,135 +33,7 @@ from oftest.testutils import *
 
 TEST_VID_DEFAULT = 2
 
-class SimpleProtocol(unittest.TestCase):
-    """
-    Root class for setting up the controller
-    """
-
-    priority = 1
-
-    def setUp(self):
-        logging.info("** START TEST CASE " + str(self))
-        self.controller = controller.Controller(
-            host=config["controller_host"],
-            port=config["controller_port"])
-        # clean_shutdown should be set to False to force quit app
-        self.clean_shutdown = True
-        self.controller.start()
-        #@todo Add an option to wait for a pkt transaction to ensure version
-        # compatibilty?
-        self.controller.connect(timeout=20)
-
-        # By default, respond to echo requests
-        self.controller.keep_alive = True
-        
-        if not self.controller.active:
-            raise Exception("Controller startup failed")
-        if self.controller.switch_addr is None: 
-            raise Exception("Controller startup failed (no switch addr)")
-        logging.info("Connected " + str(self.controller.switch_addr))
-        request = message.features_request()
-        reply, pkt = self.controller.transact(request)
-        self.assertTrue(reply is not None,
-                        "Did not complete features_request for handshake")
-        self.supported_actions = reply.actions
-        logging.info("Supported actions: " + hex(self.supported_actions))
-
-    def inheritSetup(self, parent):
-        """
-        Inherit the setup of a parent
-
-        This allows running at test from within another test.  Do the
-        following:
-
-        sub_test = SomeTestClass()  # Create an instance of the test class
-        sub_test.inheritSetup(self) # Inherit setup of parent
-        sub_test.runTest()          # Run the test
-
-        Normally, only the parent's setUp and tearDown are called and
-        the state after the sub_test is run must be taken into account
-        by subsequent operations.
-        """
-        logging.info("** Setup " + str(self) + " inheriting from "
-                          + str(parent))
-        self.controller = parent.controller
-        self.supported_actions = parent.supported_actions
-        
-    def tearDown(self):
-        logging.info("** END TEST CASE " + str(self))
-        self.controller.shutdown()
-        #@todo Review if join should be done on clean_shutdown
-        if self.clean_shutdown:
-            self.controller.join()
-
-    def runTest(self):
-        # Just a simple sanity check as illustration
-        logging.info("Running simple proto test")
-        self.assertTrue(self.controller.switch_socket is not None,
-                        str(self) + 'No connection to switch')
-
-    def assertTrue(self, cond, msg):
-        if not cond:
-            logging.error("** FAILED ASSERTION: " + msg)
-        unittest.TestCase.assertTrue(self, cond, msg)
-
-class SimpleDataPlane(SimpleProtocol):
-    """
-    Root class that sets up the controller and dataplane
-    """
-    def setUp(self):
-        SimpleProtocol.setUp(self)
-        self.dataplane = dataplane.DataPlane(config)
-        for of_port, ifname in config["port_map"].items():
-            self.dataplane.port_add(ifname, of_port)
-
-    def inheritSetup(self, parent):
-        """
-        Inherit the setup of a parent
-
-        See SimpleProtocol.inheritSetup
-        """
-        SimpleProtocol.inheritSetup(self, parent)
-        self.dataplane = parent.dataplane
-
-    def tearDown(self):
-        logging.info("Teardown for simple dataplane test")
-        SimpleProtocol.tearDown(self)
-        if hasattr(self, 'dataplane'):
-            self.dataplane.kill(join_threads=self.clean_shutdown)
-        logging.info("Teardown done")
-
-    def runTest(self):
-        self.assertTrue(self.controller.switch_socket is not None,
-                        str(self) + 'No connection to switch')
-        # self.dataplane.show()
-        # Would like an assert that checks the data plane
-
-class DataPlaneOnly(unittest.TestCase):
-    """
-    Root class that sets up only the dataplane
-    """
-
-    priority = -1
-
-    def setUp(self):
-        self.clean_shutdown = True
-        logging.info("** START DataPlaneOnly CASE " + str(self))
-        self.dataplane = dataplane.DataPlane(config)
-        for of_port, ifname in config["port_map"].items():
-            self.dataplane.port_add(ifname, of_port)
-
-    def tearDown(self):
-        logging.info("Teardown for simple dataplane test")
-        self.dataplane.kill(join_threads=self.clean_shutdown)
-        logging.info("Teardown done")
-
-    def runTest(self):
-        logging.info("DataPlaneOnly")
-        # self.dataplane.show()
-        # Would like an assert that checks the data plane
-
-class Echo(SimpleProtocol):
+class Echo(base_tests.SimpleProtocol):
     """
     Test echo response with no data
     """
@@ -175,7 +48,7 @@ class Echo(SimpleProtocol):
                          'response xid != request xid')
         self.assertEqual(len(response.data), 0, 'response data non-empty')
 
-class EchoWithData(SimpleProtocol):
+class EchoWithData(base_tests.SimpleProtocol):
     """
     Test echo response with short string data
     """
@@ -192,7 +65,7 @@ class EchoWithData(SimpleProtocol):
         self.assertEqual(request.data, response.data,
                          'response data does not match request')
 
-class PacketIn(SimpleDataPlane):
+class PacketIn(base_tests.SimpleDataPlane):
     """
     Test packet in function
 
@@ -244,7 +117,7 @@ class PacketIn(SimpleDataPlane):
                                    'Response packet does not match send packet' +
                                    ' for port ' + str(of_port))
 
-class PacketInDefaultDrop(SimpleDataPlane):
+class PacketInDefaultDrop(base_tests.SimpleDataPlane):
     """
     Test packet in function
 
@@ -279,7 +152,7 @@ class PacketInDefaultDrop(SimpleDataPlane):
                             'Packet in message received on port ' + 
                             str(of_port))
 
-class PacketInBroadcastCheck(SimpleDataPlane):
+class PacketInBroadcastCheck(base_tests.SimpleDataPlane):
     """
     Check if bcast pkts leak when no flows are present
 
@@ -309,7 +182,7 @@ class PacketInBroadcastCheck(SimpleDataPlane):
         self.assertTrue(pkt_in is None,
                         'BCast packet received on port ' + str(of_port))
 
-class PacketOut(SimpleDataPlane):
+class PacketOut(base_tests.SimpleDataPlane):
     """
     Test packet out function
 
@@ -363,7 +236,7 @@ class PacketOut(SimpleDataPlane):
                self.assertEqual(str(outpkt), str(pkt)[:len(str(outpkt))],
                                 'Response packet does not match send packet')
 
-class PacketOutMC(SimpleDataPlane):
+class PacketOutMC(base_tests.SimpleDataPlane):
     """
     Test packet out to multiple output ports
 
@@ -406,7 +279,7 @@ class PacketOutMC(SimpleDataPlane):
                                  set(of_ports).difference(dp_ports),
                                  self, config)
 
-class FlowStatsGet(SimpleProtocol):
+class FlowStatsGet(base_tests.SimpleProtocol):
     """
     Get stats 
 
@@ -432,7 +305,7 @@ class FlowStatsGet(SimpleProtocol):
                         "Did not get response for flow stats")
         logging.debug(response.show())
 
-class TableStatsGet(SimpleProtocol):
+class TableStatsGet(base_tests.SimpleProtocol):
     """
     Get table stats 
 
@@ -452,7 +325,7 @@ class TableStatsGet(SimpleProtocol):
                         "Did not get reply for table stats")
         logging.debug(response.show())
 
-class DescStatsGet(SimpleProtocol):
+class DescStatsGet(base_tests.SimpleProtocol):
     """
     Get stats 
 
@@ -468,7 +341,7 @@ class DescStatsGet(SimpleProtocol):
                         "Did not get reply for desc stats")
         logging.debug(response.show())
 
-class FlowMod(SimpleProtocol):
+class FlowMod(base_tests.SimpleProtocol):
     """
     Insert a flow
 
@@ -481,7 +354,7 @@ class FlowMod(SimpleProtocol):
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Error installing flow mod")
 
-class PortConfigMod(SimpleProtocol):
+class PortConfigMod(base_tests.SimpleProtocol):
     """
     Modify a bit in port config and verify changed
 
@@ -520,7 +393,7 @@ class PortConfigMod(SimpleProtocol):
                              ofp.OFPPC_NO_FLOOD)
         self.assertTrue(rv != -1, "Error sending port mod")
 
-class PortConfigModErr(SimpleProtocol):
+class PortConfigModErr(base_tests.SimpleProtocol):
     """
     Modify a bit in port config on an invalid port and verify
     error message is received.
@@ -558,7 +431,7 @@ class PortConfigModErr(SimpleProtocol):
 
         self.assertTrue(response is not None, 'Did not receive error message')
 
-class BadMessage(SimpleProtocol):
+class BadMessage(base_tests.SimpleProtocol):
     """
     Send a message with a bad type and verify an error is returned
     """

@@ -16,7 +16,7 @@ import oftest.message as message
 import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.parse as parse
-import basic
+import oftest.base_tests as base_tests
 
 from oftest.testutils import *
 from time import sleep
@@ -61,7 +61,7 @@ def sendPacket(obj, pkt, ingress_port, egress_port, test_timeout):
     obj.assertEqual(str(pkt), str(rcv_pkt),
                     'Response packet does not match send packet')
 
-class SingleFlowStats(basic.SimpleDataPlane):
+class SingleFlowStats(base_tests.SimpleDataPlane):
     """
     Verify flow stats are properly retrieved.
 
@@ -162,7 +162,7 @@ class SingleFlowStats(basic.SimpleDataPlane):
             self.verifyStats(match, egress_port, test_timeout, num_sends)
 
 
-class TwoFlowStats(basic.SimpleDataPlane):
+class TwoFlowStats(base_tests.SimpleDataPlane):
     """
     Verify flow stats are properly retrieved.
 
@@ -292,7 +292,7 @@ class TwoFlowStats(basic.SimpleDataPlane):
         # TODO: sweep through the wildcards to verify matching?
 
 
-class AggregateStats(basic.SimpleDataPlane):
+class AggregateStats(base_tests.SimpleDataPlane):
     """
     Verify aggregate flow stats are properly retrieved.
 

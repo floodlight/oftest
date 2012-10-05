@@ -16,7 +16,7 @@ import oftest.message as message
 import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.parse as parse
-import basic
+import oftest.base_tests as base_tests
 
 from oftest.testutils import *
 from time import sleep
@@ -114,7 +114,7 @@ def verifyStats(obj, port, test_timeout, packet_sent, packet_recv):
     obj.assertTrue(all_packets_received,
                    "Packet received does not match number sent")
 
-class SingleFlowStats(basic.SimpleDataPlane):
+class SingleFlowStats(base_tests.SimpleDataPlane):
     """
     Verify flow stats are properly retrieved.
 
@@ -180,7 +180,7 @@ class SingleFlowStats(basic.SimpleDataPlane):
         verifyStats(self, egress_port, test_timeout, initTxOutPort + num_sends, initRxOutPort)
 
 
-class MultiFlowStats(basic.SimpleDataPlane):
+class MultiFlowStats(base_tests.SimpleDataPlane):
     """
     Verify flow stats are properly retrieved.
 

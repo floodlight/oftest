@@ -10,6 +10,7 @@ import logging
 
 import unittest
 import random
+import time
 
 from oftest import config
 import oftest.controller as controller
@@ -18,14 +19,13 @@ import oftest.message as message
 import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.parse as parse
-import basic
-import time
+import oftest.base_tests as base_tests
 
 from oftest.testutils import *
 from time import sleep
 from FuncUtils import *
 
-class NoAction(basic.SimpleDataPlane):
+class NoAction(base_tests.SimpleDataPlane):
 
     """NoActionDrop : no action added to flow , drops the packet."""
 
@@ -76,7 +76,7 @@ class NoAction(basic.SimpleDataPlane):
                         'Packets not received on control plane')
 
 
-class Announcement(basic.SimpleDataPlane):
+class Announcement(base_tests.SimpleDataPlane):
     
     """Announcement : Get all supported actions by the switch.
     Send OFPT_FEATURES_REQUEST to get features supported by sw."""
@@ -123,7 +123,7 @@ class Announcement(basic.SimpleDataPlane):
         logging.info(supported_actions)
         
 
-class ForwardAll(basic.SimpleDataPlane):
+class ForwardAll(base_tests.SimpleDataPlane):
     
     """ForwardAll : Packet is sent to all dataplane ports
     except ingress port when output action.port = OFPP_ALL"""
@@ -177,7 +177,7 @@ class ForwardAll(basic.SimpleDataPlane):
                       self, config)
 
 
-class ForwardController(basic.SimpleDataPlane):
+class ForwardController(base_tests.SimpleDataPlane):
     
     """ForwardController : Packet is sent to controller 
     output.port = OFPP_CONTROLLER"""
@@ -232,7 +232,7 @@ class ForwardController(basic.SimpleDataPlane):
     
 
 
-class ForwardLocal(basic.SimpleDataPlane):
+class ForwardLocal(base_tests.SimpleDataPlane):
    
     """ForwardLocal : Packet is sent to  OFPP_LOCAL port . 
         TBD : To verify packet recieved in the local networking stack of switch"""
@@ -282,7 +282,7 @@ class ForwardLocal(basic.SimpleDataPlane):
             #TBD: Verification of packets being recieved.
 
 
-class ForwardFlood(basic.SimpleDataPlane):
+class ForwardFlood(base_tests.SimpleDataPlane):
     
     """Forward:Flood : Packet is sent to all dataplane ports
     except ingress port when output action.port = OFPP_FLOOD 
@@ -336,7 +336,7 @@ class ForwardFlood(basic.SimpleDataPlane):
         receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
                       self, config)
 
-class ForwardInport(basic.SimpleDataPlane):
+class ForwardInport(base_tests.SimpleDataPlane):
     
     """ ForwardInPort : Packet sent to virtual port IN_PORT
     If the output.port = OFPP.INPORT then the packet is sent to the input port itself"""
@@ -388,7 +388,7 @@ class ForwardInport(basic.SimpleDataPlane):
         receive_pkt_check(self.dataplane, pkt, yes_ports,set(of_ports).difference([ingress_port]),
                           self, config)
 
-class ForwardTable(basic.SimpleDataPlane):
+class ForwardTable(base_tests.SimpleDataPlane):
    
     """ForwardTable : Perform actions in flow table. Only for packet-out messages.
         If the output action.port in the packetout message = OFP.TABLE , then 
@@ -429,7 +429,7 @@ class ForwardTable(basic.SimpleDataPlane):
         self.assertTrue(pkt is not None, 'Packet not received')
 
 
-class AddVlanTag(basic.SimpleDataPlane):
+class AddVlanTag(base_tests.SimpleDataPlane):
     
     """AddVlanTag : Adds VLAN Tag to untagged packet."""
 
@@ -469,7 +469,7 @@ class AddVlanTag(basic.SimpleDataPlane):
         flow_match_test(self, config["port_map"], pkt=pkt, 
                         exp_pkt=exp_pkt, action_list=[vid_act])
 
-class ModifyVlanTag(basic.SimpleDataPlane):
+class ModifyVlanTag(base_tests.SimpleDataPlane):
 
     """ModifyVlanTag : Modifies VLAN Tag to tagged packet."""
     
@@ -507,7 +507,7 @@ class ModifyVlanTag(basic.SimpleDataPlane):
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt,
                         action_list=[vid_act])
         
-class VlanPrio1(basic.SimpleDataPlane):
+class VlanPrio1(base_tests.SimpleDataPlane):
    
     """AddVlanPrioUntaggedPkt : Add VLAN priority to untagged packet."""
     
@@ -546,7 +546,7 @@ class VlanPrio1(basic.SimpleDataPlane):
                                 action_list=[act])
 
 
-class VlanPrio2(basic.SimpleDataPlane):
+class VlanPrio2(base_tests.SimpleDataPlane):
     
     """ModifyVlanPrio : Modify VLAN priority to tagged packet."""
     
@@ -586,7 +586,7 @@ class VlanPrio2(basic.SimpleDataPlane):
                         action_list=[vid_act])
 
 
-class ModifyL2Src(basic.SimpleDataPlane):
+class ModifyL2Src(base_tests.SimpleDataPlane):
     
     """ModifyL2Src :Modify the source MAC address"""
 
@@ -621,7 +621,7 @@ class ModifyL2Src(basic.SimpleDataPlane):
                         action_list=acts, max_test=2)
 
 
-class ModifyL2Dst(basic.SimpleDataPlane):
+class ModifyL2Dst(base_tests.SimpleDataPlane):
     
     """ModifyL2SDSt :Modify the dest MAC address"""
 
@@ -655,7 +655,7 @@ class ModifyL2Dst(basic.SimpleDataPlane):
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
-class ModifyL3Src(basic.SimpleDataPlane):
+class ModifyL3Src(base_tests.SimpleDataPlane):
     
     """ModifyL3Src : Modify the source IP address of an IP packet """
 
@@ -689,7 +689,7 @@ class ModifyL3Src(basic.SimpleDataPlane):
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
-class ModifyL3Dst(basic.SimpleDataPlane):
+class ModifyL3Dst(base_tests.SimpleDataPlane):
     
     """ModifyL3Dst :Modify the dest IP address of an IP packet"""
     
@@ -724,7 +724,7 @@ class ModifyL3Dst(basic.SimpleDataPlane):
                         action_list=acts, max_test=2)
 
 
-class ModifyL4Src(basic.SimpleDataPlane):
+class ModifyL4Src(base_tests.SimpleDataPlane):
     
     """ModifyL4Src : Modify the source TCP port of a TCP packet"""
     
@@ -758,7 +758,7 @@ class ModifyL4Src(basic.SimpleDataPlane):
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
-class ModifyL4Dst(basic.SimpleDataPlane):
+class ModifyL4Dst(base_tests.SimpleDataPlane):
     
     """ ModifyL4Dst: Modify the dest TCP port of a TCP packet """
 
@@ -792,7 +792,7 @@ class ModifyL4Dst(basic.SimpleDataPlane):
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
-class ModifyTos(basic.SimpleDataPlane):
+class ModifyTos(base_tests.SimpleDataPlane):
     
     """ModifyTOS :Modify the IP type of service of an IP packet"""
    

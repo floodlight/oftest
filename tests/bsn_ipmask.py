@@ -8,7 +8,7 @@ from oftest import config
 import oftest.controller as controller
 import oftest.cstruct as ofp
 import oftest.message as message
-import basic
+import oftest.base_tests as base_tests
 
 from oftest.testutils import *
 
@@ -36,7 +36,7 @@ def fancy_ip_mask(index):
     else:
         return (1 << (63 - index)) - 1
 
-class BSNConfigIPMask(basic.SimpleDataPlane):
+class BSNConfigIPMask(base_tests.SimpleDataPlane):
     """
     Exercise BSN vendor extension for configuring IP source/dest match mask
     """
