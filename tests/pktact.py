@@ -7,42 +7,27 @@ It is recommended that these definitions be kept in their own
 namespace as different groups of tests will likely define 
 similar identifiers.
 
-  The function test_set_init is called with a complete configuration
-dictionary prior to the invocation of any tests from this file.
-
-  The switch is actively attempting to contact the controller at the address
-indicated oin oft_config
+The switch is actively attempting to contact the controller at the address
+indicated in config.
 
 """
 
 import copy
-
 import logging
-
+import time
 import unittest
 
+from oftest import config
 import oftest.controller as controller
 import oftest.cstruct as ofp
 import oftest.message as message
 import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.parse as parse
-import basic
-import time
+import oftest.base_tests as base_tests
+import basic # for IterCases
 
 from oftest.testutils import *
-
-#@var port_map Local copy of the configuration map from OF port
-# numbers to OS interfaces
-pa_port_map = None
-#@var pa_logger Local logger object
-pa_logger = None
-#@var pa_config Local copy of global configuration data
-pa_config = None
-
-# For test priority
-#@var test_prio Set test priority for local tests
-test_prio = {}
 
 WILDCARD_VALUES = [ofp.OFPFW_IN_PORT,
                    ofp.OFPFW_DL_VLAN | ofp.OFPFW_DL_VLAN_PCP,
@@ -90,25 +75,7 @@ MODIFY_ACTION_VALUES =  [ofp.OFPAT_SET_VLAN_VID,
 
 TEST_VID_DEFAULT = 2
 
-def test_set_init(config):
-    """
-    Set up function for packet action test classes
-
-    @param config The configuration dictionary; see oft
-    """
-
-    basic.test_set_init(config)
-
-    global pa_port_map
-    global pa_logger
-    global pa_config
-
-    pa_logger = logging.getLogger("pkt_act")
-    pa_logger.info("Initializing test set")
-    pa_port_map = config["port_map"]
-    pa_config = config
-
-class DirectPacket(basic.SimpleDataPlane):
+class DirectPacket(base_tests.SimpleDataPlane):
     """
     Send packet to single egress port
 
@@ -122,7 +89,7 @@ class DirectPacket(basic.SimpleDataPlane):
         self.handleFlow()
 
     def handleFlow(self, pkttype='TCP'):
-        of_ports = pa_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -137,12 +104,12 @@ class DirectPacket(basic.SimpleDataPlane):
         act = action.action_output()
 
         for idx in range(len(of_ports)):
-            rv = delete_all_flows(self.controller, pa_logger)
+            rv = delete_all_flows(self.controller)
             self.assertEqual(rv, 0, "Failed to delete all flows")
 
             ingress_port = of_ports[idx]
             egress_port = of_ports[(idx + 1) % len(of_ports)]
-            pa_logger.info("Ingress " + str(ingress_port) + 
+            logging.info("Ingress " + str(ingress_port) + 
                              " to egress " + str(egress_port))
 
             match.in_port = ingress_port
@@ -154,31 +121,31 @@ class DirectPacket(basic.SimpleDataPlane):
             act.port = egress_port
             self.assertTrue(request.actions.add(act), "Could not add action")
 
-            pa_logger.info("Inserting flow")
+            logging.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-            pa_logger.info("Sending packet to dp port " + 
+            logging.info("Sending packet to dp port " + 
                            str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
 
             exp_pkt_arg = None
             exp_port = None
-            if pa_config["relax"]:
+            if config["relax"]:
                 exp_pkt_arg = pkt
                 exp_port = egress_port
 
             (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(port_number=exp_port,
                                                                 exp_pkt=exp_pkt_arg)
             self.assertTrue(rcv_pkt is not None, "Did not receive packet")
-            pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
+            logging.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
                          str(rcv_port))
             self.assertEqual(rcv_port, egress_port, "Unexpected receive port")
             self.assertEqual(str(pkt), str(rcv_pkt),
                              'Response packet does not match send packet')
 
-class DirectPacketController(basic.SimpleDataPlane):
+class DirectPacketController(base_tests.SimpleDataPlane):
     """
     Send packet to the controller port
 
@@ -192,7 +159,7 @@ class DirectPacketController(basic.SimpleDataPlane):
         self.handleFlow()
 
     def handleFlow(self, pkttype='TCP'):
-        of_ports = pa_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 0, "Not enough ports for test")
 
@@ -206,7 +173,7 @@ class DirectPacketController(basic.SimpleDataPlane):
                         "Could not generate flow match from pkt")
         act = action.action_output()
 
-        rv = delete_all_flows(self.controller, pa_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
         ingress_port = of_ports[0]
@@ -220,12 +187,12 @@ class DirectPacketController(basic.SimpleDataPlane):
         act.max_len = 65535
         self.assertTrue(request.actions.add(act), "Could not add action")
 
-        pa_logger.info("Inserting flow")
+        logging.info("Inserting flow")
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-        pa_logger.info("Sending packet to dp port " +
+        logging.info("Sending packet to dp port " +
                         str(ingress_port))
         self.dataplane.send(ingress_port, str(pkt))
 
@@ -234,14 +201,14 @@ class DirectPacketController(basic.SimpleDataPlane):
         self.assertTrue(response is not None,
                         'Packet in message not received by controller')
         if not dataplane.match_exp_pkt(pkt, response.data):
-            pa_logger.debug("Sent %s" % format_packet(pkt))
-            pa_logger.debug("Resp %s" % format_packet(response.data))
+            logging.debug("Sent %s" % format_packet(pkt))
+            logging.debug("Resp %s" % format_packet(response.data))
             self.assertTrue(False,
                             'Response packet does not match send packet' +
                              ' for controller port')
 
 
-class DirectPacketQueue(basic.SimpleDataPlane):
+class DirectPacketQueue(base_tests.SimpleDataPlane):
     """
     Send packet to single queue on single egress port
 
@@ -263,7 +230,7 @@ class DirectPacketQueue(basic.SimpleDataPlane):
         return result
 
     def handleFlow(self, pkttype='TCP'):
-        of_ports = pa_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -291,12 +258,12 @@ class DirectPacketQueue(basic.SimpleDataPlane):
             egress_port = of_ports[(idx + 1) % len(of_ports)]
 
             for egress_queue_id in self.portQueuesGet(queue_stats, egress_port):
-                pa_logger.info("Ingress " + str(ingress_port)
+                logging.info("Ingress " + str(ingress_port)
                                + " to egress " + str(egress_port)
                                + " queue " + str(egress_queue_id)
                                )
 
-                rv = delete_all_flows(self.controller, pa_logger)
+                rv = delete_all_flows(self.controller)
                 self.assertEqual(rv, 0, "Failed to delete all flows")
 
                 match.in_port = ingress_port
@@ -309,7 +276,7 @@ class DirectPacketQueue(basic.SimpleDataPlane):
                 act.queue_id = egress_queue_id
                 self.assertTrue(request.actions.add(act), "Could not add action")
 
-                pa_logger.info("Inserting flow")
+                logging.info("Inserting flow")
                 rv = self.controller.message_send(request)
                 self.assertTrue(rv != -1, "Error installing flow mod")
                 self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
@@ -322,20 +289,20 @@ class DirectPacketQueue(basic.SimpleDataPlane):
                 (qs_before, p) = self.controller.transact(request)
                 self.assertNotEqual(qs_before, None, "Queue stats request failed")
 
-                pa_logger.info("Sending packet to dp port " + 
+                logging.info("Sending packet to dp port " + 
                                str(ingress_port))
                 self.dataplane.send(ingress_port, str(pkt))
                 
                 exp_pkt_arg = None
                 exp_port = None
-                if pa_config["relax"]:
+                if config["relax"]:
                     exp_pkt_arg = pkt
                     exp_port = egress_port
                     
                     (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(port_number=exp_port,
                                                                         exp_pkt=exp_pkt_arg)
                     self.assertTrue(rcv_pkt is not None, "Did not receive packet")
-                    pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
+                    logging.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
                                     str(rcv_port))
                     self.assertEqual(rcv_port, egress_port, "Unexpected receive port")
                     self.assertEqual(str(pkt), str(rcv_pkt),
@@ -363,7 +330,7 @@ class DirectPacketQueue(basic.SimpleDataPlane):
                                  )
                     
 
-class DirectPacketControllerQueue(basic.SimpleDataPlane):
+class DirectPacketControllerQueue(base_tests.SimpleDataPlane):
     """
     Send a packet from each of the openflow ports
     to each of the queues configured on the controller port.
@@ -387,7 +354,7 @@ class DirectPacketControllerQueue(basic.SimpleDataPlane):
         return result
 
     def handleFlow(self, pkttype='TCP'):
-        of_ports = pa_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -414,17 +381,17 @@ class DirectPacketControllerQueue(basic.SimpleDataPlane):
             ingress_port = of_ports[idx]
             egress_port = ofp.OFPP_CONTROLLER
 
-            pa_logger.info("Ingress port " + str(ingress_port)
+            logging.info("Ingress port " + str(ingress_port)
                            + ", controller port queues " 
                            + str(self.portQueuesGet(queue_stats, egress_port)))
 
             for egress_queue_id in self.portQueuesGet(queue_stats, egress_port):
-                pa_logger.info("Ingress " + str(ingress_port)
+                logging.info("Ingress " + str(ingress_port)
                                + " to egress " + str(egress_port)
                                + " queue " + str(egress_queue_id)
                                )
 
-                rv = delete_all_flows(self.controller, pa_logger)
+                rv = delete_all_flows(self.controller)
                 self.assertEqual(rv, 0, "Failed to delete all flows")
 
                 match.in_port = ingress_port
@@ -437,7 +404,7 @@ class DirectPacketControllerQueue(basic.SimpleDataPlane):
                 act.queue_id = egress_queue_id
                 self.assertTrue(request.actions.add(act), "Could not add action")
 
-                pa_logger.info("Inserting flow")
+                logging.info("Inserting flow")
                 rv = self.controller.message_send(request)
                 self.assertTrue(rv != -1, "Error installing flow mod")
                 self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
@@ -450,20 +417,21 @@ class DirectPacketControllerQueue(basic.SimpleDataPlane):
                 (qs_before, p) = self.controller.transact(request)
                 self.assertNotEqual(qs_before, None, "Queue stats request failed")
 
-                pa_logger.info("Sending packet to dp port " + 
+                logging.info("Sending packet to dp port " + 
                                str(ingress_port))
                 self.dataplane.send(ingress_port, str(pkt))
                 
                 exp_pkt_arg = None
                 exp_port = None
 
+                count = 0
                 while True:
                     (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN)
                     if not response:  # Timeout
                         break
                     if dataplane.match_exp_pkt(pkt, response.data): # Got match
                         break
-                    if not basic_config["relax"]:  # Only one attempt to match
+                    if not config["relax"]:  # Only one attempt to match
                         break
                     count += 1
                     if count > 10:   # Too many tries
@@ -472,8 +440,8 @@ class DirectPacketControllerQueue(basic.SimpleDataPlane):
                 self.assertTrue(response is not None, 
                                'Packet in message not received by controller')
                 if not dataplane.match_exp_pkt(pkt, response.data):
-                    basic_logger.debug("Sent %s" % format_packet(pkt))
-                    basic_logger.debug("Resp %s" % format_packet(response.data))
+                    logging.debug("Sent %s" % format_packet(pkt))
+                    logging.debug("Resp %s" % format_packet(response.data))
                     self.assertTrue(False,
                                     'Response packet does not match send packet' +
                                     ' for controller port')
@@ -514,7 +482,7 @@ class DirectPacketICMP(DirectPacket):
     def runTest(self):
         self.handleFlow(pkttype='ICMP')
 
-class DirectTwoPorts(basic.SimpleDataPlane):
+class DirectTwoPorts(base_tests.SimpleDataPlane):
     """
     Send packet to two egress ports
 
@@ -525,7 +493,7 @@ class DirectTwoPorts(basic.SimpleDataPlane):
     Verify the packet is received at the two egress ports
     """
     def runTest(self):
-        of_ports = pa_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
@@ -537,13 +505,13 @@ class DirectTwoPorts(basic.SimpleDataPlane):
         act = action.action_output()
 
         for idx in range(len(of_ports)):
-            rv = delete_all_flows(self.controller, pa_logger)
+            rv = delete_all_flows(self.controller)
             self.assertEqual(rv, 0, "Failed to delete all flows")
 
             ingress_port = of_ports[idx]
             egress_port1 = of_ports[(idx + 1) % len(of_ports)]
             egress_port2 = of_ports[(idx + 2) % len(of_ports)]
-            pa_logger.info("Ingress " + str(ingress_port) + 
+            logging.info("Ingress " + str(ingress_port) + 
                            " to egress " + str(egress_port1) + " and " +
                            str(egress_port2))
 
@@ -556,23 +524,23 @@ class DirectTwoPorts(basic.SimpleDataPlane):
             self.assertTrue(request.actions.add(act), "Could not add action1")
             act.port = egress_port2
             self.assertTrue(request.actions.add(act), "Could not add action2")
-            # pa_logger.info(request.show())
+            # logging.info(request.show())
 
-            pa_logger.info("Inserting flow")
+            logging.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-            pa_logger.info("Sending packet to dp port " + 
+            logging.info("Sending packet to dp port " + 
                            str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
             yes_ports = set([egress_port1, egress_port2])
             no_ports = set(of_ports).difference(yes_ports)
 
             receive_pkt_check(self.dataplane, pkt, yes_ports, no_ports,
-                              self, pa_logger, pa_config)
+                              self)
 
-class DirectMCNonIngress(basic.SimpleDataPlane):
+class DirectMCNonIngress(base_tests.SimpleDataPlane):
     """
     Multicast to all non-ingress ports
 
@@ -585,7 +553,7 @@ class DirectMCNonIngress(basic.SimpleDataPlane):
     Does not use the flood action
     """
     def runTest(self):
-        of_ports = pa_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
@@ -597,10 +565,10 @@ class DirectMCNonIngress(basic.SimpleDataPlane):
         act = action.action_output()
 
         for ingress_port in of_ports:
-            rv = delete_all_flows(self.controller, pa_logger)
+            rv = delete_all_flows(self.controller)
             self.assertEqual(rv, 0, "Failed to delete all flows")
 
-            pa_logger.info("Ingress " + str(ingress_port) + 
+            logging.info("Ingress " + str(ingress_port) + 
                            " all non-ingress ports")
             match.in_port = ingress_port
 
@@ -613,21 +581,21 @@ class DirectMCNonIngress(basic.SimpleDataPlane):
                 act.port = egress_port
                 self.assertTrue(request.actions.add(act), 
                                 "Could not add output to " + str(egress_port))
-            pa_logger.debug(request.show())
+            logging.debug(request.show())
 
-            pa_logger.info("Inserting flow")
+            logging.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-            pa_logger.info("Sending packet to dp port " + str(ingress_port))
+            logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
             yes_ports = set(of_ports).difference([ingress_port])
             receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
-                              self, pa_logger, pa_config)
+                              self)
 
 
-class DirectMC(basic.SimpleDataPlane):
+class DirectMC(base_tests.SimpleDataPlane):
     """
     Multicast to all ports including ingress
 
@@ -640,7 +608,7 @@ class DirectMC(basic.SimpleDataPlane):
     Does not use the flood action
     """
     def runTest(self):
-        of_ports = pa_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
@@ -652,10 +620,10 @@ class DirectMC(basic.SimpleDataPlane):
         act = action.action_output()
 
         for ingress_port in of_ports:
-            rv = delete_all_flows(self.controller, pa_logger)
+            rv = delete_all_flows(self.controller)
             self.assertEqual(rv, 0, "Failed to delete all flows")
 
-            pa_logger.info("Ingress " + str(ingress_port) + " to all ports")
+            logging.info("Ingress " + str(ingress_port) + " to all ports")
             match.in_port = ingress_port
 
             request = message.flow_mod()
@@ -668,19 +636,18 @@ class DirectMC(basic.SimpleDataPlane):
                     act.port = egress_port
                 self.assertTrue(request.actions.add(act), 
                                 "Could not add output to " + str(egress_port))
-            # pa_logger.info(request.show())
+            # logging.info(request.show())
 
-            pa_logger.info("Inserting flow")
+            logging.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-            pa_logger.info("Sending packet to dp port " + str(ingress_port))
+            logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
-            receive_pkt_check(self.dataplane, pkt, of_ports, [], self,
-                              pa_logger, pa_config)
+            receive_pkt_check(self.dataplane, pkt, of_ports, [], self)
 
-class Flood(basic.SimpleDataPlane):
+class Flood(base_tests.SimpleDataPlane):
     """
     Flood to all ports except ingress
 
@@ -691,7 +658,7 @@ class Flood(basic.SimpleDataPlane):
     Verify the packet is received at all other ports
     """
     def runTest(self):
-        of_ports = pa_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -703,10 +670,10 @@ class Flood(basic.SimpleDataPlane):
         act = action.action_output()
 
         for ingress_port in of_ports:
-            rv = delete_all_flows(self.controller, pa_logger)
+            rv = delete_all_flows(self.controller)
             self.assertEqual(rv, 0, "Failed to delete all flows")
 
-            pa_logger.info("Ingress " + str(ingress_port) + " to all ports")
+            logging.info("Ingress " + str(ingress_port) + " to all ports")
             match.in_port = ingress_port
 
             request = message.flow_mod()
@@ -715,20 +682,20 @@ class Flood(basic.SimpleDataPlane):
             act.port = ofp.OFPP_FLOOD
             self.assertTrue(request.actions.add(act), 
                             "Could not add flood port action")
-            pa_logger.info(request.show())
+            logging.info(request.show())
 
-            pa_logger.info("Inserting flow")
+            logging.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-            pa_logger.info("Sending packet to dp port " + str(ingress_port))
+            logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
             yes_ports = set(of_ports).difference([ingress_port])
             receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
-                              self, pa_logger, pa_config)
+                              self)
 
-class FloodPlusIngress(basic.SimpleDataPlane):
+class FloodPlusIngress(base_tests.SimpleDataPlane):
     """
     Flood to all ports plus send to ingress port
 
@@ -740,7 +707,7 @@ class FloodPlusIngress(basic.SimpleDataPlane):
     Verify the packet is received at all other ports
     """
     def runTest(self):
-        of_ports = pa_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -752,10 +719,10 @@ class FloodPlusIngress(basic.SimpleDataPlane):
         act = action.action_output()
 
         for ingress_port in of_ports:
-            rv = delete_all_flows(self.controller, pa_logger)
+            rv = delete_all_flows(self.controller)
             self.assertEqual(rv, 0, "Failed to delete all flows")
 
-            pa_logger.info("Ingress " + str(ingress_port) + " to all ports")
+            logging.info("Ingress " + str(ingress_port) + " to all ports")
             match.in_port = ingress_port
 
             request = message.flow_mod()
@@ -767,19 +734,18 @@ class FloodPlusIngress(basic.SimpleDataPlane):
             act.port = ofp.OFPP_IN_PORT
             self.assertTrue(request.actions.add(act), 
                             "Could not add ingress port for output")
-            pa_logger.info(request.show())
+            logging.info(request.show())
 
-            pa_logger.info("Inserting flow")
+            logging.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-            pa_logger.info("Sending packet to dp port " + str(ingress_port))
+            logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
-            receive_pkt_check(self.dataplane, pkt, of_ports, [], self,
-                              pa_logger, pa_config)
+            receive_pkt_check(self.dataplane, pkt, of_ports, [], self)
 
-class All(basic.SimpleDataPlane):
+class All(base_tests.SimpleDataPlane):
     """
     Send to OFPP_ALL port
 
@@ -790,7 +756,7 @@ class All(basic.SimpleDataPlane):
     Verify the packet is received at all other ports
     """
     def runTest(self):
-        of_ports = pa_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -802,10 +768,10 @@ class All(basic.SimpleDataPlane):
         act = action.action_output()
 
         for ingress_port in of_ports:
-            rv = delete_all_flows(self.controller, pa_logger)
+            rv = delete_all_flows(self.controller)
             self.assertEqual(rv, 0, "Failed to delete all flows")
 
-            pa_logger.info("Ingress " + str(ingress_port) + " to all ports")
+            logging.info("Ingress " + str(ingress_port) + " to all ports")
             match.in_port = ingress_port
 
             request = message.flow_mod()
@@ -814,20 +780,20 @@ class All(basic.SimpleDataPlane):
             act.port = ofp.OFPP_ALL
             self.assertTrue(request.actions.add(act), 
                             "Could not add ALL port action")
-            pa_logger.info(request.show())
+            logging.info(request.show())
 
-            pa_logger.info("Inserting flow")
+            logging.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-            pa_logger.info("Sending packet to dp port " + str(ingress_port))
+            logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
             yes_ports = set(of_ports).difference([ingress_port])
             receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
-                              self, pa_logger, pa_config)
+                              self)
 
-class AllPlusIngress(basic.SimpleDataPlane):
+class AllPlusIngress(base_tests.SimpleDataPlane):
     """
     Send to OFPP_ALL port and ingress port
 
@@ -839,7 +805,7 @@ class AllPlusIngress(basic.SimpleDataPlane):
     Verify the packet is received at all other ports
     """
     def runTest(self):
-        of_ports = pa_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
@@ -851,10 +817,10 @@ class AllPlusIngress(basic.SimpleDataPlane):
         act = action.action_output()
 
         for ingress_port in of_ports:
-            rv = delete_all_flows(self.controller, pa_logger)
+            rv = delete_all_flows(self.controller)
             self.assertEqual(rv, 0, "Failed to delete all flows")
 
-            pa_logger.info("Ingress " + str(ingress_port) + " to all ports")
+            logging.info("Ingress " + str(ingress_port) + " to all ports")
             match.in_port = ingress_port
 
             request = message.flow_mod()
@@ -866,19 +832,18 @@ class AllPlusIngress(basic.SimpleDataPlane):
             act.port = ofp.OFPP_IN_PORT
             self.assertTrue(request.actions.add(act), 
                             "Could not add ingress port for output")
-            pa_logger.info(request.show())
+            logging.info(request.show())
 
-            pa_logger.info("Inserting flow")
+            logging.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-            pa_logger.info("Sending packet to dp port " + str(ingress_port))
+            logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
-            receive_pkt_check(self.dataplane, pkt, of_ports, [], self,
-                              pa_logger, pa_config)
+            receive_pkt_check(self.dataplane, pkt, of_ports, [], self)
             
-class FloodMinusPort(basic.SimpleDataPlane):
+class FloodMinusPort(base_tests.SimpleDataPlane):
     """
     Config port with No_Flood and test Flood action
 
@@ -891,7 +856,7 @@ class FloodMinusPort(basic.SimpleDataPlane):
     the ingress port and the no_flood port
     """
     def runTest(self):
-        of_ports = pa_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 2, "Not enough ports for test")
 
@@ -903,15 +868,14 @@ class FloodMinusPort(basic.SimpleDataPlane):
         act = action.action_output()
 
         for idx in range(len(of_ports)):
-            rv = delete_all_flows(self.controller, pa_logger)
+            rv = delete_all_flows(self.controller)
             self.assertEqual(rv, 0, "Failed to delete all flows")
 
             ingress_port = of_ports[idx]
             no_flood_idx = (idx + 1) % len(of_ports)
             no_flood_port = of_ports[no_flood_idx]
             rv = port_config_set(self.controller, no_flood_port,
-                                 ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD,
-                                 pa_logger)
+                                 ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD)
             self.assertEqual(rv, 0, "Failed to set port config")
 
             match.in_port = ingress_port
@@ -922,24 +886,23 @@ class FloodMinusPort(basic.SimpleDataPlane):
             act.port = ofp.OFPP_FLOOD
             self.assertTrue(request.actions.add(act), 
                             "Could not add flood port action")
-            pa_logger.info(request.show())
+            logging.info(request.show())
 
-            pa_logger.info("Inserting flow")
+            logging.info("Inserting flow")
             rv = self.controller.message_send(request)
             self.assertTrue(rv != -1, "Error installing flow mod")
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-            pa_logger.info("Sending packet to dp port " + str(ingress_port))
-            pa_logger.info("No flood port is " + str(no_flood_port))
+            logging.info("Sending packet to dp port " + str(ingress_port))
+            logging.info("No flood port is " + str(no_flood_port))
             self.dataplane.send(ingress_port, str(pkt))
             no_ports = set([ingress_port, no_flood_port])
             yes_ports = set(of_ports).difference(no_ports)
-            receive_pkt_check(self.dataplane, pkt, yes_ports, no_ports, self,
-                              pa_logger, pa_config)
+            receive_pkt_check(self.dataplane, pkt, yes_ports, no_ports, self)
 
             # Turn no flood off again
             rv = port_config_set(self.controller, no_flood_port,
-                                 0, ofp.OFPPC_NO_FLOOD, pa_logger)
+                                 0, ofp.OFPPC_NO_FLOOD)
             self.assertEqual(rv, 0, "Failed to reset port config")
 
             #@todo Should check no other packets received
@@ -948,12 +911,11 @@ class FloodMinusPort(basic.SimpleDataPlane):
 
 ################################################################
 
-class BaseMatchCase(basic.SimpleDataPlane):
+class BaseMatchCase(base_tests.SimpleDataPlane):
     def setUp(self):
-        basic.SimpleDataPlane.setUp(self)
-        self.logger = pa_logger
+        base_tests.SimpleDataPlane.setUp(self)
     def runTest(self):
-        self.logger.info("BaseMatchCase")
+        logging.info("BaseMatchCase")
 
 class ExactMatch(BaseMatchCase):
     """
@@ -967,7 +929,7 @@ class ExactMatch(BaseMatchCase):
     """
 
     def runTest(self):
-        flow_match_test(self, pa_port_map)
+        flow_match_test(self, config["port_map"])
 
 class ExactMatchTagged(BaseMatchCase):
     """
@@ -975,24 +937,22 @@ class ExactMatchTagged(BaseMatchCase):
     """
 
     def runTest(self):
-        vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
-        flow_match_test(self, pa_port_map, dl_vlan=vid)
+        vid = test_param_get('vid', default=TEST_VID_DEFAULT)
+        flow_match_test(self, config["port_map"], dl_vlan=vid)
 
 class ExactMatchTaggedMany(BaseMatchCase):
     """
     ExactMatchTagged with many VLANS
     """
 
+    priority = -1
+
     def runTest(self):
         for vid in range(2,100,10):
-            flow_match_test(self, pa_port_map, dl_vlan=vid, max_test=5)
+            flow_match_test(self, config["port_map"], dl_vlan=vid, max_test=5)
         for vid in range(100,4000,389):
-            flow_match_test(self, pa_port_map, dl_vlan=vid, max_test=5)
-        flow_match_test(self, pa_port_map, dl_vlan=4094, max_test=5)
-
-# Don't run by default
-test_prio["ExactMatchTaggedMany"] = -1
-
+            flow_match_test(self, config["port_map"], dl_vlan=vid, max_test=5)
+        flow_match_test(self, config["port_map"], dl_vlan=4094, max_test=5)
 
 class SingleWildcardMatchPriority(BaseMatchCase):
     """
@@ -1004,14 +964,14 @@ class SingleWildcardMatchPriority(BaseMatchCase):
         self.flowMsgs = {}
 
     def _ClearTable(self):
-        rc = delete_all_flows(self.controller, self.logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     def runTest(self):
         
         self._Init()
-        of_ports = pa_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
 
         # Delete the initial flow table
@@ -1039,7 +999,7 @@ class SingleWildcardMatchPriority(BaseMatchCase):
             self._ClearTable()
 
         # Sanity check flow at lower priority from pA to pB
-        self.logger.info("runPrioFlows(pA=%d,pB=%d,pC=%d,ph=%d,pl=%d"
+        logging.info("runPrioFlows(pA=%d,pB=%d,pC=%d,ph=%d,pl=%d"
                          % (portA, portB, portC, prioHigher, prioLower))
 
         # Sanity check flow at lower priority from pA to pC
@@ -1072,7 +1032,7 @@ class SingleWildcardMatchPriority(BaseMatchCase):
                                   wildcards=wildcards,
                                   egr_ports=egp)
         request.priority = prio
-        self.logger.debug("Install flow with priority " + str(prio))
+        logging.debug("Install flow with priority " + str(prio))
         flow_msg_install(self, request, clear_table_override=False)
         self.flowMsgs[prio] = request
         
@@ -1082,7 +1042,7 @@ class SingleWildcardMatchPriority(BaseMatchCase):
             msg.command = ofp.OFPFC_DELETE_STRICT
             # This *must* be set for DELETE
             msg.out_port = ofp.OFPP_NONE
-            self.logger.debug("Remove flow with priority " + str(prio))
+            logging.debug("Remove flow with priority " + str(prio))
             self.controller.message_send(msg)
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
         else:
@@ -1093,10 +1053,8 @@ class SingleWildcardMatchPriority(BaseMatchCase):
         if pkt == None:
             pkt = self.pkt
 
-        self.logger.info("Pkt match test: " + str(inp) + 
-                         " to " + str(egp))
-        self.logger.debug("Send packet: " + str(inp) + " to " 
-                            + str(egp))
+        logging.info("Pkt match test: " + str(inp) + " to " + str(egp))
+        logging.debug("Send packet: " + str(inp) + " to " + str(egp))
         self.dataplane.send(inp, str(pkt))
         receive_pkt_verify(self, egp, pkt, inp)
 
@@ -1108,7 +1066,7 @@ class SingleWildcardMatchPriorityInsertModifyDelete(SingleWildcardMatchPriority)
 
         self._Init()
 
-        of_ports = pa_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
 
         # Install an entry from 0 -> 1 @ prio 1000
@@ -1140,7 +1098,7 @@ class WildcardPriority(SingleWildcardMatchPriority):
         
         self._Init()
 
-        of_ports = pa_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
 
         self._ClearTable()
@@ -1175,7 +1133,7 @@ class WildcardPriorityWithDelete(SingleWildcardMatchPriority):
         
         self._Init()
 
-        of_ports = pa_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
 
         self._ClearTable()
@@ -1210,7 +1168,7 @@ class SingleWildcardMatch(BaseMatchCase):
     Verify flow_expiration message is correct when command option is set
     """
     def runTest(self):
-        vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
+        vid = test_param_get('vid', default=TEST_VID_DEFAULT)
         for wc in WILDCARD_VALUES:
             wc |= required_wildcards(self)
             if wc & ofp.OFPFW_DL_VLAN:
@@ -1218,7 +1176,7 @@ class SingleWildcardMatch(BaseMatchCase):
                 dl_vlan = vid
             else:
                 dl_vlan = -1
-            flow_match_test(self, pa_port_map, wildcards=wc, 
+            flow_match_test(self, config["port_map"], wildcards=wc, 
                             dl_vlan=dl_vlan, max_test=10)
 
 class SingleWildcardMatchTagged(BaseMatchCase):
@@ -1226,10 +1184,10 @@ class SingleWildcardMatchTagged(BaseMatchCase):
     SingleWildcardMatch with tagged packets
     """
     def runTest(self):
-        vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
+        vid = test_param_get('vid', default=TEST_VID_DEFAULT)
         for wc in WILDCARD_VALUES:
             wc |= required_wildcards(self)
-            flow_match_test(self, pa_port_map, wildcards=wc, dl_vlan=vid,
+            flow_match_test(self, config["port_map"], wildcards=wc, dl_vlan=vid,
                             max_test=10)
 
 class AllExceptOneWildcardMatch(BaseMatchCase):
@@ -1244,7 +1202,7 @@ class AllExceptOneWildcardMatch(BaseMatchCase):
     Verify flow_expiration message is correct when command option is set
     """
     def runTest(self):
-        vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
+        vid = test_param_get('vid', default=TEST_VID_DEFAULT)
         for all_exp_one_wildcard in NO_WILDCARD_VALUES:
             all_exp_one_wildcard |= required_wildcards(self)
             if all_exp_one_wildcard & ofp.OFPFW_DL_VLAN:
@@ -1252,7 +1210,7 @@ class AllExceptOneWildcardMatch(BaseMatchCase):
                 dl_vlan = vid
             else:
                 dl_vlan = -1
-            flow_match_test(self, pa_port_map, wildcards=all_exp_one_wildcard,
+            flow_match_test(self, config["port_map"], wildcards=all_exp_one_wildcard,
                             dl_vlan=dl_vlan)
 
 class AllExceptOneWildcardMatchTagged(BaseMatchCase):
@@ -1260,10 +1218,10 @@ class AllExceptOneWildcardMatchTagged(BaseMatchCase):
     Match one field with tagged packets
     """
     def runTest(self):
-        vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
+        vid = test_param_get('vid', default=TEST_VID_DEFAULT)
         for all_exp_one_wildcard in NO_WILDCARD_VALUES:
             all_exp_one_wildcard |= required_wildcards(self)
-            flow_match_test(self, pa_port_map, wildcards=all_exp_one_wildcard,
+            flow_match_test(self, config["port_map"], wildcards=all_exp_one_wildcard,
                             dl_vlan=vid)
 
 class AllWildcardMatch(BaseMatchCase):
@@ -1278,15 +1236,15 @@ class AllWildcardMatch(BaseMatchCase):
     Verify flow_expiration message is correct when command option is set
     """
     def runTest(self):
-        flow_match_test(self, pa_port_map, wildcards=ofp.OFPFW_ALL)
+        flow_match_test(self, config["port_map"], wildcards=ofp.OFPFW_ALL)
 
 class AllWildcardMatchTagged(BaseMatchCase):
     """
     AllWildcardMatch with tagged packets
     """
     def runTest(self):
-        vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
-        flow_match_test(self, pa_port_map, wildcards=ofp.OFPFW_ALL, 
+        vid = test_param_get('vid', default=TEST_VID_DEFAULT)
+        flow_match_test(self, config["port_map"], wildcards=ofp.OFPFW_ALL, 
                         dl_vlan=vid)
 
     
@@ -1309,38 +1267,41 @@ class AddVLANTag(BaseMatchCase):
         vid_act = action.action_set_vlan_vid()
         vid_act.vlan_vid = new_vid
 
-        flow_match_test(self, pa_port_map, pkt=pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, 
                         exp_pkt=exp_pkt, action_list=[vid_act])
 
-class PacketOnly(basic.DataPlaneOnly):
+class PacketOnly(base_tests.DataPlaneOnly):
     """
     Just send a packet thru the switch
     """
+
+    priority = -1
+
     def runTest(self):
         pkt = simple_tcp_packet()
-        of_ports = pa_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         ing_port = of_ports[0]
-        pa_logger.info("Sending packet to " + str(ing_port))
-        pa_logger.debug("Data: " + str(pkt).encode('hex'))
+        logging.info("Sending packet to " + str(ing_port))
+        logging.debug("Data: " + str(pkt).encode('hex'))
         self.dataplane.send(ing_port, str(pkt))
 
-class PacketOnlyTagged(basic.DataPlaneOnly):
+class PacketOnlyTagged(base_tests.DataPlaneOnly):
     """
     Just send a packet thru the switch
     """
+
+    priority = -1
+
     def runTest(self):
-        vid = test_param_get(self.config, 'vid', default=TEST_VID_DEFAULT)
+        vid = test_param_get('vid', default=TEST_VID_DEFAULT)
         pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vid)
-        of_ports = pa_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         ing_port = of_ports[0]
-        pa_logger.info("Sending packet to " + str(ing_port))
-        pa_logger.debug("Data: " + str(pkt).encode('hex'))
+        logging.info("Sending packet to " + str(ing_port))
+        logging.debug("Data: " + str(pkt).encode('hex'))
         self.dataplane.send(ing_port, str(pkt))
-
-test_prio["PacketOnly"] = -1
-test_prio["PacketOnlyTagged"] = -1
 
 class ModifyVID(BaseMatchCase):
     """
@@ -1363,7 +1324,7 @@ class ModifyVID(BaseMatchCase):
         vid_act = action.action_set_vlan_vid()
         vid_act.vlan_vid = new_vid
 
-        flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt,
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt,
                         action_list=[vid_act], ing_port=self.ing_port)
 
 class ModifyVIDToIngress(ModifyVID):
@@ -1388,12 +1349,12 @@ class ModifyVIDWithTagMatchWildcarded(BaseMatchCase):
             skip_message_emit(self, "ModifyVIDWithTagWildcarded test")
             return
 
-        of_ports = pa_port_map.keys()
+        of_ports = config["port_map"].keys()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         ing_port = of_ports[0]
         egr_ports = of_ports[1]
         
-        rv = delete_all_flows(self.controller, pa_logger)
+        rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
         len_untagged = 100
@@ -1412,12 +1373,12 @@ class ModifyVIDWithTagMatchWildcarded(BaseMatchCase):
                                   action_list=[vid_act])
         flow_msg_install(self, request)
 
-        pa_logger.debug("Send untagged packet: " + str(ing_port) + " to " + 
+        logging.debug("Send untagged packet: " + str(ing_port) + " to " + 
                         str(egr_ports))
         self.dataplane.send(ing_port, str(untagged_pkt))
         receive_pkt_verify(self, egr_ports, exp_pkt, ing_port)
 
-        pa_logger.debug("Send tagged packet: " + str(ing_port) + " to " + 
+        logging.debug("Send tagged packet: " + str(ing_port) + " to " + 
                         str(egr_ports))
         self.dataplane.send(ing_port, str(tagged_pkt))
         receive_pkt_verify(self, egr_ports, exp_pkt, ing_port)
@@ -1440,7 +1401,7 @@ class ModifyVlanPcp(BaseMatchCase):
         vid_act = action.action_set_vlan_pcp()
         vid_act.vlan_pcp = new_vlan_pcp
 
-        flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt,
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt,
                         action_list=[vid_act])
 
 class StripVLANTag(BaseMatchCase):
@@ -1461,7 +1422,7 @@ class StripVLANTag(BaseMatchCase):
         exp_pkt = simple_tcp_packet(pktlen=len)
         vid_act = action.action_strip_vlan()
 
-        flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt,
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt,
                         action_list=[vid_act])
 
 class StripVLANTagWithTagMatchWildcarded(BaseMatchCase):
@@ -1485,7 +1446,7 @@ class StripVLANTagWithTagMatchWildcarded(BaseMatchCase):
                      ofp.OFPFW_DL_VLAN_PCP)
         vid_act = action.action_strip_vlan()
 
-        flow_match_test(self, pa_port_map, 
+        flow_match_test(self, config["port_map"], 
                         wildcards=wildcards,
                         pkt=pkt, exp_pkt=exp_pkt,
                         action_list=[vid_act])
@@ -1499,9 +1460,9 @@ def init_pkt_args():
 
     dl_vlan_enable=False
     dl_vlan=-1
-    if pa_config["test-params"]["vid"]:
+    if config["test-params"]["vid"]:
         dl_vlan_enable=True
-        dl_vlan = pa_config["test-params"]["vid"]
+        dl_vlan = config["test-params"]["vid"]
 
 # Unpack operator is ** on a dictionary
 
@@ -1519,7 +1480,7 @@ class ModifyL2Src(BaseMatchCase):
 
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_src'],
                                                 check_test_params=True)
-        flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
 class ModifyL2Dst(BaseMatchCase):
@@ -1534,7 +1495,7 @@ class ModifyL2Dst(BaseMatchCase):
 
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_dst'],
                                                 check_test_params=True)
-        flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
 class ModifyL3Src(BaseMatchCase):
@@ -1549,7 +1510,7 @@ class ModifyL3Src(BaseMatchCase):
 
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['ip_src'],
                                                 check_test_params=True)
-        flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
 class ModifyL3Dst(BaseMatchCase):
@@ -1564,7 +1525,7 @@ class ModifyL3Dst(BaseMatchCase):
 
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['ip_dst'],
                                                 check_test_params=True)
-        flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
 class ModifyL4Src(BaseMatchCase):
@@ -1579,7 +1540,7 @@ class ModifyL4Src(BaseMatchCase):
 
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['tcp_sport'],
                                                 check_test_params=True)
-        flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
 class ModifyL4Dst(BaseMatchCase):
@@ -1594,7 +1555,7 @@ class ModifyL4Dst(BaseMatchCase):
 
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['tcp_dport'],
                                                 check_test_params=True)
-        flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
 class ModifyTOS(BaseMatchCase):
@@ -1609,7 +1570,7 @@ class ModifyTOS(BaseMatchCase):
 
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['ip_tos'],
                                                 check_test_params=True)
-        flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2, egr_count=-1)
 
 class ModifyL2DstMC(BaseMatchCase):
@@ -1624,7 +1585,7 @@ class ModifyL2DstMC(BaseMatchCase):
 
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_dst'],
                                                 check_test_params=True)
-        flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2, egr_count=-1)
 
 class ModifyL2DstIngress(BaseMatchCase):
@@ -1639,7 +1600,7 @@ class ModifyL2DstIngress(BaseMatchCase):
 
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_dst'],
                                                 check_test_params=True)
-        flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2, egr_count=0,
                         ing_port=True)
 
@@ -1655,7 +1616,7 @@ class ModifyL2DstIngressMC(BaseMatchCase):
 
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_dst'],
                                                 check_test_params=True)
-        flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2, egr_count=-1,
                         ing_port=True)
 
@@ -1671,7 +1632,7 @@ class ModifyL2SrcMC(BaseMatchCase):
 
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_src'],
                                                 check_test_params=True)
-        flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2, egr_count=-1)
 
 class ModifyL2SrcDstMC(BaseMatchCase):
@@ -1688,7 +1649,7 @@ class ModifyL2SrcDstMC(BaseMatchCase):
         mod_fields = ['dl_dst', 'dl_src']
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=mod_fields,
                                                 check_test_params=True)
-        flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2, egr_count=-1)
 
 class ModifyL2DstVIDMC(BaseMatchCase):
@@ -1706,7 +1667,7 @@ class ModifyL2DstVIDMC(BaseMatchCase):
         (pkt, exp_pkt, acts) = pkt_action_setup(self, 
              start_field_vals={'dl_vlan_enable':True}, mod_fields=mod_fields,
                                                 check_test_params=True)
-        flow_match_test(self, pa_port_map, pkt=pkt, exp_pkt=exp_pkt, 
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2, egr_count=-1)
 
 class FlowToggle(BaseMatchCase):
@@ -1721,16 +1682,16 @@ class FlowToggle(BaseMatchCase):
     (add, modify, delete +/- strict).
     """
     def runTest(self):
-        flow_count = test_param_get(self.config, 'ft_flow_count', default=20)
-        iter_count = test_param_get(self.config, 'ft_iter_count', default=10)
+        flow_count = test_param_get('ft_flow_count', default=20)
+        iter_count = test_param_get('ft_iter_count', default=10)
 
-        pa_logger.info("Running flow toggle with %d flows, %d iterations" %
+        logging.info("Running flow toggle with %d flows, %d iterations" %
                        (flow_count, iter_count))
         acts = []
         acts.append(action.action_output())
         acts.append(action.action_output())
     
-        of_ports = pa_port_map.keys()
+        of_ports = config["port_map"].keys()
         if len(of_ports) < 3:
             self.assertTrue(False, "Too few ports for test")
     
@@ -1758,8 +1719,8 @@ class FlowToggle(BaseMatchCase):
                 flows[toggle].append(msg)
 
         # Show two sample flows
-        pa_logger.debug(flows[0][0].show())
-        pa_logger.debug(flows[1][0].show())
+        logging.debug(flows[0][0].show())
+        logging.debug(flows[1][0].show())
 
         # Install the first set of flows
         for f_idx in range(flow_count):
@@ -1767,7 +1728,7 @@ class FlowToggle(BaseMatchCase):
             self.assertTrue(rv != -1, "Error installing flow %d" % f_idx)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
     
-        pa_logger.info("Installed %d flows" % flow_count)
+        logging.info("Installed %d flows" % flow_count)
     
         # Repeatedly modify all the flows back and forth
         updates = 0
@@ -1776,7 +1737,7 @@ class FlowToggle(BaseMatchCase):
         start = time.time()
         for iter_idx in range(iter_count):
             if not iter_idx % mod_val:
-                pa_logger.info("Flow Toggle: iter %d of %d. " %
+                logging.info("Flow Toggle: iter %d of %d. " %
                                (iter_idx, iter_count) + 
                                "%d updates in %d secs" %
                                (updates, time.time() - start))
@@ -1792,8 +1753,8 @@ class FlowToggle(BaseMatchCase):
 
         end = time.time()
         divisor = end - start or (end - start + 1)
-        pa_logger.info("Flow toggle: %d iterations" % iter_count)
-        pa_logger.info("   %d flow mods in %d secs, %d mods/sec" %
+        logging.info("Flow toggle: %d iterations" % iter_count)
+        logging.info("   %d flow mods in %d secs, %d mods/sec" %
                        (updates, end - start, updates/divisor))
             
 
@@ -1826,14 +1787,16 @@ class IterCases(BaseMatchCase):
     The cases come from the list above
     """
 
+    priority = -1
+
     def runTest(self):
-        count = test_param_get(self.config, 'iter_count', default=10)
+        count = test_param_get('iter_count', default=10)
         tests_done = 0
-        pa_logger.info("Running iteration test " + str(count) + " times")
+        logging.info("Running iteration test " + str(count) + " times")
         start = time.time()
         last = start
         for idx in range(count):
-            pa_logger.info("Iteration " + str(idx + 1))
+            logging.info("Iteration " + str(idx + 1))
             for cls in iter_classes:
                 test = cls()
                 test.inheritSetup(self)
@@ -1842,21 +1805,18 @@ class IterCases(BaseMatchCase):
                 # Report update about every minute, between tests
                 if time.time() - last > 60:
                     last = time.time()
-                    pa_logger.info(
+                    logging.info(
                         "IterCases: Iter %d of %d; Ran %d tests in %d " %
                         (idx, count, tests_done, last - start) + 
                         "seconds so far")
         stats = all_stats_get(self)
         last = time.time()
-        pa_logger.info("\nIterCases ran %d tests in %d seconds." %
+        logging.info("\nIterCases ran %d tests in %d seconds." %
                        (tests_done, last - start))
-        pa_logger.info("    flows: %d. packets: %d. bytes: %d" %
+        logging.info("    flows: %d. packets: %d. bytes: %d" %
                        (stats["flows"], stats["packets"], stats["bytes"]))
-        pa_logger.info("    active: %d. lookups: %d. matched %d." %
+        logging.info("    active: %d. lookups: %d. matched %d." %
                        (stats["active"], stats["lookups"], stats["matched"]))
-
-# Don't run by default
-test_prio["IterCases"] = -1
 
 #@todo Need to implement tagged versions of the above tests
 #
@@ -1887,9 +1847,9 @@ class MixedVLAN(BaseMatchCase):
     If only VID 5 distinguishes pkt, this will fail on some platforms
     """   
 
-test_prio["MixedVLAN"] = -1
+    priority = -1
 
-class MatchEach(basic.SimpleDataPlane):
+class MatchEach(base_tests.SimpleDataPlane):
     """
     Check that each match field is actually matched on.
     Installs two flows that differ in one field. The flow that should not
@@ -1899,18 +1859,18 @@ class MatchEach(basic.SimpleDataPlane):
     TODO test UDP, ARP, ICMP, etc.
     """
     def runTest(self):
-        of_ports = pa_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
-        delete_all_flows(self.controller, pa_logger)
+        delete_all_flows(self.controller)
 
         pkt = simple_tcp_packet()
         ingress_port = of_ports[0]
         egress_port = of_ports[1]
 
         def testField(field, mask):
-            pa_logger.info("Testing field %s" % field)
+            logging.info("Testing field %s" % field)
 
             def addFlow(matching, priority, output_port):
                 match = packet_to_flow_match(self, pkt)
@@ -1932,7 +1892,7 @@ class MatchEach(basic.SimpleDataPlane):
                 act = action.action_output()
                 act.port = output_port
                 self.assertTrue(request.actions.add(act), "Could not add action")
-                pa_logger.info("Inserting flow")
+                logging.info("Inserting flow")
                 self.controller.message_send(request)
 
             # This flow should match.
@@ -1942,19 +1902,19 @@ class MatchEach(basic.SimpleDataPlane):
 
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-            pa_logger.info("Sending packet to dp port " + str(ingress_port))
+            logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
 
             exp_pkt_arg = None
             exp_port = None
-            if pa_config["relax"]:
+            if config["relax"]:
                 exp_pkt_arg = pkt
                 exp_port = egress_port
 
             (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(port_number=exp_port,
                                                                 exp_pkt=exp_pkt_arg)
             self.assertTrue(rcv_pkt is not None, "Did not receive packet")
-            pa_logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + str(rcv_port))
+            logging.debug("Packet len " + str(len(rcv_pkt)) + " in on " + str(rcv_port))
             self.assertEqual(rcv_port, egress_port, "Unexpected receive port")
             self.assertEqual(str(pkt), str(rcv_pkt), 'Response packet does not match send packet')
 

@@ -4,36 +4,13 @@ import struct
 
 import logging
 
+from oftest import config
 import oftest.controller as controller
 import oftest.cstruct as ofp
 import oftest.message as message
-import basic
+import oftest.base_tests as base_tests
 
 from oftest.testutils import *
-
-#@var port_map Local copy of the configuration map from OF port
-# numbers to OS interfaces
-im_port_map = None
-#@var im_logger Local logger object
-im_logger = None
-#@var im_config Local copy of global configuration data
-im_config = None
-
-# For test priority
-#@var test_prio Set test priority for local tests
-test_prio = {}
-
-def test_set_init(config):
-    basic.test_set_init(config)
-
-    global im_port_map
-    global im_logger
-    global im_config
-
-    im_logger = logging.getLogger("ipmask")
-    im_logger.info("Initializing test set")
-    im_port_map = config["port_map"]
-    im_config = config
 
 def normal_ip_mask(index):
     """
@@ -59,16 +36,19 @@ def fancy_ip_mask(index):
     else:
         return (1 << (63 - index)) - 1
 
-class BSNConfigIPMask(basic.SimpleDataPlane):
+class BSNConfigIPMask(base_tests.SimpleDataPlane):
     """
     Exercise BSN vendor extension for configuring IP source/dest match mask
     """
+
+    priority = -1
+
     def bsn_set_ip_mask(self, index, mask):
         """
         Use the BSN_SET_IP_MASK vendor command to change the IP mask for the
         given wildcard index
         """
-        im_logger.info("Setting index %d to mask is %s" % (index, mask))
+        logging.info("Setting index %d to mask is %s" % (index, mask))
         m = message.vendor()
         m.vendor = 0x005c16c7
         m.data = struct.pack("!LBBBBL", 0, index, 0, 0, 0, mask)
@@ -99,39 +79,39 @@ class BSNConfigIPMask(basic.SimpleDataPlane):
                          "IP src must be wildcarded")
         for index in range(0, 64):
             mask = self.bsn_get_ip_mask(index)
-            im_logger.info("Index %d mask is %s" %
+            logging.info("Index %d mask is %s" %
                            (index, scapy.utils.ltoa(mask)))
             self.assertEqual(mask, normal_ip_mask(index), "Unexpected IP mask")
 
         for index in range(0, 64):
             mask = normal_ip_mask(index)
             if mask == 0:
-                im_logger.info("Skipping IP wildcard index %d" % index)
+                logging.info("Skipping IP wildcard index %d" % index)
             else:
-                im_logger.info("Testing IP wildcard index %d" % index)
+                logging.info("Testing IP wildcard index %d" % index)
                 self.check_ip_mask(True, index, mask)
                 self.check_ip_mask(False, index, mask)
 
-        im_logger.info("Setting fancy IP masks")
+        logging.info("Setting fancy IP masks")
         for index in range(0, 64):
             self.bsn_set_ip_mask(index, fancy_ip_mask(index))
         for index in range(0, 64):
             mask = self.bsn_get_ip_mask(index)
-            im_logger.info("Index %d mask is %s" %
+            logging.info("Index %d mask is %s" %
                            (index, scapy.utils.ltoa(mask)))
             self.assertEqual(mask, fancy_ip_mask(index), "Unexpected IP mask")
 
         for index in range(0, 64):
             mask = fancy_ip_mask(index)
             if mask == 0:
-                im_logger.info("Skipping IP wildcard index %d" % index)
+                logging.info("Skipping IP wildcard index %d" % index)
             else:
-                im_logger.info("Testing IP wildcard index %d" % index)
+                logging.info("Testing IP wildcard index %d" % index)
                 self.check_ip_mask(True, index, mask)
                 self.check_ip_mask(False, index, mask)
 
     def check_ip_mask(self, source, index, mask):
-        ports = im_port_map.keys()
+        ports = config["port_map"].keys()
 
         # For each mask we install two flow entries, one which matches
         # on IP source or dest addr all-0s (modulo the mask) and
@@ -156,7 +136,7 @@ class BSNConfigIPMask(basic.SimpleDataPlane):
            pkt1 = simple_tcp_packet(ip_src=ip1)
            pkt2 = simple_tcp_packet(ip_src=ip2)
            pkt3 = simple_tcp_packet(ip_src=ip3)
-           msg = lambda ip: im_logger.info("Testing source IP %s" % ip)
+           msg = lambda ip: logging.info("Testing source IP %s" % ip)
         else:
            wildcards = ((ofp.OFPFW_ALL ^ ofp.OFPFW_DL_TYPE ^ ofp.OFPFW_NW_DST_MASK)
                         | (index << ofp.OFPFW_NW_DST_SHIFT))
@@ -164,9 +144,9 @@ class BSNConfigIPMask(basic.SimpleDataPlane):
            pkt1 = simple_tcp_packet(ip_dst=ip1)
            pkt2 = simple_tcp_packet(ip_dst=ip2)
            pkt3 = simple_tcp_packet(ip_dst=ip3)
-           msg = lambda ip: im_logger.info("Testing dest IP %s" % ip)
+           msg = lambda ip: logging.info("Testing dest IP %s" % ip)
 
-        rc = delete_all_flows(self.controller, im_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         rc = self.controller.message_send(flow_msg_create(
@@ -195,6 +175,3 @@ class BSNConfigIPMask(basic.SimpleDataPlane):
         msg(ip3)
         self.dataplane.send(ports[0], str(pkt3))
         receive_pkt_verify(self, [ports[2]], pkt3, ports[0])
-
-# Don't run by default
-test_prio["BSNConfigIPMask"] = -1
