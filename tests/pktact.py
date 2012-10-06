@@ -424,6 +424,7 @@ class DirectPacketControllerQueue(base_tests.SimpleDataPlane):
                 exp_pkt_arg = None
                 exp_port = None
 
+                count = 0
                 while True:
                     (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN)
                     if not response:  # Timeout

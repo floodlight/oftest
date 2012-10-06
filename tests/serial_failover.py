@@ -84,7 +84,7 @@ class SerialFailover(unittest.TestCase):
                 time.sleep(1)
                 count = count + 1
         else:
-            self.assertTrue(false, "Unknown controller kill method")
+            self.assertTrue(False, "Unknown controller kill method")
 
     def buildControllerList(self):
         # controller_list is list of ip/port tuples

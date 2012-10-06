@@ -31,16 +31,6 @@ UDP_PROTOCOL = 0x11
 
 MINSIZE = 0
 
-def clear_switch(parent, port_list):
-    """
-    Clear the switch configuration
-
-    @param parent Object implementing controller and assert equal
-    """
-    for port in port_list:
-        clear_port_config(parent, port)
-    delete_all_flows(parent.controller)
-
 def delete_all_flows(ctrl):
     """
     Delete all flows on the switch
@@ -54,16 +44,6 @@ def delete_all_flows(ctrl):
     msg.command = ofp.OFPFC_DELETE
     msg.buffer_id = 0xffffffff
     return ctrl.message_send(msg)
-
-def clear_port_config(parent, port):
-    """
-    Clear the port configuration (currently only no flood setting)
-
-    @param parent Object implementing controller and assert equal
-    """
-    rv = port_config_set(parent.controller, port,
-                         0, ofp.OFPPC_NO_FLOOD)
-    self.assertEqual(rv, 0, "Failed to reset port config")
 
 def required_wildcards(parent):
     w = test_param_get('required_wildcards', default='default')
@@ -387,47 +367,6 @@ def match_verify(parent, req_match, res_match):
                                str(req_match.tp_dst) +
                                " != " + str(res_match.tp_dst))
 
-def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
-    """
-    Receive a flow removed msg and verify it matches expected
-
-    @params parent Must implement controller, assertEqual
-    @param pkt_count If >= 0, verify packet count
-    @param byte_count If >= 0, verify byte count
-    """
-    (response, raw) = parent.controller.poll(ofp.OFPT_FLOW_REMOVED, 2)
-    parent.assertTrue(response is not None, 'No flow removed message received')
-
-    if request is None:
-        return
-
-    parent.assertEqual(request.cookie, response.cookie,
-                       "Flow removed cookie error: " +
-                       hex(request.cookie) + " != " + hex(response.cookie))
-
-    req_match = request.match
-    res_match = response.match
-    verifyMatchField(req_match, res_match)
-
-    if (req_match.wildcards != 0):
-        parent.assertEqual(request.priority, response.priority,
-                           'Flow remove prio mismatch: ' + 
-                           str(request,priority) + " != " + 
-                           str(response.priority))
-        parent.assertEqual(response.reason, ofp.OFPRR_HARD_TIMEOUT,
-                           'Flow remove reason is not HARD TIMEOUT:' +
-                           str(response.reason))
-        if pkt_count >= 0:
-            parent.assertEqual(response.packet_count, pkt_count,
-                               'Flow removed failed, packet count: ' + 
-                               str(response.packet_count) + " != " +
-                               str(pkt_count))
-        if byte_count >= 0:
-            parent.assertEqual(response.byte_count, byte_count,
-                               'Flow removed failed, byte count: ' + 
-                               str(response.byte_count) + " != " + 
-                               str(byte_count))
-
 def packet_to_flow_match(parent, packet):
     match = parse.packet_to_flow_match(packet)
     match.wildcards |= required_wildcards(parent)
@@ -519,7 +458,7 @@ def flow_msg_install(parent, request, clear_table_override=None):
 
 def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=None,
                               dl_vlan=-1, pkt=None, exp_pkt=None,
-                              action_list=None, check_expire=False):
+                              action_list=None):
     """
     Flow match test on single TCP packet
     @param egr_ports A single port or list of ports
@@ -532,8 +471,7 @@ def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=None,
         wildcards = required_wildcards(parent)
     logging.info("Pkt match test: " + str(ing_port) + " to " + 
                        str(egr_ports))
-    logging.debug("  WC: " + hex(wildcards) + " vlan: " + str(dl_vlan) +
-                    " expire: " + str(check_expire))
+    logging.debug("  WC: " + hex(wildcards) + " vlan: " + str(dl_vlan))
     if pkt is None:
         pkt = simple_tcp_packet(dl_vlan_enable=(dl_vlan >= 0), dl_vlan=dl_vlan)
 
@@ -550,10 +488,6 @@ def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=None,
     if exp_pkt is None:
         exp_pkt = pkt
     receive_pkt_verify(parent, egr_ports, exp_pkt, ing_port)
-
-    if check_expire:
-        #@todo Not all HW supports both pkt and byte counters
-        flow_removed_verify(parent, request, pkt_count=1, byte_count=len(pkt))
 
 def get_egr_list(parent, of_ports, how_many, exclude_list=[]):
     """
@@ -580,7 +514,7 @@ def get_egr_list(parent, of_ports, how_many, exclude_list=[]):
     return []
     
 def flow_match_test(parent, port_map, wildcards=None, dl_vlan=-1, pkt=None, 
-                    exp_pkt=None, action_list=None, check_expire=False, 
+                    exp_pkt=None, action_list=None,
                     max_test=0, egr_count=1, ing_port=False):
     """
     Run flow_match_test_port_pair on all port pairs
@@ -593,7 +527,6 @@ def flow_match_test(parent, port_map, wildcards=None, dl_vlan=-1, pkt=None,
     @param dl_vlan If not -1, and pkt is None, create a pkt w/ VLAN tag
     @param exp_pkt If not None, use this as the expected output pkt; els use pkt
     @param action_list Additional actions to add to flow mod
-    @param check_expire Check for flow expiration message
     @param egr_count Number of egress ports; -1 means get from config w/ dflt 2
     """
     if wildcards is None:
@@ -618,8 +551,7 @@ def flow_match_test(parent, port_map, wildcards=None, dl_vlan=-1, pkt=None,
         flow_match_test_port_pair(parent, ingress_port, egr_ports, 
                                   wildcards=wildcards, dl_vlan=dl_vlan, 
                                   pkt=pkt, exp_pkt=exp_pkt,
-                                  action_list=action_list,
-                                  check_expire=check_expire)
+                                  action_list=action_list)
         test_count += 1
         if (max_test > 0) and (test_count > max_test):
             logging.info("Ran " + str(test_count) + " tests; exiting")
@@ -703,7 +635,7 @@ def action_generate(parent, field_to_mod, mod_field_vals):
     return act
 
 def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={}, 
-                     mod_fields={}, check_test_params=False):
+                     mod_fields=[], check_test_params=False):
     """
     Set up the ingress and expected packet and action list for a test
 
