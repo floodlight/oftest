@@ -27,6 +27,13 @@ import logging
 from oft_assert import oft_assert
 from ofutils import *
 
+have_pypcap = False
+try:
+    import pcap
+    have_pypcap = True
+except:
+    pass
+
 ##@todo Find a better home for these identifiers (dataplane)
 RCV_SIZE_DEFAULT = 4096
 ETH_P_ALL = 0x03
@@ -82,8 +89,8 @@ class DataPlanePort(Thread):
             self.socket = self.interface_open(interface_name)
         except:
             self.logger.info("Could not open socket")
-            sys.exit(1)
-        self.logger.info("Openned port monitor socket")
+            raise
+        self.logger.info("Opened port monitor (class %s)", type(self).__name__)
         self.parent = parent
 
     def interface_open(self, interface_name):
@@ -208,6 +215,78 @@ class DataPlanePort(Thread):
         print prefix + "Pkts total:    " + str(self.packets_total)
         print prefix + "socket:        " + str(self.socket)
 
+class DataPlanePortPcap(DataPlanePort):
+    """
+    Alternate port implementation using libpcap. This is required for recent
+    versions of Linux (such as Linux 3.2 included in Ubuntu 12.04) which
+    offload the VLAN tag, so it isn't in the data returned from a read on a raw
+    socket. libpcap understands how to read the VLAN tag from the kernel.
+    """
+
+    def __init__(self, interface_name, port_number, parent, max_pkts=1024):
+        DataPlanePort.__init__(self, interface_name, port_number, parent, max_pkts)
+
+    def interface_open(self, interface_name):
+        """
+        Open a PCAP interface.
+        """
+        self.pcap = pcap.pcap(interface_name)
+        self.pcap.setnonblock()
+        return self.pcap.fileno()
+
+    def run(self):
+        """
+        Activity function for class
+        """
+        self.running = True
+        while self.running:
+            try:
+                sel_in, sel_out, sel_err = select.select([self.socket], [], [], 1)
+            except:
+                print sys.exc_info()
+                self.logger.error("Select error, exiting")
+                break
+
+            if not self.running:
+                break
+
+            if (sel_in is None) or (len(sel_in) == 0):
+                continue
+
+            # Enqueue packet
+            with self.parent.pkt_sync:
+                for (timestamp, rcvmsg) in self.pcap.readpkts():
+                    rcvtime = time.clock()
+                    self.logger.debug("Pkt len " + str(len(rcvmsg)) +
+                                      " in at " + str(rcvtime) + " on port " +
+                                      str(self.port_number))
+
+                    if len(self.packets) >= self.max_pkts:
+                        # Queue full, throw away oldest
+                        self.packets.pop(0)
+                        self.packets_discarded += 1
+                        self.logger.debug("Discarding oldest packet to make room")
+                    self.packets.append((rcvmsg, rcvtime))
+                    self.packets_total += 1
+                self.parent.pkt_sync.notify_all()
+
+        self.logger.info("Thread exit")
+
+    def kill(self):
+        """
+        Terminate the running thread
+        """
+        self.logger.debug("Port monitor kill")
+        self.running = False
+        # pcap object is closed on GC.
+
+    def send(self, packet):
+        """
+        Send a packet to the dataplane port
+        @param packet The packet data to send to the port
+        @retval The number of bytes sent
+        """
+        return self.pcap.inject(packet, len(packet))
 
 class DataPlane:
     """
@@ -238,7 +317,11 @@ class DataPlane:
         # We use the DataPlanePort class defined here by 
         # default for all port traffic:
         #
-        self.dppclass = DataPlanePort
+        if have_pypcap:
+            self.dppclass = DataPlanePortPcap
+        else:
+            self.logger.warning("Missing pypcap, VLAN tests may fail. See README for installation instructions.")
+            self.dppclass = DataPlanePort
 
         ############################################################
         #

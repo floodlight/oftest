@@ -86,6 +86,9 @@ Longer Start
         * oftest checked out (called <oftest> here)
         * scapy installed:  http://www.secdev.org/projects/scapy/
           'sudo apt-get install scapy' should work on Debian.
+        * pypcap installed:  http://code.google.com/p/pypcap/ (optional)
+          'sudo apt-get install python-pypcap' should work on Debian.
+          Tests using VLAN tags may fail without pypcap.
         * tcpdump installed (optional, but scapy will complain if it's
           not there)
         * Doxygen and doxypy for document generation (optional)
@@ -247,6 +250,9 @@ Important Notes
     OpenFlow messages aren't quite right, start by looking at any length
     fields in the packets.  With the local platform, you can use wireshark
     on the loopback interface as well as the dataplane veth interfaces.
+
+    3.  If tests dealing with VLANs fail unexpectedly then try installing
+    pypcap (see Longer Start above).
 
 Adding Your Own Test Cases
 ++++++++++++++++++++++++++
