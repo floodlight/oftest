@@ -296,11 +296,9 @@ class Controller(Thread):
 
             with self.connect_cv:
                 (self.switch_socket, self.switch_addr) = (sock, addr)
+                if self.initial_hello:
+                    self.message_send(hello())
                 self.connect_cv.notify() # Notify anyone waiting
-
-            if self.initial_hello:
-                self.message_send(hello())
-                ## @fixme Check return code
         elif s and s == self.switch_socket:
             for idx in range(3): # debug: try a couple of times
                 try:
