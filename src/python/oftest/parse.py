@@ -201,7 +201,7 @@ def parse_mac(mac_str):
     @param mac_str The string to convert
     @return Array of 6 integer values
     """
-    return map(lambda val:eval("0x" + val), mac_str.split(":"))
+    return map(lambda val: int(val, 16), mac_str.split(":"))
 
 def parse_ip(ip_str):
     """
@@ -212,7 +212,7 @@ def parse_ip(ip_str):
     @param ip_str The string to convert
     @return Integer value
     """
-    array = map(lambda val:eval(val),ip_str.split("."))
+    array = map(lambda val: int(val), ip_str.split("."))
     val = 0
     for a in array:
         val <<= 8

@@ -9,56 +9,38 @@ import logging
 import unittest
 import random
 
+from oftest import config
 import oftest.controller as controller
 import oftest.cstruct as ofp
 import oftest.message as message
 import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.parse as parse
-import basic
+import oftest.base_tests as base_tests
 
 from oftest.testutils import *
 from time import sleep
 from FuncUtils import *
 
-cs_port_map = None
-cs_logger = None
-cs_config = None
-
-def test_set_init(config):
-   
-
-    basic.test_set_init(config)
-
-    global cs_port_map
-    global cs_logger
-    global cs_config
-
-    cs_logger = logging.getLogger("Detailed controller to switch messages")
-    cs_logger.info("Initializing test set")
-    cs_port_map = config["port_map"]
-    cs_config = config
-
-
-class OverlapChecking(basic.SimpleDataPlane):
+class OverlapChecking(base_tests.SimpleDataPlane):
     
     """Verify that if overlap check flag is set in the flow entry and an overlapping flow is inserted then an error 
         is generated and switch refuses flow entry"""
     
     def runTest(self):
         
-        cs_logger.info("Running Overlap_Checking test")
+        logging.info("Running Overlap_Checking test")
        
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear Switch State
-        rc = delete_all_flows(self.controller, cs_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        cs_logger.info("Inserting two overlapping flows")
-        cs_logger.info("Expecting switch to return an error")
+        logging.info("Inserting two overlapping flows")
+        logging.info("Expecting switch to return an error")
 
         #Insert a flow F with wildcarded all fields
         (pkt,match) = Wildcard_All(self,of_ports)
@@ -101,24 +83,24 @@ class OverlapChecking(basic.SimpleDataPlane):
                                'Error Message code is not overlap')
 
 
-class NoOverlapChecking(basic.SimpleDataPlane):
+class NoOverlapChecking(base_tests.SimpleDataPlane):
 
     """Verify that without overlap check flag set, overlapping flows can be created."""  
     
     def runTest(self):
      
-        cs_logger.info("Running No_Overlap_Checking test")
+        logging.info("Running No_Overlap_Checking test")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear Switch State
-        rc = delete_all_flows(self.controller, cs_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        cs_logger.info("Inserting two overlapping flows")
-        cs_logger.info("Expecting switch to insert the flows without generating errors")
+        logging.info("Inserting two overlapping flows")
+        logging.info("Expecting switch to insert the flows without generating errors")
 
         #Build a flow F with wildcarded all fields.
         (pkt,match) = Wildcard_All(self,of_ports)
@@ -133,24 +115,24 @@ class NoOverlapChecking(basic.SimpleDataPlane):
         Verify_TableStats(self,active_entries=2)
 
 
-class IdenticalFlows(basic.SimpleDataPlane):
+class IdenticalFlows(base_tests.SimpleDataPlane):
     
     """Verify that adding two identical flows overwrites the existing one and clears counters"""
 
     def runTest(self):
         
-        cs_logger.info("Running Identical_Flows test ")
+        logging.info("Running Identical_Flows test ")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear switch state
-        rc = delete_all_flows(self.controller, cs_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        cs_logger.info("Inserting two identical flows one by one")
-        cs_logger.info("Expecting switch to overwrite the first flow and clear the counters associated with it ")
+        logging.info("Inserting two identical flows one by one")
+        logging.info("Expecting switch to overwrite the first flow and clear the counters associated with it ")
         
         # Create and add flow-1, check on dataplane it is active.
         (pkt,match) = Wildcard_All(self,of_ports)
@@ -174,24 +156,24 @@ class IdenticalFlows(basic.SimpleDataPlane):
         Verify_FlowStats(self,match,byte_count=0,packet_count=0)
 
    
-class EmerFlowTimeout(basic.SimpleProtocol): 
+class EmerFlowTimeout(base_tests.SimpleProtocol): 
 
     """Timeout values are not allowed for emergency flows"""
 
     def runTest(self):
 
-        cs_logger.info("Running Emergency_Flow_Timeout test")
+        logging.info("Running Emergency_Flow_Timeout test")
         
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear switch state
-        rc = delete_all_flows(self.controller, cs_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        cs_logger.info("Inserting an emergency flow with timeout values")
-        cs_logger.info("Expecting switch to generate error ")
+        logging.info("Inserting an emergency flow with timeout values")
+        logging.info("Expecting switch to generate error ")
         
         #Insert an emergency flow 
         pkt = simple_tcp_packet()
@@ -209,7 +191,7 @@ class EmerFlowTimeout(basic.SimpleProtocol):
         act.port = of_ports[1]
         
         request.actions.add(act)
-        cs_logger.info("Inserting flow")
+        logging.info("Inserting flow")
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Flow addition did not fail.")
 
@@ -226,23 +208,23 @@ class EmerFlowTimeout(basic.SimpleProtocol):
                                'Error Message code is not bad emergency timeout')
 
 
-class MissingModifyAdd(basic.SimpleDataPlane):
+class MissingModifyAdd(base_tests.SimpleDataPlane):
 
     """If a modify does not match an existing flow, the flow gets added """
     
     def runTest(self):
         
-        cs_logger.info("Running Missing_Modify_Add test")
+        logging.info("Running Missing_Modify_Add test")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
-        cs_logger.info("Inserting a flow-modify that does not match an existing flow")
-        cs_logger.info("Expecting flow to get added i.e OFPFC_MODIFY command should be taken as OFPFC_ADD ")
+        logging.info("Inserting a flow-modify that does not match an existing flow")
+        logging.info("Expecting flow to get added i.e OFPFC_MODIFY command should be taken as OFPFC_ADD ")
 
         #Clear Switch State
-        rc = delete_all_flows(self.controller, cs_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         #Generate a flow-mod,command OFPC_MODIFY 
@@ -257,7 +239,7 @@ class MissingModifyAdd(basic.SimpleDataPlane):
         act3.port = of_ports[1]
         self.assertTrue(request.actions.add(act3), "could not add action")
 
-        cs_logger.info("Inserting flow")
+        logging.info("Inserting flow")
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed") 
@@ -266,24 +248,24 @@ class MissingModifyAdd(basic.SimpleDataPlane):
         Verify_TableStats(self,active_entries=1)
 
 
-class ModifyAction(basic.SimpleDataPlane):
+class ModifyAction(base_tests.SimpleDataPlane):
 
     """A modified flow preserves counters"""
     
     def runTest(self):
         
-        cs_logger.info("Running Modify_Action test ")
+        logging.info("Running Modify_Action test ")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear switch state
-        rc = delete_all_flows(self.controller, cs_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        cs_logger.info("Inserting a Flow and incrementing flow counters. Modifying the flow action")
-        cs_logger.info("Expecting the flow action to be modified , but the flow-counters should be preserved")
+        logging.info("Inserting a Flow and incrementing flow counters. Modifying the flow action")
+        logging.info("Expecting the flow action to be modified , but the flow-counters should be preserved")
            
         #Create and add flow-1 Match on all, except one wildcarded (src adddress).Action A , output to of_port[1]
         (pkt,match) = Match_All_Except_Source_Address(self,of_ports)
@@ -304,24 +286,24 @@ class ModifyAction(basic.SimpleDataPlane):
         Verify_FlowStats(self,match,byte_count=(2*len(str(pkt))),packet_count=2)
 
 
-class StrictModifyAction(basic.SimpleDataPlane):
+class StrictModifyAction(base_tests.SimpleDataPlane):
 
     """Strict Modify Flow also changes action preserves counters"""
 
     def runTest(self):
         
-        cs_logger.info("Running Strict_Modify_Action test")
+        logging.info("Running Strict_Modify_Action test")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear switch state
-        rc = delete_all_flows(self.controller, cs_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        cs_logger.info("Inserting Flows and incrementing flow counters. Strict Modify the flow action ")
-        cs_logger.info("Expecting the flow action to be modified , but the flow-counters should be preserved")
+        logging.info("Inserting Flows and incrementing flow counters. Strict Modify the flow action ")
+        logging.info("Expecting the flow action to be modified , but the flow-counters should be preserved")
         
         #Create and add flow-1 Match on all, except one wildcarded (src adddress).Action A
         (pkt,match) = Match_All_Except_Source_Address(self,of_ports,priority=100)
@@ -348,24 +330,24 @@ class StrictModifyAction(basic.SimpleDataPlane):
         Verify_FlowStats(self,match,byte_count=(2*len(str(pkt))),packet_count=2)
 
 
-class DeleteNonexistingFlow(basic.SimpleDataPlane):
+class DeleteNonexistingFlow(base_tests.SimpleDataPlane):
     
     """Request deletion of non-existing flow"""
     
     def runTest(self):
         
-        cs_logger.info("Delete_NonExisting_Flow test begins")
+        logging.info("Delete_NonExisting_Flow test begins")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear switch state
-        rc = delete_all_flows(self.controller, cs_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        cs_logger.info("Deleting a non-existing flow")
-        cs_logger.info("Expecting switch to ignore the command , without generating errors")
+        logging.info("Deleting a non-existing flow")
+        logging.info("Expecting switch to ignore the command , without generating errors")
 
         # Issue a delete command 
         msg = message.flow_mod()
@@ -382,7 +364,7 @@ class DeleteNonexistingFlow(basic.SimpleDataPlane):
 
 
         
-class SendFlowRem(basic.SimpleDataPlane):
+class SendFlowRem(base_tests.SimpleDataPlane):
     
     """Check deletion of flows happens and generates messages as configured.
     If Send Flow removed message Flag is set in the flow entry, the flow deletion of that respective flow should generate the flow removed message, 
@@ -390,19 +372,19 @@ class SendFlowRem(basic.SimpleDataPlane):
 
     def runTest(self):
 
-        cs_logger.info("Running Send_Flow_Rem test ")
+        logging.info("Running Send_Flow_Rem test ")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear swicth state
-        rc = delete_all_flows(self.controller, cs_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        cs_logger.info("Inserting flows F1 and F2 without and with send_flow_removed_message flag set ")
-        cs_logger.info("Deleting the flows")
-        cs_logger.info("Expecting flow removed message only for F2")
+        logging.info("Inserting flows F1 and F2 without and with send_flow_removed_message flag set ")
+        logging.info("Deleting the flows")
+        logging.info("Expecting flow removed message only for F2")
 
         # Insert flow-1 with F without OFPFF_SEND_FLOW_REM flag set.
         (pkt,match) = Wildcard_All_Except_Ingress(self,of_ports)
@@ -432,7 +414,7 @@ class SendFlowRem(basic.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         # Delete the flow-2
-        rc2 = delete_all_flows(self.controller, cs_logger)
+        rc2 = delete_all_flows(self.controller)
         self.assertEqual(rc2, 0, "Failed to delete all flows")
 
         # Verify flow removed message is generated for the FLOW-2
@@ -443,24 +425,24 @@ class SendFlowRem(basic.SimpleDataPlane):
                         'Did not receive flow removed message for this flow')
 
 
-class DeleteEmerFlow(basic.SimpleProtocol):
+class DeleteEmerFlow(base_tests.SimpleProtocol):
 
     """Delete emergency flow and verify no message is generated.An emergency flow deletion will not generate flow-removed messages even if 
     Send Flow removed message flag was set during the emergency flow entry"""
 
     def runTest(self):
 
-        cs_logger.info("Running Delete_Emer_Flow")
+        logging.info("Running Delete_Emer_Flow")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         
         #Clear switch state        
-        rc = delete_all_flows(self.controller, cs_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        cs_logger.info("Inserting a emergency flow with send_flow_removed flag set")
-        cs_logger.info("Expecting no flow_removed_message on the deletion of the emergency flow")
+        logging.info("Inserting a emergency flow with send_flow_removed flag set")
+        logging.info("Expecting no flow_removed_message on the deletion of the emergency flow")
         
         # Insert a flow with emergency bit set.
         pkt = simple_tcp_packet()
@@ -486,25 +468,25 @@ class DeleteEmerFlow(basic.SimpleProtocol):
                         'Test Failed ')
 
 
-class StrictVsNonstrict(basic.SimpleDataPlane):
+class StrictVsNonstrict(base_tests.SimpleDataPlane):
 
     """Delete and verify strict and non-strict behaviors
     This test compares the behavior of delete strict and non-strict"""
 
     def runTest(self):
         
-        cs_logger.info("Strict_Vs_Nonstrict test begins")
+        logging.info("Strict_Vs_Nonstrict test begins")
         
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear switch state
-        rc = delete_all_flows(self.controller, cs_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
         
-        cs_logger.info("Inserting a flow with exact match")
-        cs_logger.info("Issue Strict Delete command , verify it gets deleted")     
+        logging.info("Inserting a flow with exact match")
+        logging.info("Issue Strict Delete command , verify it gets deleted")     
         
         #Insert F with an exact Match 
         (pkt,match) = Exact_Match(self,of_ports)  
@@ -514,9 +496,9 @@ class StrictVsNonstrict(basic.SimpleDataPlane):
         Strict_Delete(self,match)
         Verify_TableStats(self,active_entries=0)
 
-        cs_logger.info("Inserting two overlapping flows")
-        cs_logger.info("Issue Strict Delete command ")
-        cs_logger.info("Expecting only one flow gets deleted , because Strict Delete matches on wildcards as well")     
+        logging.info("Inserting two overlapping flows")
+        logging.info("Issue Strict Delete command ")
+        logging.info("Expecting only one flow gets deleted , because Strict Delete matches on wildcards as well")     
         
         #Insert Flow T with match on all , except one wildcarded ( say src adddress ). 
         (pkt,match) = Match_All_Except_Source_Address(self,of_ports)
@@ -529,9 +511,9 @@ class StrictVsNonstrict(basic.SimpleDataPlane):
         Strict_Delete(self,match1)
         Verify_TableStats(self,active_entries=1) 
 
-        cs_logger.info("Inserting two overlapping flows")
-        cs_logger.info("Issue Non-Strict Delete command ")
-        cs_logger.info("Expecting both the flow gets deleted , because wildcards are active")    
+        logging.info("Inserting two overlapping flows")
+        logging.info("Issue Non-Strict Delete command ")
+        logging.info("Expecting both the flow gets deleted , because wildcards are active")    
 
         #Insert T and T' again . 
         (pkt,match) = Match_All_Except_Source_Address(self,of_ports)
@@ -542,9 +524,9 @@ class StrictVsNonstrict(basic.SimpleDataPlane):
         NonStrict_Delete(self,match1)
         Verify_TableStats(self,active_entries=0)
 
-        cs_logger.info("Inserting three overlapping flows with different priorities")
-        cs_logger.info("Issue Non-Strict Delete command ")
-        cs_logger.info("Expecting all the flows to get deleted")  
+        logging.info("Inserting three overlapping flows with different priorities")
+        logging.info("Issue Non-Strict Delete command ")
+        logging.info("Expecting all the flows to get deleted")  
   
         #Insert T , add Priority P (say 100 ) 
         (pkt,match) = Match_All_Except_Source_Address(self,of_ports,priority=100)
@@ -560,9 +542,9 @@ class StrictVsNonstrict(basic.SimpleDataPlane):
         NonStrict_Delete(self,match1,priority=200)
         Verify_TableStats(self,active_entries=0)
 
-        cs_logger.info("Inserting three overlapping flows with different priorities")
-        cs_logger.info("Issue Strict Delete command ")
-        cs_logger.info("Expecting only one to get deleted because here priorities & wildcards are being matched")  
+        logging.info("Inserting three overlapping flows with different priorities")
+        logging.info("Issue Strict Delete command ")
+        logging.info("Expecting only one to get deleted because here priorities & wildcards are being matched")  
 
         #Issue Strict-Delete and verify only T'' gets deleted. 
         (pkt,match) = Match_All_Except_Source_Address(self,of_ports,priority=100)
@@ -573,26 +555,26 @@ class StrictVsNonstrict(basic.SimpleDataPlane):
 
         
    
-class Outport1(basic.SimpleDataPlane):
+class Outport1(base_tests.SimpleDataPlane):
 
     """Delete flows filtered by action outport.If the out_port field in the delete command contains a value other than OFPP_NONE,
     it introduces a constraint when matching. This constraint is that the rule must contain an output action directed at that port."""
 
     def runTest(self):
         
-        cs_logger.info("Outport1 test begins")
+        logging.info("Outport1 test begins")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear switch state
-        rc = delete_all_flows(self.controller, cs_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        cs_logger.info("Inserting a flow with output action --> of_port[1]")
-        cs_logger.info("Deleting the flow but with out_port set to of_port[2]")
-        cs_logger.info("Expecting switch to filter the delete command")
+        logging.info("Inserting a flow with output action --> of_port[1]")
+        logging.info("Deleting the flow but with out_port set to of_port[2]")
+        logging.info("Expecting switch to filter the delete command")
         
         #Build and send Flow-1 with action output to of_port[1]
         (pkt,match) = Wildcard_All_Except_Ingress(self,of_ports)
@@ -614,8 +596,8 @@ class Outport1(basic.SimpleDataPlane):
         # Verify flow will not get deleted, active_entries in table_stats_request = 1
         Verify_TableStats(self,active_entries=1)
 
-        cs_logger.info("Deleting the flow with out_port set to of_port[1]")
-        cs_logger.info("Expecting switch to delete the flow")
+        logging.info("Deleting the flow with out_port set to of_port[1]")
+        logging.info("Expecting switch to delete the flow")
 
         #Send Delete command with contraint out_port = of_ports[1]
         msg7 = message.flow_mod()
@@ -632,24 +614,24 @@ class Outport1(basic.SimpleDataPlane):
         Verify_TableStats(self,active_entries=0)
 
 
-class IdleTimeout(basic.SimpleDataPlane):
+class IdleTimeout(base_tests.SimpleDataPlane):
 
     """ Verify that idle timeout is implemented"""
 
     def runTest(self):
         
-        cs_logger.info("Running Idle_Timeout test ")
+        logging.info("Running Idle_Timeout test ")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rc = delete_all_flows(self.controller, cs_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        cs_logger.info("Inserting flow entry with idle_timeout set. Also send_flow_removed_message flag set")
-        cs_logger.info("Expecting the flow entry to delete with given idle_timeout")
+        logging.info("Inserting flow entry with idle_timeout set. Also send_flow_removed_message flag set")
+        logging.info("Expecting the flow entry to delete with given idle_timeout")
 
         #Insert a flow entry with idle_timeout=1.Send_Flow_Rem flag set
         msg9 = message.flow_mod()
@@ -676,24 +658,24 @@ class IdleTimeout(basic.SimpleDataPlane):
                          'Flow was not alive for 1 sec')
 
 
-class Outport2(basic.SimpleDataPlane):
+class Outport2(base_tests.SimpleDataPlane):
 
     """Add, modify flows with outport set. This field is ignored by ADD, MODIFY, and MODIFY STRICT messages."""
 
     def runTest(self):
         
-        cs_logger.info("Running Outport2 test ")
+        logging.info("Running Outport2 test ")
 
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear switch state
-        rc = delete_all_flows(self.controller, cs_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        cs_logger.info("Adding and modifying flow with out_port fields set")
-        cs_logger.info("Expecting switch to ignore out_port")
+        logging.info("Adding and modifying flow with out_port fields set")
+        logging.info("Expecting switch to ignore out_port")
 
         # Create and add flow-1,Action A ,output to port of_port[1], out_port set to of_ports[2]
         (pkt,match) = Wildcard_All_Except_Ingress(self,of_ports)
@@ -716,24 +698,24 @@ class Outport2(basic.SimpleDataPlane):
 
 
 
-class HardTimeout(basic.SimpleDataPlane):
+class HardTimeout(base_tests.SimpleDataPlane):
 
     """ Verify that hard timeout is implemented """
 
     def runTest(self):
 
-        cs_logger.info("Running Hard_Timeout test ")
+        logging.info("Running Hard_Timeout test ")
         
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear switch state
-        rc = delete_all_flows(self.controller, cs_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        cs_logger.info("Inserting flow entry with hard_timeout set. Also send_flow_removed_message flag set")
-        cs_logger.info("Expecting the flow entry to delete with given hard_timeout")
+        logging.info("Inserting flow entry with hard_timeout set. Also send_flow_removed_message flag set")
+        logging.info("Expecting the flow entry to delete with given hard_timeout")
 
         # Insert a flow entry with hardtimeout=1 and send_flow_removed flag set
         msg9 = message.flow_mod()
@@ -760,7 +742,7 @@ class HardTimeout(basic.SimpleDataPlane):
                          'Flow was not alive for 1 sec')
 
 
-class FlowTimeout(basic.SimpleDataPlane):
+class FlowTimeout(base_tests.SimpleDataPlane):
   
     """Verify that Flow removed messages are generated as expected
     Flow removed messages being generated when flag is set, is already tested in the above tests 
@@ -769,18 +751,18 @@ class FlowTimeout(basic.SimpleDataPlane):
     
     def runTest(self):
 
-        cs_logger.info("Running Flow_Timeout test ")
+        logging.info("Running Flow_Timeout test ")
         
-        of_ports = cs_port_map.keys()
+        of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear switch state
-        rc = delete_all_flows(self.controller, cs_logger)
+        rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        cs_logger.info("Inserting flow entry with hard_timeout set and send_flow_removed_message flag not set")
-        cs_logger.info("Expecting the flow entry to delete, but no flow removed message")
+        logging.info("Inserting flow entry with hard_timeout set and send_flow_removed_message flag not set")
+        logging.info("Expecting the flow entry to delete, but no flow removed message")
 
         # Insert a flow with hard_timeout = 1 but no Send_Flow_Rem flag set
         pkt = simple_tcp_packet()
