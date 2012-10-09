@@ -2636,7 +2636,7 @@ class DirectVlanPackets(DirectBadPacketBase):
         testPacket("Basic MAC matching with VLAN tag present",
             self.createMatch(dl_dst=parse_mac(dl_dst), dl_src=parse_mac(dl_src)),
             scapy.Ether(dst=dl_dst, src=dl_src)/ \
-                scapy.Dot1Q(prio=5, id=1, vlan=1000)/ \
+                scapy.Dot1Q(prio=5, vlan=1000)/ \
                 scapy.IP(),
             self.RESULT_MATCH
         )
@@ -2644,7 +2644,7 @@ class DirectVlanPackets(DirectBadPacketBase):
             self.createMatch(dl_dst=parse_mac(dl_dst), dl_src=parse_mac(dl_src),
                              dl_type=0x800),
             scapy.Ether(dst=dl_dst, src=dl_src)/ \
-                scapy.Dot1Q(prio=5, id=1, vlan=1000)/ \
+                scapy.Dot1Q(prio=5, vlan=1000)/ \
                 scapy.IP(),
             self.RESULT_MATCH
         )
@@ -2652,7 +2652,7 @@ class DirectVlanPackets(DirectBadPacketBase):
             self.createMatch(dl_dst=parse_mac(dl_dst), dl_src=parse_mac(dl_src),
                              dl_type=0x801),
             scapy.Ether(dst=dl_dst, src=dl_src)/ \
-                scapy.Dot1Q(prio=5, id=1, vlan=1000)/ \
+                scapy.Dot1Q(prio=5, vlan=1000)/ \
                 scapy.IP(),
             self.RESULT_NOMATCH
         )
@@ -2660,7 +2660,7 @@ class DirectVlanPackets(DirectBadPacketBase):
             self.createMatch(dl_dst=parse_mac(dl_dst), dl_src=parse_mac(dl_src),
                              dl_type=0x8100),
             scapy.Ether(dst=dl_dst, src=dl_src)/ \
-                scapy.Dot1Q(prio=5, id=1, vlan=1000)/ \
+                scapy.Dot1Q(prio=5, vlan=1000)/ \
                 scapy.IP(),
             self.RESULT_NOMATCH
         )
@@ -2668,8 +2668,8 @@ class DirectVlanPackets(DirectBadPacketBase):
             self.createMatch(dl_dst=parse_mac(dl_dst), dl_src=parse_mac(dl_src),
                              dl_type=0x800),
             scapy.Ether(dst=dl_dst, src=dl_src)/ \
-                scapy.Dot1Q(prio=5, id=1, vlan=1000)/ \
-                scapy.Dot1Q(prio=3, id=1, vlan=1005)/ \
+                scapy.Dot1Q(prio=5, vlan=1000)/ \
+                scapy.Dot1Q(prio=3, vlan=1005)/ \
                 scapy.IP(),
             self.RESULT_NOMATCH
         )
@@ -2677,8 +2677,8 @@ class DirectVlanPackets(DirectBadPacketBase):
             self.createMatch(dl_dst=parse_mac(dl_dst), dl_src=parse_mac(dl_src),
                              dl_type=0x8100),
             scapy.Ether(dst=dl_dst, src=dl_src)/ \
-                scapy.Dot1Q(prio=5, id=1, vlan=1000)/ \
-                scapy.Dot1Q(prio=3, id=1, vlan=1005)/ \
+                scapy.Dot1Q(prio=5, vlan=1000)/ \
+                scapy.Dot1Q(prio=3, vlan=1005)/ \
                 scapy.IP(),
             self.RESULT_MATCH
         )
@@ -2687,7 +2687,7 @@ class DirectVlanPackets(DirectBadPacketBase):
                              dl_type=0x0800,
                              nw_src=parse_ip(ip_src), nw_dst=parse_ip(ip_dst)),
             scapy.Ether(dst=dl_dst, src=dl_src)/ \
-                scapy.Dot1Q(prio=5, id=1, vlan=1000)/ \
+                scapy.Dot1Q(prio=5, vlan=1000)/ \
                 scapy.IP(src=ip_src, dst=ip_dst),
             self.RESULT_MATCH
         )
