@@ -76,7 +76,6 @@ class HandshakeNoHello(BaseHandshake):
         logging.info("Hello not sent, waiting for timeout")
 
         # wait for controller to die
-        count = 0
         self.assertTrue(self.controllers[0].wait_disconnected(timeout=10),
                         "Not notified of controller disconnect")
 
@@ -98,7 +97,6 @@ class HandshakeNoFeaturesRequest(BaseHandshake):
         logging.info("Features request not sent, waiting for timeout")
 
         # wait for controller to die
-        count = 0
         self.assertTrue(self.controllers[0].wait_disconnected(timeout=10),
                         "Not notified of controller disconnect")
 
@@ -112,6 +110,8 @@ class HandshakeAndKeepalive(BaseHandshake):
 
     def runTest(self):
         self.num_controllers = test_param_get('num_controllers', default=1)
+        self.controller_timeout = test_param_get('controller_timeout',
+                                                 default=-1)
 
         for i in range(self.num_controllers):
             self.controllerSetup(config["controller_host"],
@@ -119,23 +119,24 @@ class HandshakeAndKeepalive(BaseHandshake):
         for i in range(self.num_controllers):
             self.controllers[i].handshake_done = False
 
-        # try to maintain switch connections forever
-        count = 0
+        # try to maintain switch connections for specified timeout
+        # -1 means forever
         while True:
             for con in self.controllers:
                 if con.switch_socket and con.handshake_done:
-                    if count < 7:
+                    if (self.controller_timeout < 0 or
+                        con.count < self.controller_timeout):
                         logging.info(con.host + ":" + str(con.port) + 
                                      ": maintaining connection to " +
                                      str(con.switch_addr))
-                        count = count + 1
+                        con.count = con.count + 1
                     else:
                         logging.info(con.host + ":" + str(con.port) + 
                                      ": disconnecting from " +
                                      str(con.switch_addr))
                         con.disconnect()
                         con.handshake_done = False
-                        count = 0
+                        con.count = 0
                     time.sleep(1)
                 else:
                     #@todo Add an option to wait for a pkt transaction to 
@@ -155,9 +156,11 @@ class HandshakeAndKeepalive(BaseHandshake):
                                     str(con.switch_addr))
                         con.handshake_done = True
                         con.keep_alive = True
+                        con.count = 0
                     else:
                         logging.info("Did not complete features_request " +
                                      "for handshake")
                         con.disconnect()
                         con.handshake_done = False
+                        con.count = 0
 
