@@ -2376,7 +2376,7 @@ class DirectBadLlcPackets(DirectBadPacketBase):
                 [[
                     "Eth addr+type match - LLC frame corrupted length - %s" % title,
                     scapy.Ether(dst=dl_dst, src=dl_src, type=ethLen) / llc,
-                    self.RESULT_NOMATCH,
+                    self.RESULT_ANY,
                 ]],
                 action.action_output(), match
             )
