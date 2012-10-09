@@ -173,6 +173,7 @@ config_default = {
     "test_dir"           : os.path.join(root_dir, "tests"),
     "platform_dir"       : os.path.join(root_dir, "platforms"),
     "profile_dir"        : os.path.join(root_dir, "profiles"),
+    "priority"           : 0,
 }
 
 # Default test priority
@@ -277,6 +278,9 @@ def config_setup(cfg_dflt):
                       help="Directory containing platform modules")
     parser.add_option("--profile-dir", type="string",
                       help="Directory containing profile modules")
+    parser.add_option("--priority", type="int",
+                      help="Minimum test priority",
+                      default=0)
 
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
@@ -466,7 +470,7 @@ if config["list"]:
                 desc = desc.split('\n')[0]
             except:
                 desc = "No description"
-            if test_prio_get(test) < 0:
+            if test_prio_get(test) < config["priority"]:
                 start_str = "  * " + testname + ":"
             else:
                 start_str = "    " + testname + ":"
@@ -488,7 +492,7 @@ if config["list"]:
 if config["list_test_names"]:
     for (modname, (mod, tests)) in test_modules.items():
         for (testname, test) in tests.items():
-            if test_prio_get(test) >= 0:
+            if test_prio_get(test) >= config["priority"]:
                 print "%s.%s" % (modname, testname)
     sys.exit(0)
 
@@ -498,7 +502,7 @@ suite = unittest.TestSuite()
 
 for (modname, (mod, tests)) in test_modules.items():
     for (testname, test) in tests.items():
-        if test_prio_get(test) >= 0:
+        if test_prio_get(test) >= config["priority"]:
             logging.info("Adding test " + modname + "." + testname)
             suite.addTest(test())
 
