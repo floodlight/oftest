@@ -506,6 +506,9 @@ for (modname, (mod, tests)) in test_modules.items():
             logging.info("Adding test " + modname + "." + testname)
             suite.addTest(test())
 
+# Allow platforms to import each other
+sys.path.append(config["platform_dir"])
+
 # Load the platform module
 platform_name = config["platform"]
 logging.info("Importing platform: " + platform_name)
