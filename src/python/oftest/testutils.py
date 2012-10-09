@@ -64,7 +64,9 @@ def simple_tcp_packet(pktlen=100,
                       ip_dst='192.168.0.2',
                       ip_tos=0,
                       tcp_sport=1234,
-                      tcp_dport=80
+                      tcp_dport=80,
+                      ip_ihl=None,
+                      ip_options=False
                       ):
     """
     Return a simple dataplane TCP packet
@@ -94,14 +96,22 @@ def simple_tcp_packet(pktlen=100,
     if (dl_vlan_enable):
         pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
             scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi, vlan=dl_vlan)/ \
-            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ihl=ip_ihl)/ \
             scapy.TCP(sport=tcp_sport, dport=tcp_dport)
     else:
-        pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
-            scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+        if not ip_options:
+            pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+                scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ihl=ip_ihl)/ \
+                scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+        else:
+            pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+                scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ihl=ip_ihl, options=ip_options)/ \
+                scapy.TCP(sport=tcp_sport, dport=tcp_dport)
 
     pkt = pkt/("D" * (pktlen - len(pkt)))
+    
+    #print pkt.show()
+    #print scapy.Ether(str(pkt)).show()
 
     return pkt
 
