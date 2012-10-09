@@ -12,7 +12,7 @@ import oftest.action as action
 import oftest.parse as parse
 import logging
 import types
-import basic
+import oftest.base_tests as base_tests
 from oftest.testutils import *
 from time import sleep
 

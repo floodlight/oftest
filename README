@@ -126,7 +126,7 @@ Longer Start
         4A. Check out openflow (preferably at the same level as oftest):
             git clone git://openflowswitch.org/openflow.git
         4B. cd openflow; ./boot.sh; ./configure; make
-        4C. cd ../oftest/tests
+        4C. cd ../oftest
         4D. Run the switch startup script:
             sudo ./run_switch.py; Now you can run oft (see below).
         4F. Use --help to see command line switches.  If you use a port

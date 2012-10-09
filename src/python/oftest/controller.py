@@ -104,7 +104,6 @@ class Controller(Thread):
         self.socs = []
         self.connect_cv = Condition()
         self.message_cv = Condition()
-        self.disconnect_cv = Condition()
 
         # Counters
         self.socket_errors = 0
@@ -290,17 +289,19 @@ class Controller(Thread):
                 sock.close()
                 return 0
 
-            (sock, addr) = self.listen_socket.accept()
+            try:
+                (sock, addr) = self.listen_socket.accept()
+            except:
+                self.logger.warning("Error on listen socket accept")
+                return -1
             self.socs.append(sock)
             self.logger.info("Incoming connection from %s" % str(addr))
 
             with self.connect_cv:
                 (self.switch_socket, self.switch_addr) = (sock, addr)
+                if self.initial_hello:
+                    self.message_send(hello())
                 self.connect_cv.notify() # Notify anyone waiting
-
-            if self.initial_hello:
-                self.message_send(hello())
-                ## @fixme Check return code
         elif s and s == self.switch_socket:
             for idx in range(3): # debug: try a couple of times
                 try:
@@ -403,8 +404,8 @@ class Controller(Thread):
             self.switch_socket.close()
             self.switch_socket = None
             self.switch_addr = None
-            with self.disconnect_cv:
-                self.disconnect_cv.notifyAll()
+            with self.connect_cv:
+                self.connect_cv.notifyAll()
 
     def wait_disconnected(self, timeout=-1):
         """
@@ -412,8 +413,8 @@ class Controller(Thread):
         @return Boolean, True if disconnected
         """
 
-        with self.disconnect_cv:
-            timed_wait(self.disconnect_cv, 
+        with self.connect_cv:
+            timed_wait(self.connect_cv, 
                        lambda: True if not self.switch_socket else None, 
                        timeout=timeout)
         return self.switch_socket is None

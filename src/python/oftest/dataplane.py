@@ -299,12 +299,6 @@ class DataPlane:
                          ", port %d, length mismatch %d != %d" %
                          (port_number, bytes, len(packet)))
 
-    def _oldest_packet_find(self):
-        # Find port with oldest packet
-        oft_assert(min_port != -1, "Could not find port when pkts pending")
-
-        return min_port
-
     # Returns the port with the oldest packet, or None if no packets are queued.
     def oldest_port(self):
         min_port = None
