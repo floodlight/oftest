@@ -101,3 +101,100 @@ class LoadBarrier(base_tests.SimpleProtocol):
         logging.debug("Deleting all flows from switch")
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
+
+class PacketInLoad(base_tests.SimpleDataPlane):
+    """
+    Generate lots of packet-in messages
+
+    Test packet-in function by sending lots of packets to the dataplane.
+    This test tracks the number of pkt-ins received but does not enforce
+    any requirements about the number received.
+    """
+    def runTest(self):
+        # Construct packet to send to dataplane
+        # Send packet to dataplane, once to each port
+        # Poll controller with expect message type packet in
+
+        rc = delete_all_flows(self.controller)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        out_count = 0
+        in_count = 0
+
+        of_ports = config["port_map"].keys()
+        for of_port in of_ports:
+            for pkt, pt in [
+               (simple_tcp_packet(), "simple TCP packet"),
+               (simple_tcp_packet(dl_vlan_enable=True,pktlen=108), 
+                "simple tagged TCP packet"),
+               (simple_eth_packet(), "simple Ethernet packet"),
+               (simple_eth_packet(pktlen=40), "tiny Ethernet packet")]:
+
+               logging.info("PKT IN test with %s, port %s" % (pt, of_port))
+               for count in range(100):
+                   out_count += 1
+                   self.dataplane.send(of_port, str(pkt))
+        time.sleep(2)
+        while True:
+            (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,
+                                                   timeout=0)
+            if not response:
+                break
+            in_count += 1
+        logging.info("PacketInLoad Sent %d. Got %d." % (out_count, in_count))
+        
+
+
+class PacketOutLoad(base_tests.SimpleDataPlane):
+    """
+    Generate lots of packet-out messages
+
+    Test packet-out function by sending lots of packet-out msgs
+    to the switch.  This test tracks the number of packets received in 
+    the dataplane, but does not enforce any requirements about the 
+    number received.
+    """
+    def runTest(self):
+        # Construct packet to send to dataplane
+        # Send packet to dataplane
+        # Poll controller with expect message type packet in
+
+        rc = delete_all_flows(self.controller)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+
+        # These will get put into function
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+        out_count = 0
+        in_count = 0
+        xid = 100
+        for dp_port in of_ports:
+            for outpkt, opt in [
+               (simple_tcp_packet(), "simple TCP packet"),
+               (simple_eth_packet(), "simple Ethernet packet"),
+               (simple_eth_packet(pktlen=40), "tiny Ethernet packet")]:
+
+               logging.info("PKT OUT test with %s, port %s" % (opt, dp_port))
+               msg = message.packet_out()
+               msg.data = str(outpkt)
+               act = action.action_output()
+               act.port = dp_port
+               self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
+
+               logging.info("PacketOutLoad to: " + str(dp_port))
+               for count in range(100):
+                   msg.xid = xid
+                   xid += 1
+                   rv = self.controller.message_send(msg)
+                   self.assertTrue(rv == 0, "Error sending out message")
+                   out_count += 1
+
+               exp_pkt_arg = None
+               exp_port = None
+        time.sleep(2)
+        while True:
+            (of_port, pkt, pkt_time) = self.dataplane.poll(timeout=0)
+            if pkt is None:
+                break
+            in_count += 1
+        logging.info("PacketOutLoad Sent %d. Got %d." % (out_count, in_count))
