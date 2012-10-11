@@ -406,3 +406,27 @@ class AggregateStats(base_tests.SimpleDataPlane):
         # out_port filter for egress_port1
         self.verifyAggFlowStats(match, egress_port2, test_timeout, 
                                 1, num_pkt2s)
+
+class EmptyAggregateStats(base_tests.SimpleDataPlane):
+    """
+    Verify aggregate flow stats are properly retrieved when
+    the query doesn't match any flows.
+    """
+    def runTest(self):
+        rc = delete_all_flows(self.controller)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+        match = ofp.ofp_match()
+        match.wildcards = 0
+        stat_req = message.aggregate_stats_request()
+        stat_req.match = match
+        stat_req.table_id = 0xff
+        stat_req.out_port = ofp.OFPP_NONE
+
+        response, pkt = self.controller.transact(stat_req)
+        self.assertTrue(response is not None,
+                        "No response to stats request")
+        self.assertTrue(len(response.stats) == 1,
+                        "Did not receive flow stats reply")
+        self.assertEquals(response.stats[0].flow_count, 0)
+        self.assertEquals(response.stats[0].packet_count, 0)
+        self.assertEquals(response.stats[0].byte_count, 0)
