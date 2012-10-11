@@ -8,6 +8,7 @@ import logging
 
 import unittest
 import random
+import copy
 
 from oftest import config
 import oftest.controller as controller
@@ -72,7 +73,7 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
     Verify that the packet counter has incremented
     """
 
-    def verifyStats(self, match, out_port, test_timeout, packet_count):
+    def verifyStats(self, flow_mod_msg, match, out_port, test_timeout, packet_count):
         stat_req = message.flow_stats_request()
         stat_req.match = match
         stat_req.table_id = 0xff
@@ -90,10 +91,15 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
             for obj in response.stats:
                 # TODO: pad1 and pad2 fields may be nonzero, is this a bug?
                 # for now, just clear them so the assert is simpler
-                #obj.match.pad1 = 0
-                #obj.match.pad2 = [0, 0]
-                #self.assertEqual(match, obj.match,
-                #                 "Matches do not match")
+                obj.match.pad1 = 0
+                obj.match.pad2 = [0, 0]
+                self.assertEqual(flow_mod_msg.match, obj.match,
+                                 "Matches do not match")
+                self.assertEqual(obj.cookie, flow_mod_msg.cookie)
+                self.assertEqual(obj.priority, flow_mod_msg.priority)
+                self.assertEqual(obj.idle_timeout, flow_mod_msg.idle_timeout)
+                self.assertEqual(obj.hard_timeout, flow_mod_msg.hard_timeout)
+                self.assertEqual(obj.actions, flow_mod_msg.actions)
                 logging.info("Received " + str(obj.packet_count) + " packets")
                 if obj.packet_count == packet_count:
                     all_packets_received = 1
@@ -131,11 +137,12 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
                        " to egress " + str(egress_port))
         match.in_port = ingress_port
         flow_mod_msg = message.flow_mod()
-        flow_mod_msg.match = match
+        flow_mod_msg.match = copy.deepcopy(match)
         flow_mod_msg.cookie = random.randint(0,9007199254740992)
         flow_mod_msg.buffer_id = 0xffffffff
-        flow_mod_msg.idle_timeout = 0
-        flow_mod_msg.hard_timeout = 0
+        flow_mod_msg.idle_timeout = 60000
+        flow_mod_msg.hard_timeout = 65000
+        flow_mod_msg.priority = 100
         act.port = egress_port
         self.assertTrue(flow_mod_msg.actions.add(act), "Could not add action")
        
@@ -146,7 +153,7 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         # no packets sent, so zero packet count
-        self.verifyStats(match, ofp.OFPP_NONE, test_timeout, 0)
+        self.verifyStats(flow_mod_msg, match, ofp.OFPP_NONE, test_timeout, 0)
 
         # send packet N times
         num_sends = random.randint(10,20)
@@ -155,11 +162,11 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
             sendPacket(self, pkt, ingress_port, egress_port,
                        test_timeout)
 
-        self.verifyStats(match, ofp.OFPP_NONE, test_timeout, num_sends)
-        self.verifyStats(match, egress_port, test_timeout, num_sends)
+        self.verifyStats(flow_mod_msg, match, ofp.OFPP_NONE, test_timeout, num_sends)
+        self.verifyStats(flow_mod_msg, match, egress_port, test_timeout, num_sends)
         for wc in WILDCARD_VALUES:
             match.wildcards = required_wildcards(self) | wc
-            self.verifyStats(match, egress_port, test_timeout, num_sends)
+            self.verifyStats(flow_mod_msg, match, egress_port, test_timeout, num_sends)
 
 
 class TwoFlowStats(base_tests.SimpleDataPlane):
