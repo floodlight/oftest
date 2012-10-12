@@ -378,6 +378,7 @@ class PortConfigMod(base_tests.SimpleProtocol):
         rv = port_config_set(self.controller, of_port,
                              port_config ^ ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD)
         self.assertTrue(rv != -1, "Error sending port mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         # Verify change took place with same feature request
         (hw_addr, port_config2, advert) = \
@@ -392,6 +393,7 @@ class PortConfigMod(base_tests.SimpleProtocol):
         rv = port_config_set(self.controller, of_port, port_config,
                              ofp.OFPPC_NO_FLOOD)
         self.assertTrue(rv != -1, "Error sending port mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
 class PortConfigModErr(base_tests.SimpleProtocol):
     """
