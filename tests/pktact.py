@@ -2387,19 +2387,19 @@ class DirectBadLlcPackets(DirectBadPacketBase):
             testPacketEthSrcDstTypeMatch(title, llc, is_snap_ip)
 
         testPacket("LLC - No SNAP - No Payload",
-            scapy.LLC(dsap=0x33, ssap=0x44, ctrl=0x12),
+            scapy.LLC(dsap=0x33, ssap=0x44, ctrl=0x03),
             IS_NOT_SNAP_IP,
         )
         testPacket("LLC - No SNAP - Small Payload",
-            scapy.LLC(dsap=0x33, ssap=0x44, ctrl=0x12) / ("S" * 10),
+            scapy.LLC(dsap=0x33, ssap=0x44, ctrl=0x03) / ("S" * 10),
             IS_NOT_SNAP_IP,
         )
         testPacket("LLC - No SNAP - Max -1 Payload",
-            scapy.LLC(dsap=0x33, ssap=0x44, ctrl=0x12) / ("S" * (1500 - 3 - 1)),
+            scapy.LLC(dsap=0x33, ssap=0x44, ctrl=0x03) / ("S" * (1500 - 3 - 1)),
             IS_NOT_SNAP_IP,
         )
         testPacket("LLC - No SNAP - Max Payload",
-            scapy.LLC(dsap=0x33, ssap=0x44, ctrl=0x12) / ("S" * (1500 - 3)),
+            scapy.LLC(dsap=0x33, ssap=0x44, ctrl=0x03) / ("S" * (1500 - 3)),
             IS_NOT_SNAP_IP,
         )
         testPacket("LLC - SNAP - Small bogus payload",
@@ -2488,19 +2488,23 @@ class DirectLlcPackets(DirectBadPacketBase):
             testPacketEthTypeNotEth(title, llc, is_snap)
         
         testPacket("LLC - No SNAP - No Payload",
-            scapy.LLC(dsap=0x33, ssap=0x44, ctrl=0x12),
+            scapy.LLC(dsap=0x33, ssap=0x44, ctrl=0x03),
+            IS_NOT_SNAP,
+        )
+        testPacket("LLC (with information field) - No SNAP - No Payload",
+            scapy.LLC(dsap=0x33, ssap=0x44, ctrl=0x12) / "S",
             IS_NOT_SNAP,
         )
         testPacket("LLC - No SNAP - Small Payload",
-            scapy.LLC(dsap=0x33, ssap=0x44, ctrl=0x12) / ("S" * 10),
+            scapy.LLC(dsap=0x33, ssap=0x44, ctrl=0x03) / ("S" * 10),
             IS_NOT_SNAP,
         )
         testPacket("LLC - No SNAP - Max -1 Payload",
-            scapy.LLC(dsap=0x33, ssap=0x44, ctrl=0x12) / ("S" * (1500 - 3 - 1)),
+            scapy.LLC(dsap=0x33, ssap=0x44, ctrl=0x03) / ("S" * (1500 - 3 - 1)),
             IS_NOT_SNAP,
         )
         testPacket("LLC - No SNAP - Max Payload",
-            scapy.LLC(dsap=0x33, ssap=0x44, ctrl=0x12) / ("S" * (1500 - 3)),
+            scapy.LLC(dsap=0x33, ssap=0x44, ctrl=0x03) / ("S" * (1500 - 3)),
             IS_NOT_SNAP,
         )
         testPacket("LLC - SNAP - Non-default OUI",
