@@ -2020,6 +2020,7 @@ class DirectBadPacketBase(base_tests.SimpleDataPlane):
 
         request = message.flow_mod()
         request.match = match
+        request.priority = 1
 
         request.buffer_id = 0xffffffff
         for act in acts:
@@ -2030,6 +2031,18 @@ class DirectBadPacketBase(base_tests.SimpleDataPlane):
         logging.info("Inserting flow")
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Error installing flow mod")
+
+        # This flow speeds up negative tests
+        logging.info("Inserting catch-all flow")
+        request2 = message.flow_mod()
+        request2.match = self.createMatch()
+        request2.priority = 0
+        act = action.action_output()
+        act.port = ofp.OFPP_IN_PORT
+        request2.actions.add(act)
+        rv = self.controller.message_send(request2)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         logging.info("Sending packet to dp port " + 
@@ -2042,8 +2055,17 @@ class DirectBadPacketBase(base_tests.SimpleDataPlane):
             exp_pkt_arg = pkt
             exp_port = egress_port
 
-        (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(port_number=exp_port,
-                                                            exp_pkt=exp_pkt_arg)
+        if expected_result == self.RESULT_MATCH:
+            timeout = -1 # default timeout
+        else:
+            timeout = 1 # short timeout for negative tests
+
+        (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(exp_pkt=exp_pkt_arg,
+                                                            timeout=timeout)
+        if rcv_port == ingress_port:
+            logging.debug("Packet matched catch-all flow")
+            rcv_pkt = None
+
         if expected_result == self.RESULT_MATCH:
             self.assertTrue(rcv_pkt is not None, 
                             "Did not receive packet, expected a match")
