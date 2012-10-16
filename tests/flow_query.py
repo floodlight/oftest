@@ -563,7 +563,6 @@ class Flow_Cfg:
             elif a == ofp.OFPAT_ENQUEUE:
                 pass                    # Enqueue actions must come last
             if act:
-                act.max_len = ACTION_MAX_LEN
                 self.actions.add(act)
                 
         p = random.randint(1, 100)
@@ -575,7 +574,6 @@ class Flow_Cfg:
             # At most 1 ENQUEUE action
             act = action.action_enqueue()
             (act.port, act.queue_id) = rand_pick(valid_queues)
-            act.max_len = ACTION_MAX_LEN
             self.actions.add(act)
         if (((1 << ofp.OFPAT_OUTPUT) & actions_force) != 0 \
             or (p > 33 and p <= 66) \
@@ -591,7 +589,6 @@ class Flow_Cfg:
             for pi in port_idxs:
                 act = action.action_output()
                 act.port = valid_ports[pi]
-                act.max_len = ACTION_MAX_LEN
                 if act.port != ofp.OFPP_IN_PORT \
                    or wildcard_get(self.match.wildcards, ofp.OFPFW_IN_PORT) == 0:
                     # OUTPUT(IN_PORT) only valid if OFPFW_IN_PORT not wildcarded
