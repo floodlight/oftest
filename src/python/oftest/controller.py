@@ -218,8 +218,7 @@ class Controller(Thread):
                                   % (hdr.version, OFP_VERSION))
                 print "Version %d does not match OFTest version %d" % \
                     (hdr.version, OFP_VERSION)
-                self.active = False
-                self.switch_socket = None
+                self.disconnect()
                 return
 
             msg = of_message_parse(rawmsg)
@@ -290,7 +289,11 @@ class Controller(Thread):
                 sock.close()
                 return 0
 
-            (sock, addr) = self.listen_socket.accept()
+            try:
+                (sock, addr) = self.listen_socket.accept()
+            except:
+                self.logger.warning("Error on listen socket accept")
+                return -1
             self.socs.append(sock)
             self.logger.info("Incoming connection from %s" % str(addr))
 
@@ -357,25 +360,23 @@ class Controller(Thread):
         self.logger.info("Waiting for switch connection")
         self.socs = [self.listen_socket]
         self.dbg_state = "running"
+
         while self.active:
             try:
                 sel_in, sel_out, sel_err = \
                     select.select(self.socs, [], self.socs, 1)
             except:
                 print sys.exc_info()
-                self.logger.error("Select error, exiting")
-                self.active = False
-                break
+                self.logger.error("Select error, disconnecting")
+                self.disconnect()
 
             for s in sel_err:
-                self.logger.error("Got socket error on: " + str(s))
-                self.active = False
-                break
+                self.logger.error("Got socket error on: " + str(s) + ", disconnecting")
+                self.disconnect()
 
             for s in sel_in:
                 if self._socket_ready_handle(s) == -1:
-                    self.active = False
-                    break
+                    self.disconnect()
 
         # End of main loop
         self.dbg_state = "closing"
@@ -393,6 +394,30 @@ class Controller(Thread):
         with self.connect_cv:
             timed_wait(self.connect_cv, lambda: self.switch_socket, timeout=timeout)
         return self.switch_socket is not None
+        
+    def disconnect(self, timeout=-1):
+        """
+        If connected to a switch, disconnect.
+        """
+        if self.switch_socket:
+            self.socs.remove(self.switch_socket)
+            self.switch_socket.close()
+            self.switch_socket = None
+            self.switch_addr = None
+            with self.connect_cv:
+                self.connect_cv.notifyAll()
+
+    def wait_disconnected(self, timeout=-1):
+        """
+        @param timeout Block for up to timeout seconds. Pass -1 for the default.
+        @return Boolean, True if disconnected
+        """
+
+        with self.connect_cv:
+            timed_wait(self.connect_cv, 
+                       lambda: True if not self.switch_socket else None, 
+                       timeout=timeout)
+        return self.switch_socket is None
         
     def kill(self):
         """
