@@ -49,13 +49,13 @@ try:
     check_call(["ls", ofd])
 except:
     print "Could not find datapath daemon: " + ofd
-    os.exit(1)
+    sys.exit(1)
 
 try:
     check_call(["ls", ofp])
 except:
     print "Could not find protocol daemon: " + ofp
-    os.exit(1)
+    sys.exit(1)
 
 if not options.no_wait:
     print "Starting ofprotocol in 2 seconds; ^C to quit"
