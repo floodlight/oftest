@@ -24,7 +24,10 @@ parser.add_option("-N", "--no_wait", action="store_true",
 call(["/sbin/modprobe", "veth"])
 for idx in range(0, options.port_count):
     print "Creating veth pair " + str(idx)
-    call(["/sbin/ip", "link", "add", "type", "veth"])
+    veth = "veth%d" % (idx*2)
+    veth_peer = "veth%d" % (idx*2+1)
+    call(["/sbin/ip", "link", "add", "name", veth, "type", "veth",
+          "peer", "name", veth_peer])
 
 for idx in range(0, 2 * options.port_count):
     cmd = ["/sbin/ifconfig", 
