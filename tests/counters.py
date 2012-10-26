@@ -62,6 +62,11 @@ class FlowCounter1(base_tests.SimpleDataPlane):
         byte_count = num_pkts*len(str(pkt))
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
+
+        # FIXME: instead of sleeping, keep requesting flow stats until
+        # the expected queue counter increases or some large timeout is
+        # reached
+        time.sleep(2)
          
         #Verify Recieved Packets/Bytes Per Flow  
         Verify_FlowStats(self,match,byte_count=byte_count,packet_count=num_pkts)
@@ -168,6 +173,11 @@ class PortCounter1(base_tests.SimpleDataPlane):
         num_pkts = 5
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
+
+        # FIXME: instead of sleeping, keep requesting port stats until
+        # the expected queue counter increases or some large timeout is
+        # reached
+        time.sleep(2)
         
         #Verify recieved packet counters 
         Verify_PortStats1(self,of_ports[0],current_counter,num_pkts)
@@ -211,6 +221,11 @@ class PortCounter2(base_tests.SimpleDataPlane):
         num_pkts = 5
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
+
+        # FIXME: instead of sleeping, keep requesting port stats until
+        # the expected queue counter increases or some large timeout is
+        # reached
+        time.sleep(2)
         
         #Verify transmitted_packet counters 
         Verify_PortStats2(self,of_ports[1],current_counter,num_pkts)
@@ -255,6 +270,11 @@ class PortCounter3(base_tests.SimpleDataPlane):
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
 
+        # FIXME: instead of sleeping, keep requesting port stats until
+        # the expected queue counter increases or some large timeout is
+        # reached
+        time.sleep(2)
+
         
         #Verify recieved_bytes counters 
         Verify_PortStats3(self,of_ports[0],current_counter,byte_count)
@@ -298,6 +318,11 @@ class PortCounter4(base_tests.SimpleDataPlane):
         byte_count = num_pkts*len(str(pkt))
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
+
+        # FIXME: instead of sleeping, keep requesting port stats until
+        # the expected queue counter increases or some large timeout is
+        # reached
+        time.sleep(2)
 
         
         #Verify trasmitted_bytes counters 
@@ -377,6 +402,11 @@ class TableCounter2(base_tests.SimpleDataPlane):
         num_sends2 = 5
         for pkt_cnt in range(num_sends):
             self.dataplane.send(of_ports[1],str(pkt))
+
+        # FIXME: instead of sleeping, keep requesting table stats until
+        # the expected queue counter increases or some large timeout is
+        # reached
+        time.sleep(2)
 
         #Verify lookup_count and matched_count counters.
         Verify_TableStats1(self,current_lookedup,current_matched,num_sends+num_sends2,num_sends)
