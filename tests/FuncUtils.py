@@ -562,7 +562,7 @@ def Verify_TableStats1(self,current_lookedup,current_matched,expect_lookup,expec
         matched_counter = matched-current_matched
         
         self.assertTrue(lookedup_counter==expect_lookup, "lookup counter is not incremented properly")
-        self.assertTrue(matched_counter==expect_lookup, "matched counter is not incremented properly")
+        self.assertTrue(matched_counter==expect_match, "matched counter is not incremented properly")
 
 def Verify_FlowStats(self,match,byte_count=0,packet_count=0):
     # Verify flow counters : byte_count and packet_count
