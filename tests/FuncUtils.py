@@ -220,6 +220,43 @@ def Wildcard_All_Except_Ingress(self,of_ports,priority=0):
 
         return (Pkt_MatchIngress,match3)
 
+def Wildcard_All_Except_Ingress1(self,of_ports,priority=0):
+# Generate Wildcard_All_Except_Ingress_port flow with action output to port egress_port 2 
+        
+
+        #Create a simple tcp packet and generate wildcard all except ingress_port flow.
+        Pkt_MatchIngress = simple_tcp_packet()
+        match3 = parse.packet_to_flow_match(Pkt_MatchIngress)
+        self.assertTrue(match3 is not None, "Could not generate flow match from pkt")
+        match3.wildcards = ofp.OFPFW_ALL-ofp.OFPFW_IN_PORT
+        match3.in_port = of_ports[0]
+
+        msg3 = message.flow_mod()
+        msg3.command = ofp.OFPFC_ADD
+        msg3.match = match3
+        msg3.out_port = of_ports[2] # ignored by flow add,flow modify 
+        msg3.cookie = random.randint(0,9007199254740992)
+        msg3.buffer_id = 0xffffffff
+        msg3.idle_timeout = 0
+        msg3.hard_timeout = 0
+        msg3.buffer_id = 0xffffffff
+       
+        act3 = action.action_output()
+        act3.port = of_ports[2]
+        self.assertTrue(msg3.actions.add(act3), "could not add action")
+
+        if priority != 0 :
+                msg3.priority = priority
+
+        rv = self.controller.message_send(msg3)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        return (Pkt_MatchIngress,match3)
+
+
+
+
 def Match_Vlan_Id(self,of_ports,priority=0):
     #Generate Match_Vlan_Id
 

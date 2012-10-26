@@ -1435,3 +1435,388 @@ a) Send queue_stats request for port=egress_port and queue_ids=ofp.OFPQ_ALL
 B) send queue_stats request for egress_port and queue_id[0] (i.e first queue configured for egress_port)
 c) Verify reply has tx_errors count .
 d) Repear b , c for the all queue_ids of egress_port
+
+
+
+
+
+****     Flow matches     ****
+
+
+
+1. All Wildcard Match
+
+Test Description: Adding a Flow that matches all the possible fields
+
+Test mode: Automated
+Test Tile: AllWildcardMatch
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes:
+
+a) Insert a flow with wildcard = OFPFW_ALL (wildcard all fields), action output to egress_port
+b) Send packets with different header fields
+c) Verify all packets match the flow and implement the action specified.
+
+
+2. Single Header Field: Ingress Port
+
+Test Description: Match on Ingress Port and Wildcard rest 
+
+Test mode: Automated
+Test Tile: IngressPort
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a flow with match = in_port (say port x), action output to egress_port
+b) Send packet on port x 
+c) Verify packet was recieved on egress_port
+d) Send packet on port y
+e) Verify PacketIn event was triggered on control plane
+
+
+
+3. Single Header Field: Ethernet Src Address
+
+Test Description: Match on Ethernet Source Address and Wildcard rest 
+
+Test mode: Automated
+Test Tile: EthernetSrcAddress
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a flow with match = dl_src (say x) , action output to egress_port
+b) Send packet wth dl_src = x 
+c) Verify packet was recieved on egress_port
+d) Send packet with dl_src = y 
+e) Verify PacketIn event was triggered on the control plane
+
+
+
+4. Single Header Field: Ethernet Dst Address
+
+Test Description: Match on Ethernet Destination Address and Wildcard rest 
+
+Test mode: Automated
+Test Tile: EthernetDstAddress
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a flow with match = dl_dst (say x) , action output to egress_port
+b) Send packet wth dl_dst = x  
+c) Verify packet was recieved on egress_port
+d) Send packet with dl_dst = y 
+e) Verify PacketIn event was triggered on the control plane
+
+
+
+5. Single Header Field: Ethernet Type 
+
+Test Description: Match on Ehternet Type and Wildcard rest 
+
+Test mode: Automated
+Test Tile: EthernetType
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a flow with match = dl_type (say x) , action output to egress_port
+b) Send packet wth dl_type = x   
+c) Verify packet was recieved on egress_port
+d) Send packet with dl_type = y 
+e) Verify PacketIn event was triggered on the control plane
+
+
+
+
+6. Single Header Field: Vlan Id
+
+Test Description: Match on Ingress Port and Wildcard rest 
+
+Test mode: Automated
+Test Tile: VlanId
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a flow with match = dl_vlan (say x) , action output to egress_port
+b) Send a tagged packet with (dl_vlan_enable=True,dl_vlan = x)  
+c) Verify packet was recieved on egress_port
+d) Send another tagged packet with (dl_vlan_enable=True,dl_vlan = y )
+e) Verify PacketIn event was triggered on the control plane
+
+
+
+
+7. Single Header Field: Vlan PCP
+
+Test Description: Match on Vlan ID Priority 
+
+Test mode: Automated
+Test Tile: VlanPcp
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a flow with match = dl_vlan_pcp (say x) , action output to egress_port
+b) Send a tagged packet with (dl_vlan_enable=True, dl_vlan = * , dl_vlan_pcp = x)  
+c) Verify packet was recieved on egress_port
+b) Send a tagged packet with (dl_vlan_enable=True, dl_vlan = * , dl_vlan_pcp = y)  
+e) Verify PacketIn event was triggered on the control plane
+
+
+
+
+
+8. Single Header Field: IP Src Address -------- > (TBD)
+
+Test Description: Match on IP Src Address and Wildcard rest 
+
+Test mode: Automated
+Test Tile: IPSrcAddress
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+
+
+9. Single Header Field: IP Dst Address -----------> (TBD)
+
+Test Description: Match on IP Dst Address and Wildcard rest 
+
+Test mode: Automated
+Test Tile: IPDstAddress
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+
+
+
+10. Single Header Field: IP protocol---------------> (TBD)
+
+Test Description: Match on IP Protocol and Wildcard rest 
+
+Test mode: Automated
+Test Tile: IPprotocol
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+
+
+
+
+11. Single Header Field: IP Tos bits
+
+Test Description: Match on IP Tos bits and Wildcard rest 
+
+Test mode: Automated
+Test Tile: IpTos
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a flow with match = nw_tos (say x) , action output to egress_port
+b) Send a tcp packet with (nw_tos=x)  
+c) Verify packet was recieved on egress_port
+b) Send a tcp packet with (nw_tos = y)
+e) Verify PacketIn event was triggered on the control plane
+
+
+
+12. Single Header Field: Transport Source Port
+
+Test Description: Match on Transport Src Port and Wildcard rest 
+
+Test mode: Automated
+Test Tile: TcpSrcPort
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a flow with match = tp_src (say x) , action output to egress_port
+b) Send a tcp packet with (tp_src=x)  
+c) Verify packet was recieved on egress_port
+b) Send a tcp packet with tp_src= y)
+e) Verify PacketIn event was triggered on the control plane
+
+
+
+13. Single Header Field: Transport Destination Port
+
+Test Description: Match on Transport Dst Port and Wildcard rest 
+
+Test mode: Automated
+Test Tile: TcpDstPort
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a flow with match = tp_dst (say x) , action output to egress_port
+b) Send a tcp packet with (tp_dst=x)  
+c) Verify packet was recieved on egress_port
+b) Send a tcp packet with tp_dst = y)
+e) Verify PacketIn event was triggered on the control plane
+
+
+
+
+14. Multiple Header Fields: L2
+
+
+Test Description: Match on Ethernet Type, Ethernet Source Address, Ethernet Destination Address and Wildcard rest 
+
+Test mode: Automated
+Test Tile: MultipleHeaderFieldL2
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a flow with match = dl_type (say x), dl_src (say y ), dl_dst (say z), action output to egress_port
+b) Send a eth packet with dl_type (say x), dl_src (say y ), dl_dst (say z)
+c) Verify packet was recieved on egress_port
+b) Send a eth packet with dl_type (say w), dl_src (say v ), dl_dst (say f)
+e) Verify PacketIn event was triggered on the control plane
+
+
+
+15. Multiple Header Fields: L3 ------> TBD
+
+
+
+
+16. Multiple Header Fields: L4
+
+Test Description: Match on Tcp Source Port, Tcp Destination Port
+
+Test mode: Automated
+Test Tile: MultipleHeaderFieldL4
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a flow with match = tp_src (say x), tp_dst (say y )
+b) Send a tcp packet with tp_src (say x), tp_dst (say y )	
+c) Verify packet was recieved on egress_port
+b) Send a eth packet with tcp_src (say w), tcp_dst (say v )
+e) Verify PacketIn event was triggered on the control plane
+
+
+
+17. All Header Fields: Exact Match flows
+
+Test Description: Verify exact flow matches are possible 
+
+Test mode: Automated
+Test Tile: ExactMatch
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a flow with exact match, action output to egress_port
+b) Send packet matching the flow  
+c) Verify packet received on egress_port
+d) Send a non-matching packet
+e) Verify PacketIn event gets triggered
+
+
+
+18. Exact Match Highest Priority
+
+Test Description: An exact match flow entry has a highest priority compared to other flow entries 
+
+Test mode: Automated
+Test Tile: ExactMatchHigh
+POrts: 4 (1 Control Plane 3 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert two overlapping flows:
+	Exact Match (prio = p )   action egress_port
+	Wildacrd All (prio = p+ ) action egress_port2
+b) Send packet matching the flows
+c) Verify packet received on egress_port 
+
+
+
+
+19. Wildcard Match Highest Priority
+
+Test Description: If Wildcard flow entries have priority associated with them.
+		  Higher priority Wildcard flow overrides the lower priroty Wildcard flow  
+
+Test mode: Automated
+Test Tile: WildcardMatchHigh
+POrts: 4 (1 Control Plane 3 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert two wildcarded flows :
+	Wildcard All Except ingress (prio = p ) , action = egress_port
+	Wildcard All (prio = p+ ) ,action = egress_port2
+b) Send packet matching the flows  
+c) Verify packet is recieved on egress_port2
+
+
+
+20. Fragment TCP Segments ------> TBD 
+
+Test Description: Create flow matching on tcp port number. Verify that fragmented packets always match that flow rule.
+
+Test mode: Automated
+Test Tile: FragTcpSeg
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
