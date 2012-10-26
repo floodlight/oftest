@@ -1546,6 +1546,21 @@ class ModifyL4Src(BaseMatchCase):
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
+class ModifyL4SrcUdp(BaseMatchCase):
+    """
+    Modify the source UDP port of a UDP packet
+    """
+    def runTest(self):
+        sup_acts = self.supported_actions
+        if not (sup_acts & 1 << ofp.OFPAT_SET_TP_DST):
+            skip_message_emit(self, "ModifyL4SrcUdp test")
+            return
+
+        (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['udp_sport'],
+                                                check_test_params=True, tp="udp")
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt,
+                        action_list=acts, max_test=2)
+
 class ModifyL4Dst(BaseMatchCase):
     """
     Modify the dest TCP port of a TCP packet (TP1)
@@ -1559,6 +1574,21 @@ class ModifyL4Dst(BaseMatchCase):
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['tcp_dport'],
                                                 check_test_params=True)
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
+                        action_list=acts, max_test=2)
+
+class ModifyL4DstUdp(BaseMatchCase):
+    """
+    Modify the dest UDP port of a UDP packet
+    """
+    def runTest(self):
+        sup_acts = self.supported_actions
+        if not (sup_acts & 1 << ofp.OFPAT_SET_TP_DST):
+            skip_message_emit(self, "ModifyL4DstUdp test")
+            return
+
+        (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['udp_dport'],
+                                                check_test_params=True, tp="udp")
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt,
                         action_list=acts, max_test=2)
 
 class ModifyTOS(BaseMatchCase):
