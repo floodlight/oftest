@@ -115,6 +115,64 @@ def simple_tcp_packet(pktlen=100,
 
     return pkt
 
+def simple_udp_packet(pktlen=100,
+                      dl_dst='00:01:02:03:04:05',
+                      dl_src='00:06:07:08:09:0a',
+                      dl_vlan_enable=False,
+                      dl_vlan=0,
+                      dl_vlan_pcp=0,
+                      dl_vlan_cfi=0,
+                      ip_src='192.168.0.1',
+                      ip_dst='192.168.0.2',
+                      ip_tos=0,
+                      udp_sport=1234,
+                      udp_dport=80,
+                      ip_ihl=None,
+                      ip_options=False
+                      ):
+    """
+    Return a simple dataplane UDP packet
+
+    Supports a few parameters:
+    @param len Length of packet in bytes w/o CRC
+    @param dl_dst Destination MAC
+    @param dl_src Source MAC
+    @param dl_vlan_enable True if the packet is with vlan, False otherwise
+    @param dl_vlan VLAN ID
+    @param dl_vlan_pcp VLAN priority
+    @param ip_src IP source
+    @param ip_dst IP destination
+    @param ip_tos IP ToS
+    @param udp_dport UDP destination port
+    @param udp_sport UDP source port
+
+    Generates a simple UDP packet. Users shouldn't assume anything about
+    this packet other than that it is a valid ethernet/IP/UDP frame.
+    """
+
+    if MINSIZE > pktlen:
+        pktlen = MINSIZE
+
+    # Note Dot1Q.id is really CFI
+    if (dl_vlan_enable):
+        pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi, vlan=dl_vlan)/ \
+            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ihl=ip_ihl)/ \
+            scapy.UDP(sport=udp_sport, dport=udp_dport)
+    else:
+        if not ip_options:
+            pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+                scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ihl=ip_ihl)/ \
+                scapy.UDP(sport=udp_sport, dport=udp_dport)
+        else:
+            pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+                scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ihl=ip_ihl, options=ip_options)/ \
+                scapy.UDP(sport=udp_sport, dport=udp_dport)
+
+    pkt = pkt/("D" * (pktlen - len(pkt)))
+
+    return pkt
+
 def simple_icmp_packet(pktlen=60, 
                       dl_dst='00:01:02:03:04:05',
                       dl_src='00:06:07:08:09:0a',
