@@ -199,7 +199,7 @@ class PortCounter2(base_tests.SimpleDataPlane):
         
         # Send Port_Stats request for the ingress port (retrieve current counter state)
         port_stats_req = message.port_stats_request()
-        port_stats_req.port_no = of_ports[0]   
+        port_stats_req.port_no = of_ports[1]   
         response,pkt = self.controller.transact(port_stats_req)
         self.assertTrue(response is not None,"No response received for port stats request") 
         current_counter=0
@@ -213,7 +213,7 @@ class PortCounter2(base_tests.SimpleDataPlane):
             self.dataplane.send(of_ports[0],str(pkt))
         
         #Verify transmitted_packet counters 
-        Verify_PortStats2(self,of_ports[0],current_counter,num_pkts)
+        Verify_PortStats2(self,of_ports[1],current_counter,num_pkts)
 
 
 class PortCounter3(base_tests.SimpleDataPlane):
@@ -285,7 +285,7 @@ class PortCounter4(base_tests.SimpleDataPlane):
 
         # Send Port_Stats request for the ingress port (retrieve current counter state)
         port_stats_req = message.port_stats_request()
-        port_stats_req.port_no = of_ports[0]   
+        port_stats_req.port_no = of_ports[1]   
         response,pkt = self.controller.transact(port_stats_req)
         self.assertTrue(response is not None,"No response received for port stats request") 
         current_counter=0
@@ -301,7 +301,7 @@ class PortCounter4(base_tests.SimpleDataPlane):
 
         
         #Verify trasmitted_bytes counters 
-        Verify_PortStats4(self,of_ports[0],current_counter,byte_count)
+        Verify_PortStats4(self,of_ports[1],current_counter,byte_count)
 
 
 class TableCounter1(base_tests.SimpleDataPlane):
