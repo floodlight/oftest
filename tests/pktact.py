@@ -1991,16 +1991,6 @@ class DirectBadPacketBase(base_tests.SimpleDataPlane):
         # - VLAN?
         # - action
 
-    def pktToStr(self, pkt):
-        from cStringIO import StringIO
-        backup = sys.stdout
-        sys.stdout = StringIO()
-        pkt.show2()
-        out = sys.stdout.getvalue() 
-        sys.stdout.close() 
-        sys.stdout = backup
-        return out
-
     def createMatch(self, **kwargs):
         match = ofp.ofp_match()
         match.wildcards = ofp.OFPFW_ALL
@@ -2044,7 +2034,7 @@ class DirectBadPacketBase(base_tests.SimpleDataPlane):
         logging.info("Ingress %s to egress %s" % 
                        (str(ingress_port), str(egress_port)))
         logging.info("Packet:")
-        logging.info(self.pktToStr(pkt))
+        logging.info(inspect_packet(pkt))
 
         match.in_port = ingress_port
 
@@ -2108,7 +2098,7 @@ class DirectBadPacketBase(base_tests.SimpleDataPlane):
             if str_pkt != str_rcv_pkt:
                 logging.error("Response packet does not match send packet")
                 logging.info("Response:")
-                logging.info(self.pktToStr(scapy.Ether(rcv_pkt)))
+                logging.info(inspect_packet(scapy.Ether(rcv_pkt)))
             self.assertEqual(str_pkt, str_rcv_pkt,
                              'Response packet does not match send packet')
         elif expected_result == self.RESULT_NOMATCH:

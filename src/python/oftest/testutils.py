@@ -109,9 +109,6 @@ def simple_tcp_packet(pktlen=100,
                 scapy.TCP(sport=tcp_sport, dport=tcp_dport)
 
     pkt = pkt/("D" * (pktlen - len(pkt)))
-    
-    #print pkt.show()
-    #print scapy.Ether(str(pkt)).show()
 
     return pkt
 
@@ -374,6 +371,8 @@ def receive_pkt_verify(parent, egr_ports, exp_pkt, ing_port):
                                 + str(exp_pkt).encode('hex'))
             logging.debug("Received len " + str(len(rcv_pkt)) + ": "
                                 + str(rcv_pkt).encode('hex'))
+            logging.debug("Expected packet: " + inspect_packet(scapy.Ether(str(exp_pkt))))
+            logging.debug("Received packet: " + inspect_packet(scapy.Ether(str(rcv_pkt))))
         parent.assertEqual(str(exp_pkt), str(rcv_pkt),
                            "Packet match error on port " + str(check_port))
 
@@ -902,3 +901,20 @@ def hex_dump_buffer(src, length=16):
 def format_packet(pkt):
     return "Packet length %d \n%s" % (len(str(pkt)), 
                                       hex_dump_buffer(str(pkt)))
+
+def inspect_packet(pkt):
+    """
+    Wrapper around scapy's show() method.
+    @returns A string showing the dissected packet.
+    """
+    from cStringIO import StringIO
+    out = None
+    backup = sys.stdout
+    try:
+        sys.stdout = StringIO()
+        pkt.show2()
+        out = sys.stdout.getvalue()
+        sys.stdout.close()
+    finally:
+        sys.stdout = backup
+    return out
