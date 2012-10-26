@@ -979,3 +979,459 @@ c) Verify packet received has tcp destination port rewritten. (ip_tos= new_ip_to
 
 24. Sequential execution  -- TBD 
 
+
+
+
+
+****     Counters     ****
+
+
+
+1. Received Packets per Flow
+
+
+Test Description: Verify that packet_count in the Flow_Stats reply increments in accordance with the packets in flow  
+
+Test mode: Automated
+Test Tile: FlowCounter1
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a flow , match = ingress_port
+b) Send N packet matching the flow  i.e packets should be sent on ingress_port
+c) Send flow_stats_request for the flow 
+d) Verify packet_count = N in the flow_stats_reply
+
+
+
+2. Received Bytes per Flow
+
+
+Test Description: Verify that byte_count in the Flow_Stats reply increments in accordance with the bytes in flow  
+
+Test mode: Automated
+Test Tile: FlowCounter1
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a flow , match = ingress_port
+b) Send N packet matching the flow  i.e packets should be sent on ingress_port
+c) Send flow_stats_request for the flow 
+d) Verify byte_count = N*(no. of bytes in one packet) in the flow_stats_reply
+
+
+
+3. Duration in sec per Flow
+
+
+Test Description: Verify that duration_sec in the Flow_Stats reply increments in accordance with the time that flow was alive in sec 
+
+Test mode: Automated
+Test Tile: FlowCounter2
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a any flow 
+b) Send flow_stats_request for that flow periodically after n sec intervals upto timeout of y 
+c) Verify each flow_stats_reply has duration_sec field incrementing as n , 2n , 3n .. y 
+
+
+
+4. Duration in nsec per flow
+
+
+Test Description: Verify that duration_nsec in the flow_stats repl increments in accordance with the time flow has been alive in nanoseconds 
+beyond duration_sec.
+
+Test mode: Automated
+Test Tile: FlowCounter2
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert any flow 
+b) Send flow_stats_request periodically after n sec intervals upto timeout of y 
+c) Verify each flow_stats_reply has duration_sec field incrementing as n , 2n , 3n .. y and read out duration_nsec field ( Verification of nsec field 
+is out of scope)
+
+
+
+5. Received packets per port
+
+
+Test Description: Verify that rx_packets in the Port_Stats reply increments in accordance with the packets recieved on that port
+
+Test mode: Automated
+Test Tile: PortCounter1
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a flow with match on ingress_port
+b) Send N packets on the ingress_port 
+c) Send port_stats request for port=ingress_port
+d) Verify port_stats_reply has rx_packet=N
+
+
+
+
+6. Transmitted packets per port
+
+
+Test Description: Verify that tx_packets in the Port_Stats reply increments in accordance with the packets transmitted from a port  
+
+Test mode: Automated
+Test Tile: PortCounter2
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a flow with match on ingress_port, action output = egress_port
+b) Send N packets on the ingress_port
+c) Send port_stats request for port=ingress_port
+d) Verify port_stats_reply had tx_packets=N   
+
+
+
+7. Received Bytes per port
+
+
+Test Description: Verify that rx_bytes in the Port_Stats reply increments in accordance with the bytes recieved on a port  
+
+Test mode: Automated
+Test Tile: PortCounter3
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a flow with match on ingress_port, action output = egress_port
+b) Send N packet matching the flow  
+c) Send port_stats request for port=ingress_port
+d) Verify port_stats_reply had rx_bytes=N*(no. of bytes in a packet) 
+
+
+
+8. Transmitted Bytes per port
+
+
+Test Description: Verify that tx_bytes in the Port_Stats reply increments in accordance with the bytes transmitted from a port  
+
+Test mode: Automated
+Test Tile: PortCounter4
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a flow with match on ingress_port, action output = egress_port
+b) Send N packet matching the flow  
+c) Send port_stats request for port=ingress_port
+d) Verify port_stats_reply had tx_bytes=N*(no. of bytes in a packet) 
+
+
+
+9. Recieve Drops per port (TBD ---> Verification of counter incrementing correctly)
+
+
+Test Description: Verify that rx_dropped counters in the Port_Stats reply increments in accordance with the packets dropped by RX  
+
+Test mode: Automated
+Test Tile: RxDrops
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+Test Notes :
+
+a) Send port_stats request for port=ingress_port
+b) Verify port_stats reply has rx_dropped count
+
+
+
+
+
+10. Transmit Drops per port (TBD ---> Verification of counter incrementing correctly)
+
+
+Test Description: Verify that tx_dropped counters in the Port_Stats reply increments in accordance with the packets dropped by TX
+
+Test mode: Automated
+Test Tile: TxDrops
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Manadatory
+
+
+a) Send port_stats request for port=ingress_port
+b) Verify port_stats reply has tx_dropped count
+
+
+
+
+11. Recieve Errors (TBD ---> Verification of counter incrementing correctly)
+
+
+Test Description: Verify that rx_errors counters in the Port_Stats reply increments in accordance with number of recieved error  
+		  This is a super-set of more specific receive errors and should be greater than or equal to the sum of all
+                  rx_*_err values.
+
+Test mode: Automated
+Test Tile: RxErrors
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Send port_stats request for port=ingress_port
+b) Verify port_stats reply has rx_errors count
+
+
+
+12. Transmit Errors (TBD ---> Verification of counter incrementing correctly)
+
+
+Test Description: Verify that tx_errors counters in the Port_Stats reply increments in accordance with number of trasmit errors  
+
+Test mode: Automated
+Test Tile: TxErrors
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Send port_stats request for port=ingress_port
+b) Verify port_stats reply has tx_errors count
+
+
+
+13. Recieve Frame Errors (TBD ---> Verification of counter incrementing correctly)
+
+
+Test Description: Verify that rx_frm_err counters in the Port_Stats reply increments in accordance with the number of frame alignment errors
+Test mode: Automated
+Test Tile: RxFrameErr
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Send port_stats request for port=ingress_port
+b) Verify port_stats reply has rx_frame_err count 
+
+
+
+14. Recieve Overrun Errors (TBD ---> Verification of counter incrementing correctly)
+
+
+Test Description: Verify that rx_over_err counters in the Port_Stats reply increments in accordance with the number of with RX overrun
+
+Test mode: Automated
+Test Tile: RxOErr
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Send port_stats request for port=ingress_port
+b) Verify port_stats reply has rx_over_err count 
+
+
+15. CRC Errors (TBD ---> Verification of counter incrementing correctly)
+
+
+Test Description: Verify that rx_crc_err counters in the Port_Stats reply increments in accordance with the number of crc errors
+
+Test mode: Automated
+Test Tile: RxCrcErr
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Manadatory
+
+
+Test Notes: 
+
+a) Send port_stats request for port=ingress_port
+b) Verify port_stats reply has rx_crc_err count 
+
+
+
+16. Collisions (TBD ---> Verification of counter incrementing correctly)
+
+
+Test Description: Verify that collisons counters in the Port_Stats reply increments in accordance with the collisions encountered by the switch
+
+Test mode: Automated
+Test Tile: Collisions
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Send port_stats request for port=ingress_port
+b) Verify port_stats reply has collisions count 
+
+
+
+17. Active Entries per Table
+
+
+Test Description: Verify that active_count in the table increments in accordance with the flows inserted in the table
+
+Test mode: Automated
+Test Tile: TableCounter1
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a flow 
+b) Send table_stats_request
+c) Verify active_count=1
+
+
+
+18. Packet Lookup per Table
+
+
+Test Description: Verify that lookup_count in the Table_Stats reply increments in accordance with the number of packets looked up in table
+
+Test mode: Automated
+Test Tile: TableCounter2
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a flow with match on ingress_port
+b) Send N packets on ingress_port (matching the flow)
+c) Send N' packets on x port (Not matching the flow)
+d) Send table_stats_request 
+e) Verify lookup_count = N+N' 
+
+
+
+19. Packets matched per Table
+
+Test Description: Verify that matched_count in the Table_Stats reply increments in accordance with the number of packets matched with the table
+
+Test mode: Automated
+Test Tile: TableCounter2
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Mandatory
+
+
+Test Notes: 
+
+a) Insert a flow with match on ingress_port
+b) Send N packets on ingress_port (matching the flow)
+c) Send N' packets on x port (Not matching the flow)
+d) Send table_stats_request 
+e) Verify matched_count = N 
+
+
+
+
+20. Transmit Packets per Queue
+
+Test Description: Verify that tx_packets in the queue_stats reply increments in accordance with the number of transmitted packets
+
+Test mode: Automated
+Test Tile: QueueCounter1
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Optional
+
+
+Test Notes: 
+
+a) Send queue_stats request for ports=ofp.OFPP_ALL and queue_ids=ofp.OFPQ_ALL (i.e all ports and all queues)
+b) Send queue_stats request for egress_port[0] and queue_id[0] and note the tx_packets count in the reply
+c) Insert a flow entry with enqueue action , port = egress_port[0] queue_id= queue_id[0]
+d) Send packet matching the flow
+e) Send queue_stats request again, verify tx_packet count incremented 
+f) Repeat b , c , d , e for all the queue_ids configured for egress_port[0]
+h) Repeat b , c , d , e , f for all the egress_ports available
+
+
+
+
+21. Transmit Bytes per Queue
+
+Test Description: Verify that tx_bytes in the queue_stats reply increments in accordance with the number of transmitted bytes
+
+Test mode: Automated
+Test Tile: QueueCounter2
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Optional
+
+
+Test Notes: 
+
+a) Send queue_stats request for ports=ofp.OFPP_ALL and queue_ids=ofp.OFPQ_ALL (i.e all ports and all queues)
+b) Send queue_stats request for egress_port[0] and queue_id[0] and note the tx_bytes count in the reply
+c) Insert a flow entry with enqueue action , port = egress_port[0] queue_id= queue_id[0]
+d) Send packet matching the flow
+e) Send queue_stats request again, verify tx_byte count incremented 
+f) Repeat b , c , d , e for all the queue_ids configured for egress_port[0]
+h) Repeat b , c , d , e , f for all the egress_ports available
+
+
+
+22. Transmit Overrun Errors per queue (TBD ----> Verification of tx_error count being incremented correctly) 
+
+Test Description: Verify that tx_errors in the queue_stats reply increments in accordance with the number of packets dropped due to overrun.
+Test mode: Automated
+Test Tile: QueueCounter3
+POrts: 3 (1 Control Plane 2 Data Plane)
+Initial State: Default (Clear switch state), Connection setup
+Test-Field: Optional
+
+Test Notes: 
+
+
+a) Send queue_stats request for port=egress_port and queue_ids=ofp.OFPQ_ALL
+B) send queue_stats request for egress_port and queue_id[0] (i.e first queue configured for egress_port)
+c) Verify reply has tx_errors count .
+d) Repear b , c for the all queue_ids of egress_port

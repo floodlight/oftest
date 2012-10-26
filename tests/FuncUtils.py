@@ -12,6 +12,7 @@ import oftest.action as action
 import oftest.parse as parse
 import logging
 import types
+
 import oftest.base_tests as base_tests
 from oftest.testutils import *
 from time import sleep
@@ -45,7 +46,35 @@ def Exact_Match(self,of_ports,priority=0):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         return (Pkt_ExactFlow,match)
-        
+
+def Exact_Match_With_Prio(self,of_ports,priority=0):
+    # Generate ExactMatch With Prority flow .
+
+        #Create a simple tcp packet and generate exact flow match from it.
+        Pkt_ExactFlow = simple_tcp_packet()
+        match = parse.packet_to_flow_match(Pkt_ExactFlow)
+        self.assertTrue(match is not None, "Could not generate flow match from pkt")
+        match.in_port = of_ports[0]
+        #match.nw_src = 1
+        match.wildcards=0
+        msg = message.flow_mod()
+        msg.out_port = ofp.OFPP_NONE
+        msg.command = ofp.OFPFC_ADD
+        msg.buffer_id = 0xffffffff
+        msg.match = match
+        if priority != 0 :
+                msg.priority = priority
+
+        act = action.action_output()
+        act.port = of_ports[2]
+        self.assertTrue(msg.actions.add(act), "could not add action")
+
+        rv = self.controller.message_send(msg)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        return (Pkt_ExactFlow,match)         
+       
 
 def Match_All_Except_Source_Address(self,of_ports,priority=0):
 # Generate Match_All_Except_Source_Address flow
@@ -74,7 +103,62 @@ def Match_All_Except_Source_Address(self,of_ports,priority=0):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         return (Pkt_WildcardSrc,match1)
+
+def Match_Ethernet_Src_Address(self,of_ports,priority=0):
+    #Generate Match_Ethernet_SrC_Address flow
+
+        #Create a simple tcp packet and generate match on ethernet src address flow
+        pkt_MatchSrc = simple_tcp_packet(dl_src='00:01:01:01:01:01')
+        match = parse.packet_to_flow_match(pkt_MatchSrc)
+        self.assertTrue(match is not None, "Could not generate flow match from pkt")
+
+        match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_SRC
         
+        msg = message.flow_mod()
+        msg.out_port = ofp.OFPP_NONE
+        msg.command = ofp.OFPFC_ADD
+        msg.buffer_id = 0xffffffff
+        msg.match = match
+        if priority != 0 :
+                msg.priority = priority
+
+        act = action.action_output()
+        act.port = of_ports[1]
+        self.assertTrue(msg.actions.add(act), "could not add action")
+
+        rv = self.controller.message_send(msg)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        return (pkt_MatchSrc,match)
+      
+def Match_Ethernet_Dst_Address(self,of_ports,priority=0):
+    #Generate Match_Ethernet_Dst_Address flow
+
+        #Create a simple tcp packet and generate match on ethernet dst address flow
+        pkt_MatchDst = simple_tcp_packet(dl_dst='00:01:01:01:01:01')
+        match = parse.packet_to_flow_match(pkt_MatchDst)
+        self.assertTrue(match is not None, "Could not generate flow match from pkt")
+
+        match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_DST
+        msg = message.flow_mod()
+        msg.out_port = ofp.OFPP_NONE
+        msg.command = ofp.OFPFC_ADD
+        msg.buffer_id = 0xffffffff
+        msg.match = match
+        if priority != 0 :
+                msg.priority = priority
+
+        act = action.action_output()
+        act.port = of_ports[1]
+        self.assertTrue(msg.actions.add(act), "could not add action")
+
+        rv = self.controller.message_send(msg)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        return (pkt_MatchDst,match)
+
 def Wildcard_All(self,of_ports,priority=0):
 # Generate a Wildcard_All Flow 
 
@@ -135,7 +219,230 @@ def Wildcard_All_Except_Ingress(self,of_ports,priority=0):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         return (Pkt_MatchIngress,match3)
-    
+
+def Match_Vlan_Id(self,of_ports,priority=0):
+    #Generate Match_Vlan_Id
+
+        #Create a simple tcp packet and generate match on ethernet dst address flow
+        pkt_MatchVlanId = simple_tcp_packet(dl_vlan_enable=True,dl_vlan=1)
+        match = parse.packet_to_flow_match(pkt_MatchVlanId)
+        self.assertTrue(match is not None, "Could not generate flow match from pkt")
+
+        match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_VLAN
+        msg = message.flow_mod()
+        msg.out_port = ofp.OFPP_NONE
+        msg.command = ofp.OFPFC_ADD
+        msg.buffer_id = 0xffffffff
+        msg.match = match
+        if priority != 0 :
+                msg.priority = priority
+
+        act = action.action_output()
+        act.port = of_ports[1]
+        self.assertTrue(msg.actions.add(act), "could not add action")
+
+        rv = self.controller.message_send(msg)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        return (pkt_MatchVlanId,match)
+
+def Match_Vlan_Pcp(self,of_ports,priority=0):
+    #Generate Match_Vlan_Id
+
+        #Create a simple tcp packet and generate match on ethernet dst address flow
+        pkt_MatchVlanPcp = simple_tcp_packet(dl_vlan_enable=True,dl_vlan=1,dl_vlan_pcp=10)
+        match = parse.packet_to_flow_match(pkt_MatchVlanPcp)
+        self.assertTrue(match is not None, "Could not generate flow match from pkt")
+
+        match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_VLAN_PCP 
+        msg = message.flow_mod()
+        msg.out_port = ofp.OFPP_NONE
+        msg.command = ofp.OFPFC_ADD
+        msg.buffer_id = 0xffffffff
+        msg.match = match
+        if priority != 0 :
+                msg.priority = priority
+
+        act = action.action_output()
+        act.port = of_ports[1]
+        self.assertTrue(msg.actions.add(act), "could not add action")
+
+        rv = self.controller.message_send(msg)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        return (pkt_MatchVlanPcp,match)
+
+
+def Match_Mul_L2(self,of_ports,priority=0):
+    #Generate Match_Mul_L2 flow
+
+        #Create a simple eth packet and generate match on ethernet protocol flow
+        pkt_MulL2 = simple_eth_packet(dl_type=0x88cc,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:01:01:02')
+        match = parse.packet_to_flow_match(pkt_MulL2)
+        self.assertTrue(match is not None, "Could not generate flow match from pkt")
+
+        match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_TYPE ^ofp.OFPFW_DL_DST ^ofp.OFPFW_DL_SRC
+        msg = message.flow_mod()
+        msg.out_port = ofp.OFPP_NONE
+        msg.command = ofp.OFPFC_ADD
+        msg.buffer_id = 0xffffffff
+        msg.match = match
+        if priority != 0 :
+                msg.priority = priority
+
+        act = action.action_output()
+        act.port = of_ports[1]
+        self.assertTrue(msg.actions.add(act), "could not add action")
+
+        rv = self.controller.message_send(msg)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        return (pkt_MulL2,match)
+
+
+def Match_Mul_L4(self,of_ports,priority=0):
+    #Generate Match_Mul_L4 flow
+
+        #Create a simple tcp packet and generate match on tcp protocol flow
+        pkt_MulL4 = simple_tcp_packet(tcp_sport=111,tcp_dport=112)
+        match = parse.packet_to_flow_match(pkt_MulL4)
+        self.assertTrue(match is not None, "Could not generate flow match from pkt")
+
+        match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_TP_SRC ^ofp.OFPFW_TP_DST 
+        msg = message.flow_mod()
+        msg.out_port = ofp.OFPP_NONE
+        msg.command = ofp.OFPFC_ADD
+        msg.buffer_id = 0xffffffff
+        msg.match = match
+        if priority != 0 :
+                msg.priority = priority
+
+        act = action.action_output()
+        act.port = of_ports[1]
+        self.assertTrue(msg.actions.add(act), "could not add action")
+
+        rv = self.controller.message_send(msg)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        return (pkt_MulL4,match)  
+
+def Match_Ip_Tos(self,of_ports,priority=0):
+    #Generate a Match on IP Type of service flow
+
+        #Create a simple tcp packet and generate match on Type of service 
+        pkt_IpTos = simple_tcp_packet(ip_tos=3)
+        match = parse.packet_to_flow_match(pkt_IpTos)
+        self.assertTrue(match is not None, "Could not generate flow match from pkt")
+
+        match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_NW_TOS
+        msg = message.flow_mod()
+        msg.out_port = ofp.OFPP_NONE
+        msg.command = ofp.OFPFC_ADD
+        msg.buffer_id = 0xffffffff
+        msg.match = match
+        if priority != 0 :
+                msg.priority = priority
+
+        act = action.action_output()
+        act.port = of_ports[1]
+        self.assertTrue(msg.actions.add(act), "could not add action")
+
+        rv = self.controller.message_send(msg)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        return (pkt_IpTos,match)
+
+def Match_Tcp_Src(self,of_ports,priority=0):
+    #Generate Match_Tcp_Src
+
+        #Create a simple tcp packet and generate match on tcp source port flow
+        pkt_MatchTSrc = simple_tcp_packet(tcp_sport=111)
+        match = parse.packet_to_flow_match(pkt_MatchTSrc)
+        self.assertTrue(match is not None, "Could not generate flow match from pkt")
+
+        match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_TP_SRC  
+        msg = message.flow_mod()
+        msg.out_port = ofp.OFPP_NONE
+        msg.command = ofp.OFPFC_ADD
+        msg.buffer_id = 0xffffffff
+        msg.match = match
+        if priority != 0 :
+                msg.priority = priority
+
+        act = action.action_output()
+        act.port = of_ports[1]
+        self.assertTrue(msg.actions.add(act), "could not add action")
+
+        rv = self.controller.message_send(msg)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        return (pkt_MatchTSrc,match)  
+
+def Match_Tcp_Dst(self,of_ports,priority=0):
+    #Generate Match_Tcp_Dst
+
+        #Create a simple tcp packet and generate match on tcp destination port flow
+        pkt_MatchTDst = simple_tcp_packet(tcp_dport=112)
+        match = parse.packet_to_flow_match(pkt_MatchTDst)
+        self.assertTrue(match is not None, "Could not generate flow match from pkt")
+
+        match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_TP_DST  
+        msg = message.flow_mod()
+        msg.out_port = ofp.OFPP_NONE
+        msg.command = ofp.OFPFC_ADD
+        msg.buffer_id = 0xffffffff
+        msg.match = match
+        if priority != 0 :
+                msg.priority = priority
+
+        act = action.action_output()
+        act.port = of_ports[1]
+        self.assertTrue(msg.actions.add(act), "could not add action")
+
+        rv = self.controller.message_send(msg)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        return (pkt_MatchTDst,match)        
+
+
+
+
+
+def Match_Ethernet_Type(self,of_ports,priority=0):
+    #Generate a Match_Ethernet_Type flow
+
+        #Create a simple tcp packet and generate match on ethernet type flow
+        pkt_MatchType = simple_eth_packet(dl_type=0x88cc)
+        match = parse.packet_to_flow_match(pkt_MatchType)
+        self.assertTrue(match is not None, "Could not generate flow match from pkt")
+
+        match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_TYPE
+        msg = message.flow_mod()
+        msg.out_port = ofp.OFPP_NONE
+        msg.command = ofp.OFPFC_ADD
+        msg.buffer_id = 0xffffffff
+        msg.match = match
+        if priority != 0 :
+                msg.priority = priority
+
+        act = action.action_output()
+        act.port = of_ports[1]
+        self.assertTrue(msg.actions.add(act), "could not add action")
+
+        rv = self.controller.message_send(msg)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        return (pkt_MatchType,match)
+
+   
    
 def Strict_Modify_Flow_Action(self,egress_port,match,priority=0):
 # Strict Modify the flow Action 
@@ -181,10 +488,49 @@ def Modify_Flow_Action(self,of_ports,match,priority=0):
         self.assertTrue(rv != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
+def Enqueue(self,ingress_port,egress_port,egress_queue_id):
+#Generate a flow with enqueue action i.e output to a queue configured on a egress_port
+
+        pkt = simple_tcp_packet()
+        match = packet_to_flow_match(self, pkt)
+        match.wildcards &= ~ofp.OFPFW_IN_PORT
+        self.assertTrue(match is not None, 
+                "Could not generate flow match from pkt")
+
+        match.in_port = ingress_port
+        request = message.flow_mod()
+        request.match = match
+        request.buffer_id = 0xffffffff
+        act = action.action_enqueue()
+        act.port     = egress_port
+        act.queue_id = egress_queue_id
+        self.assertTrue(request.actions.add(act), "Could not add action")
+
+        logging.info("Inserting flow")
+        rv = self.controller.message_send(request)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        return (pkt,match)
+
+
+
 
 ###########################   Verify Stats Functions   ###########################################################################################
 
-def Verify_TableStats(self,active_entries=0,):
+
+def Get_QueueStats(self,port_num,queue_id):
+#Generate Queue Stats request 
+
+    request = message.queue_stats_request()
+    request.port_no  = port_num
+    request.queue_id = queue_id
+    (queue_stats, p) = self.controller.transact(request)
+    self.assertNotEqual(queue_stats, None, "Queue stats request failed")
+
+    return (queue_stats,p)
+
+def Verify_TableStats(self,active_entries=0):
 #Verify Table_Stats
         
         #Send Table_Stats_Request        
@@ -198,32 +544,46 @@ def Verify_TableStats(self,active_entries=0,):
             active_count += stat.active_count
         self.assertTrue(active_entries == active_count,"Incorrect no. of flows in Table")
 
+def Verify_TableStats1(self,current_lookedup,current_matched,expect_lookup,expect_match):
+       
+        stat_req = message.table_stats_request()
+        response, pkt = self.controller.transact(stat_req,
+                                                     timeout=5)
+        self.assertTrue(response is not None, 
+                            "No response to stats request")
+        lookedup = 0
+        matched = 0 
+            
+        for obj in response.stats:
+            lookedup += obj.lookup_count
+            matched += obj.matched_count
+        
+        lookedup_counter = lookedup-current_lookedup
+        matched_counter = matched-current_matched
+        
+        self.assertTrue(lookedup_counter==expect_lookup, "lookup counter is not incremented properly")
+        self.assertTrue(matched_counter==expect_lookup, "matched counter is not incremented properly")
 
 def Verify_FlowStats(self,match,byte_count=0,packet_count=0):
-# Verify flow counters : byte_count and packet_count
+    # Verify flow counters : byte_count and packet_count
 
         stat_req = message.flow_stats_request()
         stat_req.match = match
         stat_req.table_id = 0xff
         stat_req.out_port = ofp.OFPP_NONE
-        test_timeout = 10
-        all_packets_received = 0
-        for i in range(0,test_timeout):
-            
-            response, pkt = self.controller.transact(stat_req,
-                                                     timeout=test_timeout)
-            self.assertTrue(response is not None, 
+        response, pkt = self.controller.transact(stat_req,
+                                                     timeout=4)
+        self.assertTrue(response is not None, 
                             "No response to stats request")
-            for obj in response.stats:
-                if ( obj.packet_count == packet_count and obj.byte_count == byte_count ) :
-                    all_packets_received = 1
+        packetcounter=0
+        bytecounter=0
+        for obj in response.stats:
+            packetcounter += obj.packet_count
+            bytecounter += obj.byte_count
 
-            if all_packets_received:
-                break
-            sleep(1)
+        self.assertTrue(packetcounter==packet_count, "packet counter is not incremented properly")
+        self.assertTrue(bytecounter==byte_count, "byte counter is not incremented properly")
 
-        self.assertTrue(all_packets_received,
-                        "Flow counters are incorrect")
 
 def Verify_PortStats(self,in_port,rx_dropped):
 #Verify Port counters like rx_dropped
@@ -234,7 +594,62 @@ def Verify_PortStats(self,in_port,rx_dropped):
         self.assertTrue(resp is not None,"No response received for port stats request")        
         self.assertTrue(resp.rx_dropped == rx_dropped, "Packets not dropped")
 
+def Verify_PortStats1(self,out_port,current_counter,rx_packets):
+#Verify Port counters like rx_packets
 
+        port_stats_req = message.port_stats_request()
+        port_stats_req.port_no = out_port     
+        response,pkt = self.controller.transact(port_stats_req)
+        self.assertTrue(response is not None,"No response received for port stats request") 
+        rxpackets=0
+       
+        for obj in response.stats:
+            rxpackets += obj.rx_packets
+        rx_packet_counter = rxpackets-current_counter    
+        self.assertEqual(rx_packets,rx_packet_counter,"recieved packet counter is not incremented properly")
+
+def Verify_PortStats2(self,out_port,current_counter,tx_packets):
+#Verify Port counters like tx_packets
+
+        port_stats_req = message.port_stats_request()
+        port_stats_req.port_no = out_port     
+        response,pkt = self.controller.transact(port_stats_req)
+        self.assertTrue(response is not None,"No response received for port stats request") 
+        txpackets=0
+       
+        for obj in response.stats:
+            txpackets += obj.tx_packets
+        tx_packet_counter = txpackets-current_counter    
+        self.assertEqual(tx_packets,tx_packet_counter,"Transmitted packet counter is not incremented properly")    
+
+
+def Verify_PortStats3(self,out_port,current_counter,rx_bytes):
+#Verify Port counters like rx_bytes
+
+        port_stats_req = message.port_stats_request()
+        port_stats_req.port_no = out_port     
+        response,pkt = self.controller.transact(port_stats_req)
+        self.assertTrue(response is not None,"No response received for port stats request") 
+        rxbytes=0
+       
+        for obj in response.stats:
+            rxbytes += obj.rx_bytes
+        rx_byte_counter = rxbytes-current_counter    
+        self.assertEqual(rx_bytes,rx_byte_counter,"Recieved byte counter is not incremented properly")   
+
+def Verify_PortStats4(self,out_port,current_counter,tx_bytes):
+#Verify Port counters like tx_bytes
+
+        port_stats_req = message.port_stats_request()
+        port_stats_req.port_no = out_port     
+        response,pkt = self.controller.transact(port_stats_req)
+        self.assertTrue(response is not None,"No response received for port stats request") 
+        txbytes=0
+       
+        for obj in response.stats:
+            txbytes += obj.tx_bytes
+        tx_byte_counter = txbytes-current_counter    
+        self.assertEqual(tx_bytes,tx_byte_counter,"Transmitted byte counter is not incremented properly")  
 
 ############################## Various delete commands #############################################################################################
 
@@ -306,4 +721,6 @@ def sw_supported_actions(parent,use_cache=False):
         parent.assertTrue(reply is not None, "Did not get response to ftr req")
         cache_supported_actions = reply.actions
     return cache_supported_actions
+
+##############################################################################################################################################################
 
