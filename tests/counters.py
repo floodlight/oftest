@@ -474,7 +474,7 @@ class QueueCounter2(base_tests.SimpleDataPlane):
                 (qs_after,p) = Get_QueueStats(self,egress_port,egress_queue_id)
 
                 #Verify transmitted packets counter is incremented in accordance
-                self.assertEqual(qs_after.stats[0].tx_bytes,qs_before.stats[0].tx_bytes + 1,"tx_bytes count incorrect")
+                self.assertEqual(qs_after.stats[0].tx_bytes,qs_before.stats[0].tx_bytes + len(str(pkt)),"tx_bytes count incorrect")
        
 
 
