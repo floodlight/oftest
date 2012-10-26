@@ -697,13 +697,19 @@ def action_generate(parent, field_to_mod, mod_field_vals):
     elif field_to_mod == 'tcp_dport':
         act = action.action_set_tp_dst()
         act.tp_port = mod_field_vals['tcp_dport']
+    elif field_to_mod == 'udp_sport':
+        act = action.action_set_tp_src()
+        act.tp_port = mod_field_vals['udp_sport']
+    elif field_to_mod == 'udp_dport':
+        act = action.action_set_tp_dst()
+        act.tp_port = mod_field_vals['udp_dport']
     else:
         parent.assertTrue(0, "Unknown field to modify: " + str(field_to_mod))
 
     return act
 
 def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={}, 
-                     mod_fields=[], check_test_params=False):
+                     mod_fields=[], tp="tcp", check_test_params=False):
     """
     Set up the ingress and expected packet and action list for a test
 
@@ -729,8 +735,12 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
     base_pkt_params['ip_src'] = '192.168.0.1'
     base_pkt_params['ip_dst'] = '192.168.0.2'
     base_pkt_params['ip_tos'] = 0
-    base_pkt_params['tcp_sport'] = 1234
-    base_pkt_params['tcp_dport'] = 80
+    if tp == "tcp":
+        base_pkt_params['tcp_sport'] = 1234
+        base_pkt_params['tcp_dport'] = 80
+    elif tp == "udp":
+        base_pkt_params['udp_sport'] = 1234
+        base_pkt_params['udp_dport'] = 80
     for keyname in start_field_vals.keys():
         base_pkt_params[keyname] = start_field_vals[keyname]
 
@@ -744,8 +754,12 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
     mod_pkt_params['ip_src'] = '10.20.30.40'
     mod_pkt_params['ip_dst'] = '50.60.70.80'
     mod_pkt_params['ip_tos'] = 0xf0
-    mod_pkt_params['tcp_sport'] = 4321
-    mod_pkt_params['tcp_dport'] = 8765
+    if tp == "tcp":
+        mod_pkt_params['tcp_sport'] = 4321
+        mod_pkt_params['tcp_dport'] = 8765
+    elif tp == "udp":
+        mod_pkt_params['udp_sport'] = 4321
+        mod_pkt_params['udp_dport'] = 8765
     for keyname in mod_field_vals.keys():
         mod_pkt_params[keyname] = mod_field_vals[keyname]
 
@@ -780,8 +794,15 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
             mod_fields.append('dl_vlan_enable')
             mod_fields.append('pktlen')
 
+    if tp == "tcp":
+        packet_builder = simple_tcp_packet
+    elif tp == "udp":
+        packet_builder = simple_udp_packet
+    else:
+        raise NotImplementedError("unknown transport protocol %s" % tp)
+
     # Build the ingress packet
-    ingress_pkt = simple_tcp_packet(**base_pkt_params)
+    ingress_pkt = packet_builder(**base_pkt_params)
 
     # Build the expected packet, modifying the indicated fields
     for item in mod_fields:
@@ -790,7 +811,7 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
         if act:
             new_actions.append(act)
 
-    expected_pkt = simple_tcp_packet(**base_pkt_params)
+    expected_pkt = packet_builder(**base_pkt_params)
 
     return (ingress_pkt, expected_pkt, new_actions)
 
