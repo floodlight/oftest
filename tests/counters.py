@@ -62,6 +62,11 @@ class FlowCounter1(base_tests.SimpleDataPlane):
         byte_count = num_pkts*len(str(pkt))
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
+
+        # FIXME: instead of sleeping, keep requesting flow stats until
+        # the expected queue counter increases or some large timeout is
+        # reached
+        time.sleep(2)
          
         #Verify Recieved Packets/Bytes Per Flow  
         Verify_FlowStats(self,match,byte_count=byte_count,packet_count=num_pkts)
@@ -168,6 +173,11 @@ class PortCounter1(base_tests.SimpleDataPlane):
         num_pkts = 5
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
+
+        # FIXME: instead of sleeping, keep requesting port stats until
+        # the expected queue counter increases or some large timeout is
+        # reached
+        time.sleep(2)
         
         #Verify recieved packet counters 
         Verify_PortStats1(self,of_ports[0],current_counter,num_pkts)
@@ -199,7 +209,7 @@ class PortCounter2(base_tests.SimpleDataPlane):
         
         # Send Port_Stats request for the ingress port (retrieve current counter state)
         port_stats_req = message.port_stats_request()
-        port_stats_req.port_no = of_ports[0]   
+        port_stats_req.port_no = of_ports[1]   
         response,pkt = self.controller.transact(port_stats_req)
         self.assertTrue(response is not None,"No response received for port stats request") 
         current_counter=0
@@ -211,9 +221,14 @@ class PortCounter2(base_tests.SimpleDataPlane):
         num_pkts = 5
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
+
+        # FIXME: instead of sleeping, keep requesting port stats until
+        # the expected queue counter increases or some large timeout is
+        # reached
+        time.sleep(2)
         
         #Verify transmitted_packet counters 
-        Verify_PortStats2(self,of_ports[0],current_counter,num_pkts)
+        Verify_PortStats2(self,of_ports[1],current_counter,num_pkts)
 
 
 class PortCounter3(base_tests.SimpleDataPlane):
@@ -255,6 +270,11 @@ class PortCounter3(base_tests.SimpleDataPlane):
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
 
+        # FIXME: instead of sleeping, keep requesting port stats until
+        # the expected queue counter increases or some large timeout is
+        # reached
+        time.sleep(2)
+
         
         #Verify recieved_bytes counters 
         Verify_PortStats3(self,of_ports[0],current_counter,byte_count)
@@ -285,7 +305,7 @@ class PortCounter4(base_tests.SimpleDataPlane):
 
         # Send Port_Stats request for the ingress port (retrieve current counter state)
         port_stats_req = message.port_stats_request()
-        port_stats_req.port_no = of_ports[0]   
+        port_stats_req.port_no = of_ports[1]   
         response,pkt = self.controller.transact(port_stats_req)
         self.assertTrue(response is not None,"No response received for port stats request") 
         current_counter=0
@@ -299,9 +319,14 @@ class PortCounter4(base_tests.SimpleDataPlane):
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
 
+        # FIXME: instead of sleeping, keep requesting port stats until
+        # the expected queue counter increases or some large timeout is
+        # reached
+        time.sleep(2)
+
         
         #Verify trasmitted_bytes counters 
-        Verify_PortStats4(self,of_ports[0],current_counter,byte_count)
+        Verify_PortStats4(self,of_ports[1],current_counter,byte_count)
 
 
 class TableCounter1(base_tests.SimpleDataPlane):
@@ -377,6 +402,11 @@ class TableCounter2(base_tests.SimpleDataPlane):
         num_sends2 = 5
         for pkt_cnt in range(num_sends):
             self.dataplane.send(of_ports[1],str(pkt))
+
+        # FIXME: instead of sleeping, keep requesting table stats until
+        # the expected queue counter increases or some large timeout is
+        # reached
+        time.sleep(2)
 
         #Verify lookup_count and matched_count counters.
         Verify_TableStats1(self,current_lookedup,current_matched,num_sends+num_sends2,num_sends)
@@ -474,7 +504,7 @@ class QueueCounter2(base_tests.SimpleDataPlane):
                 (qs_after,p) = Get_QueueStats(self,egress_port,egress_queue_id)
 
                 #Verify transmitted packets counter is incremented in accordance
-                self.assertEqual(qs_after.stats[0].tx_bytes,qs_before.stats[0].tx_bytes + 1,"tx_bytes count incorrect")
+                self.assertEqual(qs_after.stats[0].tx_bytes,qs_before.stats[0].tx_bytes + len(str(pkt)),"tx_bytes count incorrect")
        
 
 
