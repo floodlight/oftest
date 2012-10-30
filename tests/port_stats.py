@@ -348,6 +348,6 @@ class AllPortStats(base_tests.SimpleDataPlane):
         port_stats[ port2 ] = getStats(self, port2)
 
         all_stats = getAllStats(self)
-        assert(port_stats[ port0 ] == all_stats[ port0 ])
-        assert(port_stats[ port1 ] == all_stats[ port1 ])
-        assert(port_stats[ port2 ] == all_stats[ port2 ])
+        self.assertEqual(port_stats[ port0 ], all_stats[ port0 ])
+        self.assertEqual(port_stats[ port1 ], all_stats[ port1 ])
+        self.assertEqual(port_stats[ port2 ], all_stats[ port2 ])
