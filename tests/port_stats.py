@@ -78,6 +78,21 @@ def getStats(obj, port):
     logging.info("Port %d stats count: tx %d rx %d" % (port, packet_sent, packet_recv))
     return packet_sent, packet_recv
 
+def getAllStats(obj):
+    stat_req = message.port_stats_request()
+    stat_req.port_no = ofp.OFPP_NONE
+
+    logging.info("Sending all port stats request")
+    response, pkt = obj.controller.transact(stat_req, timeout=2)
+    obj.assertTrue(response is not None, 
+                    "No response to stats request")
+    obj.assertTrue(len(response.stats) >= 3,
+                    "Did not receive all port stats reply")
+    stats = {}
+    for item in response.stats:
+        stats[ item.port_no ] = ( item.tx_packets, item.rx_packets )
+    return stats
+
 def verifyStats(obj, port, test_timeout, packet_sent, packet_recv):
     stat_req = message.port_stats_request()
     stat_req.port_no = port
@@ -179,7 +194,6 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
         verifyStats(self, ingress_port, test_timeout, initTxInPort, initRxInPort + num_sends)
         verifyStats(self, egress_port, test_timeout, initTxOutPort + num_sends, initRxOutPort)
 
-
 class MultiFlowStats(base_tests.SimpleDataPlane):
     """
     Verify flow stats are properly retrieved.
@@ -260,3 +274,80 @@ class MultiFlowStats(base_tests.SimpleDataPlane):
                     initTxOutPort1 + num_pkt1s, initRxOutPort1)
         verifyStats(self, egress_port2, test_timeout,
                     initTxOutPort2 + num_pkt2s, initRxOutPort2)
+
+class AllPortStats(base_tests.SimpleDataPlane):
+    """
+    Verify all port stats are properly retrieved.
+
+    First, get stats from each port. Then get all port stats, verify
+    consistency with single port stats.
+    """
+
+    # TODO: This is copied from MultiFlowStats. Need to combine.
+    def buildFlowModMsg(self, pkt, ingress_port, egress_port):
+        match = packet_to_flow_match(self, pkt)
+        match.wildcards &= ~ofp.OFPFW_IN_PORT
+        self.assertTrue(match is not None, 
+                        "Could not generate flow match from pkt")
+        match.in_port = ingress_port
+        
+        flow_mod_msg = message.flow_mod()
+        flow_mod_msg.match = match
+        flow_mod_msg.cookie = random.randint(0,9007199254740992)
+        flow_mod_msg.buffer_id = 0xffffffff
+        flow_mod_msg.idle_timeout = 0
+        flow_mod_msg.hard_timeout = 0
+        act = action.action_output()
+        act.port = egress_port
+        self.assertTrue(flow_mod_msg.actions.add(act), "Could not add action")
+
+        logging.info("Ingress " + str(ingress_port) + 
+                       " to egress " + str(egress_port))
+
+        return flow_mod_msg
+
+    def runTest(self):
+        # TODO: set from command-line parameter
+        test_timeout = 60
+
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) >= 3, "Not enough ports for test")
+        port0 = of_ports[0];
+        port1 = of_ports[1];
+        port2 = of_ports[2];
+
+        # construct some packets and flows, send to switch
+        pkt1 = simple_tcp_packet()
+        flow_mod_msg1 = self.buildFlowModMsg(pkt1, port0, port1)
+       
+        pkt2 = simple_tcp_packet(dl_src='0:7:7:7:7:7')
+        flow_mod_msg2 = self.buildFlowModMsg(pkt2, port0, port2)
+       
+        logging.info("Inserting flow1")
+        rv = self.controller.message_send(flow_mod_msg1)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        logging.info("Inserting flow2")
+        rv = self.controller.message_send(flow_mod_msg2)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        num_pkt1s = random.randint(5,10)
+        logging.info("Sending " + str(num_pkt1s) + " pkt1s")
+        num_pkt2s = random.randint(10,15)
+        logging.info("Sending " + str(num_pkt2s) + " pkt2s")
+        for i in range(0,num_pkt1s):
+            sendPacket(self, pkt1, port0, port1, test_timeout)
+        for i in range(0,num_pkt2s):
+            sendPacket(self, pkt2, port0, port2, test_timeout)
+
+        # get individual port stats count
+        port_stats = {}
+        port_stats[ port0 ] = getStats(self, port0)
+        port_stats[ port1 ] = getStats(self, port1)
+        port_stats[ port2 ] = getStats(self, port2)
+
+        all_stats = getAllStats(self)
+        assert(port_stats[ port0 ] == all_stats[ port0 ])
+        assert(port_stats[ port1 ] == all_stats[ port1 ])
+        assert(port_stats[ port2 ] == all_stats[ port2 ])
