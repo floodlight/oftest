@@ -112,55 +112,84 @@ class HandshakeAndKeepalive(BaseHandshake):
         self.num_controllers = test_param_get('num_controllers', default=1)
         self.controller_timeout = test_param_get('controller_timeout',
                                                  default=-1)
+        self.hello_timeout = test_param_get('hello_timeout',
+                                            default=5)
+        self.features_req_timeout = test_param_get('features_req_timeout',
+                                                   default=5)
 
         for i in range(self.num_controllers):
             self.controllerSetup(config["controller_host"],
                                  config["controller_port"]+i)
         for i in range(self.num_controllers):
-            self.controllers[i].handshake_done = False
+            self.controllers[i].cstate = 0
+            self.controllers[i].keep_alive = True
+        tick = 0.1  # time period in seconds at which controllers are handled
 
-        # try to maintain switch connections for specified timeout
-        # -1 means forever
         while True:
             for con in self.controllers:
-                if con.switch_socket and con.handshake_done:
-                    if (self.controller_timeout < 0 or
-                        con.count < self.controller_timeout):
-                        logging.info(con.host + ":" + str(con.port) + 
-                                     ": maintaining connection to " +
-                                     str(con.switch_addr))
-                        con.count = con.count + 1
-                    else:
-                        logging.info(con.host + ":" + str(con.port) + 
-                                     ": disconnecting from " +
-                                     str(con.switch_addr))
-                        con.disconnect()
-                        con.handshake_done = False
-                        con.count = 0
-                    time.sleep(1)
-                else:
-                    #@todo Add an option to wait for a pkt transaction to 
-                    # ensure version compatibilty?
-                    con.connect(self.default_timeout)
-                    if not con.switch_socket:
-                        logging.info("Did not connect to switch")
-                        continue
-                    logging.info("TCP Connected " + str(con.switch_addr))
-                    logging.info("Sending hello")
-                    con.message_send(message.hello())
-                    request = message.features_request()
-                    reply, pkt = con.transact(request, 
-                                              timeout=self.default_timeout)
-                    if reply:
-                        logging.info("Handshake complete with " + 
-                                    str(con.switch_addr))
-                        con.handshake_done = True
-                        con.keep_alive = True
-                        con.count = 0
-                    else:
-                        logging.info("Did not complete features_request " +
-                                     "for handshake")
-                        con.disconnect()
-                        con.handshake_done = False
-                        con.count = 0
+                condesc = con.host + ":" + str(con.port) + ": "
+                logging.debug("Checking " + condesc)
 
+                if con.switch_socket: 
+                    if con.cstate == 0:
+                        logging.info(condesc + "Sending hello to " +
+                                     str(con.switch_addr))
+                        con.message_send(message.hello())
+                        con.cstate = 1
+                        con.count = 0
+                    elif con.cstate == 1:
+                        reply, pkt = con.poll(exp_msg=ofp.OFPT_HELLO,
+                                              timeout=0)
+                        if reply is not None:
+                            logging.info(condesc + 
+                                         "Hello received from " +
+                                         str(con.switch_addr))
+                            con.cstate = 2
+                        else:
+                            con.count = con.count + 1
+                            # fall back to previous state on timeout
+                            if con.count >= self.hello_timeout/tick:
+                                logging.info(condesc + 
+                                             "Timeout hello from " +
+                                             str(con.switch_addr))
+                                con.cstate = 0
+                    elif con.cstate == 2:
+                        logging.info(condesc + "Sending features request to " +
+                                     str(con.switch_addr))
+                        con.message_send(message.features_request())
+                        con.cstate = 3
+                        con.count = 0
+                    elif con.cstate == 3:
+                        reply, pkt = con.poll(exp_msg=ofp.OFPT_FEATURES_REPLY,
+                                              timeout=0)
+                        if reply is not None:
+                            logging.info(condesc + 
+                                         "Features request received from " +
+                                         str(con.switch_addr))
+                            con.cstate = 4
+                            con.count = 0
+                        else:
+                            con.count = con.count + 1
+                            # fall back to previous state on timeout
+                            if con.count >= self.features_req_timeout/tick:
+                                logging.info(condesc +
+                                             "Timeout features request from " +
+                                             str(con.switch_addr))
+                                con.cstate = 2
+                    elif con.cstate == 4:
+                        if (self.controller_timeout < 0 or
+                            con.count < self.controller_timeout/tick):
+                            logging.debug(condesc +
+                                          "Maintaining connection to " +
+                                          str(con.switch_addr))
+                            con.count = con.count + 1
+                        else:
+                            logging.info(condesc + 
+                                         "Disconnecting from " +
+                                         str(con.switch_addr))
+                            con.disconnect()
+                            con.cstate = 0
+                else:
+                    con.cstate = 0
+
+            time.sleep(tick)

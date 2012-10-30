@@ -295,7 +295,7 @@ class Controller(Thread):
                 self.logger.warning("Error on listen socket accept")
                 return -1
             self.socs.append(sock)
-            self.logger.info("Incoming connection from %s" % str(addr))
+            self.logger.info(self.host+":"+str(self.port)+": Incoming connection from "+str(addr))
 
             with self.connect_cv:
                 (self.switch_socket, self.switch_addr) = (sock, addr)
@@ -496,7 +496,7 @@ class Controller(Thread):
         If an error occurs, (None, None) is returned
         """
 
-        if exp_msg:
+        if exp_msg is not None:
             self.logger.debug("Poll for %s" % ofp_type_map[exp_msg])
         else:
             self.logger.debug("Poll for any OF message")
@@ -504,7 +504,7 @@ class Controller(Thread):
         # Take the packet from the queue
         def grab():
             if len(self.packets) > 0:
-                if not exp_msg:
+                if exp_msg is None:
                     self.logger.debug("Looking for any packet")
                     (msg, pkt) = self.packets.pop(0)
                     return (msg, pkt)
