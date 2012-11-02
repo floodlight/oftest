@@ -24,7 +24,7 @@ from time import sleep
 from FuncUtils import*
 
 
-def portQueuesGet(self, queue_stats, port_num):
+def port_queues_get(self, queue_stats, port_num):
             result = []
             for qs in queue_stats.stats:
                 if qs.port_no != port_num:
@@ -33,14 +33,14 @@ def portQueuesGet(self, queue_stats, port_num):
             return result
 
 
-class FlowCounter1(base_tests.SimpleDataPlane):
+class PktPerFlow(base_tests.SimpleDataPlane):
 
-    """Verify Packet and Byte counters per flow are
-    incremented by no. of packets/bytes received for that flow"""
+    """Verify Packet counters per flow are
+    incremented by no. of packets received for that flow"""
 
     def runTest(self):
 
-        logging.info("Running Flow_Counter_1 test")
+        logging.info("Running PktPerFlow test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -52,34 +52,62 @@ class FlowCounter1(base_tests.SimpleDataPlane):
 
         logging.info("Insert any flow")
         logging.info("Sending N Packets matching the flow")
-        logging.info("Verify packet/byte counters increment in accordance")
+        logging.info("Verify packet counters increment in accordance")
         
         #Create a Match on Ingress flow
-        (pkt,match) = Wildcard_All_Except_Ingress(self,of_ports)
+        (pkt,match) = wildcard_all_except_ingress(self,of_ports)
+       
+        #Send Packets matching the flow 
+        num_pkts = 5 
+        for pkt_cnt in range(num_pkts):
+            self.dataplane.send(of_ports[0],str(pkt))
+         
+        #Verify Recieved Packets/Bytes Per Flow  
+        verify_flowstats(self,match,packet_count=num_pkts)
+
+
+class BytPerFlow(base_tests.SimpleDataPlane):
+
+    """Verify Byte counters per flow are
+    incremented by no. of  bytes received for that flow"""
+
+    def runTest(self):
+
+        logging.info("Running BytPerFlow test")
+
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+        
+        #Clear switch state      
+        rv = delete_all_flows(self.controller)
+        self.assertEqual(rv, 0, "Failed to delete all flows")
+
+        logging.info("Insert any flow")
+        logging.info("Sending N Packets matching the flow")
+        logging.info("Verify byte counters increment in accordance")
+        
+        #Create a Match on Ingress flow
+        (pkt,match) = wildcard_all_except_ingress(self,of_ports)
        
         #Send Packets matching the flow 
         num_pkts = 5 
         byte_count = num_pkts*len(str(pkt))
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
-
-        # FIXME: instead of sleeping, keep requesting flow stats until
-        # the expected queue counter increases or some large timeout is
-        # reached
-        time.sleep(2)
          
         #Verify Recieved Packets/Bytes Per Flow  
-        Verify_FlowStats(self,match,byte_count=byte_count,packet_count=num_pkts)
+        verify_flowstats(self,match,byte_count=byte_count)
 
 
-class FlowCounter2(base_tests.SimpleDataPlane):
+class DurationPerFlow(base_tests.SimpleDataPlane):
     
     """Verify Duration_sec and Duration_nsec counters per flow varies in accordance with the amount of 
     time the flow was alive"""
 
     def runTest(self):
         
-        logging.info("Running Flow_Counter_2 test")
+        logging.info("Running DurationPerFlow test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -94,30 +122,14 @@ class FlowCounter2(base_tests.SimpleDataPlane):
         logging.info("Verify duration_sec and nsec counters are incrementing in accordance with the life of flow")
 
         #Create a flow with match on ingress_port
-        pkt = simple_tcp_packet()
-        match = parse.packet_to_flow_match(pkt)
-        match.wildcards &= ~ofp.OFPFW_IN_PORT
-        self.assertTrue(match is not None, 
-                        "Could not generate flow match from pkt")
-        match.in_port = of_ports[0]
-        flow_mod_msg = message.flow_mod()
-        flow_mod_msg.match = match
-        flow_mod_msg.cookie = random.randint(0,9007199254740992)
-        flow_mod_msg.buffer_id = 0xffffffff
-        flow_mod_msg.idle_timeout = 0
-        flow_mod_msg.hard_timeout = 0
-        act = action.action_output()
-        act.port = of_ports[1]
-        self.assertTrue(flow_mod_msg.actions.add(act), "Could not add action")
-        rv = self.controller.message_send(flow_mod_msg)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
-        
+        (pkt,match) = wildcard_all_except_ingress(self,of_ports)
+    
         #Create flow_stats request 
         test_timeout = 30
         stat_req = message.flow_stats_request()
         stat_req.match= match
-        stat_req.out_port = of_ports[1]
+        stat_req.table_id = 0xff
+        stat_req.out_port = ofp.OFPP_NONE
         
         flow_stats_gen_ts =  range (10,test_timeout,10)
         
@@ -135,14 +147,14 @@ class FlowCounter2(base_tests.SimpleDataPlane):
             sleep(1)
 
 
+class RxPktPerPort(base_tests.SimpleDataPlane):
 
-class PortCounter1(base_tests.SimpleDataPlane):
-
-    """Verify that rx_packets counter in the Port_Stats reply , increments when packets are received on a port"""
+    """Verify that rx_packets counter in the Port_Stats reply
+        increments when packets are received on a port"""
     
     def runTest(self):
 
-        logging.info("Running Port_Counter_1 test")
+        logging.info("Running RxPktPerPort test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -157,39 +169,28 @@ class PortCounter1(base_tests.SimpleDataPlane):
         logging.info("Send Port_Stats Request for Port P , verify recieved packets counters are incrementing in accordance")
         
         #Insert a flow with match on all ingress port
-        (pkt, match ) = Wildcard_All_Except_Ingress(self,of_ports)
+        (pkt, match ) = wildcard_all_except_ingress(self,of_ports)
 
-        # Send Port_Stats request for the ingress port (retrieve current counter state)
-        port_stats_req = message.port_stats_request()
-        port_stats_req.port_no = of_ports[0]   
-        response,pkt = self.controller.transact(port_stats_req)
-        self.assertTrue(response is not None,"No response received for port stats request") 
-        current_counter=0
+        # Send Port_Stats request for the ingress port (retrieve old counter state)
+        (counter) = get_portstats(self,of_ports[0])
 
-        for obj in response.stats:
-            current_counter += obj.rx_packets
-        
-        #Send packets matching the flow
-        num_pkts = 5
+        # Send packets matching the flow
+        num_pkts = 5 
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
 
-        # FIXME: instead of sleeping, keep requesting port stats until
-        # the expected queue counter increases or some large timeout is
-        # reached
-        time.sleep(2)
-        
+        pkts = num_pkts+counter[0]
+
         #Verify recieved packet counters 
-        Verify_PortStats1(self,of_ports[0],current_counter,num_pkts)
+        verify_portstats(self,of_ports[0],rx_packets=pkts)
 
-
-class PortCounter2(base_tests.SimpleDataPlane):
+class TxPktPerPort(base_tests.SimpleDataPlane):
 
     """Verify that tx_packets counter in the Port_Stats reply , increments when packets are transmitted by a port"""
       
     def runTest(self):
 
-        logging.info("Running Port_Counter_2 test")
+        logging.info("Running TxPktPerPort test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -205,39 +206,30 @@ class PortCounter2(base_tests.SimpleDataPlane):
         logging.info("Send Port_Stats Request for Port P , verify transmitted packets counters are incrementing in accordance")
         
         #Insert a flow with match on all ingress port
-        (pkt, match ) = Wildcard_All_Except_Ingress(self,of_ports)
+        (pkt,match) = wildcard_all_except_ingress(self,of_ports)
         
-        # Send Port_Stats request for the ingress port (retrieve current counter state)
-        port_stats_req = message.port_stats_request()
-        port_stats_req.port_no = of_ports[1]   
-        response,pkt = self.controller.transact(port_stats_req)
-        self.assertTrue(response is not None,"No response received for port stats request") 
-        current_counter=0
-
-        for obj in response.stats:
-            current_counter += obj.tx_packets
+        # Send Port_Stats request for the ingress port (retrieve old counter state)
+        (counter) = get_portstats(self,of_ports[1])
         
         #Send packets matching the flow
         num_pkts = 5
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
 
-        # FIXME: instead of sleeping, keep requesting port stats until
-        # the expected queue counter increases or some large timeout is
-        # reached
-        time.sleep(2)
+        pkts = num_pkts+counter[1]
         
         #Verify transmitted_packet counters 
-        Verify_PortStats2(self,of_ports[1],current_counter,num_pkts)
+        verify_portstats(self,of_ports[1],tx_packets=pkts)
 
 
-class PortCounter3(base_tests.SimpleDataPlane):
+
+class RxBytPerPort(base_tests.SimpleDataPlane):
 
     """Verify that recieved bytes counter in the Port_Stats reply , increments in accordance with the bytes recieved on a port"""
 
     def runTest(self):
         
-        logging.info("Running Port_Counter_3 test")
+        logging.info("Running RxBytPerPort test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -252,41 +244,30 @@ class PortCounter3(base_tests.SimpleDataPlane):
         logging.info("Send Port_Stats Request for Port P , verify recieved bytes counters are incrementing in accordance")
         
         #Insert a flow with match on all ingress port
-        (pkt, match ) = Wildcard_All_Except_Ingress(self,of_ports)
+        (pkt, match ) = wildcard_all_except_ingress(self,of_ports)
 
         # Send Port_Stats request for the ingress port (retrieve current counter state)
-        port_stats_req = message.port_stats_request()
-        port_stats_req.port_no = of_ports[0]   
-        response,pkt = self.controller.transact(port_stats_req)
-        self.assertTrue(response is not None,"No response received for port stats request") 
-        current_counter=0
-
-        for obj in response.stats:
-            current_counter += obj.rx_bytes
-         
+        (counter) = get_portstats(self,of_ports[0])
+           
         #Send packets matching the flow.
         num_pkts = 5
         byte_count = num_pkts*len(str(pkt))
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
 
-        # FIXME: instead of sleeping, keep requesting port stats until
-        # the expected queue counter increases or some large timeout is
-        # reached
-        time.sleep(2)
+        byt_count = byte_count+counter[2]
 
-        
         #Verify recieved_bytes counters 
-        Verify_PortStats3(self,of_ports[0],current_counter,byte_count)
+        verify_portstats(self,of_ports[0],rx_byte=byt_count)
 
 
-class PortCounter4(base_tests.SimpleDataPlane):
+class TxBytPerPort(base_tests.SimpleDataPlane):
 
     """Verify that trasnsmitted bytes counter in the Port_Stats reply , increments in accordance with the bytes trasmitted by a port"""
 
     def runTest(self):
         
-        logging.info("Running Port_Counter_4 test")
+        logging.info("Running TxBytPerPort test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -301,17 +282,10 @@ class PortCounter4(base_tests.SimpleDataPlane):
         logging.info("Send Port_Stats Request for Port P , verify trasmitted bytes counters are incrementing in accordance")
         
         #Insert a flow with match on all ingress port
-        (pkt, match ) = Wildcard_All_Except_Ingress(self,of_ports)
+        (pkt, match ) = wildcard_all_except_ingress(self,of_ports)
 
         # Send Port_Stats request for the ingress port (retrieve current counter state)
-        port_stats_req = message.port_stats_request()
-        port_stats_req.port_no = of_ports[1]   
-        response,pkt = self.controller.transact(port_stats_req)
-        self.assertTrue(response is not None,"No response received for port stats request") 
-        current_counter=0
-
-        for obj in response.stats:
-            current_counter += obj.tx_bytes
+        (counter) = get_portstats(self,of_ports[1])
         
         #Send packets matching the flow.
         num_pkts = 5
@@ -319,17 +293,12 @@ class PortCounter4(base_tests.SimpleDataPlane):
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
 
-        # FIXME: instead of sleeping, keep requesting port stats until
-        # the expected queue counter increases or some large timeout is
-        # reached
-        time.sleep(2)
-
+        byt_count = byte_count+counter[3]
         
         #Verify trasmitted_bytes counters 
-        Verify_PortStats4(self,of_ports[1],current_counter,byte_count)
+        verify_portstats(self,of_ports[1],tx_byte=byt_count)
 
-
-class TableCounter1(base_tests.SimpleDataPlane):
+class ActiveCount(base_tests.SimpleDataPlane):
 
     """Verify that active_count counter in the Table_Stats reply , increments in accordance with the flows inserted in a table"""
 
@@ -349,20 +318,20 @@ class TableCounter1(base_tests.SimpleDataPlane):
         logging.info("Send Table_Stats, verify active_count counter is incremented in accordance")
 
         #Insert a flow with match on all ingress port
-        (pkt, match ) = Wildcard_All_Except_Ingress(self,of_ports)
+        (pkt, match ) = wildcard_all_except_ingress(self,of_ports)
 
         #Generate  Table_Stats
-        Verify_TableStats(self,active_entries=1)
+        verify_tablestats(self,expect_active=1)
 
 
-class TableCounter2(base_tests.SimpleDataPlane):
+class LookupMatchedCount(base_tests.SimpleDataPlane):
     
     """Verify that lookup_count and matched_count counter in the Table_Stats reply 
         increments in accordance with the packets looked up and matched with the flows in the table"""
 
     def runTest(self):
 
-        logging.info("Running Table_Counter_1 test")
+        logging.info("Running LookupMatchedCount test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -376,22 +345,11 @@ class TableCounter2(base_tests.SimpleDataPlane):
         logging.info("Send N packets matching the flow, N' packets not matching the flow")
         logging.info("Send Table_Stats, verify lookup_count = N+N' & matched_count=N ")
 
-        # Send Table_Stats reuqest (retrieve current table counters )
-
-        stat_req = message.table_stats_request()
-        response, pkt = self.controller.transact(stat_req,
-                                                     timeout=5)
-        self.assertTrue(response is not None, 
-                            "No response to stats request")
-        current_lookedup = 0
-        current_matched = 0
-            
-        for obj in response.stats:
-            current_lookedup += obj.lookup_count
-            current_matched  += obj.matched_count
+        #Get Current Table Stats
+        (current_lookedup,current_matched,current_active) = get_tablestats(self)
 
         #Insert a flow with match on all ingress port
-        (pkt, match ) = Wildcard_All_Except_Ingress(self,of_ports)
+        (pkt, match ) = wildcard_all_except_ingress(self,of_ports)
 
         #send packet pkt N times (pkt matches the flow)
         num_sends = 5
@@ -403,35 +361,31 @@ class TableCounter2(base_tests.SimpleDataPlane):
         for pkt_cnt in range(num_sends):
             self.dataplane.send(of_ports[1],str(pkt))
 
-        # FIXME: instead of sleeping, keep requesting table stats until
-        # the expected queue counter increases or some large timeout is
-        # reached
-        time.sleep(2)
+        new_lookup = num_sends+num_sends2+current_lookedup
+        new_matched = num_sends+current_matched
 
         #Verify lookup_count and matched_count counters.
-        Verify_TableStats1(self,current_lookedup,current_matched,num_sends+num_sends2,num_sends)
+        verify_tablestats(self,expect_lookup=new_lookup,expect_match=new_matched)
 
-
-
-class QueueCounter1(base_tests.SimpleDataPlane):
+class TxPktPerQueue(base_tests.SimpleDataPlane):
 
     """Verify that tx_packets in the queue_stats reply increments in accordance with the number of transmitted packets"""
     
     def runTest(self):
-        logging.info("Running Queue_Counter_1 test")
+        logging.info("Running TxPktPerQueue test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         # Get queue stats from switch (retrieve current state)
-        (queue_stats,p) = Get_QueueStats(self,ofp.OFPP_ALL,ofp.OFPQ_ALL)
+        (queue_stats,p) = get_queuestats(self,ofp.OFPP_ALL,ofp.OFPQ_ALL)
   
         for idx in range(len(of_ports)):
             ingress_port = of_ports[idx]
             egress_port = of_ports[(idx + 1) % len(of_ports)]
 
-            queue_id = portQueuesGet(self,queue_stats,egress_port)
+            queue_id = port_queues_get(self,queue_stats,egress_port)
 
             for egress_queue_id in queue_id:
 
@@ -440,13 +394,13 @@ class QueueCounter1(base_tests.SimpleDataPlane):
                 self.assertEqual(rv, 0, "Failed to delete all flows")
 
                 # Get Queue stats for selected egress queue only
-                (qs_before,p) = Get_QueueStats(self,egress_port,egress_queue_id)
+                (qs_before,p) = get_queuestats(self,egress_port,egress_queue_id)
 
                 #Insert a flow with enqueue action to queues configured on egress_port
-                (pkt,match) = Enqueue(self,ingress_port,egress_port,egress_queue_id)
+                (pkt,match) = enqueue(self,ingress_port,egress_port,egress_queue_id)
               
                 #Send packet on the ingress_port and verify its received on egress_port
-                SendPacket(self,pkt,ingress_port,egress_port)
+                send_packet(self,pkt,ingress_port,egress_port)
                 
                 # FIXME: instead of sleeping, keep requesting queue stats until
                 # the expected queue counter increases or some large timeout is
@@ -454,31 +408,31 @@ class QueueCounter1(base_tests.SimpleDataPlane):
                 time.sleep(2)
 
                 # Get Queue Stats for selected egress queue after packets have been sent
-                (qs_after,p) = Get_QueueStats(self,egress_port,egress_queue_id)
+                (qs_after,p) = get_queuestats(self,egress_port,egress_queue_id)
 
                 #Verify transmitted packets counter is incremented in accordance
                 self.assertEqual(qs_after.stats[0].tx_packets,qs_before.stats[0].tx_packets + 1,"tx_packet count incorrect")
        
 
-class QueueCounter2(base_tests.SimpleDataPlane):
+class TxBytPerQueue(base_tests.SimpleDataPlane):
 
     """Verify that tx_bytes in the queue_stats reply increments in accordance with the number of transmitted bytes"""
     
     def runTest(self):
-        logging.info("Running Queue_Counter_2 test")
+        logging.info("Running TxBytPerQueue test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         # Get queue stats from switch (retrieve current state)
-        (queue_stats,p) = Get_QueueStats(self,ofp.OFPP_ALL,ofp.OFPQ_ALL)
+        (queue_stats,p) = get_queuestats(self,ofp.OFPP_ALL,ofp.OFPQ_ALL)
   
         for idx in range(len(of_ports)):
             ingress_port = of_ports[idx]
             egress_port = of_ports[(idx + 1) % len(of_ports)]
 
-            queue_id = portQueuesGet(self,queue_stats,egress_port)
+            queue_id = port_queues_get(self,queue_stats,egress_port)
 
             for egress_queue_id in queue_id:
 
@@ -487,13 +441,13 @@ class QueueCounter2(base_tests.SimpleDataPlane):
                 self.assertEqual(rv, 0, "Failed to delete all flows")
 
                 # Get Queue stats for selected egress queue only
-                (qs_before,p) = Get_QueueStats(self,egress_port,egress_queue_id)
+                (qs_before,p) = get_queuestats(self,egress_port,egress_queue_id)
 
                 #Insert a flow with enqueue action to queues configured on egress_port
-                (pkt,match) = Enqueue(self,ingress_port,egress_port,egress_queue_id)
+                (pkt,match) = enqueue(self,ingress_port,egress_port,egress_queue_id)
               
                 #Send packet on the ingress_port and verify its received on egress_port
-                SendPacket(self,pkt,ingress_port,egress_port)
+                send_packet(self,pkt,ingress_port,egress_port)
                 
                 # FIXME: instead of sleeping, keep requesting queue stats until
                 # the expected queue counter increases or some large timeout is
@@ -501,10 +455,10 @@ class QueueCounter2(base_tests.SimpleDataPlane):
                 time.sleep(2)
 
                 # Get Queue Stats for selected egress queue after packets have been sent
-                (qs_after,p) = Get_QueueStats(self,egress_port,egress_queue_id)
+                (qs_after,p) = get_queuestats(self,egress_port,egress_queue_id)
 
                 #Verify transmitted packets counter is incremented in accordance
-                self.assertEqual(qs_after.stats[0].tx_bytes,qs_before.stats[0].tx_bytes + len(str(pkt)),"tx_bytes count incorrect")
+                self.assertEqual(qs_after.stats[0].tx_bytes,qs_before.stats[0].tx_bytes + 1,"tx_bytes count incorrect")
        
 
 
@@ -528,16 +482,10 @@ class RxDrops(base_tests.SimpleDataPlane):
         logging.info("Verify reply has rx_dropped count ")
 
         # Send Port_Stats request for the ingress port (retrieve current counter state)
-        port_stats_req = message.port_stats_request()
-        port_stats_req.port_no = of_ports[0]   
-        response,pkt = self.controller.transact(port_stats_req)
-        self.assertTrue(response is not None,"No response received for port stats request") 
-        current_counter=0
+        (counter) = get_portstats(self,of_ports[0])
 
-        for obj in response.stats:
-            current_counter += obj.rx_dropped
-        
-        logging.info("recieved dropped count is :" + str(current_counter))
+        rx_drp = counter[4]
+        logging.info("recieved dropped count is :" + str(rx_drp))
 
 
 
@@ -561,16 +509,10 @@ class TxDrops(base_tests.SimpleDataPlane):
         logging.info("Verify reply has tx_dropped count ")
 
         # Send Port_Stats request for the ingress port (retrieve current counter state)
-        port_stats_req = message.port_stats_request()
-        port_stats_req.port_no = of_ports[0]   
-        response,pkt = self.controller.transact(port_stats_req)
-        self.assertTrue(response is not None,"No response received for port stats request") 
-        current_counter=0
-
-        for obj in response.stats:
-            current_counter += obj.tx_dropped
+        (counter) = get_portstats(self,of_ports[1])
         
-        logging.info("Transmitted dropped count is :" + str(current_counter))
+        tx_drp = counter[5]
+        logging.info("Transmitted dropped count is :" + str(tx_drp))
 
 
 class RxErrors(base_tests.SimpleDataPlane):
@@ -595,16 +537,10 @@ class RxErrors(base_tests.SimpleDataPlane):
         logging.info("Verify reply has rx_errors count ")
 
         # Send Port_Stats request for the ingress port (retrieve current counter state)
-        port_stats_req = message.port_stats_request()
-        port_stats_req.port_no = of_ports[0]   
-        response,pkt = self.controller.transact(port_stats_req)
-        self.assertTrue(response is not None,"No response received for port stats request") 
-        current_counter=0
+        (counter) = get_portstats(self,of_ports[0])
 
-        for obj in response.stats:
-            current_counter += obj.rx_errors
-        
-        logging.info("Recieve Errors count is :" + str(current_counter))
+        rx_err = counter[6]    
+        logging.info("Recieve Errors count is :" + str(rx_err))
 
 
 class TxErrors(base_tests.SimpleDataPlane):
@@ -627,16 +563,10 @@ class TxErrors(base_tests.SimpleDataPlane):
         logging.info("Verify reply has Tx_errors count ")
 
         # Send Port_Stats request for the ingress port (retrieve current counter state)
-        port_stats_req = message.port_stats_request()
-        port_stats_req.port_no = of_ports[0]   
-        response,pkt = self.controller.transact(port_stats_req)
-        self.assertTrue(response is not None,"No response received for port stats request") 
-        current_counter=0
-
-        for obj in response.stats:
-            current_counter += obj.tx_errors
+        (counter) = get_portstats(self,of_ports[0])
         
-        logging.info("Trasmit Error count is :" + str(current_counter))
+        tx_err = counter[7]
+        logging.info("Trasmit Error count is :" + str(tx_err))
 
 
 class RxFrameErr(base_tests.SimpleDataPlane):
@@ -659,18 +589,10 @@ class RxFrameErr(base_tests.SimpleDataPlane):
         logging.info("Verify reply has rx_frame_err count ")
 
         # Send Port_Stats request for the ingress port (retrieve current counter state)
-        port_stats_req = message.port_stats_request()
-        port_stats_req.port_no = of_ports[0]   
-        response,pkt = self.controller.transact(port_stats_req)
-        self.assertTrue(response is not None,"No response received for port stats request") 
-        current_counter=0
-
-        for obj in response.stats:
-            current_counter += obj.rx_frame_err
+        (counter) = get_portstats(self,of_ports[0])
         
-        logging.info("Recieve Frame Errors count is :" + str(current_counter))
-
-
+        rx_fr_err = counter[8]
+        logging.info("Recieve Frame Errors count is :" + str(rx_fr_err))
 
 
 
@@ -694,16 +616,10 @@ class RxOErr(base_tests.SimpleDataPlane):
         logging.info("Verify reply has rx_over_err count ")
 
         # Send Port_Stats request for the ingress port (retrieve current counter state)
-        port_stats_req = message.port_stats_request()
-        port_stats_req.port_no = of_ports[0]   
-        response,pkt = self.controller.transact(port_stats_req)
-        self.assertTrue(response is not None,"No response received for port stats request") 
-        current_counter=0
-
-        for obj in response.stats:
-            current_counter += obj.rx_over_err
+        (counter) = get_portstats(self,of_ports[0])
         
-        logging.info("Recieve Overrun Errors  count is :" + str(current_counter))
+        rx_over_err = counter[9]
+        logging.info("Recieve Overrun Errors  count is :" + str(rx_over_err))
 
 
 
@@ -728,16 +644,10 @@ class RxCrcErr(base_tests.SimpleDataPlane):
         logging.info("Verify reply has rx_crc_err count ")
 
         # Send Port_Stats request for the ingress port (retrieve current counter state)
-        port_stats_req = message.port_stats_request()
-        port_stats_req.port_no = of_ports[0]   
-        response,pkt = self.controller.transact(port_stats_req)
-        self.assertTrue(response is not None,"No response received for port stats request") 
-        current_counter=0
+        (counter) = get_portstats(self,of_ports[0])
 
-        for obj in response.stats:
-            current_counter += obj.rx_crc_err
-        
-        logging.info("Recieve CRC Errors  count is :" + str(current_counter))
+        rx_crc_err = counter[10]   
+        logging.info("Recieve CRC Errors  count is :" + str(rx_crc_err))
 
 
 
@@ -761,27 +671,21 @@ class Collisions(base_tests.SimpleDataPlane):
         logging.info("Verify reply has Collisions count ")
 
         # Send Port_Stats request for the ingress port (retrieve current counter state)
-        port_stats_req = message.port_stats_request()
-        port_stats_req.port_no = of_ports[0]   
-        response,pkt = self.controller.transact(port_stats_req)
-        self.assertTrue(response is not None,"No response received for port stats request") 
-        current_counter=0
+        (counter) = get_portstats(self,of_ports[0])
 
-        for obj in response.stats:
-            current_counter += obj.collisions
-        
-        logging.info("collisions count is :" + str(current_counter))
+        collisions = counter[11]
+        logging.info("collisions count is :" + str(collisions))
 
 
 
 
-class QueueCounter3(base_tests.SimpleDataPlane):
+class TxErrorPerQueue(base_tests.SimpleDataPlane):
 
     """Verify that tx_errors in the queue_stats reply increments in accordance with the number of packets dropped due to overrun """
 
     def runTest(self):
         
-        logging.info("Running Queue_Counter_3 test")
+        logging.info("Running TxErrorPerQueue test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -795,15 +699,10 @@ class QueueCounter3(base_tests.SimpleDataPlane):
         logging.info("Verify reply has Tramitted Overrun errors count ")
 
         # Send Port_Stats request for the ingress port (retrieve current counter state)
-        port_stats_req = message.port_stats_request()
-        port_stats_req.port_no = of_ports[0]   
-        response,pkt = self.controller.transact(port_stats_req)
-        self.assertTrue(response is not None,"No response received for port stats request") 
-        current_counter=0
+        (counter) = get_portstats(self,of_ports[0])
 
-        for obj in response.stats:
-            current_counter += obj.tx_errors
+        tx_err = counter[12]
+        logging.info("Transmit Overrun Error count is :" + str(tx_err))
 
-        logging.info("Transmit Overrun Error count is :" + str(current_counter))
 
 
