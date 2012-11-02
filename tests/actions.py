@@ -411,7 +411,7 @@ class ForwardTable(base_tests.SimpleDataPlane):
         logging.info("Expecting packet on the egress_port")
         
         #Insert a all wildcarded flow
-        (pkt,match) = Wildcard_All(self,of_ports)
+        (pkt,match) = wildcard_all(self,of_ports)
         
         #Create a packet out message
         pkt_out =message.packet_out();

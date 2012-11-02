@@ -102,10 +102,10 @@ class ModifyStateAdd(base_tests.SimpleProtocol):
         logging.info("Expecting active_count=1 in table_stats_reply")
 
         #Insert a flow entry matching on ingress_port
-        (Pkt,match) = Wildcard_All_Except_Ingress(self,of_ports)
+        (pkt,match) = wildcard_all_except_ingress(self,of_ports)
 
         # Send Table_Stats_Request and verify flow gets inserted.
-        Verify_TableStats(self,active_entries=1)
+        verify_tablestats(self,expect_active=1)
 
 
 class ModifyStateDelete(base_tests.SimpleProtocol):
@@ -131,16 +131,16 @@ class ModifyStateDelete(base_tests.SimpleProtocol):
         logging.info("Expecting the active_count=0 in table_stats_reply")
 
         #Insert a flow matching on ingress_port 
-        (Pkt,match) = Wildcard_All_Except_Ingress(self,of_ports)
+        (pkt,match) = wildcard_all_except_ingress(self,of_ports)
 
         #Verify Flow inserted.
-        Verify_TableStats(self,active_entries=1)
+        verify_tablestats(self,expect_active=1)
 
         #Delete the flow 
-        NonStrict_Delete(self,match)
+        nonstrict_delete(self,match)
 
         # Send Table_Stats_Request and verify flow deleted.
-        Verify_TableStats(self,active_entries=0)
+        verify_tablestats(self,expect_active=0)
 
       
 
@@ -166,13 +166,13 @@ class ModifyStateModify(base_tests.SimpleDataPlane):
         logging.info("Expecting the Test Packet to implement the modified action")
 
         # Insert a flow matching on ingress_port with action A (output to of_port[1])    
-        (pkt,match) = Wildcard_All_Except_Ingress(self,of_ports)
+        (pkt,match) = wildcard_all_except_ingress(self,of_ports)
   
         # Modify the flow action (output to of_port[2])
-        Modify_Flow_Action(self,of_ports,match)
+        modify_flow_action(self,of_ports,match)
         
         # Send the Test Packet and verify action implemented is A' (output to of_port[2])
-        SendPacket(self,pkt,of_ports[0],of_ports[2])
+        send_packet(self,pkt,of_ports[0],of_ports[2])
                        
 
 class ReadState(base_tests.SimpleProtocol):
@@ -197,10 +197,10 @@ class ReadState(base_tests.SimpleProtocol):
         logging.info("Expecting the a flow_stats_reply without errors")
 
         # Insert a flow with match on ingress_port
-        (pkt,match ) = Wildcard_All_Except_Ingress(self,of_ports)
+        (pkt,match ) = wildcard_all_except_ingress(self,of_ports)
         
         #Verify Flow_Stats request does not generate errors
-        Verify_FlowStats(self,match)
+        get_flowstats(self,match)
         
 class PacketOut(base_tests.SimpleDataPlane):
     
@@ -355,7 +355,7 @@ class BarrierRequestReply(base_tests.SimpleProtocol):
 
         #Send Barrier Request
         request = message.barrier_request()
-        (response, pkt) = self.controller.transact(request)
+        (response,pkt) = self.controller.transact(request)
         self.assertEqual(response.header.type, ofp.OFPT_BARRIER_REPLY,'response is not barrier_reply')
         self.assertEqual(request.header.xid, response.header.xid,
                          'response xid != request xid')
