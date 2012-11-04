@@ -200,10 +200,9 @@ class TxPktPerPort(base_tests.SimpleDataPlane):
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-
         logging.info("Insert any flow matching on in_port=ingress_port, action output to egress_port T ")
         logging.info("Send N Packets matching the flow on ingress_port P ")
-        logging.info("Send Port_Stats Request for Port P , verify transmitted packets counters are incrementing in accordance")
+        logging.info("Send Port_Stats Request for Port T , verify transmitted packets counters are incrementing in accordance")
         
         #Insert a flow with match on all ingress port
         (pkt,match) = wildcard_all_except_ingress(self,of_ports)
@@ -277,9 +276,9 @@ class TxBytPerPort(base_tests.SimpleDataPlane):
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-        logging.info("Insert any flow matching on in_port=ingress_port,action = output to egress_port")
+        logging.info("Insert any flow matching on in_port=ingress_port,action = output to egress_port T")
         logging.info("Send N Packets matching the flow on ingress_port P ")
-        logging.info("Send Port_Stats Request for Port P , verify trasmitted bytes counters are incrementing in accordance")
+        logging.info("Send Port_Stats Request for Port T , verify trasmitted bytes counters are incrementing in accordance")
         
         #Insert a flow with match on all ingress port
         (pkt, match ) = wildcard_all_except_ingress(self,of_ports)
@@ -314,7 +313,7 @@ class ActiveCount(base_tests.SimpleDataPlane):
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-        logging.info("Insert any flow matching on in_port=ingress_port,action = output to egress_port")
+        logging.info("Insert any flow matching on in_port=ingress_port,action = output to egress_port T ")
         logging.info("Send Table_Stats, verify active_count counter is incremented in accordance")
 
         #Insert a flow with match on all ingress port
@@ -402,16 +401,9 @@ class TxPktPerQueue(base_tests.SimpleDataPlane):
                 #Send packet on the ingress_port and verify its received on egress_port
                 send_packet(self,pkt,ingress_port,egress_port)
                 
-                # FIXME: instead of sleeping, keep requesting queue stats until
-                # the expected queue counter increases or some large timeout is
-                # reached
-                time.sleep(2)
+                expected_packets = qs_before.stats[0].tx_packets+1
 
-                # Get Queue Stats for selected egress queue after packets have been sent
-                (qs_after,p) = get_queuestats(self,egress_port,egress_queue_id)
-
-                #Verify transmitted packets counter is incremented in accordance
-                self.assertEqual(qs_after.stats[0].tx_packets,qs_before.stats[0].tx_packets + 1,"tx_packet count incorrect")
+                verify_queuestats(self,egress_port,egress_queue_id,expect_packet=expected_packets)
        
 
 class TxBytPerQueue(base_tests.SimpleDataPlane):
@@ -449,19 +441,11 @@ class TxBytPerQueue(base_tests.SimpleDataPlane):
                 #Send packet on the ingress_port and verify its received on egress_port
                 send_packet(self,pkt,ingress_port,egress_port)
                 
-                # FIXME: instead of sleeping, keep requesting queue stats until
-                # the expected queue counter increases or some large timeout is
-                # reached
-                time.sleep(2)
+                expected_bytes = qs_before.stats[0].tx_bytes+len(str(pkt))
 
-                # Get Queue Stats for selected egress queue after packets have been sent
-                (qs_after,p) = get_queuestats(self,egress_port,egress_queue_id)
-
-                #Verify transmitted packets counter is incremented in accordance
-                self.assertEqual(qs_after.stats[0].tx_bytes,qs_before.stats[0].tx_bytes + 1,"tx_bytes count incorrect")
+                verify_queuestats(self,egress_port,egress_queue_id,expect_packet=expected_bytes)
        
-
-
+       
 class RxDrops(base_tests.SimpleDataPlane):
 
     """Verify that rx_dropped counters in the Port_Stats reply increments in accordance with the packets dropped by RX"""

@@ -19,7 +19,7 @@ from time import sleep
 
 #################### Functions for various types of flow_mod  ##########################################################################################
 
-def exact_match(self,of_ports,priority=0):
+def exact_match(self,of_ports,priority=None):
 # Generate ExactMatch flow .
 
     #Create a simple tcp packet and generate exact flow match from it.
@@ -34,7 +34,7 @@ def exact_match(self,of_ports,priority=0):
     msg.command = ofp.OFPFC_ADD
     msg.buffer_id = 0xffffffff
     msg.match = match
-    if priority != 0 :
+    if priority != None :
         msg.priority = priority
 
     act = action.action_output()
@@ -47,7 +47,7 @@ def exact_match(self,of_ports,priority=0):
 
     return (pkt_exactflow,match)
 
-def exact_match_with_prio(self,of_ports,priority=0):
+def exact_match_with_prio(self,of_ports,priority=None):
     # Generate ExactMatch with action output to port 2
 
     #Create a simple tcp packet and generate exact flow match from it.
@@ -62,7 +62,7 @@ def exact_match_with_prio(self,of_ports,priority=0):
     msg.command = ofp.OFPFC_ADD
     msg.buffer_id = 0xffffffff
     msg.match = match
-    if priority != 0 :
+    if priority != None :
         msg.priority = priority
 
     act = action.action_output()
@@ -76,7 +76,7 @@ def exact_match_with_prio(self,of_ports,priority=0):
     return (pkt_exactflow,match)         
        
 
-def match_all_except_source_address(self,of_ports,priority=0):
+def match_all_except_source_address(self,of_ports,priority=None):
 # Generate Match_All_Except_Source_Address flow
         
     #Create a simple tcp packet and generate match all except src address flow.
@@ -91,7 +91,7 @@ def match_all_except_source_address(self,of_ports,priority=0):
     msg1.command = ofp.OFPFC_ADD
     msg1.buffer_id = 0xffffffff
     msg1.match = match1
-    if priority != 0 :
+    if priority != None :
         msg1.priority = priority
 
     act1 = action.action_output()
@@ -104,7 +104,7 @@ def match_all_except_source_address(self,of_ports,priority=0):
 
     return (pkt_wildcardsrc,match1)
 
-def match_wthernet_src_address(self,of_ports,priority=0):
+def match_wthernet_src_address(self,of_ports,priority=None):
     #Generate Match_Ethernet_SrC_Address flow
 
     #Create a simple tcp packet and generate match on ethernet src address flow
@@ -119,7 +119,7 @@ def match_wthernet_src_address(self,of_ports,priority=0):
     msg.command = ofp.OFPFC_ADD
     msg.buffer_id = 0xffffffff
     msg.match = match
-    if priority != 0 :
+    if priority != None :
         msg.priority = priority
 
     act = action.action_output()
@@ -132,7 +132,7 @@ def match_wthernet_src_address(self,of_ports,priority=0):
 
     return (pkt_MatchSrc,match)
       
-def match_ethernet_dst_address(self,of_ports,priority=0):
+def match_ethernet_dst_address(self,of_ports,priority=None):
     #Generate Match_Ethernet_Dst_Address flow
 
     #Create a simple tcp packet and generate match on ethernet dst address flow
@@ -146,7 +146,7 @@ def match_ethernet_dst_address(self,of_ports,priority=0):
     msg.command = ofp.OFPFC_ADD
     msg.buffer_id = 0xffffffff
     msg.match = match
-    if priority != 0 :
+    if priority != None :
         msg.priority = priority
 
     act = action.action_output()
@@ -159,7 +159,7 @@ def match_ethernet_dst_address(self,of_ports,priority=0):
 
     return (pkt_matchdst,match)
 
-def wildcard_all(self,of_ports,priority=0):
+def wildcard_all(self,of_ports,priority=None):
 # Generate a Wildcard_All Flow 
 
     #Create a simple tcp packet and generate wildcard all flow match from it.  
@@ -177,7 +177,7 @@ def wildcard_all(self,of_ports,priority=0):
     act2 = action.action_output()
     act2.port = of_ports[1]
     self.assertTrue(msg2.actions.add(act2), "could not add action")
-    if priority != 0 :
+    if priority != None :
         msg2.priority = priority
 
     rv = self.controller.message_send(msg2)
@@ -186,7 +186,7 @@ def wildcard_all(self,of_ports,priority=0):
 
     return (pkt_wildcard,match2)
 
-def wildcard_all_except_ingress(self,of_ports,priority=0):
+def wildcard_all_except_ingress(self,of_ports,priority=None):
 # Generate Wildcard_All_Except_Ingress_port flow
         
 
@@ -211,7 +211,7 @@ def wildcard_all_except_ingress(self,of_ports,priority=0):
     act3.port = of_ports[1]
     self.assertTrue(msg3.actions.add(act3), "could not add action")
 
-    if priority != 0 :
+    if priority != None :
         msg3.priority = priority
 
     rv = self.controller.message_send(msg3)
@@ -220,7 +220,7 @@ def wildcard_all_except_ingress(self,of_ports,priority=0):
 
     return (pkt_matchingress,match3)
 
-def wildcard_all_except_ingress1(self,of_ports,priority=0):
+def wildcard_all_except_ingress1(self,of_ports,priority=None):
 # Generate Wildcard_All_Except_Ingress_port flow with action output to port egress_port 2 
         
 
@@ -244,7 +244,7 @@ def wildcard_all_except_ingress1(self,of_ports,priority=0):
     act3 = action.action_output()
     act3.port = of_ports[2]
     self.assertTrue(msg3.actions.add(act3), "could not add action")
-    if priority != 0 :
+    if priority != None :
         msg3.priority = priority
 
     rv = self.controller.message_send(msg3)
@@ -256,7 +256,7 @@ def wildcard_all_except_ingress1(self,of_ports,priority=0):
 
 
 
-def match_vlan_id(self,of_ports,priority=0):
+def match_vlan_id(self,of_ports,priority=None):
     #Generate Match_Vlan_Id
 
     #Create a simple tcp packet and generate match on ethernet dst address flow
@@ -270,7 +270,7 @@ def match_vlan_id(self,of_ports,priority=0):
     msg.command = ofp.OFPFC_ADD
     msg.buffer_id = 0xffffffff
     msg.match = match
-    if priority != 0 :
+    if priority != None :
         msg.priority = priority
 
     act = action.action_output()
@@ -283,7 +283,7 @@ def match_vlan_id(self,of_ports,priority=0):
 
     return (pkt_matchvlanid,match)
 
-def match_vlan_pcp(self,of_ports,priority=0):
+def match_vlan_pcp(self,of_ports,priority=None):
     #Generate Match_Vlan_Id
 
     #Create a simple tcp packet and generate match on ethernet dst address flow
@@ -297,7 +297,7 @@ def match_vlan_pcp(self,of_ports,priority=0):
     msg.command = ofp.OFPFC_ADD
     msg.buffer_id = 0xffffffff
     msg.match = match
-    if priority != 0 :
+    if priority != None :
         msg.priority = priority
 
     act = action.action_output()
@@ -311,7 +311,7 @@ def match_vlan_pcp(self,of_ports,priority=0):
     return (pkt_matchvlanpcp,match)
 
 
-def match_mul_l2(self,of_ports,priority=0):
+def match_mul_l2(self,of_ports,priority=None):
     #Generate Match_Mul_L2 flow
 
     #Create a simple eth packet and generate match on ethernet protocol flow
@@ -325,7 +325,7 @@ def match_mul_l2(self,of_ports,priority=0):
     msg.command = ofp.OFPFC_ADD
     msg.buffer_id = 0xffffffff
     msg.match = match
-    if priority != 0 :
+    if priority != None :
         msg.priority = priority
 
     act = action.action_output()
@@ -339,7 +339,7 @@ def match_mul_l2(self,of_ports,priority=0):
     return (pkt_mulL2,match)
 
 
-def match_mul_L4(self,of_ports,priority=0):
+def match_mul_L4(self,of_ports,priority=None):
     #Generate Match_Mul_L4 flow
 
         #Create a simple tcp packet and generate match on tcp protocol flow
@@ -352,7 +352,7 @@ def match_mul_L4(self,of_ports,priority=0):
     msg.command = ofp.OFPFC_ADD
     msg.buffer_id = 0xffffffff
     msg.match = match
-    if priority != 0 :
+    if priority != None :
         msg.priority = priority
 
     act = action.action_output()
@@ -365,7 +365,7 @@ def match_mul_L4(self,of_ports,priority=0):
 
     return (pkt_mulL4,match)  
 
-def match_ip_tos(self,of_ports,priority=0):
+def match_ip_tos(self,of_ports,priority=None):
     #Generate a Match on IP Type of service flow
 
         #Create a simple tcp packet and generate match on Type of service 
@@ -379,7 +379,7 @@ def match_ip_tos(self,of_ports,priority=0):
     msg.command = ofp.OFPFC_ADD
     msg.buffer_id = 0xffffffff
     msg.match = match
-    if priority != 0 :
+    if priority != None :
         msg.priority = priority
     act = action.action_output()
     act.port = of_ports[1]
@@ -391,7 +391,7 @@ def match_ip_tos(self,of_ports,priority=0):
 
     return (pkt_iptos,match)
 
-def match_tcp_src(self,of_ports,priority=0):
+def match_tcp_src(self,of_ports,priority=None):
     #Generate Match_Tcp_Src
 
     #Create a simple tcp packet and generate match on tcp source port flow
@@ -405,7 +405,7 @@ def match_tcp_src(self,of_ports,priority=0):
     msg.command = ofp.OFPFC_ADD
     msg.buffer_id = 0xffffffff
     msg.match = match
-    if priority != 0 :
+    if priority != None :
         msg.priority = priority
 
     act = action.action_output()
@@ -418,7 +418,7 @@ def match_tcp_src(self,of_ports,priority=0):
 
     return (pkt_matchtSrc,match)  
 
-def match_tcp_dst(self,of_ports,priority=0):
+def match_tcp_dst(self,of_ports,priority=None):
     #Generate Match_Tcp_Dst
 
         #Create a simple tcp packet and generate match on tcp destination port flow
@@ -432,7 +432,7 @@ def match_tcp_dst(self,of_ports,priority=0):
     msg.command = ofp.OFPFC_ADD
     msg.buffer_id = 0xffffffff
     msg.match = match
-    if priority != 0 :
+    if priority != None :
         msg.priority = priority
     act = action.action_output()
     act.port = of_ports[1]
@@ -448,7 +448,7 @@ def match_tcp_dst(self,of_ports,priority=0):
 
 
 
-def match_ethernet_type(self,of_ports,priority=0):
+def match_ethernet_type(self,of_ports,priority=None):
     #Generate a Match_Ethernet_Type flow
 
     #Create a simple tcp packet and generate match on ethernet type flow
@@ -462,7 +462,7 @@ def match_ethernet_type(self,of_ports,priority=0):
     msg.command = ofp.OFPFC_ADD
     msg.buffer_id = 0xffffffff
     msg.match = match
-    if priority != 0 :
+    if priority != None :
         msg.priority = priority
 
     act = action.action_output()
@@ -477,7 +477,7 @@ def match_ethernet_type(self,of_ports,priority=0):
 
    
    
-def strict_modify_flow_action(self,egress_port,match,priority=0):
+def strict_modify_flow_action(self,egress_port,match,priority=None):
 # Strict Modify the flow Action 
         
     #Create a flow_mod message , command MODIFY_STRICT
@@ -490,7 +490,7 @@ def strict_modify_flow_action(self,egress_port,match,priority=0):
     act5.port = egress_port
     self.assertTrue(msg5.actions.add(act5), "could not add action")
 
-    if priority != 0 :
+    if priority != None :
         msg5.priority = priority
 
     # Send the flow with action A'
@@ -498,7 +498,7 @@ def strict_modify_flow_action(self,egress_port,match,priority=0):
     self.assertTrue(rv != -1, "Error installing flow mod")
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-def modify_flow_action(self,of_ports,match,priority=0):
+def modify_flow_action(self,of_ports,match,priority=None):
 # Modify the flow action
         
     #Create a flow_mod message , command MODIFY 
@@ -513,7 +513,7 @@ def modify_flow_action(self,of_ports,match,priority=0):
     act8.port = of_ports[2]
     self.assertTrue(msg8.actions.add(act8), "could not add action")
 
-    if priority != 0 :
+    if priority != None :
         msg8.priority = priority
 
     # Send the flow with action A'
@@ -633,17 +633,10 @@ def get_tablestats(self):
 
 
 
-def verify_tablestats(self,expect_lookup=0,expect_match=0,expect_active=0):
+def verify_tablestats(self,expect_lookup=None,expect_match=None,expect_active=None):
 
     stat_req = message.table_stats_request()
-
-    all_packets_lookedup = 0
-    all_packets_matched = 0
-    all_entries_active = 0 
-    lookedup = 0 
-    matched = 0 
-    active = 0
-        
+    
     for i in range(0,60):
 
         logging.info("Sending stats request")
@@ -652,56 +645,43 @@ def verify_tablestats(self,expect_lookup=0,expect_match=0,expect_active=0):
                                                      timeout=5)
         self.assertTrue(response is not None,"No response to stats request")
 
+        lookedup = 0 
+        matched = 0 
+        active = 0
+        
         for item in response.stats:
+
             lookedup += item.lookup_count
             matched += item.matched_count
             active += item.active_count
 
             logging.info("Packets Looked up " + str(lookedup) + " packets")
-            if expect_lookup != 0 :
-                if lookedup == expect_lookup:
-                    all_packets_lookedup = 1
-            
             logging.info("Packets matched " + str(matched) + "packets")
-            if expect_match != 0 :
-                if matched == expect_match:
-                    all_packets_matched = 1
-
             logging.info("Active flow entries" + str(active) + "flows")
-            if active != 0 :
-                if active == expect_active:
-                    all_entries_active = 1
-
-        if all_packets_lookedup == 1 and expect_lookup!= 0 :
-            break
-        if all_packets_matched== 1 and expect_match !=0 :
-            break
-        if all_entries_active ==1 and expect_active != 0 :
-            break 
         
+        if expect_lookup != None and expect_lookup != lookedup:continue
+        if expect_match != None and expect_match != matched:continue
+        if expect_active != None and expect_active != active:continue
+        break
+
         sleep(1)
 
-    if expect_lookup != 0 :
-        self.assertTrue(all_packets_matched, "lookup counter is not incremented properly")
-    if expect_match != 0 :
-        self.assertTrue(all_packets_matched, "matched counter is not incremented properly")
-    if expect_active != 0 :
-        self.assertTrue(all_entries_active, "active counter is not incremented properly")
+    if expect_lookup != None :
+        self.assertEqual(expect_lookup,item.lookup_count,"lookup counter is not incremented properly")
+    if expect_match != None :
+        self.assertEqual(expect_match,item.matched_count, "matched counter is not incremented properly")
+    if expect_active != None :
+        self.assertEqual(expect_active,item.active_count,"active counter is not incremented properly")
 
 
-def verify_flowstats(self,match,byte_count=0,packet_count=0):
+def verify_flowstats(self,match,byte_count=None,packet_count=None):
     # Verify flow counters : byte_count and packet_count
 
     stat_req = message.flow_stats_request()
     stat_req.match = match
     stat_req.table_id = 0xff
     stat_req.out_port = ofp.OFPP_NONE
-
-    all_packets_rx = 0
-    all_bytes_rx = 0
-    packet_counter = 0
-    byte_counter = 0 
-        
+    
     for i in range(0,60):
         logging.info("Sending stats request")
         # TODO: move REPLY_MORE handling to controller.transact?
@@ -709,44 +689,35 @@ def verify_flowstats(self,match,byte_count=0,packet_count=0):
                                                      timeout=5)
         self.assertTrue(response is not None,"No response to stats request")
 
+        packet_counter = 0
+        byte_counter = 0 
+
         for item in response.stats:
             packet_counter += item.packet_count
             byte_counter += item.byte_count
 
             logging.info("Recieved" + str(item.packet_count) + " packets")
-            if packet_count != 0 :
-                if packet_count == packet_counter:
-                    all_packets_rx = 1
-            
+           
             logging.info("Received " + str(item.byte_count) + "bytes")
-            if byte_count != 0 :
-                if byte_counter == byte_count:
-                    all_bytes_rx = 1
+           
+        if packet_count != None  and  packet_count != packet_counter: continue
+        if byte_count != None  and  byte_count != byte_counter: continue
+        break
 
-        if all_packets_rx == 1 and packet_count != 0 :
-            break
-        if all_bytes_rx == 1 and byte_count !=0 :
-            break 
         sleep(1)
+    
+    if packet_count != None :
+        self.assertEqual(packet_count,item.packet_count,"packet_count counter is not incremented correctly")
 
-    if packet_count != 0 :
-        self.assertTrue(all_packets_rx,"packet_count counter is not incremented correctly")
-
-    if byte_count != 0 :   
-        self.assertTrue(all_bytes_rx,"byte_count counter is not incremented correctly")
+    if byte_count != None :   
+        self.assertEqual(byte_count,item.byte_count,"byte_count counter is not incremented correctly")
 
 
-def verify_portstats(self, port,tx_packets=0,rx_packets=0,rx_byte=0,tx_byte=0):
+def verify_portstats(self, port,tx_packets=None,rx_packets=None,rx_byte=None,tx_byte=None):
 
     
     stat_req = message.port_stats_request()
     stat_req.port_no = port
-    all_packets_received = 0
-    all_packets_sent = 0
-    all_bytes_recieved = 0
-    all_bytes_sent = 0 
-    sentp = recvp = 0
-    sentb = recvb = 0
     
     for i in range(0,60):
         logging.info("Sending stats request")
@@ -756,57 +727,82 @@ def verify_portstats(self, port,tx_packets=0,rx_packets=0,rx_byte=0,tx_byte=0):
                        "No response to stats request")
         self.assertTrue(len(response.stats) == 1,
                        "Did not receive port stats reply")
+
+        sentp = recvp = 0
+        sentb = recvb = 0
+        
         for item in response.stats:
             sentp += item.tx_packets
             recvp += item.rx_packets
-            sentb += item.tx_bytes
             recvb += item.rx_bytes
+            sentb += item.tx_bytes
+           
             
             logging.info("Sent " + str(sentp) + " packets")
-            if tx_packets != 0:
-                if item.tx_packets == tx_packets:
-                    all_packets_sent = 1
-            
             logging.info("Received " + str(recvp) + " packets")
-            if rx_packets !=0 :
-                if item.rx_packets == rx_packets:
-                    all_packets_received = 1
-
             logging.info("Received " + str(recvb) + "bytes")
-            if rx_byte !=0 :
-                if item.rx_bytes == rx_byte:
-                    all_bytes_received = 1  
-
             logging.info("Sent" + str(sentb) + "bytes")
-            if tx_byte !=0 :
-                if item.tx_bytes == tx_byte:
-                    all_bytes_sent = 1  
-                    
-        if rx_packets !=0  and all_packets_received == 1:
-            break
-        if tx_packets !=0 and all_packets_sent == 1:
-            break 
-        if rx_byte !=0  and all_bytes_received == 1:
-            break
-        if tx_byte !=0 and all_bytes_sent == 1:
-            break
+    
+        if tx_packets != None  and  tx_packets != sentp: continue
+        if rx_packets != None  and  rx_packets != recvp: continue 
+        if rx_byte != None  and  rx_byte != recvb: continue
+        if tx_byte != None  and  tx_byte != sentb: continue
+        
+        break
         
         sleep(1)
 
-    if (rx_packets !=0):
-        self.assertTrue(all_packets_received == 1 ,"rx_packets counter is not incremented correctly")
-    if (tx_packets !=0):
-        self.assertTrue(all_packets_sent == 1,"tx_packets counter is not incremented correctly")
-    if (rx_byte !=0):
-        self.assertTrue(all_bytes_received == 1 ,"rx_bytes counter is not incremented correctly")
-    if (tx_byte !=0):
-        self.assertTrue(all_bytes_sent == 1,"tx_bytes counter is not incremented correctly")
+    if (tx_packets != None):
+        self.assertEqual(tx_packets,item.tx_packets,"rx_packets counter is not incremented correctly")
+    if (rx_packets != None):
+        self.assertEqual(rx_packets,item.rx_packets,"tx_packets counter is not incremented correctly")
+    if (rx_byte != None):
+        self.assertEqual(rx_byte,item.rx_bytes,"rx_bytes counter is not incremented correctly")
+    if (tx_byte != None):
+        self.assertEqual(tx_byte,item.tx_bytes,"tx_bytes counter is not incremented correctly")
 
+
+
+def verify_queuestats(self,port_num,queue_id,expect_packet=None,expect_byte=None):
+    
+    # Verify queue counters : tx_packets and tx_bytes
+
+    request = message.queue_stats_request()
+    request.port_no  = port_num
+    request.queue_id = queue_id
+    
+    for i in range(0,60):
+
+        logging.info("Sending stats request")
+     
+        (queue_stats, p) = self.controller.transact(request)
+        self.assertNotEqual(queue_stats, None, "Queue stats request failed")
+        packet_counter = 0
+        byte_counter = 0 
+        
+        for item in queue_stats.stats[0]:
+            packet_counter += item.tx_packets
+            byte_counter += item.tx_bytes
+
+            logging.info("Transmitted" + str(packet_counter) + " packets")
+            logging.info("Transmitted" + str(byte_counter) + "bytes")
+           
+        if expect_packet != None  and  packet_counter != expect_packet: continue
+        if expect_byte != None  and  byte_counter != expect_byte: continue
+        break
+
+        sleep(1)
+    
+    if expect_packet != None :
+        self.assertEqual(packet_counter,expect_packet,"tx_packets counter is not incremented correctly")
+
+    if expect_byte != None :   
+        self.assertEqual(byte_counter,expect_byte,"tx_bytes counter is not incremented correctly")
 
 
 ############################## Various delete commands #############################################################################################
 
-def strict_delete(self,match,priority=0):
+def strict_delete(self,match,priority=None):
 # Issue Strict Delete 
         
     #Create flow_mod message, command DELETE_STRICT
@@ -816,7 +812,7 @@ def strict_delete(self,match,priority=0):
     msg4.buffer_id = 0xffffffff
     msg4.match = match
 
-    if priority != 0 :
+    if priority != None :
         msg4.priority = priority
     rv = self.controller.message_send(msg4)
     self.assertTrue(rv!= -1, "Error installing flow mod")
@@ -824,7 +820,7 @@ def strict_delete(self,match,priority=0):
 
 
 
-def nonstrict_delete(self,match,priority=0):
+def nonstrict_delete(self,match,priority=None):
 # Issue Non_Strict Delete 
         
     #Create flow_mod message, command DELETE
@@ -834,7 +830,7 @@ def nonstrict_delete(self,match,priority=0):
     msg6.buffer_id = 0xffffffff
     msg6.match = match
 
-    if priority != 0 :
+    if priority != None :
         msg6.priority = priority
 
     rv = self.controller.message_send(msg6)
