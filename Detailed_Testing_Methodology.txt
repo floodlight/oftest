@@ -993,7 +993,7 @@ c) Verify packet received has tcp destination port rewritten. (ip_tos= new_ip_to
 Test Description: Verify that packet_count in the Flow_Stats reply increments in accordance with the packets in flow  
 
 Test mode: Automated
-Test Tile: FlowCounter1
+Test Tile: PktPerFlow
 POrts: 3 (1 Control Plane 2 Data Plane)
 Initial State: Default (Clear switch state), Connection setup
 Test-Field: Mandatory
@@ -1014,7 +1014,7 @@ d) Verify packet_count = N in the flow_stats_reply
 Test Description: Verify that byte_count in the Flow_Stats reply increments in accordance with the bytes in flow  
 
 Test mode: Automated
-Test Tile: FlowCounter1
+Test Tile: BytPerFlow
 POrts: 3 (1 Control Plane 2 Data Plane)
 Initial State: Default (Clear switch state), Connection setup
 Test-Field: Mandatory
@@ -1035,7 +1035,7 @@ d) Verify byte_count = N*(no. of bytes in one packet) in the flow_stats_reply
 Test Description: Verify that duration_sec in the Flow_Stats reply increments in accordance with the time that flow was alive in sec 
 
 Test mode: Automated
-Test Tile: FlowCounter2
+Test Tile: DurationPerFlow
 POrts: 3 (1 Control Plane 2 Data Plane)
 Initial State: Default (Clear switch state), Connection setup
 Test-Field: Mandatory
@@ -1056,7 +1056,7 @@ Test Description: Verify that duration_nsec in the flow_stats repl increments in
 beyond duration_sec.
 
 Test mode: Automated
-Test Tile: FlowCounter2
+Test Tile: DurationPerFlow
 POrts: 3 (1 Control Plane 2 Data Plane)
 Initial State: Default (Clear switch state), Connection setup
 Test-Field: Mandatory
@@ -1077,7 +1077,7 @@ is out of scope)
 Test Description: Verify that rx_packets in the Port_Stats reply increments in accordance with the packets recieved on that port
 
 Test mode: Automated
-Test Tile: PortCounter1
+Test Tile: RxPktPerPort
 POrts: 3 (1 Control Plane 2 Data Plane)
 Initial State: Default (Clear switch state), Connection setup
 Test-Field: Mandatory
@@ -1099,7 +1099,7 @@ d) Verify port_stats_reply has rx_packet=N
 Test Description: Verify that tx_packets in the Port_Stats reply increments in accordance with the packets transmitted from a port  
 
 Test mode: Automated
-Test Tile: PortCounter2
+Test Tile: TxPktPerPort
 POrts: 3 (1 Control Plane 2 Data Plane)
 Initial State: Default (Clear switch state), Connection setup
 Test-Field: Mandatory
@@ -1120,7 +1120,7 @@ d) Verify port_stats_reply had tx_packets=N
 Test Description: Verify that rx_bytes in the Port_Stats reply increments in accordance with the bytes recieved on a port  
 
 Test mode: Automated
-Test Tile: PortCounter3
+Test Tile: RxBytPerPort
 POrts: 3 (1 Control Plane 2 Data Plane)
 Initial State: Default (Clear switch state), Connection setup
 Test-Field: Mandatory
@@ -1141,7 +1141,7 @@ d) Verify port_stats_reply had rx_bytes=N*(no. of bytes in a packet)
 Test Description: Verify that tx_bytes in the Port_Stats reply increments in accordance with the bytes transmitted from a port  
 
 Test mode: Automated
-Test Tile: PortCounter4
+Test Tile: TxBytPerPort
 POrts: 3 (1 Control Plane 2 Data Plane)
 Initial State: Default (Clear switch state), Connection setup
 Test-Field: Mandatory
@@ -1314,7 +1314,7 @@ b) Verify port_stats reply has collisions count
 Test Description: Verify that active_count in the table increments in accordance with the flows inserted in the table
 
 Test mode: Automated
-Test Tile: TableCounter1
+Test Tile: ActiveCount
 POrts: 3 (1 Control Plane 2 Data Plane)
 Initial State: Default (Clear switch state), Connection setup
 Test-Field: Mandatory
@@ -1334,7 +1334,7 @@ c) Verify active_count=1
 Test Description: Verify that lookup_count in the Table_Stats reply increments in accordance with the number of packets looked up in table
 
 Test mode: Automated
-Test Tile: TableCounter2
+Test Tile: LookupMatchedCount
 POrts: 3 (1 Control Plane 2 Data Plane)
 Initial State: Default (Clear switch state), Connection setup
 Test-Field: Mandatory
@@ -1355,7 +1355,7 @@ e) Verify lookup_count = N+N'
 Test Description: Verify that matched_count in the Table_Stats reply increments in accordance with the number of packets matched with the table
 
 Test mode: Automated
-Test Tile: TableCounter2
+Test Tile: LookupMatchedCount
 POrts: 3 (1 Control Plane 2 Data Plane)
 Initial State: Default (Clear switch state), Connection setup
 Test-Field: Mandatory
@@ -1377,7 +1377,7 @@ e) Verify matched_count = N
 Test Description: Verify that tx_packets in the queue_stats reply increments in accordance with the number of transmitted packets
 
 Test mode: Automated
-Test Tile: QueueCounter1
+Test Tile: TxPktPerQueue
 POrts: 3 (1 Control Plane 2 Data Plane)
 Initial State: Default (Clear switch state), Connection setup
 Test-Field: Optional
@@ -1401,7 +1401,7 @@ h) Repeat b , c , d , e , f for all the egress_ports available
 Test Description: Verify that tx_bytes in the queue_stats reply increments in accordance with the number of transmitted bytes
 
 Test mode: Automated
-Test Tile: QueueCounter2
+Test Tile: TxBytPerQueue
 POrts: 3 (1 Control Plane 2 Data Plane)
 Initial State: Default (Clear switch state), Connection setup
 Test-Field: Optional
@@ -1423,7 +1423,7 @@ h) Repeat b , c , d , e , f for all the egress_ports available
 
 Test Description: Verify that tx_errors in the queue_stats reply increments in accordance with the number of packets dropped due to overrun.
 Test mode: Automated
-Test Tile: QueueCounter3
+Test Tile: TxErrorPerQueue
 POrts: 3 (1 Control Plane 2 Data Plane)
 Initial State: Default (Clear switch state), Connection setup
 Test-Field: Optional
