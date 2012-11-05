@@ -443,7 +443,7 @@ class TxBytPerQueue(base_tests.SimpleDataPlane):
                 
                 expected_bytes = qs_before.stats[0].tx_bytes+len(str(pkt))
 
-                verify_queuestats(self,egress_port,egress_queue_id,expect_packet=expected_bytes)
+                verify_queuestats(self,egress_port,egress_queue_id,expect_byte=expected_bytes)
        
        
 class RxDrops(base_tests.SimpleDataPlane):
