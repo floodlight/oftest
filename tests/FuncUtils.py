@@ -648,6 +648,8 @@ def verify_tablestats(self,expect_lookup=None,expect_match=None,expect_active=No
         lookedup = 0 
         matched = 0 
         active = 0
+
+        sleep(1)
         
         for item in response.stats:
 
@@ -664,7 +666,7 @@ def verify_tablestats(self,expect_lookup=None,expect_match=None,expect_active=No
         if expect_active != None and expect_active != active:continue
         break
 
-        sleep(1)
+        
 
     if expect_lookup != None :
         self.assertEqual(expect_lookup,item.lookup_count,"lookup counter is not incremented properly")
@@ -692,6 +694,8 @@ def verify_flowstats(self,match,byte_count=None,packet_count=None):
         packet_counter = 0
         byte_counter = 0 
 
+        sleep(1)
+
         for item in response.stats:
             packet_counter += item.packet_count
             byte_counter += item.byte_count
@@ -704,7 +708,7 @@ def verify_flowstats(self,match,byte_count=None,packet_count=None):
         if byte_count != None  and  byte_count != byte_counter: continue
         break
 
-        sleep(1)
+        
     
     if packet_count != None :
         self.assertEqual(packet_count,item.packet_count,"packet_count counter is not incremented correctly")
@@ -730,6 +734,8 @@ def verify_portstats(self, port,tx_packets=None,rx_packets=None,rx_byte=None,tx_
 
         sentp = recvp = 0
         sentb = recvb = 0
+
+        sleep(1)
         
         for item in response.stats:
             sentp += item.tx_packets
@@ -750,7 +756,7 @@ def verify_portstats(self, port,tx_packets=None,rx_packets=None,rx_byte=None,tx_
         
         break
         
-        sleep(1)
+        
 
     if (tx_packets != None):
         self.assertEqual(tx_packets,item.tx_packets,"rx_packets counter is not incremented correctly")
@@ -779,8 +785,10 @@ def verify_queuestats(self,port_num,queue_id,expect_packet=None,expect_byte=None
         self.assertNotEqual(queue_stats, None, "Queue stats request failed")
         packet_counter = 0
         byte_counter = 0 
+
+        sleep(1)
         
-        for item in queue_stats.stats[0]:
+        for item in queue_stats.stats:
             packet_counter += item.tx_packets
             byte_counter += item.tx_bytes
 
@@ -791,7 +799,7 @@ def verify_queuestats(self,port_num,queue_id,expect_packet=None,expect_byte=None
         if expect_byte != None  and  byte_counter != expect_byte: continue
         break
 
-        sleep(1)
+        
     
     if expect_packet != None :
         self.assertEqual(packet_counter,expect_packet,"tx_packets counter is not incremented correctly")
