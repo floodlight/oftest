@@ -43,14 +43,14 @@ class OverlapChecking(base_tests.SimpleDataPlane):
         logging.info("Expecting switch to return an error")
 
         #Insert a flow F with wildcarded all fields
-        (pkt,match) = Wildcard_All(self,of_ports)
+        (pkt,match) = wildcard_all(self,of_ports)
 
         #Verify flow is active  
-        Verify_TableStats(self,active_entries=1)
+        verify_tablestats(self,expect_active=1)
         
         # Build a overlapping flow F'-- Wildcard All except ingress with check overlap bit set
-        Pkt_MatchIngress = simple_tcp_packet()
-        match3 = parse.packet_to_flow_match(Pkt_MatchIngress)
+        pkt_matchingress = simple_tcp_packet()
+        match3 = parse.packet_to_flow_match(pkt_matchingress)
         self.assertTrue(match3 is not None, "Could not generate flow match from pkt")
         match3.wildcards = ofp.OFPFW_ALL-ofp.OFPFW_IN_PORT
         match3.in_port = of_ports[0]
@@ -70,7 +70,7 @@ class OverlapChecking(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         # Verify Flow does not get inserted 
-        Verify_TableStats(self,active_entries=1)
+        verify_tablestats(self,expect_active=1)
 
         #Verify OFPET_FLOW_MOD_FAILED/OFPFMFC_OVERLAP error is recieved on the control plane
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,         
@@ -103,16 +103,16 @@ class NoOverlapChecking(base_tests.SimpleDataPlane):
         logging.info("Expecting switch to insert the flows without generating errors")
 
         #Build a flow F with wildcarded all fields.
-        (pkt,match) = Wildcard_All(self,of_ports)
+        (pkt,match) = wildcard_all(self,of_ports)
         
         #Verify flow is active  
-        Verify_TableStats(self,active_entries=1)
+        verify_tablestats(self,expect_active=1)
         
         # Build a overlapping flow F' without check overlap bit set.
-        Wildcard_All_Except_Ingress(self,of_ports)
+        wildcard_all_except_ingress(self,of_ports)
 
         # Verify Flow gets inserted 
-        Verify_TableStats(self,active_entries=2)
+        verify_tablestats(self,expect_active=2)
 
 
 class IdenticalFlows(base_tests.SimpleDataPlane):
@@ -135,25 +135,25 @@ class IdenticalFlows(base_tests.SimpleDataPlane):
         logging.info("Expecting switch to overwrite the first flow and clear the counters associated with it ")
         
         # Create and add flow-1, check on dataplane it is active.
-        (pkt,match) = Wildcard_All(self,of_ports)
+        (pkt,match) = wildcard_all(self,of_ports)
 
         # Verify active_entries in table_stats_request =1 
-        Verify_TableStats(self,active_entries=1)
+        verify_tablestats(self,expect_active=1)
         
         # Send Packet (to increment counters like byte_count and packet_count)
-        SendPacket(self,pkt,of_ports[0],of_ports[1])
+        send_packet(self,pkt,of_ports[0],of_ports[1])
 
         # Verify Flow counters have incremented
-        Verify_FlowStats(self,match,byte_count=len(str(pkt)),packet_count=1)
+        verify_flowstats(self,match,byte_count=len(str(pkt)),packet_count=1)
         
         #Send Identical flow 
-        (pkt1,match1) = Wildcard_All(self,of_ports)
+        (pkt1,match1) = wildcard_all(self,of_ports)
 
         # Verify active_entries in table_stats_request =1 
-        Verify_TableStats(self,active_entries=1)
+        verify_tablestats(self,expect_active=1)
 
         # Verify Flow counters reset
-        Verify_FlowStats(self,match,byte_count=0,packet_count=0)
+        verify_flowstats(self,match,byte_count=0,packet_count=0)
 
    
 class EmerFlowTimeout(base_tests.SimpleProtocol): 
@@ -245,7 +245,7 @@ class MissingModifyAdd(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed") 
 
         #Verify the flow gets added i.e. active_count= 1
-        Verify_TableStats(self,active_entries=1)
+        verify_tablestats(self,expect_active=1)
 
 
 class ModifyAction(base_tests.SimpleDataPlane):
@@ -268,22 +268,22 @@ class ModifyAction(base_tests.SimpleDataPlane):
         logging.info("Expecting the flow action to be modified , but the flow-counters should be preserved")
            
         #Create and add flow-1 Match on all, except one wildcarded (src adddress).Action A , output to of_port[1]
-        (pkt,match) = Match_All_Except_Source_Address(self,of_ports)
+        (pkt,match) = match_all_except_source_address(self,of_ports)
 
         #Send Packet matching the flow thus incrementing counters like packet_count,byte_count
-        SendPacket(self,pkt,of_ports[0],of_ports[1])
+        send_packet(self,pkt,of_ports[0],of_ports[1])
 
         #Verify flow counters
-        Verify_FlowStats(self,match,byte_count=len(str(pkt)),packet_count=1)
+        verify_flowstats(self,match,byte_count=len(str(pkt)),packet_count=1)
 
         #Modify flow- 1 
-        Modify_Flow_Action(self,of_ports,match)
+        modify_flow_action(self,of_ports,match)
         
         # Send Packet matching the flow-1 i.e ingress_port=port[0] and verify it is recieved on corret dataplane port i.e port[2]
-        SendPacket(self,pkt,of_ports[0],of_ports[2])
+        send_packet(self,pkt,of_ports[0],of_ports[2])
         
         #Verify flow counters are preserved
-        Verify_FlowStats(self,match,byte_count=(2*len(str(pkt))),packet_count=2)
+        verify_flowstats(self,match,byte_count=(2*len(str(pkt))),packet_count=2)
 
 
 class StrictModifyAction(base_tests.SimpleDataPlane):
@@ -306,28 +306,28 @@ class StrictModifyAction(base_tests.SimpleDataPlane):
         logging.info("Expecting the flow action to be modified , but the flow-counters should be preserved")
         
         #Create and add flow-1 Match on all, except one wildcarded (src adddress).Action A
-        (pkt,match) = Match_All_Except_Source_Address(self,of_ports,priority=100)
+        (pkt,match) = match_all_except_source_address(self,of_ports,priority=100)
         
         #Create and add flow-2 , Match on ingress_port only, Action A
-        (pkt1,match1) = Wildcard_All_Except_Ingress(self,of_ports,priority=10)
+        (pkt1,match1) = wildcard_all_except_ingress(self,of_ports,priority=10)
         
         # Verify both the flows are active
-        Verify_TableStats(self,active_entries=2)
+        verify_tablestats(self,expect_active=2)
 
         #Send a packet matching the flows, thus incrementing flow-counters (packet matches the flow F-1 with higher priority)
-        SendPacket(self,pkt,of_ports[0],of_ports[1])
+        send_packet(self,pkt,of_ports[0],of_ports[1])
 
         # Verify flow counters of the flow-1
-        Verify_FlowStats(self,match,byte_count=len(str(pkt)),packet_count=1)
+        verify_flowstats(self,match,byte_count=len(str(pkt)),packet_count=1)
 
         # Strict-Modify flow- 1 
-        Strict_Modify_Flow_Action(self,of_ports[2],match,priority=100)
+        strict_modify_flow_action(self,of_ports[2],match,priority=100)
         
         # Send Packet matching the flow-1 i.e ingress_port=port[0] and verify it is recieved on corret dataplane port i.e port[2]
-        SendPacket(self,pkt,of_ports[0],of_ports[2])
+        send_packet(self,pkt,of_ports[0],of_ports[2])
         
         # Verify flow counters are preserved
-        Verify_FlowStats(self,match,byte_count=(2*len(str(pkt))),packet_count=2)
+        verify_flowstats(self,match,byte_count=(2*len(str(pkt))),packet_count=2)
 
 
 class DeleteNonexistingFlow(base_tests.SimpleDataPlane):
@@ -387,13 +387,13 @@ class SendFlowRem(base_tests.SimpleDataPlane):
         logging.info("Expecting flow removed message only for F2")
 
         # Insert flow-1 with F without OFPFF_SEND_FLOW_REM flag set.
-        (pkt,match) = Wildcard_All_Except_Ingress(self,of_ports)
+        (pkt,match) = wildcard_all_except_ingress(self,of_ports)
 
         # Verify flow is inserted 
-        Verify_TableStats(self,active_entries=1)
+        verify_tablestats(self,expect_active=1)
 
         #Delete the flow-1
-        NonStrict_Delete(self,match,priority=0)
+        nonstrict_delete(self,match,priority=0)
 
         # Verify no flow removed message is generated for the FLOW-1
 
@@ -461,7 +461,7 @@ class DeleteEmerFlow(base_tests.SimpleProtocol):
         
         # Delete the emergency flow
         
-        NonStrict_Delete(self,match)
+        nonstrict_delete(self,match)
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPFF_SEND_FLOW_REM ,
                                                timeout=2)
         self.assertTrue(response is None, 
@@ -489,69 +489,69 @@ class StrictVsNonstrict(base_tests.SimpleDataPlane):
         logging.info("Issue Strict Delete command , verify it gets deleted")     
         
         #Insert F with an exact Match 
-        (pkt,match) = Exact_Match(self,of_ports)  
-        Verify_TableStats(self,active_entries=1)
+        (pkt,match) = exact_match(self,of_ports)  
+        verify_tablestats(self,expect_active=1)
 
         #Issue Strict Delete Command , verify F gets deleted.
-        Strict_Delete(self,match)
-        Verify_TableStats(self,active_entries=0)
+        strict_delete(self,match)
+        verify_tablestats(self,expect_active=0)
 
         logging.info("Inserting two overlapping flows")
         logging.info("Issue Strict Delete command ")
         logging.info("Expecting only one flow gets deleted , because Strict Delete matches on wildcards as well")     
         
         #Insert Flow T with match on all , except one wildcarded ( say src adddress ). 
-        (pkt,match) = Match_All_Except_Source_Address(self,of_ports)
+        (pkt,match) = match_all_except_source_address(self,of_ports)
 
         #Insert another flow T' with match on ingress_port , wildcarded rest.  
-        (pkt1,match1) = Wildcard_All_Except_Ingress(self,of_ports)
-        Verify_TableStats(self,active_entries=2)
+        (pkt1,match1) = wildcard_all_except_ingress(self,of_ports)
+        verify_tablestats(self,expect_active=2)
 
         #Issue Strict Delete matching on ingress_port. Verify only T' gets deleted
-        Strict_Delete(self,match1)
-        Verify_TableStats(self,active_entries=1) 
+        strict_delete(self,match1)
+        verify_tablestats(self,expect_active=1) 
 
         logging.info("Inserting two overlapping flows")
         logging.info("Issue Non-Strict Delete command ")
         logging.info("Expecting both the flow gets deleted , because wildcards are active")    
 
         #Insert T and T' again . 
-        (pkt,match) = Match_All_Except_Source_Address(self,of_ports)
-        (pkt1,match1) = Wildcard_All_Except_Ingress(self,of_ports)
-        Verify_TableStats(self,active_entries=2)
+        (pkt,match) = match_all_except_source_address(self,of_ports)
+        (pkt1,match1) = wildcard_all_except_ingress(self,of_ports)
+        verify_tablestats(self,expect_active=2)
 
         #Issue Non-strict Delete with match on ingress_port.Verify T+T' gets deleted . 
-        NonStrict_Delete(self,match1)
-        Verify_TableStats(self,active_entries=0)
+        nonstrict_delete(self,match1)
+        verify_tablestats(self,expect_active=0)
 
         logging.info("Inserting three overlapping flows with different priorities")
         logging.info("Issue Non-Strict Delete command ")
         logging.info("Expecting all the flows to get deleted")  
   
         #Insert T , add Priority P (say 100 ) 
-        (pkt,match) = Match_All_Except_Source_Address(self,of_ports,priority=100)
+        (pkt,match) = match_all_except_source_address(self,of_ports,priority=100)
 
         #Insert T' add priority (200).
-        (pkt1,match1) = Wildcard_All_Except_Ingress(self,of_ports,priority=200)
+        (pkt1,match1) = wildcard_all_except_ingress(self,of_ports,priority=200)
         
         #Insert T' again add priority 300 --> T" . 
-        (pkt2,match2) = Wildcard_All_Except_Ingress(self,of_ports,priority=300)
-        Verify_TableStats(self,active_entries=3)
+        (pkt2,match2) = wildcard_all_except_ingress(self,of_ports,priority=300)
+        verify_tablestats(self,expect_active=3)
 
         #Issue Non-Strict Delete and verify all getting deleted
-        NonStrict_Delete(self,match1,priority=200)
-        Verify_TableStats(self,active_entries=0)
+        nonstrict_delete(self,match1,priority=200)
+        verify_tablestats(self,expect_active=0)
 
         logging.info("Inserting three overlapping flows with different priorities")
         logging.info("Issue Strict Delete command ")
         logging.info("Expecting only one to get deleted because here priorities & wildcards are being matched")  
 
         #Issue Strict-Delete and verify only T'' gets deleted. 
-        (pkt,match) = Match_All_Except_Source_Address(self,of_ports,priority=100)
-        (pkt1,match1) = Wildcard_All_Except_Ingress(self,of_ports,priority=200)
-        (pkt2,match2) = Wildcard_All_Except_Ingress(self,of_ports,priority=300)
-        Strict_Delete(self,match1,priority=200)
-        Verify_TableStats(self,active_entries=2)
+        (pkt,match) = match_all_except_source_address(self,of_ports,priority=100)
+        (pkt1,match1) = wildcard_all_except_ingress(self,of_ports,priority=200)
+        (pkt2,match2) = wildcard_all_except_ingress(self,of_ports,priority=300)
+        strict_delete(self,match1,priority=200)
+        verify_tablestats(self,expect_active=2)
 
         
    
@@ -577,10 +577,10 @@ class Outport1(base_tests.SimpleDataPlane):
         logging.info("Expecting switch to filter the delete command")
         
         #Build and send Flow-1 with action output to of_port[1]
-        (pkt,match) = Wildcard_All_Except_Ingress(self,of_ports)
+        (pkt,match) = wildcard_all_except_ingress(self,of_ports)
 
         # Verify active_entries in table_stats_request = 1
-        Verify_TableStats(self,active_entries=1)
+        verify_tablestats(self,expect_active=1)
 
         #Send delete command matching the flow-1 but with contraint out_port = of_port[2]
         msg7 = message.flow_mod()
@@ -594,7 +594,7 @@ class Outport1(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         # Verify flow will not get deleted, active_entries in table_stats_request = 1
-        Verify_TableStats(self,active_entries=1)
+        verify_tablestats(self,expect_active=1)
 
         logging.info("Deleting the flow with out_port set to of_port[1]")
         logging.info("Expecting switch to delete the flow")
@@ -611,7 +611,7 @@ class Outport1(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
         
         #Verify flow gets deleted.
-        Verify_TableStats(self,active_entries=0)
+        verify_tablestats(self,expect_active=0)
 
 
 class IdleTimeout(base_tests.SimpleDataPlane):
@@ -645,7 +645,7 @@ class IdleTimeout(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         #Verify flow gets inserted
-        Verify_TableStats(self,active_entries=1)
+        verify_tablestats(self,expect_active=1)
         
         # Verify flow removed message is recieved.
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_FLOW_REMOVED,
@@ -678,22 +678,22 @@ class Outport2(base_tests.SimpleDataPlane):
         logging.info("Expecting switch to ignore out_port")
 
         # Create and add flow-1,Action A ,output to port of_port[1], out_port set to of_ports[2]
-        (pkt,match) = Wildcard_All_Except_Ingress(self,of_ports)
+        (pkt,match) = wildcard_all_except_ingress(self,of_ports)
 
         # Verify flow is active
-        Verify_TableStats(self,active_entries=1)
+        verify_tablestats(self,expect_active=1)
         
         # Send Packet matching the flow
-        SendPacket(self,pkt,of_ports[0],of_ports[1])
+        send_packet(self,pkt,of_ports[0],of_ports[1])
         
         # Insert Flow-Modify matching flow F-1 ,action A', output to port[2], out_port set to port[3]
-        Modify_Flow_Action(self,of_ports,match)
+        modify_flow_action(self,of_ports,match)
 
         # Again verify active_entries in table_stats_request =1 
-        Verify_TableStats(self,active_entries=1)
+        verify_tablestats(self,expect_active=1)
 
         #Verify action is modified
-        SendPacket(self,pkt,of_ports[0],of_ports[2])
+        send_packet(self,pkt,of_ports[0],of_ports[2])
 
 
 
@@ -729,7 +729,7 @@ class HardTimeout(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         #Verify flow gets inserted
-        Verify_TableStats(self,active_entries=1)
+        verify_tablestats(self,expect_active=1)
 
         # Verify flow removed message is recieved.
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_FLOW_REMOVED,
@@ -793,7 +793,7 @@ class FlowTimeout(base_tests.SimpleDataPlane):
                         'Recieved flow removed message ')
 
         # Verify no entries in the table
-        Verify_TableStats(self,active_entries=0)
+        verify_tablestats(self,expect_active=0)
 
 
 
