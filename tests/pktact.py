@@ -1703,6 +1703,40 @@ class ModifyL2DstVIDMC(BaseMatchCase):
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2, egr_count=-1)
 
+class ModifyAll(BaseMatchCase):
+    """
+    Modify all supported fields and output to a port
+    """
+    def runTest(self):
+        sup_acts = self.supported_actions
+
+        sup_map = {
+            "dl_dst" : ofp.OFPAT_SET_DL_DST,
+            "dl_src" : ofp.OFPAT_SET_DL_SRC,
+            "dl_vlan_enable" : ofp.OFPAT_SET_VLAN_VID,
+            "dl_vlan" : ofp.OFPAT_SET_VLAN_VID,
+            "dl_vlan_pcp" : ofp.OFPAT_SET_VLAN_PCP,
+            "ip_src" : ofp.OFPAT_SET_NW_SRC,
+            "ip_dst" : ofp.OFPAT_SET_NW_DST,
+            "ip_tos" : ofp.OFPAT_SET_NW_TOS,
+            "tcp_sport" : ofp.OFPAT_SET_TP_SRC,
+            "tcp_dport" : ofp.OFPAT_SET_TP_DST,
+        }
+
+        mod_fields = [field for (field, bit) in sup_map.items() if (sup_acts & 1 << bit)]
+        random.shuffle(mod_fields)
+        start_field_vals = { "dl_vlan_enable" : True }
+        mod_field_vals = { "dl_vlan_enable" : True }
+        logging.info("modifying fields: %s" % repr(mod_fields))
+
+        (pkt, exp_pkt, acts) = pkt_action_setup(self,
+                                                mod_fields=mod_fields,
+                                                start_field_vals=start_field_vals,
+                                                mod_field_vals=mod_field_vals,
+                                                check_test_params=True)
+        flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
+                        action_list=acts, max_test=2)
+
 class FlowToggle(BaseMatchCase):
     """
     Add flows to the table and modify them repeatedly
