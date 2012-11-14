@@ -82,6 +82,7 @@ class LoadBarrier(base_tests.SimpleProtocol):
 
         # Create packet out and send to port lb_port + 1
         msg = message.packet_out()
+        msg.in_port = lb_port
         msg.data = str(pkt)
         act = action.action_output()
         act.port = lb_port + 1
@@ -176,6 +177,7 @@ class PacketOutLoad(base_tests.SimpleDataPlane):
 
                logging.info("PKT OUT test with %s, port %s" % (opt, dp_port))
                msg = message.packet_out()
+               msg.in_port = ofp.OFPP_NONE
                msg.data = str(outpkt)
                act = action.action_output()
                act.port = dp_port
