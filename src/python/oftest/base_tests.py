@@ -25,6 +25,7 @@ class SimpleProtocol(unittest.TestCase):
     def setUp(self):
         logging.info("** START TEST CASE " + str(self))
         self.controller = controller.Controller(
+            switch=config["switch_ip"],
             host=config["controller_host"],
             port=config["controller_port"])
         # clean_shutdown should be set to False to force quit app

@@ -86,6 +86,7 @@ class Controller(Thread):
     echo replies
     @var initial_hello If true, will send a hello message immediately
     upon connecting to the switch
+    @var switch If not None, do an active connection to the switch
     @var host The host to use for connect
     @var port The port to connect on 
     @var packets_total Total number of packets received
@@ -94,7 +95,7 @@ class Controller(Thread):
     @var dbg_state Debug indication of state
     """
 
-    def __init__(self, host='127.0.0.1', port=6633, max_pkts=1024):
+    def __init__(self, switch=None, host='127.0.0.1', port=6633, max_pkts=1024):
         Thread.__init__(self)
         # Socket related
         self.rcv_size = RCV_SIZE_DEFAULT
@@ -127,7 +128,8 @@ class Controller(Thread):
 
         # Settings
         self.max_pkts = max_pkts
-        self.passive = True
+        self.switch = switch
+        self.passive = not self.switch
         self.host = host
         self.port = port
         self.dbg_state = "init"
@@ -282,7 +284,7 @@ class Controller(Thread):
         @returns 0 on success, -1 on error
         """
 
-        if s and s == self.listen_socket:
+        if self.passive and s and s == self.listen_socket:
             if self.switch_socket:
                 self.logger.warning("Ignoring incoming connection; already connected to switch")
                 (sock, addr) = self.listen_socket.accept()
@@ -330,6 +332,23 @@ class Controller(Thread):
 
         return 0
 
+    def active_connect(self):
+        """
+        Actively connect to a switch IP addr
+        """
+        try:
+            self.logger.info("Trying active connection to %s" % self.switch)
+            soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            soc.connect((self.switch, self.port))
+            self.logger.info("Connected to " + self.switch + " on " +
+                         str(self.port))
+            self.switch_addr = (self.switch, self.port)
+            return soc
+        except (StandardError, socket.error), e:
+            self.logger.error("Could not connect to %s at %d:: %s" % 
+                              (self.switch, self.port, str(e)))
+        return None
+
     def run(self):
         """
         Activity function for class
@@ -348,18 +367,19 @@ class Controller(Thread):
         self.dbg_state = "starting"
 
         # Create listen socket
-        self.logger.info("Create/listen at " + self.host + ":" + 
-                 str(self.port))
-        self.listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.listen_socket.setsockopt(socket.SOL_SOCKET, 
-                                      socket.SO_REUSEADDR, 1)
-        self.listen_socket.bind((self.host, self.port))
-        self.dbg_state = "listening"
-        self.listen_socket.listen(LISTEN_QUEUE_SIZE)
+        if self.passive:
+            self.logger.info("Create/listen at " + self.host + ":" + 
+                             str(self.port))
+            self.listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.listen_socket.setsockopt(socket.SOL_SOCKET, 
+                                          socket.SO_REUSEADDR, 1)
+            self.listen_socket.bind((self.host, self.port))
+            self.dbg_state = "listening"
+            self.listen_socket.listen(LISTEN_QUEUE_SIZE)
 
-        self.logger.info("Waiting for switch connection")
-        self.socs = [self.listen_socket]
-        self.dbg_state = "running"
+            self.logger.info("Listening for switch connection")
+            self.socs = [self.listen_socket]
+            self.dbg_state = "running"
 
         while self.active:
             try:
@@ -391,8 +411,28 @@ class Controller(Thread):
         @return Boolean, True if connected
         """
 
-        with self.connect_cv:
-            timed_wait(self.connect_cv, lambda: self.switch_socket, timeout=timeout)
+        if not self.passive:  # Do active connection now
+            self.logger.info("Attempting to connect to %s on port %s" %
+                             (self.switch, str(self.port)))
+            soc = self.active_connect()
+            if soc:
+                self.logger.info("Connected to %s", self.switch)
+                self.socs = [soc]
+                self.dbg_state = "running"
+                self.switch_socket = soc
+                with self.connect_cv:
+                    if self.initial_hello:
+                        self.message_send(hello())
+                    self.connect_cv.notify() # Notify anyone waiting
+            else:
+                self.logger.error("Could not actively connect to switch %s",
+                                  self.switch)
+                self.active = False
+        else:
+            with self.connect_cv:
+                timed_wait(self.connect_cv, lambda: self.switch_socket,
+                           timeout=timeout)
+
         return self.switch_socket is not None
         
     def disconnect(self, timeout=-1):
@@ -620,6 +660,7 @@ class Controller(Thread):
         string += "  parse errors    " + str(self.parse_errors) + "\n"
         string += "  sock errrors    " + str(self.socket_errors) + "\n"
         string += "  max pkts        " + str(self.max_pkts) + "\n"
+        string += "  target switch   " + str(self.switch) + "\n"
         string += "  host            " + str(self.host) + "\n"
         string += "  port            " + str(self.port) + "\n"
         string += "  keep_alive      " + str(self.keep_alive) + "\n"

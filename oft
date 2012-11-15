@@ -153,11 +153,13 @@ config_default = {
     "param"              : None,
     "platform"           : "local",
     "platform_args"      : None,
-    "controller_host"    : "0.0.0.0",
+    "switch_ip"          : None,  # If not none, actively connect to switch
+    "controller_host"    : "0.0.0.0",  # For passive bind
     "controller_port"    : 6633,
     "relax"              : False,
     "test_spec"          : "all",
     "log_file"           : "oft.log",
+    "log_append"         : False,
     "list"               : False,
     "list_test_names"    : False, 
     "debug"              : _debug_default,
@@ -225,6 +227,8 @@ def config_setup(cfg_dflt):
     parser.add_option("-P", "--platform", help=plat_help)
     parser.add_option("-H", "--host", dest="controller_host",
                       help="The IP/name of the test controller host")
+    parser.add_option("-S", "--switch-ip", dest="switch_ip",
+                      help="If set, actively connect to this switch by IP")
     parser.add_option("-p", "--port", dest="controller_port",
                       type="int", help="Port number of the test controller")
     test_list_help = """Indicate tests to run.  Valid entries are "all" (the
@@ -236,6 +240,8 @@ def config_setup(cfg_dflt):
     parser.add_option("-T", "--test-spec", "--test-list", help=test_list_help)
     parser.add_option("--log-file", 
                       help="Name of log file, empty string to log to console")
+    parser.add_option("--log-append", action="store_true",
+                      help="Do not delete log file if specified")
     parser.add_option("--debug",
                       help="Debug lvl: debug, info, warning, error, critical")
     parser.add_option("--port-count", type="int",
@@ -312,7 +318,9 @@ def logging_setup(config):
     """
     _format = "%(asctime)s  %(name)-10s: %(levelname)-8s: %(message)s"
     _datefmt = "%H:%M:%S"
+    _mode = config["log_append"] and "a" or "w"
     logging.basicConfig(filename=config["log_file"],
+                        filemode=_mode,
                         level=config["dbg_level"],
                         format=_format, datefmt=_datefmt)
 
