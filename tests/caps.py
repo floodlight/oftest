@@ -87,6 +87,11 @@ def flow_caps_common(obj, is_exact=True):
     logging.error("RESULT: " + str(flow_count) + " flows inserted")
     logging.error("RESULT: " + str(active_flows) + " flows reported")
 
+    # clean up and wait a bit in case the table is really big
+    rv = delete_all_flows(obj.controller)
+    time.sleep(flow_count / 100)
+
+
 
 class FillTableExact(base_tests.SimpleProtocol):
     """
