@@ -234,13 +234,13 @@ def simple_eth_packet(pktlen=60,
 
     return pkt
 
-def do_barrier(ctrl):
+def do_barrier(ctrl, timeout=-1):
     """
     Do a barrier command
     Return 0 on success, -1 on error
     """
     b = message.barrier_request()
-    (resp, pkt) = ctrl.transact(b)
+    (resp, pkt) = ctrl.transact(b, timeout=timeout)
     # We'll trust the transaction processing in the controller that xid matched
     if not resp:
         return -1
