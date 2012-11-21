@@ -1095,6 +1095,8 @@ class WildcardPriority(SingleWildcardMatchPriority):
     on port specified by this flow.
     3. Add wildcard flow with even higher priority, verify packet received
     on port specified by this flow.
+    4. Add wildcard flow with lower priority, verify packet received
+    on port specified by the highest priority flow.
     """
 
     def runTest(self):
@@ -1116,6 +1118,11 @@ class WildcardPriority(SingleWildcardMatchPriority):
         # Install a flow with wildcards for our packet with higher
         # priority
         self.installFlow(1001, of_ports[0], of_ports[3])
+        self.verifyFlow(of_ports[0], of_ports[3])
+        # Install a flow with wildcards for our packet with lower
+        # priority
+        self.installFlow(999, of_ports[0], of_ports[1],
+                         wildcards=ofp.OFPFW_DL_SRC)
         self.verifyFlow(of_ports[0], of_ports[3])
         
 
