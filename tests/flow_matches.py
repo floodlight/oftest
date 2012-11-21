@@ -23,7 +23,7 @@ from oftest.testutils import *
 from time import sleep
 from FuncUtils import *
 
-    
+
 
 class AllWildcardMatch(base_tests.SimpleDataPlane):
 
@@ -44,57 +44,40 @@ class AllWildcardMatch(base_tests.SimpleDataPlane):
         logging.info("Inserting an all wildcarded flow and sending packets with various match fields")
         logging.info("Expecting all sent packets to match")
 
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+    
         #Insert an All Wildcarded flow.
         wildcard_all(self,of_ports)
 
         #check for different  match fields and verify packet implements the action specified in the flow
         pkt1 = simple_tcp_packet(dl_src="00:01:01:01:01:01");
         self.dataplane.send(of_ports[0], str(pkt1))
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
         receive_pkt_check(self.dataplane,pkt1,[yes_ports],no_ports,self)
-
+       
         pkt2 = simple_tcp_packet(dl_dst="00:01:01:01:01:01");    
         self.dataplane.send(of_ports[0], str(pkt2))
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
         receive_pkt_check(self.dataplane,pkt2,[yes_ports],no_ports,self)
         
         pkt3 = simple_tcp_packet(ip_src="192.168.2.1");
         self.dataplane.send(of_ports[0], str(pkt3))
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
         receive_pkt_check(self.dataplane,pkt3,[yes_ports],no_ports,self)
-
+        
         pkt4 = simple_tcp_packet(ip_dst="192.168.2.2");
         self.dataplane.send(of_ports[0], str(pkt4))
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
         receive_pkt_check(self.dataplane,pkt4,[yes_ports],no_ports,self)
-
+        
         pkt5 = simple_tcp_packet(ip_tos=2);
         self.dataplane.send(of_ports[0], str(pkt5))
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
         receive_pkt_check(self.dataplane,pkt5,[yes_ports],no_ports,self)
-
+       
         pkt6 = simple_tcp_packet(tcp_sport=8080);
         self.dataplane.send(of_ports[0], str(pkt6))
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
         receive_pkt_check(self.dataplane,pkt6,[yes_ports],no_ports,self)
-                  
+              
         pkt7 = simple_tcp_packet(tcp_dport=8081);
         self.dataplane.send(of_ports[0], str(pkt7))
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
         receive_pkt_check(self.dataplane,pkt7,[yes_ports],no_ports,self)
 
 
@@ -115,6 +98,10 @@ class EthernetSrcAddress(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+    
         logging.info("Inserting a flow with match on Ethernet Source Address ")
         logging.info("Sending matching and non-matching ethernet packets")
         logging.info("Verifying only matching packets implements the action specified in the flow")
@@ -126,9 +113,6 @@ class EthernetSrcAddress(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet implements the action specified in the flow
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
         #Sending non matching packet , verify Packetin event gets triggered.
@@ -154,6 +138,10 @@ class EthernetDstAddress(base_tests.SimpleDataPlane):
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+        
         logging.info("Inserting a flow with match on Ethernet Destination Address ")
         logging.info("Sending matching and non-matching ethernet packets")
         logging.info("Verifying only matching packets implements the action specified in the flow")
@@ -165,9 +153,6 @@ class EthernetDstAddress(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet implements the action specified in the flow
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
         
         #Send Non-matching packet
@@ -195,6 +180,10 @@ class EthernetType(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+        
         logging.info("Inserting a flow with match on Ethernet Type ")
         logging.info("Sending matching and non-matching ethernet packets")
         logging.info("Verifying only matching packets implements the action specified in the flow")
@@ -206,9 +195,6 @@ class EthernetType(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet implements the action specified in the flow
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
         #Sending non matching packet , 
@@ -236,6 +222,10 @@ class IngressPort(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+    
         logging.info("Inserting a flow with match on Ingress Port ")
         logging.info("Sending matching and non-matching packets")
         logging.info("Verifying only matching packets implements the action specified in the flow")
@@ -247,9 +237,6 @@ class IngressPort(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet implements the action specified in the flow
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
         #Send Non-Matching Packet 
@@ -273,6 +260,10 @@ class VlanId(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+    
         logging.info("Inserting a flow with match on VLAN ID ")
         logging.info("Sending matching and non-matching tagged packets")
         logging.info("Verifying matching packets implements the action specified in the flow")
@@ -284,9 +275,6 @@ class VlanId(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet implements the action specified in the flow
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
         
         #Send Non-matching packet, i.e packet with different Vlan Id
@@ -312,7 +300,11 @@ class VlanPCP(base_tests.SimpleDataPlane):
         #Clear Switch State
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
-        
+
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+    
         logging.info("Inserting a flow with match on VLAN Priority ")
         logging.info("Sending matching and non-matching tagged packets")
         logging.info("Verifying matching packet implements the action specified in the flow")
@@ -324,14 +316,15 @@ class VlanPCP(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet implements the action specified in the flow
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
         
         #Send tagged packet with same vlan_id but different vlan priority
         pkt2 = simple_tcp_packet(dl_vlan_enable=True,dl_vlan=1,dl_vlan_pcp=20);
-        self.dataplane.send(in_port, str(pkt))
+        self.dataplane.send(of_ports[0], str(pkt2))
+
+        #Verify Packet_In event gets triggered
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
+        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
        
 class MultipleHeaderFieldL2(base_tests.SimpleDataPlane):
     
@@ -349,6 +342,10 @@ class MultipleHeaderFieldL2(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+    
         logging.info("Inserting a flow with match on Multiple Header Fields in L2 ")
         logging.info("Sending matching and non-matching packets")
         logging.info("Verifying matching packets implements the action specified in the flow")
@@ -359,9 +356,6 @@ class MultipleHeaderFieldL2(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet implements the action specified in the flow
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
         #Sending non matching packet (only dl_dst is different) , verify Packetin event gets triggered.
@@ -382,6 +376,7 @@ class MultipleHeaderFieldL2(base_tests.SimpleDataPlane):
         pkt2 = simple_eth_packet(dl_type=0x0806,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:01:01:02');
         self.dataplane.send(of_ports[0], str(pkt2))
         
+        #Verify packet_in event gets triggered
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 
@@ -400,7 +395,11 @@ class IpTos(base_tests.SimpleDataPlane):
         #Clear Switch State
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
-        
+
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+    
         logging.info("Inserting a flow with match on Ip_Tos ")
         logging.info("Sending matching and non-matching tcp/ip packets")
         logging.info("Verifying only matching packets implements the action specified in the flow")
@@ -412,9 +411,6 @@ class IpTos(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet implements the action specified in the flow
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
         
         #Create a non-matching packet , verify packet_in get generated
@@ -438,7 +434,11 @@ class IpProtocol(base_tests.SimpleDataPlane):
         #Clear Switch State
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
-        
+
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+    
         logging.info("Inserting a flow with match on Ip Protocol ")
         logging.info("Sending matching and non-matching tcp/ip packets")
         logging.info("Verifying only matching packets implements the action specified in the flow")
@@ -450,9 +450,6 @@ class IpProtocol(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet implements the action specified in the flow
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
         
         #Create a non-matching packet , verify packet_in get generated
@@ -478,6 +475,10 @@ class TcpSrcPort(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+    
         logging.info("Inserting a flow with match on Tcp Tcp Source Port ")
         logging.info("Sending matching and non-matching tcp packets")
         logging.info("Verifying matching packets implements the action specified in the flow")
@@ -488,9 +489,6 @@ class TcpSrcPort(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet implements the action specified in the flow
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
         #Sending non matching packet , verify Packetin event gets triggered.
@@ -516,6 +514,10 @@ class TcpDstPort(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+        
         logging.info("Inserting a flow with match on Tcp Destination Port ")
         logging.info("Sending matching and non-matching packets")
         logging.info("Verifying matching packets implements the action specified in the flow")
@@ -526,9 +528,6 @@ class TcpDstPort(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet implements the action specified in the flow
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
         #Sending non matching packet , verify Packetin event gets triggered.
@@ -555,6 +554,10 @@ class ExactMatch(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+        
         logging.info("Inserting a flow with match for Exact Match ")
         logging.info("Sending matching and non-matching packets")
         logging.info("Verifying matching packets implements the action specified in the flow")
@@ -565,9 +568,6 @@ class ExactMatch(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet implements the action specified in the flow
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
         #Sending non matching packet , verify Packetin event gets triggered.
@@ -594,6 +594,10 @@ class MultipleHeaderFieldL4(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+        
         logging.info("Inserting a flow with match on Multiple Header Field L4 ")
         logging.info("Sending matching and non-matching packets")
         logging.info("Verifying matching packets implements the action specified in the flow")
@@ -604,13 +608,17 @@ class MultipleHeaderFieldL4(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet implements the action specified in the flow
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
-        #Sending non matching packet , verify Packetin event gets triggered.
-        pkt2 = simple_tcp_packet(tcp_sport=540,tcp_dport=541);
+        #Sending non matching packet (tcp_dport different), verify Packetin event gets triggered.
+        pkt2 = simple_tcp_packet(tcp_sport=111,tcp_dport=541);
+        self.dataplane.send(of_ports[0], str(pkt2))
+        
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
+        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+
+        #Sending non matching packet (tcp_sport different), verify Packetin event gets triggered.
+        pkt2 = simple_tcp_packet(tcp_sport=100,tcp_dport=112);
         self.dataplane.send(of_ports[0], str(pkt2))
         
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
@@ -633,6 +641,10 @@ class ExactMatchPrio(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+    
         logging.info("Inserting a flow with Exact Match (low priority)")
         logging.info("Inserting an overlapping wildcarded flow (higher priority)")
         logging.info("Sending packets matching both the flows ")
@@ -646,9 +658,6 @@ class ExactMatchPrio(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt2))
 
         #verify it implements the action specified in Exact Match Flow
-        egress_port=of_ports[2]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = egress_port
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
 
@@ -668,6 +677,10 @@ class WildcardMatchPrio(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+    
         logging.info("Inserting two wildcarded flows with priorities ")
         logging.info("Sending packets matching the flows")
         logging.info("Verifying matching packets implements the action specified in the flow with higher priority")
@@ -677,10 +690,6 @@ class WildcardMatchPrio(base_tests.SimpleDataPlane):
 
         #Sending packet matching both the flows , verify it implements the action specified by Higher Priority flow
         self.dataplane.send(of_ports[0], str(pkt1))
-
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
 
