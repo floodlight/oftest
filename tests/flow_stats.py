@@ -458,3 +458,78 @@ class EmptyAggregateStats(base_tests.SimpleDataPlane):
         self.assertEquals(response.stats[0].flow_count, 0)
         self.assertEquals(response.stats[0].packet_count, 0)
         self.assertEquals(response.stats[0].byte_count, 0)
+
+class DeletedFlowStats(base_tests.SimpleDataPlane):
+    """
+    Verify flow stats are properly returned when a flow is deleted.
+
+    Generate a packet
+    Generate and install a matching flow
+    Send the packet
+    Delete the flow
+    Verify that the flow_removed message has the correct stats
+    """
+
+    def runTest(self):
+        # TODO: set from command-line parameter
+        test_timeout = 60
+
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+
+        rc = delete_all_flows(self.controller)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+
+        # build packet
+        pkt = simple_tcp_packet()
+        match = packet_to_flow_match(self, pkt)
+        match.wildcards &= ~ofp.OFPFW_IN_PORT
+        self.assertTrue(match is not None,
+                        "Could not generate flow match from pkt")
+        act = action.action_output()
+
+        # build flow
+        ingress_port = of_ports[0];
+        egress_port = of_ports[1];
+        logging.info("Ingress " + str(ingress_port) +
+                       " to egress " + str(egress_port))
+        match.in_port = ingress_port
+        flow_mod_msg = message.flow_mod()
+        flow_mod_msg.match = copy.deepcopy(match)
+        flow_mod_msg.cookie = random.randint(0,9007199254740992)
+        flow_mod_msg.buffer_id = 0xffffffff
+        flow_mod_msg.idle_timeout = 0
+        flow_mod_msg.hard_timeout = 0
+        flow_mod_msg.priority = 100
+        flow_mod_msg.flags = ofp.OFPFF_SEND_FLOW_REM
+        act.port = egress_port
+        self.assertTrue(flow_mod_msg.actions.add(act), "Could not add action")
+
+        # send flow
+        logging.info("Inserting flow")
+        rv = self.controller.message_send(flow_mod_msg)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        # send packet N times
+        num_sends = random.randint(10,20)
+        logging.info("Sending " + str(num_sends) + " test packets")
+        for i in range(0,num_sends):
+            sendPacket(self, pkt, ingress_port, egress_port,
+                       test_timeout)
+
+        # delete flow
+        logging.info("Deleting flow")
+        rc = delete_all_flows(self.controller)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+
+        # wait for flow_removed message
+        flow_removed, _ = self.controller.poll(
+            exp_msg=ofp.OFPT_FLOW_REMOVED, timeout=test_timeout)
+
+        self.assertTrue(flow_removed != None, "Did not receive flow_removed message")
+        self.assertEqual(flow_removed.cookie, flow_mod_msg.cookie)
+        self.assertEqual(flow_removed.reason, ofp.OFPRR_DELETE)
+        self.assertEqual(flow_removed.packet_count, num_sends)
+        self.assertEqual(flow_removed.byte_count, num_sends * len(str(pkt)))
