@@ -19,15 +19,17 @@ optionally specifying a test parameters specific to the test run
 #@var skip_test_list The list of tests to skip for this run
 skip_test_list = []
 
-# TO BE IMPLEMENTED
-# A list of test cases with parameters(?)
-# TBD
+# A list of test cases
 #@var run_test_list List of tests to run which would normally be skipped
-run_test_list = dict(
-    # Example
-    # SomeTestCase = [dict(<params1>), dict(<params2>),...],
-)
+run_test_list = []
 
+#
+# Ideally, we should allow parameters to be specified
+#
+# run_test_list = (
+#     testcase = [dict(param1), dict(param2), ...],
+# )
+#
 # for test_dict in profile.run_test_list:
 #     for test_name, test_params in test_dict.items():
 #          ...

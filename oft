@@ -441,6 +441,9 @@ def test_prio_get(test):
     if test.__name__ in profile_mod.skip_test_list:
         logging.info("Skipping test %s due to profile" % test.__name__)
         return TEST_PRIO_SKIP
+    if test.__name__ in profile_mod.run_test_list:
+        logging.info("Add test %s due to profile" % test.__name__)
+        return TEST_PRIO_DEFAULT
     return getattr(test, "priority", TEST_PRIO_DEFAULT)
 
 #
