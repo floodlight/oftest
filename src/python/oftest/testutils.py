@@ -56,6 +56,8 @@ def required_wildcards(parent):
 def simple_tcp_packet(pktlen=100, 
                       dl_dst='00:01:02:03:04:05',
                       dl_src='00:06:07:08:09:0a',
+                      dl_qinq_enable=False,
+                      dl_vlan_outer=20,
                       dl_vlan_enable=False,
                       dl_vlan=0,
                       dl_vlan_pcp=0,
@@ -75,6 +77,8 @@ def simple_tcp_packet(pktlen=100,
     @param len Length of packet in bytes w/o CRC
     @param dl_dst Destinatino MAC
     @param dl_src Source MAC
+    @param dl_qinq_enable True if the packet is double vlan tags
+    @param dl_vlan_outer Outer VLAN ID
     @param dl_vlan_enable True if the packet is with vlan, False otherwise
     @param dl_vlan VLAN ID
     @param dl_vlan_pcp VLAN priority
@@ -93,7 +97,13 @@ def simple_tcp_packet(pktlen=100,
         pktlen = MINSIZE
 
     # Note Dot1Q.id is really CFI
-    if (dl_vlan_enable):
+    if (dl_qinq_enable):
+        pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            scapy.Dot1Q(prio=0, id=0, vlan=dl_vlan_outer)/ \
+            scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi, vlan=dl_vlan)/ \
+            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ihl=ip_ihl)/ \
+            scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+    elif (dl_vlan_enable):
         pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
             scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi, vlan=dl_vlan)/ \
             scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ihl=ip_ihl)/ \
