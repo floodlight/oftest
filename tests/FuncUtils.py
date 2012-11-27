@@ -1,4 +1,4 @@
-""" Defined Some common functions used by Conformance tests -- OF-SWITCH 1.0.0 Testcases """
+""" Some common function definitions used by Conformance tests -- OF-SWITCH 1.0.0 Testcases """
 
 import sys
 import copy
@@ -104,11 +104,11 @@ def match_all_except_source_address(self,of_ports,priority=None):
 
     return (pkt_wildcardsrc,match1)
 
-def match_wthernet_src_address(self,of_ports,priority=None):
+def match_ethernet_src_address(self,of_ports,priority=None):
     #Generate Match_Ethernet_SrC_Address flow
 
     #Create a simple tcp packet and generate match on ethernet src address flow
-    pkt_MatchSrc = simple_tcp_packet(dl_src='00:01:01:01:01:01')
+    pkt_MatchSrc = simple_eth_packet(dl_src='00:01:01:01:01:01')
     match = parse.packet_to_flow_match(pkt_MatchSrc)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
@@ -136,7 +136,7 @@ def match_ethernet_dst_address(self,of_ports,priority=None):
     #Generate Match_Ethernet_Dst_Address flow
 
     #Create a simple tcp packet and generate match on ethernet dst address flow
-    pkt_matchdst = simple_tcp_packet(dl_dst='00:01:01:01:01:01')
+    pkt_matchdst = simple_eth_packet(dl_dst='00:01:01:01:01:01')
     match = parse.packet_to_flow_match(pkt_matchdst)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
@@ -254,8 +254,6 @@ def wildcard_all_except_ingress1(self,of_ports,priority=None):
     return (pkt_matchingress,match3)
 
 
-
-
 def match_vlan_id(self,of_ports,priority=None):
     #Generate Match_Vlan_Id
 
@@ -264,7 +262,7 @@ def match_vlan_id(self,of_ports,priority=None):
     match = parse.packet_to_flow_match(pkt_matchvlanid)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
-    match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_VLAN
+    match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_TYPE ^ofp.OFPFW_DL_VLAN
     msg = message.flow_mod()
     msg.out_port = ofp.OFPP_NONE
     msg.command = ofp.OFPFC_ADD
@@ -291,7 +289,7 @@ def match_vlan_pcp(self,of_ports,priority=None):
     match = parse.packet_to_flow_match(pkt_matchvlanpcp)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
-    match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_VLAN_PCP 
+    match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_TYPE^ofp.OFPFW_DL_VLAN^ofp.OFPFW_DL_VLAN_PCP 
     msg = message.flow_mod()
     msg.out_port = ofp.OFPP_NONE
     msg.command = ofp.OFPFC_ADD
@@ -339,14 +337,14 @@ def match_mul_l2(self,of_ports,priority=None):
     return (pkt_mulL2,match)
 
 
-def match_mul_L4(self,of_ports,priority=None):
+def match_mul_l4(self,of_ports,priority=None):
     #Generate Match_Mul_L4 flow
 
         #Create a simple tcp packet and generate match on tcp protocol flow
     pkt_mulL4 = simple_tcp_packet(tcp_sport=111,tcp_dport=112)
     match = parse.packet_to_flow_match(pkt_mulL4)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
-    match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_TP_SRC ^ofp.OFPFW_TP_DST 
+    match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_TYPE ^ofp.OFPFW_NW_PROTO^ofp.OFPFW_TP_SRC ^ofp.OFPFW_TP_DST 
     msg = message.flow_mod()
     msg.out_port = ofp.OFPP_NONE
     msg.command = ofp.OFPFC_ADD
@@ -369,11 +367,11 @@ def match_ip_tos(self,of_ports,priority=None):
     #Generate a Match on IP Type of service flow
 
         #Create a simple tcp packet and generate match on Type of service 
-    pkt_iptos = simple_tcp_packet(ip_tos=3)
+    pkt_iptos = simple_tcp_packet(ip_tos=30)
     match = parse.packet_to_flow_match(pkt_iptos)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
-    match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_NW_TOS
+    match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_TYPE^ofp.OFPFW_NW_PROTO ^ofp.OFPFW_NW_TOS
     msg = message.flow_mod()
     msg.out_port = ofp.OFPP_NONE
     msg.command = ofp.OFPFC_ADD
@@ -391,6 +389,33 @@ def match_ip_tos(self,of_ports,priority=None):
 
     return (pkt_iptos,match)
 
+def match_ip_protocol(self,of_ports,priority=None):
+    #Generate a Match on IP Protocol
+
+    #Create a simple tcp packet and generate match on Type of service 
+    pkt_iptos = simple_tcp_packet()
+    match = parse.packet_to_flow_match(pkt_iptos)
+    self.assertTrue(match is not None, "Could not generate flow match from pkt")
+
+    match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_TYPE^ofp.OFPFW_NW_PROTO 
+    msg = message.flow_mod()
+    msg.out_port = ofp.OFPP_NONE
+    msg.command = ofp.OFPFC_ADD
+    msg.buffer_id = 0xffffffff
+    msg.match = match
+    if priority != None :
+        msg.priority = priority
+    act = action.action_output()
+    act.port = of_ports[1]
+    self.assertTrue(msg.actions.add(act), "could not add action")
+
+    rv = self.controller.message_send(msg)
+    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+    return (pkt_iptos,match)
+
+
 def match_tcp_src(self,of_ports,priority=None):
     #Generate Match_Tcp_Src
 
@@ -399,7 +424,7 @@ def match_tcp_src(self,of_ports,priority=None):
     match = parse.packet_to_flow_match(pkt_matchtSrc)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
-    match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_TP_SRC  
+    match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_TYPE ^ofp.OFPFW_NW_PROTO ^ofp.OFPFW_TP_SRC  
     msg = message.flow_mod()
     msg.out_port = ofp.OFPP_NONE
     msg.command = ofp.OFPFC_ADD
@@ -422,11 +447,11 @@ def match_tcp_dst(self,of_ports,priority=None):
     #Generate Match_Tcp_Dst
 
         #Create a simple tcp packet and generate match on tcp destination port flow
-    pkt_Matchtdst = simple_tcp_packet(tcp_dport=112)
-    match = parse.packet_to_flow_match(pkt_matchtdst)
+    pkt_matchdst = simple_tcp_packet(tcp_dport=112)
+    match = parse.packet_to_flow_match(pkt_matchdst)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
-    match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_TP_DST  
+    match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_TYPE^ofp.OFPFW_NW_PROTO^ofp.OFPFW_TP_DST  
     msg = message.flow_mod()
     msg.out_port = ofp.OFPP_NONE
     msg.command = ofp.OFPFC_ADD
@@ -442,11 +467,7 @@ def match_tcp_dst(self,of_ports,priority=None):
     self.assertTrue(rv != -1, "Error installing flow mod")
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-    return (pkt_matchtdst,match)        
-
-
-
-
+    return (pkt_matchdst,match)        
 
 def match_ethernet_type(self,of_ports,priority=None):
     #Generate a Match_Ethernet_Type flow
@@ -472,11 +493,11 @@ def match_ethernet_type(self,of_ports,priority=None):
     rv = self.controller.message_send(msg)
     self.assertTrue(rv != -1, "Error installing flow mod")
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
-
     return (pkt_matchtype,match)
 
    
    
+
 def strict_modify_flow_action(self,egress_port,match,priority=None):
 # Strict Modify the flow Action 
         
@@ -544,8 +565,6 @@ def enqueue(self,ingress_port,egress_port,egress_queue_id):
     self.assertTrue(rv != -1, "Error installing flow mod")
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
     return (pkt,match)
-
-
 
 
 ###########################   Verify Stats Functions   ###########################################################################################
@@ -766,7 +785,6 @@ def verify_portstats(self, port,tx_packets=None,rx_packets=None,rx_byte=None,tx_
         self.assertEqual(rx_byte,item.rx_bytes,"rx_bytes counter is not incremented correctly")
     if (tx_byte != None):
         self.assertEqual(tx_byte,item.tx_bytes,"tx_bytes counter is not incremented correctly")
-
 
 
 def verify_queuestats(self,port_num,queue_id,expect_packet=None,expect_byte=None):
