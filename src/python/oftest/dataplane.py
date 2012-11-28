@@ -197,7 +197,6 @@ class DataPlanePort(Thread):
         """
         return self.socket.send(packet)
 
-
     def register(self, handler):
         """
         Register a callback function to receive packets from this
@@ -210,12 +209,45 @@ class DataPlanePort(Thread):
         pass
 
     def show(self, prefix=''):
+
         print prefix + "Name:          " + self.interface_name
         print prefix + "Pkts pending:  " + str(len(self.packets))
         print prefix + "Pkts total:    " + str(self.packets_total)
         print prefix + "socket:        " + str(self.socket)
 
-class DataPlanePortPcap(DataPlanePort):
+    
+    def port_down(self,port_number,config):
+
+        """
+        Grabs a port from the dataplane ports and brings it down by 
+        shutting the corresponding interface 
+        @port_number The port number which has brought to be down
+        @interface_name The interface corresponding to the port that needs to
+        be brought down
+
+        """
+        interface_name = config["port_map"].get(port_number)
+        cmd = 'ifdown '+ interface_name
+        os.system(cmd)
+
+    def port_up(self,port_number,config):
+
+        """
+        Grabs a port from the dataplane ports and brings it up by 
+        starting up the corresponding interface 
+        @port_number The port number which has to brought up
+        @interface_name The interface corresponding to the port that has to
+        be brought up
+
+        """
+        interface_name = config["port_map"].get(port_number)
+        cmd = 'ifup '+ interface_name
+        os.system(cmd)
+
+
+
+
+class DataPlanePortPcap():
     """
     Alternate port implementation using libpcap. This is required for recent
     versions of Linux (such as Linux 3.2 included in Ubuntu 12.04) which
@@ -370,6 +402,9 @@ class DataPlane:
                      (bytes, len(packet)))
         return bytes
 
+ 
+
+    
     def flood(self, packet):
         """
         Send a packet to all ports
@@ -475,3 +510,12 @@ class DataPlane:
             print prefix + "OpenFlow Port Number " + str(pnum)
             port.show(prefix + '  ')
 
+
+    def port_down(self,port_number):
+        """Brings the specified port down"""
+        self.port_list[port_number].port_down(port_number,self.config)
+
+
+    def port_up(self,port_number):
+        """Brings the specified port up"""
+        self.port_list[port_number].port_up(port_number,self.config)
