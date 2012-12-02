@@ -245,9 +245,7 @@ class DataPlanePort(Thread):
         os.system(cmd)
 
 
-
-
-class DataPlanePortPcap():
+class DataPlanePortPcap(DataPlanePort):
     """
     Alternate port implementation using libpcap. This is required for recent
     versions of Linux (such as Linux 3.2 included in Ubuntu 12.04) which
