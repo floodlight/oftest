@@ -239,7 +239,7 @@ class SetConfigRequest(base_tests.SimpleProtocol):
 
     def runTest(self):
 
-        logging.info("Running OFPT_SET_CONFIG Test")
+        logging.info("Running SetConfigRequest Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
 
