@@ -123,11 +123,8 @@ class FeaturesReplyBody(base_tests.SimpleProtocol):
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
+        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
-        #Clear switch state      
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
-        
         # Sending Features_Request
         logging.info("Sending Features_Request...")
         request = message.features_request()
@@ -161,8 +158,10 @@ class FeaturesReplyBody(base_tests.SimpleProtocol):
             supported_actions.append('OFPAT_VENDOR')
         if(reply.actions &1<<ofp.OFPAT_ENQUEUE):
             supported_actions.append('OFPAT_ENQUEUE')
-        
+
         self.assertTrue(len(supported_actions) != 0,"Features Reply did not contain actions supported by sw")
+        #Verify switch supports the Required Actions i.e Forward 
+        self.assertTrue('OFPAT_OUTPUT' in supported_actions,"Required Action--Forward is not supported ")
         logging.info("Supported Actions: " + str(supported_actions))
 
         supported_capabilities = []
@@ -183,13 +182,11 @@ class FeaturesReplyBody(base_tests.SimpleProtocol):
         if(reply.capabilities &1<<ofp.OFPC_ARP_MATCH_IP):
             supported_capabilities.append('OFPC_ARP_MATCH_IP')
 
-        self.assertTrue(len(supported_capabilities) != 0,"Features Reply did not contain capabilities supported by sw")
         logging.info("Supported Capabilities: " +  str(supported_capabilities))
 
         self.assertTrue(reply.datapath_id != 0 , "Features Reply did not contain datapath of the sw")
         logging.info("Datapath Id: " + str(reply.datapath_id))
         
-        self.assertTrue(reply.n_buffers != 0 , "Features Reply does not contain no. of max packets buffered at once")
         logging.info("Buffer Size: " + str(reply.n_buffers))
 
         self.assertTrue(reply.n_tables != 0 , "Features Reply does not contain no. of tables supported by datapath")
@@ -210,17 +207,13 @@ class GetConfigReply(base_tests.SimpleProtocol):
 
         logging.info("Running GetConfigReply Test")
        
-        #Clear switch state      
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
-
         #Send get_config_request
         logging.info("Sending Get Config Request...")
         request = message.get_config_request()
         (reply, pkt) = self.controller.transact(request)
 
         #Verify get_config_reply is recieved
-        logging.info("Waiting for Get Config Reply with expected body")
+        logging.info("Expecting GetConfigReply ")
         self.assertTrue(reply is not None, "Failed to get any reply")
         self.assertEqual(reply.header.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
         self.assertEqual(reply.header.xid,request.header.xid,'Transaction id does not match')
@@ -232,11 +225,11 @@ class GetConfigReply(base_tests.SimpleProtocol):
         
         if reply.flags == 0 :
             logging.info("OFPC_FRAG_NORMAL:No special handling for fragments.")
-        if reply.flags == 1 :
+        elif reply.flags == 1 :
             logging.info("OFPC_FRAG_DROP:Drop fragments.")
-        if reply.flags == 2 :
-            logging.info("OFPC_FRAG_REASM:Reassemble")
-        if reply.flags == 3:
+        elif reply.flags == 2 :
+            logging.info("OFPC_FRAG_REASM:ReasSsemble")
+        elif reply.flags == 3:
             logging.info("OFPC_FRAG_MASK")
 
 
@@ -246,13 +239,9 @@ class SetConfigRequest(base_tests.SimpleProtocol):
 
     def runTest(self):
 
-        logging.info("Running SetConfigRequest Test")
+        logging.info("Running OFPT_SET_CONFIG Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
-        
-        #Clear switch state      
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
 
         #Send get_config_request -- retrive miss_send_len field
         logging.info("Sending Get Config Request ")
@@ -299,7 +288,7 @@ class SetConfigRequest(base_tests.SimpleProtocol):
       
 
 
-class PacketInSize1(base_tests.SimpleDataPlane):
+class PacketInSizeMiss(base_tests.SimpleDataPlane):
 
     """ When packet_in is triggered due to a flow table miss,
         verify the data sent in packet_in varies in accordance with the
@@ -307,7 +296,7 @@ class PacketInSize1(base_tests.SimpleDataPlane):
 
     def runTest(self):
 
-        logging.info("Running PacketInSize Test")
+        logging.info("Running PacketInSizeMiss Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
 
@@ -339,10 +328,13 @@ class PacketInSize1(base_tests.SimpleDataPlane):
                         'Packet In not received on control plane')
         
             # Verify data bytes sent in packet_in is same as miss_send_length
-            self.assertEqual(len(response.data),bytes,"PacketIn Size is not equal to miss_send_len") 
+            if bytes==0:
+                self.assertEqual(len(response.data),bytes,"PacketIn Size is not equal to miss_send_len") 
+            else:
+                self.assertTrue(len(response.data)>=bytes,"PacketIn Size is not atleast miss_send_len bytes") 
 
 
-class PacketInSize2(base_tests.SimpleDataPlane):
+class PacketInSizeAction(base_tests.SimpleDataPlane):
 
     """When the packet is sent because of a "send to controller" action, 
         verify the data sent in packet_in varies in accordance with the
@@ -351,7 +343,7 @@ class PacketInSize2(base_tests.SimpleDataPlane):
     
     def runTest(self):
 
-        logging.info("Running PacketInSize2 Test")
+        logging.info("Running PacketInSizeAction Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
 
@@ -399,17 +391,17 @@ class PacketInSize2(base_tests.SimpleDataPlane):
             self.assertEqual(response.reason,ofp.OFPR_ACTION,"PacketIn reason field is incorrect")
 
             #verify the data field
-            self.assertEqual(len(response.data),bytes,"Packet_in size is not equal to max_len field")
+            self.assertTrue(len(response.data)<=bytes,"Packet_in size is greater than max_len field")
 
            
-class PacketInBody1(base_tests.SimpleDataPlane):
+class PacketInBodyMiss(base_tests.SimpleDataPlane):
 
     """Verify the packet_in message body, 
     when packet_in is triggered due to a flow table miss"""
 
     def runTest(self):
 
-        logging.info("Running PacketInBody1 Test")
+        logging.info("Running PacketInBodyMiss Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
 
@@ -452,13 +444,13 @@ class PacketInBody1(base_tests.SimpleDataPlane):
 
 
 
-class PacketInBody2(base_tests.SimpleDataPlane):
+class PacketInBodyAction(base_tests.SimpleDataPlane):
 
     """Verify the packet_in message body, when packet_in is generated due to action output to controller"""
 
     def runTest(self):
 
-        logging.info("Running PacketInBody2 Test")
+        logging.info("Running PacketInBodyAction Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
 
@@ -524,37 +516,41 @@ class PortStatusMessage(base_tests.SimpleDataPlane):
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
         #Bring down the port by shutting the interface connected 
-        logging.info("Bringing down the interface ..")
-        default_port_num = 0
-        num = test_param_get('port',default=default_port_num)
-        self.dataplane.port_down(of_ports[num])  
+        try:
+            logging.info("Bringing down the interface ..")
+            default_port_num = 0
+            num = test_param_get('port',default=default_port_num)
+            self.dataplane.port_down(of_ports[num])  
         
-        #Verify Port Status message is recieved with reason-- Port Deleted
-        logging.info("Verify PortStatus-Down message is recieved on the control plane ")
-        (response, raw) = self.controller.poll(ofp.OFPT_PORT_STATUS, timeout=15)
-        self.assertTrue(response is not None,
-                    'Port Status Message not generated')
-        self.assertEqual(response.reason,ofp.OFPPR_DELETE,"The reason field of Port Status Message is incorrect")
+            #Verify Port Status message is recieved with reason-- Port Deleted
+            logging.info("Verify PortStatus-Down message is recieved on the control plane ")
+            (response, raw) = self.controller.poll(ofp.OFPT_PORT_STATUS, timeout=15)
+            self.assertTrue(response is not None,
+                        'Port Status Message not generated')
+            self.assertEqual(response.reason,ofp.OFPPR_DELETE,"The reason field of Port Status Message is incorrect")
 
         #Bring up the port by starting the interface connected
-        logging.info("Bringing up the interface ...")
-        self.dataplane.port_up(of_ports[num])
+        finally:
+            logging.info("Bringing up the interface ...")
+            self.dataplane.port_up(of_ports[num])
 
         #Verify Port Status message is recieved with reason-- Port Added
         logging.info("Verify Port Status Up message is received")
         (response, raw) = self.controller.poll(ofp.OFPT_PORT_STATUS, timeout=15)
+        
         self.assertTrue(response is not None,
-                    'Port Status Message not generated')
+                        'Port Status Message not generated')
         self.assertEqual(response.reason,ofp.OFPPR_ADD,"The reason field of Port Status Message is incorrect")
 
 
-class PortConfigurationMod(base_tests.SimpleDataPlane):
+class PortModFlood(base_tests.SimpleDataPlane):
     
-    """ Modify the behavior of physical port using Port Modification Messages """
+    """ Modify the behavior of physical port using Port Modification Messages
+    Change OFPPC_NO_FLOOD flag  and verify change takes place with features request """
 
     def runTest(self):
 
-        logging.info("Running PortConfigMod Test")
+        logging.info("Running PortModFlood Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
 
@@ -563,9 +559,9 @@ class PortConfigurationMod(base_tests.SimpleDataPlane):
         (hw_addr, port_config, advert) = \
             port_config_get(self.controller, of_ports[0])
         self.assertTrue(port_config is not None, "Did not get port config")
+
         logging.debug("No flood bit port " + str(of_ports[0]) + " is now " + 
                            str(port_config & ofp.OFPPC_NO_FLOOD))
-
         
         #Modify Port Configuration 
         logging.info("Modify Port Configuration using Port Modification Message:OFPT_PORT_MOD")
@@ -574,15 +570,7 @@ class PortConfigurationMod(base_tests.SimpleDataPlane):
         self.assertTrue(rv != -1, "Error sending port mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-        
-        #Verify Port Status Message is generated with reason: OFPPR_MODIFY
-        (response, raw) = self.controller.poll(ofp.OFPT_PORT_STATUS, timeout=15)
-        self.assertTrue(response is not None,
-                    'Port Status Message not generated')
-        self.assertEqual(response.reason,ofp.OFPPR_MODIFY,"The reason field of Port Status Message is incorrect")
-
-        
-        # Verify change took place with same feature request
+        # Verify change took place with features request
         logging.info("Verify the change and then set it back")
         (hw_addr, port_config2, advert) = port_config_get(self.controller, of_ports[0])
         
@@ -592,10 +580,97 @@ class PortConfigurationMod(base_tests.SimpleDataPlane):
         self.assertTrue(port_config2 & ofp.OFPPC_NO_FLOOD !=
                         port_config & ofp.OFPPC_NO_FLOOD,
                         "Bit change did not take")
-        
         # Set it back
         rv = port_config_set(self.controller, of_ports[0],port_config,
                              ofp.OFPPC_NO_FLOOD)
+        self.assertTrue(rv != -1, "Error sending port mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+
+class PortModFwd(base_tests.SimpleDataPlane):
+    """ 
+    Modify the behavior of physical port using Port Modification Messages
+    Change OFPPC_NO_FWD flag and verify change took place with Features Request"""
+
+    def runTest(self):
+
+        logging.info("Running PortModFwd Test")
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+
+        #Retrieve Port Configuration
+        logging.info("Sends Features Request and retrieve Port Configuration from reply")
+        (hw_addr, port_config, advert) = \
+            port_config_get(self.controller, of_ports[0])
+        self.assertTrue(port_config is not None, "Did not get port config")
+        logging.debug("No flood bit port " + str(of_ports[0]) + " is now " + 
+                           str(port_config & ofp.OFPPC_NO_FWD))
+
+        #Modify Port Configuration 
+        logging.info("Modify Port Configuration using Port Modification Message:OFPT_PORT_MOD")
+        rv = port_config_set(self.controller, of_ports[0],
+                             port_config ^ ofp.OFPPC_NO_FWD, ofp.OFPPC_NO_FWD)
+        self.assertTrue(rv != -1, "Error sending port mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        # Verify change took place with features request
+        logging.info("Verify the change and then set it back")
+        (hw_addr, port_config2, advert) = port_config_get(self.controller, of_ports[0])
+        
+        logging.debug("No flood bit port " + str(of_ports[0]) + " is now " + 
+                           str(port_config2 & ofp.OFPPC_NO_FWD))
+
+        self.assertTrue(port_config2 is not None, "Did not get port config2")
+        self.assertTrue(port_config2 & ofp.OFPPC_NO_FWD !=
+                        port_config & ofp.OFPPC_NO_FWD,
+                        "Bit change did not take")
+        # Set it back
+        rv = port_config_set(self.controller, of_ports[0],port_config,
+                             ofp.OFPPC_NO_FWD)
+        self.assertTrue(rv != -1, "Error sending port mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+
+class PortModPacketIn(base_tests.SimpleDataPlane):
+    """ 
+    Modify the behavior of physical port using Port Modification Messages
+    Change OFPPC_NO_PACKET_IN flag and verify change took place with Features Request"""
+
+    def runTest(self):
+
+        logging.info("Running PortModPacketIn Test")
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+
+        #Retrieve Port Configuration
+        logging.info("Sends Features Request and retrieve Port Configuration from reply")
+        (hw_addr, port_config, advert) = \
+            port_config_get(self.controller, of_ports[0])
+        self.assertTrue(port_config is not None, "Did not get port config")
+        logging.debug("No flood bit port " + str(of_ports[0]) + " is now " + 
+                           str(port_config & ofp.OFPPC_NO_PACKET_IN))
+
+        #Modify Port Configuration 
+        logging.info("Modify Port Configuration using Port Modification Message:OFPT_PORT_MOD")
+        rv = port_config_set(self.controller, of_ports[0],
+                             port_config ^ ofp.OFPPC_NO_PACKET_IN, ofp.OFPPC_NO_PACKET_IN)
+        self.assertTrue(rv != -1, "Error sending port mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        # Verify change took place with features request
+        logging.info("Verify the change and then set it back")
+        (hw_addr, port_config2, advert) = port_config_get(self.controller, of_ports[0])
+        
+        logging.debug("No flood bit port " + str(of_ports[0]) + " is now " + 
+                           str(port_config2 & ofp.OFPPC_NO_PACKET_IN))
+
+        self.assertTrue(port_config2 is not None, "Did not get port config2")
+        self.assertTrue(port_config2 & ofp.OFPPC_NO_PACKET_IN !=
+                        port_config & ofp.OFPPC_NO_PACKET_IN,
+                        "Bit change did not take")
+        # Set it back
+        rv = port_config_set(self.controller, of_ports[0],port_config,
+                             ofp.OFPPC_NO_PACKET_IN)
         self.assertTrue(rv != -1, "Error sending port mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
