@@ -389,43 +389,6 @@ def match_ip_tos(self,of_ports,priority=None):
 
     return (pkt_iptos,match)
 
-def match_ip_src(self,of_ports,priority=None):
-    #Generate a Match on IP Type of service flow
-
-        #Create a simple tcp packet and generate match on Type of service 
-    pkt_iptos = simple_tcp_packet(ip_src='148.165.130.66')
-    match = parse.packet_to_flow_match(pkt_iptos)
-    self.assertTrue(match is not None, "Could not generate flow match from pkt")
-
-    ofp.OFPFW_NW_SRC_BITS = 32
-    print hex(ofp.OFPFW_NW_SRC_BITS)
-    ofp.OFPFW_NW_SRC_MASK = ((1 << ofp.OFPFW_NW_SRC_BITS) - 1) << ofp.OFPFW_NW_SRC_SHIFT
-    print hex(ofp.OFPFW_NW_SRC_MASK)
-    match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_TYPE^ofp.OFPFW_NW_PROTO ^ofp.OFPFW_NW_SRC_MASK
-    print hex(match.wildcards)
-
-    msg = message.flow_mod()
-    msg.out_port = ofp.OFPP_NONE
-    msg.command = ofp.OFPFC_ADD
-    msg.buffer_id = 0xffffffff
-    msg.match = match
-    if priority != None :
-        msg.priority = priority
-    act = action.action_output()
-    act.port = of_ports[1]
-    self.assertTrue(msg.actions.add(act), "could not add action")
-
-    rv = self.controller.message_send(msg)
-    self.assertTrue(rv != -1, "Error installing flow mod")
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
-
-    return (pkt_iptos,match)
-
-
-
-
-
-
 def match_ip_protocol(self,of_ports,priority=None):
     #Generate a Match on IP Protocol
 
