@@ -506,8 +506,10 @@ class PortStatusMessage(base_tests.SimpleDataPlane):
     """Verify Port Status Messages are sent to the controller 
     whenever physical ports are added, modified or deleted"""
 
+    priority = -1
+    
     def runTest(self):
-
+        
         logging.info("Running PortStatusMessage Test")
         of_ports = config["port_map"].keys()
         
