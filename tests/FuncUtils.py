@@ -367,7 +367,7 @@ def match_ip_tos(self,of_ports,priority=None):
     #Generate a Match on IP Type of service flow
 
         #Create a simple tcp packet and generate match on Type of service 
-    pkt_iptos = simple_tcp_packet(ip_tos=30)
+    pkt_iptos = simple_tcp_packet(ip_tos=28)
     match = parse.packet_to_flow_match(pkt_iptos)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 

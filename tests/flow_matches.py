@@ -414,7 +414,7 @@ class IpTos(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
         
         #Create a non-matching packet , verify packet_in get generated
-        pkt2 = simple_tcp_packet(ip_tos=2);
+        pkt2 = simple_tcp_packet(ip_tos=4);
         self.dataplane.send(of_ports[0], str(pkt2))
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
