@@ -566,6 +566,43 @@ def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=None,
         exp_pkt = pkt
     receive_pkt_verify(parent, egr_ports, exp_pkt, ing_port)
 
+def flow_match_test_pktout(parent, ing_port, egr_ports,
+                           dl_vlan=-1, pkt=None, exp_pkt=None,
+                           action_list=None):
+    """
+    Packet-out test on single TCP packet
+    @param egr_ports A single port or list of ports
+
+    Run test sending packet-out to egr_ports. The goal is to test the actions
+    taken on the packet, not the matching which is of course irrelevant.
+    See flow_match_test for parameter descriptions
+    """
+
+    if pkt is None:
+        pkt = simple_tcp_packet(dl_vlan_enable=(dl_vlan >= 0), dl_vlan=dl_vlan)
+
+    msg = message.packet_out()
+    msg.in_port = ing_port
+    msg.data = str(pkt)
+    if action_list is not None:
+        for act in action_list:
+            assert(msg.actions.add(act))
+
+    # Set up output action
+    if egr_ports is not None:
+        for egr_port in egr_ports:
+            act = action.action_output()
+            act.port = egr_port
+            assert(msg.actions.add(act))
+
+    logging.debug(msg.show())
+    rv = parent.controller.message_send(msg)
+    parent.assertTrue(rv == 0, "Error sending out message")
+
+    if exp_pkt is None:
+        exp_pkt = pkt
+    receive_pkt_verify(parent, egr_ports, exp_pkt, ing_port)
+
 def get_egr_list(parent, of_ports, how_many, exclude_list=[]):
     """
     Generate a list of ports avoiding those in the exclude list
@@ -594,7 +631,7 @@ def flow_match_test(parent, port_map, wildcards=None, dl_vlan=-1, pkt=None,
                     exp_pkt=None, action_list=None,
                     max_test=0, egr_count=1, ing_port=False):
     """
-    Run flow_match_test_port_pair on all port pairs
+    Run flow_match_test_port_pair on all port pairs and packet-out
 
     @param max_test If > 0 no more than this number of tests are executed.
     @param parent Must implement controller, dataplane, assertTrue, assertEqual
@@ -632,7 +669,18 @@ def flow_match_test(parent, port_map, wildcards=None, dl_vlan=-1, pkt=None,
         test_count += 1
         if (max_test > 0) and (test_count > max_test):
             logging.info("Ran " + str(test_count) + " tests; exiting")
-            return
+            break
+
+
+    ingress_port = of_ports[0]
+    egr_ports = get_egr_list(parent, of_ports, egr_count,
+                             exclude_list=[ingress_port])
+    if ing_port:
+        egr_ports.append(ofp.OFPP_IN_PORT)
+    flow_match_test_pktout(parent, ingress_port, egr_ports,
+                           dl_vlan=dl_vlan,
+                           pkt=pkt, exp_pkt=exp_pkt,
+                           action_list=action_list)
 
 def test_param_get(key, default=None):
     """
