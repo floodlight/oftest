@@ -108,7 +108,7 @@ class DataPlanePortOVSDummy(Thread):
                 data = self.socket.recv(n)
                 rxbuf += data
                 if len(data) == n and len(rxbuf) > 2:
-                    rcvtime = time.clock()
+                    rcvtime = time.time()
                     self.logger.debug("Pkt len " + str(len(rxbuf)) +
                              " in at " + str(rcvtime) + " on port " +
                              str(self.port_number))

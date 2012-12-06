@@ -141,7 +141,7 @@ class DataPlanePort(Thread):
                 self.kill()
                 break
 
-            rcvtime = time.clock()
+            rcvtime = time.time()
             self.logger.debug("Pkt len " + str(len(rcvmsg)) +
                      " in at " + str(rcvtime) + " on port " +
                      str(self.port_number))
@@ -256,9 +256,8 @@ class DataPlanePortPcap(DataPlanePort):
             # Enqueue packet
             with self.parent.pkt_sync:
                 for (timestamp, rcvmsg) in self.pcap.readpkts():
-                    rcvtime = time.clock()
                     self.logger.debug("Pkt len " + str(len(rcvmsg)) +
-                                      " in at " + str(rcvtime) + " on port " +
+                                      " in at " + str(timestamp) + " on port " +
                                       str(self.port_number))
 
                     if len(self.packets) >= self.max_pkts:
@@ -266,7 +265,7 @@ class DataPlanePortPcap(DataPlanePort):
                         self.packets.pop(0)
                         self.packets_discarded += 1
                         self.logger.debug("Discarding oldest packet to make room")
-                    self.packets.append((rcvmsg, rcvtime))
+                    self.packets.append((rcvmsg, timestamp))
                     self.packets_total += 1
                 self.parent.pkt_sync.notify_all()
 
