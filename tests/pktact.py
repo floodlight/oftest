@@ -870,6 +870,12 @@ class FloodMinusPort(base_tests.SimpleDataPlane):
                         "Could not generate flow match from pkt")
         act = action.action_output()
 
+        # Clear OFPPC_NO_FLOOD on each port
+        for of_port in of_ports:
+            rv = port_config_set(self.controller, of_port,
+                                 0, ofp.OFPPC_NO_FLOOD)
+            self.assertEqual(rv, 0, "Failed to set port config")
+
         for idx in range(len(of_ports)):
             rv = delete_all_flows(self.controller)
             self.assertEqual(rv, 0, "Failed to delete all flows")
