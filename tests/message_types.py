@@ -326,13 +326,15 @@ class PacketInSizeMiss(base_tests.SimpleDataPlane):
             (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=3)
             self.assertTrue(response is not None,
                         'Packet In not received on control plane')
-        
-            # Verify data bytes sent in packet_in is same as miss_send_length
-            if bytes==0:
+
+            #Verify buffer_id field and data field
+            if response.buffer_id == -1:
+                self.assertTrue(len(response.data)==len(str(pkt)),"Buffer None here but packet_in is not a complete packet")
+            elif (bytes==0):
                 self.assertEqual(len(response.data),bytes,"PacketIn Size is not equal to miss_send_len") 
             else:
                 self.assertTrue(len(response.data)>=bytes,"PacketIn Size is not atleast miss_send_len bytes") 
-
+                
 
 class PacketInSizeAction(base_tests.SimpleDataPlane):
 
@@ -358,6 +360,7 @@ class PacketInSizeAction(base_tests.SimpleDataPlane):
         match.wildcards=ofp.OFPFW_ALL
         match.in_port = of_ports[0]
 
+
         max_len = [0 ,32 ,64,100]
         
         for bytes in max_len :
@@ -365,6 +368,7 @@ class PacketInSizeAction(base_tests.SimpleDataPlane):
             #Insert a flow entry with action --output to controller
             request = message.flow_mod()
             request.match = match
+            request.buffer_id = 0xffffffff
             act = action.action_output()
             act.port = ofp.OFPP_CONTROLLER
             act.max_len = bytes 
@@ -384,14 +388,14 @@ class PacketInSizeAction(base_tests.SimpleDataPlane):
             self.assertTrue(response is not None,
                         'Packet in message not received by controller')
 
-            #Verify buffer_id field 
-            self.assertTrue(response.buffer_id != -1,"PacketIn buffer field is incorrect")
-
-            #Verify the reasON field is OFPR_ACTION
+            #Verify the reason field is OFPR_ACTION
             self.assertEqual(response.reason,ofp.OFPR_ACTION,"PacketIn reason field is incorrect")
 
-            #verify the data field
-            self.assertTrue(len(response.data)<=bytes,"Packet_in size is greater than max_len field")
+            #Verify buffer_id field and data field
+            if response.buffer_id != -1:
+                self.assertTrue(len(response.data)<=bytes,"Packet_in size is greater than max_len field")
+            else:
+                self.assertTrue(len(response.data)==len(str(pkt)),"Buffer None here but packet_in is not a complete packet")
 
            
 class PacketInBodyMiss(base_tests.SimpleDataPlane):
@@ -441,7 +445,6 @@ class PacketInBodyMiss(base_tests.SimpleDataPlane):
 
         #Verify data field 
         self.assertTrue(len(response.data) == len(str(pkt)), "Complete Data packet was not sent")
-
 
 
 class PacketInBodyAction(base_tests.SimpleDataPlane):
