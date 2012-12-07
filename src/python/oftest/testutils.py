@@ -316,6 +316,12 @@ def receive_pkt_check(dp, pkt, yes_ports, no_ports, assert_if):
     @param no_ports Set or list of ports that should not receive packet
     @param assert_if Object that implements assertXXX
     """
+
+    # Wait this long for packets that we don't expect to receive.
+    # 100ms is (rarely) too short for positive tests on slow
+    # switches but is definitely not too short for a negative test.
+    negative_timeout = 0.1
+
     exp_pkt_arg = None
     if config["relax"]:
         exp_pkt_arg = pkt
@@ -333,11 +339,11 @@ def receive_pkt_check(dp, pkt, yes_ports, no_ports, assert_if):
                              "Response packet does not match send packet " +
                              "on port " + str(ofport))
     if len(no_ports) > 0:
-        time.sleep(1)
+        time.sleep(negative_timeout)
     for ofport in no_ports:
         logging.debug("Negative check for pkt on port " + str(ofport))
         (rcv_port, rcv_pkt, pkt_time) = dp.poll(
-            port_number=ofport, timeout=1, exp_pkt=exp_pkt_arg)
+            port_number=ofport, timeout=0, exp_pkt=exp_pkt_arg)
         assert_if.assertTrue(rcv_pkt is None, 
                              "Unexpected pkt on port " + str(ofport))
 
