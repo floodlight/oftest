@@ -913,6 +913,14 @@ class FloodMinusPort(base_tests.SimpleDataPlane):
             rv = port_config_set(self.controller, no_flood_port,
                                  0, ofp.OFPPC_NO_FLOOD)
             self.assertEqual(rv, 0, "Failed to reset port config")
+            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+            # Check that packets are now flooded to no_flood_port
+            logging.info("Sending packet to dp port " + str(ingress_port))
+            self.dataplane.send(ingress_port, str(pkt))
+            no_ports = set([ingress_port])
+            yes_ports = set(of_ports).difference(no_ports)
+            receive_pkt_check(self.dataplane, pkt, yes_ports, no_ports, self)
 
             #@todo Should check no other packets received
 
