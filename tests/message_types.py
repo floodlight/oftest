@@ -195,7 +195,7 @@ class FeaturesReplyBody(base_tests.SimpleProtocol):
         ports=0
         ports = len(reply.ports)
         self.assertTrue(ports != 0, "Features Reply does not contain no. of ports and their ports definitions")
-        self.assertTrue(ports==len(of_ports),"No. of openflow ports in the features Reply is incorrect")
+        self.assertTrue(ports >= len(of_ports),"No. of openflow ports in the features Reply is incorrect")
         logging.info("No. of openflow ports: " + str(ports))
 
 
@@ -328,7 +328,7 @@ class PacketInSizeMiss(base_tests.SimpleDataPlane):
                         'Packet In not received on control plane')
 
             #Verify buffer_id field and data field
-            if response.buffer_id == -1:
+            if response.buffer_id == 0xFFFFFFFF:
                 self.assertTrue(len(response.data)==len(str(pkt)),"Buffer None here but packet_in is not a complete packet")
             elif (bytes==0):
                 self.assertEqual(len(response.data),bytes,"PacketIn Size is not equal to miss_send_len") 
@@ -392,7 +392,7 @@ class PacketInSizeAction(base_tests.SimpleDataPlane):
             self.assertEqual(response.reason,ofp.OFPR_ACTION,"PacketIn reason field is incorrect")
 
             #Verify buffer_id field and data field
-            if response.buffer_id != -1:
+            if response.buffer_id != 0xFFFFFFFF :
                 self.assertTrue(len(response.data)<=bytes,"Packet_in size is greater than max_len field")
             else:
                 self.assertTrue(len(response.data)==len(str(pkt)),"Buffer None here but packet_in is not a complete packet")
