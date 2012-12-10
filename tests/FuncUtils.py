@@ -1,4 +1,4 @@
-""" Some common function definitions used by Conformance tests -- OF-SWITCH 1.0.0 Testcases """
+""" Defined Some common functions used by Conformance tests -- OF-SWITCH 1.0.0 Testcases """
 
 import sys
 import copy
@@ -282,7 +282,7 @@ def match_vlan_id(self,of_ports,priority=None):
     return (pkt_matchvlanid,match)
 
 def match_vlan_pcp(self,of_ports,priority=None):
-    #Generate Match_Vlan_Id
+    #Generate Match_Vlan_Priority
 
     #Create a simple tcp packet and generate match on ethernet dst address flow
     pkt_matchvlanpcp = simple_tcp_packet(dl_vlan_enable=True,dl_vlan=1,dl_vlan_pcp=5)
@@ -468,6 +468,7 @@ def match_tcp_dst(self,of_ports,priority=None):
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     return (pkt_matchdst,match)        
+
 
 def match_ethernet_type(self,of_ports,priority=None):
     #Generate a Match_Ethernet_Type flow
