@@ -30,7 +30,9 @@ from ofutils import *
 have_pypcap = False
 try:
     import pcap
-    have_pypcap = True
+    if hasattr(pcap, "pcap"):
+        # the incompatible pylibpcap library masquerades as pcap
+        have_pypcap = True
 except:
     pass
 

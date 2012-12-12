@@ -200,3 +200,46 @@ class PacketOutLoad(base_tests.SimpleDataPlane):
                 break
             in_count += 1
         logging.info("PacketOutLoad Sent %d. Got %d." % (out_count, in_count))
+
+class FlowModLoad(base_tests.SimpleProtocol):
+
+    def checkBarrier(self):
+        msg, pkt = self.controller.transact(message.barrier_request(), timeout=60)
+        self.assertNotEqual(msg, None, "Barrier failed")
+        while self.controller.packets:
+           msg = self.controller.packets.pop(0)[0]
+           self.assertNotEqual(msg.header.type, message.OFPT_ERROR,
+                               "Error received")
+
+    def runTest(self):
+        msg, pkt = self.controller.transact(message.table_stats_request())
+        num_flows = msg.stats[0].max_entries
+
+        requests = []
+        for i in range(num_flows):
+            match = ofp.ofp_match()
+            match.wildcards = ofp.OFPFW_ALL & ~ofp.OFPFW_DL_VLAN & ~ofp.OFPFW_DL_DST
+            match.dl_vlan = ofp.OFP_VLAN_NONE
+            match.dl_dst = [0, 1, 2, 3, i / 256, i % 256]
+            act = action.action_output()
+            act.port = ofp.OFPP_CONTROLLER
+            request = message.flow_mod()
+            request.command = ofp.OFPFC_ADD
+            request.buffer_id = 0xffffffff
+            request.priority = num_flows - i
+            request.out_port = ofp.OFPP_NONE
+            request.match = match
+            request.actions.add(act)
+            requests.append(request)
+
+        for i in range(5):
+            logging.info("Iteration %d: delete all flows" % i)
+            self.assertEqual(delete_all_flows(self.controller), 0,
+                             "Failed to delete all flows")
+            self.checkBarrier()
+
+            logging.info("Iteration %d: add %s flows" % (i, num_flows))
+            for request in requests:
+               self.assertNotEqual(self.controller.message_send(request), -1,
+                               "Error installing flow mod")
+            self.checkBarrier()
