@@ -1953,7 +1953,7 @@ class MatchEach(base_tests.SimpleDataPlane):
 
         delete_all_flows(self.controller)
 
-        pkt = simple_tcp_packet()
+        pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=2)
         ingress_port = of_ports[0]
         egress_port = of_ports[1]
 
