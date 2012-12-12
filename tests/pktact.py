@@ -2006,18 +2006,29 @@ class MatchEach(base_tests.SimpleDataPlane):
             self.assertEqual(rcv_port, egress_port, "Unexpected receive port")
             self.assertEqual(str(pkt), str(rcv_pkt), 'Response packet does not match send packet')
 
+        wildcards = required_wildcards(self)
         # TODO in_port
-        testField("dl_src", [0xff]*6)
-        testField("dl_dst", [0xff]*6)
-        testField("dl_type", 0xffff)
-        testField("dl_vlan", 0xfff)
+        if not (wildcards & ofp.OFPFW_DL_SRC):
+            testField("dl_src", [0xff]*6)
+        if not (wildcards & ofp.OFPFW_DL_DST):
+            testField("dl_dst", [0xff]*6)
+        if not (wildcards & ofp.OFPFW_DL_TYPE):
+            testField("dl_type", 0xffff)
+        if not (wildcards & ofp.OFPFW_DL_VLAN):
+            testField("dl_vlan", 0xfff)
         # TODO dl_vlan_pcp
-        testField("nw_src", 0xffffffff)
-        testField("nw_dst", 0xffffffff)
-        testField("nw_tos", 0x3f)
-        testField("nw_proto", 0xff)
-        testField("tp_src", 0xffff)
-        testField("tp_dst", 0xffff)
+        if not (wildcards & ofp.OFPFW_NW_SRC_ALL):
+            testField("nw_src", 0xffffffff)
+        if not (wildcards & ofp.OFPFW_NW_DST_ALL):
+            testField("nw_dst", 0xffffffff)
+        if not (wildcards & ofp.OFPFW_NW_TOS):
+            testField("nw_tos", 0x3f)
+        if not (wildcards & ofp.OFPFW_NW_PROTO):
+            testField("nw_proto", 0xff)
+        if not (wildcards & ofp.OFPFW_TP_SRC):
+            testField("tp_src", 0xffff)
+        if not (wildcards & ofp.OFPFW_TP_DST):
+            testField("tp_dst", 0xffff)
 
 class DirectBadPacketBase(base_tests.SimpleDataPlane):
     """
