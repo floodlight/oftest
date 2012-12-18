@@ -100,32 +100,59 @@ class HandshakeNoFeaturesRequest(BaseHandshake):
         self.assertTrue(self.controllers[0].wait_disconnected(timeout=10),
                         "Not notified of controller disconnect")
 
-class HandshakeAndKeepalive(BaseHandshake):
+class CompleteHandshake(BaseHandshake):
     """
-    Complete handshake and respond to echo request, but otherwise do nothing.
-    Good for manual testing.
+    Set up multiple controllers and complete handshake, but otherwise do nothing.
     """
 
     priority = -1
 
-    def runTest(self):
-        self.num_controllers = test_param_get('num_controllers', default=1)
-        self.controller_timeout = test_param_get('controller_timeout',
-                                                 default=-1)
-        self.hello_timeout = test_param_get('hello_timeout',
-                                            default=5)
-        self.features_req_timeout = test_param_get('features_req_timeout',
-                                                   default=5)
+    def buildControllerList(self):                                             
+        # controller_list is a list of IP:port tuples
+        con_list = test_param_get('controller_list')
+        if con_list is not None:
+            self.controller_list = []
+            for controller in con_list:
+                ip,portstr = controller.split(':')
+                try:
+                    port = int(portstr)
+                except:
+                    self.assertTrue(0, "failure converting port " +
+                                    portstr + " to integer")
+                self.controller_list.append( (ip, int(port)) )
+        else:
+            self.controller_list = [(config["controller_host"],
+                                     config["controller_port"])]
 
-        for i in range(self.num_controllers):
-            self.controllerSetup(config["controller_host"],
-                                 config["controller_port"]+i)
-        for i in range(self.num_controllers):
+    def __init__(self, keep_alive=True, cxn_cycles=5,
+                 controller_timeout=-1, hello_timeout=5, 
+                 features_req_timeout=5, disconnected_timeout=3):
+        BaseHandshake.__init__(self)
+        self.buildControllerList()
+        self.keep_alive = keep_alive
+        self.cxn_cycles = test_param_get('cxn_cycles') \
+            or cxn_cycles
+        self.controller_timeout = test_param_get('controller_timeout') \
+            or controller_timeout
+        self.hello_timeout = test_param_get('hello_timeout') \
+            or hello_timeout
+        self.features_req_timeout = test_param_get('features_req_timeout') \
+            or features_req_timeout
+        self.disconnected_timeout = test_param_get('disconnected_timeout') \
+            or disconnected_timeout
+
+    def runTest(self):
+        for conspec in self.controller_list:
+            self.controllerSetup(conspec[0], conspec[1])
+        for i in range(len(self.controller_list)):
             self.controllers[i].cstate = 0
-            self.controllers[i].keep_alive = True
+            self.controllers[i].keep_alive = self.keep_alive
         tick = 0.1  # time period in seconds at which controllers are handled
 
+        disconnected_count = 0
+        cycle = 0
         while True:
+            states = []
             for con in self.controllers:
                 condesc = con.host + ":" + str(con.port) + ": "
                 logging.debug("Checking " + condesc)
@@ -168,6 +195,7 @@ class HandshakeAndKeepalive(BaseHandshake):
                                          str(con.switch_addr))
                             con.cstate = 4
                             con.count = 0
+                            cycle = cycle + 1
                         else:
                             con.count = con.count + 1
                             # fall back to previous state on timeout
@@ -191,5 +219,56 @@ class HandshakeAndKeepalive(BaseHandshake):
                             con.cstate = 0
                 else:
                     con.cstate = 0
+            
+                states.append(con.cstate)
 
+            logging.debug("Cycle " + str(cycle) +
+                          ", states " + str(states) +
+                          ", disconnected_count " + str(disconnected_count))
+            if 4 in states:
+                disconnected_count = 0
+            else:
+                disconnected_count = disconnected_count + 1
+            if cycle != 0:
+                self.assertTrue(disconnected_count < self.disconnected_timeout/tick,
+                                "Timeout expired connecting to controller")
+            else:
+               # on first cycle, allow more time for initial connect
+               self.assertTrue(disconnected_count < 2*self.disconnected_timeout/tick,
+                               "Timeout expired connecting to controller on init")
+
+            if cycle > self.cxn_cycles:
+               break
             time.sleep(tick)
+
+class HandshakeAndKeepalive(CompleteHandshake):
+    """
+    Complete handshake and respond to echo request, but otherwise do nothing.
+    Good for manual testing.
+    """
+
+    priority = -1
+
+    def __init__(self):
+       CompleteHandshake.__init__(self, keep_alive=True)
+
+class HandshakeNoEcho(CompleteHandshake):
+    """
+    Complete handshake, but otherwise do nothing, and do not respond to echo.
+    """
+
+    priority = -1
+
+    def __init__(self):
+       CompleteHandshake.__init__(self, keep_alive=False)
+
+class HandshakeAndDrop(CompleteHandshake):
+    """
+    Complete handshake, but otherwise do nothing, and drop connection after a while.
+    """
+
+    priority = -1
+
+    def __init__(self):
+       CompleteHandshake.__init__(self, keep_alive=True, controller_timeout=10)
+
