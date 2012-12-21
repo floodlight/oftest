@@ -444,6 +444,8 @@ class Controller(Thread):
             self.switch_socket.close()
             self.switch_socket = None
             self.switch_addr = None
+            with self.packets_cv:
+                self.packets = []
             with self.connect_cv:
                 self.connect_cv.notifyAll()
 

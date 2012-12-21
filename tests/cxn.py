@@ -147,6 +147,7 @@ class CompleteHandshake(BaseHandshake):
         for i in range(len(self.controller_list)):
             self.controllers[i].cstate = 0
             self.controllers[i].keep_alive = self.keep_alive
+            self.controllers[i].saved_switch_addr = None
         tick = 0.1  # time period in seconds at which controllers are handled
 
         disconnected_count = 0
@@ -157,7 +158,11 @@ class CompleteHandshake(BaseHandshake):
                 condesc = con.host + ":" + str(con.port) + ": "
                 logging.debug("Checking " + condesc)
 
-                if con.switch_socket: 
+                if con.switch_socket:
+                    if con.switch_addr != con.saved_switch_addr:
+                        con.saved_switch_addr = con.switch_addr
+                        con.cstate = 0
+
                     if con.cstate == 0:
                         logging.info(condesc + "Sending hello to " +
                                      str(con.switch_addr))
@@ -196,6 +201,7 @@ class CompleteHandshake(BaseHandshake):
                             con.cstate = 4
                             con.count = 0
                             cycle = cycle + 1
+                            logging.info("Cycle " + str(cycle))
                         else:
                             con.count = con.count + 1
                             # fall back to previous state on timeout
