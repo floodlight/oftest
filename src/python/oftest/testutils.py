@@ -577,11 +577,11 @@ def flow_msg_install(parent, request, clear_table_override=None):
         logging.debug("Clear flow table")
         rc = delete_all_flows(parent.controller)
         parent.assertEqual(rc, 0, "Failed to delete all flows")
-        parent.assertEqual(do_barrier(parent.controller), 0, "Barrier failed")
 
     logging.debug("Insert flow")
     rv = parent.controller.message_send(request)
     parent.assertTrue(rv != -1, "Error installing flow mod")
+
     parent.assertEqual(do_barrier(parent.controller), 0, "Barrier failed")
 
 def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=None,
