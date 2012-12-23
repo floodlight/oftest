@@ -105,8 +105,8 @@ class Controller(Thread):
         self.connect_cv = Condition()
         self.message_cv = Condition()
 
-        # Pipe used to wake up event loop
-        self.pipe_rd, self.pipe_wr = os.pipe()
+        # Used to wake up the event loop from another thread
+        self.waker = EventDescriptor()
 
         # Counters
         self.socket_errors = 0
@@ -329,8 +329,8 @@ class Controller(Thread):
                 return -1
 
             self._pkt_handle(pkt)
-        elif s and s == self.pipe_rd:
-            os.read(s, 1)
+        elif s and s == self.waker:
+            self.waker.wait()
         else:
             self.logger.error("Unknown socket ready: " + str(s))
             return -1
@@ -359,13 +359,13 @@ class Controller(Thread):
         """
         Wake up the event loop, presumably from another thread.
         """
-        os.write(self.pipe_wr, "x")
+        self.waker.notify()
 
     def sockets(self):
         """
         Return list of sockets to select on.
         """
-        socs = [self.listen_socket, self.switch_socket, self.pipe_rd]
+        socs = [self.listen_socket, self.switch_socket, self.waker]
         return [x for x in socs if x]
 
     def run(self):

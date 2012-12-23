@@ -5,6 +5,7 @@ Utilities for the OpenFlow test framework
 
 import random
 import time
+import os
 
 default_timeout = None # set by oft
 
@@ -34,3 +35,25 @@ def timed_wait(cv, fn, timeout=-1):
 
         if time.time() > end_time:
             return None
+
+class EventDescriptor():
+    """
+    Similar to a condition variable, but can be passed to select().
+    Only supports one waiter.
+    """
+
+    def __init__(self):
+        self.pipe_rd, self.pipe_wr = os.pipe()
+
+    def __del__(self):
+        os.close(self.pipe_rd)
+        os.close(self.pipe_wr)
+
+    def notify(self):
+        os.write(self.pipe_wr, "x")
+
+    def wait(self):
+        os.read(self.pipe_rd, 1)
+
+    def fileno(self):
+        return self.pipe_rd
