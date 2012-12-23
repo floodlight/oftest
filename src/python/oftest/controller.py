@@ -301,6 +301,8 @@ class Controller(Thread):
 
             with self.connect_cv:
                 (self.switch_socket, self.switch_addr) = (sock, addr)
+                self.switch_socket.setsockopt(socket.IPPROTO_TCP,
+                                              socket.TCP_NODELAY, True)
                 if self.initial_hello:
                     self.message_send(hello())
                 self.connect_cv.notify() # Notify anyone waiting
@@ -342,6 +344,7 @@ class Controller(Thread):
             soc.connect((self.switch, self.port))
             self.logger.info("Connected to " + self.switch + " on " +
                          str(self.port))
+            soc.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
             self.switch_addr = (self.switch, self.port)
             return soc
         except (StandardError, socket.error), e:
