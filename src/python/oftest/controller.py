@@ -102,9 +102,11 @@ class Controller(Thread):
         self.listen_socket = None
         self.switch_socket = None
         self.switch_addr = None
-        self.socs = []
         self.connect_cv = Condition()
         self.message_cv = Condition()
+
+        # Pipe used to wake up event loop
+        self.pipe_rd, self.pipe_wr = os.pipe()
 
         # Counters
         self.socket_errors = 0
@@ -296,7 +298,6 @@ class Controller(Thread):
             except:
                 self.logger.warning("Error on listen socket accept")
                 return -1
-            self.socs.append(sock)
             self.logger.info(self.host+":"+str(self.port)+": Incoming connection from "+str(addr))
 
             with self.connect_cv:
@@ -328,6 +329,8 @@ class Controller(Thread):
                 return -1
 
             self._pkt_handle(pkt)
+        elif s and s == self.pipe_rd:
+            os.read(s, 1)
         else:
             self.logger.error("Unknown socket ready: " + str(s))
             return -1
@@ -351,6 +354,19 @@ class Controller(Thread):
             self.logger.error("Could not connect to %s at %d:: %s" % 
                               (self.switch, self.port, str(e)))
         return None
+
+    def wakeup(self):
+        """
+        Wake up the event loop, presumably from another thread.
+        """
+        os.write(self.pipe_wr, "x")
+
+    def sockets(self):
+        """
+        Return list of sockets to select on.
+        """
+        socs = [self.listen_socket, self.switch_socket, self.pipe_rd]
+        return [x for x in socs if x]
 
     def run(self):
         """
@@ -381,13 +397,12 @@ class Controller(Thread):
             self.listen_socket.listen(LISTEN_QUEUE_SIZE)
 
             self.logger.info("Listening for switch connection")
-            self.socs = [self.listen_socket]
             self.dbg_state = "running"
 
         while self.active:
             try:
                 sel_in, sel_out, sel_err = \
-                    select.select(self.socs, [], self.socs, 1)
+                    select.select(self.sockets(), [], self.sockets(), 1)
             except:
                 print sys.exc_info()
                 self.logger.error("Select error, disconnecting")
@@ -420,9 +435,9 @@ class Controller(Thread):
             soc = self.active_connect()
             if soc:
                 self.logger.info("Connected to %s", self.switch)
-                self.socs = [soc]
                 self.dbg_state = "running"
                 self.switch_socket = soc
+                self.wakeup()
                 with self.connect_cv:
                     if self.initial_hello:
                         self.message_send(hello())
@@ -443,7 +458,6 @@ class Controller(Thread):
         If connected to a switch, disconnect.
         """
         if self.switch_socket:
-            self.socs.remove(self.switch_socket)
             self.switch_socket.close()
             self.switch_socket = None
             self.switch_addr = None
@@ -472,6 +486,7 @@ class Controller(Thread):
         the select timeout to kick in
         """
         self.active = False
+        self.wakeup()
 
     def shutdown(self):
         """
@@ -500,6 +515,7 @@ class Controller(Thread):
         with self.connect_cv:
             self.connect_cv.notifyAll()
 
+        self.wakeup()
         self.dbg_state = "down"
 
     def register(self, msg_type, handler):
