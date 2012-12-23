@@ -85,6 +85,9 @@ gParser.add_argument('--ovs-vswitchd-schema',
                      help="""Path to the vswitchd.ovsschema file""")
 gParser.add_argument('--ovs-vswitchd-log', 
                      help="""Path to the vswitchd log file""")
+gParser.add_argument('--ovs-vswitchd-verbosity', 
+                     help="""Set vswitchd logging level (off/emer/err/warn/info/dbg)""",
+                     default="dbg")
 gParser.add_argument('--ovs-vswitchd', 
                      help="""Path to the target ovs-vswitchd binary""")
 gParser.add_argument('--ovs-vsctl', 
@@ -447,7 +450,8 @@ vsctl(["--no-wait", "init"])
 # Start vswitchd
 startV = [ gArgs.ovs_vswitchd, 
           "unix:%s" % (gArgs.ovs_db_sock), 
-          "--verbose", "--detach",
+          "--verbose=%s" % gArgs.ovs_vswitchd_verbosity,
+          "--detach",
           "--pidfile=%s" % (gSwitchPid) ]
 
 if gArgs.ovs_vswitchd_log:
