@@ -496,7 +496,9 @@ class DataPlane:
         """
         for port_number in self.port_list.keys():
             self.port_list[port_number].kill()
-            if join_threads:
+
+        if join_threads:
+            for port_number in self.port_list.keys():
                 self.logger.debug("Joining " + str(port_number))
                 self.port_list[port_number].join()
 
