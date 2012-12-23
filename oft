@@ -316,7 +316,7 @@ def logging_setup(config):
     """
     Set up logging based on config
     """
-    _format = "%(asctime)s  %(name)-10s: %(levelname)-8s: %(message)s"
+    _format = "%(asctime)s.%(msecs)d  %(name)-10s: %(levelname)-8s: %(message)s"
     _datefmt = "%H:%M:%S"
     _mode = config["log_append"] and "a" or "w"
     logging.basicConfig(filename=config["log_file"],
