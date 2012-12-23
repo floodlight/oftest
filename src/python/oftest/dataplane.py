@@ -95,6 +95,9 @@ class DataPlanePort(Thread):
         self.logger.info("Opened port monitor (class %s)", type(self).__name__)
         self.parent = parent
 
+        # Used to wake up the event loop in kill()
+        self.waker = EventDescriptor()
+
     def interface_open(self, interface_name):
         """
         Open a socket in a promiscuous mode for a data connection.
@@ -113,7 +116,7 @@ class DataPlanePort(Thread):
         Activity function for class
         """
         self.running = True
-        self.socs = [self.socket]
+        self.socs = [self.socket, self.waker]
         error_warned = False # Have we warned about error?
         while self.running:
             try:
@@ -128,6 +131,10 @@ class DataPlanePort(Thread):
                 break
 
             if (sel_in is None) or (len(sel_in) == 0):
+                continue
+
+            if self.waker in sel_in:
+                self.waker.wait()
                 continue
 
             try:
@@ -167,6 +174,7 @@ class DataPlanePort(Thread):
         """
         self.logger.debug("Port monitor kill")
         self.running = False
+        self.waker.notify()
         try:
             self.socket.close()
         except:
@@ -273,7 +281,7 @@ class DataPlanePortPcap(DataPlanePort):
         self.running = True
         while self.running:
             try:
-                sel_in, sel_out, sel_err = select.select([self.socket], [], [], 1)
+                sel_in, sel_out, sel_err = select.select([self.socket, self.waker], [], [], 1)
             except:
                 print sys.exc_info()
                 self.logger.error("Select error, exiting")
@@ -283,6 +291,10 @@ class DataPlanePortPcap(DataPlanePort):
                 break
 
             if (sel_in is None) or (len(sel_in) == 0):
+                continue
+
+            if self.waker in sel_in:
+                self.waker.wait()
                 continue
 
             # Enqueue packet
@@ -309,6 +321,7 @@ class DataPlanePortPcap(DataPlanePort):
         """
         self.logger.debug("Port monitor kill")
         self.running = False
+        self.waker.notify()
         # pcap object is closed on GC.
 
     def send(self, packet):
