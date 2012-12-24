@@ -94,6 +94,7 @@ class DataPlanePort(Thread):
             raise
         self.logger.info("Opened port monitor (class %s)", type(self).__name__)
         self.parent = parent
+        self.killed = False
 
         # Used to wake up the event loop in kill()
         self.waker = EventDescriptor()
@@ -115,19 +116,15 @@ class DataPlanePort(Thread):
         """
         Activity function for class
         """
-        self.running = True
         self.socs = [self.socket, self.waker]
         error_warned = False # Have we warned about error?
-        while self.running:
+        while not self.killed:
             try:
                 sel_in, sel_out, sel_err = \
                     select.select(self.socs, [], [], 1)
             except:
                 print sys.exc_info()
                 self.logger.error("Select error, exiting")
-                break
-
-            if not self.running:
                 break
 
             if (sel_in is None) or (len(sel_in) == 0):
@@ -173,7 +170,7 @@ class DataPlanePort(Thread):
         Terminate the running thread
         """
         self.logger.debug("Port monitor kill")
-        self.running = False
+        self.killed = True
         self.waker.notify()
         try:
             self.socket.close()
@@ -278,16 +275,12 @@ class DataPlanePortPcap(DataPlanePort):
         """
         Activity function for class
         """
-        self.running = True
-        while self.running:
+        while not self.killed:
             try:
                 sel_in, sel_out, sel_err = select.select([self.socket, self.waker], [], [], 1)
             except:
                 print sys.exc_info()
                 self.logger.error("Select error, exiting")
-                break
-
-            if not self.running:
                 break
 
             if (sel_in is None) or (len(sel_in) == 0):
@@ -320,7 +313,7 @@ class DataPlanePortPcap(DataPlanePort):
         Terminate the running thread
         """
         self.logger.debug("Port monitor kill")
-        self.running = False
+        self.killed = True
         self.waker.notify()
         # pcap object is closed on GC.
 
