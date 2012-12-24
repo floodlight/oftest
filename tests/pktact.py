@@ -2046,6 +2046,8 @@ class DirectBadPacketBase(base_tests.SimpleDataPlane):
     Verify the packet is received at the egress port only
     """
 
+    priority = -1 # no-op base class
+
     RESULT_MATCH = "MATCH"
     RESULT_NOMATCH = "NO MATCH"
     RESULT_ANY = "ANY MATCH"
