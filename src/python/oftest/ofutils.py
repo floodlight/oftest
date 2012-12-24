@@ -6,6 +6,7 @@ Utilities for the OpenFlow test framework
 import random
 import time
 import os
+import fcntl
 
 default_timeout = None # set by oft
 
@@ -44,13 +45,17 @@ class EventDescriptor():
 
     def __init__(self):
         self.pipe_rd, self.pipe_wr = os.pipe()
+        fcntl.fcntl(self.pipe_wr, fcntl.F_SETFL, os.O_NONBLOCK)
 
     def __del__(self):
         os.close(self.pipe_rd)
         os.close(self.pipe_wr)
 
     def notify(self):
-        os.write(self.pipe_wr, "x")
+        try:
+            os.write(self.pipe_wr, "x")
+        except OSError as e:
+            logger.warn("Failed to notify EventDescriptor: %s", e)
 
     def wait(self):
         os.read(self.pipe_rd, 1)
