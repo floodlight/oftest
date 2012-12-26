@@ -7,6 +7,7 @@ import random
 import time
 import os
 import fcntl
+import logging
 
 default_timeout = None # set by oft
 
@@ -55,7 +56,7 @@ class EventDescriptor():
         try:
             os.write(self.pipe_wr, "x")
         except OSError as e:
-            logger.warn("Failed to notify EventDescriptor: %s", e)
+            logging.warn("Failed to notify EventDescriptor: %s", e)
 
     def wait(self):
         os.read(self.pipe_rd, 1)
