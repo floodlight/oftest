@@ -508,6 +508,8 @@ class DataPlane:
                 self.logger.debug("Joining " + str(port_number))
                 self.port_list[port_number].join()
 
+        self.port_list = None
+
         self.logger.info("DataPlane shutdown")
 
     def show(self, prefix=''):

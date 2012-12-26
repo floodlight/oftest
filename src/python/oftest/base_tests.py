@@ -76,6 +76,7 @@ class SimpleProtocol(unittest.TestCase):
         #@todo Review if join should be done on clean_shutdown
         if self.clean_shutdown:
             self.controller.join()
+        del self.controller
 
     def runTest(self):
         # Just a simple sanity check as illustration
@@ -112,6 +113,7 @@ class SimpleDataPlane(SimpleProtocol):
         SimpleProtocol.tearDown(self)
         if hasattr(self, 'dataplane'):
             self.dataplane.kill(join_threads=self.clean_shutdown)
+            del self.dataplane
         logging.info("Teardown done")
 
     def runTest(self):
@@ -135,6 +137,7 @@ class DataPlaneOnly(unittest.TestCase):
     def tearDown(self):
         logging.info("Teardown for simple dataplane test")
         self.dataplane.kill(join_threads=self.clean_shutdown)
+        del self.dataplane
         logging.info("Teardown done")
 
     def runTest(self):
