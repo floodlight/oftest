@@ -338,17 +338,19 @@ def port_config_set(controller, port_no, config, mask):
     if reply is None:
         return -1
     logging.debug(reply.show())
+    p = None
     for idx in range(len(reply.ports)):
         if reply.ports[idx].port_no == port_no:
+            p = reply.ports[idx]
             break
-    if idx >= len(reply.ports):
-        return -1
     mod = message.port_mod()
     mod.port_no = port_no
-    mod.hw_addr = reply.ports[idx].hw_addr
+    if p:
+        mod.hw_addr = p.hw_addr
     mod.config = config
     mod.mask = mask
-    mod.advertise = reply.ports[idx].advertised
+    if p:
+        mod.advertise = p.advertised
     controller.message_send(mod)
     return 0
 
