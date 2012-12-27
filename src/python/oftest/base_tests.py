@@ -112,7 +112,7 @@ class SimpleDataPlane(SimpleProtocol):
         logging.info("Teardown for simple dataplane test")
         SimpleProtocol.tearDown(self)
         if hasattr(self, 'dataplane'):
-            self.dataplane.kill(join_threads=self.clean_shutdown)
+            self.dataplane.kill()
             del self.dataplane
         logging.info("Teardown done")
 
@@ -136,7 +136,7 @@ class DataPlaneOnly(unittest.TestCase):
 
     def tearDown(self):
         logging.info("Teardown for simple dataplane test")
-        self.dataplane.kill(join_threads=self.clean_shutdown)
+        self.dataplane.kill()
         del self.dataplane
         logging.info("Teardown done")
 
