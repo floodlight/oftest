@@ -336,29 +336,12 @@ class DataPlane:
         # as a condition variable
         self.pkt_sync = Condition()
 
-        # These are used to signal async pkt arrival for polling
-        self.want_pkt = False
-        self.exp_pkt = None
-        self.want_pkt_port = None # What port required (or None)
-        self.got_pkt_port = None # On what port received?
-        self.packets_pending = 0 # Total pkts in all port queues
         self.logger = logging.getLogger("dataplane")
 
         if config is None:
             self.config = {}
         else:
             self.config = config; 
-
-        ############################################################
-        #
-        # We use the DataPlanePort class defined here by 
-        # default for all port traffic:
-        #
-        if have_pypcap:
-            self.dppclass = DataPlanePortPcap
-        else:
-            self.logger.warning("Missing pypcap, VLAN tests may fail. See README for installation instructions.")
-            self.dppclass = DataPlanePort
 
         ############################################################
         #
@@ -370,13 +353,13 @@ class DataPlane:
         # where MyDataPlanePortClass has the same interface as the class
         # DataPlanePort defined here. 
         #
-        if "dataplane" in self.config:
-            if "portclass" in self.config["dataplane"]:
-                self.dppclass = self.config["dataplane"]["portclass"]
-
-        if self.dppclass == None:
-            raise Exception("Problem determining DataPlanePort class.")
-
+        if "dataplane" in self.config and "portclass" in self.config["dataplane"]:
+            self.dppclass = self.config["dataplane"]["portclass"]
+        elif have_pypcap:
+            self.dppclass = DataPlanePortPcap
+        else:
+            self.logger.warning("Missing pypcap, VLAN tests may fail. See README for installation instructions.")
+            self.dppclass = DataPlanePort
 
     def port_add(self, interface_name, port_number):
         """
@@ -391,8 +374,6 @@ class DataPlane:
 
         self.port_list[port_number].start()
 
-
-
     def send(self, port_number, packet):
         """
         Send a packet to the given port
@@ -406,21 +387,6 @@ class DataPlane:
             self.logger.error("Unhandled send error, length mismatch %d != %d" %
                      (bytes, len(packet)))
         return bytes
-
- 
-
-    
-    def flood(self, packet):
-        """
-        Send a packet to all ports
-        @param packet Raw packet data to send to port
-        """
-        for port_number in self.port_list.keys():
-            bytes = self.port_list[port_number].send(packet)
-            if bytes != len(packet):
-                self.logger.error("Unhandled send error" +
-                         ", port %d, length mismatch %d != %d" %
-                         (port_number, bytes, len(packet)))
 
     # Returns the port with the oldest packet, or None if no packets are queued.
     def oldest_port(self):
@@ -514,16 +480,13 @@ class DataPlane:
 
     def show(self, prefix=''):
         print prefix + "Dataplane Controller"
-        print prefix + "Packets pending" + str(self.packets_pending)
         for pnum, port in self.port_list.items():
             print prefix + "OpenFlow Port Number " + str(pnum)
             port.show(prefix + '  ')
 
-
     def port_down(self,port_number):
         """Brings the specified port down"""
         self.port_list[port_number].port_down(port_number,self.config)
-
 
     def port_up(self,port_number):
         """Brings the specified port up"""
