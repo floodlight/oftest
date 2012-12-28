@@ -566,6 +566,11 @@ if config["random_seed"] is not None:
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 if __name__ == "__main__":
+    # Set up the dataplane
+    oftest.dataplane_instance = oftest.dataplane.DataPlane(config)
+    for of_port, ifname in config["port_map"].items():
+        oftest.dataplane_instance.port_add(ifname, of_port)
+
     logging.info("*** TEST RUN START: " + time.asctime())
     result = unittest.TextTestRunner(verbosity=_verb).run(suite)
     if oftest.testutils.skipped_test_count > 0:
@@ -574,6 +579,11 @@ if __name__ == "__main__":
         logging.info("Skipped " + str(oftest.testutils.skipped_test_count) + ts)
         print("Skipped " + str(oftest.testutils.skipped_test_count) + ts)
     logging.info("*** TEST RUN END  : " + time.asctime())
+
+    # Shutdown the dataplane
+    oftest.dataplane_instance.kill()
+    oftest.dataplane_instance = None
+
     if result.failures or result.errors:
         # exit(1) hangs sometimes
         os._exit(1)

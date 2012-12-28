@@ -347,3 +347,10 @@ class DataPlane(Thread):
     def port_up(self, port_number):
         """Brings the specified port up"""
         self.ports[port_number].up()
+
+    def flush(self):
+        """
+        Drop any queued packets.
+        """
+        for port_number in self.packet_queues.keys():
+            self.packet_queues[port_number] = []

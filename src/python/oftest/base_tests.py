@@ -8,6 +8,7 @@ and/or dataplane automatically set up.
 import logging
 import unittest
 
+import oftest
 from oftest import config
 import oftest.controller as controller
 import oftest.cstruct as ofp
@@ -95,9 +96,8 @@ class SimpleDataPlane(SimpleProtocol):
     """
     def setUp(self):
         SimpleProtocol.setUp(self)
-        self.dataplane = dataplane.DataPlane(config)
-        for of_port, ifname in config["port_map"].items():
-            self.dataplane.port_add(ifname, of_port)
+        self.dataplane = oftest.dataplane_instance
+        self.dataplane.flush()
 
     def inheritSetup(self, parent):
         """
@@ -111,9 +111,6 @@ class SimpleDataPlane(SimpleProtocol):
     def tearDown(self):
         logging.info("Teardown for simple dataplane test")
         SimpleProtocol.tearDown(self)
-        if hasattr(self, 'dataplane'):
-            self.dataplane.kill()
-            del self.dataplane
         logging.info("Teardown done")
 
     def runTest(self):
@@ -130,14 +127,11 @@ class DataPlaneOnly(unittest.TestCase):
     def setUp(self):
         self.clean_shutdown = True
         logging.info("** START DataPlaneOnly CASE " + str(self))
-        self.dataplane = dataplane.DataPlane(config)
-        for of_port, ifname in config["port_map"].items():
-            self.dataplane.port_add(ifname, of_port)
+        self.dataplane = oftest.dataplane_instance
+        self.dataplane.flush()
 
     def tearDown(self):
         logging.info("Teardown for simple dataplane test")
-        self.dataplane.kill()
-        del self.dataplane
         logging.info("Teardown done")
 
     def runTest(self):
