@@ -213,7 +213,7 @@ class Controller(Thread):
                 if hdr:
                     self.logger.error("hdr len %d." % hdr.length)
                 self.logger.error("%s" % hex_dump_buffer(pkt[:200]))
-                self.kill()
+                self.shutdown()
                 return
 
             # Extract the raw message bytes
@@ -477,12 +477,10 @@ class Controller(Thread):
     def kill(self):
         """
         Force the controller thread to quit
-
-        Just sets the active state variable to false and expects
-        the select timeout to kick in
         """
         self.active = False
         self.wakeup()
+        self.join()
 
     def shutdown(self):
         """
