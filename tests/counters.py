@@ -125,26 +125,22 @@ class DurationPerFlow(base_tests.SimpleDataPlane):
         (pkt,match) = wildcard_all_except_ingress(self,of_ports)
     
         #Create flow_stats request 
-        test_timeout = 30
         stat_req = message.flow_stats_request()
         stat_req.match= match
         stat_req.table_id = 0xff
         stat_req.out_port = ofp.OFPP_NONE
+
+        expected_duration = 3
+        sleep(expected_duration)
+
+        response, pkt = self.controller.transact(stat_req)
         
-        flow_stats_gen_ts =  range (10,test_timeout,10)
+        self.assertTrue(response is not None,"No response to stats request")
+        self.assertTrue(len(response.stats) == 1,"Did not receive flow stats reply")
         
-        for ts in range(0,test_timeout):
-            if ts in flow_stats_gen_ts:
-                response, pkt = self.controller.transact(stat_req)
-                
-                self.assertTrue(response is not None,"No response to stats request")
-                self.assertTrue(len(response.stats) == 1,"Did not receive flow stats reply")
-                
-                stat = response.stats[0]
-                self.assertTrue(stat.duration_sec == ts,"Flow stats reply incorrect")
-                logging.info("Duration of flow is " + str(stat.duration_sec) + str(stat.duration_nsec)) 
-            
-            sleep(1)
+        stat = response.stats[0]
+        logging.info("Duration of flow is %d s %d ns", stat.duration_sec, stat.duration_nsec) 
+        self.assertTrue(stat.duration_sec == expected_duration, "Flow stats reply incorrect")
 
 
 class RxPktPerPort(base_tests.SimpleDataPlane):
