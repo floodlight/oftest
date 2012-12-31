@@ -30,24 +30,30 @@ class SimpleProtocol(unittest.TestCase):
             host=config["controller_host"],
             port=config["controller_port"])
         self.controller.start()
-        #@todo Add an option to wait for a pkt transaction to ensure version
-        # compatibilty?
-        self.controller.connect(timeout=20)
 
-        # By default, respond to echo requests
-        self.controller.keep_alive = True
-        
-        if not self.controller.active:
-            raise Exception("Controller startup failed")
-        if self.controller.switch_addr is None: 
-            raise Exception("Controller startup failed (no switch addr)")
-        logging.info("Connected " + str(self.controller.switch_addr))
-        request = message.features_request()
-        reply, pkt = self.controller.transact(request)
-        self.assertTrue(reply is not None,
-                        "Did not complete features_request for handshake")
-        self.supported_actions = reply.actions
-        logging.info("Supported actions: " + hex(self.supported_actions))
+        try:
+            #@todo Add an option to wait for a pkt transaction to ensure version
+            # compatibilty?
+            self.controller.connect(timeout=20)
+
+            # By default, respond to echo requests
+            self.controller.keep_alive = True
+
+            if not self.controller.active:
+                raise Exception("Controller startup failed")
+            if self.controller.switch_addr is None:
+                raise Exception("Controller startup failed (no switch addr)")
+            logging.info("Connected " + str(self.controller.switch_addr))
+            request = message.features_request()
+            reply, pkt = self.controller.transact(request)
+            self.assertTrue(reply is not None,
+                            "Did not complete features_request for handshake")
+            self.supported_actions = reply.actions
+            logging.info("Supported actions: " + hex(self.supported_actions))
+        except:
+            self.controller.kill()
+            del self.controller
+            raise
 
     def inheritSetup(self, parent):
         """
