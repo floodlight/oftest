@@ -14,9 +14,8 @@ that the first two OF ports are connected by a loopback cable.
 """
 
 import copy
-
+import random
 import logging
-
 import unittest
 
 from oftest import config
@@ -239,6 +238,7 @@ class FlowModLoad(base_tests.SimpleProtocol):
             self.checkBarrier()
 
             logging.info("Iteration %d: add %s flows" % (i, num_flows))
+            random.shuffle(requests)
             for request in requests:
                self.assertNotEqual(self.controller.message_send(request), -1,
                                "Error installing flow mod")
