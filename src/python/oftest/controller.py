@@ -152,6 +152,16 @@ class Controller(Thread):
 
         self.buffered_input = ""
 
+        # Create listen socket
+        if self.passive:
+            self.logger.info("Create/listen at " + self.host + ":" +
+                             str(self.port))
+            self.listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.listen_socket.setsockopt(socket.SOL_SOCKET,
+                                          socket.SO_REUSEADDR, 1)
+            self.listen_socket.bind((self.host, self.port))
+            self.listen_socket.listen(LISTEN_QUEUE_SIZE)
+
     def filter_packet(self, rawmsg, hdr):
         """
         Check if packet should be filtered
@@ -383,21 +393,7 @@ class Controller(Thread):
         connection for now.
         """
 
-        self.dbg_state = "starting"
-
-        # Create listen socket
-        if self.passive:
-            self.logger.info("Create/listen at " + self.host + ":" + 
-                             str(self.port))
-            self.listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.listen_socket.setsockopt(socket.SOL_SOCKET, 
-                                          socket.SO_REUSEADDR, 1)
-            self.listen_socket.bind((self.host, self.port))
-            self.dbg_state = "listening"
-            self.listen_socket.listen(LISTEN_QUEUE_SIZE)
-
-            self.logger.info("Listening for switch connection")
-            self.dbg_state = "running"
+        self.dbg_state = "running"
 
         while self.active:
             try:
