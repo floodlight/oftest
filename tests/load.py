@@ -232,7 +232,7 @@ class FlowModLoad(base_tests.SimpleProtocol):
             request.actions.add(act)
             requests.append(request)
 
-        for i in range(5):
+        for i in range(3):
             logging.info("Iteration %d: delete all flows" % i)
             self.assertEqual(delete_all_flows(self.controller), 0,
                              "Failed to delete all flows")
