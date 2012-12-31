@@ -29,8 +29,6 @@ class SimpleProtocol(unittest.TestCase):
             switch=config["switch_ip"],
             host=config["controller_host"],
             port=config["controller_port"])
-        # clean_shutdown should be set to False to force quit app
-        self.clean_shutdown = True
         self.controller.start()
         #@todo Add an option to wait for a pkt transaction to ensure version
         # compatibilty?
@@ -74,9 +72,7 @@ class SimpleProtocol(unittest.TestCase):
     def tearDown(self):
         logging.info("** END TEST CASE " + str(self))
         self.controller.shutdown()
-        #@todo Review if join should be done on clean_shutdown
-        if self.clean_shutdown:
-            self.controller.join()
+        self.controller.join()
         del self.controller
 
     def runTest(self):
@@ -125,7 +121,6 @@ class DataPlaneOnly(unittest.TestCase):
     """
 
     def setUp(self):
-        self.clean_shutdown = True
         logging.info("** START DataPlaneOnly CASE " + str(self))
         self.dataplane = oftest.dataplane_instance
         self.dataplane.flush()
