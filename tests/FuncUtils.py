@@ -657,7 +657,7 @@ def verify_tablestats(self,expect_lookup=None,expect_match=None,expect_active=No
 
     stat_req = message.table_stats_request()
     
-    for i in range(0,60):
+    for i in range(0,100):
 
         logging.info("Sending stats request")
         # TODO: move REPLY_MORE handling to controller.transact?
@@ -668,8 +668,6 @@ def verify_tablestats(self,expect_lookup=None,expect_match=None,expect_active=No
         lookedup = 0 
         matched = 0 
         active = 0
-
-        sleep(1)
         
         for item in response.stats:
 
@@ -680,13 +678,13 @@ def verify_tablestats(self,expect_lookup=None,expect_match=None,expect_active=No
             logging.info("Packets Looked up " + str(lookedup) + " packets")
             logging.info("Packets matched " + str(matched) + "packets")
             logging.info("Active flow entries" + str(active) + "flows")
-        
-        if expect_lookup != None and expect_lookup != lookedup:continue
-        if expect_match != None and expect_match != matched:continue
-        if expect_active != None and expect_active != active:continue
-        break
 
-        
+        if (expect_lookup == None or expect_lookup == lookedup) and \
+           (expect_match == None or expect_match == matched) and \
+           (expect_active == None or expect_active == active):
+            break
+
+        sleep(0.1)
 
     if expect_lookup != None :
         self.assertEqual(expect_lookup,item.lookup_count,"lookup counter is not incremented properly")
@@ -704,7 +702,7 @@ def verify_flowstats(self,match,byte_count=None,packet_count=None):
     stat_req.table_id = 0xff
     stat_req.out_port = ofp.OFPP_NONE
     
-    for i in range(0,60):
+    for i in range(0,100):
         logging.info("Sending stats request")
         # TODO: move REPLY_MORE handling to controller.transact?
         response, pkt = self.controller.transact(stat_req,
@@ -714,8 +712,6 @@ def verify_flowstats(self,match,byte_count=None,packet_count=None):
         packet_counter = 0
         byte_counter = 0 
 
-        sleep(1)
-
         for item in response.stats:
             packet_counter += item.packet_count
             byte_counter += item.byte_count
@@ -723,12 +719,12 @@ def verify_flowstats(self,match,byte_count=None,packet_count=None):
             logging.info("Recieved" + str(item.packet_count) + " packets")
            
             logging.info("Received " + str(item.byte_count) + "bytes")
-           
-        if packet_count != None  and  packet_count != packet_counter: continue
-        if byte_count != None  and  byte_count != byte_counter: continue
-        break
 
-        
+        if (packet_count == None or packet_count == packet_counter) and \
+           (byte_count == None or byte_count == byte_counter):
+            break
+
+        sleep(0.1)
     
     if packet_count != None :
         self.assertEqual(packet_count,item.packet_count,"packet_count counter is not incremented correctly")
@@ -743,7 +739,7 @@ def verify_portstats(self, port,tx_packets=None,rx_packets=None,rx_byte=None,tx_
     stat_req = message.port_stats_request()
     stat_req.port_no = port
     
-    for i in range(0,60):
+    for i in range(0,100):
         logging.info("Sending stats request")
         response, pkt = self.controller.transact(stat_req,
                                                 timeout=5)
@@ -754,8 +750,6 @@ def verify_portstats(self, port,tx_packets=None,rx_packets=None,rx_byte=None,tx_
 
         sentp = recvp = 0
         sentb = recvb = 0
-
-        sleep(1)
         
         for item in response.stats:
             sentp += item.tx_packets
@@ -768,13 +762,14 @@ def verify_portstats(self, port,tx_packets=None,rx_packets=None,rx_byte=None,tx_
             logging.info("Received " + str(recvp) + " packets")
             logging.info("Received " + str(recvb) + "bytes")
             logging.info("Sent" + str(sentb) + "bytes")
-    
-        if tx_packets != None  and  tx_packets != sentp: continue
-        if rx_packets != None  and  rx_packets != recvp: continue 
-        if rx_byte != None  and  rx_byte != recvb: continue
-        if tx_byte != None  and  tx_byte != sentb: continue
-        
-        break
+
+        if (tx_packets == None or tx_packets == sentp) and \
+           (rx_packets == None or rx_packets == recvp) and \
+           (tx_byte == None or tx_byte == sentb) and \
+           (rx_byte == None or rx_byte == recvb):
+            break
+
+        sleep(0.1)
         
         
 
@@ -796,7 +791,7 @@ def verify_queuestats(self,port_num,queue_id,expect_packet=None,expect_byte=None
     request.port_no  = port_num
     request.queue_id = queue_id
     
-    for i in range(0,60):
+    for i in range(0,100):
 
         logging.info("Sending stats request")
      
@@ -804,8 +799,6 @@ def verify_queuestats(self,port_num,queue_id,expect_packet=None,expect_byte=None
         self.assertNotEqual(queue_stats, None, "Queue stats request failed")
         packet_counter = 0
         byte_counter = 0 
-
-        sleep(1)
         
         for item in queue_stats.stats:
             packet_counter += item.tx_packets
@@ -814,11 +807,11 @@ def verify_queuestats(self,port_num,queue_id,expect_packet=None,expect_byte=None
             logging.info("Transmitted" + str(packet_counter) + " packets")
             logging.info("Transmitted" + str(byte_counter) + "bytes")
            
-        if expect_packet != None  and  packet_counter != expect_packet: continue
-        if expect_byte != None  and  byte_counter != expect_byte: continue
-        break
+        if (expect_packet == None or packet_counter == expect_packet) and \
+           (expect_byte == None or byte_counter == expect_byte):
+            break
 
-        
+        sleep(0.1)
     
     if expect_packet != None :
         self.assertEqual(packet_counter,expect_packet,"tx_packets counter is not incremented correctly")
