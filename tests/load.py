@@ -212,7 +212,12 @@ class FlowModLoad(base_tests.SimpleProtocol):
 
     def runTest(self):
         msg, pkt = self.controller.transact(message.table_stats_request())
-        num_flows = msg.stats[0].max_entries
+
+        # Some switches report an extremely high max_entries that would cause
+        # us to run out of memory attempting to create all the flow-mods.
+        num_flows = min(msg.stats[0].max_entries, 32678)
+
+        logging.info("Creating %d flow-mods messages", num_flows)
 
         requests = []
         for i in range(num_flows):
