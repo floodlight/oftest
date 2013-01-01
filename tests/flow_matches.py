@@ -641,9 +641,9 @@ class ExactMatchPrio(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        egress_port=of_ports[1]
+        egress_port=of_ports[2]
         no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
+        yes_ports = egress_port
     
         logging.info("Inserting a flow with Exact Match (low priority)")
         logging.info("Inserting an overlapping wildcarded flow (higher priority)")
