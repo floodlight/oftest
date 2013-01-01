@@ -1105,11 +1105,9 @@ class SingleWildcardMatchPriorityInsertModifyDelete(SingleWildcardMatchPriority)
 class WildcardPriority(SingleWildcardMatchPriority):
     """
     1. Add wildcard flow, verify packet received.
-    2. Add exact match flow with higher priority, verify packet received 
+    2. Add wildcard flow with higher priority, verify packet received
     on port specified by this flow.
-    3. Add wildcard flow with even higher priority, verify packet received
-    on port specified by this flow.
-    4. Add wildcard flow with lower priority, verify packet received
+    3. Add wildcard flow with lower priority, verify packet received
     on port specified by the highest priority flow.
     """
 
@@ -1126,26 +1124,22 @@ class WildcardPriority(SingleWildcardMatchPriority):
         self.installFlow(999, of_ports[0], of_ports[1], 
                          wildcards=ofp.OFPFW_DL_DST)
         self.verifyFlow(of_ports[0], of_ports[1])
-        # Install a flow with no wildcards for our packet
-        self.installFlow(1000, of_ports[0], of_ports[2], wildcards=0)
+        # Install a flow with wildcards with higher priority
+        self.installFlow(1000, of_ports[0], of_ports[2],
+                         wildcards=ofp.OFPFW_DL_DST)
         self.verifyFlow(of_ports[0], of_ports[2])
-        # Install a flow with wildcards for our packet with higher
-        # priority
-        self.installFlow(1001, of_ports[0], of_ports[3])
-        self.verifyFlow(of_ports[0], of_ports[3])
-        # Install a flow with wildcards for our packet with lower
-        # priority
+        # Install a flow with wildcards with lower priority
         self.installFlow(999, of_ports[0], of_ports[1],
                          wildcards=ofp.OFPFW_DL_SRC)
-        self.verifyFlow(of_ports[0], of_ports[3])
+        self.verifyFlow(of_ports[0], of_ports[2])
         
 
 class WildcardPriorityWithDelete(SingleWildcardMatchPriority):
     """
-    1. Add exact match flow, verify packet received.
+    1. Add wildcard match flow, verify packet received.
     2. Add wildcard flow with higher priority, verify packet received on port
     specified by this flow.
-    3. Add exact match flow with even higher priority, verify packet received
+    3. Add wildcard flow with even higher priority, verify packet received
     on port specified by this flow.
     4. Delete lowest priority flow, verify packet received on port specified
     by highest priority flow.
@@ -1162,15 +1156,17 @@ class WildcardPriorityWithDelete(SingleWildcardMatchPriority):
 
         self._ClearTable()
 
-        # Install an exact match flow
-        self.installFlow(250, of_ports[0], of_ports[1], wildcards=0)
+        # Install a flow with wildcards
+        self.installFlow(250, of_ports[0], of_ports[1],
+                         wildcards=ofp.OFPFW_DL_DST)
         self.verifyFlow(of_ports[0], of_ports[1])
         # Install a flow with wildcards of higher priority
         self.installFlow(1250, of_ports[0], of_ports[2],
                          wildcards=ofp.OFPFW_DL_DST)
         self.verifyFlow(of_ports[0], of_ports[2])
-        # Install an exact match flow with even higher priority
-        self.installFlow(2001, of_ports[0], of_ports[3], wildcards=0)
+        # Install a flow with wildcards with even higher priority
+        self.installFlow(2001, of_ports[0], of_ports[3],
+                         wildcards=ofp.OFPFW_DL_DST)
         self.verifyFlow(of_ports[0], of_ports[3])
         # Delete lowest priority flow
         self.removeFlow(250)
