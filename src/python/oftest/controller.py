@@ -657,7 +657,11 @@ class Controller(Thread):
         else:
             outpkt = msg
 
-        self.logger.debug("Sending pkt of len " + str(len(outpkt)))
+        msg_version, msg_type, msg_len, msg_xid = struct.unpack_from("!BBHL", outpkt)
+        self.logger.debug("Msg out: buf len %d. hdr.type %s. hdr.len %d",
+                          len(outpkt),
+                          ofp_type_map.get(msg_type, "unknown (%d)" % msg_type),
+                          msg_len)
         if self.switch_socket.sendall(outpkt) is not None:
             raise Exception("unknown error on sendall")
 
