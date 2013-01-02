@@ -1030,16 +1030,17 @@ def inspect_packet(pkt):
 
 def nonstandard(cls):
     """
-    Testcase decorator that marks the test as being non-standard,
-    so it is not added to the "all" group.
+    Testcase decorator that marks the test as being non-standard.
+    These tests are not automatically added to the "standard" group.
     """
-    cls.priority = -1
+    cls._nonstandard = True
     return cls
 
 def disabled(cls):
     """
-    Testcase decorator that marks the test as being disabled,
-    so it is not added to the "all" group.
+    Testcase decorator that marks the test as being disabled.
+    These tests are not automatically added to the "standard" group or
+    their module's group.
     """
-    cls.priority = -1
+    cls._disabled = True
     return cls

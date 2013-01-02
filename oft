@@ -178,10 +178,6 @@ config_default = {
     "priority"           : 0,
 }
 
-# Default test priority
-TEST_PRIO_DEFAULT=100
-TEST_PRIO_SKIP=-1
-
 #@todo Set up a dict of config params so easier to manage:
 # <param> <cmdline flags> <default value> <help> <optional parser>
 
@@ -330,6 +326,9 @@ def load_test_modules(config):
 
     Test cases are subclasses of unittest.TestCase
 
+    Also updates the _groups member to include "standard" and
+    module test groups if appropriate.
+
     @param config The oft configuration dictionary
     @returns A dictionary from test module names to tuples of
     (module, dictionary from test names to test classes).
@@ -355,6 +354,24 @@ def load_test_modules(config):
             tests = dict((k, v) for (k, v) in mod.__dict__.items() if type(v) == type and
                                                                       issubclass(v, unittest.TestCase))
             if tests:
+                for (testname, test) in tests.items():
+                    # Set default annotation values
+                    if not hasattr(test, "_groups"):
+                        test._groups = []
+                    if not hasattr(test, "_nonstandard"):
+                        test._nonstandard = False
+                    if not hasattr(test, "_disabled"):
+                        test._disabled = False
+
+                    # Put test in its module's test group
+                    if not test._disabled:
+                        test._groups.append(modname)
+
+                    # Put test in the standard test group
+                    if not test._disabled and not test._nonstandard:
+                        test._groups.append("standard")
+                        test._groups.append("all") # backwards compatibility
+
                 result[modname] = (mod, tests)
 
     return result
@@ -367,52 +384,17 @@ def prune_tests(test_spec, test_modules):
     @returns Same format as the output of load_test_modules.
     """
     result = {}
-    for (spec_modname, spec_testname) in parse_test_spec(test_spec):
+    for e in test_spec.split(","):
         matched = False
         for (modname, (mod, tests)) in test_modules.items():
-            if (spec_modname == None or spec_modname == modname):
-                for (testname, test) in tests.items():
-                    if (spec_testname == None or spec_testname == testname):
-                            result.setdefault(modname, (mod, {}))
-                            result[modname][1][testname] = test
-                            matched = True
+            for (testname, test) in tests.items():
+                if e in test._groups or e == "%s.%s" % (modname, testname):
+                    result.setdefault(modname, (mod, {}))
+                    result[modname][1][testname] = test
+                    matched = True
         if not matched:
-            if spec_modname and spec_testname:
-                el = "%s.%s" % (spec_modname, spec_testname)
-            else:
-                el = spec_modname or spec_testname or "all"
-            die("test-spec element %s did not match any tests" % el)
+            die("test-spec element %s did not match any tests" % e)
     return result
-
-def parse_test_spec(test_spec):
-    """
-    The input string is split on commas and each element is parsed
-    individually into a module name and test name. Either may be None
-    for a wildcard. The case of the first letter resolves ambiguity
-    of whether a word is a test or module name. The special string
-    "all" results in both fields wildcarded.
-
-    Examples:
-      basic.Echo -> ("basic", "Echo")
-      basic -> ("basic", None)
-      Echo -> (None, "Echo")
-      all -> (None, None)
-    """
-    results = []
-    for ts_entry in test_spec.split(","):
-        parts = ts_entry.split(".")
-        if len(parts) == 1:
-            if ts_entry == "all":
-                results.append((None, None))
-            elif ts_entry[0].isupper():
-                results.append((None, ts_entry))
-            else:
-                results.append((ts_entry, None))
-        elif len(parts) == 2:
-            results.append((parts[0], parts[1]))
-        else:
-            die("Bad test spec: " + ts_entry)
-    return results
 
 def die(msg, exit_val=1):
     print msg
@@ -428,23 +410,6 @@ def _space_to(n, str):
     if spaces > 0:
         return " " * spaces
     return " "
-
-def test_prio_get(test):
-    """
-    Return the priority of a test
-
-    If test is in "skip list" from profile, return the skip value
-
-    If the priority property is set in the class, return
-    that value.  Otherwise return 100 (default)
-    """
-    if test.__name__ in profile_mod.skip_test_list:
-        logging.info("Skipping test %s due to profile" % test.__name__)
-        return TEST_PRIO_SKIP
-    if test.__name__ in profile_mod.run_test_list:
-        logging.info("Add test %s due to profile" % test.__name__)
-        return TEST_PRIO_DEFAULT
-    return getattr(test, "priority", TEST_PRIO_DEFAULT)
 
 #
 # Main script
@@ -481,7 +446,7 @@ if config["list"]:
                 desc = desc.split('\n')[0]
             except:
                 desc = "No description"
-            if test_prio_get(test) < config["priority"]:
+            if test._nonstandard or test._disabled:
                 start_str = "  * " + testname + ":"
             else:
                 start_str = "    " + testname + ":"
@@ -503,8 +468,7 @@ if config["list"]:
 if config["list_test_names"]:
     for (modname, (mod, tests)) in test_modules.items():
         for (testname, test) in tests.items():
-            if test_prio_get(test) >= config["priority"]:
-                print "%s.%s" % (modname, testname)
+            print "%s.%s" % (modname, testname)
     sys.exit(0)
 
 # Generate the test suite
@@ -513,9 +477,8 @@ suite = unittest.TestSuite()
 
 for (modname, (mod, tests)) in test_modules.items():
     for (testname, test) in tests.items():
-        if test_prio_get(test) >= config["priority"]:
-            logging.info("Adding test " + modname + "." + testname)
-            suite.addTest(test())
+        logging.info("Adding test " + modname + "." + testname)
+        suite.addTest(test())
 
 # Allow platforms to import each other
 sys.path.append(config["platform_dir"])
