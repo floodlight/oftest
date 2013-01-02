@@ -75,13 +75,12 @@ class bsn_action_mirror(action.action_vendor):
 
 action_list.action_object_map[ofp.OFPAT_VENDOR] = bsn_action_mirror
 
+@nonstandard
 class BSNMirrorAction(base_tests.SimpleDataPlane):
     """
     Exercise BSN vendor extension for copying packets to a mirror destination
     port
     """
-
-    priority = -1
 
     def bsn_set_mirroring(self, enabled):
         """

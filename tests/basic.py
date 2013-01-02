@@ -117,6 +117,7 @@ class PacketIn(base_tests.SimpleDataPlane):
                                    'Response packet does not match send packet' +
                                    ' for port ' + str(of_port))
 
+@nonstandard
 class PacketInDefaultDrop(base_tests.SimpleDataPlane):
     """
     Test packet in function
@@ -124,8 +125,6 @@ class PacketInDefaultDrop(base_tests.SimpleDataPlane):
     Send a packet to each dataplane port and verify that a packet
     in message is received from the controller for each
     """
-
-    priority = -1
 
     def runTest(self):
         rc = delete_all_flows(self.controller)
@@ -152,6 +151,7 @@ class PacketInDefaultDrop(base_tests.SimpleDataPlane):
                             'Packet in message received on port ' + 
                             str(of_port))
 
+@nonstandard
 class PacketInBroadcastCheck(base_tests.SimpleDataPlane):
     """
     Check if bcast pkts leak when no flows are present
@@ -160,8 +160,6 @@ class PacketInBroadcastCheck(base_tests.SimpleDataPlane):
     Send in a broadcast pkt
     Look for the packet on other dataplane ports.
     """
-
-    priority = -1
 
     def runTest(self):
         # Need at least two ports
@@ -281,14 +279,13 @@ class PacketOutMC(base_tests.SimpleDataPlane):
                                  set(of_ports).difference(dp_ports),
                                  self)
 
+@disabled
 class FlowStatsGet(base_tests.SimpleProtocol):
     """
     Get stats 
 
     Simply verify stats get transaction
     """
-
-    priority = -1
 
     def runTest(self):
         logging.info("Running StatsGet")

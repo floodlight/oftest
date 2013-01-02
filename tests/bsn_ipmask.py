@@ -36,12 +36,11 @@ def fancy_ip_mask(index):
     else:
         return (1 << (63 - index)) - 1
 
+@nonstandard
 class BSNConfigIPMask(base_tests.SimpleDataPlane):
     """
     Exercise BSN vendor extension for configuring IP source/dest match mask
     """
-
-    priority = -1
 
     def bsn_set_ip_mask(self, index, mask):
         """

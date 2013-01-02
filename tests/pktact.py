@@ -960,12 +960,11 @@ class ExactMatchTagged(BaseMatchCase):
         vid = test_param_get('vid', default=TEST_VID_DEFAULT)
         flow_match_test(self, config["port_map"], dl_vlan=vid)
 
+@disabled
 class ExactMatchTaggedMany(BaseMatchCase):
     """
     ExactMatchTagged with many VLANS
     """
-
-    priority = -1
 
     def runTest(self):
         for vid in range(2,100,10):
@@ -1293,12 +1292,11 @@ class AddVLANTag(BaseMatchCase):
         flow_match_test(self, config["port_map"], pkt=pkt, 
                         exp_pkt=exp_pkt, action_list=[vid_act])
 
+@disabled
 class PacketOnly(base_tests.DataPlaneOnly):
     """
     Just send a packet thru the switch
     """
-
-    priority = -1
 
     def runTest(self):
         pkt = simple_tcp_packet()
@@ -1309,12 +1307,11 @@ class PacketOnly(base_tests.DataPlaneOnly):
         logging.debug("Data: " + str(pkt).encode('hex'))
         self.dataplane.send(ing_port, str(pkt))
 
+@disabled
 class PacketOnlyTagged(base_tests.DataPlaneOnly):
     """
     Just send a packet thru the switch
     """
-
-    priority = -1
 
     def runTest(self):
         vid = test_param_get('vid', default=TEST_VID_DEFAULT)
@@ -1867,14 +1864,13 @@ iter_classes = [
     ModifyL2SrcDstMC
     ]
 
+@disabled
 class IterCases(BaseMatchCase):
     """
     Iterate over a bunch of test cases
 
     The cases come from the list above
     """
-
-    priority = -1
 
     def runTest(self):
         count = test_param_get('iter_count', default=10)
@@ -1911,6 +1907,7 @@ class IterCases(BaseMatchCase):
 # and modifies tag 4 to tag 5.  Then verify (in addition) that
 # tag 6 does not get modified.
 
+@disabled
 class MixedVLAN(BaseMatchCase):
     """
     Test mixture of VLAN tag actions
@@ -1933,8 +1930,6 @@ class MixedVLAN(BaseMatchCase):
     Variation:  Might try sending VID 5 to port 3 and check.
     If only VID 5 distinguishes pkt, this will fail on some platforms
     """   
-
-    priority = -1
 
 class MatchEach(base_tests.SimpleDataPlane):
     """

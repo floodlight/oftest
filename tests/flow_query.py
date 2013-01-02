@@ -1665,6 +1665,7 @@ class Flow_Add_5(base_tests.SimpleProtocol):
 # Disabled.
 # Should be DUT dependent.
 
+@nonstandard
 class Flow_Add_5_1(base_tests.SimpleProtocol):
     """
     Test FLOW_ADD_5.1 from draft top-half test plan
@@ -1673,8 +1674,6 @@ class Flow_Add_5_1(base_tests.SimpleProtocol):
     None
     """
 
-    priority = -1
-    
     def runTest(self):
         logging.info("Flow_Add_5_1 TEST BEGIN")
 
@@ -1783,6 +1782,7 @@ class Flow_Add_5_1(base_tests.SimpleProtocol):
 # Disabled because of bogus capacity reported by OVS.
 # Should be DUT dependent.
 
+@nonstandard
 class Flow_Add_6(base_tests.SimpleProtocol):
     """
     Test FLOW_ADD_6 from draft top-half test plan
@@ -1790,8 +1790,6 @@ class Flow_Add_6(base_tests.SimpleProtocol):
     INPUTS
     num_flows - Number of flows to generate
     """
-
-    priority = -1
 
     def runTest(self):
         logging.info("Flow_Add_6 TEST BEGIN")

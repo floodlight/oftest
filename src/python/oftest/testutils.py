@@ -1027,3 +1027,19 @@ def inspect_packet(pkt):
     finally:
         sys.stdout = backup
     return out
+
+def nonstandard(cls):
+    """
+    Testcase decorator that marks the test as being non-standard,
+    so it is not added to the "all" group.
+    """
+    cls.priority = -1
+    return cls
+
+def disabled(cls):
+    """
+    Testcase decorator that marks the test as being disabled,
+    so it is not added to the "all" group.
+    """
+    cls.priority = -1
+    return cls

@@ -92,7 +92,7 @@ def flow_caps_common(obj, is_exact=True):
     time.sleep(flow_count / 100)
 
 
-
+@disabled
 class FillTableExact(base_tests.SimpleProtocol):
     """
     Fill the flow table with exact matches; can take a while
@@ -111,12 +111,11 @@ class FillTableExact(base_tests.SimpleProtocol):
     you can control which table to check.
     """
 
-    priority = -1
-
     def runTest(self):
         logging.info("Running " + str(self))
         flow_caps_common(self)
 
+@disabled
 class FillTableWC(base_tests.SimpleProtocol):
     """
     Fill the flow table with wildcard matches
@@ -136,8 +135,6 @@ class FillTableWC(base_tests.SimpleProtocol):
     you can control which table to check.
 
     """
-
-    priority = -1
 
     def runTest(self):
         logging.info("Running " + str(self))
