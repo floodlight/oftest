@@ -716,6 +716,8 @@ def flow_match_test(parent, port_map, wildcards=None, dl_vlan=-1, pkt=None,
             logging.info("Ran " + str(test_count) + " tests; exiting")
             break
 
+    if not test_param_get('pktout_actions', default=True):
+        return
 
     ingress_port = of_ports[0]
     egr_ports = get_egr_list(parent, of_ports, egr_count,
