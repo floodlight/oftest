@@ -447,7 +447,24 @@ load_profile(config)
 if config["list"]:
     mod_count = 0
     test_count = 0
-    print "\nTest List:"
+    print """\
+Tests are shown grouped by module. If a test is in any groups beyond "standard"
+and its module's group then they are shown in parentheses."""
+    print
+    print """\
+Tests marked with '*' are non-standard and may require vendor extensions or
+special switch configuration. These are not part of the "standard" test group."""
+    print
+    print """\
+Tests marked with '!' are disabled because they are experimental, special-purpose,
+or are too long to be run normally. These are not part of the "standard" test
+group or their module's test group."""
+    print
+    print "Tests marked (TP1) after name take --test-params including:"
+    print "    'vid=N;strip_vlan=bool;add_vlan=bool'"
+    print "Note that --profile may override which tests are run"
+    print
+    print "Test List:"
     for (modname, (mod, tests)) in test_modules.items():
         mod_count += 1
         desc = (mod.__doc__ or "").strip()
@@ -460,10 +477,12 @@ if config["list"]:
                 desc = desc.split('\n')[0]
             except:
                 desc = "No description"
-            if test._nonstandard or test._disabled:
-                start_str = "  * " + testname + ":"
-            else:
-                start_str = "    " + testname + ":"
+            groups = set(test._groups) - set(["all", "standard", modname])
+            if groups:
+                desc = "(%s) %s" % (",".join(groups), desc)
+            start_str = " %s%s %s:" % (test._nonstandard and "*" or " ",
+                                       test._disabled and "!" or " ",
+                                       testname)
             if len(start_str) > 22:
                 desc = "\n" + _space_to(22, "") + desc
             print start_str + _space_to(22, start_str) + desc
@@ -471,11 +490,6 @@ if config["list"]:
         print
     print "%d modules shown with a total of %d tests" % \
         (mod_count, test_count)
-    print
-    print "Tests preceded by * are not run by default"
-    print "Tests marked (TP1) after name take --test-params including:"
-    print "    'vid=N;strip_vlan=bool;add_vlan=bool'"
-    print "Note that --profile may override which tests are run"
     sys.exit(0)
 
 test_modules = prune_tests(test_specs, test_modules)
