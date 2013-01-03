@@ -447,6 +447,7 @@ load_profile(config)
 if config["list"]:
     mod_count = 0
     test_count = 0
+    all_groups = set()
     print """\
 Tests are shown grouped by module. If a test is in any groups beyond "standard"
 and its module's group then they are shown in parentheses."""
@@ -478,6 +479,7 @@ group or their module's test group."""
             except:
                 desc = "No description"
             groups = set(test._groups) - set(["all", "standard", modname])
+            all_groups.update(test._groups)
             if groups:
                 desc = "(%s) %s" % (",".join(groups), desc)
             start_str = " %s%s %s:" % (test._nonstandard and "*" or " ",
@@ -490,6 +492,9 @@ group or their module's test group."""
         print
     print "%d modules shown with a total of %d tests" % \
         (mod_count, test_count)
+    print
+    print "Test groups: %s" % (', '.join(sorted(all_groups)))
+
     sys.exit(0)
 
 test_modules = prune_tests(test_specs, test_modules)
