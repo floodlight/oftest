@@ -207,7 +207,26 @@ def config_setup(cfg_dflt):
     object and args is any additional arguments from the command line
     """
 
-    parser = OptionParser(version="%prog 0.1")
+    usage = "usage: %prog [options] (test|group)..."
+
+    description = """
+OFTest is a framework and set of tests for validating OpenFlow switches.
+
+The default configuration assumes that an OpenFlow 1.0 switch is attempting to
+connect to a controller on the machine running OFTest, port 6633. Additionally,
+the interfaces veth1, veth3, veth5, and veth7 should be connected to the switch's
+dataplane.
+
+If no positional arguments are given then OFTest will run all tests that
+depend only on standard OpenFlow 1.0. Otherwise each positional argument
+is interpreted as either a test name or a test group name. The union of
+these will be executed. To see what groups each test belongs to use the
+--list option.
+"""
+
+    parser = OptionParser(version="%prog 0.1",
+                          usage=usage,
+                          description=description)
 
     #@todo parse port map as option?
     # Set up default values
@@ -229,8 +248,7 @@ def config_setup(cfg_dflt):
                       type="int", help="Port number of the test controller")
     test_list_help = """Indicate tests to run.  Valid entries are "all" (the
         default) or a comma separated list of:
-        module            Run all tests in the named module
-        testcase          Run tests in all modules with the name testcase
+        group             Run all tests in the named group
         module.testcase   Run the specific test case
         """
     parser.add_option("-T", "--test-spec", "--test-list", help=test_list_help)
