@@ -1044,3 +1044,14 @@ def disabled(cls):
     """
     cls._disabled = True
     return cls
+
+def group(name):
+    """
+    Testcase decorator that adds the test to a group.
+    """
+    def fn(cls):
+        if not hasattr(cls, "_groups"):
+            cls._groups = []
+        cls._groups.append(name)
+        return cls
+    return fn

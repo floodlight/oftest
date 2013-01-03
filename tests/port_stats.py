@@ -129,6 +129,7 @@ def verifyStats(obj, port, test_timeout, packet_sent, packet_recv):
     obj.assertTrue(all_packets_received,
                    "Packet received does not match number sent")
 
+@group('smoke')
 class SingleFlowStats(base_tests.SimpleDataPlane):
     """
     Verify flow stats are properly retrieved.

@@ -33,6 +33,7 @@ from oftest.testutils import *
 
 TEST_VID_DEFAULT = 2
 
+@group('smoke')
 class Echo(base_tests.SimpleProtocol):
     """
     Test echo response with no data
@@ -65,6 +66,7 @@ class EchoWithData(base_tests.SimpleProtocol):
         self.assertEqual(request.data, response.data,
                          'response data does not match request')
 
+@group('smoke')
 class PacketIn(base_tests.SimpleDataPlane):
     """
     Test packet in function
@@ -180,6 +182,7 @@ class PacketInBroadcastCheck(base_tests.SimpleDataPlane):
         self.assertTrue(pkt_in is None,
                         'BCast packet received on port ' + str(of_port))
 
+@group('smoke')
 class PacketOut(base_tests.SimpleDataPlane):
     """
     Test packet out function
@@ -353,6 +356,7 @@ class FlowMod(base_tests.SimpleProtocol):
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Error installing flow mod")
 
+@group('smoke')
 class PortConfigMod(base_tests.SimpleProtocol):
     """
     Modify a bit in port config and verify changed
@@ -432,6 +436,7 @@ class PortConfigModErr(base_tests.SimpleProtocol):
 
         self.assertTrue(response is not None, 'Did not receive error message')
 
+@group('smoke')
 class BadMessage(base_tests.SimpleProtocol):
     """
     Send a message with a bad type and verify an error is returned

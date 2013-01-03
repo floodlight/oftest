@@ -78,6 +78,7 @@ MODIFY_ACTION_VALUES =  [ofp.OFPAT_SET_VLAN_VID,
 
 TEST_VID_DEFAULT = 2
 
+@group('smoke')
 class DirectPacket(base_tests.SimpleDataPlane):
     """
     Send packet to single egress port
@@ -148,6 +149,7 @@ class DirectPacket(base_tests.SimpleDataPlane):
             self.assertEqual(str(pkt), str(rcv_pkt),
                              'Response packet does not match send packet')
 
+@group('smoke')
 class DirectPacketController(base_tests.SimpleDataPlane):
     """
     Send packet to the controller port
@@ -1136,6 +1138,7 @@ class WildcardPriority(SingleWildcardMatchPriority):
         self.verifyFlow(of_ports[0], of_ports[2])
         
 
+@group("smoke")
 class WildcardPriorityWithDelete(SingleWildcardMatchPriority):
     """
     1. Add wildcard match flow, verify packet received.
@@ -1269,7 +1272,7 @@ class AllWildcardMatchTagged(BaseMatchCase):
         flow_match_test(self, config["port_map"], wildcards=ofp.OFPFW_ALL, 
                         dl_vlan=vid)
 
-    
+@group('smoke')
 class AddVLANTag(BaseMatchCase):
     """
     Add a VLAN tag to an untagged packet
@@ -1720,6 +1723,7 @@ class ModifyL2DstVIDMC(BaseMatchCase):
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2, egr_count=-1)
 
+@group("smoke")
 class ModifyAll(BaseMatchCase):
     """
     Modify all supported fields and output to a port
@@ -1931,6 +1935,7 @@ class MixedVLAN(BaseMatchCase):
     If only VID 5 distinguishes pkt, this will fail on some platforms
     """   
 
+@group('smoke')
 class MatchEach(base_tests.SimpleDataPlane):
     """
     Check that each match field is actually matched on.

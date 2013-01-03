@@ -114,6 +114,7 @@ class ErrorMsg(base_tests.SimpleProtocol):
                                'Message field code is not OFPBRC_BAD_VERSION')
 
 
+@group('smoke')
 class FeaturesReplyBody(base_tests.SimpleProtocol):
     """Verify the body of Features Reply message"""
 
