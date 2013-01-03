@@ -247,7 +247,7 @@ def config_setup(cfg_dflt):
     parser.add_option("--base-if-index", type="int",
                       help="Base interface index number (optional)")
     parser.add_option("--list-test-names", action='store_true',
-                      help="List only test names.", default=False)
+                      help="List test names matching the test spec and exit", default=False)
     parser.add_option("--list", action="store_true",
                       help="List all tests and exit")
     parser.add_option("-v", "--verbose", action="store_true",
@@ -432,7 +432,7 @@ if config["test_spec"] != "":
 if test_specs == []:
     test_specs = ["standard"]
 
-test_modules = prune_tests(test_specs, load_test_modules(config))
+test_modules = load_test_modules(config)
 
 load_profile(config)
 
@@ -470,6 +470,8 @@ if config["list"]:
     print "    'vid=N;strip_vlan=bool;add_vlan=bool'"
     print "Note that --profile may override which tests are run"
     sys.exit(0)
+
+test_modules = prune_tests(test_specs, test_modules)
 
 # Check if test list is requested; display and exit if so
 if config["list_test_names"]:
