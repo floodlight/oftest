@@ -157,7 +157,7 @@ config_default = {
     "controller_host"    : "0.0.0.0",  # For passive bind
     "controller_port"    : 6633,
     "relax"              : False,
-    "test_spec"          : "all",
+    "test_spec"          : "",
     "log_file"           : "oft.log",
     "log_append"         : False,
     "list"               : False,
@@ -376,15 +376,15 @@ def load_test_modules(config):
 
     return result
 
-def prune_tests(test_spec, test_modules):
+def prune_tests(test_specs, test_modules):
     """
-    Return tests matching a given test-spec.
-    @param test_spec A test-spec string.
+    Return tests matching the given test-specs
+    @param test_specs A list of group names or test names.
     @param test_modules Same format as the output of load_test_modules.
     @returns Same format as the output of load_test_modules.
     """
     result = {}
-    for e in test_spec.split(","):
+    for e in test_specs:
         matched = False
         for (modname, (mod, tests)) in test_modules.items():
             for (testname, test) in tests.items():
@@ -425,7 +425,14 @@ logging.info("++++++++ " + time.asctime() + " ++++++++")
 # Allow tests to import each other
 sys.path.append(config["test_dir"])
 
-test_modules = prune_tests(config["test_spec"], load_test_modules(config))
+test_specs = args
+if config["test_spec"] != "":
+    print >> sys.stderr, "WARNING: The --test-spec option is deprecated"
+    test_specs += config["test_spec"].split(',')
+if test_specs == []:
+    test_specs = ["standard"]
+
+test_modules = prune_tests(test_specs, load_test_modules(config))
 
 load_profile(config)
 
