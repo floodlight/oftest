@@ -258,12 +258,6 @@ these will be executed. To see what groups each test belongs to use the
                       help="Do not delete log file if specified")
     parser.add_option("--debug",
                       help="Debug lvl: debug, info, warning, error, critical")
-    parser.add_option("--port-count", type="int",
-                      help="Number of ports to use (optional)")
-    parser.add_option("--base-of-port", type="int",
-                      help="Base OpenFlow port number (optional)")
-    parser.add_option("--base-if-index", type="int",
-                      help="Base interface index number (optional)")
     parser.add_option("--list-test-names", action='store_true',
                       help="List test names matching the test spec and exit", default=False)
     parser.add_option("--list", action="store_true",
@@ -272,8 +266,6 @@ these will be executed. To see what groups each test belongs to use the
                       help="Short cut for --debug=verbose")
     parser.add_option("--relax", action="store_true",
                       help="Relax packet match checks allowing other packets")
-    parser.add_option("--param", type="int",
-                      help="Parameter sent to test (for debugging)")
     parser.add_option("--profile", 
                       help="File listing tests to skip/run")
     parser.add_option("-t", "--test-params",
@@ -298,9 +290,6 @@ these will be executed. To see what groups each test belongs to use the
                       help="Directory containing platform modules")
     parser.add_option("--profile-dir", type="string",
                       help="Directory containing profile modules")
-    parser.add_option("--priority", type="int",
-                      help="Minimum test priority",
-                      default=0)
 
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
