@@ -111,6 +111,7 @@ class ErrorMsg(base_tests.SimpleProtocol):
                                'Message field code is not OFPBRC_BAD_VERSION')
 
 
+@group('smoke')
 class FeaturesReplyBody(base_tests.SimpleProtocol):
     """Verify the body of Features Reply message"""
 
@@ -491,14 +492,12 @@ class PacketInBodyAction(base_tests.SimpleDataPlane):
         self.assertEqual(response.in_port,of_ports[0],"PacketIn in_port or recieved port field is incorrect")
 
 
-
+@nonstandard
 class PortStatusMessage(base_tests.SimpleDataPlane):
 
     """Verify Port Status Messages are sent to the controller 
     whenever physical ports are added, modified or deleted"""
 
-    priority = -1
-    
     def runTest(self):
         
         logging.info("Running PortStatusMessage Test")

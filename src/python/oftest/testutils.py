@@ -1020,3 +1020,31 @@ def inspect_packet(pkt):
     finally:
         sys.stdout = backup
     return out
+
+def nonstandard(cls):
+    """
+    Testcase decorator that marks the test as being non-standard.
+    These tests are not automatically added to the "standard" group.
+    """
+    cls._nonstandard = True
+    return cls
+
+def disabled(cls):
+    """
+    Testcase decorator that marks the test as being disabled.
+    These tests are not automatically added to the "standard" group or
+    their module's group.
+    """
+    cls._disabled = True
+    return cls
+
+def group(name):
+    """
+    Testcase decorator that adds the test to a group.
+    """
+    def fn(cls):
+        if not hasattr(cls, "_groups"):
+            cls._groups = []
+        cls._groups.append(name)
+        return cls
+    return fn

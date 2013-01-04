@@ -19,12 +19,11 @@ NXT_ROLE_REQUEST = 10
 
 NXT_ROLE_VALUE = dict( other=0, slave=1, master=2 )
 
+@nonstandard
 class NiciraRoleRequest(base_tests.SimpleDataPlane):
     """
     Exercise Nicira vendor extension for requesting HA roles
     """
-
-    priority = 0
 
     def nicira_role_request(self, role):
         """

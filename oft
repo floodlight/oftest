@@ -157,7 +157,7 @@ config_default = {
     "controller_host"    : "0.0.0.0",  # For passive bind
     "controller_port"    : 6633,
     "relax"              : False,
-    "test_spec"          : "all",
+    "test_spec"          : "",
     "log_file"           : "oft.log",
     "log_append"         : False,
     "list"               : False,
@@ -177,10 +177,6 @@ config_default = {
     "profile_dir"        : os.path.join(root_dir, "profiles"),
     "priority"           : 0,
 }
-
-# Default test priority
-TEST_PRIO_DEFAULT=100
-TEST_PRIO_SKIP=-1
 
 #@todo Set up a dict of config params so easier to manage:
 # <param> <cmdline flags> <default value> <help> <optional parser>
@@ -211,7 +207,26 @@ def config_setup(cfg_dflt):
     object and args is any additional arguments from the command line
     """
 
-    parser = OptionParser(version="%prog 0.1")
+    usage = "usage: %prog [options] (test|group)..."
+
+    description = """
+OFTest is a framework and set of tests for validating OpenFlow switches.
+
+The default configuration assumes that an OpenFlow 1.0 switch is attempting to
+connect to a controller on the machine running OFTest, port 6633. Additionally,
+the interfaces veth1, veth3, veth5, and veth7 should be connected to the switch's
+dataplane.
+
+If no positional arguments are given then OFTest will run all tests that
+depend only on standard OpenFlow 1.0. Otherwise each positional argument
+is interpreted as either a test name or a test group name. The union of
+these will be executed. To see what groups each test belongs to use the
+--list option.
+"""
+
+    parser = OptionParser(version="%prog 0.1",
+                          usage=usage,
+                          description=description)
 
     #@todo parse port map as option?
     # Set up default values
@@ -233,8 +248,7 @@ def config_setup(cfg_dflt):
                       type="int", help="Port number of the test controller")
     test_list_help = """Indicate tests to run.  Valid entries are "all" (the
         default) or a comma separated list of:
-        module            Run all tests in the named module
-        testcase          Run tests in all modules with the name testcase
+        group             Run all tests in the named group
         module.testcase   Run the specific test case
         """
     parser.add_option("-T", "--test-spec", "--test-list", help=test_list_help)
@@ -244,22 +258,14 @@ def config_setup(cfg_dflt):
                       help="Do not delete log file if specified")
     parser.add_option("--debug",
                       help="Debug lvl: debug, info, warning, error, critical")
-    parser.add_option("--port-count", type="int",
-                      help="Number of ports to use (optional)")
-    parser.add_option("--base-of-port", type="int",
-                      help="Base OpenFlow port number (optional)")
-    parser.add_option("--base-if-index", type="int",
-                      help="Base interface index number (optional)")
     parser.add_option("--list-test-names", action='store_true',
-                      help="List only test names.", default=False)
+                      help="List test names matching the test spec and exit", default=False)
     parser.add_option("--list", action="store_true",
                       help="List all tests and exit")
     parser.add_option("-v", "--verbose", action="store_true",
                       help="Short cut for --debug=verbose")
     parser.add_option("--relax", action="store_true",
                       help="Relax packet match checks allowing other packets")
-    parser.add_option("--param", type="int",
-                      help="Parameter sent to test (for debugging)")
     parser.add_option("--profile", 
                       help="File listing tests to skip/run")
     parser.add_option("-t", "--test-params",
@@ -284,9 +290,6 @@ def config_setup(cfg_dflt):
                       help="Directory containing platform modules")
     parser.add_option("--profile-dir", type="string",
                       help="Directory containing profile modules")
-    parser.add_option("--priority", type="int",
-                      help="Minimum test priority",
-                      default=0)
 
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
@@ -330,6 +333,9 @@ def load_test_modules(config):
 
     Test cases are subclasses of unittest.TestCase
 
+    Also updates the _groups member to include "standard" and
+    module test groups if appropriate.
+
     @param config The oft configuration dictionary
     @returns A dictionary from test module names to tuples of
     (module, dictionary from test names to test classes).
@@ -355,64 +361,47 @@ def load_test_modules(config):
             tests = dict((k, v) for (k, v) in mod.__dict__.items() if type(v) == type and
                                                                       issubclass(v, unittest.TestCase))
             if tests:
+                for (testname, test) in tests.items():
+                    # Set default annotation values
+                    if not hasattr(test, "_groups"):
+                        test._groups = []
+                    if not hasattr(test, "_nonstandard"):
+                        test._nonstandard = False
+                    if not hasattr(test, "_disabled"):
+                        test._disabled = False
+
+                    # Put test in its module's test group
+                    if not test._disabled:
+                        test._groups.append(modname)
+
+                    # Put test in the standard test group
+                    if not test._disabled and not test._nonstandard:
+                        test._groups.append("standard")
+                        test._groups.append("all") # backwards compatibility
+
                 result[modname] = (mod, tests)
 
     return result
 
-def prune_tests(test_spec, test_modules):
+def prune_tests(test_specs, test_modules):
     """
-    Return tests matching a given test-spec.
-    @param test_spec A test-spec string.
+    Return tests matching the given test-specs
+    @param test_specs A list of group names or test names.
     @param test_modules Same format as the output of load_test_modules.
     @returns Same format as the output of load_test_modules.
     """
     result = {}
-    for (spec_modname, spec_testname) in parse_test_spec(test_spec):
+    for e in test_specs:
         matched = False
         for (modname, (mod, tests)) in test_modules.items():
-            if (spec_modname == None or spec_modname == modname):
-                for (testname, test) in tests.items():
-                    if (spec_testname == None or spec_testname == testname):
-                            result.setdefault(modname, (mod, {}))
-                            result[modname][1][testname] = test
-                            matched = True
+            for (testname, test) in tests.items():
+                if e in test._groups or e == "%s.%s" % (modname, testname):
+                    result.setdefault(modname, (mod, {}))
+                    result[modname][1][testname] = test
+                    matched = True
         if not matched:
-            if spec_modname and spec_testname:
-                el = "%s.%s" % (spec_modname, spec_testname)
-            else:
-                el = spec_modname or spec_testname or "all"
-            die("test-spec element %s did not match any tests" % el)
+            die("test-spec element %s did not match any tests" % e)
     return result
-
-def parse_test_spec(test_spec):
-    """
-    The input string is split on commas and each element is parsed
-    individually into a module name and test name. Either may be None
-    for a wildcard. The case of the first letter resolves ambiguity
-    of whether a word is a test or module name. The special string
-    "all" results in both fields wildcarded.
-
-    Examples:
-      basic.Echo -> ("basic", "Echo")
-      basic -> ("basic", None)
-      Echo -> (None, "Echo")
-      all -> (None, None)
-    """
-    results = []
-    for ts_entry in test_spec.split(","):
-        parts = ts_entry.split(".")
-        if len(parts) == 1:
-            if ts_entry == "all":
-                results.append((None, None))
-            elif ts_entry[0].isupper():
-                results.append((None, ts_entry))
-            else:
-                results.append((ts_entry, None))
-        elif len(parts) == 2:
-            results.append((parts[0], parts[1]))
-        else:
-            die("Bad test spec: " + ts_entry)
-    return results
 
 def die(msg, exit_val=1):
     print msg
@@ -429,23 +418,6 @@ def _space_to(n, str):
         return " " * spaces
     return " "
 
-def test_prio_get(test):
-    """
-    Return the priority of a test
-
-    If test is in "skip list" from profile, return the skip value
-
-    If the priority property is set in the class, return
-    that value.  Otherwise return 100 (default)
-    """
-    if test.__name__ in profile_mod.skip_test_list:
-        logging.info("Skipping test %s due to profile" % test.__name__)
-        return TEST_PRIO_SKIP
-    if test.__name__ in profile_mod.run_test_list:
-        logging.info("Add test %s due to profile" % test.__name__)
-        return TEST_PRIO_DEFAULT
-    return getattr(test, "priority", TEST_PRIO_DEFAULT)
-
 #
 # Main script
 #
@@ -460,7 +432,14 @@ logging.info("++++++++ " + time.asctime() + " ++++++++")
 # Allow tests to import each other
 sys.path.append(config["test_dir"])
 
-test_modules = prune_tests(config["test_spec"], load_test_modules(config))
+test_specs = args
+if config["test_spec"] != "":
+    print >> sys.stderr, "WARNING: The --test-spec option is deprecated"
+    test_specs += config["test_spec"].split(',')
+if test_specs == []:
+    test_specs = ["standard"]
+
+test_modules = load_test_modules(config)
 
 load_profile(config)
 
@@ -468,18 +447,43 @@ load_profile(config)
 if config["list"]:
     mod_count = 0
     test_count = 0
-    print "\nTest List:"
+    all_groups = set()
+    print """\
+Tests are shown grouped by module. If a test is in any groups beyond "standard"
+and its module's group then they are shown in parentheses."""
+    print
+    print """\
+Tests marked with '*' are non-standard and may require vendor extensions or
+special switch configuration. These are not part of the "standard" test group."""
+    print
+    print """\
+Tests marked with '!' are disabled because they are experimental, special-purpose,
+or are too long to be run normally. These are not part of the "standard" test
+group or their module's test group."""
+    print
+    print "Tests marked (TP1) after name take --test-params including:"
+    print "    'vid=N;strip_vlan=bool;add_vlan=bool'"
+    print "Note that --profile may override which tests are run"
+    print
+    print "Test List:"
     for (modname, (mod, tests)) in test_modules.items():
         mod_count += 1
         desc = (mod.__doc__ or "No description").strip().split('\n')[0]
         start_str = "  Module " + mod.__name__ + ": "
         print start_str + _space_to(22, start_str) + desc
         for (testname, test) in tests.items():
-            desc = (test.__doc__ or "No description").strip().split('\n')[0]
-            if test_prio_get(test) < config["priority"]:
-                start_str = "  * " + testname + ":"
-            else:
-                start_str = "    " + testname + ":"
+            try:
+                desc = (test.__doc__ or "").strip()
+                desc = desc.split('\n')[0]
+            except:
+                desc = "No description"
+            groups = set(test._groups) - set(["all", "standard", modname])
+            all_groups.update(test._groups)
+            if groups:
+                desc = "(%s) %s" % (",".join(groups), desc)
+            start_str = " %s%s %s:" % (test._nonstandard and "*" or " ",
+                                       test._disabled and "!" or " ",
+                                       testname)
             if len(start_str) > 22:
                 desc = "\n" + _space_to(22, "") + desc
             print start_str + _space_to(22, start_str) + desc
@@ -488,18 +492,17 @@ if config["list"]:
     print "%d modules shown with a total of %d tests" % \
         (mod_count, test_count)
     print
-    print "Tests preceded by * are not run by default"
-    print "Tests marked (TP1) after name take --test-params including:"
-    print "    'vid=N;strip_vlan=bool;add_vlan=bool'"
-    print "Note that --profile may override which tests are run"
+    print "Test groups: %s" % (', '.join(sorted(all_groups)))
+
     sys.exit(0)
+
+test_modules = prune_tests(test_specs, test_modules)
 
 # Check if test list is requested; display and exit if so
 if config["list_test_names"]:
     for (modname, (mod, tests)) in test_modules.items():
         for (testname, test) in tests.items():
-            if test_prio_get(test) >= config["priority"]:
-                print "%s.%s" % (modname, testname)
+            print "%s.%s" % (modname, testname)
     sys.exit(0)
 
 # Generate the test suite
@@ -508,9 +511,8 @@ suite = unittest.TestSuite()
 
 for (modname, (mod, tests)) in test_modules.items():
     for (testname, test) in tests.items():
-        if test_prio_get(test) >= config["priority"]:
-            logging.info("Adding test " + modname + "." + testname)
-            suite.addTest(test())
+        logging.info("Adding test " + modname + "." + testname)
+        suite.addTest(test())
 
 # Allow platforms to import each other
 sys.path.append(config["platform_dir"])

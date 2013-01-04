@@ -19,12 +19,12 @@ import oftest.action as action
 
 from oftest.testutils import *
 
+@disabled
 class BaseHandshake(unittest.TestCase):
     """
     Base handshake case to set up controller, but do not send hello.
     """
 
-    priority = -1
     controllers = []
     default_timeout = 2
 
@@ -100,12 +100,11 @@ class HandshakeNoFeaturesRequest(BaseHandshake):
         self.assertTrue(self.controllers[0].wait_disconnected(timeout=10),
                         "Not notified of controller disconnect")
 
+@disabled
 class CompleteHandshake(BaseHandshake):
     """
     Set up multiple controllers and complete handshake, but otherwise do nothing.
     """
-
-    priority = -1
 
     def buildControllerList(self):                                             
         # controller_list is a list of IP:port tuples
@@ -247,33 +246,30 @@ class CompleteHandshake(BaseHandshake):
                break
             time.sleep(tick)
 
+@disabled
 class HandshakeAndKeepalive(CompleteHandshake):
     """
     Complete handshake and respond to echo request, but otherwise do nothing.
     Good for manual testing.
     """
 
-    priority = -1
-
     def __init__(self):
        CompleteHandshake.__init__(self, keep_alive=True)
 
+@disabled
 class HandshakeNoEcho(CompleteHandshake):
     """
     Complete handshake, but otherwise do nothing, and do not respond to echo.
     """
 
-    priority = -1
-
     def __init__(self):
        CompleteHandshake.__init__(self, keep_alive=False)
 
+@disabled
 class HandshakeAndDrop(CompleteHandshake):
     """
     Complete handshake, but otherwise do nothing, and drop connection after a while.
     """
-
-    priority = -1
 
     def __init__(self):
        CompleteHandshake.__init__(self, keep_alive=True, controller_timeout=10)

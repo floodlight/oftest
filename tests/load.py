@@ -30,6 +30,7 @@ import time
 
 from oftest.testutils import *
 
+@nonstandard
 class LoadBarrier(base_tests.SimpleProtocol):
     """
     Test barrier under load with loopback
@@ -43,8 +44,6 @@ class LoadBarrier(base_tests.SimpleProtocol):
     The test succeeds if the barrier response is received.  Otherwise
     the test fails.
     """
-
-    priority = -1
 
     def runTest(self):
         # Set up flow to send from port 1 to port 2 and copy to CPU
