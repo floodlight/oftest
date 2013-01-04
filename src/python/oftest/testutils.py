@@ -43,7 +43,8 @@ def delete_all_flows(ctrl):
     msg.out_port = ofp.OFPP_NONE
     msg.command = ofp.OFPFC_DELETE
     msg.buffer_id = 0xffffffff
-    return ctrl.message_send(msg)
+    ctrl.message_send(msg)
+    return 0
 
 def required_wildcards(parent):
     w = test_param_get('required_wildcards', default='default')
@@ -349,8 +350,8 @@ def port_config_set(controller, port_no, config, mask):
     mod.config = config
     mod.mask = mask
     mod.advertise = reply.ports[idx].advertised
-    rv = controller.message_send(mod)
-    return rv
+    controller.message_send(mod)
+    return 0
 
 def receive_pkt_check(dp, pkt, yes_ports, no_ports, assert_if):
     """
@@ -574,8 +575,7 @@ def flow_msg_install(parent, request, clear_table_override=None):
         parent.assertEqual(rc, 0, "Failed to delete all flows")
 
     logging.debug("Insert flow")
-    rv = parent.controller.message_send(request)
-    parent.assertTrue(rv != -1, "Error installing flow mod")
+    parent.controller.message_send(request)
 
     parent.assertEqual(do_barrier(parent.controller), 0, "Barrier failed")
 
@@ -642,8 +642,7 @@ def flow_match_test_pktout(parent, ing_port, egr_ports,
             msg.actions.add(act)
 
     logging.debug(msg.show())
-    rv = parent.controller.message_send(msg)
-    parent.assertTrue(rv == 0, "Error sending out message")
+    parent.controller.message_send(msg)
 
     if exp_pkt is None:
         exp_pkt = pkt

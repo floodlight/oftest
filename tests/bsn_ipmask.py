@@ -52,8 +52,7 @@ class BSNConfigIPMask(base_tests.SimpleDataPlane):
         m = message.vendor()
         m.vendor = 0x005c16c7
         m.data = struct.pack("!LBBBBL", 0, index, 0, 0, 0, mask)
-        rc = self.controller.message_send(m)
-        self.assertNotEqual(rc, -1, "Error sending set IP mask command")
+        self.controller.message_send(m)
 
     def bsn_get_ip_mask(self, index):
         """
@@ -63,8 +62,7 @@ class BSNConfigIPMask(base_tests.SimpleDataPlane):
         m = message.vendor()
         m.vendor = 0x005c16c7
         m.data = struct.pack( "!LBBBBL", 1, index, 0, 0, 0, 0 )
-        rc = self.controller.message_send(m)
-        self.assertNotEqual(rc, -1, "Error sending get IP mask command")
+        self.controller.message_send(m)
         m, r = self.controller.poll(ofp.OFPT_VENDOR)
         self.assertEqual(m.vendor, 0x005c16c7, "Wrong vendor ID")
         x = struct.unpack("!LBBBBL", m.data)
@@ -149,14 +147,12 @@ class BSNConfigIPMask(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        rc = self.controller.message_send(flow_msg_create(
+        self.controller.message_send(flow_msg_create(
               self, pkt0, ing_port=ports[0], egr_ports=[ports[1]],
               wildcards=wildcards))
-        self.assertNotEqual(rc, -1, "Error inserting flow entry 0")
-        rc = self.controller.message_send(flow_msg_create(
+        self.controller.message_send(flow_msg_create(
               self, pkt1, ing_port=ports[0], egr_ports=[ports[2]],
               wildcards=wildcards))
-        self.assertNotEqual(rc, -1, "Error inserting flow entry 1")
 
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
             

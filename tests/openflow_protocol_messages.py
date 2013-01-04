@@ -43,8 +43,7 @@ class FeaturesRequest(base_tests.SimpleProtocol):
         logging.info("Expecting Features_Reply")
 
         request = message.features_request()
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Not able to send features request.")
+        self.controller.message_send(request)
         
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_FEATURES_REPLY,
                                                timeout=2)
@@ -73,8 +72,7 @@ class ConfigurationRequest(base_tests.SimpleProtocol):
         logging.info("Expecting OFPT_GET_CONFIG_REPLY ")
 
         request = message.get_config_request()
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, " Not able to send get_config request.")
+        self.controller.message_send(request)
         
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_GET_CONFIG_REPLY,
                                                timeout=2)
@@ -235,8 +233,7 @@ class PacketOut(base_tests.SimpleDataPlane):
                 msg.actions.add(act)
 
                 logging.info("PacketOut to: " + str(dp_port))
-                rv = self.controller.message_send(msg)
-                self.assertTrue(rv == 0, "Error sending out message")
+                self.controller.message_send(msg)
 
                 exp_pkt_arg = None
                 exp_port = None

@@ -41,8 +41,7 @@ def exact_match(self,of_ports,priority=None):
     act.port = of_ports[1]
     msg.actions.add(act)
 
-    rv = self.controller.message_send(msg)
-    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.controller.message_send(msg)
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     return (pkt_exactflow,match)
@@ -69,8 +68,7 @@ def exact_match_with_prio(self,of_ports,priority=None):
     act.port = of_ports[2]
     msg.actions.add(act)
 
-    rv = self.controller.message_send(msg)
-    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.controller.message_send(msg)
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     return (pkt_exactflow,match)         
@@ -98,8 +96,7 @@ def match_all_except_source_address(self,of_ports,priority=None):
     act1.port = of_ports[1]
     msg1.actions.add(act1)
 
-    rv = self.controller.message_send(msg1)
-    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.controller.message_send(msg1)
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     return (pkt_wildcardsrc,match1)
@@ -126,8 +123,7 @@ def match_ethernet_src_address(self,of_ports,priority=None):
     act.port = of_ports[1]
     msg.actions.add(act)
 
-    rv = self.controller.message_send(msg)
-    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.controller.message_send(msg)
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     return (pkt_MatchSrc,match)
@@ -153,8 +149,7 @@ def match_ethernet_dst_address(self,of_ports,priority=None):
     act.port = of_ports[1]
     msg.actions.add(act)
 
-    rv = self.controller.message_send(msg)
-    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.controller.message_send(msg)
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     return (pkt_matchdst,match)
@@ -180,8 +175,7 @@ def wildcard_all(self,of_ports,priority=None):
     if priority != None :
         msg2.priority = priority
 
-    rv = self.controller.message_send(msg2)
-    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.controller.message_send(msg2)
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     return (pkt_wildcard,match2)
@@ -214,8 +208,7 @@ def wildcard_all_except_ingress(self,of_ports,priority=None):
     if priority != None :
         msg3.priority = priority
 
-    rv = self.controller.message_send(msg3)
-    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.controller.message_send(msg3)
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     return (pkt_matchingress,match3)
@@ -247,8 +240,7 @@ def wildcard_all_except_ingress1(self,of_ports,priority=None):
     if priority != None :
         msg3.priority = priority
 
-    rv = self.controller.message_send(msg3)
-    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.controller.message_send(msg3)
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     return (pkt_matchingress,match3)
@@ -275,8 +267,7 @@ def match_vlan_id(self,of_ports,priority=None):
     act.port = of_ports[1]
     msg.actions.add(act)
 
-    rv = self.controller.message_send(msg)
-    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.controller.message_send(msg)
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     return (pkt_matchvlanid,match)
@@ -302,8 +293,7 @@ def match_vlan_pcp(self,of_ports,priority=None):
     act.port = of_ports[1]
     msg.actions.add(act)
 
-    rv = self.controller.message_send(msg)
-    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.controller.message_send(msg)
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     return (pkt_matchvlanpcp,match)
@@ -330,8 +320,7 @@ def match_mul_l2(self,of_ports,priority=None):
     act.port = of_ports[1]
     msg.actions.add(act)
 
-    rv = self.controller.message_send(msg)
-    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.controller.message_send(msg)
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     return (pkt_mulL2,match)
@@ -357,8 +346,7 @@ def match_mul_l4(self,of_ports,priority=None):
     act.port = of_ports[1]
     msg.actions.add(act)
 
-    rv = self.controller.message_send(msg)
-    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.controller.message_send(msg)
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     return (pkt_mulL4,match)  
@@ -383,8 +371,7 @@ def match_ip_tos(self,of_ports,priority=None):
     act.port = of_ports[1]
     msg.actions.add(act)
 
-    rv = self.controller.message_send(msg)
-    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.controller.message_send(msg)
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     return (pkt_iptos,match)
@@ -409,8 +396,7 @@ def match_ip_protocol(self,of_ports,priority=None):
     act.port = of_ports[1]
     msg.actions.add(act)
 
-    rv = self.controller.message_send(msg)
-    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.controller.message_send(msg)
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     return (pkt_iptos,match)
@@ -437,8 +423,7 @@ def match_tcp_src(self,of_ports,priority=None):
     act.port = of_ports[1]
     msg.actions.add(act)
 
-    rv = self.controller.message_send(msg)
-    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.controller.message_send(msg)
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     return (pkt_matchtSrc,match)  
@@ -463,8 +448,7 @@ def match_tcp_dst(self,of_ports,priority=None):
     act.port = of_ports[1]
     msg.actions.add(act)
 
-    rv = self.controller.message_send(msg)
-    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.controller.message_send(msg)
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     return (pkt_matchdst,match)        
@@ -491,8 +475,7 @@ def match_ethernet_type(self,of_ports,priority=None):
     act.port = of_ports[1]
     msg.actions.add(act)
 
-    rv = self.controller.message_send(msg)
-    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.controller.message_send(msg)
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
     return (pkt_matchtype,match)
 
@@ -516,8 +499,7 @@ def strict_modify_flow_action(self,egress_port,match,priority=None):
         msg5.priority = priority
 
     # Send the flow with action A'
-    rv = self.controller.message_send (msg5)
-    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.controller.message_send (msg5)
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
 def modify_flow_action(self,of_ports,match,priority=None):
@@ -539,8 +521,7 @@ def modify_flow_action(self,of_ports,match,priority=None):
         msg8.priority = priority
 
     # Send the flow with action A'
-    rv = self.controller.message_send (msg8)
-    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.controller.message_send (msg8)
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
 def enqueue(self,ingress_port,egress_port,egress_queue_id):
@@ -562,8 +543,7 @@ def enqueue(self,ingress_port,egress_port,egress_queue_id):
     request.actions.add(act)
     
     logging.info("Inserting flow")
-    rv = self.controller.message_send(request)
-    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.controller.message_send(request)
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
     return (pkt,match)
 
@@ -834,8 +814,7 @@ def strict_delete(self,match,priority=None):
 
     if priority != None :
         msg4.priority = priority
-    rv = self.controller.message_send(msg4)
-    self.assertTrue(rv!= -1, "Error installing flow mod")
+    self.controller.message_send(msg4)
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
 
@@ -853,8 +832,7 @@ def nonstrict_delete(self,match,priority=None):
     if priority != None :
         msg6.priority = priority
 
-    rv = self.controller.message_send(msg6)
-    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.controller.message_send(msg6)
     self.assertEqual(do_barrier(self.controller),0, "Barrier failed")
 
 

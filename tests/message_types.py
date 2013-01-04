@@ -38,8 +38,7 @@ class HelloWithBody(base_tests.SimpleDataPlane):
         logging.info("Sending Hello...")
         request = message.hello()
         request.data = 'OpenFlow Will Rule The World'
-        rv=self.controller.message_send(request)
-        self.assertTrue(rv is not None,"Unable to send the message")
+        self.controller.message_send(request)
 
         #Verify Hello message in response 
         logging.info("Waiting for a Hello on the control plane with same xid,version--1.0.0 and data field empty")
@@ -64,8 +63,7 @@ class EchoWithData(base_tests.SimpleProtocol):
         logging.info("Sending Echo With Data ...")
         request = message.echo_request()
         request.data = 'OpenFlow Will Rule The World'
-        rv=self.controller.message_send(request)
-        self.assertTrue(rv is not None,"Unable to send the message")
+        self.controller.message_send(request)
 
         #Verify Echo Reply is recieved 
         logging.info("Waiting for Echo Reply with data field copied from Echo Request")
@@ -100,8 +98,7 @@ class ErrorMsg(base_tests.SimpleProtocol):
         logging.info("Sending a Echo request with a version which is not supported by the switch")
         request=message.echo_request()
         request.header.version=0  
-        rv=self.controller.message_send(request)
-        self.assertTrue(rv is not None,"Unable to send the message")
+        self.controller.message_send(request)
 
         logging.info("Waiting for a OFPT_ERROR msg on the control plane...") 
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,         
@@ -273,8 +270,7 @@ class SetConfigRequest(base_tests.SimpleProtocol):
             req.flags = old_flags+1 
             new_flags = req.flags
 
-        rv=self.controller.message_send(req)
-        self.assertTrue(rv is not None,"Unable to send the message")
+        self.controller.message_send(req)
 
         #Send get_config_request -- verify change came into effect
         logging.info("Sending Get Config Request...")
@@ -310,8 +306,7 @@ class PacketInSizeMiss(base_tests.SimpleDataPlane):
         for bytes in miss_send_len :
             req = message.set_config()
             req.miss_send_len = bytes
-            rv=self.controller.message_send(req)
-            self.assertTrue(rv is not None,"Unable to send the message")
+            self.controller.message_send(req)
             sleep(1)
 
             # Send packet to trigger packet_in event
@@ -375,8 +370,7 @@ class PacketInSizeAction(base_tests.SimpleDataPlane):
             request.actions.add(act)
             
             logging.info("Inserting flow....")
-            rv = self.controller.message_send(request)
-            self.assertTrue(rv != -1, "Error installing flow mod")
+            self.controller.message_send(request)
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
             
             #Send packet matching the flow
@@ -417,8 +411,7 @@ class PacketInBodyMiss(base_tests.SimpleDataPlane):
         logging.info("Sending  set_config_request to set miss_send_len... ")
         req = message.set_config()
         req.miss_send_len = 65535
-        rv=self.controller.message_send(req)
-        self.assertTrue(rv is not None,"Unable to send the message")
+        self.controller.message_send(req)
         sleep(1)
 
         # Send packet to trigger packet_in event
@@ -477,8 +470,7 @@ class PacketInBodyAction(base_tests.SimpleDataPlane):
         request.actions.add(act)
 
         logging.info("Inserting flow....")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.controller.message_send(request)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
             
         #Send packet matching the flow

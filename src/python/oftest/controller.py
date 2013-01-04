@@ -258,8 +258,7 @@ class Controller(Thread):
                         rep = echo_reply()
                         rep.header.xid = hdr.xid
                         # Ignoring additional data
-                        if self.message_send(rep.pack(), zero_xid=True) < 0:
-                            self.logger.error("Error sending echo reply")
+                        self.message_send(rep.pack(), zero_xid=True)
                         continue
 
                 # Now check for message handlers; preference is given to
@@ -613,10 +612,7 @@ class Controller(Thread):
 
             self.xid = msg.header.xid
             self.xid_response = None
-            if self.message_send(msg.pack()) < 0:
-                self.logger.error("Error sending pkt for transaction %d" %
-                                  msg.header.xid)
-                return (None, None)
+            self.message_send(msg.pack())
 
             self.logger.debug("Waiting for transaction %d" % msg.header.xid)
             timed_wait(self.xid_cv, lambda: self.xid_response, timeout=timeout)
@@ -641,9 +637,6 @@ class Controller(Thread):
         the XID in the header is 0, then an XID will be generated
         for the message.  Set zero_xid to override this behavior (and keep an
         existing 0 xid)
-
-        @return 0 on success
-
         """
 
         if not self.switch_socket:
@@ -663,9 +656,9 @@ class Controller(Thread):
                           ofp_type_map.get(msg_type, "unknown (%d)" % msg_type),
                           msg_len)
         if self.switch_socket.sendall(outpkt) is not None:
-            raise Exception("unknown error on sendall")
+            raise AssertionError("failed to send message to switch")
 
-        return 0
+        return 0 # for backwards compatibility
 
     def __str__(self):
         string = "Controller:\n"

@@ -91,8 +91,7 @@ class BSNMirrorAction(base_tests.SimpleDataPlane):
         m = message.vendor()
         m.vendor = 0x005c16c7
         m.data = struct.pack("!LBBBB", 3, enabled, 0, 0, 0)
-        rc = self.controller.message_send(m)
-        self.assertNotEqual(rc, -1, "Error sending set mirroring command")
+        self.controller.message_send(m)
 
     def bsn_get_mirroring(self):
         """
@@ -102,8 +101,7 @@ class BSNMirrorAction(base_tests.SimpleDataPlane):
         m = message.vendor()
         m.vendor = 0x005c16c7
         m.data = struct.pack("!LBBBB", 4, 0, 0, 0, 0)
-        rc = self.controller.message_send(m)
-        self.assertNotEqual(rc, -1, "Error sending get mirroring command")
+        self.controller.message_send(m)
         m, r = self.controller.poll(ofp.OFPT_VENDOR, 2)
         self.assertEqual(m.vendor, 0x005c16c7, "Wrong vendor ID")
         x = struct.unpack("!LBBBB", m.data)
@@ -154,8 +152,7 @@ class BSNMirrorAction(base_tests.SimpleDataPlane):
         flow_mod.actions.add(act3)
         self.assertEqual(delete_all_flows(self.controller), 0,
                          "Failed to delete all flows")
-        self.assertNotEqual(self.controller.message_send(flow_mod), -1,
-                            "Error installing flow mod")
+        self.controller.message_send(flow_mod)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
         
         logging.info("Sending packet to port %s" % ports[0])

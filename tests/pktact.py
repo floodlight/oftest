@@ -125,8 +125,7 @@ class DirectPacket(base_tests.SimpleDataPlane):
             request.actions.add(act)
 
             logging.info("Inserting flow")
-            rv = self.controller.message_send(request)
-            self.assertTrue(rv != -1, "Error installing flow mod")
+            self.controller.message_send(request)
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
             logging.info("Sending packet to dp port " + 
@@ -191,8 +190,7 @@ class DirectPacketController(base_tests.SimpleDataPlane):
         request.actions.add(act)
 
         logging.info("Inserting flow")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.controller.message_send(request)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         logging.info("Sending packet to dp port " +
@@ -280,8 +278,7 @@ class DirectPacketQueue(base_tests.SimpleDataPlane):
                 request.actions.add(act)
 
                 logging.info("Inserting flow")
-                rv = self.controller.message_send(request)
-                self.assertTrue(rv != -1, "Error installing flow mod")
+                self.controller.message_send(request)
                 self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
                 # Get current stats for selected egress queue
@@ -411,8 +408,7 @@ class DirectPacketControllerQueue(base_tests.SimpleDataPlane):
                 request.actions.add(act)
 
                 logging.info("Inserting flow")
-                rv = self.controller.message_send(request)
-                self.assertTrue(rv != -1, "Error installing flow mod")
+                self.controller.message_send(request)
                 self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
                 # Get current stats for selected egress queue
@@ -533,8 +529,7 @@ class DirectTwoPorts(base_tests.SimpleDataPlane):
             # logging.info(request.show())
 
             logging.info("Inserting flow")
-            rv = self.controller.message_send(request)
-            self.assertTrue(rv != -1, "Error installing flow mod")
+            self.controller.message_send(request)
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
             logging.info("Sending packet to dp port " + 
@@ -589,8 +584,7 @@ class DirectMCNonIngress(base_tests.SimpleDataPlane):
             logging.debug(request.show())
 
             logging.info("Inserting flow")
-            rv = self.controller.message_send(request)
-            self.assertTrue(rv != -1, "Error installing flow mod")
+            self.controller.message_send(request)
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
             logging.info("Sending packet to dp port " + str(ingress_port))
@@ -643,8 +637,7 @@ class DirectMC(base_tests.SimpleDataPlane):
             # logging.info(request.show())
 
             logging.info("Inserting flow")
-            rv = self.controller.message_send(request)
-            self.assertTrue(rv != -1, "Error installing flow mod")
+            self.controller.message_send(request)
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
             logging.info("Sending packet to dp port " + str(ingress_port))
@@ -688,8 +681,7 @@ class Flood(base_tests.SimpleDataPlane):
             logging.info(request.show())
 
             logging.info("Inserting flow")
-            rv = self.controller.message_send(request)
-            self.assertTrue(rv != -1, "Error installing flow mod")
+            self.controller.message_send(request)
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
             logging.info("Sending packet to dp port " + str(ingress_port))
@@ -738,8 +730,7 @@ class FloodPlusIngress(base_tests.SimpleDataPlane):
             logging.info(request.show())
 
             logging.info("Inserting flow")
-            rv = self.controller.message_send(request)
-            self.assertTrue(rv != -1, "Error installing flow mod")
+            self.controller.message_send(request)
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
             logging.info("Sending packet to dp port " + str(ingress_port))
@@ -783,8 +774,7 @@ class All(base_tests.SimpleDataPlane):
             logging.info(request.show())
 
             logging.info("Inserting flow")
-            rv = self.controller.message_send(request)
-            self.assertTrue(rv != -1, "Error installing flow mod")
+            self.controller.message_send(request)
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
             logging.info("Sending packet to dp port " + str(ingress_port))
@@ -833,8 +823,7 @@ class AllPlusIngress(base_tests.SimpleDataPlane):
             logging.info(request.show())
 
             logging.info("Inserting flow")
-            rv = self.controller.message_send(request)
-            self.assertTrue(rv != -1, "Error installing flow mod")
+            self.controller.message_send(request)
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
             logging.info("Sending packet to dp port " + str(ingress_port))
@@ -892,8 +881,7 @@ class FloodMinusPort(base_tests.SimpleDataPlane):
             logging.info(request.show())
 
             logging.info("Inserting flow")
-            rv = self.controller.message_send(request)
-            self.assertTrue(rv != -1, "Error installing flow mod")
+            self.controller.message_send(request)
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
             logging.info("Sending packet to dp port " + str(ingress_port))
@@ -1802,8 +1790,7 @@ class FlowToggle(BaseMatchCase):
 
         # Install the first set of flows
         for f_idx in range(flow_count):
-            rv = self.controller.message_send(flows[0][f_idx])
-            self.assertTrue(rv != -1, "Error installing flow %d" % f_idx)
+            self.controller.message_send(flows[0][f_idx])
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
     
         logging.info("Installed %d flows" % flow_count)
@@ -1822,10 +1809,8 @@ class FlowToggle(BaseMatchCase):
             for toggle in range(2):
                 t_idx = 1 - toggle
                 for f_idx in range(flow_count):
-                    rv = self.controller.message_send(flows[t_idx][f_idx])
+                    self.controller.message_send(flows[t_idx][f_idx])
                     updates += 1
-                    self.assertTrue(rv != -1, "Error modifying flow %d" % 
-                                    f_idx)
                 self.assertEqual(do_barrier(self.controller), 0,
                                  "Barrier failed")
 
@@ -2104,8 +2089,7 @@ class DirectBadPacketBase(base_tests.SimpleDataPlane):
             request.actions.add(act)
 
         logging.info("Inserting flow")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.controller.message_send(request)
 
         # This flow speeds up negative tests
         logging.info("Inserting catch-all flow")
@@ -2115,8 +2099,7 @@ class DirectBadPacketBase(base_tests.SimpleDataPlane):
         act = action.action_output()
         act.port = ofp.OFPP_IN_PORT
         request2.actions.add(act)
-        rv = self.controller.message_send(request2)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.controller.message_send(request2)
 
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 

@@ -65,9 +65,7 @@ class OverlapChecking(base_tests.SimpleDataPlane):
         act3 = action.action_output()
         act3.port = of_ports[1]
         msg3.actions.add(act3)
-        msg3.actions.add(1)
-        rv = self.controller.message_send(msg3)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.controller.message_send(msg3)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         # Verify Flow does not get inserted 
@@ -193,8 +191,7 @@ class EmerFlowTimeout(base_tests.SimpleProtocol):
         
         request.actions.add(act)
         logging.info("Inserting flow")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Flow addition did not fail.")
+        self.controller.message_send(request)
 
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
@@ -241,8 +238,7 @@ class MissingModifyAdd(base_tests.SimpleDataPlane):
         request.actions.add(act3)
 
         logging.info("Inserting flow")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.controller.message_send(request)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed") 
 
         #Verify the flow gets added i.e. active_count= 1
@@ -457,8 +453,7 @@ class DeleteEmerFlow(base_tests.SimpleProtocol):
         act.port = of_ports[1]
         request.actions.add(act)
 
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Flow addition failed.")
+        self.controller.message_send(request)
         
         # Delete the emergency flow
         
@@ -590,8 +585,7 @@ class Outport1(base_tests.SimpleDataPlane):
         msg7.buffer_id = 0xffffffff
         msg7.match = match
 
-        rv = self.controller.message_send(msg7)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.controller.message_send(msg7)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         # Verify flow will not get deleted, active_entries in table_stats_request = 1
@@ -607,8 +601,7 @@ class Outport1(base_tests.SimpleDataPlane):
         msg7.buffer_id = 0xffffffff
         msg7.match = match
 
-        rv = self.controller.message_send(msg7)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.controller.message_send(msg7)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
         
         #Verify flow gets deleted.
@@ -783,8 +776,7 @@ class FlowTimeout(base_tests.SimpleDataPlane):
         act3.port = of_ports[1]
         msg3.actions.add(act3)
 
-        rv = self.controller.message_send(msg3)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.controller.message_send(msg3)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         #Verify no flow removed message is generated

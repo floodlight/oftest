@@ -176,8 +176,7 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
        
         # send flow
         logging.info("Inserting flow")
-        rv = self.controller.message_send(flow_mod_msg)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.controller.message_send(flow_mod_msg)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         # get initial port stats count
@@ -247,11 +246,9 @@ class MultiFlowStats(base_tests.SimpleDataPlane):
         flow_mod_msg2 = self.buildFlowModMsg(pkt2, ingress_port, egress_port2)
        
         logging.info("Inserting flow1")
-        rv = self.controller.message_send(flow_mod_msg1)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.controller.message_send(flow_mod_msg1)
         logging.info("Inserting flow2")
-        rv = self.controller.message_send(flow_mod_msg2)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.controller.message_send(flow_mod_msg2)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         # get initial port stats count
@@ -325,11 +322,9 @@ class AllPortStats(base_tests.SimpleDataPlane):
         flow_mod_msg2 = self.buildFlowModMsg(pkt2, port0, port2)
        
         logging.info("Inserting flow1")
-        rv = self.controller.message_send(flow_mod_msg1)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.controller.message_send(flow_mod_msg1)
         logging.info("Inserting flow2")
-        rv = self.controller.message_send(flow_mod_msg2)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.controller.message_send(flow_mod_msg2)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         num_pkt1s = random.randint(5,10)

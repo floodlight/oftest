@@ -215,8 +215,7 @@ class PacketOut(base_tests.SimpleDataPlane):
                msg.actions.add(act)
 
                logging.info("PacketOut to: " + str(dp_port))
-               rv = self.controller.message_send(msg)
-               self.assertTrue(rv == 0, "Error sending out message")
+               self.controller.message_send(msg)
 
                exp_pkt_arg = None
                exp_port = None
@@ -273,8 +272,7 @@ class PacketOutMC(base_tests.SimpleDataPlane):
                   msg.actions.add(act)
 
                logging.info("PacketOut to: " + str(dp_ports))
-               rv = self.controller.message_send(msg)
-               self.assertTrue(rv == 0, "Error sending out message")
+               self.controller.message_send(msg)
 
                receive_pkt_check(self.dataplane, outpkt, dp_ports,
                                  set(of_ports).difference(dp_ports),
@@ -293,8 +291,7 @@ class FlowStatsGet(base_tests.SimpleProtocol):
         logging.info("Running StatsGet")
         logging.info("Inserting trial flow")
         request = flow_mod_gen(config["port_map"], True)
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Failed to insert test flow")
+        self.controller.message_send(request)
         
         logging.info("Sending flow request")
         request = message.flow_stats_request()
@@ -316,8 +313,7 @@ class TableStatsGet(base_tests.SimpleProtocol):
         logging.info("Running TableStatsGet")
         logging.info("Inserting trial flow")
         request = flow_mod_gen(config["port_map"], True)
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Failed to insert test flow")
+        self.controller.message_send(request)
         
         logging.info("Sending table stats request")
         request = message.table_stats_request()
@@ -352,8 +348,7 @@ class FlowMod(base_tests.SimpleProtocol):
     def runTest(self):
         logging.info("Running " + str(self))
         request = flow_mod_gen(config["port_map"], True)
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.controller.message_send(request)
 
 class PortConfigMod(base_tests.SimpleProtocol):
     """

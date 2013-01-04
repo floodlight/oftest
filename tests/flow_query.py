@@ -1330,8 +1330,7 @@ class Switch:
         request.match    = query_match
         request.table_id = 0xff
         request.out_port = ofp.OFPP_NONE;
-        if self.controller.message_send(request) == -1:
-            return False
+        self.controller.message_send(request)
         # <TBD>
         # Glue together successive reponse messages for stats reply.
         # Looking at the "more" flag and performing re-assembly
@@ -1367,7 +1366,8 @@ class Switch:
         logging.info("Sending flow_mod(add), xid=%d"
                         % (flow_mod_msg.header.xid)
                         )
-        return (self.controller.message_send(flow_mod_msg) != -1)
+        self.controller.message_send(flow_mod_msg)
+        return True
 
     def flow_mod(self, flow_cfg, strictf):
         flow_mod_msg = message.flow_mod()
@@ -1379,7 +1379,8 @@ class Switch:
         logging.info("Sending flow_mod(mod), xid=%d"
                         % (flow_mod_msg.header.xid)
                         )
-        return (self.controller.message_send(flow_mod_msg) != -1)
+        self.controller.message_send(flow_mod_msg)
+        return True
 
     def flow_del(self, flow_cfg, strictf):
         flow_mod_msg = message.flow_mod()
@@ -1393,7 +1394,8 @@ class Switch:
         logging.info("Sending flow_mod(del), xid=%d"
                         % (flow_mod_msg.header.xid)
                         )
-        return (self.controller.message_send(flow_mod_msg) != -1)
+        self.controller.message_send(flow_mod_msg)
+        return True
 
     def barrier(self):
         barrier = message.barrier_request()

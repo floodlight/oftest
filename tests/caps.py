@@ -58,8 +58,7 @@ def flow_caps_common(obj, is_exact=True):
 
     # Make sure we can install at least one flow
     logging.info("Inserting initial flow")
-    rv = obj.controller.message_send(request)
-    obj.assertTrue(rv != -1, "Error installing flow mod")
+    obj.controller.message_send(request)
     obj.assertEqual(do_barrier(obj.controller, timeout=10), 0, "Barrier failed")
     flow_count = 1
 
@@ -68,7 +67,7 @@ def flow_caps_common(obj, is_exact=True):
 
     while True:
         request.match.nw_src += 1
-        rv = obj.controller.message_send(request)
+        obj.controller.message_send(request)
         flow_count += 1
         if flow_count % count_check == 0:
             obj.assertEqual(do_barrier(obj.controller, timeout=10), 0, "Barrier failed")

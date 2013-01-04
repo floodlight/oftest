@@ -57,8 +57,7 @@ class NoAction(base_tests.SimpleDataPlane):
         msg.command = ofp.OFPFC_ADD
         msg.buffer_id = 0xffffffff
         msg.match = match
-        rv = self.controller.message_send(msg)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.controller.message_send(msg)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         #Sending N packets matching the flow inserted
@@ -163,8 +162,7 @@ class ForwardAll(base_tests.SimpleDataPlane):
         request.actions.add(act)
         
         logging.info("Inserting flow")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.controller.message_send(request)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         #Send Packet matching the flow
@@ -217,8 +215,7 @@ class ForwardController(base_tests.SimpleDataPlane):
             request.actions.add(act)
 
             logging.info("Inserting flow")
-            rv = self.controller.message_send(request)
-            self.assertTrue(rv != -1, "Error installing flow mod")
+            self.controller.message_send(request)
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
             
             #Send packet matching the flow
@@ -271,8 +268,7 @@ class ForwardLocal(base_tests.SimpleDataPlane):
             request.actions.add(act)
 
             logging.info("Inserting flow")
-            rv = self.controller.message_send(request)
-            self.assertTrue(rv != -1, "Error installing flow mod")
+            self.controller.message_send(request)
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
             #Send packet matching the flow
@@ -323,8 +319,7 @@ class ForwardFlood(base_tests.SimpleDataPlane):
         request.actions.add(act)
         
         logging.info("Inserting flow")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.controller.message_send(request)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         #Send Packet matching the flow
@@ -375,8 +370,7 @@ class ForwardInport(base_tests.SimpleDataPlane):
             
         request.actions.add(act)
         logging.info("Inserting flow")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.controller.message_send(request)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         #Send packet matching the flow
@@ -420,8 +414,7 @@ class ForwardTable(base_tests.SimpleDataPlane):
         act = action.action_output()
         act.port = ofp.OFPP_TABLE
         pkt_out.actions.add(act)
-        rv = self.controller.message_send(pkt_out)
-        self.assertTrue(rv == 0, "Error sending out message")
+        self.controller.message_send(pkt_out)
 
         #Verifying packet out message recieved on the expected dataplane port. 
         (of_port, pkt, pkt_time) = self.dataplane.poll(port_number=of_ports[1],

@@ -68,8 +68,7 @@ class FlowExpire(base_tests.SimpleDataPlane):
         request.actions.add(act)
         
         logging.info("Inserting flow")
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.controller.message_send(request)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_FLOW_REMOVED,
