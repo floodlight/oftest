@@ -695,21 +695,20 @@ def verify_flowstats(self,match,byte_count=None,packet_count=None):
             packet_counter += item.packet_count
             byte_counter += item.byte_count
 
-            logging.info("Recieved" + str(item.packet_count) + " packets")
-           
-            logging.info("Received " + str(item.byte_count) + "bytes")
+        logging.info("Received %d packets", packet_counter)
+        logging.info("Received %d bytes", byte_counter)
 
-        if (packet_count == None or packet_count == packet_counter) and \
-           (byte_count == None or byte_count == byte_counter):
+        if (packet_count == None or packet_counter >= packet_count) and \
+           (byte_count == None or byte_counter >= byte_count):
             break
 
         sleep(0.1)
     
     if packet_count != None :
-        self.assertEqual(packet_count,item.packet_count,"packet_count counter is not incremented correctly")
+        self.assertEqual(packet_count, packet_counter, "packet_count counter is not incremented correctly")
 
     if byte_count != None :   
-        self.assertEqual(byte_count,item.byte_count,"byte_count counter is not incremented correctly")
+        self.assertEqual(byte_count, byte_counter, "byte_count counter is not incremented correctly")
 
 
 def verify_portstats(self, port,tx_packets=None,rx_packets=None,rx_byte=None,tx_byte=None):
