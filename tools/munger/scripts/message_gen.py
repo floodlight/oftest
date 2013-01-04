@@ -296,7 +296,7 @@ def gen_message_wrapper(msg):
     _p1('"""')
 
     print
-    _p1("def __init__(self):")
+    _p1("def __init__(self, **kwargs):")
     if has_core_members:
         _p2(parent + ".__init__(self)")
     _p2("self.header = ofp_header()")
@@ -308,6 +308,11 @@ def gen_message_wrapper(msg):
             _p2('self.' + list_var + ' = ' + list_type + '()')
     if has_string:
         _p2('self.data = ""')
+    _p2('for (k, v) in kwargs.items():')
+    _p3('if hasattr(self, k):')
+    _p4('setattr(self, k, v)')
+    _p3('else:')
+    _p4('raise NameError("field %s does not exist in %s" % (k, self.__class__))')
 
     print """
 
@@ -528,12 +533,17 @@ class --TYPE--_stats_request(ofp_stats_request, ofp_--TYPE--_stats_request):
     \"""
     Wrapper class for --TYPE-- stats request message
     \"""
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         ofp_stats_request.__init__(self)
         ofp_--TYPE--_stats_request.__init__(self)
         self.header.type = OFPT_STATS_REQUEST
         self.type = --STATS_NAME--
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)

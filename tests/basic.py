@@ -53,8 +53,7 @@ class EchoWithData(base_tests.SimpleProtocol):
     Test echo response with short string data
     """
     def runTest(self):
-        request = message.echo_request()
-        request.data = 'OpenFlow Will Rule The World'
+        request = message.echo_request(data='OpenFlow Will Rule The World')
         response, pkt = self.controller.transact(request)
         self.assertTrue(response is not None,
                         "Did not get echo reply (with data)")
@@ -203,9 +202,8 @@ class PacketOut(base_tests.SimpleDataPlane):
                (simple_eth_packet(pktlen=40), "tiny Ethernet packet")]:
 
                logging.info("PKT OUT test with %s, port %s" % (opt, dp_port))
-               msg = message.packet_out()
-               msg.in_port = ofp.OFPP_NONE
-               msg.data = str(outpkt)
+               msg = message.packet_out(in_port=ofp.OFPP_NONE,
+                                        data=str(outpkt))
                act = action.action_output()
                act.port = dp_port
                msg.actions.add(act)
@@ -258,9 +256,8 @@ class PacketOutMC(base_tests.SimpleDataPlane):
                dp_ports = of_ports[0:num_ports]
                logging.info("PKT OUT test with " + opt +
                                  ", ports " + str(dp_ports))
-               msg = message.packet_out()
-               msg.in_port = ofp.OFPP_NONE
-               msg.data = str(outpkt)
+               msg = message.packet_out(in_port=ofp.OFPP_NONE,
+                                        data=str(outpkt))
                act = action.action_output()
                for i in range(0,num_ports):
                   act.port = dp_ports[i]
@@ -289,9 +286,8 @@ class FlowStatsGet(base_tests.SimpleProtocol):
         self.controller.message_send(request)
         
         logging.info("Sending flow request")
-        request = message.flow_stats_request()
-        request.out_port = ofp.OFPP_NONE
-        request.table_id = 0xff
+        request = message.flow_stats_request(out_port=ofp.OFPP_NONE,
+                                             table_id=0xff)
         request.match.wildcards = 0 # ofp.OFPFW_ALL
         response, pkt = self.controller.transact(request)
         self.assertTrue(response is not None,
