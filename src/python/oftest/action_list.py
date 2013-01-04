@@ -54,8 +54,10 @@ class action_list(object):
 
     """
 
-    def __init__(self):
-        self.actions = []
+    def __init__(self, actions=None):
+        if actions == None:
+            actions = []
+        self.actions = actions
 
     def pack(self):
         """
