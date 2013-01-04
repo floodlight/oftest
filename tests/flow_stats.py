@@ -148,7 +148,7 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
         # send flow
         logging.info("Inserting flow")
         self.controller.message_send(flow_mod_msg)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         # no packets sent, so zero packet count
         self.verifyStats(flow_mod_msg, match, ofp.OFPP_NONE, test_timeout, 0)
@@ -270,7 +270,7 @@ class TwoFlowStats(base_tests.SimpleDataPlane):
         self.controller.message_send(flow_mod_msg1)
         logging.info("Inserting flow2")
         self.controller.message_send(flow_mod_msg2)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         num_pkt1s = random.randint(10,30)
         logging.info("Sending " + str(num_pkt1s) + " pkt1s")
@@ -381,7 +381,7 @@ class AggregateStats(base_tests.SimpleDataPlane):
         self.controller.message_send(flow_mod_msg1)
         logging.info("Inserting flow2")
         self.controller.message_send(flow_mod_msg2)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         num_pkt1s = random.randint(10,30)
         logging.info("Sending " + str(num_pkt1s) + " pkt1s")
@@ -498,7 +498,7 @@ class DeletedFlowStats(base_tests.SimpleDataPlane):
         # send flow
         logging.info("Inserting flow")
         self.controller.message_send(flow_mod_msg)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         # send packet N times
         num_sends = random.randint(10,20)

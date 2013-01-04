@@ -152,7 +152,7 @@ class BSNMirrorAction(base_tests.SimpleDataPlane):
         flow_mod.actions.add(act3)
         delete_all_flows(self.controller)
         self.controller.message_send(flow_mod)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
         
         logging.info("Sending packet to port %s" % ports[0])
         self.dataplane.send(ports[0], str(pkt))

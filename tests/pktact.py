@@ -125,7 +125,7 @@ class DirectPacket(base_tests.SimpleDataPlane):
 
             logging.info("Inserting flow")
             self.controller.message_send(request)
-            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+            do_barrier(self.controller)
 
             logging.info("Sending packet to dp port " + 
                            str(ingress_port))
@@ -189,7 +189,7 @@ class DirectPacketController(base_tests.SimpleDataPlane):
 
         logging.info("Inserting flow")
         self.controller.message_send(request)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         logging.info("Sending packet to dp port " +
                         str(ingress_port))
@@ -276,7 +276,7 @@ class DirectPacketQueue(base_tests.SimpleDataPlane):
 
                 logging.info("Inserting flow")
                 self.controller.message_send(request)
-                self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+                do_barrier(self.controller)
 
                 # Get current stats for selected egress queue
 
@@ -405,7 +405,7 @@ class DirectPacketControllerQueue(base_tests.SimpleDataPlane):
 
                 logging.info("Inserting flow")
                 self.controller.message_send(request)
-                self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+                do_barrier(self.controller)
 
                 # Get current stats for selected egress queue
 
@@ -525,7 +525,7 @@ class DirectTwoPorts(base_tests.SimpleDataPlane):
 
             logging.info("Inserting flow")
             self.controller.message_send(request)
-            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+            do_barrier(self.controller)
 
             logging.info("Sending packet to dp port " + 
                            str(ingress_port))
@@ -579,7 +579,7 @@ class DirectMCNonIngress(base_tests.SimpleDataPlane):
 
             logging.info("Inserting flow")
             self.controller.message_send(request)
-            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+            do_barrier(self.controller)
 
             logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
@@ -631,7 +631,7 @@ class DirectMC(base_tests.SimpleDataPlane):
 
             logging.info("Inserting flow")
             self.controller.message_send(request)
-            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+            do_barrier(self.controller)
 
             logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
@@ -674,7 +674,7 @@ class Flood(base_tests.SimpleDataPlane):
 
             logging.info("Inserting flow")
             self.controller.message_send(request)
-            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+            do_barrier(self.controller)
 
             logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
@@ -722,7 +722,7 @@ class FloodPlusIngress(base_tests.SimpleDataPlane):
 
             logging.info("Inserting flow")
             self.controller.message_send(request)
-            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+            do_barrier(self.controller)
 
             logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
@@ -765,7 +765,7 @@ class All(base_tests.SimpleDataPlane):
 
             logging.info("Inserting flow")
             self.controller.message_send(request)
-            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+            do_barrier(self.controller)
 
             logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
@@ -813,7 +813,7 @@ class AllPlusIngress(base_tests.SimpleDataPlane):
 
             logging.info("Inserting flow")
             self.controller.message_send(request)
-            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+            do_barrier(self.controller)
 
             logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
@@ -870,7 +870,7 @@ class FloodMinusPort(base_tests.SimpleDataPlane):
 
             logging.info("Inserting flow")
             self.controller.message_send(request)
-            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+            do_barrier(self.controller)
 
             logging.info("Sending packet to dp port " + str(ingress_port))
             logging.info("No flood port is " + str(no_flood_port))
@@ -883,7 +883,7 @@ class FloodMinusPort(base_tests.SimpleDataPlane):
             rv = port_config_set(self.controller, no_flood_port,
                                  0, ofp.OFPPC_NO_FLOOD)
             self.assertEqual(rv, 0, "Failed to reset port config")
-            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+            do_barrier(self.controller)
 
             # Check that packets are now flooded to no_flood_port
             logging.info("Sending packet to dp port " + str(ingress_port))
@@ -952,7 +952,7 @@ class SingleWildcardMatchPriority(BaseMatchCase):
 
     def _ClearTable(self):
         delete_all_flows(self.controller)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
     def runTest(self):
         
@@ -1030,7 +1030,7 @@ class SingleWildcardMatchPriority(BaseMatchCase):
             msg.out_port = ofp.OFPP_NONE
             logging.debug("Remove flow with priority " + str(prio))
             self.controller.message_send(msg)
-            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+            do_barrier(self.controller)
         else:
             raise Exception("Not initialized")
 
@@ -1777,7 +1777,7 @@ class FlowToggle(BaseMatchCase):
         # Install the first set of flows
         for f_idx in range(flow_count):
             self.controller.message_send(flows[0][f_idx])
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
     
         logging.info("Installed %d flows" % flow_count)
     
@@ -1797,8 +1797,7 @@ class FlowToggle(BaseMatchCase):
                 for f_idx in range(flow_count):
                     self.controller.message_send(flows[t_idx][f_idx])
                     updates += 1
-                self.assertEqual(do_barrier(self.controller), 0,
-                                 "Barrier failed")
+                do_barrier(self.controller)
 
         end = time.time()
         divisor = end - start or (end - start + 1)
@@ -1949,7 +1948,7 @@ class MatchEach(base_tests.SimpleDataPlane):
             # This flow should not match, but it has a higher priority.
             addFlow(matching=False, priority=1, output_port=ofp.OFPP_IN_PORT)
 
-            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+            do_barrier(self.controller)
 
             logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
@@ -2086,7 +2085,7 @@ class DirectBadPacketBase(base_tests.SimpleDataPlane):
         request2.actions.add(act)
         self.controller.message_send(request2)
 
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         logging.info("Sending packet to dp port " + 
                        str(ingress_port))

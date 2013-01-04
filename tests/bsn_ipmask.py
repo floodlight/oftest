@@ -153,7 +153,7 @@ class BSNConfigIPMask(base_tests.SimpleDataPlane):
               self, pkt1, ing_port=ports[0], egr_ports=[ports[2]],
               wildcards=wildcards))
 
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
             
         msg(ip0)
         self.dataplane.send(ports[0], str(pkt0))

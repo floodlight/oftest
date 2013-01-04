@@ -76,7 +76,7 @@ class LoadBarrier(base_tests.SimpleProtocol):
         request.actions.add(act)
 
         self.controller.message_send(request)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         # Create packet out and send to port lb_port + 1
         msg = message.packet_out()
@@ -91,7 +91,7 @@ class LoadBarrier(base_tests.SimpleProtocol):
         self.controller.message_send(msg)
 
         for idx in range(0, barrier_count):
-            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+            do_barrier(self.controller)
             # To do:  Add some interesting functionality here
             logging.info("Barrier %d completed" % idx)
 
@@ -113,7 +113,7 @@ class PacketInLoad(base_tests.SimpleDataPlane):
         # Poll controller with expect message type packet in
 
         delete_all_flows(self.controller)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
         out_count = 0
         in_count = 0
 

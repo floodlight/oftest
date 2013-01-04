@@ -265,7 +265,7 @@ class PacketIn(base_tests.SimpleDataPlane):
 
         #Clear Switch state
         delete_all_flows(self.controller)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         logging.info("Sending a Simple tcp packet a dataplane port")
         logging.info("Expecting a packet_in event on the control plane")

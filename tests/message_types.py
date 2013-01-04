@@ -369,7 +369,7 @@ class PacketInSizeAction(base_tests.SimpleDataPlane):
             
             logging.info("Inserting flow....")
             self.controller.message_send(request)
-            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+            do_barrier(self.controller)
             
             #Send packet matching the flow
             logging.debug("Sending packet to dp port " + str(of_ports[0]))
@@ -467,7 +467,7 @@ class PacketInBodyAction(base_tests.SimpleDataPlane):
 
         logging.info("Inserting flow....")
         self.controller.message_send(request)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
             
         #Send packet matching the flow
         logging.debug("Sending packet to dp port " + str(of_ports[0]))
@@ -560,7 +560,7 @@ class PortModFlood(base_tests.SimpleDataPlane):
         rv = port_config_set(self.controller, of_ports[0],
                              port_config ^ ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD)
         self.assertTrue(rv != -1, "Error sending port mod")
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         # Verify change took place with features request
         logging.info("Verify the change and then set it back")
@@ -576,7 +576,7 @@ class PortModFlood(base_tests.SimpleDataPlane):
         rv = port_config_set(self.controller, of_ports[0],port_config,
                              ofp.OFPPC_NO_FLOOD)
         self.assertTrue(rv != -1, "Error sending port mod")
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
 
 class PortModFwd(base_tests.SimpleDataPlane):
@@ -603,7 +603,7 @@ class PortModFwd(base_tests.SimpleDataPlane):
         rv = port_config_set(self.controller, of_ports[0],
                              port_config ^ ofp.OFPPC_NO_FWD, ofp.OFPPC_NO_FWD)
         self.assertTrue(rv != -1, "Error sending port mod")
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         # Verify change took place with features request
         logging.info("Verify the change and then set it back")
@@ -620,7 +620,7 @@ class PortModFwd(base_tests.SimpleDataPlane):
         rv = port_config_set(self.controller, of_ports[0],port_config,
                              ofp.OFPPC_NO_FWD)
         self.assertTrue(rv != -1, "Error sending port mod")
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
 
 class PortModPacketIn(base_tests.SimpleDataPlane):
@@ -647,7 +647,7 @@ class PortModPacketIn(base_tests.SimpleDataPlane):
         rv = port_config_set(self.controller, of_ports[0],
                              port_config ^ ofp.OFPPC_NO_PACKET_IN, ofp.OFPPC_NO_PACKET_IN)
         self.assertTrue(rv != -1, "Error sending port mod")
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         # Verify change took place with features request
         logging.info("Verify the change and then set it back")
@@ -664,7 +664,7 @@ class PortModPacketIn(base_tests.SimpleDataPlane):
         rv = port_config_set(self.controller, of_ports[0],port_config,
                              ofp.OFPPC_NO_PACKET_IN)
         self.assertTrue(rv != -1, "Error sending port mod")
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
 
 class DescStatsReplyBody(base_tests.SimpleDataPlane):

@@ -58,7 +58,7 @@ def flow_caps_common(obj, is_exact=True):
     # Make sure we can install at least one flow
     logging.info("Inserting initial flow")
     obj.controller.message_send(request)
-    obj.assertEqual(do_barrier(obj.controller, timeout=10), 0, "Barrier failed")
+    do_barrier(obj.controller, timeout=10)
     flow_count = 1
 
     logging.info("Table idx: " + str(table_idx))
@@ -69,7 +69,7 @@ def flow_caps_common(obj, is_exact=True):
         obj.controller.message_send(request)
         flow_count += 1
         if flow_count % count_check == 0:
-            obj.assertEqual(do_barrier(obj.controller, timeout=10), 0, "Barrier failed")
+            do_barrier(obj.controller, timeout=10)
             response, pkt = obj.controller.transact(tstats)
             obj.assertTrue(response is not None, "Get tab stats failed")
             logging.info(response.show())

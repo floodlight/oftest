@@ -78,7 +78,7 @@ class PacketIn(base_tests.SimpleDataPlane):
         # Poll controller with expect message type packet in
 
         delete_all_flows(self.controller)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         vid = test_param_get('vid', default=TEST_VID_DEFAULT)
 
@@ -128,7 +128,7 @@ class PacketInDefaultDrop(base_tests.SimpleDataPlane):
 
     def runTest(self):
         delete_all_flows(self.controller)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         for of_port in config["port_map"].keys():
             pkt = simple_tcp_packet()
@@ -166,7 +166,7 @@ class PacketInBroadcastCheck(base_tests.SimpleDataPlane):
         self.assertTrue(len(config["port_map"]) > 1, "Too few ports for test")
 
         delete_all_flows(self.controller)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         of_ports = config["port_map"].keys()
         d_port = of_ports[0]
@@ -369,7 +369,7 @@ class PortConfigMod(base_tests.SimpleProtocol):
         rv = port_config_set(self.controller, of_port,
                              port_config ^ ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD)
         self.assertTrue(rv != -1, "Error sending port mod")
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         # Verify change took place with same feature request
         (hw_addr, port_config2, advert) = \
@@ -384,7 +384,7 @@ class PortConfigMod(base_tests.SimpleProtocol):
         rv = port_config_set(self.controller, of_port, port_config,
                              ofp.OFPPC_NO_FLOOD)
         self.assertTrue(rv != -1, "Error sending port mod")
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
 class PortConfigModErr(base_tests.SimpleProtocol):
     """

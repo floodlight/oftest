@@ -297,10 +297,10 @@ def do_barrier(ctrl, timeout=-1):
     """
     b = message.barrier_request()
     (resp, pkt) = ctrl.transact(b, timeout=timeout)
+    if resp is None:
+        raise AssertionError("barrier failed")
     # We'll trust the transaction processing in the controller that xid matched
-    if not resp:
-        return -1
-    return 0
+    return 0 # for backwards compatibility
 
 def port_config_get(controller, port_no):
     """
@@ -576,7 +576,7 @@ def flow_msg_install(parent, request, clear_table_override=None):
     logging.debug("Insert flow")
     parent.controller.message_send(request)
 
-    parent.assertEqual(do_barrier(parent.controller), 0, "Barrier failed")
+    do_barrier(parent.controller)
 
 def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=None,
                               dl_vlan=-1, pkt=None, exp_pkt=None,

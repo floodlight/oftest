@@ -42,7 +42,7 @@ def exact_match(self,of_ports,priority=None):
     msg.actions.add(act)
 
     self.controller.message_send(msg)
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    do_barrier(self.controller)
 
     return (pkt_exactflow,match)
 
@@ -69,7 +69,7 @@ def exact_match_with_prio(self,of_ports,priority=None):
     msg.actions.add(act)
 
     self.controller.message_send(msg)
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    do_barrier(self.controller)
 
     return (pkt_exactflow,match)         
        
@@ -97,7 +97,7 @@ def match_all_except_source_address(self,of_ports,priority=None):
     msg1.actions.add(act1)
 
     self.controller.message_send(msg1)
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    do_barrier(self.controller)
 
     return (pkt_wildcardsrc,match1)
 
@@ -124,7 +124,7 @@ def match_ethernet_src_address(self,of_ports,priority=None):
     msg.actions.add(act)
 
     self.controller.message_send(msg)
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    do_barrier(self.controller)
 
     return (pkt_MatchSrc,match)
       
@@ -150,7 +150,7 @@ def match_ethernet_dst_address(self,of_ports,priority=None):
     msg.actions.add(act)
 
     self.controller.message_send(msg)
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    do_barrier(self.controller)
 
     return (pkt_matchdst,match)
 
@@ -176,7 +176,7 @@ def wildcard_all(self,of_ports,priority=None):
         msg2.priority = priority
 
     self.controller.message_send(msg2)
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    do_barrier(self.controller)
 
     return (pkt_wildcard,match2)
 
@@ -209,7 +209,7 @@ def wildcard_all_except_ingress(self,of_ports,priority=None):
         msg3.priority = priority
 
     self.controller.message_send(msg3)
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    do_barrier(self.controller)
 
     return (pkt_matchingress,match3)
 
@@ -241,7 +241,7 @@ def wildcard_all_except_ingress1(self,of_ports,priority=None):
         msg3.priority = priority
 
     self.controller.message_send(msg3)
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    do_barrier(self.controller)
 
     return (pkt_matchingress,match3)
 
@@ -268,7 +268,7 @@ def match_vlan_id(self,of_ports,priority=None):
     msg.actions.add(act)
 
     self.controller.message_send(msg)
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    do_barrier(self.controller)
 
     return (pkt_matchvlanid,match)
 
@@ -294,7 +294,7 @@ def match_vlan_pcp(self,of_ports,priority=None):
     msg.actions.add(act)
 
     self.controller.message_send(msg)
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    do_barrier(self.controller)
 
     return (pkt_matchvlanpcp,match)
 
@@ -321,7 +321,7 @@ def match_mul_l2(self,of_ports,priority=None):
     msg.actions.add(act)
 
     self.controller.message_send(msg)
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    do_barrier(self.controller)
 
     return (pkt_mulL2,match)
 
@@ -347,7 +347,7 @@ def match_mul_l4(self,of_ports,priority=None):
     msg.actions.add(act)
 
     self.controller.message_send(msg)
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    do_barrier(self.controller)
 
     return (pkt_mulL4,match)  
 
@@ -372,7 +372,7 @@ def match_ip_tos(self,of_ports,priority=None):
     msg.actions.add(act)
 
     self.controller.message_send(msg)
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    do_barrier(self.controller)
 
     return (pkt_iptos,match)
 
@@ -397,7 +397,7 @@ def match_ip_protocol(self,of_ports,priority=None):
     msg.actions.add(act)
 
     self.controller.message_send(msg)
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    do_barrier(self.controller)
 
     return (pkt_iptos,match)
 
@@ -424,7 +424,7 @@ def match_tcp_src(self,of_ports,priority=None):
     msg.actions.add(act)
 
     self.controller.message_send(msg)
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    do_barrier(self.controller)
 
     return (pkt_matchtSrc,match)  
 
@@ -449,7 +449,7 @@ def match_tcp_dst(self,of_ports,priority=None):
     msg.actions.add(act)
 
     self.controller.message_send(msg)
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    do_barrier(self.controller)
 
     return (pkt_matchdst,match)        
 
@@ -476,7 +476,7 @@ def match_ethernet_type(self,of_ports,priority=None):
     msg.actions.add(act)
 
     self.controller.message_send(msg)
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    do_barrier(self.controller)
     return (pkt_matchtype,match)
 
    
@@ -500,7 +500,7 @@ def strict_modify_flow_action(self,egress_port,match,priority=None):
 
     # Send the flow with action A'
     self.controller.message_send (msg5)
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    do_barrier(self.controller)
 
 def modify_flow_action(self,of_ports,match,priority=None):
 # Modify the flow action
@@ -522,7 +522,7 @@ def modify_flow_action(self,of_ports,match,priority=None):
 
     # Send the flow with action A'
     self.controller.message_send (msg8)
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    do_barrier(self.controller)
 
 def enqueue(self,ingress_port,egress_port,egress_queue_id):
 #Generate a flow with enqueue action i.e output to a queue configured on a egress_port
@@ -544,7 +544,7 @@ def enqueue(self,ingress_port,egress_port,egress_queue_id):
     
     logging.info("Inserting flow")
     self.controller.message_send(request)
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    do_barrier(self.controller)
     return (pkt,match)
 
 
@@ -815,7 +815,7 @@ def strict_delete(self,match,priority=None):
     if priority != None :
         msg4.priority = priority
     self.controller.message_send(msg4)
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    do_barrier(self.controller)
 
 
 
@@ -833,7 +833,7 @@ def nonstrict_delete(self,match,priority=None):
         msg6.priority = priority
 
     self.controller.message_send(msg6)
-    self.assertEqual(do_barrier(self.controller),0, "Barrier failed")
+    do_barrier(self.controller)
 
 
 ###########################################################################################################################################################

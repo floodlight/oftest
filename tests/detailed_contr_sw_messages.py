@@ -65,7 +65,7 @@ class OverlapChecking(base_tests.SimpleDataPlane):
         act3.port = of_ports[1]
         msg3.actions.add(act3)
         self.controller.message_send(msg3)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         # Verify Flow does not get inserted 
         verify_tablestats(self,expect_active=1)
@@ -189,7 +189,7 @@ class EmerFlowTimeout(base_tests.SimpleProtocol):
         logging.info("Inserting flow")
         self.controller.message_send(request)
 
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         #Verify OFPET_FLOW_MOD_FAILED/OFPFMFC_OVERLAP error is recieved on the control plane
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,         
@@ -234,7 +234,7 @@ class MissingModifyAdd(base_tests.SimpleDataPlane):
 
         logging.info("Inserting flow")
         self.controller.message_send(request)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed") 
+        do_barrier(self.controller) 
 
         #Verify the flow gets added i.e. active_count= 1
         verify_tablestats(self,expect_active=1)
@@ -399,7 +399,7 @@ class SendFlowRem(base_tests.SimpleDataPlane):
         msg9.flags |= ofp.OFPFF_SEND_FLOW_REM
         rv1 = self.controller.message_send(msg9)
         self.assertTrue(rv1 != -1, "Error installing flow mod")
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         # Delete the flow-2
         delete_all_flows(self.controller)
@@ -573,7 +573,7 @@ class Outport1(base_tests.SimpleDataPlane):
         msg7.match = match
 
         self.controller.message_send(msg7)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         # Verify flow will not get deleted, active_entries in table_stats_request = 1
         verify_tablestats(self,expect_active=1)
@@ -589,7 +589,7 @@ class Outport1(base_tests.SimpleDataPlane):
         msg7.match = match
 
         self.controller.message_send(msg7)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
         
         #Verify flow gets deleted.
         verify_tablestats(self,expect_active=0)
@@ -622,7 +622,7 @@ class IdleTimeout(base_tests.SimpleDataPlane):
         msg9.flags |= ofp.OFPFF_SEND_FLOW_REM
         rv1 = self.controller.message_send(msg9)
         self.assertTrue(rv1 != -1, "Error installing flow mod")
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         #Verify flow gets inserted
         verify_tablestats(self,expect_active=1)
@@ -704,7 +704,7 @@ class HardTimeout(base_tests.SimpleDataPlane):
         msg9.flags |= ofp.OFPFF_SEND_FLOW_REM
         rv1 = self.controller.message_send(msg9)
         self.assertTrue(rv1 != -1, "Error installing flow mod")
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         #Verify flow gets inserted
         verify_tablestats(self,expect_active=1)
@@ -760,7 +760,7 @@ class FlowTimeout(base_tests.SimpleDataPlane):
         msg3.actions.add(act3)
 
         self.controller.message_send(msg3)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         #Verify no flow removed message is generated
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_FLOW_REMOVED,

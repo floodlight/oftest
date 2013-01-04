@@ -176,7 +176,7 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
         # send flow
         logging.info("Inserting flow")
         self.controller.message_send(flow_mod_msg)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         # get initial port stats count
         initTxInPort, initRxInPort = getStats(self, ingress_port)
@@ -247,7 +247,7 @@ class MultiFlowStats(base_tests.SimpleDataPlane):
         self.controller.message_send(flow_mod_msg1)
         logging.info("Inserting flow2")
         self.controller.message_send(flow_mod_msg2)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         # get initial port stats count
         initTxInPort, initRxInPort = getStats(self, ingress_port)
@@ -323,7 +323,7 @@ class AllPortStats(base_tests.SimpleDataPlane):
         self.controller.message_send(flow_mod_msg1)
         logging.info("Inserting flow2")
         self.controller.message_send(flow_mod_msg2)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         num_pkt1s = random.randint(5,10)
         logging.info("Sending " + str(num_pkt1s) + " pkt1s")

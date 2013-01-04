@@ -68,7 +68,7 @@ class FlowExpire(base_tests.SimpleDataPlane):
         
         logging.info("Inserting flow")
         self.controller.message_send(request)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_FLOW_REMOVED,
                                                timeout=test_timeout)

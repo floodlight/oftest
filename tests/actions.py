@@ -57,7 +57,7 @@ class NoAction(base_tests.SimpleDataPlane):
         msg.buffer_id = 0xffffffff
         msg.match = match
         self.controller.message_send(msg)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         #Sending N packets matching the flow inserted
         for pkt_cnt in range(5):
@@ -160,7 +160,7 @@ class ForwardAll(base_tests.SimpleDataPlane):
         
         logging.info("Inserting flow")
         self.controller.message_send(request)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         #Send Packet matching the flow
         logging.info("Sending packet to dp port " + str(ingress_port))
@@ -211,7 +211,7 @@ class ForwardController(base_tests.SimpleDataPlane):
 
             logging.info("Inserting flow")
             self.controller.message_send(request)
-            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+            do_barrier(self.controller)
             
             #Send packet matching the flow
             logging.info("Sending packet to dp port " + str(ingress_port))
@@ -262,7 +262,7 @@ class ForwardLocal(base_tests.SimpleDataPlane):
 
             logging.info("Inserting flow")
             self.controller.message_send(request)
-            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+            do_barrier(self.controller)
 
             #Send packet matching the flow
             logging.info("Sending packet to dp port " + str(ingress_port))
@@ -311,7 +311,7 @@ class ForwardFlood(base_tests.SimpleDataPlane):
         
         logging.info("Inserting flow")
         self.controller.message_send(request)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         #Send Packet matching the flow
         logging.info("Sending packet to dp port " + str(ingress_port))
@@ -360,7 +360,7 @@ class ForwardInport(base_tests.SimpleDataPlane):
         request.actions.add(act)
         logging.info("Inserting flow")
         self.controller.message_send(request)
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        do_barrier(self.controller)
 
         #Send packet matching the flow
         logging.info("Sending packet to dp port " + str(ingress_port))
