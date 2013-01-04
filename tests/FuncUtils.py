@@ -650,14 +650,13 @@ def verify_tablestats(self,expect_lookup=None,expect_match=None,expect_active=No
         active = 0
         
         for item in response.stats:
-
             lookedup += item.lookup_count
             matched += item.matched_count
             active += item.active_count
 
-            logging.info("Packets Looked up " + str(lookedup) + " packets")
-            logging.info("Packets matched " + str(matched) + "packets")
-            logging.info("Active flow entries" + str(active) + "flows")
+        logging.info("Packets Looked up: %d", lookedup)
+        logging.info("Packets matched: %d", matched)
+        logging.info("Active flow entries: %d", active)
 
         if (expect_lookup == None or expect_lookup == lookedup) and \
            (expect_match == None or expect_match == matched) and \
