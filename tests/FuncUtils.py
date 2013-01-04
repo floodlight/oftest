@@ -658,9 +658,9 @@ def verify_tablestats(self,expect_lookup=None,expect_match=None,expect_active=No
         logging.info("Packets matched: %d", matched)
         logging.info("Active flow entries: %d", active)
 
-        if (expect_lookup == None or expect_lookup == lookedup) and \
-           (expect_match == None or expect_match == matched) and \
-           (expect_active == None or expect_active == active):
+        if (expect_lookup == None or lookedup >= expect_lookup) and \
+           (expect_match == None or matched >= expect_match) and \
+           (expect_active == None or active >= expect_active):
             break
 
         sleep(0.1)
