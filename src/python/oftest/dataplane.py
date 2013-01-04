@@ -24,7 +24,6 @@ from threading import Lock
 from threading import Condition
 import select
 import logging
-from oft_assert import oft_assert
 from ofutils import *
 
 have_pypcap = False
