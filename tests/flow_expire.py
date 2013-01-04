@@ -65,7 +65,7 @@ class FlowExpire(base_tests.SimpleDataPlane):
         request.idle_timeout = 1
         request.flags |= ofp.OFPFF_SEND_FLOW_REM
         act.port = egress_port
-        self.assertTrue(request.actions.add(act), "Could not add action")
+        request.actions.add(act)
         
         logging.info("Inserting flow")
         rv = self.controller.message_send(request)

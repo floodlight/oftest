@@ -535,8 +535,7 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None
     if action_list is not None:
         for act in action_list:
             logging.debug("Adding action " + act.show())
-            rv = request.actions.add(act)
-            parent.assertTrue(rv, "Could not add action" + act.show())
+            request.actions.add(act)
 
     # Set up output/enqueue action if directed
     if egr_queue is not None:
@@ -545,16 +544,12 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None
         for egr_port in egr_port_list:
             act.port = egr_port
             act.queue_id = egr_queue
-            rv = request.actions.add(act)
-            parent.assertTrue(rv, "Could not add enqueue action " + 
-                              str(egr_port) + " Q: " + str(egr_queue))
+            request.actions.add(act)
     elif egr_ports is not None:
         for egr_port in egr_port_list:
             act = action.action_output()
             act.port = egr_port
-            rv = request.actions.add(act)
-            parent.assertTrue(rv, "Could not add output action " + 
-                              str(egr_port))
+            request.actions.add(act)
 
     logging.debug(request.show())
 
@@ -637,14 +632,14 @@ def flow_match_test_pktout(parent, ing_port, egr_ports,
     msg.data = str(pkt)
     if action_list is not None:
         for act in action_list:
-            assert(msg.actions.add(act))
+            msg.actions.add(act)
 
     # Set up output action
     if egr_ports is not None:
         for egr_port in egr_ports:
             act = action.action_output()
             act.port = egr_port
-            assert(msg.actions.add(act))
+            msg.actions.add(act)
 
     logging.debug(msg.show())
     rv = parent.controller.message_send(msg)

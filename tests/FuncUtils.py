@@ -39,7 +39,7 @@ def exact_match(self,of_ports,priority=None):
 
     act = action.action_output()
     act.port = of_ports[1]
-    self.assertTrue(msg.actions.add(act), "could not add action")
+    msg.actions.add(act)
 
     rv = self.controller.message_send(msg)
     self.assertTrue(rv != -1, "Error installing flow mod")
@@ -67,7 +67,7 @@ def exact_match_with_prio(self,of_ports,priority=None):
 
     act = action.action_output()
     act.port = of_ports[2]
-    self.assertTrue(msg.actions.add(act), "could not add action")
+    msg.actions.add(act)
 
     rv = self.controller.message_send(msg)
     self.assertTrue(rv != -1, "Error installing flow mod")
@@ -96,7 +96,7 @@ def match_all_except_source_address(self,of_ports,priority=None):
 
     act1 = action.action_output()
     act1.port = of_ports[1]
-    self.assertTrue(msg1.actions.add(act1), "could not add action")
+    msg1.actions.add(act1)
 
     rv = self.controller.message_send(msg1)
     self.assertTrue(rv != -1, "Error installing flow mod")
@@ -124,7 +124,7 @@ def match_ethernet_src_address(self,of_ports,priority=None):
 
     act = action.action_output()
     act.port = of_ports[1]
-    self.assertTrue(msg.actions.add(act), "could not add action")
+    msg.actions.add(act)
 
     rv = self.controller.message_send(msg)
     self.assertTrue(rv != -1, "Error installing flow mod")
@@ -151,7 +151,7 @@ def match_ethernet_dst_address(self,of_ports,priority=None):
 
     act = action.action_output()
     act.port = of_ports[1]
-    self.assertTrue(msg.actions.add(act), "could not add action")
+    msg.actions.add(act)
 
     rv = self.controller.message_send(msg)
     self.assertTrue(rv != -1, "Error installing flow mod")
@@ -176,7 +176,7 @@ def wildcard_all(self,of_ports,priority=None):
     msg2.match = match2
     act2 = action.action_output()
     act2.port = of_ports[1]
-    self.assertTrue(msg2.actions.add(act2), "could not add action")
+    msg2.actions.add(act2)
     if priority != None :
         msg2.priority = priority
 
@@ -209,7 +209,7 @@ def wildcard_all_except_ingress(self,of_ports,priority=None):
        
     act3 = action.action_output()
     act3.port = of_ports[1]
-    self.assertTrue(msg3.actions.add(act3), "could not add action")
+    msg3.actions.add(act3)
 
     if priority != None :
         msg3.priority = priority
@@ -243,7 +243,7 @@ def wildcard_all_except_ingress1(self,of_ports,priority=None):
        
     act3 = action.action_output()
     act3.port = of_ports[2]
-    self.assertTrue(msg3.actions.add(act3), "could not add action")
+    msg3.actions.add(act3)
     if priority != None :
         msg3.priority = priority
 
@@ -273,7 +273,7 @@ def match_vlan_id(self,of_ports,priority=None):
 
     act = action.action_output()
     act.port = of_ports[1]
-    self.assertTrue(msg.actions.add(act), "could not add action")
+    msg.actions.add(act)
 
     rv = self.controller.message_send(msg)
     self.assertTrue(rv != -1, "Error installing flow mod")
@@ -300,7 +300,7 @@ def match_vlan_pcp(self,of_ports,priority=None):
 
     act = action.action_output()
     act.port = of_ports[1]
-    self.assertTrue(msg.actions.add(act), "could not add action")
+    msg.actions.add(act)
 
     rv = self.controller.message_send(msg)
     self.assertTrue(rv != -1, "Error installing flow mod")
@@ -328,7 +328,7 @@ def match_mul_l2(self,of_ports,priority=None):
 
     act = action.action_output()
     act.port = of_ports[1]
-    self.assertTrue(msg.actions.add(act), "could not add action")
+    msg.actions.add(act)
 
     rv = self.controller.message_send(msg)
     self.assertTrue(rv != -1, "Error installing flow mod")
@@ -355,7 +355,7 @@ def match_mul_l4(self,of_ports,priority=None):
 
     act = action.action_output()
     act.port = of_ports[1]
-    self.assertTrue(msg.actions.add(act), "could not add action")
+    msg.actions.add(act)
 
     rv = self.controller.message_send(msg)
     self.assertTrue(rv != -1, "Error installing flow mod")
@@ -381,7 +381,7 @@ def match_ip_tos(self,of_ports,priority=None):
         msg.priority = priority
     act = action.action_output()
     act.port = of_ports[1]
-    self.assertTrue(msg.actions.add(act), "could not add action")
+    msg.actions.add(act)
 
     rv = self.controller.message_send(msg)
     self.assertTrue(rv != -1, "Error installing flow mod")
@@ -407,7 +407,7 @@ def match_ip_protocol(self,of_ports,priority=None):
         msg.priority = priority
     act = action.action_output()
     act.port = of_ports[1]
-    self.assertTrue(msg.actions.add(act), "could not add action")
+    msg.actions.add(act)
 
     rv = self.controller.message_send(msg)
     self.assertTrue(rv != -1, "Error installing flow mod")
@@ -435,7 +435,7 @@ def match_tcp_src(self,of_ports,priority=None):
 
     act = action.action_output()
     act.port = of_ports[1]
-    self.assertTrue(msg.actions.add(act), "could not add action")
+    msg.actions.add(act)
 
     rv = self.controller.message_send(msg)
     self.assertTrue(rv != -1, "Error installing flow mod")
@@ -461,7 +461,7 @@ def match_tcp_dst(self,of_ports,priority=None):
         msg.priority = priority
     act = action.action_output()
     act.port = of_ports[1]
-    self.assertTrue(msg.actions.add(act), "could not add action")
+    msg.actions.add(act)
 
     rv = self.controller.message_send(msg)
     self.assertTrue(rv != -1, "Error installing flow mod")
@@ -489,7 +489,7 @@ def match_ethernet_type(self,of_ports,priority=None):
 
     act = action.action_output()
     act.port = of_ports[1]
-    self.assertTrue(msg.actions.add(act), "could not add action")
+    msg.actions.add(act)
 
     rv = self.controller.message_send(msg)
     self.assertTrue(rv != -1, "Error installing flow mod")
@@ -510,7 +510,7 @@ def strict_modify_flow_action(self,egress_port,match,priority=None):
     msg5.buffer_id = 0xffffffff
     act5 = action.action_output()
     act5.port = egress_port
-    self.assertTrue(msg5.actions.add(act5), "could not add action")
+    msg5.actions.add(act5)
 
     if priority != None :
         msg5.priority = priority
@@ -533,7 +533,7 @@ def modify_flow_action(self,of_ports,match,priority=None):
     msg8.buffer_id = 0xffffffff
     act8 = action.action_output()
     act8.port = of_ports[2]
-    self.assertTrue(msg8.actions.add(act8), "could not add action")
+    msg8.actions.add(act8)
 
     if priority != None :
         msg8.priority = priority
@@ -559,7 +559,7 @@ def enqueue(self,ingress_port,egress_port,egress_queue_id):
     act = action.action_enqueue()
     act.port     = egress_port
     act.queue_id = egress_queue_id
-    self.assertTrue(request.actions.add(act), "Could not add action")
+    request.actions.add(act)
     
     logging.info("Inserting flow")
     rv = self.controller.message_send(request)

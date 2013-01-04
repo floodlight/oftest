@@ -212,7 +212,7 @@ class PacketOut(base_tests.SimpleDataPlane):
                msg.data = str(outpkt)
                act = action.action_output()
                act.port = dp_port
-               self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
+               msg.actions.add(act)
 
                logging.info("PacketOut to: " + str(dp_port))
                rv = self.controller.message_send(msg)
@@ -270,8 +270,7 @@ class PacketOutMC(base_tests.SimpleDataPlane):
                act = action.action_output()
                for i in range(0,num_ports):
                   act.port = dp_ports[i]
-                  self.assertTrue(msg.actions.add(act),
-                                  'Could not add action to msg')
+                  msg.actions.add(act)
 
                logging.info("PacketOut to: " + str(dp_ports))
                rv = self.controller.message_send(msg)

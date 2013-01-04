@@ -172,7 +172,7 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
         flow_mod_msg.idle_timeout = 0
         flow_mod_msg.hard_timeout = 0
         act.port = egress_port
-        self.assertTrue(flow_mod_msg.actions.add(act), "Could not add action")
+        flow_mod_msg.actions.add(act)
        
         # send flow
         logging.info("Inserting flow")
@@ -219,7 +219,7 @@ class MultiFlowStats(base_tests.SimpleDataPlane):
         flow_mod_msg.hard_timeout = 0
         act = action.action_output()
         act.port = egress_port
-        self.assertTrue(flow_mod_msg.actions.add(act), "Could not add action")
+        flow_mod_msg.actions.add(act)
 
         logging.info("Ingress " + str(ingress_port) + 
                        " to egress " + str(egress_port))
@@ -299,7 +299,7 @@ class AllPortStats(base_tests.SimpleDataPlane):
         flow_mod_msg.hard_timeout = 0
         act = action.action_output()
         act.port = egress_port
-        self.assertTrue(flow_mod_msg.actions.add(act), "Could not add action")
+        flow_mod_msg.actions.add(act)
 
         logging.info("Ingress " + str(ingress_port) + 
                        " to egress " + str(egress_port))

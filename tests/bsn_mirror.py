@@ -149,9 +149,9 @@ class BSNMirrorAction(base_tests.SimpleDataPlane):
         act3.port = ports[1]
         flow_mod = message.flow_mod()
         flow_mod.match = match
-        self.assertTrue(flow_mod.actions.add(act1), "Could not add mirror action")
-        self.assertTrue(flow_mod.actions.add(act2), "Could not add mirror action")
-        self.assertTrue(flow_mod.actions.add(act3), "Could not add output action")
+        flow_mod.actions.add(act1)
+        flow_mod.actions.add(act2)
+        flow_mod.actions.add(act3)
         self.assertEqual(delete_all_flows(self.controller), 0,
                          "Failed to delete all flows")
         self.assertNotEqual(self.controller.message_send(flow_mod), -1,

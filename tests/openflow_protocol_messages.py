@@ -232,7 +232,7 @@ class PacketOut(base_tests.SimpleDataPlane):
                 msg.data = str(outpkt)
                 act = action.action_output()
                 act.port = dp_port
-                self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
+                msg.actions.add(act)
 
                 logging.info("PacketOut to: " + str(dp_port))
                 rv = self.controller.message_send(msg)

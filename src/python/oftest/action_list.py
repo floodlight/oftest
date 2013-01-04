@@ -112,14 +112,11 @@ class action_list(object):
 
         @param action The action to add
 
-        @return True if successful, False if not an action object
-
         """
-        if isinstance(action, action_class_list):
-            tmp = copy.deepcopy(action)
-            self.actions.append(tmp)
-            return True
-        return False
+        if not isinstance(action, action_class_list):
+            raise ValueError("%s is not an action" % type(action))
+        self.actions.append(copy.deepcopy(action))
+        return True # for backwards compatibility
 
     def remove_type(self, type):
         """
@@ -163,9 +160,8 @@ class action_list(object):
 
         """
         for act in other.actions:
-            if not self.add(act):
-                return False
-        return True
+            self.add(act)
+        return True # for backwards compatibility
         
     def __len__(self):
         length = 0

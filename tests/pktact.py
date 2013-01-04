@@ -122,7 +122,7 @@ class DirectPacket(base_tests.SimpleDataPlane):
 
             request.buffer_id = 0xffffffff
             act.port = egress_port
-            self.assertTrue(request.actions.add(act), "Could not add action")
+            request.actions.add(act)
 
             logging.info("Inserting flow")
             rv = self.controller.message_send(request)
@@ -188,7 +188,7 @@ class DirectPacketController(base_tests.SimpleDataPlane):
         request.buffer_id = 0xffffffff
         act.port = ofp.OFPP_CONTROLLER
         act.max_len = 65535
-        self.assertTrue(request.actions.add(act), "Could not add action")
+        request.actions.add(act)
 
         logging.info("Inserting flow")
         rv = self.controller.message_send(request)
@@ -277,7 +277,7 @@ class DirectPacketQueue(base_tests.SimpleDataPlane):
                 request.buffer_id = 0xffffffff
                 act.port     = egress_port
                 act.queue_id = egress_queue_id
-                self.assertTrue(request.actions.add(act), "Could not add action")
+                request.actions.add(act)
 
                 logging.info("Inserting flow")
                 rv = self.controller.message_send(request)
@@ -408,7 +408,7 @@ class DirectPacketControllerQueue(base_tests.SimpleDataPlane):
                 request.buffer_id = 0xffffffff
                 act.port     = egress_port
                 act.queue_id = egress_queue_id
-                self.assertTrue(request.actions.add(act), "Could not add action")
+                request.actions.add(act)
 
                 logging.info("Inserting flow")
                 rv = self.controller.message_send(request)
@@ -527,9 +527,9 @@ class DirectTwoPorts(base_tests.SimpleDataPlane):
             request.match = match
             request.buffer_id = 0xffffffff
             act.port = egress_port1
-            self.assertTrue(request.actions.add(act), "Could not add action1")
+            request.actions.add(act)
             act.port = egress_port2
-            self.assertTrue(request.actions.add(act), "Could not add action2")
+            request.actions.add(act)
             # logging.info(request.show())
 
             logging.info("Inserting flow")
@@ -585,8 +585,7 @@ class DirectMCNonIngress(base_tests.SimpleDataPlane):
                 if egress_port == ingress_port:
                     continue
                 act.port = egress_port
-                self.assertTrue(request.actions.add(act), 
-                                "Could not add output to " + str(egress_port))
+                request.actions.add(act)
             logging.debug(request.show())
 
             logging.info("Inserting flow")
@@ -640,8 +639,7 @@ class DirectMC(base_tests.SimpleDataPlane):
                     act.port = ofp.OFPP_IN_PORT
                 else:
                     act.port = egress_port
-                self.assertTrue(request.actions.add(act), 
-                                "Could not add output to " + str(egress_port))
+                request.actions.add(act)
             # logging.info(request.show())
 
             logging.info("Inserting flow")
@@ -686,8 +684,7 @@ class Flood(base_tests.SimpleDataPlane):
             request.match = match
             request.buffer_id = 0xffffffff
             act.port = ofp.OFPP_FLOOD
-            self.assertTrue(request.actions.add(act), 
-                            "Could not add flood port action")
+            request.actions.add(act)
             logging.info(request.show())
 
             logging.info("Inserting flow")
@@ -735,11 +732,9 @@ class FloodPlusIngress(base_tests.SimpleDataPlane):
             request.match = match
             request.buffer_id = 0xffffffff
             act.port = ofp.OFPP_FLOOD
-            self.assertTrue(request.actions.add(act), 
-                            "Could not add flood port action")
+            request.actions.add(act)
             act.port = ofp.OFPP_IN_PORT
-            self.assertTrue(request.actions.add(act), 
-                            "Could not add ingress port for output")
+            request.actions.add(act)
             logging.info(request.show())
 
             logging.info("Inserting flow")
@@ -784,8 +779,7 @@ class All(base_tests.SimpleDataPlane):
             request.match = match
             request.buffer_id = 0xffffffff
             act.port = ofp.OFPP_ALL
-            self.assertTrue(request.actions.add(act), 
-                            "Could not add ALL port action")
+            request.actions.add(act)
             logging.info(request.show())
 
             logging.info("Inserting flow")
@@ -833,11 +827,9 @@ class AllPlusIngress(base_tests.SimpleDataPlane):
             request.match = match
             request.buffer_id = 0xffffffff
             act.port = ofp.OFPP_ALL
-            self.assertTrue(request.actions.add(act), 
-                            "Could not add ALL port action")
+            request.actions.add(act)
             act.port = ofp.OFPP_IN_PORT
-            self.assertTrue(request.actions.add(act), 
-                            "Could not add ingress port for output")
+            request.actions.add(act)
             logging.info(request.show())
 
             logging.info("Inserting flow")
@@ -896,8 +888,7 @@ class FloodMinusPort(base_tests.SimpleDataPlane):
             request.match = match
             request.buffer_id = 0xffffffff
             act.port = ofp.OFPP_FLOOD
-            self.assertTrue(request.actions.add(act), 
-                            "Could not add flood port action")
+            request.actions.add(act)
             logging.info(request.show())
 
             logging.info("Inserting flow")
@@ -1978,7 +1969,7 @@ class MatchEach(base_tests.SimpleDataPlane):
                 request.priority = priority
                 act = action.action_output()
                 act.port = output_port
-                self.assertTrue(request.actions.add(act), "Could not add action")
+                request.actions.add(act)
                 logging.info("Inserting flow")
                 self.controller.message_send(request)
 
@@ -2110,8 +2101,7 @@ class DirectBadPacketBase(base_tests.SimpleDataPlane):
         request.buffer_id = 0xffffffff
         for act in acts:
             act.port = egress_port
-            rv = request.actions.add(act)
-            self.assertTrue(rv, "Could not add action")
+            request.actions.add(act)
 
         logging.info("Inserting flow")
         rv = self.controller.message_send(request)

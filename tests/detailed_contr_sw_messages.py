@@ -64,7 +64,8 @@ class OverlapChecking(base_tests.SimpleDataPlane):
        
         act3 = action.action_output()
         act3.port = of_ports[1]
-        self.assertTrue(msg3.actions.add(act3), "could not add action")
+        msg3.actions.add(act3)
+        msg3.actions.add(1)
         rv = self.controller.message_send(msg3)
         self.assertTrue(rv != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
@@ -237,7 +238,7 @@ class MissingModifyAdd(base_tests.SimpleDataPlane):
         request.buffer_id = 0xffffffff
         act3 = action.action_output()
         act3.port = of_ports[1]
-        self.assertTrue(request.actions.add(act3), "could not add action")
+        request.actions.add(act3)
 
         logging.info("Inserting flow")
         rv = self.controller.message_send(request)
@@ -780,7 +781,7 @@ class FlowTimeout(base_tests.SimpleDataPlane):
         msg3.match = match3
         act3 = action.action_output()
         act3.port = of_ports[1]
-        self.assertTrue(msg3.actions.add(act3), "could not add action")
+        msg3.actions.add(act3)
 
         rv = self.controller.message_send(msg3)
         self.assertTrue(rv != -1, "Error installing flow mod")

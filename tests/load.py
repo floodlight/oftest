@@ -69,11 +69,11 @@ class LoadBarrier(base_tests.SimpleProtocol):
         request.hard_timeout = 2 * barrier_count
 
         request.buffer_id = 0xffffffff
-        self.assertTrue(request.actions.add(act), "Could not add action")
+        request.actions.add(act)
 
         act = action.action_output()
         act.port = ofp.OFPP_CONTROLLER
-        self.assertTrue(request.actions.add(act), "Could not add action")
+        request.actions.add(act)
 
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Error installing flow mod")
@@ -85,7 +85,7 @@ class LoadBarrier(base_tests.SimpleProtocol):
         msg.data = str(pkt)
         act = action.action_output()
         act.port = lb_port + 1
-        self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
+        msg.actions.add(act)
         logging.info("Sleeping before starting storm")
         time.sleep(1) # Root causing issue with fast disconnects
         logging.info("Sending packet out to %d" % (lb_port + 1))
@@ -180,7 +180,7 @@ class PacketOutLoad(base_tests.SimpleDataPlane):
                msg.data = str(outpkt)
                act = action.action_output()
                act.port = dp_port
-               self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
+               msg.actions.add(act)
 
                logging.info("PacketOutLoad to: " + str(dp_port))
                for count in range(100):
