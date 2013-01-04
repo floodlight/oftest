@@ -666,11 +666,11 @@ def verify_tablestats(self,expect_lookup=None,expect_match=None,expect_active=No
         sleep(0.1)
 
     if expect_lookup != None :
-        self.assertEqual(expect_lookup,item.lookup_count,"lookup counter is not incremented properly")
+        self.assertEqual(expect_lookup, lookedup, "lookup counter is not incremented properly")
     if expect_match != None :
-        self.assertEqual(expect_match,item.matched_count, "matched counter is not incremented properly")
+        self.assertEqual(expect_match, matched, "matched counter is not incremented properly")
     if expect_active != None :
-        self.assertEqual(expect_active,item.active_count,"active counter is not incremented properly")
+        self.assertEqual(expect_active, active ,"active counter is not incremented properly")
 
 
 def verify_flowstats(self,match,byte_count=None,packet_count=None):
