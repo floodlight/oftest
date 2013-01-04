@@ -36,8 +36,7 @@ class OverlapChecking(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear Switch State
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Inserting two overlapping flows")
         logging.info("Expecting switch to return an error")
@@ -95,8 +94,7 @@ class NoOverlapChecking(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear Switch State
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Inserting two overlapping flows")
         logging.info("Expecting switch to insert the flows without generating errors")
@@ -127,8 +125,7 @@ class IdenticalFlows(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear switch state
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Inserting two identical flows one by one")
         logging.info("Expecting switch to overwrite the first flow and clear the counters associated with it ")
@@ -168,8 +165,7 @@ class EmerFlowTimeout(base_tests.SimpleProtocol):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear switch state
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Inserting an emergency flow with timeout values")
         logging.info("Expecting switch to generate error ")
@@ -222,8 +218,7 @@ class MissingModifyAdd(base_tests.SimpleDataPlane):
         logging.info("Expecting flow to get added i.e OFPFC_MODIFY command should be taken as OFPFC_ADD ")
 
         #Clear Switch State
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         #Generate a flow-mod,command OFPC_MODIFY 
 
@@ -258,8 +253,7 @@ class ModifyAction(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear switch state
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Inserting a Flow and incrementing flow counters. Modifying the flow action")
         logging.info("Expecting the flow action to be modified , but the flow-counters should be preserved")
@@ -296,8 +290,7 @@ class StrictModifyAction(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear switch state
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Inserting Flows and incrementing flow counters. Strict Modify the flow action ")
         logging.info("Expecting the flow action to be modified , but the flow-counters should be preserved")
@@ -340,8 +333,7 @@ class DeleteNonexistingFlow(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear switch state
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Deleting a non-existing flow")
         logging.info("Expecting switch to ignore the command , without generating errors")
@@ -376,8 +368,7 @@ class SendFlowRem(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear swicth state
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Inserting flows F1 and F2 without and with send_flow_removed_message flag set ")
         logging.info("Deleting the flows")
@@ -411,8 +402,7 @@ class SendFlowRem(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         # Delete the flow-2
-        rc2 = delete_all_flows(self.controller)
-        self.assertEqual(rc2, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         # Verify flow removed message is generated for the FLOW-2
 
@@ -435,8 +425,7 @@ class DeleteEmerFlow(base_tests.SimpleProtocol):
         of_ports.sort()
         
         #Clear switch state        
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Inserting a emergency flow with send_flow_removed flag set")
         logging.info("Expecting no flow_removed_message on the deletion of the emergency flow")
@@ -478,8 +467,7 @@ class StrictVsNonstrict(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear switch state
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
         
         logging.info("Inserting a flow with exact match")
         logging.info("Issue Strict Delete command , verify it gets deleted")     
@@ -565,8 +553,7 @@ class Outport1(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear switch state
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Inserting a flow with output action --> of_port[1]")
         logging.info("Deleting the flow but with out_port set to of_port[2]")
@@ -621,8 +608,7 @@ class IdleTimeout(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Inserting flow entry with idle_timeout set. Also send_flow_removed_message flag set")
         logging.info("Expecting the flow entry to delete with given idle_timeout")
@@ -665,8 +651,7 @@ class Outport2(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear switch state
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Adding and modifying flow with out_port fields set")
         logging.info("Expecting switch to ignore out_port")
@@ -705,8 +690,7 @@ class HardTimeout(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear switch state
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Inserting flow entry with hard_timeout set. Also send_flow_removed_message flag set")
         logging.info("Expecting the flow entry to delete with given hard_timeout")
@@ -752,8 +736,7 @@ class FlowTimeout(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear switch state
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Inserting flow entry with hard_timeout set and send_flow_removed_message flag not set")
         logging.info("Expecting the flow entry to delete, but no flow removed message")

@@ -38,8 +38,7 @@ class NoAction(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
         
         logging.info("Install a flow without action")
         logging.info("Send packets matching that flow")
@@ -136,8 +135,7 @@ class ForwardAll(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
         
         logging.info("Insert a flow with output action port OFPP_ALL")
         logging.info("Send packet matching the flow")
@@ -149,8 +147,7 @@ class ForwardAll(base_tests.SimpleDataPlane):
         act = action.action_output()
 
         #Delete all flows 
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
         ingress_port=of_ports[0]
         match.in_port = ingress_port
 
@@ -189,8 +186,7 @@ class ForwardController(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
         
         logging.info("Insert a flow with output action port OFPP_CONTROLLER")
         logging.info("Send packet matching the flow")
@@ -203,8 +199,7 @@ class ForwardController(base_tests.SimpleDataPlane):
 
         for ingress_port in of_ports:
             #Delete all flows 
-            rv = delete_all_flows(self.controller)
-            self.assertEqual(rv, 0, "Failed to delete all flows")
+            delete_all_flows(self.controller)
 
             match.in_port = ingress_port
             
@@ -243,8 +238,7 @@ class ForwardLocal(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
         
         logging.info("Insert a flow with output action port OFPP_LOCAL")
         logging.info("Send packet matching the flow")
@@ -257,8 +251,7 @@ class ForwardLocal(base_tests.SimpleDataPlane):
 
         for ingress_port in of_ports:
             #Delete the flows
-            rv = delete_all_flows(self.controller)
-            self.assertEqual(rv, 0, "Failed to delete all flows")
+            delete_all_flows(self.controller)
 
             match.in_port = ingress_port
             #Create flow mod message
@@ -293,8 +286,7 @@ class ForwardFlood(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
         
         logging.info("Insert a flow with output action port OFPP_FORWARD")
         logging.info("Send packet matching the flow")
@@ -306,8 +298,7 @@ class ForwardFlood(base_tests.SimpleDataPlane):
         act = action.action_output()
 
         #Delete all flows 
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
         ingress_port=of_ports[0]
         match.in_port = ingress_port
 
@@ -345,8 +336,7 @@ class ForwardInport(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
         
         logging.info("Insert a flow with output action port OFPP_INPORT")
         logging.info("Send packet matching the flow")
@@ -358,8 +348,7 @@ class ForwardInport(base_tests.SimpleDataPlane):
         act = action.action_output()
 
         #Delete the flows
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
         ingress_port=of_ports[0]
         match.in_port = ingress_port
 
@@ -397,8 +386,7 @@ class ForwardTable(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
         
         logging.info("Insert a flow F with output action port set to some egress_port")
         logging.info("Send packet out message (matching flow F) with action.port = OFP.TABLE")
@@ -435,8 +423,7 @@ class AddVlanTag(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Verify if switch supports the action -- set vlan id, if not skip the test")
         logging.info("Insert a flow with set vid action")
@@ -475,8 +462,7 @@ class ModifyVlanTag(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Verify if switch supports the action -- modify vlan id, if not skip the test")
         logging.info("Insert a flow with action --set vid ")
@@ -513,8 +499,7 @@ class VlanPrio1(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Verify if switch supports the action -- set vlan priority, if not skip the test")
         logging.info("Insert a flow with action -- set vlan priority ")
@@ -552,8 +537,7 @@ class VlanPrio2(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Verify if switch supports the action -- set vlan priority, if not skip the test")
         logging.info("Insert a flow with action -- set vlan priority ")
@@ -592,8 +576,7 @@ class ModifyL2Src(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Verify if switch supports the action -- modify_l2_src, if not skip the test")
         logging.info("Insert a flow with action -- set etherent src address")
@@ -627,8 +610,7 @@ class ModifyL2Dst(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Verify if switch supports the action -- modify_l2_dst, if not skip the test")
         logging.info("Insert a flow with action -- set etherent dst address ")
@@ -661,8 +643,7 @@ class ModifyL3Src(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Verify if switch supports the action -- modify_l3_src, if not skip the test")
         logging.info("Insert a flow with action -- set network src address ")
@@ -695,8 +676,7 @@ class ModifyL3Dst(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Verify if switch supports the action -- modify_l3_dst, if not skip the test")
         logging.info("Insert a flow with action -- set network dst address ")
@@ -730,8 +710,7 @@ class ModifyL4Src(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Verify if switch supports the action -- modify_l4_src, if not skip the test")
         logging.info("Insert a flow with action -- set src tcp port")
@@ -764,8 +743,7 @@ class ModifyL4Dst(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Verify if switch supports the action -- modify_l4_dst, if not skip the test")
         logging.info("Insert a flow with action -- set dst tcp port")
@@ -798,8 +776,7 @@ class ModifyTos(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Verify if switch supports the action -- modify_tos, if not skip the test")
         logging.info("Insert a flow with action -- set type of service ")

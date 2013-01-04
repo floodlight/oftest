@@ -150,8 +150,7 @@ class BSNMirrorAction(base_tests.SimpleDataPlane):
         flow_mod.actions.add(act1)
         flow_mod.actions.add(act2)
         flow_mod.actions.add(act3)
-        self.assertEqual(delete_all_flows(self.controller), 0,
-                         "Failed to delete all flows")
+        delete_all_flows(self.controller)
         self.controller.message_send(flow_mod)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
         

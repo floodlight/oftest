@@ -36,8 +36,7 @@ class FeaturesRequest(base_tests.SimpleProtocol):
         of_ports.sort()
         
         #Clear switch state
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
         
         logging.info("Sending Features_Request")
         logging.info("Expecting Features_Reply")
@@ -65,8 +64,7 @@ class ConfigurationRequest(base_tests.SimpleProtocol):
         of_ports.sort()
 
         #Clear switch state
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Sending OFPT_GET_CONFIG_REQUEST ")
         logging.info("Expecting OFPT_GET_CONFIG_REPLY ")
@@ -93,8 +91,7 @@ class ModifyStateAdd(base_tests.SimpleProtocol):
         of_ports.sort()
         
         #Clear switch state
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Inserting a flow entry")
         logging.info("Expecting active_count=1 in table_stats_reply")
@@ -122,8 +119,7 @@ class ModifyStateDelete(base_tests.SimpleProtocol):
         of_ports.sort()
 
         #Clear switch state
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Inserting a flow entry and then deleting it")
         logging.info("Expecting the active_count=0 in table_stats_reply")
@@ -157,8 +153,7 @@ class ModifyStateModify(base_tests.SimpleDataPlane):
         of_ports.sort()
 
         #Clear switch state
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Inserting a flow entry and then modifying it")
         logging.info("Expecting the Test Packet to implement the modified action")
@@ -188,8 +183,7 @@ class ReadState(base_tests.SimpleProtocol):
         of_ports.sort()
 
         #Clear switch state
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Inserting a flow entry and then sending flow_stats request")
         logging.info("Expecting the a flow_stats_reply without errors")
@@ -214,8 +208,7 @@ class PacketOut(base_tests.SimpleDataPlane):
         of_ports.sort()
        
         #Clear Switch state
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Sending a packet-out for each dataplane port")
         logging.info("Expecting the packet on appropriate dataplane port")
@@ -271,8 +264,7 @@ class PacketIn(base_tests.SimpleDataPlane):
         ingress_port = of_ports[0]
 
         #Clear Switch state
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         logging.info("Sending a Simple tcp packet a dataplane port")

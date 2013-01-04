@@ -44,7 +44,7 @@ def delete_all_flows(ctrl):
     msg.command = ofp.OFPFC_DELETE
     msg.buffer_id = 0xffffffff
     ctrl.message_send(msg)
-    return 0
+    return 0 # for backwards compatibility
 
 def required_wildcards(parent):
     w = test_param_get('required_wildcards', default='default')
@@ -571,8 +571,7 @@ def flow_msg_install(parent, request, clear_table_override=None):
 
     if clear_table: 
         logging.debug("Clear flow table")
-        rc = delete_all_flows(parent.controller)
-        parent.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(parent.controller)
 
     logging.debug("Insert flow")
     parent.controller.message_send(request)

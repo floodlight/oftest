@@ -97,8 +97,7 @@ class LoadBarrier(base_tests.SimpleProtocol):
 
         # Clear the flow table when done
         logging.debug("Deleting all flows from switch")
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
 class PacketInLoad(base_tests.SimpleDataPlane):
     """
@@ -113,8 +112,7 @@ class PacketInLoad(base_tests.SimpleDataPlane):
         # Send packet to dataplane, once to each port
         # Poll controller with expect message type packet in
 
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
         out_count = 0
         in_count = 0
@@ -157,8 +155,7 @@ class PacketOutLoad(base_tests.SimpleDataPlane):
         # Send packet to dataplane
         # Poll controller with expect message type packet in
 
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         # These will get put into function
         of_ports = config["port_map"].keys()
@@ -235,8 +232,7 @@ class FlowModLoad(base_tests.SimpleProtocol):
 
         for i in range(3):
             logging.info("Iteration %d: delete all flows" % i)
-            self.assertEqual(delete_all_flows(self.controller), 0,
-                             "Failed to delete all flows")
+            delete_all_flows(self.controller)
             self.checkBarrier()
 
             logging.info("Iteration %d: add %s flows" % (i, num_flows))

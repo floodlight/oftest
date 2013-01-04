@@ -77,8 +77,7 @@ class PacketIn(base_tests.SimpleDataPlane):
         # Send packet to dataplane, once to each port
         # Poll controller with expect message type packet in
 
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         vid = test_param_get('vid', default=TEST_VID_DEFAULT)
@@ -128,8 +127,7 @@ class PacketInDefaultDrop(base_tests.SimpleDataPlane):
     priority = -1
 
     def runTest(self):
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         for of_port in config["port_map"].keys():
@@ -167,8 +165,7 @@ class PacketInBroadcastCheck(base_tests.SimpleDataPlane):
         # Need at least two ports
         self.assertTrue(len(config["port_map"]) > 1, "Too few ports for test")
 
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         of_ports = config["port_map"].keys()
@@ -194,8 +191,7 @@ class PacketOut(base_tests.SimpleDataPlane):
         # Send packet to dataplane
         # Poll controller with expect message type packet in
 
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         # These will get put into function
         of_ports = config["port_map"].keys()
@@ -248,8 +244,7 @@ class PacketOutMC(base_tests.SimpleDataPlane):
         # Send packet to dataplane
         # Poll controller with expect message type packet in
 
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         # These will get put into function
         of_ports = config["port_map"].keys()

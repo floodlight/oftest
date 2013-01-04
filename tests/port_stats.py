@@ -148,8 +148,7 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         # build packet
         pkt = simple_tcp_packet()
@@ -236,8 +235,7 @@ class MultiFlowStats(base_tests.SimpleDataPlane):
         egress_port1 = of_ports[1];
         egress_port2 = of_ports[2];
 
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         pkt1 = simple_tcp_packet()
         flow_mod_msg1 = self.buildFlowModMsg(pkt1, ingress_port, egress_port1)

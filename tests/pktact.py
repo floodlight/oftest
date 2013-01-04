@@ -107,8 +107,7 @@ class DirectPacket(base_tests.SimpleDataPlane):
         act = action.action_output()
 
         for idx in range(len(of_ports)):
-            rv = delete_all_flows(self.controller)
-            self.assertEqual(rv, 0, "Failed to delete all flows")
+            delete_all_flows(self.controller)
 
             ingress_port = of_ports[idx]
             egress_port = of_ports[(idx + 1) % len(of_ports)]
@@ -175,8 +174,7 @@ class DirectPacketController(base_tests.SimpleDataPlane):
                         "Could not generate flow match from pkt")
         act = action.action_output()
 
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         ingress_port = of_ports[0]
         match.in_port = ingress_port
@@ -264,8 +262,7 @@ class DirectPacketQueue(base_tests.SimpleDataPlane):
                                + " queue " + str(egress_queue_id)
                                )
 
-                rv = delete_all_flows(self.controller)
-                self.assertEqual(rv, 0, "Failed to delete all flows")
+                delete_all_flows(self.controller)
 
                 match.in_port = ingress_port
                 
@@ -394,8 +391,7 @@ class DirectPacketControllerQueue(base_tests.SimpleDataPlane):
                                + " queue " + str(egress_queue_id)
                                )
 
-                rv = delete_all_flows(self.controller)
-                self.assertEqual(rv, 0, "Failed to delete all flows")
+                delete_all_flows(self.controller)
 
                 match.in_port = ingress_port
                 
@@ -507,8 +503,7 @@ class DirectTwoPorts(base_tests.SimpleDataPlane):
         act = action.action_output()
 
         for idx in range(len(of_ports)):
-            rv = delete_all_flows(self.controller)
-            self.assertEqual(rv, 0, "Failed to delete all flows")
+            delete_all_flows(self.controller)
 
             ingress_port = of_ports[idx]
             egress_port1 = of_ports[(idx + 1) % len(of_ports)]
@@ -566,8 +561,7 @@ class DirectMCNonIngress(base_tests.SimpleDataPlane):
         act = action.action_output()
 
         for ingress_port in of_ports:
-            rv = delete_all_flows(self.controller)
-            self.assertEqual(rv, 0, "Failed to delete all flows")
+            delete_all_flows(self.controller)
 
             logging.info("Ingress " + str(ingress_port) + 
                            " all non-ingress ports")
@@ -619,8 +613,7 @@ class DirectMC(base_tests.SimpleDataPlane):
         act = action.action_output()
 
         for ingress_port in of_ports:
-            rv = delete_all_flows(self.controller)
-            self.assertEqual(rv, 0, "Failed to delete all flows")
+            delete_all_flows(self.controller)
 
             logging.info("Ingress " + str(ingress_port) + " to all ports")
             match.in_port = ingress_port
@@ -667,8 +660,7 @@ class Flood(base_tests.SimpleDataPlane):
         act = action.action_output()
 
         for ingress_port in of_ports:
-            rv = delete_all_flows(self.controller)
-            self.assertEqual(rv, 0, "Failed to delete all flows")
+            delete_all_flows(self.controller)
 
             logging.info("Ingress " + str(ingress_port) + " to all ports")
             match.in_port = ingress_port
@@ -714,8 +706,7 @@ class FloodPlusIngress(base_tests.SimpleDataPlane):
         act = action.action_output()
 
         for ingress_port in of_ports:
-            rv = delete_all_flows(self.controller)
-            self.assertEqual(rv, 0, "Failed to delete all flows")
+            delete_all_flows(self.controller)
 
             logging.info("Ingress " + str(ingress_port) + " to all ports")
             match.in_port = ingress_port
@@ -760,8 +751,7 @@ class All(base_tests.SimpleDataPlane):
         act = action.action_output()
 
         for ingress_port in of_ports:
-            rv = delete_all_flows(self.controller)
-            self.assertEqual(rv, 0, "Failed to delete all flows")
+            delete_all_flows(self.controller)
 
             logging.info("Ingress " + str(ingress_port) + " to all ports")
             match.in_port = ingress_port
@@ -807,8 +797,7 @@ class AllPlusIngress(base_tests.SimpleDataPlane):
         act = action.action_output()
 
         for ingress_port in of_ports:
-            rv = delete_all_flows(self.controller)
-            self.assertEqual(rv, 0, "Failed to delete all flows")
+            delete_all_flows(self.controller)
 
             logging.info("Ingress " + str(ingress_port) + " to all ports")
             match.in_port = ingress_port
@@ -861,8 +850,7 @@ class FloodMinusPort(base_tests.SimpleDataPlane):
             self.assertEqual(rv, 0, "Failed to set port config")
 
         for idx in range(len(of_ports)):
-            rv = delete_all_flows(self.controller)
-            self.assertEqual(rv, 0, "Failed to delete all flows")
+            delete_all_flows(self.controller)
 
             ingress_port = of_ports[idx]
             no_flood_idx = (idx + 1) % len(of_ports)
@@ -963,8 +951,7 @@ class SingleWildcardMatchPriority(BaseMatchCase):
         self.flowMsgs = {}
 
     def _ClearTable(self):
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     def runTest(self):
@@ -1356,8 +1343,7 @@ class ModifyVIDWithTagMatchWildcarded(BaseMatchCase):
         ing_port = of_ports[0]
         egr_ports = of_ports[1]
         
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         len_untagged = 100
         len_w_vid = 104
@@ -2064,8 +2050,7 @@ class DirectBadPacketBase(base_tests.SimpleDataPlane):
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         ingress_port = of_ports[0]
         egress_port = of_ports[1]

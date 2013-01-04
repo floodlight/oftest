@@ -37,8 +37,7 @@ class FlowExpire(base_tests.SimpleDataPlane):
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         pkt = simple_tcp_packet()
         match = packet_to_flow_match(self, pkt)

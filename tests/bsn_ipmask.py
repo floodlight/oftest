@@ -144,8 +144,7 @@ class BSNConfigIPMask(base_tests.SimpleDataPlane):
            pkt3 = simple_tcp_packet(ip_dst=ip3)
            msg = lambda ip: logging.info("Testing dest IP %s" % ip)
 
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         self.controller.message_send(flow_msg_create(
               self, pkt0, ing_port=ports[0], egr_ports=[ports[1]],

@@ -47,8 +47,7 @@ class PktPerFlow(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state      
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Insert any flow")
         logging.info("Sending N Packets matching the flow")
@@ -80,8 +79,7 @@ class BytPerFlow(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state      
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Insert any flow")
         logging.info("Sending N Packets matching the flow")
@@ -114,8 +112,7 @@ class DurationPerFlow(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Insert any flow")
         logging.info("Send Flow_stats request after n sec intervals")
@@ -157,8 +154,7 @@ class RxPktPerPort(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         # Clear Switch State
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Insert a flow with match on ingress_port")
         logging.info("Send N Packets on an ingress_port P ")
@@ -193,8 +189,7 @@ class TxPktPerPort(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Insert any flow matching on in_port=ingress_port, action output to egress_port T ")
         logging.info("Send N Packets matching the flow on ingress_port P ")
@@ -231,8 +226,7 @@ class RxBytPerPort(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
          
         #Clear switch State        
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Insert any flow matching on in_port=ingress_port")
         logging.info("Send N Packets matching the flow on ingress_port P ")
@@ -269,8 +263,7 @@ class TxBytPerPort(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
          
         #Clear switch State        
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Insert any flow matching on in_port=ingress_port,action = output to egress_port T")
         logging.info("Send N Packets matching the flow on ingress_port P ")
@@ -306,8 +299,7 @@ class ActiveCount(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
          
         #Clear Switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Insert any flow matching on in_port=ingress_port,action = output to egress_port T ")
         logging.info("Send Table_Stats, verify active_count counter is incremented in accordance")
@@ -333,8 +325,7 @@ class LookupMatchedCount(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
          
         #Clear Switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Insert any flow matching on in_port=ingress_port,action = output to egress_port")
         logging.info("Send N packets matching the flow, N' packets not matching the flow")
@@ -385,8 +376,7 @@ class TxPktPerQueue(base_tests.SimpleDataPlane):
             for egress_queue_id in queue_id:
 
                 #Clear switch state
-                rv = delete_all_flows(self.controller)
-                self.assertEqual(rv, 0, "Failed to delete all flows")
+                delete_all_flows(self.controller)
 
                 # Get Queue stats for selected egress queue only
                 (qs_before,p) = get_queuestats(self,egress_port,egress_queue_id)
@@ -425,8 +415,7 @@ class TxBytPerQueue(base_tests.SimpleDataPlane):
             for egress_queue_id in queue_id:
 
                 #Clear switch state
-                rv = delete_all_flows(self.controller)
-                self.assertEqual(rv, 0, "Failed to delete all flows")
+                delete_all_flows(self.controller)
 
                 # Get Queue stats for selected egress queue only
                 (qs_before,p) = get_queuestats(self,egress_port,egress_queue_id)
@@ -455,8 +444,7 @@ class RxDrops(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
          
         #Clear switch State        
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Send Port_Stats Request")
         logging.info("Verify reply has rx_dropped count ")
@@ -482,8 +470,7 @@ class TxDrops(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
          
         #Clear switch State        
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Send Port_Stats Request")
         logging.info("Verify reply has tx_dropped count ")
@@ -510,8 +497,7 @@ class RxErrors(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
          
         #Clear switch State        
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Send Port_Stats Request")
         logging.info("Verify reply has rx_errors count ")
@@ -536,8 +522,7 @@ class TxErrors(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
          
         #Clear switch State        
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Send Port_Stats Request")
         logging.info("Verify reply has Tx_errors count ")
@@ -562,8 +547,7 @@ class RxFrameErr(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
          
         #Clear switch State        
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Send Port_Stats Request")
         logging.info("Verify reply has rx_frame_err count ")
@@ -589,8 +573,7 @@ class RxOErr(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
          
         #Clear switch State        
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Send Port_Stats Request")
         logging.info("Verify reply has rx_over_err count ")
@@ -617,8 +600,7 @@ class RxCrcErr(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
          
         #Clear switch State        
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Send Port_Stats Request")
         logging.info("Verify reply has rx_crc_err count ")
@@ -644,8 +626,7 @@ class Collisions(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
          
         #Clear switch State        
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Send Port_Stats Request")
         logging.info("Verify reply has Collisions count ")
@@ -672,8 +653,7 @@ class TxErrorPerQueue(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
          
         #Clear switch State        
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Send Queue_Stats Request")
         logging.info("Verify reply has Tramitted Overrun errors count ")

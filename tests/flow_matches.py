@@ -38,8 +38,7 @@ class AllWildcardMatch(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear Switch State
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         logging.info("Inserting an all wildcarded flow and sending packets with various match fields")
         logging.info("Expecting all sent packets to match")
@@ -95,8 +94,7 @@ class EthernetSrcAddress(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
     
         #Clear Switch State
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
@@ -135,8 +133,7 @@ class EthernetDstAddress(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear Switch State
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
@@ -177,8 +174,7 @@ class EthernetType(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
     
         #Clear Switch State
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
@@ -219,8 +215,7 @@ class IngressPort(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear Switch State
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
@@ -257,8 +252,7 @@ class VlanId(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         #Clear Switch State
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
@@ -298,8 +292,7 @@ class VlanPCP(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
     
         #Clear Switch State
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
@@ -339,8 +332,7 @@ class MultipleHeaderFieldL2(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
     
         #Clear Switch State
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
@@ -393,8 +385,7 @@ class IpTos(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
     
         #Clear Switch State
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
@@ -432,8 +423,7 @@ class IpProtocol(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
     
         #Clear Switch State
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
@@ -472,8 +462,7 @@ class TcpSrcPort(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
     
         #Clear Switch State
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
@@ -511,8 +500,7 @@ class TcpDstPort(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
     
         #Clear Switch State
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
@@ -551,8 +539,7 @@ class ExactMatch(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
     
         #Clear Switch State
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
@@ -591,8 +578,7 @@ class MultipleHeaderFieldL4(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
     
         #Clear Switch State
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
@@ -638,8 +624,7 @@ class ExactMatchPrio(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
     
         #Clear Switch State
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         egress_port=of_ports[2]
         no_ports=set(of_ports).difference([egress_port])
@@ -674,8 +659,7 @@ class WildcardMatchPrio(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
     
         #Clear Switch State
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])

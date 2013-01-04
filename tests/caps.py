@@ -29,8 +29,7 @@ def flow_caps_common(obj, is_exact=True):
     of_ports = config["port_map"].keys()
     of_ports.sort()
 
-    rv = delete_all_flows(obj.controller)
-    obj.assertEqual(rv, 0, "Failed to delete all flows")
+    delete_all_flows(obj.controller)
 
     pkt = simple_tcp_packet()
     match = packet_to_flow_match(obj, pkt)
@@ -87,7 +86,7 @@ def flow_caps_common(obj, is_exact=True):
     logging.error("RESULT: " + str(active_flows) + " flows reported")
 
     # clean up and wait a bit in case the table is really big
-    rv = delete_all_flows(obj.controller)
+    delete_all_flows(obj.controller)
     time.sleep(flow_count / 100)
 
 

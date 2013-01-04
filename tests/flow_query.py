@@ -1582,8 +1582,7 @@ class Flow_Add_5(base_tests.SimpleProtocol):
         # Clear all flows from switch
 
         logging.info("Deleting all flows from switch")
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         # Get switch capabilites
 
@@ -1685,8 +1684,7 @@ class Flow_Add_5_1(base_tests.SimpleProtocol):
         # Clear all flows from switch
 
         logging.info("Deleting all flows from switch")
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         # Get switch capabilites
 
@@ -1801,8 +1799,7 @@ class Flow_Add_6(base_tests.SimpleProtocol):
         # Clear all flows from switch
 
         logging.info("Deleting all flows from switch")
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         # Get switch capabilites
 
@@ -1933,8 +1930,7 @@ class Flow_Add_7(base_tests.SimpleProtocol):
         # Clear all flows from switch
 
         logging.info("Deleting all flows from switch")
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         # Get switch capabilites
 
@@ -2055,8 +2051,7 @@ class Flow_Add_8(base_tests.SimpleProtocol):
         # Clear all flows from switch
 
         logging.info("Deleting all flows from switch")
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         # Get switch capabilites
 
@@ -2182,8 +2177,7 @@ class Flow_Mod_1(base_tests.SimpleProtocol):
         # Clear all flows from switch
 
         logging.info("Deleting all flows from switch")
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         # Get switch capabilites
 
@@ -2309,8 +2303,7 @@ class Flow_Mod_2(base_tests.SimpleProtocol):
         # Clear all flows from switch
 
         logging.info("Deleting all flows from switch")
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         # Get switch capabilites
 
@@ -2460,8 +2453,7 @@ class Flow_Mod_3(base_tests.SimpleProtocol):
         # Clear all flows from switch
 
         logging.info("Deleting all flows from switch")
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         # Get switch capabilites
 
@@ -2553,8 +2545,7 @@ class Flow_Mod_3_1(base_tests.SimpleProtocol):
         # Clear all flows from switch
 
         logging.info("Deleting all flows from switch")
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         # Get switch capabilites
 
@@ -2669,8 +2660,7 @@ class Flow_Del_1(base_tests.SimpleProtocol):
         # Clear all flows from switch
 
         logging.info("Deleting all flows from switch")
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         # Get switch capabilites
 
@@ -2793,8 +2783,7 @@ class Flow_Del_2(base_tests.SimpleProtocol):
         # Clear all flows from switch
 
         logging.info("Deleting all flows from switch")
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         # Get switch capabilites
 
@@ -2950,8 +2939,7 @@ class Flow_Del_4(base_tests.SimpleProtocol):
         # Clear all flows from switch
 
         logging.info("Deleting all flows from switch")
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         # Get switch capabilites
 

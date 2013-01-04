@@ -297,8 +297,7 @@ class PacketInSizeMiss(base_tests.SimpleDataPlane):
         of_ports.sort()
 
         #Clear switch state      
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         #Send a set_config_request message 
         miss_send_len = [0 ,32 ,64,100]
@@ -345,8 +344,7 @@ class PacketInSizeAction(base_tests.SimpleDataPlane):
         of_ports.sort()
 
         #Clear switch state      
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         #Create a simple tcp packet
         pkt = simple_tcp_packet()
@@ -404,8 +402,7 @@ class PacketInBodyMiss(base_tests.SimpleDataPlane):
         of_ports.sort()
 
         #Clear switch state      
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         #Set miss_send_len field 
         logging.info("Sending  set_config_request to set miss_send_len... ")
@@ -451,8 +448,7 @@ class PacketInBodyAction(base_tests.SimpleDataPlane):
         of_ports.sort()
 
         #Clear switch state      
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         # Create a simple tcp packet
         pkt = simple_tcp_packet()
@@ -509,8 +505,7 @@ class PortStatusMessage(base_tests.SimpleDataPlane):
         of_ports = config["port_map"].keys()
         
         #Clear switch state      
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        delete_all_flows(self.controller)
 
         #Bring down the port by shutting the interface connected 
         try:
