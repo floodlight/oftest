@@ -203,9 +203,8 @@ class PacketOut(base_tests.SimpleDataPlane):
 
                logging.info("PKT OUT test with %s, port %s" % (opt, dp_port))
                msg = message.packet_out(in_port=ofp.OFPP_NONE,
-                                        data=str(outpkt))
-               act = action.action_output(port=dp_port)
-               msg.actions.add(act)
+                                        data=str(outpkt),
+                                        actions=[action.action_output(port=dp_port)])
 
                logging.info("PacketOut to: " + str(dp_port))
                self.controller.message_send(msg)
@@ -255,11 +254,10 @@ class PacketOutMC(base_tests.SimpleDataPlane):
                dp_ports = of_ports[0:num_ports]
                logging.info("PKT OUT test with " + opt +
                                  ", ports " + str(dp_ports))
+               actions = [action.action_output(port=port) for port in dp_ports]
                msg = message.packet_out(in_port=ofp.OFPP_NONE,
-                                        data=str(outpkt))
-               for i in range(0,num_ports):
-                  act = action.action_output(port=dp_ports[i])
-                  msg.actions.add(act)
+                                        data=str(outpkt),
+                                        actions=actions)
 
                logging.info("PacketOut to: " + str(dp_ports))
                self.controller.message_send(msg)

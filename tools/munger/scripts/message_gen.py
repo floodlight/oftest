@@ -302,10 +302,7 @@ def gen_message_wrapper(msg):
     _p2("self.header = ofp_header()")
     _p2("self.header.type = " + msg_name)
     if has_list:
-        if list_type == None:
-            _p2('self.' + list_var + ' = []')
-        else:
-            _p2('self.' + list_var + ' = ' + list_type + '()')
+        _p2('self.' + list_var + ' = []')
     if has_string:
         _p2('self.data = ""')
     _p2('for (k, v) in kwargs.items():')
@@ -313,6 +310,9 @@ def gen_message_wrapper(msg):
     _p4('setattr(self, k, v)')
     _p3('else:')
     _p4('raise NameError("field %s does not exist in %s" % (k, self.__class__))')
+    if has_list and list_type != None:
+        _p2('# Coerce keyword arg into list type')
+        _p2('self.%(list_var)s = %(list_type)s(self.%(list_var)s)' % dict(list_type=list_type, list_var=list_var))
 
     print """
 
