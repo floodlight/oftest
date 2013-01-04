@@ -66,7 +66,7 @@ action_class_map = {
 }
 
 template = """
-class action_--TYPE--(--PARENT_TYPE--):
+class --TYPE--(--PARENT_TYPE--):
     \"""
     Wrapper class for --TYPE-- action object
 
@@ -85,6 +85,8 @@ class action_--TYPE--(--PARENT_TYPE--):
         outstr = prefix + "action_--TYPE--\\n"
         outstr += --PARENT_TYPE--.show(self, prefix)
         return outstr
+
+action_--TYPE-- = --TYPE-- # for backwards compatibility
 """
 
 if __name__ == '__main__':
