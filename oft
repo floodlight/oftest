@@ -129,9 +129,6 @@ except:
     except:
         sys.exit("Need to install scapy for packet parsing")
 
-##@var Profile module
-profile_mod = None
-
 ##@var DEBUG_LEVELS
 # Map from strings to debugging levels
 DEBUG_LEVELS = {
@@ -166,7 +163,6 @@ config_default = {
     "dbg_level"          : _debug_level_default,
     "port_map"           : {},
     "test_params"        : "None",
-    "profile"            : "default",
     "allow_user"         : False,
     "fail_skipped"       : False,
     "default_timeout"    : 2,
@@ -174,7 +170,6 @@ config_default = {
     "random_seed"        : None,
     "test_dir"           : os.path.join(root_dir, "tests"),
     "platform_dir"       : os.path.join(root_dir, "platforms"),
-    "profile_dir"        : os.path.join(root_dir, "profiles"),
     "priority"           : 0,
 }
 
@@ -266,8 +261,6 @@ these will be executed. To see what groups each test belongs to use the
                       help="Short cut for --debug=verbose")
     parser.add_option("--relax", action="store_true",
                       help="Relax packet match checks allowing other packets")
-    parser.add_option("--profile", 
-                      help="File listing tests to skip/run")
     parser.add_option("-t", "--test-params",
                       help="""Set test parameters: key=val;...
         NOTE:  key MUST be a valid Python identifier, egr_count not egr-count
@@ -288,8 +281,6 @@ these will be executed. To see what groups each test belongs to use the
                       help="Directory containing tests")
     parser.add_option("--platform-dir", type="string",
                       help="Directory containing platform modules")
-    parser.add_option("--profile-dir", type="string",
-                      help="Directory containing profile modules")
 
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
@@ -298,22 +289,6 @@ these will be executed. To see what groups each test belongs to use the
     config = config_get(options)
 
     return (config, args)
-
-def load_profile(config):
-    """
-    Import a profile from the profiles library
-    """
-
-    global profile_mod
-    logging.info("Importing profile: %s" % config["profile"])
-    try:
-        profile_mod = imp.load_module(config["profile"], *imp.find_module(config["profile"], [config["profile_dir"]]))
-        if not "skip_test_list" in dir(profile_mod):
-            die("Profile did not define skip_test_list")
-    except:
-        logging.info("Could not import profile: %s.py" % config["profile"])
-        print "Failed to import profile: %s" % config["profile"]
-        raise
 
 def logging_setup(config):
     """
@@ -441,8 +416,6 @@ if test_specs == []:
 
 test_modules = load_test_modules(config)
 
-load_profile(config)
-
 # Check if test list is requested; display and exit if so
 if config["list"]:
     mod_count = 0
@@ -463,7 +436,6 @@ group or their module's test group."""
     print
     print "Tests marked (TP1) after name take --test-params including:"
     print "    'vid=N;strip_vlan=bool;add_vlan=bool'"
-    print "Note that --profile may override which tests are run"
     print
     print "Test List:"
     for (modname, (mod, tests)) in test_modules.items():
