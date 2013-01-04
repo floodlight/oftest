@@ -72,10 +72,15 @@ class action_--TYPE--(--PARENT_TYPE--):
 
     --DOC_INFO--
     \"""
-    def __init__(self):
+    def __init__(self, **kwargs):
         --PARENT_TYPE--.__init__(self)
         self.type = --ACTION_NAME--
         self.len = self.__len__()
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
     def show(self, prefix=''):
         outstr = prefix + "action_--TYPE--\\n"
         outstr += --PARENT_TYPE--.show(self, prefix)
