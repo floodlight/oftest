@@ -117,40 +117,6 @@ class PacketIn(base_tests.SimpleDataPlane):
                                    'Response packet does not match send packet' +
                                    ' for port ' + str(of_port))
 
-@nonstandard
-class PacketInDefaultDrop(base_tests.SimpleDataPlane):
-    """
-    Test packet in function
-
-    Send a packet to each dataplane port and verify that a packet
-    in message is received from the controller for each
-    """
-
-    def runTest(self):
-        delete_all_flows(self.controller)
-        do_barrier(self.controller)
-
-        for of_port in config["port_map"].keys():
-            pkt = simple_tcp_packet()
-            self.dataplane.send(of_port, str(pkt))
-            count = 0
-            while True:
-                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN)
-                if not response:  # Timeout
-                    break
-                if dataplane.match_exp_pkt(pkt, response.data): # Got match
-                    break
-                if not config["relax"]:  # Only one attempt to match
-                    break
-                count += 1
-                if count > 10:   # Too many tries
-                    break
-
-            self.assertTrue(response is None, 
-                            'Packet in message received on port ' + 
-                            str(of_port))
-
-@nonstandard
 class PacketInBroadcastCheck(base_tests.SimpleDataPlane):
     """
     Check if bcast pkts leak when no flows are present
@@ -267,7 +233,6 @@ class PacketOutMC(base_tests.SimpleDataPlane):
                                  set(of_ports).difference(dp_ports),
                                  self)
 
-@disabled
 class FlowStatsGet(base_tests.SimpleProtocol):
     """
     Get stats 
