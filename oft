@@ -155,6 +155,7 @@ config_default = {
     "controller_port"    : 6633,
     "relax"              : False,
     "test_spec"          : "",
+    "test_file"          : None,
     "log_file"           : "oft.log",
     "log_append"         : False,
     "list"               : False,
@@ -247,6 +248,7 @@ these will be executed. To see what groups each test belongs to use the
         module.testcase   Run the specific test case
         """
     parser.add_option("-T", "--test-spec", "--test-list", help=test_list_help)
+    parser.add_option("-f", "--test-file", help="File of tests to run, one per line")
     parser.add_option("--log-file", 
                       help="Name of log file, empty string to log to console")
     parser.add_option("--log-append", action="store_true",
@@ -411,6 +413,13 @@ test_specs = args
 if config["test_spec"] != "":
     print >> sys.stderr, "WARNING: The --test-spec option is deprecated"
     test_specs += config["test_spec"].split(',')
+if config["test_file"] != None:
+    with open(config["test_file"], 'r') as f:
+        for line in f:
+            line, _, _ = line.partition('#') # remove comments
+            line = line.strip()
+            if line:
+                test_specs.append(line)
 if test_specs == []:
     test_specs = ["standard"]
 
