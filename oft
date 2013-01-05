@@ -520,13 +520,6 @@ if not config["port_map"]:
 logging.debug("Configuration: " + str(config))
 logging.info("OF port map: " + str(config["port_map"]))
 
-if config["dbg_level"] == logging.CRITICAL:
-    _verb = 0
-elif config["dbg_level"] >= logging.WARNING:
-    _verb = 1
-else:
-    _verb = 2
-
 oftest.ofutils.default_timeout = config["default_timeout"]
 oftest.testutils.MINSIZE = config['minsize']
 
@@ -550,7 +543,7 @@ if __name__ == "__main__":
         oftest.dataplane_instance.port_add(ifname, of_port)
 
     logging.info("*** TEST RUN START: " + time.asctime())
-    result = unittest.TextTestRunner(verbosity=_verb).run(suite)
+    result = unittest.TextTestRunner(verbosity=2).run(suite)
     if oftest.testutils.skipped_test_count > 0:
         ts = " tests"
         if oftest.testutils.skipped_test_count == 1: ts = " test"
