@@ -259,8 +259,10 @@ these will be executed. To see what groups each test belongs to use the
                       help="List test names matching the test spec and exit", default=False)
     parser.add_option("--list", action="store_true",
                       help="List all tests and exit")
-    parser.add_option("-v", "--verbose", action="store_true",
+    parser.add_option("-v", "--verbose", action="store_true", default=True,
                       help="Short cut for --debug=verbose")
+    parser.add_option("-q", "--quiet", action="store_false", dest="verbose",
+                      help="Reduces verbosity")
     parser.add_option("--relax", action="store_true",
                       help="Relax packet match checks allowing other packets")
     parser.add_option("-t", "--test-params",
