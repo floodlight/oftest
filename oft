@@ -4,91 +4,12 @@
 
 OpenFlow test framework top level script
 
-This script is the entry point for running OpenFlow tests
-using the OFT framework.
+This script is the entry point for running OpenFlow tests using the OFT
+framework. For usage information, see --help or the README.
 
-The global configuration is passed around in a dictionary
-generally called config.  The keys have the following
-significance.
-
-<pre>
-    platform          : String identifying the target platform
-    controller_host   : Host on which test controller is running (for sockets)
-    controller_port   : Port on which test controller listens for switch cxn
-    test_dir          : (TBD) Directory to search for test files (default .)
-    test_spec         : (TBD) Specification of test(s) to run
-    log_file          : Filename for test logging
-    list              : Boolean:  List all tests and exit
-    debug             : String giving debug level (info, warning, error...)
-</pre>
-
-See config_defaults below for the default values.
-
-The following are stored in the config dictionary, but are not currently
-configurable through the command line.
-
-<pre>
-    dbg_level         : logging module value of debug level
-    port_map          : Map of dataplane OpenFlow port to OS interface names
-</pre>
-
-Each test may be assigned a priority by setting the "priority" property
-in the class definition.  For now, the only use of this is to avoid
-automatic inclusion of tests into the default list.  This is done by
-setting the priority value less than 0.  Eventually we may add ordering
-of test execution by test priority.
-
-To add a test to the system, either: edit an existing test case file (like
-basic.py) to add a test class which inherits from unittest.TestCase (directly
-or indirectly); or add a new file with the test case class.  Preferably the
-file is in the same directory as existing tests, though you can specify the
-directory on the command line.  The file should not be called "all" as that's
-reserved for the test-spec.
-
-TBD:  To add configuration to the system, first add an entry to config_default
-below.  If you want this to be a command line parameter, edit config_setup
-to add the option and default value to the parser.  Then edit config_get
-to make sure the option value gets copied into the configuration 
-structure (which then gets passed to everyone else).
-
-By convention, oft attempts to import the contents of a file by the 
-name of $platform.py into the local namespace.  
-
-IMPORTANT: That file should define a function platform_config_update which
-takes a configuration dictionary as an argument and updates it for the
-current run.  In particular, it should set up config["port_map"] with
-the proper map from OF port numbers to OF interface names.
-
-You can add your own platform, say gp104, by adding a file gp104.py to the
-platforms directory that defines the function platform_config_update and then
-use the parameter --platform=gp104 on the command line. You can also use the
---platform-dir option to change which directory is searched.
-
-The current model for test sets is basic.py.
-
-Default setup:
-
-The default setup runs locally using veth pairs.  To exercise this, 
-checkout and build an openflow userspace datapath.  Then start it on 
-the local host:
-<pre>
-  sudo ~/openflow/regress/bin/veth_setup.pl 
-  sudo ofdatapath -i veth0,veth2,veth4,veth6 punix:/tmp/ofd &
-  sudo ofprotocol unix:/tmp/ofd tcp:127.0.0.1 --fail=closed --max-backoff=1 &
-
-Next, run oft: 
-  sudo ./oft --debug=info
-</pre>
-
-Examine oft.log if things don't work.
-
-@todo Support per-component debug levels (esp controller vs dataplane)
-@todo Allow specification of priority to override prio check
-
-Current test case setup:
-    File with the .py extension in the test directory are considered test files.
-    Support a command line option --test-spec to choose the tests to run.
-    Support test-spec "all" to specify all tests.
+To add a new command line option, edit both the config_default dictionary and
+the config_setup function. The option's result will end up in the global
+oftest.config dictionary.
 """
 
 import sys

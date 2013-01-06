@@ -1,0 +1,102 @@
+Overview
+++++++++
+
+    The directory structure is currently:
+
+     <oftest>
+         `
+         |-- oft
+         |-- doc
+         |-- src
+         |   `-- python
+         |       `-- oftest
+         |-- tests
+         |   `-- test cases
+         `-- tools
+             |-- munger
+             `-- pylibopenflow
+
+    The tools directory is what processes the OpenFlow header
+    files to produce Python classes representing OpenFlow messages.
+    The results are placed in src/python/oftest and currently
+    include:
+
+        message.py:      The main API providing OF message classes
+        error.py:        Subclasses for error messages
+        action.py:       Subclasses for action specification
+        cstruct.py:      Direct representation of C structures in Python
+        class_maps.py:   Addition info about C structures
+
+    In addition, the following Python files are present in 
+    src/python/oftest:
+
+        controller.py:   The controller representation
+        dataplane.py:    The dataplane representation
+        action_list.py:  Action list class
+        netutils.py:     e.g., set promisc on sockets
+        ofutils.py:      Utilities related to OpenFlow messages
+        oft_assert.py:   Test framework level assertion
+        testutils.py:    Test utilities
+        base_tests.py:   Base test classes
+
+Important Notes
++++++++++++++++
+
+    1.  If you change any of the code generation scripts in
+    tools/munger/scripts you must re-run make -C tools/munger to
+    regenerate the OpenFlow message classes.
+
+Adding Your Own Test Cases
+++++++++++++++++++++++++++
+
+    Check the online tutorial:  
+        http://openflow.org/wk/index.php/OFTestTutorial
+
+    It's suggested to use basic.py as example code for writing new tests.
+
+    You can:
+
+        * Add cases to an existing file
+        * Add a new file
+
+    If you add cases to an existing file, each case should be its own
+    class.  It must inherit from unittest.TestCase or one of its 
+    derivatives.  Most tests will inherit from oftest.base_tests.SimpleDataPlane.
+
+    CONVENTIONS:
+
+    The first line of the doc string for a file and for a test class is 
+    displayed in the list command.  Please keep it clear and under 50
+    characters.
+
+Submitting Patches
+++++++++++++++++++
+
+    Send a pull request on GitHub to floodlight/oftest.
+
+Other Info
+++++++++++
+
+    * Build doc with
+      + cd <oftest>/tools/munger
+      + make doc
+    Places the results in <oftest>/doc/html
+    If you have problems, check the install location doxypy.py and
+    that it is set correctly in <oftest>/doc/Doxyfile
+
+    * Run lint on sources
+      + cd <oftest>/tools/munger
+      + make lint
+    Places results in <oftest>/lint/*.log
+    The file controller.log currently has some errors indicated
+
+To Do
++++++
+
+    * Need to have an overview of the components of the test, how they
+      connect and how they are managed by the test framework.
+    * See the Regression Test component on trac:
+      http://www.openflowswitch.org/bugs/openflow
+      http://www.openflowswitch.org/bugs/openflow/query?component=Regression+test+suite
+
+    * Make the framework work with OF versions other than 1.0?

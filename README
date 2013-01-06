@@ -1,18 +1,9 @@
 OpenFlow Testing Framework
 July, 2010
-Last updated March 2012
+Last updated January 2013
 
 Copyright (c) 2010 The Board of Trustees of The Leland Stanford 
 Junior University
-
-Warning
-+++++++
-
-    This is still experimental and it requires root privilege to
-    control the dataplane ports.  As a consequence, there may be
-    risks to the machine on which this is running.  Use caution.
-
-    Please see Helpful Notes below.
 
 License
 +++++++
@@ -25,13 +16,6 @@ License
 
     Other software referenced in this distribution is subject to its
     respective license.
-
-Getting OFTest
-++++++++++++++
-
-    You can check out OFTest with git with the following command:
-
-    git clone git://github.com/floodlight/oftest
 
 Introduction
 ++++++++++++
@@ -49,6 +33,16 @@ Introduction
 
     Normally log output from oft is sent to the file oft.log, but
     can be redirected to the console by specifying --log-file="".
+
+    For information on writing new tests or making improvements to
+    the test framework see the file DEVELOPING.
+
+Getting OFTest
+++++++++++++++
+
+    You can check out OFTest with git with the following command:
+
+    git clone git://github.com/floodlight/oftest
  
 Quick Start
 +++++++++++
@@ -69,9 +63,9 @@ Quick Start
          Make sure the switch you want to test is running --
          see (4) below for the reference switch example.
       # ./oft --list
-      # sudo ./oft --test-spec=Echo
+      # sudo ./oft basic.Echo
       # sudo ./oft --verbose --log-file=""
-      # sudo ./oft --test-spec=<mod> --platform=remote --host=...
+      # sudo ./oft basic --platform=remote --host=...
 
 Longer Start
 ++++++++++++
@@ -105,15 +99,10 @@ Longer Start
         This places files in <oftest>/src/python/oftest/src.
 
     3.  Edit configuration if necessary
-        Local platforms work with veth interface pairs and default to
-        four ports.  You can adjust this a bit with the command line
-        parameters port_count, base_of_port and base_if_index.
- 
-        Starting from remote.py as a simple example, you can add your
-        own <platform>.py file and then have it imported with
-        --platform=<platform> on the command line.  This is meant to 
-        allow you to test remote switches attempting to connect to a
-        controller on a network accessible to the test host.
+        The default (local) platform uses 4 veth interface pairs and
+        is only suitable for testing local software switches. To test
+        hardware switches you will need to create an appropriate
+        platform file. See the "Platforms" section below.
 
     4.  Start the switch to test
         The switch must be running and actively attempting to 
@@ -143,10 +132,38 @@ Longer Start
         oftest/tools/ovs-ctl.  You will need to install a version of
         openvswitch.  See http://openvswitch.org/.
 
-    5.  Run oft
-        See Warning above; requires sudo to control the dataplane
+    5.  Run oft (requires sudo to control the dataplane)
         cd <oftest>
         sudo ./oft --help
+
+Important Notes
++++++++++++++++
+
+    1.  If you're running into issues with transactions, and it appears that
+    OpenFlow messages aren't quite right, start by looking at any length
+    fields in the packets.  With the local platform, you can use wireshark
+    on the loopback interface as well as the dataplane veth interfaces.
+
+    2.  If tests dealing with VLANs fail unexpectedly then try installing
+    pypcap (see Longer Start above).
+
+Platforms
++++++++++
+
+    The "platform" is a configuration file (written in Python) that
+    tells OFTest how to send packets to and receive packets from the
+    dataplane of the switch. The default platform uses Linux virtual
+    ethernet interfaces and is suitable only for local software switches.
+
+    You can add your own platform, say gp104, by adding a file gp104.py to the
+    platforms directory that defines the function platform_config_update and then
+    use the parameter --platform=gp104 on the command line. You can also use the
+    --platform-dir option to change which directory is searched.
+
+    IMPORTANT: That file should define a function platform_config_update which
+    takes a configuration dictionary as an argument and updates it for the
+    current run.  In particular, it should set up config["port_map"] with
+    the proper map from OF port numbers to OF interface names.
 
 Helpful Note: Recovering From Crash
 +++++++++++++++++++++++++++++++++++
@@ -176,113 +193,6 @@ Helpful Note: Recovering From Crash
     that need to be ironed out.  Please report any issues to
     dtalayco@stanford.edu.
 
-
-OFT Command Line Options
-++++++++++++++++++++++++
-
-    Here is a summary of the oft command line options.  Use --help to see
-    the long and short command option names.
-
-    platform          : String identifying the target platform
-    controller_host   : Host on which test controller is running (for sockets)
-    controller_port   : Port on which test controller listens for switch cxn
-    port_count        : Number of ports in dataplane
-    base_of_port      : Base OpenFlow port number in dataplane
-    base_if_index     : Base OS network interface for dataplane
-    test_dir          : Directory to search for test files (default .)
-    test_spec         : Specification of test(s) to run
-    log_file          : Filename for test logging
-    list              : Boolean:  List all tests and exit
-    debug             : String giving debug level (info, warning, error...)
-    verbose           : Same as debug=verbose
-
-Overview
-++++++++
-
-    The directory structure is currently:
-
-     <oftest>
-         `
-         |-- oft
-         |-- doc
-         |-- src
-         |   `-- python
-         |       `-- oftest
-         |-- tests
-         |   `-- test cases
-         `-- tools
-             |-- munger
-             `-- pylibopenflow
-
-    The tools directory is what processes the OpenFlow header
-    files to produce Python classes representing OpenFlow messages.
-    The results are placed in src/python/oftest and currently
-    include:
-
-        message.py:      The main API providing OF message classes
-        error.py:        Subclasses for error messages
-        action.py:       Subclasses for action specification
-        cstruct.py:      Direct representation of C structures in Python
-        class_maps.py:   Addition info about C structures
-
-    In addition, the following Python files are present in 
-    src/python/oftest:
-
-        controller.py:   The controller representation
-        dataplane.py:    The dataplane representation
-        action_list.py:  Action list class
-        netutils.py:     e.g., set promisc on sockets
-        ofutils.py:      Utilities related to OpenFlow messages
-        oft_assert.py:   Test framework level assertion
-        testutils.py:    Test utilities
-
-    Tests are run from the tests directory.  The file oft is the
-    top level entry point for tests.  Try ./oft --help for some more.
-
-Important Notes
-+++++++++++++++
-
-    1.  If you change any of the code generation scripts in
-    tools/munger/scripts you must re-run make -C tools/munger to
-    regenerate the OpenFlow message classes.
-
-    2.  If your running into issues with transactions, and it appears that
-    OpenFlow messages aren't quite right, start by looking at any length
-    fields in the packets.  With the local platform, you can use wireshark
-    on the loopback interface as well as the dataplane veth interfaces.
-
-    3.  If tests dealing with VLANs fail unexpectedly then try installing
-    pypcap (see Longer Start above).
-
-Adding Your Own Test Cases
-++++++++++++++++++++++++++
-
-    Check the online tutorial:  
-        http://openflow.org/wk/index.php/OFTestTutorial
-
-    You can:
-
-        * Add cases to an existing file
-        * Add a new file
-
-    If you add cases to an existing file, each case should be its own
-    class.  It must inherit from unittest.TestCase or one of its 
-    derivatives and define runTest (that's how test cases are discovered).
-
-    If you add a new file, it must implement a top level function called
-    test_set_init which takes a configuration dictionary.  See basic.py
-    for an example.  The main point of this is to pass the port map 
-    object to the test cases.  But you can access any configuration
-    parameters this way.  Each test case in the new file must derive
-    from unittest.TestCase.
-
-    CONVENTIONS:
-
-    The first line of the doc string for a file and for a test class is 
-    displayed in the list command.  Please keep it clear and under 50
-    characters.
-
-
 Using CentOS/RHEL
 +++++++++++++++++
 
@@ -305,33 +215,3 @@ Using CentOS/RHEL
     If you hit an error related to importing scapy.all, you just need
     to change the import to refer to scapy (not scapy.all).  See
     examples in parse.py for example.
-
-
-Other Info
-++++++++++
-
-    * Build doc with
-      + cd <oftest>/tools/munger
-      + make doc
-    Places the results in <oftest>/doc/html
-    If you have problems, check the install location doxypy.py and
-    that it is set correctly in <oftest>/doc/Doxyfile
-
-    * Run lint on sources
-      + cd <oftest>/tools/munger
-      + make lint
-    Places results in <oftest>/lint/*.log
-    The file controller.log currently has some errors indicated
-
-
-To Do
-+++++
-
-    * Need to have an overview of the components of the test, how they
-      connect and how they are managed by the test framework.
-    * See the Regression Test component on trac:
-      http://www.openflowswitch.org/bugs/openflow
-      http://www.openflowswitch.org/bugs/openflow/query?component=Regression+test+suite
-
-    * Make the framework work with OF versions other than 1.0?
-
