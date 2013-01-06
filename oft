@@ -92,7 +92,7 @@ Current test case setup:
 """
 
 import sys
-from optparse import OptionParser
+import optparse
 from subprocess import Popen,PIPE
 import logging
 import unittest
@@ -120,6 +120,7 @@ except:
 
 import oftest.testutils
 import oftest.ofutils
+import oftest.help_formatter
 
 try:
     import scapy.all as scapy
@@ -141,71 +142,55 @@ DEBUG_LEVELS = {
     'critical'           : logging.CRITICAL
 }
 
-_debug_default = "warning"
-_debug_level_default = DEBUG_LEVELS[_debug_default]
-
 ##@var config_default
 # The default configuration dictionary for OFT
 config_default = {
-    "param"              : None,
-    "platform"           : "local",
-    "platform_args"      : None,
-    "switch_ip"          : None,  # If not none, actively connect to switch
-    "controller_host"    : "0.0.0.0",  # For passive bind
-    "controller_port"    : 6633,
-    "relax"              : False,
+    # Miscellaneous options
+    "list"               : False,
+    "list_test_names"    : False,
+    "allow_user"         : False,
+
+    # Test selection options
     "test_spec"          : "",
     "test_file"          : None,
+    "test_dir"           : os.path.join(root_dir, "tests"),
+
+    # Switch connection options
+    "controller_host"    : "0.0.0.0",  # For passive bind
+    "controller_port"    : 6633,
+    "switch_ip"          : None,  # If not none, actively connect to switch
+    "platform"           : "local",
+    "platform_args"      : None,
+    "platform_dir"       : os.path.join(root_dir, "platforms"),
+
+    # Logging options
     "log_file"           : "oft.log",
     "log_append"         : False,
-    "list"               : False,
-    "list_test_names"    : False, 
-    "debug"              : _debug_default,
-    "dbg_level"          : _debug_level_default,
-    "port_map"           : {},
+    "debug"              : "verbose",
+
+    # Test behavior options
+    "relax"              : False,
     "test_params"        : "None",
-    "allow_user"         : False,
     "fail_skipped"       : False,
     "default_timeout"    : 2,
     "minsize"            : 0,
     "random_seed"        : None,
-    "test_dir"           : os.path.join(root_dir, "tests"),
-    "platform_dir"       : os.path.join(root_dir, "platforms"),
-    "priority"           : 0,
+
+    # Other configuration
+    "port_map"           : {}, # TODO replace with --interface
 }
 
-#@todo Set up a dict of config params so easier to manage:
-# <param> <cmdline flags> <default value> <help> <optional parser>
-
-# Map options to config structure
-def config_get(opts):
-    "Convert options class to OFT configuration dictionary"
-    cfg = config_default.copy()
-    for key in cfg.keys():
-        cfg[key] = getattr(opts, key)
-
-    # Special case checks
-    if opts.debug not in DEBUG_LEVELS.keys():
-        print "Warning:  Bad value specified for debug level; using default"
-        opts.debug = _debug_default
-    if opts.verbose:
-        cfg["debug"] = "verbose"
-    cfg["dbg_level"] = DEBUG_LEVELS[cfg["debug"]]
-
-    return cfg
-
-def config_setup(cfg_dflt):
+def config_setup():
     """
     Set up the configuration including parsing the arguments
 
-    @param cfg_dflt The default configuration dictionary
     @return A pair (config, args) where config is an config
     object and args is any additional arguments from the command line
     """
 
     usage = "usage: %prog [options] (test|group)..."
 
-    description = """
+    description = """\
 OFTest is a framework and set of tests for validating OpenFlow switches.
 
 The default configuration assumes that an OpenFlow 1.0 switch is attempting to
@@ -220,77 +205,77 @@ these will be executed. To see what groups each test belongs to use the
 --list option.
 """
 
-    parser = OptionParser(version="%prog 0.1",
-                          usage=usage,
-                          description=description)
+    parser = optparse.OptionParser(version="%prog 0.1",
+                                   usage=usage,
+                                   description=description,
+                                   formatter=oftest.help_formatter.HelpFormatter())
 
-    #@todo parse port map as option?
     # Set up default values
-    parser.set_defaults(**cfg_dflt)
+    parser.set_defaults(**config_default)
 
-    #@todo Add options via dictionary
-    plat_help = """Set the platform type.  Valid values include:
-        local:  User space virtual ethernet pair setup
-        remote:  Remote embedded Broadcom based switch
-        Create a new_plat.py file and use --platform=new_plat on the command line
-        """
-    parser.add_option("-a", "--platform-args", help="Custom arguments per platform.")
-    parser.add_option("-P", "--platform", help=plat_help)
-    parser.add_option("-H", "--host", dest="controller_host",
-                      help="The IP/name of the test controller host")
-    parser.add_option("-S", "--switch-ip", dest="switch_ip",
-                      help="If set, actively connect to this switch by IP")
-    parser.add_option("-p", "--port", dest="controller_port",
-                      type="int", help="Port number of the test controller")
-    test_list_help = """Indicate tests to run.  Valid entries are "all" (the
-        default) or a comma separated list of:
-        group             Run all tests in the named group
-        module.testcase   Run the specific test case
-        """
-    parser.add_option("-T", "--test-spec", "--test-list", help=test_list_help)
-    parser.add_option("-f", "--test-file", help="File of tests to run, one per line")
-    parser.add_option("--log-file", 
-                      help="Name of log file, empty string to log to console")
-    parser.add_option("--log-append", action="store_true",
-                      help="Do not delete log file if specified")
-    parser.add_option("--debug",
-                      help="Debug lvl: debug, info, warning, error, critical")
-    parser.add_option("--list-test-names", action='store_true',
-                      help="List test names matching the test spec and exit", default=False)
     parser.add_option("--list", action="store_true",
                       help="List all tests and exit")
-    parser.add_option("-v", "--verbose", action="store_true", default=True,
-                      help="Short cut for --debug=verbose")
-    parser.add_option("-q", "--quiet", action="store_false", dest="verbose",
-                      help="Reduces verbosity")
-    parser.add_option("--relax", action="store_true",
-                      help="Relax packet match checks allowing other packets")
-    parser.add_option("-t", "--test-params",
-                      help="""Set test parameters: key=val;...
-        NOTE:  key MUST be a valid Python identifier, egr_count not egr-count
-        See --list""")
+    parser.add_option("--list-test-names", action='store_true',
+                      help="List test names matching the test spec and exit")
     parser.add_option("--allow-user", action="store_true",
                       help="Proceed even if oftest is not run as root")
-    parser.add_option("--fail-skipped", action="store_true",
+
+    group = optparse.OptionGroup(parser, "Test selection options")
+    group.add_option("-T", "--test-spec", "--test-list", help="Tests to run, separated by commas")
+    group.add_option("-f", "--test-file", help="File of tests to run, one per line")
+    group.add_option("--test-dir", type="string", help="Directory containing tests")
+    parser.add_option_group(group)
+
+    group = optparse.OptionGroup(parser, "Switch connection options")
+    group.add_option("-H", "--host", dest="controller_host",
+                      help="IP address to listen on (default %default)")
+    group.add_option("-p", "--port", dest="controller_port",
+                      type="int", help="Port number to listen on (default %default)")
+    group.add_option("-S", "--switch-ip", dest="switch_ip",
+                      help="If set, actively connect to this switch by IP")
+    group.add_option("-P", "--platform", help="Platform module name (default %default)")
+    group.add_option("-a", "--platform-args", help="Custom arguments for the platform")
+    group.add_option("--platform-dir", type="string", help="Directory containing platform modules")
+    parser.add_option_group(group)
+
+    group = optparse.OptionGroup(parser, "Logging options")
+    group.add_option("--log-file",
+                      help="Name of log file, empty string to log to console (default %default)")
+    group.add_option("--log-append", action="store_true",
+                      help="Do not delete log file if specified")
+    dbg_lvl_names = sorted(DEBUG_LEVELS.keys(), key=lambda x: DEBUG_LEVELS[x])
+    group.add_option("--debug", choices=dbg_lvl_names,
+                      help="Debug lvl: debug, info, warning, error, critical (default %default)")
+    group.add_option("-v", "--verbose", action="store_const", dest="debug",
+                     const="verbose", help="Shortcut for --debug=verbose")
+    group.add_option("-q", "--quiet", action="store_const", dest="debug",
+                     const="warning", help="Shortcut for --debug=warning")
+    parser.add_option_group(group)
+
+    group = optparse.OptionGroup(parser, "Test behavior options")
+    group.add_option("--relax", action="store_true",
+                      help="Relax packet match checks allowing other packets")
+    test_params_help = """Set test parameters: key=val;... (see --list)
+    """
+    group.add_option("-t", "--test-params", help=test_params_help)
+    group.add_option("--fail-skipped", action="store_true",
                       help="Return failure if any test was skipped")
-    parser.add_option("--default-timeout", type="int",
+    group.add_option("--default-timeout", type="int",
                       help="Timeout in seconds for most operations")
-    parser.add_option("--minsize", type="int", 
-                      help="Minimum allowable packet size on the dataplane.", 
-                      default=0)
-    parser.add_option("--random-seed", type="int",
-                      help="Random number generator seed",
-                      default=None)
-    parser.add_option("--test-dir", type="string",
-                      help="Directory containing tests")
-    parser.add_option("--platform-dir", type="string",
-                      help="Directory containing platform modules")
+    group.add_option("--minsize", type="int",
+                      help="Minimum allowable packet size on the dataplane.")
+    group.add_option("--random-seed", type="int",
+                      help="Random number generator seed")
+    parser.add_option_group(group)
 
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
     (options, args) = parser.parse_args()
 
-    config = config_get(options)
+    # Convert options from a Namespace to a plain dictionary
+    config = config_default.copy()
+    for key in config.keys():
+        config[key] = getattr(options, key)
 
     return (config, args)
 
@@ -303,7 +288,7 @@ def logging_setup(config):
     _mode = config["log_append"] and "a" or "w"
     logging.basicConfig(filename=config["log_file"],
                         filemode=_mode,
-                        level=config["dbg_level"],
+                        level=DEBUG_LEVELS[config["debug"]],
                         format=_format, datefmt=_datefmt)
 
 def load_test_modules(config):
@@ -402,7 +387,7 @@ def _space_to(n, str):
 #
 
 # Setup global configuration
-(new_config, args) = config_setup(config_default)
+(new_config, args) = config_setup()
 oftest.config.update(new_config)
 
 logging_setup(config)
