@@ -191,8 +191,11 @@ class OFSwitch(Thread):
         """
         Main execute function for running the switch
         """
-
-        logging.basicConfig(filename="", level=logging.DEBUG)
+        logging.basicConfig(filename="",
+                            filemode="w",
+                            level=logging.DEBUG,
+                            format="%(asctime)s.%(msecs)d  %(name)-10s: %(levelname)-8s: %(message)s",
+                            datefmt="%H:%M:%S")
         self.logger.info("Switch thread running")
         host = self.config.controller_ip
         if self.config.passive_connect:
