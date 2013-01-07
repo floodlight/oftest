@@ -298,13 +298,12 @@ class GroupTable(object):
         """
         return None
 
-def sigint_handler(signum, frame):
-    sys.exit()
-
 #####
 # If we're actually executing this file, then run this
 if __name__ == '__main__':
-    signal.signal(signal.SIGINT, sigint_handler)
+    # Remove python's signal handler which raises KeyboardError. Exiting from an
+    # exception waits for all threads to terminate which might not happen.
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     #pdb.set_trace()
     config = OFSwitchConfig()
