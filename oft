@@ -117,7 +117,8 @@ If no positional arguments are given then OFTest will run all tests that
 depend only on standard OpenFlow 1.0. Otherwise each positional argument
 is interpreted as either a test name or a test group name. The union of
 these will be executed. To see what groups each test belongs to use the
---list option.
+--list option. Tests and groups can be subtracted from the result by
+prefixing them with the '^' character.
 """
 
     parser = optparse.OptionParser(version="%prog 0.1",
@@ -272,14 +273,29 @@ def prune_tests(test_specs, test_modules):
     result = {}
     for e in test_specs:
         matched = False
+
+        if e.startswith('^'):
+            negated = True
+            e = e[1:]
+        else:
+            negated = False
+
         for (modname, (mod, tests)) in test_modules.items():
             for (testname, test) in tests.items():
                 if e in test._groups or e == "%s.%s" % (modname, testname):
                     result.setdefault(modname, (mod, {}))
-                    result[modname][1][testname] = test
+                    if not negated:
+                        result[modname][1][testname] = test
+                    else:
+                        if modname in result and testname in result[modname][1]:
+                            del result[modname][1][testname]
+                            if not result[modname][1]:
+                                del result[modname]
                     matched = True
+
         if not matched:
             die("test-spec element %s did not match any tests" % e)
+
     return result
 
 def die(msg, exit_val=1):
