@@ -172,7 +172,7 @@ class FlowPipeline(Thread):
         @param  request: A table_stats_request objects  
         """
         # we're a software table, can do anything!
-        all = sys.maxint
+        all = 0xFFFFFFFF
         reply = message.table_stats_reply()
         reply.header.xid = request.header.xid
         
