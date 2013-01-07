@@ -25,9 +25,6 @@ class BaseHandshake(unittest.TestCase):
     Base handshake case to set up controller, but do not send hello.
     """
 
-    controllers = []
-    default_timeout = 2
-
     def controllerSetup(self, host, port):
         con = controller.Controller(host=host,port=port)
 
@@ -42,6 +39,7 @@ class BaseHandshake(unittest.TestCase):
     def setUp(self):
         logging.info("** START TEST CASE " + str(self))
 
+        self.controllers = []
         self.default_timeout = test_param_get('default_timeout',
                                               default=2)
 
