@@ -21,11 +21,11 @@ import random
 
 from oftest import config
 import oftest.controller as controller
-import oftest.cstruct as ofp
-import oftest.message as message
 import oftest.dataplane as dataplane
-import oftest.action as action
 import oftest.base_tests as base_tests
+import of10.cstruct as ofp
+import of10.message as message
+import of10.action as action
 
 import oftest.illegal_message as illegal_message
 

@@ -26,14 +26,6 @@ Introduction
     controls data plane ports, sending and receiving packets, which 
     should be connected to the switch.
 
-    There are two parts to running the test framework:
-
-    * Building the python libraries that support the OF protocol
-    * Running oft, the main entry point of the test framework
-
-    Normally log output from oft is sent to the file oft.log, but
-    can be redirected to the console by specifying --log-file="".
-
     For information on writing new tests or making improvements to
     the test framework see the file DEVELOPING.
 
@@ -59,7 +51,6 @@ Quick Start
 
       # git clone git://github.com/floodlight/oftest
       # cd oftest
-      # make -C tools/munger
          Make sure the switch you want to test is running --
          see (4) below for the reference switch example.
       # ./oft --list
@@ -88,23 +79,13 @@ Longer Start
         * Doxygen and doxypy for document generation (optional)
         * lint for source checking (optional)
 
-    2.  Build the OpenFlow Python message classes
-
-        Important:  The OF version used by the controller is based on 
-        the file in <oftest>/tools/pylibopenflow/include/openflow.h
-        This is currently the 1.0 release file.
-
-        make -C <oftest>/tools/munger
-
-        This places files in <oftest>/src/python/oftest/src.
-
-    3.  Edit configuration if necessary
+    2.  Edit configuration if necessary
         The default (local) platform uses 4 veth interface pairs and
         is only suitable for testing local software switches. To test
         hardware switches you will need to create an appropriate
         platform file. See the "Platforms" section below.
 
-    4.  Start the switch to test
+    3.  Start the switch to test
         The switch must be running and actively attempting to 
         connect to a controller on the test host at the port number
         used by oft (6633 by default, or specified as --port=<n> as
@@ -132,7 +113,7 @@ Longer Start
         oftest/tools/ovs-ctl.  You will need to install a version of
         openvswitch.  See http://openvswitch.org/.
 
-    5.  Run oft (requires sudo to control the dataplane)
+    4.  Run oft (requires sudo to control the dataplane)
         cd <oftest>
         sudo ./oft --help
 

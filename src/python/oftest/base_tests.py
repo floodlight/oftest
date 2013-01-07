@@ -11,11 +11,8 @@ import unittest
 import oftest
 from oftest import config
 import oftest.controller as controller
-import oftest.cstruct as ofp
-import oftest.message as message
 import oftest.dataplane as dataplane
-import oftest.action as action
-
+import of10.message as message
 from oftest.testutils import *
 
 class SimpleProtocol(unittest.TestCase):

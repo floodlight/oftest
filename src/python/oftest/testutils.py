@@ -1,6 +1,8 @@
-
 import sys
 import copy
+import logging
+import types
+import time
 
 try:
     import scapy.all as scapy
@@ -12,14 +14,11 @@ except:
 
 from oftest import config
 import oftest.controller as controller
-import oftest.cstruct as ofp
-import oftest.message as message
 import oftest.dataplane as dataplane
-import oftest.action as action
-import oftest.parse as parse
-import logging
-import types
-import time
+import of10.cstruct as ofp
+import of10.message as message
+import of10.action as action
+import of10.parse as parse
 
 global skipped_test_count
 skipped_test_count = 0

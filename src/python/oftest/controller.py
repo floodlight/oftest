@@ -32,8 +32,8 @@ import time
 from threading import Thread
 from threading import Lock
 from threading import Condition
-from message import *
-from parse import *
+from of10.message import *
+from of10.parse import *
 from ofutils import *
 # For some reason, it seems select to be last (or later).
 # Otherwise get an attribute error when calling select.select

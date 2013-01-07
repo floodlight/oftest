@@ -5,7 +5,7 @@
 
 import re
 import sys
-sys.path.append("../../src/python/oftest")
+sys.path.append("../../src/python/of10")
 from cstruct import *
 from class_maps import class_to_members_map
 

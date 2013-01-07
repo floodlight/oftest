@@ -33,12 +33,6 @@ if os.path.exists(os.path.join(pydir, 'oftest')):
 
 import oftest
 from oftest import config
-
-try:
-    import oftest.message
-except:
-    sys.exit("Missing OpenFlow message classes: please run \"make -C tools/munger\"")
-
 import oftest.testutils
 import oftest.ofutils
 import oftest.help_formatter

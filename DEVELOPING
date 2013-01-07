@@ -44,7 +44,8 @@ Important Notes
 
     1.  If you change any of the code generation scripts in
     tools/munger/scripts you must re-run make -C tools/munger to
-    regenerate the OpenFlow message classes.
+    regenerate the OpenFlow message classes. Make sure you
+    commit the generated code.
 
 Adding Your Own Test Cases
 ++++++++++++++++++++++++++

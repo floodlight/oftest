@@ -11,7 +11,7 @@ TESTS_DIR = ${TOP_DIR}/tests
 
 PYLIBOF_DIR = ${TOOLS_DIR}/pylibopenflow
 
-TARGET_DIR = ${TOP_DIR}/src/python/oftest
+TARGET_DIR = ${TOP_DIR}/src/python/of10
 
 # Relative to pyopenflow-pythonize exec location
 OF_HEADER = include/openflow.h
