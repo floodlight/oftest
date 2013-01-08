@@ -56,7 +56,7 @@ Quick Start
       # ./oft --list
       # sudo ./oft basic.Echo
       # sudo ./oft --verbose --log-file=""
-      # sudo ./oft basic --platform=remote --host=...
+      # sudo ./oft basic -i 1@veth1 -i 2@veth3
 
 Longer Start
 ++++++++++++
@@ -79,13 +79,7 @@ Longer Start
         * Doxygen and doxypy for document generation (optional)
         * lint for source checking (optional)
 
-    2.  Edit configuration if necessary
-        The default (local) platform uses 4 veth interface pairs and
-        is only suitable for testing local software switches. To test
-        hardware switches you will need to create an appropriate
-        platform file. See the "Platforms" section below.
-
-    3.  Start the switch to test
+    2.  Start the switch to test
         The switch must be running and actively attempting to 
         connect to a controller on the test host at the port number
         used by oft (6633 by default, or specified as --port=<n> as
@@ -113,7 +107,7 @@ Longer Start
         oftest/tools/ovs-ctl.  You will need to install a version of
         openvswitch.  See http://openvswitch.org/.
 
-    4.  Run oft (requires sudo to control the dataplane)
+    3.  Run oft (requires sudo to control the dataplane)
         cd <oftest>
         sudo ./oft --help
 
@@ -122,8 +116,8 @@ Important Notes
 
     1.  If you're running into issues with transactions, and it appears that
     OpenFlow messages aren't quite right, start by looking at any length
-    fields in the packets.  With the local platform, you can use wireshark
-    on the loopback interface as well as the dataplane veth interfaces.
+    fields in the packets.  You can use wireshark on the loopback interface
+    as well as the dataplane ethernet interfaces.
 
     2.  If tests dealing with VLANs fail unexpectedly then try installing
     pypcap (see Longer Start above).
@@ -133,8 +127,12 @@ Platforms
 
     The "platform" is a configuration file (written in Python) that
     tells OFTest how to send packets to and receive packets from the
-    dataplane of the switch. The default platform uses Linux virtual
-    ethernet interfaces and is suitable only for local software switches.
+    dataplane of the switch.
+    
+    The default platform uses Linux ethernet interfaces and is configured with
+    the -i option. Pass the option as "-i ofport@interface", for example
+    "-i 1@eth1". If no -i options are given the the default configuration
+    uses veths and is compatible with the refrence switch.
 
     You can add your own platform, say gp104, by adding a file gp104.py to the
     platforms directory that defines the function platform_config_update and then

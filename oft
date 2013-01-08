@@ -75,7 +75,7 @@ config_default = {
     "controller_host"    : "0.0.0.0",  # For passive bind
     "controller_port"    : 6633,
     "switch_ip"          : None,  # If not none, actively connect to switch
-    "platform"           : "local",
+    "platform"           : "eth",
     "platform_args"      : None,
     "platform_dir"       : os.path.join(root_dir, "platforms"),
     "interfaces"         : [],
@@ -94,7 +94,7 @@ config_default = {
     "random_seed"        : None,
 
     # Other configuration
-    "port_map"           : {}, # TODO replace with --interface
+    "port_map"           : {},
 }
 
 def config_setup():
