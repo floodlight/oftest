@@ -730,7 +730,6 @@ class ofp_packet_in(object):
         self.reason = 0
         self.table_id = 0
         self.match = ofp_match()
-        self.match.length = OFP_MATCH_BYTES
 
     def __assert(self):
         """Sanity check
@@ -1342,7 +1341,6 @@ class ofp_aggregate_stats_request(object):
         self.cookie = 0
         self.cookie_mask = 0
         self.match = ofp_match()
-        self.match.length = OFP_MATCH_BYTES
 
     def __assert(self):
         """Sanity check
@@ -2618,7 +2616,6 @@ class ofp_flow_stats(object):
         self.packet_count = 0
         self.byte_count = 0
         self.match = ofp_match()
-        self.match.length = OFP_MATCH_BYTES
 
     def __assert(self):
         """Sanity check
@@ -2736,7 +2733,6 @@ class ofp_flow_removed(object):
         self.packet_count = 0
         self.byte_count = 0
         self.match = ofp_match()
-        self.match.length = OFP_MATCH_BYTES
 
     def __assert(self):
         """Sanity check
@@ -3826,7 +3822,6 @@ class ofp_flow_stats_request(object):
         self.cookie = 0
         self.cookie_mask = 0
         self.match = ofp_match()
-        self.match.length = OFP_MATCH_BYTES
 
     def __assert(self):
         """Sanity check
@@ -4107,7 +4102,8 @@ class ofp_match(object):
         Declare members and default values
         """
         self.type = OFPMT_OXM
-        self.length = 0
+        #exclude padding bytes
+        self.length = OFP_MATCH_BYTES 
 
     def __assert(self):
         """Sanity check
@@ -4188,7 +4184,6 @@ class ofp_flow_mod(object):
         self.flags = 0
         self.pad= [0,0]
         self.match = ofp_match()
-        self.match.length = OFP_MATCH_BYTES
 
     def __assert(self):
         """Sanity check

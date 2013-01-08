@@ -88,8 +88,6 @@ def delete_all_flows_one_table(ctrl, logger, table_id=0):
     """
     logger.info("Deleting all flows on table ID: " + str(table_id))
     msg = message.flow_mod()
-    msg.match.length = 0
-    msg.match_tlvs = [0,0,0,0]
     msg.out_port = ofp.OFPP_ANY
     msg.out_group = ofp.OFPG_ANY
     msg.command = ofp.OFPFC_DELETE

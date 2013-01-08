@@ -1003,8 +1003,7 @@ class flow_mod(ofp_flow_mod):
         """
         self.header.length = len(self)
         if not len(self.match_fields):
-            tlv_pad = oxm_tlv(0,0,0,0,0)
-            self.match.length += 4
+            tlv_pad = oxm_tlv(0,0,0,0,0,0)
             self.match_fields.tlvs.append(tlv_pad)
         else:
             if len(self.match_fields) > 4:
@@ -1142,7 +1141,7 @@ class flow_removed(ofp_flow_removed):
         """
         self.header.length = len(self)
         if not len(self.match_fields):
-            tlv_pad = oxm_tlv(0,0,0,0,0)
+            tlv_pad = oxm_tlv(0,0,0,0,0,0)
             self.match.length += 4
             self.match_fields.tlvs.append(tlv_pad)
         else:
@@ -1677,7 +1676,7 @@ class packet_in(ofp_packet_in):
         """
         self.header.length = len(self)
         if len(self.match_fields) < 4:
-            tlv_pad = oxm_tlv(0,0,0,0,0)
+            tlv_pad = oxm_tlv(0,0,0,0,0,0)
             self.match.length += 4
             self.match_fields.tlvs.append(tlv_pad)
         else:
@@ -2835,7 +2834,7 @@ class flow_stats_entry(ofp_flow_stats):
     def pack(self, assertstruct=True):
         self.length = len(self)
         if not len(self.match_fields):
-            tlv_pad = oxm_tlv(0,0,0,0,0)
+            tlv_pad = oxm_tlv(0,0,0,0,0,0)
             self.match.length += 4
             self.match_fields.tlvs.append(tlv_pad)
         else:
@@ -2901,7 +2900,7 @@ class aggregate_stats_request(ofp_stats_request, ofp_aggregate_stats_request):
         packed = self.header.pack()
         packed += ofp_stats_request.pack(self)
         if not len(self.match_fields):
-            tlv_pad = oxm_tlv(0,0,0,0,0)
+            tlv_pad = oxm_tlv(0,0,0,0,0,0)
             self.match.length += 4
             self.match_fields.tlvs.append(tlv_pad)
         else:
@@ -3132,7 +3131,7 @@ class flow_stats_request(ofp_stats_request, ofp_flow_stats_request):
         packed = self.header.pack()
         packed += ofp_stats_request.pack(self)
         if not len(self.match_fields):
-            tlv_pad = oxm_tlv(0,0,0,0,0)
+            tlv_pad = oxm_tlv(0,0,0,0,0,0)
             self.match.length += 4
             self.match_fields.tlvs.append(tlv_pad)
         else:
