@@ -23,6 +23,7 @@ import imp
 import random
 import signal
 import fnmatch
+import copy
 
 root_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -77,6 +78,7 @@ config_default = {
     "platform"           : "local",
     "platform_args"      : None,
     "platform_dir"       : os.path.join(root_dir, "platforms"),
+    "interfaces"         : [],
 
     # Logging options
     "log_file"           : "oft.log",
@@ -121,10 +123,25 @@ these will be executed. To see what groups each test belongs to use the
 prefixing them with the '^' character.
 """
 
+    # Parse --interface
+    def check_interface(option, opt, value):
+        try:
+            ofport, interface = value.split('@', 1)
+            ofport = int(ofport)
+        except ValueError:
+            raise optparse.OptionValueError("incorrect interface syntax (got %s, expected 'ofport@interface')" % repr(value))
+        return (ofport, interface)
+
+    class Option(optparse.Option):
+        TYPES = optparse.Option.TYPES + ("interface",)
+        TYPE_CHECKER = copy.copy(optparse.Option.TYPE_CHECKER)
+        TYPE_CHECKER["interface"] = check_interface
+
     parser = optparse.OptionParser(version="%prog 0.1",
                                    usage=usage,
                                    description=description,
-                                   formatter=oftest.help_formatter.HelpFormatter())
+                                   formatter=oftest.help_formatter.HelpFormatter(),
+                                   option_class=Option)
 
     # Set up default values
     parser.set_defaults(**config_default)
@@ -152,6 +169,8 @@ prefixing them with the '^' character.
     group.add_option("-P", "--platform", help="Platform module name (default %default)")
     group.add_option("-a", "--platform-args", help="Custom arguments for the platform")
     group.add_option("--platform-dir", type="string", help="Directory containing platform modules")
+    group.add_option("--interface", "-i", type="interface", dest="interfaces", metavar="INTERFACE", action="append",
+                     help="Specify a OpenFlow port number and the dataplane interface to use. May be given multiple times. Example: 1@eth1")
     parser.add_option_group(group)
 
     group = optparse.OptionGroup(parser, "Logging options")
