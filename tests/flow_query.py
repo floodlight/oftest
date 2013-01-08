@@ -338,7 +338,7 @@ class Flow_Cfg:
 
     def __init__(self):
         self.priority        = 0
-        self.match           = parse.ofp_match()
+        self.match           = ofp.ofp_match()
         self.match.wildcards = ofp.OFPFW_ALL
         self.idle_timeout    = 0
         self.hard_timeout    = 0

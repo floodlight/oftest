@@ -255,7 +255,7 @@ class Controller(Thread):
                 if self.keep_alive:
                     if hdr.type == of10.cstruct.OFPT_ECHO_REQUEST:
                         self.logger.debug("Responding to echo request")
-                        rep = echo_reply()
+                        rep = of10.message.echo_reply()
                         rep.header.xid = hdr.xid
                         # Ignoring additional data
                         self.message_send(rep.pack(), zero_xid=True)
