@@ -18,13 +18,13 @@ import sys
 import os
 import socket
 import time
-import netutils
+import select
+import logging
 from threading import Thread
 from threading import Lock
 from threading import Condition
-import select
-import logging
-from ofutils import *
+import ofutils
+import netutils
 
 have_pypcap = False
 try:
@@ -161,7 +161,7 @@ class DataPlane(Thread):
         self.cvar = Condition()
 
         # Used to wake up the event loop from another thread
-        self.waker = EventDescriptor()
+        self.waker = ofutils.EventDescriptor()
         self.killed = False
 
         self.logger = logging.getLogger("dataplane")
@@ -320,7 +320,7 @@ class DataPlane(Thread):
             return None
 
         with self.cvar:
-            ret = timed_wait(self.cvar, grab, timeout=timeout)
+            ret = ofutils.timed_wait(self.cvar, grab, timeout=timeout)
 
         if ret != None:
             return ret

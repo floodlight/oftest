@@ -13,7 +13,6 @@ from oftest import config
 import oftest.controller as controller
 import oftest.dataplane as dataplane
 import of10.message as message
-from oftest.testutils import *
 
 class SimpleProtocol(unittest.TestCase):
     """

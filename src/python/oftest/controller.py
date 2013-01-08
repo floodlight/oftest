@@ -29,16 +29,16 @@ on an administrative socket and can shut down the socket might work.
 import os
 import socket
 import time
+import struct
+import select
+import logging
 from threading import Thread
 from threading import Lock
 from threading import Condition
-from of10.message import *
-from of10.parse import *
-from ofutils import *
-# For some reason, it seems select to be last (or later).
-# Otherwise get an attribute error when calling select.select
-import select
-import logging
+import of10.message
+import of10.parse
+import of10.cstruct
+import ofutils
 
 
 FILTER=''.join([(len(repr(chr(x)))==3) and chr(x) or '.' 
@@ -106,7 +106,7 @@ class Controller(Thread):
         self.message_cv = Condition()
 
         # Used to wake up the event loop from another thread
-        self.waker = EventDescriptor()
+        self.waker = ofutils.EventDescriptor()
 
         # Counters
         self.socket_errors = 0
@@ -206,7 +206,7 @@ class Controller(Thread):
         offset = 0
         while offset < len(pkt):
             # Parse the header to get type
-            hdr = of_header_parse(pkt[offset:])
+            hdr = of10.parse.of_header_parse(pkt[offset:])
             if not hdr or hdr.length == 0:
                 self.logger.error("Could not parse header")
                 self.logger.error("pkt len %d." % len(pkt))
@@ -225,17 +225,17 @@ class Controller(Thread):
             if self.filter_packet(rawmsg, hdr):
                 continue
 
-            self.logger.debug("Msg in: buf len %d. hdr.type %s. hdr.len %d" %
-                              (len(pkt), ofp_type_map[hdr.type], hdr.length))
-            if hdr.version != OFP_VERSION:
+            self.logger.debug("Msg in: buf len %d. hdr.type %s. hdr.len %d hdr.version %d" %
+                              (len(pkt), of10.cstruct.ofp_type_map[hdr.type], hdr.length, hdr.version))
+            if hdr.version != of10.cstruct.OFP_VERSION:
                 self.logger.error("Version %d does not match OFTest version %d"
-                                  % (hdr.version, OFP_VERSION))
+                                  % (hdr.version, of10.cstruct.OFP_VERSION))
                 print "Version %d does not match OFTest version %d" % \
-                    (hdr.version, OFP_VERSION)
+                    (hdr.version, of10.cstruct.OFP_VERSION)
                 self.disconnect()
                 return
 
-            msg = of_message_parse(rawmsg)
+            msg = of10.parse.of_message_parse(rawmsg)
             if not msg:
                 self.parse_errors += 1
                 self.logger.warn("Could not parse message")
@@ -253,7 +253,7 @@ class Controller(Thread):
 
                 # Check if keep alive is set; if so, respond to echo requests
                 if self.keep_alive:
-                    if hdr.type == OFPT_ECHO_REQUEST:
+                    if hdr.type == of10.cstruct.OFPT_ECHO_REQUEST:
                         self.logger.debug("Responding to echo request")
                         rep = echo_reply()
                         rep.header.xid = hdr.xid
@@ -270,7 +270,7 @@ class Controller(Thread):
                     handled = self.handlers["all"](self, msg, rawmsg)
 
                 if not handled: # Not handled, enqueue
-                    self.logger.debug("Enqueuing pkt type " + ofp_type_map[hdr.type])
+                    self.logger.debug("Enqueuing pkt type " + of10.cstruct.ofp_type_map[hdr.type])
                     with self.packets_cv:
                         if len(self.packets) >= self.max_pkts:
                             self.packets.pop(0)
@@ -314,7 +314,7 @@ class Controller(Thread):
                 self.switch_socket.setsockopt(socket.IPPROTO_TCP,
                                               socket.TCP_NODELAY, True)
                 if self.initial_hello:
-                    self.message_send(hello())
+                    self.message_send(of10.message.hello())
                 self.connect_cv.notify() # Notify anyone waiting
         elif s and s == self.switch_socket:
             for idx in range(3): # debug: try a couple of times
@@ -443,8 +443,8 @@ class Controller(Thread):
                 self.active = False
         else:
             with self.connect_cv:
-                timed_wait(self.connect_cv, lambda: self.switch_socket,
-                           timeout=timeout)
+                ofutils.timed_wait(self.connect_cv, lambda: self.switch_socket,
+                                   timeout=timeout)
 
         return self.switch_socket is not None
         
@@ -468,9 +468,9 @@ class Controller(Thread):
         """
 
         with self.connect_cv:
-            timed_wait(self.connect_cv, 
-                       lambda: True if not self.switch_socket else None, 
-                       timeout=timeout)
+            ofutils.timed_wait(self.connect_cv, 
+                               lambda: True if not self.switch_socket else None, 
+                               timeout=timeout)
         return self.switch_socket is None
         
     def kill(self):
@@ -551,7 +551,7 @@ class Controller(Thread):
         """
 
         if exp_msg is not None:
-            self.logger.debug("Poll for %s" % ofp_type_map[exp_msg])
+            self.logger.debug("Poll for %s" % of10.cstruct.ofp_type_map[exp_msg])
         else:
             self.logger.debug("Poll for any OF message")
 
@@ -563,10 +563,10 @@ class Controller(Thread):
                     (msg, pkt) = self.packets.pop(0)
                     return (msg, pkt)
                 else:
-                    self.logger.debug("Looking for %s" % ofp_type_map[exp_msg])
+                    self.logger.debug("Looking for %s" % of10.cstruct.ofp_type_map[exp_msg])
                     for i in range(len(self.packets)):
                         msg = self.packets[i][0]
-                        self.logger.debug("Checking packets[%d] (%s)" % (i, ofp_type_map[msg.header.type]))
+                        self.logger.debug("Checking packets[%d] (%s)" % (i, of10.cstruct.ofp_type_map[msg.header.type]))
                         if msg.header.type == exp_msg:
                             (msg, pkt) = self.packets.pop(i)
                             return (msg, pkt)
@@ -575,7 +575,7 @@ class Controller(Thread):
             return None
 
         with self.packets_cv:
-            ret = timed_wait(self.packets_cv, grab, timeout=timeout)
+            ret = ofutils.timed_wait(self.packets_cv, grab, timeout=timeout)
 
         if ret != None:
             (msg, pkt) = ret
@@ -601,7 +601,7 @@ class Controller(Thread):
         """
 
         if not zero_xid and msg.header.xid == 0:
-            msg.header.xid = gen_xid()
+            msg.header.xid = ofutils.gen_xid()
 
         self.logger.debug("Running transaction %d" % msg.header.xid)
 
@@ -615,7 +615,7 @@ class Controller(Thread):
             self.message_send(msg.pack())
 
             self.logger.debug("Waiting for transaction %d" % msg.header.xid)
-            timed_wait(self.xid_cv, lambda: self.xid_response, timeout=timeout)
+            ofutils.timed_wait(self.xid_cv, lambda: self.xid_response, timeout=timeout)
 
             if self.xid_response:
                 (resp, pkt) = self.xid_response
@@ -645,16 +645,17 @@ class Controller(Thread):
         #@todo If not string, try to pack
         if type(msg) != type(""):
             if msg.header.xid == 0 and not zero_xid:
-                msg.header.xid = gen_xid()
+                msg.header.xid = ofutils.gen_xid()
             outpkt = msg.pack()
         else:
             outpkt = msg
 
         msg_version, msg_type, msg_len, msg_xid = struct.unpack_from("!BBHL", outpkt)
-        self.logger.debug("Msg out: buf len %d. hdr.type %s. hdr.len %d",
+        self.logger.debug("Msg out: buf len %d. hdr.type %s. hdr.len %d hdr.version %d",
                           len(outpkt),
-                          ofp_type_map.get(msg_type, "unknown (%d)" % msg_type),
-                          msg_len)
+                          of10.cstruct.ofp_type_map.get(msg_type, "unknown (%d)" % msg_type),
+                          msg_len,
+                          msg_version)
         if self.switch_socket.sendall(outpkt) is not None:
             raise AssertionError("failed to send message to switch")
 
