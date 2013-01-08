@@ -429,7 +429,6 @@ suite = unittest.TestSuite()
 
 for (modname, (mod, tests)) in test_modules.items():
     for (testname, test) in tests.items():
-        logging.info("Adding test " + modname + "." + testname)
         suite.addTest(test())
 
 # Allow platforms to import each other
