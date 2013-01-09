@@ -507,6 +507,10 @@ class DeletedFlowStats(base_tests.SimpleDataPlane):
             sendPacket(self, pkt, ingress_port, egress_port,
                        test_timeout)
 
+        # wait some time for flow stats to be propagated
+        # FIXME timeout handling should be unified
+        sleep(test_param_get('default_timeout', default=2))
+
         # delete flow
         logging.info("Deleting flow")
         delete_all_flows(self.controller)
@@ -516,7 +520,20 @@ class DeletedFlowStats(base_tests.SimpleDataPlane):
             exp_msg=ofp.OFPT_FLOW_REMOVED, timeout=test_timeout)
 
         self.assertTrue(flow_removed != None, "Did not receive flow_removed message")
-        self.assertEqual(flow_removed.cookie, flow_mod_msg.cookie)
-        self.assertEqual(flow_removed.reason, ofp.OFPRR_DELETE)
-        self.assertEqual(flow_removed.packet_count, num_sends)
-        self.assertEqual(flow_removed.byte_count, num_sends * len(str(pkt)))
+        self.assertEqual(flow_removed.cookie, flow_mod_msg.cookie, 
+                         "Received cookie " + str(flow_removed.cookie) +
+                         " does not match expected " + str(flow_mod_msg.cookie))
+        self.assertEqual(flow_removed.reason, ofp.OFPRR_DELETE,
+                         "Received reason " + str(flow_removed.reason) + 
+                         " does not match expected " + str(ofp.OFPRR_DELETE))
+        self.assertEqual(flow_removed.packet_count, num_sends,
+                         "Received packet count " + str(flow_removed.packet_count) + 
+                         " does not match expected " + str(num_sends))
+        tolerance = 5 # percent
+        self.assertTrue(flow_removed.byte_count >= 
+                        (1-tolerance/100.0) * num_sends * len(str(pkt)) and
+                        flow_removed.byte_count <= 
+                        (1+tolerance/100.0) * num_sends * len(str(pkt)),
+                        "Received byte count " + str(flow_removed.byte_count) +
+                        " is not within " + str(tolerance) + "% of expected " + 
+                        str(num_sends*len(str(pkt))))
