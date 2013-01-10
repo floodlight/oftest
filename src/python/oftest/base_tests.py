@@ -12,7 +12,7 @@ import oftest
 from oftest import config
 import oftest.controller as controller
 import oftest.dataplane as dataplane
-import of10.message as message
+import of10 as ofp
 
 class SimpleProtocol(unittest.TestCase):
     """
@@ -40,7 +40,7 @@ class SimpleProtocol(unittest.TestCase):
             if self.controller.switch_addr is None:
                 raise Exception("Controller startup failed (no switch addr)")
             logging.info("Connected " + str(self.controller.switch_addr))
-            request = message.features_request()
+            request = ofp.message.features_request()
             reply, pkt = self.controller.transact(request)
             self.assertTrue(reply is not None,
                             "Did not complete features_request for handshake")
