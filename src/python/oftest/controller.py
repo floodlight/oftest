@@ -225,10 +225,10 @@ class Controller(Thread):
 
             self.logger.debug("Msg in: buf len %d. hdr.type %s. hdr.len %d hdr.version %d" %
                               (len(pkt), ofp.cstruct.ofp_type_map[hdr.type], hdr.length, hdr.version))
-            if hdr.version != ofp.cstruct.OFP_VERSION:
-                self.logger.error("Version %d does not match OFTest version %d"
-                                  % (hdr.version, ofp.cstruct.OFP_VERSION))
-                print "Version %d does not match OFTest version %d" % \
+            if hdr.version < ofp.cstruct.OFP_VERSION:
+                self.logger.error("Switch only supports up to OpenFlow version %d (OFTest version is %d)",
+                                  hdr.version, ofp.cstruct.OFP_VERSION)
+                print "Switch only supports up to OpenFlow version %d (OFTest version is %d)" % \
                     (hdr.version, ofp.cstruct.OFP_VERSION)
                 self.disconnect()
                 return
