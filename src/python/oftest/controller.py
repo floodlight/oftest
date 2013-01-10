@@ -35,7 +35,7 @@ import logging
 from threading import Thread
 from threading import Lock
 from threading import Condition
-import of10 as ofp
+import ofp
 import ofutils
 
 

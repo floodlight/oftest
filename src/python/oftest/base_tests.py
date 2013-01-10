@@ -12,7 +12,7 @@ import oftest
 from oftest import config
 import oftest.controller as controller
 import oftest.dataplane as dataplane
-import of10 as ofp
+import ofp
 
 class SimpleProtocol(unittest.TestCase):
     """

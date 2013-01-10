@@ -34,7 +34,6 @@ if os.path.exists(os.path.join(pydir, 'oftest')):
 
 import oftest
 from oftest import config
-import oftest.testutils
 import oftest.ofutils
 import oftest.help_formatter
 
@@ -79,6 +78,7 @@ config_default = {
     "platform_args"      : None,
     "platform_dir"       : os.path.join(root_dir, "platforms"),
     "interfaces"         : [],
+    "openflow_version"   : "1.0",
 
     # Logging options
     "log_file"           : "oft.log",
@@ -171,6 +171,8 @@ prefixing them with the '^' character.
     group.add_option("--platform-dir", type="string", help="Directory containing platform modules")
     group.add_option("--interface", "-i", type="interface", dest="interfaces", metavar="INTERFACE", action="append",
                      help="Specify a OpenFlow port number and the dataplane interface to use. May be given multiple times. Example: 1@eth1")
+    group.add_option("--of-version", "-V", dest="openflow_version", choices=["1.0", "1.1", "1.2"],
+                     help="OpenFlow version to use")
     parser.add_option_group(group)
 
     group = optparse.OptionGroup(parser, "Logging options")
@@ -342,6 +344,24 @@ oftest.config.update(new_config)
 
 logging_setup(config)
 logging.info("++++++++ " + time.asctime() + " ++++++++")
+
+# Pick an OpenFlow protocol module based on the configured version
+# This will go away once we have a single protocol module that
+# can handle all OpenFlow versions.
+if config["openflow_version"] == "1.0":
+    import of10
+    sys.modules["ofp"] = of10
+elif config["openflow_version"] == "1.1":
+    import of11
+    sys.modules["ofp"] = of11
+elif config["openflow_version"] == "1.2":
+    import of12
+    sys.modules["ofp"] = of12
+else:
+    assert(False)
+
+# HACK: testutils.py imports controller.py, which needs the ofp module
+import oftest.testutils
 
 # Allow tests to import each other
 sys.path.append(config["test_dir"])
