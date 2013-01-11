@@ -23,9 +23,7 @@ from oftest import config
 import oftest.controller as controller
 import oftest.dataplane as dataplane
 import oftest.base_tests as base_tests
-import of10.cstruct as ofp
-import of10.message as message
-import of10.action as action
+import ofp
 
 import oftest.illegal_message as illegal_message
 
@@ -39,7 +37,7 @@ class Echo(base_tests.SimpleProtocol):
     Test echo response with no data
     """
     def runTest(self):
-        request = message.echo_request()
+        request = ofp.message.echo_request()
         response, pkt = self.controller.transact(request)
         self.assertTrue(response is not None,
                         "Did not get echo reply")
@@ -54,7 +52,7 @@ class EchoWithData(base_tests.SimpleProtocol):
     Test echo response with short string data
     """
     def runTest(self):
-        request = message.echo_request(data='OpenFlow Will Rule The World')
+        request = ofp.message.echo_request(data='OpenFlow Will Rule The World')
         response, pkt = self.controller.transact(request)
         self.assertTrue(response is not None,
                         "Did not get echo reply (with data)")
@@ -169,9 +167,9 @@ class PacketOut(base_tests.SimpleDataPlane):
                (simple_eth_packet(pktlen=40), "tiny Ethernet packet")]:
 
                logging.info("PKT OUT test with %s, port %s" % (opt, dp_port))
-               msg = message.packet_out(in_port=ofp.OFPP_NONE,
+               msg = ofp.message.packet_out(in_port=ofp.OFPP_NONE,
                                         data=str(outpkt),
-                                        actions=[action.output(port=dp_port)])
+                                        actions=[ofp.action.output(port=dp_port)])
 
                logging.info("PacketOut to: " + str(dp_port))
                self.controller.message_send(msg)
@@ -221,8 +219,8 @@ class PacketOutMC(base_tests.SimpleDataPlane):
                dp_ports = of_ports[0:num_ports]
                logging.info("PKT OUT test with " + opt +
                                  ", ports " + str(dp_ports))
-               actions = [action.output(port=port) for port in dp_ports]
-               msg = message.packet_out(in_port=ofp.OFPP_NONE,
+               actions = [ofp.action.output(port=port) for port in dp_ports]
+               msg = ofp.message.packet_out(in_port=ofp.OFPP_NONE,
                                         data=str(outpkt),
                                         actions=actions)
 
@@ -247,7 +245,7 @@ class FlowStatsGet(base_tests.SimpleProtocol):
         self.controller.message_send(request)
         
         logging.info("Sending flow request")
-        request = message.flow_stats_request(out_port=ofp.OFPP_NONE,
+        request = ofp.message.flow_stats_request(out_port=ofp.OFPP_NONE,
                                              table_id=0xff)
         request.match.wildcards = 0 # ofp.OFPFW_ALL
         response, pkt = self.controller.transact(request)
@@ -268,7 +266,7 @@ class TableStatsGet(base_tests.SimpleProtocol):
         self.controller.message_send(request)
         
         logging.info("Sending table stats request")
-        request = message.table_stats_request()
+        request = ofp.message.table_stats_request()
         response, pkt = self.controller.transact(request)
         self.assertTrue(response is not None,
                         "Did not get reply for table stats")
@@ -284,7 +282,7 @@ class DescStatsGet(base_tests.SimpleProtocol):
         logging.info("Running DescStatsGet")
         
         logging.info("Sending stats request")
-        request = message.desc_stats_request()
+        request = ofp.message.desc_stats_request()
         response, pkt = self.controller.transact(request)
         self.assertTrue(response is not None,
                         "Did not get reply for desc stats")
