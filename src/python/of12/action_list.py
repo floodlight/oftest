@@ -41,9 +41,11 @@ class action_list(ofp_base_list):
 
     """
 
-    def __init__(self):
+    def __init__(self, actions=None):
         ofp_base_list.__init__(self)
         self.actions = self.items
+        if actions:
+            self.actions.extend(actions)
         self.name = "action"
         self.class_list = action_class_list
 

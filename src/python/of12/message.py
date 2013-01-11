@@ -1872,13 +1872,14 @@ class packet_out(ofp_packet_out):
         ofp_packet_out.__init__(self)
         self.header = ofp_header()
         self.header.type = OFPT_PACKET_OUT
-        self.actions = action_list()
+        self.actions = []
         self.data = ""
         for (k, v) in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
             else:
                 raise NameError("field %s does not exist in %s" % (k, self.__class__))
+        self.actions = action_list(self.actions)
 
 
     def pack(self):
