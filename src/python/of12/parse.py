@@ -319,7 +319,7 @@ def packet_to_flow_match(packet):
         match_ls.add(ip_proto)
         match_ls.add(udp_src)
         match_ls.add(udp_dst)        
-        returnmatch_ls
+        return match_ls
 
     if ICMP in packet:
         icmp = packet[ICMP]
