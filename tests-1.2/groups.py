@@ -1,11 +1,7 @@
 """
 Group table test cases.
 """
-import time
-import signal
-import sys
 import logging
-import unittest
 
 from oftest import config
 import of12 as ofp

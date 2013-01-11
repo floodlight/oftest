@@ -6,10 +6,7 @@ namespace as different groups of tests will likely define
 similar identifiers.
 """
 
-import sys
 import logging
-import unittest
-import ipaddr
 
 from oftest import config
 import ofp

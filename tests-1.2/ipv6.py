@@ -14,8 +14,6 @@ indicated oin oft_config
 
 import logging
 import ipaddr
-import os.path
-import subprocess
 
 from oftest import config
 import ofp
