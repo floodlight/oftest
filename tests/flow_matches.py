@@ -526,6 +526,158 @@ class TcpDstPort(base_tests.SimpleDataPlane):
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=10)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 
+class UdpSrcPort(base_tests.SimpleDataPlane):
+    
+    """Verify match on Single header field -- Udp Source Port,  """
+    
+    def runTest(self):
+
+        logging.info("Running Udp Src Port test")
+
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+    
+        #Clear Switch State
+        delete_all_flows(self.controller)
+
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+    
+        logging.info("Inserting a flow with match on Udp Udp Source Port ")
+        logging.info("Sending matching and non-matching tcp packets")
+        logging.info("Verifying matching packets implements the action specified in the flow")
+
+        (pkt,match) = match_udp_src(self,of_ports)   
+
+        #Sending packet matching the tcp_sport, verify it implements the action
+        self.dataplane.send(of_ports[0], str(pkt))
+
+        #Verify packet implements the action specified in the flow
+        receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
+
+        #Sending non matching packet , verify Packetin event gets triggered.
+        pkt2 = simple_udp_packet(udp_sport=540);
+        self.dataplane.send(of_ports[0], str(pkt2))
+        
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
+        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+
+class UdpDstPort(base_tests.SimpleDataPlane):
+    
+    """Verify match on Single header field -- Udp Destination Port """
+    
+    def runTest(self):
+
+        logging.info("Running Udp Destination Port test")
+
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+    
+        #Clear Switch State
+        delete_all_flows(self.controller)
+
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+        
+        logging.info("Inserting a flow with match on Udp Destination Port ")
+        logging.info("Sending matching and non-matching packets")
+        logging.info("Verifying matching packets implements the action specified in the flow")
+
+        (pkt,match) = match_udp_dst(self,of_ports)   
+
+        #Sending packet matching the tcp_dport, verify it implements the action
+        self.dataplane.send(of_ports[0], str(pkt))
+
+        #Verify packet implements the action specified in the flow
+        receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
+
+        #Sending non matching packet , verify Packetin event gets triggered.
+        pkt2 = simple_udp_packet(udp_dport=541);
+        self.dataplane.send(of_ports[0], str(pkt2))
+        
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=10)
+        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+
+class ICMPType(base_tests.SimpleDataPlane):
+    
+    """Verify match on Single header field -- ICMP type,  """
+
+    def runTest(self):
+
+        logging.info("Running ICMP type test")
+
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+    
+        #Clear Switch State
+        delete_all_flows(self.controller)
+
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+    
+        logging.info("Inserting a flow with match on ICMP type")
+        logging.info("Sending matching and non-matching ICMP packets")
+        logging.info("Verifying matching packets implements the action specified in the flow")
+
+        (pkt,match) = match_icmp_type(self,of_ports)   
+
+        #Sending packet matching the tcp_sport, verify it implements the action
+        self.dataplane.send(of_ports[0], str(pkt))
+
+        #Verify packet implements the action specified in the flow
+        receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
+
+        #Sending non matching packet , verify Packetin event gets triggered.
+        pkt2 = simple_icmp_packet(icmp_type=10);
+        self.dataplane.send(of_ports[0], str(pkt2))
+        
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
+        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+
+class ICMPCode(base_tests.SimpleDataPlane):
+    
+    """Verify match on Single header field -- ICMP code,  """
+
+    def runTest(self):
+
+        logging.info("Running ICMP code test")
+
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+    
+        #Clear Switch State
+        delete_all_flows(self.controller)
+
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+    
+        logging.info("Inserting a flow with match on ICMP type")
+        logging.info("Sending matching and non-matching ICMP packets")
+        logging.info("Verifying matching packets implements the action specified in the flow")
+
+        (pkt,match) = match_icmp_code(self,of_ports)   
+
+        #Sending packet matching the tcp_dport, verify it implements the action
+        self.dataplane.send(of_ports[0], str(pkt))
+
+        #Verify packet implements the action specified in the flow
+        receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
+
+        #Sending non matching packet , verify Packetin event gets triggered.
+        pkt2 = simple_icmp_packet(icmp_code=10);
+        self.dataplane.send(of_ports[0], str(pkt2))
+        
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
+        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+
 
 class ExactMatch(base_tests.SimpleDataPlane):
     

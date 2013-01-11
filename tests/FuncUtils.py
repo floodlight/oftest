@@ -454,6 +454,111 @@ def match_tcp_dst(self,of_ports,priority=None):
     return (pkt_matchdst,match)        
 
 
+def match_udp_src(self,of_ports,priority=None):
+    #Generate Match_Udp_Src
+
+    #Create a simple udp packet and generate match on udp source port flow
+    pkt_matchtSrc = simple_udp_packet(udp_sport=111)
+    match = parse.packet_to_flow_match(pkt_matchtSrc)
+    self.assertTrue(match is not None, "Could not generate flow match from pkt")
+
+    match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_TYPE ^ofp.OFPFW_NW_PROTO ^ofp.OFPFW_TP_SRC  
+    msg = message.flow_mod()
+    msg.out_port = ofp.OFPP_NONE
+    msg.command = ofp.OFPFC_ADD
+    msg.buffer_id = 0xffffffff
+    msg.match = match
+    if priority != None :
+        msg.priority = priority
+
+    act = action.action_output()
+    act.port = of_ports[1]
+    msg.actions.add(act)
+
+    self.controller.message_send(msg)
+    do_barrier(self.controller)
+
+    return (pkt_matchtSrc,match)  
+
+def match_udp_dst(self,of_ports,priority=None):
+    #Generate Match_Udp_Dst
+
+        #Create a simple udp packet and generate match on udp destination port flow
+    pkt_matchdst = simple_udp_packet(udp_dport=112)
+    match = parse.packet_to_flow_match(pkt_matchdst)
+    self.assertTrue(match is not None, "Could not generate flow match from pkt")
+
+    match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_TYPE^ofp.OFPFW_NW_PROTO^ofp.OFPFW_TP_DST  
+    msg = message.flow_mod()
+    msg.out_port = ofp.OFPP_NONE
+    msg.command = ofp.OFPFC_ADD
+    msg.buffer_id = 0xffffffff
+    msg.match = match
+    if priority != None :
+        msg.priority = priority
+    act = action.action_output()
+    act.port = of_ports[1]
+    msg.actions.add(act)
+
+    self.controller.message_send(msg)
+    do_barrier(self.controller)
+
+    return (pkt_matchdst,match)        
+
+
+def match_icmp_type(self,of_ports,priority=None):
+    #Generate Match_Icmp_Type
+
+    #Create a simple icmp packet and generate match on icmp type flow
+    pkt_match = simple_icmp_packet(icmp_type=1)
+    match = parse.packet_to_flow_match(pkt_match)
+    self.assertTrue(match is not None, "Could not generate flow match from pkt")
+
+    match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_TYPE ^ofp.OFPFW_NW_PROTO ^ofp.OFPFW_TP_SRC  
+    msg = message.flow_mod()
+    msg.out_port = ofp.OFPP_NONE
+    msg.command = ofp.OFPFC_ADD
+    msg.buffer_id = 0xffffffff
+    msg.match = match
+    if priority != None :
+        msg.priority = priority
+
+    act = action.action_output()
+    act.port = of_ports[1]
+    msg.actions.add(act)
+
+    self.controller.message_send(msg)
+    do_barrier(self.controller)
+
+    return (pkt_match, match)
+
+def match_icmp_code(self,of_ports,priority=None):
+    #Generate Match_Icmp_Code
+
+    #Create a simple icmp packet and generate match on icmp code flow
+    pkt_match = simple_icmp_packet(icmp_code=3)
+    match = parse.packet_to_flow_match(pkt_match)
+    self.assertTrue(match is not None, "Could not generate flow match from pkt")
+
+    match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_TYPE ^ofp.OFPFW_NW_PROTO ^ofp.OFPFW_TP_DST
+    msg = message.flow_mod()
+    msg.out_port = ofp.OFPP_NONE
+    msg.command = ofp.OFPFC_ADD
+    msg.buffer_id = 0xffffffff
+    msg.match = match
+    if priority != None :
+        msg.priority = priority
+
+    act = action.action_output()
+    act.port = of_ports[1]
+    msg.actions.add(act)
+
+    self.controller.message_send(msg)
+    do_barrier(self.controller)
+
+    return (pkt_match, match)  
+
+
 def match_ethernet_type(self,of_ports,priority=None):
     #Generate a Match_Ethernet_Type flow
 
