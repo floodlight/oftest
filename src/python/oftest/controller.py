@@ -223,8 +223,8 @@ class Controller(Thread):
             if self.filter_packet(rawmsg, hdr):
                 continue
 
-            self.logger.debug("Msg in: buf len %d. hdr.type %s. hdr.len %d hdr.version %d" %
-                              (len(pkt), ofp.cstruct.ofp_type_map[hdr.type], hdr.length, hdr.version))
+            self.logger.debug("Msg in: buf len %d. hdr.type %s. hdr.len %d hdr.version %d hdr.xid %d" %
+                              (len(pkt), ofp.cstruct.ofp_type_map[hdr.type], hdr.length, hdr.version, hdr.xid))
             if hdr.version < ofp.cstruct.OFP_VERSION:
                 self.logger.error("Switch only supports up to OpenFlow version %d (OFTest version is %d)",
                                   hdr.version, ofp.cstruct.OFP_VERSION)
@@ -258,6 +258,34 @@ class Controller(Thread):
                         # Ignoring additional data
                         self.message_send(rep.pack(), zero_xid=True)
                         continue
+
+                # Log error messages
+                if hdr.type == ofp.OFPT_ERROR:
+                    if msg.type in ofp.ofp_error_type_map:
+                        type_str = ofp.ofp_error_type_map[msg.type]
+                        if msg.type == ofp.OFPET_HELLO_FAILED:
+                            code_map = ofp.ofp_hello_failed_code_map
+                        elif msg.type == ofp.OFPET_BAD_REQUEST:
+                            code_map = ofp.ofp_bad_request_code_map
+                        elif msg.type == ofp.OFPET_BAD_ACTION:
+                            code_map = ofp.ofp_bad_action_code_map
+                        elif msg.type == ofp.OFPET_FLOW_MOD_FAILED:
+                            code_map = ofp.ofp_flow_mod_failed_code_map
+                        elif msg.type == ofp.OFPET_PORT_MOD_FAILED:
+                            code_map = ofp.ofp_port_mod_failed_code_map
+                        elif msg.type == ofp.OFPET_QUEUE_OP_FAILED:
+                            code_map = ofp.ofp_queue_op_failed_code_map
+                        else:
+                            code_map = None
+
+                        if code_map and msg.code in code_map:
+                            code_str = code_map[msg.code]
+                        else:
+                            code_str = "unknown"
+                    else:
+                        type_str = "unknown"
+                    self.logger.warn("Received error message: xid=%d type=%s (%d) code=%s (%d)",
+                                     hdr.xid, type_str, msg.type, code_str, msg.code)
 
                 # Now check for message handlers; preference is given to
                 # handlers for a specific packet
@@ -649,11 +677,12 @@ class Controller(Thread):
             outpkt = msg
 
         msg_version, msg_type, msg_len, msg_xid = struct.unpack_from("!BBHL", outpkt)
-        self.logger.debug("Msg out: buf len %d. hdr.type %s. hdr.len %d hdr.version %d",
+        self.logger.debug("Msg out: buf len %d. hdr.type %s. hdr.len %d hdr.version %d hdr.xid %d",
                           len(outpkt),
                           ofp.cstruct.ofp_type_map.get(msg_type, "unknown (%d)" % msg_type),
                           msg_len,
-                          msg_version)
+                          msg_version,
+                          msg_xid)
         if self.switch_socket.sendall(outpkt) is not None:
             raise AssertionError("failed to send message to switch")
 
