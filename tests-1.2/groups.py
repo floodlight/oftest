@@ -53,17 +53,17 @@ def create_bucket(weight = 0, watch_port = 0, watch_group = 0, actions=[]):
 def create_action(**kwargs):
     a = kwargs.get('action')
     if a == ofp.OFPAT_OUTPUT:
-        act = ofp.action.action_output()
+        act = ofp.action.output()
         act.port = kwargs.get('port', 1)
         return act
     if a == ofp.OFPAT_GROUP:
-        act = ofp.action.action_group()
+        act = ofp.action.group()
         act.group_id = kwargs.get('group_id', 0)
         return act
     if a == ofp.OFPAT_SET_FIELD:
         port = kwargs.get('tcp_sport', 0)
         field_2b_set = ofp.match.tcp_src(port)
-        act = ofp.action.action_set_field()
+        act = ofp.action.set_field()
         act.field = field_2b_set
         return act;
 

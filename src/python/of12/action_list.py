@@ -8,21 +8,21 @@ from base_list import ofp_base_list
 import copy
 
 action_object_map = {
-    OFPAT_OUTPUT                        : action_output,
-    OFPAT_SET_FIELD                     : action_set_field,
-    OFPAT_COPY_TTL_OUT                  : action_copy_ttl_out,
-    OFPAT_COPY_TTL_IN                   : action_copy_ttl_in,
-    OFPAT_SET_MPLS_TTL                  : action_set_mpls_ttl,
-    OFPAT_DEC_MPLS_TTL                  : action_dec_mpls_ttl,
-    OFPAT_PUSH_VLAN                     : action_push_vlan,
-    OFPAT_POP_VLAN                      : action_pop_vlan,
-    OFPAT_PUSH_MPLS                     : action_push_mpls,
-    OFPAT_POP_MPLS                      : action_pop_mpls,
-    OFPAT_SET_QUEUE                     : action_set_queue,
-    OFPAT_GROUP                         : action_group,
-    OFPAT_SET_NW_TTL                    : action_set_nw_ttl,
-    OFPAT_DEC_NW_TTL                    : action_dec_nw_ttl,
-    OFPAT_EXPERIMENTER                  : action_experimenter
+    OFPAT_OUTPUT                        : output,
+    OFPAT_SET_FIELD                     : set_field,
+    OFPAT_COPY_TTL_OUT                  : copy_ttl_out,
+    OFPAT_COPY_TTL_IN                   : copy_ttl_in,
+    OFPAT_SET_MPLS_TTL                  : set_mpls_ttl,
+    OFPAT_DEC_MPLS_TTL                  : dec_mpls_ttl,
+    OFPAT_PUSH_VLAN                     : push_vlan,
+    OFPAT_POP_VLAN                      : pop_vlan,
+    OFPAT_PUSH_MPLS                     : push_mpls,
+    OFPAT_POP_MPLS                      : pop_mpls,
+    OFPAT_SET_QUEUE                     : set_queue,
+    OFPAT_GROUP                         : group,
+    OFPAT_SET_NW_TTL                    : set_nw_ttl,
+    OFPAT_DEC_NW_TTL                    : dec_nw_ttl,
+    OFPAT_EXPERIMENTER                  : experimenter
 }
 
 class action_list(ofp_base_list):

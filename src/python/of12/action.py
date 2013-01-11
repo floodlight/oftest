@@ -5,7 +5,7 @@ from cstruct import *
 from match import roundup
 from match_list import match_list
 
-class action_pop_mpls(ofp_action_pop_mpls):
+class pop_mpls(ofp_action_pop_mpls):
     """
     Wrapper class for pop_mpls action object
 
@@ -25,7 +25,7 @@ class action_pop_mpls(ofp_action_pop_mpls):
         return outstr
 
 
-class action_push_vlan(ofp_action_push):
+class push_vlan(ofp_action_push):
     """
     Wrapper class for push_vlan action object
 
@@ -45,7 +45,7 @@ class action_push_vlan(ofp_action_push):
         return outstr
 
 
-class action_experimenter(ofp_action_experimenter_header):
+class experimenter(ofp_action_experimenter_header):
     """
     Wrapper class for experimenter action object
 
@@ -65,7 +65,7 @@ class action_experimenter(ofp_action_experimenter_header):
         return outstr
 
 
-class action_dec_mpls_ttl(ofp_action_header):
+class dec_mpls_ttl(ofp_action_header):
     """
     Wrapper class for dec_mpls_ttl action object
 
@@ -84,7 +84,7 @@ class action_dec_mpls_ttl(ofp_action_header):
         return outstr
 
 
-class action_set_nw_ttl(ofp_action_nw_ttl):
+class set_nw_ttl(ofp_action_nw_ttl):
     """
     Wrapper class for set_nw_ttl action object
 
@@ -104,7 +104,7 @@ class action_set_nw_ttl(ofp_action_nw_ttl):
         return outstr
 
 
-class action_copy_ttl_in(ofp_action_header):
+class copy_ttl_in(ofp_action_header):
     """
     Wrapper class for copy_ttl_in action object
 
@@ -123,7 +123,7 @@ class action_copy_ttl_in(ofp_action_header):
         return outstr
 
 
-class action_group(ofp_action_group):
+class group(ofp_action_group):
     """
     Wrapper class for group action object
 
@@ -145,7 +145,7 @@ class action_group(ofp_action_group):
         return roundup(4 + 4,8)
 
 
-class action_set_queue(ofp_action_set_queue):
+class set_queue(ofp_action_set_queue):
     """
     Wrapper class for set_queue action object
 
@@ -165,7 +165,7 @@ class action_set_queue(ofp_action_set_queue):
         return outstr
 
 
-class action_push_mpls(ofp_action_push):
+class push_mpls(ofp_action_push):
     """
     Wrapper class for push_mpls action object
 
@@ -185,7 +185,7 @@ class action_push_mpls(ofp_action_push):
         return outstr
 
 
-class action_copy_ttl_out(ofp_action_header):
+class copy_ttl_out(ofp_action_header):
     """
     Wrapper class for copy_ttl_out action object
 
@@ -204,7 +204,7 @@ class action_copy_ttl_out(ofp_action_header):
         return outstr
 
 
-class action_set_field(ofp_action_set_field):
+class set_field(ofp_action_set_field):
     """
     Wrapper class for set_field action object
 
@@ -255,7 +255,7 @@ class action_set_field(ofp_action_set_field):
         return roundup(4 + len(self.field),8)
          
 
-class action_set_mpls_ttl(ofp_action_mpls_ttl):
+class set_mpls_ttl(ofp_action_mpls_ttl):
     """
     Wrapper class for set_mpls_ttl action object
 
@@ -275,7 +275,7 @@ class action_set_mpls_ttl(ofp_action_mpls_ttl):
         return outstr
 
 
-class action_pop_vlan(ofp_action_header):
+class pop_vlan(ofp_action_header):
     """
     Wrapper class for pop_vlan action object
 
@@ -294,7 +294,7 @@ class action_pop_vlan(ofp_action_header):
         return outstr
 
 
-class action_dec_nw_ttl(ofp_action_header):
+class dec_nw_ttl(ofp_action_header):
     """
     Wrapper class for dec_nw_ttl action object
 
@@ -313,7 +313,7 @@ class action_dec_nw_ttl(ofp_action_header):
         return outstr
 
 
-class action_output(ofp_action_output):
+class output(ofp_action_output):
     """
     Wrapper class for output action object
 
@@ -334,19 +334,19 @@ class action_output(ofp_action_output):
         return outstr
 
 action_class_list = (
-    action_copy_ttl_in,
-    action_copy_ttl_out,
-    action_dec_mpls_ttl,
-    action_dec_nw_ttl,
-    action_experimenter,
-    action_group,
-    action_output,
-    action_pop_mpls,
-    action_pop_vlan,
-    action_push_mpls,
-    action_push_vlan,
-    action_set_field,
-    action_set_mpls_ttl,
-    action_set_nw_ttl,
-    action_set_queue)
+    copy_ttl_in,
+    copy_ttl_out,
+    dec_mpls_ttl,
+    dec_nw_ttl,
+    experimenter,
+    group,
+    output,
+    pop_mpls,
+    pop_vlan,
+    push_mpls,
+    push_vlan,
+    set_field,
+    set_mpls_ttl,
+    set_nw_ttl,
+    set_queue)
 

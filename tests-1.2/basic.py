@@ -108,7 +108,7 @@ class PacketOut(base_tests.SimpleDataPlane):
             msg = ofp.message.packet_out()
             msg.in_port = ofp.OFPP_CONTROLLER
             msg.data = str(outpkt)
-            act = ofp.action.action_output()
+            act = ofp.action.output()
             act.port = dp_port
             self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
 

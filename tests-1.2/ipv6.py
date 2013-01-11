@@ -59,7 +59,7 @@ class MatchIPv6Simple(base_tests.SimpleDataPlane):
         request.match_fields.tlvs.append(eth_type)
         request.match_fields.tlvs.append(eth_dst)
         request.match_fields.tlvs.append(ipv6_src)
-        act = ofp.action.action_output()
+        act = ofp.action.output()
         act.port = of_ports[3]
         inst = ofp.instruction.instruction_apply_actions()
         inst.actions.add(act)
@@ -117,7 +117,7 @@ class MatchICMPv6Simple(base_tests.SimpleDataPlane):
         request.match_fields.tlvs.append(ip_proto)
         request.match_fields.tlvs.append(icmpv6_type)
         
-        act = ofp.action.action_output()
+        act = ofp.action.output()
         act.port = of_ports[3]
         inst = ofp.instruction.instruction_apply_actions()
         inst.actions.add(act)
@@ -170,11 +170,11 @@ class IPv6SetField(base_tests.SimpleDataPlane):
         request.match_fields.tlvs.append(ipv6_src)
         
         field_2b_set = ofp.match.ipv6_dst(ipaddr.IPv6Address('fe80::2420:52ff:fe8f:DDDD'))
-        act_setfield = ofp.action.action_set_field()
+        act_setfield = ofp.action.set_field()
         act_setfield.field = field_2b_set
         
 #       TODO: insert action set field properly
-        act_out = ofp.action.action_output()
+        act_out = ofp.action.output()
         act_out.port = of_ports[3]
         
         
@@ -239,7 +239,7 @@ class MatchIPv6TCP(base_tests.SimpleDataPlane):
         request.match_fields.tlvs.append(ip_proto)
         request.match_fields.tlvs.append(tcp_port)
         
-        act = ofp.action.action_output()
+        act = ofp.action.output()
         act.port = of_ports[3]
         inst = ofp.instruction.instruction_apply_actions()
         inst.actions.add(act)
