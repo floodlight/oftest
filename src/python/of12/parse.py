@@ -12,15 +12,10 @@ import match
 #from action_list import action_list
 import cstruct as ofp
 
-
-
-
 try:
     logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
     from scapy.all import *
-    #load_contrib("mpls")
-    #TODO This should really be in scapy!
-    #bind_layers(MPLS, MPLS, s=0)
+    from oftest.mpls import *
 except ImportError:
     sys.exit("Need to install scapy for packet parsing")
 
