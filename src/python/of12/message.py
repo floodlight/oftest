@@ -19,7 +19,7 @@ class ofp_template_msg(object):
     high level API.
 
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         """
         Constructor for base class
 
@@ -37,7 +37,7 @@ class template_msg(ofp_template_msg):
     implement the functions indicated in this template.
 
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         """
         Constructor
         Must set the header type value appropriately for the message
@@ -125,9 +125,14 @@ class barrier_reply(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         self.header.type = OFPT_BARRIER_REPLY
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -218,9 +223,14 @@ class barrier_request(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         self.header.type = OFPT_BARRIER_REQUEST
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -312,10 +322,15 @@ class echo_reply(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         self.header.type = OFPT_ECHO_REPLY
         self.data = ""
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -419,10 +434,15 @@ class echo_request(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         self.header.type = OFPT_ECHO_REQUEST
         self.data = ""
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -529,11 +549,16 @@ class error(ofp_error_msg):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_error_msg.__init__(self)
         self.header = ofp_header()
         self.header.type = OFPT_ERROR
         self.data = ""
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -645,11 +670,16 @@ class experimenter(ofp_experimenter_header):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_experimenter_header.__init__(self)
         self.header = ofp_header()
         self.header.type = OFPT_EXPERIMENTER
         self.data = ""
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -764,11 +794,16 @@ class features_reply(ofp_switch_features):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_switch_features.__init__(self)
         self.header = ofp_header()
         self.header.type = OFPT_FEATURES_REPLY
         self.ports = []
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -876,9 +911,14 @@ class features_request(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         self.header.type = OFPT_FEATURES_REQUEST
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -983,7 +1023,7 @@ class flow_mod(ofp_flow_mod):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_flow_mod.__init__(self)
         self.header = ofp_header()
         self.header.type = OFPT_FLOW_MOD
@@ -992,6 +1032,11 @@ class flow_mod(ofp_flow_mod):
         self.out_group = OFPG_ANY
         self.match_fields = match_list()
         self.instructions = instruction_list()
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -1125,11 +1170,16 @@ class flow_removed(ofp_flow_removed):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_flow_removed.__init__(self)
         self.header = ofp_header()
         self.header.type = OFPT_FLOW_REMOVED
         self.match_fields = match_list()
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -1242,10 +1292,15 @@ class get_config_reply(ofp_switch_config):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_switch_config.__init__(self)
         self.header = ofp_header()
         self.header.type = OFPT_GET_CONFIG_REPLY
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -1341,9 +1396,14 @@ class get_config_request(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         self.header.type = OFPT_GET_CONFIG_REQUEST
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -1439,11 +1499,16 @@ class group_mod(ofp_group_mod):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_group_mod.__init__(self)
         self.header = ofp_header()
         self.header.type = OFPT_GROUP_MOD
         self.buckets = bucket_list()
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -1546,10 +1611,15 @@ class hello(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         self.header.type = OFPT_HELLO
         self.data = ""
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -1659,12 +1729,17 @@ class packet_in(ofp_packet_in):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_packet_in.__init__(self)
         self.header = ofp_header()
         self.header.type = OFPT_PACKET_IN
         self.match_fields =  match_list()
         self.data = ""
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -1793,12 +1868,17 @@ class packet_out(ofp_packet_out):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_packet_out.__init__(self)
         self.header = ofp_header()
         self.header.type = OFPT_PACKET_OUT
         self.actions = action_list()
         self.data = ""
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -1919,10 +1999,15 @@ class port_mod(ofp_port_mod):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_port_mod.__init__(self)
         self.header = ofp_header()
         self.header.type = OFPT_PORT_MOD
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -2021,10 +2106,15 @@ class port_status(ofp_port_status):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_port_status.__init__(self)
         self.header = ofp_header()
         self.header.type = OFPT_PORT_STATUS
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -2123,11 +2213,16 @@ class queue_get_config_reply(ofp_queue_get_config_reply):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_queue_get_config_reply.__init__(self)
         self.header = ofp_header()
         self.header.type = OFPT_QUEUE_GET_CONFIG_REPLY
         self.queues = []
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -2235,10 +2330,15 @@ class queue_get_config_request(ofp_queue_get_config_request):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_queue_get_config_request.__init__(self)
         self.header = ofp_header()
         self.header.type = OFPT_QUEUE_GET_CONFIG_REQUEST
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -2337,10 +2437,15 @@ class set_config(ofp_switch_config):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_switch_config.__init__(self)
         self.header = ofp_header()
         self.header.type = OFPT_SET_CONFIG
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -2439,10 +2544,15 @@ class stats_reply(ofp_stats_reply):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_stats_reply.__init__(self)
         self.header = ofp_header()
         self.header.type = OFPT_STATS_REPLY
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -2541,10 +2651,15 @@ class stats_request(ofp_stats_request):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_stats_request.__init__(self)
         self.header = ofp_header()
         self.header.type = OFPT_STATS_REQUEST
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -2643,10 +2758,15 @@ class table_mod(ofp_table_mod):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_table_mod.__init__(self)
         self.header = ofp_header()
         self.header.type = OFPT_TABLE_MOD
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
 
     def pack(self):
@@ -2744,7 +2864,7 @@ class ofp_desc_stats_request(object):
     """
     Forced definition of ofp_desc_stats_request (empty class)
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         pass
     def pack(self, assertstruct=True):
         return ""
@@ -2765,7 +2885,7 @@ class ofp_table_stats_request(object):
     """
     Forced definition of ofp_table_stats_request (empty class)
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         pass
     def pack(self, assertstruct=True):
         return ""
@@ -2786,7 +2906,7 @@ class ofp_group_desc_stats_request(object):
     """
     Forced definition of ofp_group_desc_stats_request (empty class)
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         pass
     def pack(self, assertstruct=True):
         return ""
@@ -2826,7 +2946,7 @@ class flow_stats_entry(ofp_flow_stats):
     """
     Special case flow stats entry to handle action list object
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_flow_stats.__init__(self)
         self.match_fields = match_list()
         self.instructions = instruction_list()
@@ -2887,13 +3007,18 @@ class aggregate_stats_request(ofp_stats_request, ofp_aggregate_stats_request):
     """
     Wrapper class for aggregate stats request message
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         ofp_stats_request.__init__(self)
         ofp_aggregate_stats_request.__init__(self)
         self.header.type = OFPT_STATS_REQUEST
         self.type = OFPST_AGGREGATE
         self.match_fields = match_list()
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
         
     def pack(self, assertstruct=True):
         self.header.length = len(self)
@@ -2957,13 +3082,18 @@ class aggregate_stats_reply(ofp_stats_reply):
     """
     Wrapper class for aggregate stats reply
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         ofp_stats_reply.__init__(self)
         self.header.type = OFPT_STATS_REPLY
         self.type = OFPST_AGGREGATE
         # stats: Array of type aggregate_stats_entry
         self.stats = []
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)
@@ -3014,12 +3144,17 @@ class desc_stats_request(ofp_stats_request, ofp_desc_stats_request):
     """
     Wrapper class for desc stats request message
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         ofp_stats_request.__init__(self)
         ofp_desc_stats_request.__init__(self)
         self.header.type = OFPT_STATS_REQUEST
         self.type = OFPST_DESC
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)
@@ -3061,13 +3196,18 @@ class desc_stats_reply(ofp_stats_reply):
     """
     Wrapper class for desc stats reply
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         ofp_stats_reply.__init__(self)
         self.header.type = OFPT_STATS_REPLY
         self.type = OFPST_DESC
         # stats: Array of type desc_stats_entry
         self.stats = []
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)
@@ -3118,13 +3258,18 @@ class flow_stats_request(ofp_stats_request, ofp_flow_stats_request):
     """
     Wrapper class for flow stats request message
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         ofp_stats_request.__init__(self)
         ofp_flow_stats_request.__init__(self)
         self.header.type = OFPT_STATS_REQUEST
         self.type = OFPST_FLOW
         self.match_fields = match_list()
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
     def pack(self):
         self.header.length = len(self)
@@ -3188,13 +3333,18 @@ class flow_stats_reply(ofp_stats_reply):
     """
     Wrapper class for flow stats reply
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         ofp_stats_reply.__init__(self)
         self.header.type = OFPT_STATS_REPLY
         self.type = OFPST_FLOW
         # stats: Array of type flow_stats_entry
         self.stats = []
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)
@@ -3245,12 +3395,17 @@ class port_stats_request(ofp_stats_request, ofp_port_stats_request):
     """
     Wrapper class for port stats request message
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         ofp_stats_request.__init__(self)
         ofp_port_stats_request.__init__(self)
         self.header.type = OFPT_STATS_REQUEST
         self.type = OFPST_PORT
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)
@@ -3292,13 +3447,18 @@ class port_stats_reply(ofp_stats_reply):
     """
     Wrapper class for port stats reply
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         ofp_stats_reply.__init__(self)
         self.header.type = OFPT_STATS_REPLY
         self.type = OFPST_PORT
         # stats: Array of type port_stats_entry
         self.stats = []
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)
@@ -3349,12 +3509,17 @@ class queue_stats_request(ofp_stats_request, ofp_queue_stats_request):
     """
     Wrapper class for queue stats request message
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         ofp_stats_request.__init__(self)
         ofp_queue_stats_request.__init__(self)
         self.header.type = OFPT_STATS_REQUEST
         self.type = OFPST_QUEUE
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)
@@ -3396,13 +3561,18 @@ class queue_stats_reply(ofp_stats_reply):
     """
     Wrapper class for queue stats reply
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         ofp_stats_reply.__init__(self)
         self.header.type = OFPT_STATS_REPLY
         self.type = OFPST_QUEUE
         # stats: Array of type queue_stats_entry
         self.stats = []
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)
@@ -3453,12 +3623,17 @@ class group_stats_request(ofp_stats_request, ofp_group_stats_request):
     """
     Wrapper class for group stats request message
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         ofp_stats_request.__init__(self)
         ofp_group_stats_request.__init__(self)
         self.header.type = OFPT_STATS_REQUEST
         self.type = OFPST_GROUP
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)
@@ -3500,13 +3675,18 @@ class group_stats_reply(ofp_stats_reply):
     """
     Wrapper class for group stats reply
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         ofp_stats_reply.__init__(self)
         self.header.type = OFPT_STATS_REPLY
         self.type = OFPST_GROUP
         # stats: Array of type group_stats_entry
         self.stats = []
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)
@@ -3557,12 +3737,17 @@ class group_desc_stats_request(ofp_stats_request, ofp_group_desc_stats_request):
     """
     Wrapper class for group_desc stats request message
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         ofp_stats_request.__init__(self)
         ofp_group_desc_stats_request.__init__(self)
         self.header.type = OFPT_STATS_REQUEST
         self.type = OFPST_GROUP_DESC
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)
@@ -3604,13 +3789,18 @@ class group_desc_stats_reply(ofp_stats_reply):
     """
     Wrapper class for group_desc stats reply
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         ofp_stats_reply.__init__(self)
         self.header.type = OFPT_STATS_REPLY
         self.type = OFPST_GROUP_DESC
         # stats: Array of type group_desc_stats_entry
         self.stats = []
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)
@@ -3661,12 +3851,17 @@ class table_stats_request(ofp_stats_request, ofp_table_stats_request):
     """
     Wrapper class for table stats request message
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         ofp_stats_request.__init__(self)
         ofp_table_stats_request.__init__(self)
         self.header.type = OFPT_STATS_REQUEST
         self.type = OFPST_TABLE
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)
@@ -3708,13 +3903,18 @@ class table_stats_reply(ofp_stats_reply):
     """
     Wrapper class for table stats reply
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.header = ofp_header()
         ofp_stats_reply.__init__(self)
         self.header.type = OFPT_STATS_REPLY
         self.type = OFPST_TABLE
         # stats: Array of type table_stats_entry
         self.stats = []
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)

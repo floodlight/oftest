@@ -15,10 +15,15 @@ class pop_mpls(ofp_action_pop_mpls):
     @arg ethertype
 
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_action_pop_mpls.__init__(self)
         self.type = OFPAT_POP_MPLS
         self.len = self.__len__()
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
     def show(self, prefix=''):
         outstr = prefix + "action_pop_mpls\n"
         outstr += ofp_action_pop_mpls.show(self, prefix)
@@ -35,10 +40,15 @@ class push_vlan(ofp_action_push):
     @arg ethertype
 
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_action_push.__init__(self)
         self.type = OFPAT_PUSH_VLAN
         self.len = self.__len__()
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
     def show(self, prefix=''):
         outstr = prefix + "action_push_vlan\n"
         outstr += ofp_action_push.show(self, prefix)
@@ -55,10 +65,15 @@ class experimenter(ofp_action_experimenter_header):
     @arg experimenter
 
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_action_experimenter_header.__init__(self)
         self.type = OFPAT_EXPERIMENTER
         self.len = self.__len__()
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
     def show(self, prefix=''):
         outstr = prefix + "action_experimenter\n"
         outstr += ofp_action_experimenter_header.show(self, prefix)
@@ -74,10 +89,15 @@ class dec_mpls_ttl(ofp_action_header):
     @arg len
 
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_action_header.__init__(self)
         self.type = OFPAT_DEC_MPLS_TTL
         self.len = self.__len__()
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
     def show(self, prefix=''):
         outstr = prefix + "action_dec_mpls_ttl\n"
         outstr += ofp_action_header.show(self, prefix)
@@ -94,10 +114,15 @@ class set_nw_ttl(ofp_action_nw_ttl):
     @arg nw_ttl
 
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_action_nw_ttl.__init__(self)
         self.type = OFPAT_SET_NW_TTL
         self.len = self.__len__()
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
     def show(self, prefix=''):
         outstr = prefix + "action_set_nw_ttl\n"
         outstr += ofp_action_nw_ttl.show(self, prefix)
@@ -113,10 +138,15 @@ class copy_ttl_in(ofp_action_header):
     @arg len
 
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_action_header.__init__(self)
         self.type = OFPAT_COPY_TTL_IN
         self.len = self.__len__()
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
     def show(self, prefix=''):
         outstr = prefix + "action_copy_ttl_in\n"
         outstr += ofp_action_header.show(self, prefix)
@@ -133,10 +163,15 @@ class group(ofp_action_group):
     @arg group_id
 
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_action_group.__init__(self)
         self.type = OFPAT_GROUP
         self.len = self.__len__()
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
     def show(self, prefix=''):
         outstr = prefix + "action_group\n"
         outstr += ofp_action_group.show(self, prefix)
@@ -155,10 +190,15 @@ class set_queue(ofp_action_set_queue):
     @arg queue_id
 
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_action_set_queue.__init__(self)
         self.type = OFPAT_SET_QUEUE
         self.len = self.__len__()
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
     def show(self, prefix=''):
         outstr = prefix + "action_set_queue\n"
         outstr += ofp_action_set_queue.show(self, prefix)
@@ -175,10 +215,15 @@ class push_mpls(ofp_action_push):
     @arg ethertype
 
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_action_push.__init__(self)
         self.type = OFPAT_PUSH_MPLS
         self.len = self.__len__()
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
     def show(self, prefix=''):
         outstr = prefix + "action_push_mpls\n"
         outstr += ofp_action_push.show(self, prefix)
@@ -194,10 +239,15 @@ class copy_ttl_out(ofp_action_header):
     @arg len
 
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_action_header.__init__(self)
         self.type = OFPAT_COPY_TTL_OUT
         self.len = self.__len__()
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
     def show(self, prefix=''):
         outstr = prefix + "action_copy_ttl_out\n"
         outstr += ofp_action_header.show(self, prefix)
@@ -214,11 +264,16 @@ class set_field(ofp_action_set_field):
     @arg field
 
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_action_set_field.__init__(self)
         self.type = OFPAT_SET_FIELD
         self.len = self.__len__()
         self.field = match_list()
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
         
     def pack(self):
         packed = ""
@@ -265,10 +320,15 @@ class set_mpls_ttl(ofp_action_mpls_ttl):
     @arg mpls_ttl
 
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_action_mpls_ttl.__init__(self)
         self.type = OFPAT_SET_MPLS_TTL
         self.len = self.__len__()
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
     def show(self, prefix=''):
         outstr = prefix + "action_set_mpls_ttl\n"
         outstr += ofp_action_mpls_ttl.show(self, prefix)
@@ -284,10 +344,15 @@ class pop_vlan(ofp_action_header):
     @arg len
 
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_action_header.__init__(self)
         self.type = OFPAT_POP_VLAN
         self.len = self.__len__()
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
     def show(self, prefix=''):
         outstr = prefix + "action_pop_vlan\n"
         outstr += ofp_action_header.show(self, prefix)
@@ -303,10 +368,15 @@ class dec_nw_ttl(ofp_action_header):
     @arg len
 
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_action_header.__init__(self)
         self.type = OFPAT_DEC_NW_TTL
         self.len = self.__len__()
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
     def show(self, prefix=''):
         outstr = prefix + "action_dec_nw_ttl\n"
         outstr += ofp_action_header.show(self, prefix)
@@ -324,10 +394,15 @@ class output(ofp_action_output):
     @arg max_len
 
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         ofp_action_output.__init__(self)
         self.type = OFPAT_OUTPUT
         self.len = self.__len__()
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
     def show(self, prefix=''):
         outstr = prefix + "action_output\n"
         outstr += ofp_action_output.show(self, prefix)
