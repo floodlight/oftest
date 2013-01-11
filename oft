@@ -284,10 +284,11 @@ def load_test_modules(config):
 
     return result
 
-def prune_tests(test_specs, test_modules):
+def prune_tests(test_specs, test_modules, version):
     """
-    Return tests matching the given test-specs
+    Return tests matching the given test-specs and OpenFlow version
     @param test_specs A list of group names or test names.
+    @param version An OpenFlow version (e.g. "1.0")
     @param test_modules Same format as the output of load_test_modules.
     @returns Same format as the output of load_test_modules.
     """
@@ -306,7 +307,8 @@ def prune_tests(test_specs, test_modules):
                 if e in test._groups or e == "%s.%s" % (modname, testname):
                     result.setdefault(modname, (mod, {}))
                     if not negated:
-                        result[modname][1][testname] = test
+                        if not hasattr(test, "_versions") or version in test._versions:
+                            result[modname][1][testname] = test
                     else:
                         if modname in result and testname in result[modname][1]:
                             del result[modname][1][testname]
@@ -419,6 +421,8 @@ group or their module's test group."""
             all_groups.update(test._groups)
             if groups:
                 desc = "(%s) %s" % (",".join(groups), desc)
+            if hasattr(test, "_versions"):
+                desc = "(%s) %s" % (",".join(sorted(test._versions)), desc)
             start_str = " %s%s %s:" % (test._nonstandard and "*" or " ",
                                        test._disabled and "!" or " ",
                                        testname)
@@ -434,7 +438,7 @@ group or their module's test group."""
 
     sys.exit(0)
 
-test_modules = prune_tests(test_specs, test_modules)
+test_modules = prune_tests(test_specs, test_modules, config["openflow_version"])
 
 # Check if test list is requested; display and exit if so
 if config["list_test_names"]:

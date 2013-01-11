@@ -3,6 +3,7 @@ import copy
 import logging
 import types
 import time
+import re
 
 try:
     import scapy.all as scapy
@@ -1050,3 +1051,44 @@ def group(name):
         cls._groups.append(name)
         return cls
     return fn
+
+def version(ver):
+    """
+    Testcase decorator that specifies which versions of OpenFlow the test
+    supports. The default is 1.0+. This decorator may only be used once.
+
+    Supported syntax:
+    1.0 -> 1.0
+    1.0,1.2,1.3 -> 1.0, 1.2, 1.3
+    1.0+ -> 1.0, 1.1, 1.2, 1.3
+    """
+    versions = parse_version(ver)
+    def fn(cls):
+        cls._versions = versions
+        return cls
+    return fn
+
+def parse_version(ver):
+    allowed_versions = ["1.0", "1.1", "1.2", "1.3"]
+    if re.match("^1\.\d+$", ver):
+        versions = set([ver])
+    elif re.match("^(1\.\d+)\+$", ver):
+        if not ver[:-1] in allowed_versions:
+            raise ValueError("invalid OpenFlow version %s" % ver[:-1])
+        versions = set()
+        if ver != "1.1+": versions.add("1.0")
+        if ver != "1.2+": versions.add("1.1")
+        if ver != "1.3+": versions.add("1.2")
+        versions.add("1.3")
+    else:
+        versions = set(ver.split(','))
+
+    for version in versions:
+        if not version in allowed_versions:
+            raise ValueError("invalid OpenFlow version %s" % version)
+
+    return versions
+
+assert(parse_version("1.0") == set(["1.0"]))
+assert(parse_version("1.0,1.2,1.3") == set(["1.0", "1.2", "1.3"]))
+assert(parse_version("1.0+") == set(["1.0", "1.1", "1.2", "1.3"]))

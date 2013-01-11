@@ -399,5 +399,47 @@ class BadMessage(base_tests.SimpleProtocol):
         self.assertTrue(reply.code == ofp.OFPBRC_BAD_TYPE,
                         "reply error code is not bad type")
 
+@group('smoke')
+@version('1.1+')
+class TableModConfig(base_tests.SimpleProtocol):
+    """
+    Simple table modification
+
+    Mostly to make sure the switch correctly responds to these messages.
+    More complicated tests in the multi-tables.py tests
+    """
+    def runTest(self):
+        # First table should always exist
+        table_id = 0
+
+        def get_table_config():
+            request = ofp.message.table_stats_request()
+            response, _ = self.controller.transact(request)
+            try:
+                table_stats = [x for x in response.stats if x.table_id == table_id][0]
+            except IndexError:
+                raise AssertionError("table id %d not found" % table_id)
+            return table_stats.config
+
+        # Get current configuration
+        orig_table_config = get_table_config()
+
+        # Change the configuration
+        if orig_table_config == ofp.OFPTC_TABLE_MISS_CONTROLLER:
+            new_table_config = ofp.OFPTC_TABLE_MISS_DROP
+        else:
+            new_table_config = ofp.OFPTC_TABLE_MISS_CONTROLLER
+        request = ofp.message.table_mod(table_id=table_id, config=new_table_config)
+        self.controller.message_send(request)
+        self.controller.transact(ofp.message.barrier_request())
+
+        # Check the configuration took
+        self.assertEqual(get_table_config(), new_table_config)
+
+        # Change the configuration back
+        request = ofp.message.table_mod(table_id=table_id, config=orig_table_config)
+        self.controller.message_send(request)
+        self.controller.transact(ofp.message.barrier_request())
+
 if __name__ == "__main__":
     print "Please run through oft script:  ./oft --test_spec=basic"
