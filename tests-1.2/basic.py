@@ -8,23 +8,13 @@ similar identifiers.
 
 import sys
 import logging
-
 import unittest
-
-import oftest.controller as controller
-import oftest.dataplane as dataplane
-import oftest.base_tests as base_tests
+import ipaddr
 
 from oftest import config
-import oftest.controller as controller
-import oftest.dataplane as dataplane
+import ofp
 import oftest.base_tests as base_tests
-import of12.cstruct as ofp
-import of12.message as message
-import of12.action as action
-
 import oftest.oft12.testutils as testutils
-import ipaddr
 
 class Echo(base_tests.SimpleProtocol):
     """
@@ -38,7 +28,7 @@ class EchoWithData(base_tests.SimpleProtocol):
     Test echo response with short string data
     """
     def runTest(self):
-        request = message.echo_request()
+        request = ofp.message.echo_request()
         request.data = 'OpenFlow Will Rule The World'
         response, _ = self.controller.transact(request)
         self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,
@@ -55,7 +45,7 @@ class FeaturesRequest(base_tests.SimpleProtocol):
     Does NOT test the contents; just that we get a response
     """
     def runTest(self):
-        request = message.features_request()
+        request = ofp.message.features_request()
         response,_ = self.controller.transact(request)
         self.assertTrue(response,"Got no features_reply to features_request")
         self.assertEqual(response.header.type, ofp.OFPT_FEATURES_REPLY,
@@ -118,10 +108,10 @@ class PacketOut(base_tests.SimpleDataPlane):
         of_ports = config["port_map"].keys()
         of_ports.sort()
         for dp_port in of_ports:
-            msg = message.packet_out()
+            msg = ofp.message.packet_out()
             msg.in_port = ofp.OFPP_CONTROLLER
             msg.data = str(outpkt)
-            act = action.action_output()
+            act = ofp.action.action_output()
             act.port = dp_port
             self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
 
@@ -150,7 +140,7 @@ class FlowRemoveAll(base_tests.SimpleProtocol):
     def runTest(self):
         logging.info("Running StatsGet")
         logging.info("Inserting trial flow")
-        request = message.flow_mod()
+        request = ofp.message.flow_mod()
         request.buffer_id = 0xffffffff
         for i in range(1,5):
             request.priority = i*1000
@@ -160,13 +150,13 @@ class FlowRemoveAll(base_tests.SimpleProtocol):
         logging.info("Removing all flows")
         testutils.delete_all_flows(self.controller, logging)
         logging.info("Sending flow request")
-        request = message.flow_stats_request()
+        request = ofp.message.flow_stats_request()
         request.out_port = ofp.OFPP_ANY
         request.out_group = ofp.OFPG_ANY
         request.table_id = 0xff
         response, _ = self.controller.transact(request, timeout=2)
         self.assertTrue(response is not None, "Did not get response")
-        self.assertTrue(isinstance(response,message.flow_stats_reply),"Not a flow_stats_reply")
+        self.assertTrue(isinstance(response,ofp.message.flow_stats_reply),"Not a flow_stats_reply")
         self.assertEqual(len(response.stats),0)
         logging.debug(response.show())
         
@@ -181,7 +171,7 @@ class FlowStatsGet(base_tests.SimpleProtocol):
     def runTest(self):
         logging.info("Running StatsGet")
         logging.info("Inserting trial flow")
-        request = message.flow_mod()
+        request = ofp.message.flow_mod()
         request.buffer_id = 0xffffffff
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Failed to insert test flow")
@@ -200,7 +190,7 @@ class TableStatsGet(base_tests.SimpleProtocol):
     def runTest(self):
         logging.info("Running TableStatsGet")
         logging.info("Sending table stats request")
-        request = message.table_stats_request()
+        request = ofp.message.table_stats_request()
         response, _ = self.controller.transact(request, timeout=2)
         self.assertTrue(response is not None, "Did not get response")
         logging.debug(response.show())
@@ -214,7 +204,7 @@ class FlowMod(base_tests.SimpleProtocol):
 
     def runTest(self):
         logging.info("Running " + str(self))
-        request = message.flow_mod()
+        request = ofp.message.flow_mod()
         request.buffer_id = 0xffffffff
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Error installing flow mod")
@@ -267,7 +257,7 @@ class TableModConfig(base_tests.SimpleProtocol):
     """        
     def runTest(self):
         logging.info("Running " + str(self))
-        table_mod = message.table_mod()
+        table_mod = ofp.message.table_mod()
         table_mod.table_id = 0 # first table should always exist
         table_mod.config = ofp.OFPTC_TABLE_MISS_CONTROLLER
         
