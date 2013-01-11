@@ -444,19 +444,19 @@ def receive_pkt_check(dataplane, pkt, yes_ports, no_ports, assert_if, logger):
 
 def pkt_verify(parent, rcv_pkt, exp_pkt):
     if str(exp_pkt) != str(rcv_pkt):
-        parent.logger.error("ERROR: Packet match failed.")
-        parent.logger.debug("Expected (" + str(len(exp_pkt)) + ")")
-        parent.logger.debug(str(exp_pkt).encode('hex'))
+        logging.error("ERROR: Packet match failed.")
+        logging.debug("Expected (" + str(len(exp_pkt)) + ")")
+        logging.debug(str(exp_pkt).encode('hex'))
         sys.stdout = tmpout = StringIO()
         exp_pkt.show()
         sys.stdout = sys.__stdout__
-        parent.logger.debug(tmpout.getvalue())
-        parent.logger.debug("Received (" + str(len(rcv_pkt)) + ")")
-        parent.logger.debug(str(rcv_pkt).encode('hex'))
+        logging.debug(tmpout.getvalue())
+        logging.debug("Received (" + str(len(rcv_pkt)) + ")")
+        logging.debug(str(rcv_pkt).encode('hex'))
         sys.stdout = tmpout = StringIO()
         Ether(rcv_pkt).show()
         sys.stdout = sys.__stdout__
-        parent.logger.debug(tmpout.getvalue())
+        logging.debug(tmpout.getvalue())
     parent.assertEqual(str(exp_pkt), str(rcv_pkt),
                        "Packet match error")
     
@@ -475,15 +475,15 @@ def receive_pkt_verify(parent, egr_port, exp_pkt):
         if rcv_pkt is None:
             return None
         else:
-            parent.logger.error("ERROR: Received unexpected packet from " + str(egr_port));
+            logging.error("ERROR: Received unexpected packet from " + str(egr_port));
             return rcv_pkt
 
     if rcv_pkt is None:
-        parent.logger.error("ERROR: No packet received from " + str(egr_port))
+        logging.error("ERROR: No packet received from " + str(egr_port))
 
     parent.assertTrue(rcv_pkt is not None,
                       "Did not receive packet port " + str(egr_port))
-    parent.logger.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
+    logging.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
                     str(rcv_port))
 
     return pkt_verify(parent, rcv_pkt, exp_pkt)
@@ -496,9 +496,9 @@ def packetin_verify(parent, exp_pkt):
 
     parent.assertTrue(response is not None, 'Packet in message not received')
     if str(exp_pkt) != response.data:
-        parent.logger.debug("pkt  len " + str(len(str(exp_pkt))) + ": "
+        logging.debug("pkt  len " + str(len(str(exp_pkt))) + ": "
                             + str(exp_pkt).encode('hex'))
-        parent.logger.debug("resp len " + str(len(str(response.data))) + ": "
+        logging.debug("resp len " + str(len(str(response.data))) + ": "
                             + str(response.data).encode('hex'))
     parent.assertEqual(str(exp_pkt), response.data,
                      'PACKET_IN packet does not match send packet')
@@ -665,19 +665,19 @@ def flow_msg_create(parent, pkt, ing_port=0, match_fields=None, instruction_list
 
     # add all the actions to the last inst
     for act in action_list:
-        parent.logger.debug("Adding action " + act.show())
+        logging.debug("Adding action " + act.show())
         rv = inst.actions.add(act)
         parent.assertTrue(rv, "Could not add action" + act.show())
     # NOTE that the inst has already been added to the flow_mod
 
     # add all the instrutions to the flow_mod
     for i in instruction_list: 
-        parent.logger.debug("Adding instruction " + inst.show())
+        logging.debug("Adding instruction " + inst.show())
         rv = request.instructions.add(i)
         parent.assertTrue(rv, "Could not add instruction " + i.show())
 
  
-    parent.logger.debug(request.show())
+    logging.debug(request.show())
     return request
 
 def flow_msg_install(parent, request, clear_table=True):
@@ -689,19 +689,19 @@ def flow_msg_install(parent, request, clear_table=True):
     @param clear_table If true, clear the flow table before installing
     """
     if clear_table:
-        parent.logger.debug("Clear flow table")
+        logging.debug("Clear flow table")
         if request.table_id:
             table_id = request.table_id
         else:
             table_id = 0
         rc = delete_all_flows_one_table(parent.controller,
-                                        parent.logger,
+                                        logging,
                                         table_id)
         parent.assertEqual(rc, 0, "Failed to delete all flows on table: "
                            + str(table_id))
         do_barrier(parent.controller)
 
-    parent.logger.debug("Insert flow::\n%s" % request.show())
+    logging.debug("Insert flow::\n%s" % request.show())
     rv = parent.controller.message_send(request)
     parent.assertTrue(rv != -1, "Error installing flow mod")
     do_barrier(parent.controller)
@@ -718,7 +718,7 @@ def error_verify(parent, exp_type, exp_code):
     parent.assertTrue(response is not None, 'No error message received')
 
     if (exp_type is None) or (exp_code is None):
-        parent.logger.debug("Parametrs are not sufficient")
+        logging.debug("Parametrs are not sufficient")
         return
 
     parent.assertEqual(exp_type, response.type,
@@ -741,8 +741,8 @@ def flow_match_test_port_pair(parent, ing_port, egr_port, match=None,
     See flow_match_test for parameter descriptions
     """
 
-    parent.logger.info("Pkt match test: " + str(ing_port) + " to " + str(egr_port))
-    parent.logger.debug("  WC: " + hex(wildcards) + " vlan: " + str(dl_vlan) +
+    logging.info("Pkt match test: " + str(ing_port) + " to " + str(egr_port))
+    logging.debug("  WC: " + hex(wildcards) + " vlan: " + str(dl_vlan) +
                     " expire: " + str(check_expire))
     if pkt is None:
         if dl_vlan >= 0:
@@ -772,7 +772,7 @@ def flow_match_test_port_pair(parent, ing_port, egr_port, match=None,
 
     flow_msg_install(parent, request)
 
-    parent.logger.debug("Send packet: " + str(ing_port) + " to " + str(egr_port))
+    logging.debug("Send packet: " + str(ing_port) + " to " + str(egr_port))
     parent.dataplane.send(ing_port, str(pkt))
 
     if exp_pkt is None:
@@ -821,7 +821,7 @@ def flow_match_test(parent, port_map, match=None, wildcards=0,
                                       check_expire=check_expire)
             test_count += 1
             if (max_test > 0) and (test_count >= max_test):
-                parent.logger.info("Ran " + str(test_count) + " tests; exiting")
+                logging.info("Ran " + str(test_count) + " tests; exiting")
                 return
 
 def flow_match_test_port_pair_vlan(parent, ing_port, egr_port, wildcards=0,
@@ -843,8 +843,8 @@ def flow_match_test_port_pair_vlan(parent, ing_port, egr_port, wildcards=0,
     Run test with packet through switch from ing_port to egr_port
     See flow_match_test_vlan for parameter descriptions
     """
-    parent.logger.info("Pkt match test: " + str(ing_port) + " to " + str(egr_port))
-    parent.logger.debug("  WC: " + hex(wildcards) + " vlan: " + str(dl_vlan) +
+    logging.info("Pkt match test: " + str(ing_port) + " to " + str(egr_port))
+    logging.debug("  WC: " + hex(wildcards) + " vlan: " + str(dl_vlan) +
                     " expire: " + str(check_expire))
     if pkt is None:
         if dl_vlan >= 0 and dl_vlan != ofp.OFPVID_NONE:
@@ -906,8 +906,8 @@ def flow_match_test_port_pair_vlan(parent, ing_port, egr_port, wildcards=0,
 
     flow_msg_install(parent, request)
 
-    parent.logger.debug("Send packet: " + str(ing_port) + " to " + str(egr_port))
-    parent.logger.debug("Sent:" + str(pkt).encode('hex'))
+    logging.debug("Send packet: " + str(ing_port) + " to " + str(egr_port))
+    logging.debug("Sent:" + str(pkt).encode('hex'))
     parent.dataplane.send(ing_port, str(pkt))
 
     if match_exp:
@@ -1002,7 +1002,7 @@ def flow_match_test_vlan(parent, port_map, wildcards=0,
                                            check_expire=check_expire)
             test_count += 1
             if (max_test > 0) and (test_count >= max_test):
-                parent.logger.info("Ran " + str(test_count) + " tests; exiting")
+                logging.info("Ran " + str(test_count) + " tests; exiting")
                 return
 
 def test_param_get(config, key, default=None):
@@ -1195,7 +1195,7 @@ def skip_message_emit(parent, s):
     global skipped_test_count
 
     skipped_test_count += 1
-    parent.logger.info("Skipping: " + s)
+    logging.info("Skipping: " + s)
     if parent.config["dbg_level"] < logging.WARNING:
         sys.stderr.write("(skipped) ")
     else:
@@ -1312,8 +1312,8 @@ def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
     Run test with packet through switch from ing_port to egr_port
     See flow_match_test for parameter descriptions
     """
-    parent.logger.info("Pkt match test: " + str(ing_port) + " to " + str(egr_port))
-    parent.logger.debug("  WC: " + hex(wildcards) + " MPLS: " +
+    logging.info("Pkt match test: " + str(ing_port) + " to " + str(egr_port))
+    logging.debug("  WC: " + hex(wildcards) + " MPLS: " +
                     str(mpls_label) + " expire: " + str(check_expire))
 
     if pkt is None:
@@ -1386,8 +1386,8 @@ def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
 
     flow_msg_install(parent, request)
 
-    parent.logger.debug("Send packet: " + str(ing_port) + " to " + str(egr_port))
-    #parent.logger.debug(str(pkt).encode("hex"))
+    logging.debug("Send packet: " + str(ing_port) + " to " + str(egr_port))
+    #logging.debug(str(pkt).encode("hex"))
     parent.dataplane.send(ing_port, str(pkt))
 
     if match_exp:
@@ -1497,7 +1497,7 @@ def flow_match_test_mpls(parent, port_map, wildcards=0,
                                       check_expire=check_expire)
             test_count += 1
             if (max_test > 0) and (test_count >= max_test):
-                parent.logger.info("Ran " + str(test_count) + " tests; exiting")
+                logging.info("Ran " + str(test_count) + " tests; exiting")
                 return
 
 def flow_stats_get(parent, match_fields = None):
