@@ -24,6 +24,8 @@ import of10.parse
 global skipped_test_count
 skipped_test_count = 0
 
+_import_blacklist = set(locals().keys())
+
 # Some useful defines
 IP_ETHERTYPE = 0x800
 TCP_PROTOCOL = 0x6
@@ -984,6 +986,7 @@ def all_stats_get(parent):
 
     return rv
 
+_import_blacklist.add('FILTER')
 FILTER=''.join([(len(repr(chr(x)))==3) and chr(x) or '.' 
                 for x in range(256)])
 
@@ -1092,3 +1095,5 @@ def parse_version(ver):
 assert(parse_version("1.0") == set(["1.0"]))
 assert(parse_version("1.0,1.2,1.3") == set(["1.0", "1.2", "1.3"]))
 assert(parse_version("1.0+") == set(["1.0", "1.1", "1.2", "1.3"]))
+
+__all__ = list(set(locals()) - _import_blacklist)
