@@ -17,6 +17,7 @@ import logging
 import time
 import unittest
 import random
+import scapy.all as scapy
 
 from oftest import config
 import oftest.controller as controller

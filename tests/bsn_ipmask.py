@@ -1,8 +1,8 @@
 """
 """
 import struct
-
 import logging
+import scapy
 
 from oftest import config
 import oftest.controller as controller

@@ -63,6 +63,7 @@ import logging
 import unittest
 import random
 import time
+import copy
 
 from oftest import config
 import oftest.controller  as controller
