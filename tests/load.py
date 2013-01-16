@@ -129,10 +129,8 @@ class PacketInLoad(base_tests.SimpleDataPlane):
                for count in range(100):
                    out_count += 1
                    self.dataplane.send(of_port, str(pkt))
-        time.sleep(2)
         while True:
-            (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,
-                                                   timeout=0)
+            (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN)
             if not response:
                 break
             in_count += 1
@@ -185,9 +183,8 @@ class PacketOutLoad(base_tests.SimpleDataPlane):
 
                exp_pkt_arg = None
                exp_port = None
-        time.sleep(2)
         while True:
-            (of_port, pkt, pkt_time) = self.dataplane.poll(timeout=0)
+            (of_port, pkt, pkt_time) = self.dataplane.poll()
             if pkt is None:
                 break
             in_count += 1
