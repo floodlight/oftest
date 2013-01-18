@@ -43,6 +43,7 @@ class FlowMod_ModifyStrict(base_tests.SimpleProtocol):
                          "Expected only one flow_mod")
         stat = flow_stats.stats[0]
         self.assertEqual(stat.match, fm_new.match)
+        self.assertEqual(stat.match_fields, fm_new.match_fields)
         self.assertEqual(stat.instructions, fm_new.instructions)
         # @todo consider adding more tests here
         
