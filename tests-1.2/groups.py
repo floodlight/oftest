@@ -161,7 +161,7 @@ class GroupTest(base_tests.SimpleDataPlane):
 
 
     def send_data(self, packet, in_port):
-        self.logger.debug("Send packet on port " + str(in_port))
+        logging.debug("Send packet on port " + str(in_port))
         self.dataplane.send(in_port, str(packet))
 
 
