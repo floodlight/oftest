@@ -390,10 +390,10 @@ def receive_pkt_check(dp, pkt, yes_ports, no_ports, assert_if):
         assert_if.assertTrue(rcv_pkt is not None, 
                              "Did not receive pkt on " + str(ofport))
         if not oftest.dataplane.match_exp_pkt(pkt, rcv_pkt):
-            logging.debug("Sent %s" % format_packet(pkt))
-            logging.debug("Resp %s" % format_packet(rcv_pkt))
+            logging.debug("Expected %s" % format_packet(pkt))
+            logging.debug("Received %s" % format_packet(rcv_pkt))
         assert_if.assertTrue(oftest.dataplane.match_exp_pkt(pkt, rcv_pkt),
-                             "Response packet does not match send packet " +
+                             "Received packet does not match expected packet " +
                              "on port " + str(ofport))
     if len(no_ports) > 0:
         time.sleep(negative_timeout)
