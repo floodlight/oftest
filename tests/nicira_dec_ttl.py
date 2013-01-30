@@ -31,6 +31,12 @@ class TtlDecrement(base_tests.SimpleDataPlane):
         portB = of_ports[1]
         portC = of_ports[2]
 
+        # Test using flow mods (does not test drop)
+        flow_match_test(self, config["port_map"],
+                        pkt=simple_tcp_packet(pktlen=100, ip_ttl=2),
+                        exp_pkt=simple_tcp_packet(pktlen=100, ip_ttl=1),
+                        action_list=[action_nx_dec_ttl()])
+
         outpkt = simple_tcp_packet(pktlen=100, ip_ttl=3)
         msg = ofp.message.packet_out(in_port=ofp.OFPP_NONE,
                                      data=str(outpkt),
