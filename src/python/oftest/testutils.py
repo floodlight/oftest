@@ -66,6 +66,7 @@ def simple_tcp_packet(pktlen=100,
                       ip_src='192.168.0.1',
                       ip_dst='192.168.0.2',
                       ip_tos=0,
+                      ip_ttl=64,
                       tcp_sport=1234,
                       tcp_dport=80,
                       ip_ihl=None,
@@ -84,6 +85,7 @@ def simple_tcp_packet(pktlen=100,
     @param ip_src IP source
     @param ip_dst IP destination
     @param ip_tos IP ToS
+    @param ip_ttl IP TTL
     @param tcp_dport TCP destination port
     @param ip_sport TCP source port
 
@@ -99,16 +101,16 @@ def simple_tcp_packet(pktlen=100,
     if (dl_vlan_enable):
         pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
             scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi, vlan=dl_vlan)/ \
-            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ihl=ip_ihl)/ \
+            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl)/ \
             scapy.TCP(sport=tcp_sport, dport=tcp_dport)
     else:
         if not ip_options:
             pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-                scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ihl=ip_ihl)/ \
+                scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl)/ \
                 scapy.TCP(sport=tcp_sport, dport=tcp_dport)
         else:
             pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-                scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ihl=ip_ihl, options=ip_options)/ \
+                scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl, options=ip_options)/ \
                 scapy.TCP(sport=tcp_sport, dport=tcp_dport)
 
     pkt = pkt/("D" * (pktlen - len(pkt)))
@@ -125,6 +127,7 @@ def simple_udp_packet(pktlen=100,
                       ip_src='192.168.0.1',
                       ip_dst='192.168.0.2',
                       ip_tos=0,
+                      ip_ttl=64,
                       udp_sport=1234,
                       udp_dport=80,
                       ip_ihl=None,
@@ -143,6 +146,7 @@ def simple_udp_packet(pktlen=100,
     @param ip_src IP source
     @param ip_dst IP destination
     @param ip_tos IP ToS
+    @param ip_ttl IP TTL
     @param udp_dport UDP destination port
     @param udp_sport UDP source port
 
@@ -157,16 +161,16 @@ def simple_udp_packet(pktlen=100,
     if (dl_vlan_enable):
         pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
             scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi, vlan=dl_vlan)/ \
-            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ihl=ip_ihl)/ \
+            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl)/ \
             scapy.UDP(sport=udp_sport, dport=udp_dport)
     else:
         if not ip_options:
             pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-                scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ihl=ip_ihl)/ \
+                scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl)/ \
                 scapy.UDP(sport=udp_sport, dport=udp_dport)
         else:
             pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-                scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ihl=ip_ihl, options=ip_options)/ \
+                scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl, options=ip_options)/ \
                 scapy.UDP(sport=udp_sport, dport=udp_dport)
 
     pkt = pkt/("D" * (pktlen - len(pkt)))
@@ -182,6 +186,7 @@ def simple_icmp_packet(pktlen=60,
                       ip_src='192.168.0.1',
                       ip_dst='192.168.0.2',
                       ip_tos=0,
+                      ip_ttl=64,
                       icmp_type=8,
                       icmp_code=0
                       ):
@@ -198,6 +203,7 @@ def simple_icmp_packet(pktlen=60,
     @param ip_src IP source
     @param ip_dst IP destination
     @param ip_tos IP ToS
+    @param ip_ttl IP TTL
     @param icmp_type ICMP type
     @param icmp_code ICMP code
 
@@ -212,11 +218,11 @@ def simple_icmp_packet(pktlen=60,
     if (dl_vlan_enable):
         pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
             scapy.Dot1Q(prio=dl_vlan_pcp, id=0, vlan=dl_vlan)/ \
-            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+            scapy.IP(src=ip_src, dst=ip_dst, ttl=ip_ttl, tos=ip_tos)/ \
             scapy.ICMP(type=icmp_type, code=icmp_code)
     else:
         pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
+            scapy.IP(src=ip_src, dst=ip_dst, ttl=ip_ttl, tos=ip_tos)/ \
             scapy.ICMP(type=icmp_type, code=icmp_code)
 
     pkt = pkt/("0" * (pktlen - len(pkt)))
@@ -249,6 +255,7 @@ def qinq_tcp_packet(pktlen=100,
                     ip_src='192.168.0.1',
                     ip_dst='192.168.0.2',
                     ip_tos=0,
+                    ip_ttl=64,
                     tcp_sport=1234,
                     tcp_dport=80,
                     ip_ihl=None,
@@ -285,7 +292,7 @@ def qinq_tcp_packet(pktlen=100,
     pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
           scapy.Dot1Q(prio=dl_vlan_pcp_outer, id=dl_vlan_cfi_outer, vlan=dl_vlan_outer)/ \
           scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi, vlan=dl_vlan)/ \
-          scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ihl=ip_ihl)/ \
+          scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl)/ \
           scapy.TCP(sport=tcp_sport, dport=tcp_dport)
 
     pkt = pkt/("D" * (pktlen - len(pkt)))
@@ -383,10 +390,10 @@ def receive_pkt_check(dp, pkt, yes_ports, no_ports, assert_if):
         assert_if.assertTrue(rcv_pkt is not None, 
                              "Did not receive pkt on " + str(ofport))
         if not oftest.dataplane.match_exp_pkt(pkt, rcv_pkt):
-            logging.debug("Sent %s" % format_packet(pkt))
-            logging.debug("Resp %s" % format_packet(rcv_pkt))
+            logging.debug("Expected %s" % format_packet(pkt))
+            logging.debug("Received %s" % format_packet(rcv_pkt))
         assert_if.assertTrue(oftest.dataplane.match_exp_pkt(pkt, rcv_pkt),
-                             "Response packet does not match send packet " +
+                             "Received packet does not match expected packet " +
                              "on port " + str(ofport))
     if len(no_ports) > 0:
         time.sleep(negative_timeout)
