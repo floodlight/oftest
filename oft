@@ -223,7 +223,9 @@ def logging_setup(config):
     _format = "%(asctime)s.%(msecs)d  %(name)-10s: %(levelname)-8s: %(message)s"
     _datefmt = "%H:%M:%S"
     _mode = config["log_append"] and "a" or "w"
-    logging.basicConfig(filename=config["log_file"],
+    if config['log_file'] in [ "-", "stderr" ]:
+        config['log_file'] = None
+    logging.basicConfig(filename=config['log_file'],
                         filemode=_mode,
                         level=DEBUG_LEVELS[config["debug"]],
                         format=_format, datefmt=_datefmt)
