@@ -19,6 +19,21 @@ from time import sleep
 
 #################### Functions for various types of flow_mod  ##########################################################################################
 
+def match_send_flowadd(self, match, priority, port):
+    msg = message.flow_mod()
+    msg.out_port = ofp.OFPP_NONE
+    msg.command = ofp.OFPFC_ADD
+    # msg.cookie = random.randint(0,9007199254740992)
+    msg.buffer_id = 0xffffffff
+    msg.match = match
+    if priority != None :
+        msg.priority = priority
+    act = action.action_output()
+    act.port = port 
+    msg.actions.add(act)
+    self.controller.message_send(msg)
+    do_barrier(self.controller)
+
 def exact_match(self,of_ports,priority=None):
 # Generate ExactMatch flow .
 
@@ -29,21 +44,7 @@ def exact_match(self,of_ports,priority=None):
     match.in_port = of_ports[0]
     #match.nw_src = 1
     match.wildcards=0
-    msg = message.flow_mod()
-    msg.out_port = ofp.OFPP_NONE
-    msg.command = ofp.OFPFC_ADD
-    msg.buffer_id = 0xffffffff
-    msg.match = match
-    if priority != None :
-        msg.priority = priority
-
-    act = action.action_output()
-    act.port = of_ports[1]
-    msg.actions.add(act)
-
-    self.controller.message_send(msg)
-    do_barrier(self.controller)
-
+    match_send_flowadd(self, match, priority, of_ports[1])
     return (pkt_exactflow,match)
 
 def exact_match_with_prio(self,of_ports,priority=None):
@@ -56,21 +57,7 @@ def exact_match_with_prio(self,of_ports,priority=None):
     match.in_port = of_ports[0]
     #match.nw_src = 1
     match.wildcards=0
-    msg = message.flow_mod()
-    msg.out_port = ofp.OFPP_NONE
-    msg.command = ofp.OFPFC_ADD
-    msg.buffer_id = 0xffffffff
-    msg.match = match
-    if priority != None :
-        msg.priority = priority
-
-    act = action.action_output()
-    act.port = of_ports[2]
-    msg.actions.add(act)
-
-    self.controller.message_send(msg)
-    do_barrier(self.controller)
-
+    match_send_flowadd(self, match, priority, of_ports[2])
     return (pkt_exactflow,match)         
        
 
@@ -84,21 +71,7 @@ def match_all_except_source_address(self,of_ports,priority=None):
     match1.in_port = of_ports[0]
     #match1.nw_src = 1
     match1.wildcards = ofp.OFPFW_DL_SRC
-    msg1 = message.flow_mod()
-    msg1.out_port = ofp.OFPP_NONE
-    msg1.command = ofp.OFPFC_ADD
-    msg1.buffer_id = 0xffffffff
-    msg1.match = match1
-    if priority != None :
-        msg1.priority = priority
-
-    act1 = action.action_output()
-    act1.port = of_ports[1]
-    msg1.actions.add(act1)
-
-    self.controller.message_send(msg1)
-    do_barrier(self.controller)
-
+    match_send_flowadd(self, match1, priority, of_ports[1])
     return (pkt_wildcardsrc,match1)
 
 def match_ethernet_src_address(self,of_ports,priority=None):
@@ -108,24 +81,8 @@ def match_ethernet_src_address(self,of_ports,priority=None):
     pkt_MatchSrc = simple_eth_packet(dl_src='00:01:01:01:01:01')
     match = parse.packet_to_flow_match(pkt_MatchSrc)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
-
     match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_SRC
-        
-    msg = message.flow_mod()
-    msg.out_port = ofp.OFPP_NONE
-    msg.command = ofp.OFPFC_ADD
-    msg.buffer_id = 0xffffffff
-    msg.match = match
-    if priority != None :
-        msg.priority = priority
-
-    act = action.action_output()
-    act.port = of_ports[1]
-    msg.actions.add(act)
-
-    self.controller.message_send(msg)
-    do_barrier(self.controller)
-
+    match_send_flowadd(self, match, priority, of_ports[1])
     return (pkt_MatchSrc,match)
       
 def match_ethernet_dst_address(self,of_ports,priority=None):
@@ -137,21 +94,7 @@ def match_ethernet_dst_address(self,of_ports,priority=None):
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
     match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_DST
-    msg = message.flow_mod()
-    msg.out_port = ofp.OFPP_NONE
-    msg.command = ofp.OFPFC_ADD
-    msg.buffer_id = 0xffffffff
-    msg.match = match
-    if priority != None :
-        msg.priority = priority
-
-    act = action.action_output()
-    act.port = of_ports[1]
-    msg.actions.add(act)
-
-    self.controller.message_send(msg)
-    do_barrier(self.controller)
-
+    match_send_flowadd(self, match, priority, of_ports[1])
     return (pkt_matchdst,match)
 
 def wildcard_all(self,of_ports,priority=None):
@@ -163,26 +106,11 @@ def wildcard_all(self,of_ports,priority=None):
     self.assertTrue(match2 is not None, "Could not generate flow match from pkt")
     match2.wildcards=ofp.OFPFW_ALL
     match2.in_port = of_ports[0]
-
-    msg2 = message.flow_mod()
-    msg2.out_port = ofp.OFPP_NONE
-    msg2.command = ofp.OFPFC_ADD
-    msg2.buffer_id = 0xffffffff
-    msg2.match = match2
-    act2 = action.action_output()
-    act2.port = of_ports[1]
-    msg2.actions.add(act2)
-    if priority != None :
-        msg2.priority = priority
-
-    self.controller.message_send(msg2)
-    do_barrier(self.controller)
-
+    match_send_flowadd(self, match2, priority, of_ports[1])
     return (pkt_wildcard,match2)
 
 def wildcard_all_except_ingress(self,of_ports,priority=None):
 # Generate Wildcard_All_Except_Ingress_port flow
-        
 
     #Create a simple tcp packet and generate wildcard all except ingress_port flow.
     pkt_matchingress = simple_tcp_packet()
@@ -190,32 +118,11 @@ def wildcard_all_except_ingress(self,of_ports,priority=None):
     self.assertTrue(match3 is not None, "Could not generate flow match from pkt")
     match3.wildcards = ofp.OFPFW_ALL-ofp.OFPFW_IN_PORT
     match3.in_port = of_ports[0]
-
-    msg3 = message.flow_mod()
-    msg3.command = ofp.OFPFC_ADD
-    msg3.match = match3
-    msg3.out_port = of_ports[2] # ignored by flow add,flow modify 
-    msg3.cookie = random.randint(0,9007199254740992)
-    msg3.buffer_id = 0xffffffff
-    msg3.idle_timeout = 0
-    msg3.hard_timeout = 0
-    msg3.buffer_id = 0xffffffff
-       
-    act3 = action.action_output()
-    act3.port = of_ports[1]
-    msg3.actions.add(act3)
-
-    if priority != None :
-        msg3.priority = priority
-
-    self.controller.message_send(msg3)
-    do_barrier(self.controller)
-
+    match_send_flowadd(self, match3, priority, of_ports[1])
     return (pkt_matchingress,match3)
 
 def wildcard_all_except_ingress1(self,of_ports,priority=None):
 # Generate Wildcard_All_Except_Ingress_port flow with action output to port egress_port 2 
-        
 
     #Create a simple tcp packet and generate wildcard all except ingress_port flow.
     pkt_matchingress = simple_tcp_packet()
@@ -223,26 +130,7 @@ def wildcard_all_except_ingress1(self,of_ports,priority=None):
     self.assertTrue(match3 is not None, "Could not generate flow match from pkt")
     match3.wildcards = ofp.OFPFW_ALL-ofp.OFPFW_IN_PORT
     match3.in_port = of_ports[0]
-
-    msg3 = message.flow_mod()
-    msg3.command = ofp.OFPFC_ADD
-    msg3.match = match3
-    msg3.out_port = of_ports[2] # ignored by flow add,flow modify 
-    msg3.cookie = random.randint(0,9007199254740992)
-    msg3.buffer_id = 0xffffffff
-    msg3.idle_timeout = 0
-    msg3.hard_timeout = 0
-    msg3.buffer_id = 0xffffffff
-       
-    act3 = action.action_output()
-    act3.port = of_ports[2]
-    msg3.actions.add(act3)
-    if priority != None :
-        msg3.priority = priority
-
-    self.controller.message_send(msg3)
-    do_barrier(self.controller)
-
+    match_send_flowadd(self, match3, priority, of_ports[2])
     return (pkt_matchingress,match3)
 
 
@@ -255,21 +143,7 @@ def match_vlan_id(self,of_ports,priority=None):
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
     match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_TYPE ^ofp.OFPFW_DL_VLAN
-    msg = message.flow_mod()
-    msg.out_port = ofp.OFPP_NONE
-    msg.command = ofp.OFPFC_ADD
-    msg.buffer_id = 0xffffffff
-    msg.match = match
-    if priority != None :
-        msg.priority = priority
-
-    act = action.action_output()
-    act.port = of_ports[1]
-    msg.actions.add(act)
-
-    self.controller.message_send(msg)
-    do_barrier(self.controller)
-
+    match_send_flowadd(self, match, priority, of_ports[1])
     return (pkt_matchvlanid,match)
 
 def match_vlan_pcp(self,of_ports,priority=None):
@@ -281,21 +155,7 @@ def match_vlan_pcp(self,of_ports,priority=None):
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
     match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_TYPE^ofp.OFPFW_DL_VLAN^ofp.OFPFW_DL_VLAN_PCP 
-    msg = message.flow_mod()
-    msg.out_port = ofp.OFPP_NONE
-    msg.command = ofp.OFPFC_ADD
-    msg.buffer_id = 0xffffffff
-    msg.match = match
-    if priority != None :
-        msg.priority = priority
-
-    act = action.action_output()
-    act.port = of_ports[1]
-    msg.actions.add(act)
-
-    self.controller.message_send(msg)
-    do_barrier(self.controller)
-
+    match_send_flowadd(self, match, priority, of_ports[1])
     return (pkt_matchvlanpcp,match)
 
 
@@ -308,21 +168,7 @@ def match_mul_l2(self,of_ports,priority=None):
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
     match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_TYPE ^ofp.OFPFW_DL_DST ^ofp.OFPFW_DL_SRC
-    msg = message.flow_mod()
-    msg.out_port = ofp.OFPP_NONE
-    msg.command = ofp.OFPFC_ADD
-    msg.buffer_id = 0xffffffff
-    msg.match = match
-    if priority != None :
-        msg.priority = priority
-
-    act = action.action_output()
-    act.port = of_ports[1]
-    msg.actions.add(act)
-
-    self.controller.message_send(msg)
-    do_barrier(self.controller)
-
+    match_send_flowadd(self, match, priority, of_ports[1])
     return (pkt_mulL2,match)
 
 
@@ -334,46 +180,19 @@ def match_mul_l4(self,of_ports,priority=None):
     match = parse.packet_to_flow_match(pkt_mulL4)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
     match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_TYPE ^ofp.OFPFW_NW_PROTO^ofp.OFPFW_TP_SRC ^ofp.OFPFW_TP_DST 
-    msg = message.flow_mod()
-    msg.out_port = ofp.OFPP_NONE
-    msg.command = ofp.OFPFC_ADD
-    msg.buffer_id = 0xffffffff
-    msg.match = match
-    if priority != None :
-        msg.priority = priority
-
-    act = action.action_output()
-    act.port = of_ports[1]
-    msg.actions.add(act)
-
-    self.controller.message_send(msg)
-    do_barrier(self.controller)
-
+    match_send_flowadd(self, match, priority, of_ports[1])
     return (pkt_mulL4,match)  
 
 def match_ip_tos(self,of_ports,priority=None):
     #Generate a Match on IP Type of service flow
 
-        #Create a simple tcp packet and generate match on Type of service 
+    #Create a simple tcp packet and generate match on Type of service 
     pkt_iptos = simple_tcp_packet(ip_tos=28)
     match = parse.packet_to_flow_match(pkt_iptos)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
     match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_TYPE^ofp.OFPFW_NW_PROTO ^ofp.OFPFW_NW_TOS
-    msg = message.flow_mod()
-    msg.out_port = ofp.OFPP_NONE
-    msg.command = ofp.OFPFC_ADD
-    msg.buffer_id = 0xffffffff
-    msg.match = match
-    if priority != None :
-        msg.priority = priority
-    act = action.action_output()
-    act.port = of_ports[1]
-    msg.actions.add(act)
-
-    self.controller.message_send(msg)
-    do_barrier(self.controller)
-
+    match_send_flowadd(self, match, priority, of_ports[1])
     return (pkt_iptos,match)
 
 def match_ip_protocol(self,of_ports,priority=None):
@@ -385,22 +204,8 @@ def match_ip_protocol(self,of_ports,priority=None):
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
     match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_TYPE^ofp.OFPFW_NW_PROTO 
-    msg = message.flow_mod()
-    msg.out_port = ofp.OFPP_NONE
-    msg.command = ofp.OFPFC_ADD
-    msg.buffer_id = 0xffffffff
-    msg.match = match
-    if priority != None :
-        msg.priority = priority
-    act = action.action_output()
-    act.port = of_ports[1]
-    msg.actions.add(act)
-
-    self.controller.message_send(msg)
-    do_barrier(self.controller)
-
+    match_send_flowadd(self, match, priority, of_ports[1])
     return (pkt_iptos,match)
-
 
 def match_tcp_src(self,of_ports,priority=None):
     #Generate Match_Tcp_Src
@@ -411,46 +216,19 @@ def match_tcp_src(self,of_ports,priority=None):
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
     match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_TYPE ^ofp.OFPFW_NW_PROTO ^ofp.OFPFW_TP_SRC  
-    msg = message.flow_mod()
-    msg.out_port = ofp.OFPP_NONE
-    msg.command = ofp.OFPFC_ADD
-    msg.buffer_id = 0xffffffff
-    msg.match = match
-    if priority != None :
-        msg.priority = priority
-
-    act = action.action_output()
-    act.port = of_ports[1]
-    msg.actions.add(act)
-
-    self.controller.message_send(msg)
-    do_barrier(self.controller)
-
+    match_send_flowadd(self, match, priority, of_ports[1])
     return (pkt_matchtSrc,match)  
 
 def match_tcp_dst(self,of_ports,priority=None):
     #Generate Match_Tcp_Dst
 
-        #Create a simple tcp packet and generate match on tcp destination port flow
+    #Create a simple tcp packet and generate match on tcp destination port flow
     pkt_matchdst = simple_tcp_packet(tcp_dport=112)
     match = parse.packet_to_flow_match(pkt_matchdst)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
     match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_TYPE^ofp.OFPFW_NW_PROTO^ofp.OFPFW_TP_DST  
-    msg = message.flow_mod()
-    msg.out_port = ofp.OFPP_NONE
-    msg.command = ofp.OFPFC_ADD
-    msg.buffer_id = 0xffffffff
-    msg.match = match
-    if priority != None :
-        msg.priority = priority
-    act = action.action_output()
-    act.port = of_ports[1]
-    msg.actions.add(act)
-
-    self.controller.message_send(msg)
-    do_barrier(self.controller)
-
+    match_send_flowadd(self, match, priority, of_ports[1])
     return (pkt_matchdst,match)        
 
 
@@ -463,46 +241,19 @@ def match_udp_src(self,of_ports,priority=None):
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
     match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_TYPE ^ofp.OFPFW_NW_PROTO ^ofp.OFPFW_TP_SRC  
-    msg = message.flow_mod()
-    msg.out_port = ofp.OFPP_NONE
-    msg.command = ofp.OFPFC_ADD
-    msg.buffer_id = 0xffffffff
-    msg.match = match
-    if priority != None :
-        msg.priority = priority
-
-    act = action.action_output()
-    act.port = of_ports[1]
-    msg.actions.add(act)
-
-    self.controller.message_send(msg)
-    do_barrier(self.controller)
-
+    match_send_flowadd(self, match, priority, of_ports[1])
     return (pkt_matchtSrc,match)  
 
 def match_udp_dst(self,of_ports,priority=None):
     #Generate Match_Udp_Dst
 
-        #Create a simple udp packet and generate match on udp destination port flow
+    #Create a simple udp packet and generate match on udp destination port flow
     pkt_matchdst = simple_udp_packet(udp_dport=112)
     match = parse.packet_to_flow_match(pkt_matchdst)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
     match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_TYPE^ofp.OFPFW_NW_PROTO^ofp.OFPFW_TP_DST  
-    msg = message.flow_mod()
-    msg.out_port = ofp.OFPP_NONE
-    msg.command = ofp.OFPFC_ADD
-    msg.buffer_id = 0xffffffff
-    msg.match = match
-    if priority != None :
-        msg.priority = priority
-    act = action.action_output()
-    act.port = of_ports[1]
-    msg.actions.add(act)
-
-    self.controller.message_send(msg)
-    do_barrier(self.controller)
-
+    match_send_flowadd(self, match, priority, of_ports[1])
     return (pkt_matchdst,match)        
 
 
@@ -515,21 +266,7 @@ def match_icmp_type(self,of_ports,priority=None):
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
     match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_TYPE ^ofp.OFPFW_NW_PROTO ^ofp.OFPFW_TP_SRC  
-    msg = message.flow_mod()
-    msg.out_port = ofp.OFPP_NONE
-    msg.command = ofp.OFPFC_ADD
-    msg.buffer_id = 0xffffffff
-    msg.match = match
-    if priority != None :
-        msg.priority = priority
-
-    act = action.action_output()
-    act.port = of_ports[1]
-    msg.actions.add(act)
-
-    self.controller.message_send(msg)
-    do_barrier(self.controller)
-
+    match_send_flowadd(self, match, priority, of_ports[1])
     return (pkt_match, match)
 
 def match_icmp_code(self,of_ports,priority=None):
@@ -541,21 +278,7 @@ def match_icmp_code(self,of_ports,priority=None):
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
     match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_TYPE ^ofp.OFPFW_NW_PROTO ^ofp.OFPFW_TP_DST
-    msg = message.flow_mod()
-    msg.out_port = ofp.OFPP_NONE
-    msg.command = ofp.OFPFC_ADD
-    msg.buffer_id = 0xffffffff
-    msg.match = match
-    if priority != None :
-        msg.priority = priority
-
-    act = action.action_output()
-    act.port = of_ports[1]
-    msg.actions.add(act)
-
-    self.controller.message_send(msg)
-    do_barrier(self.controller)
-
+    match_send_flowadd(self, match, priority, of_ports[1])
     return (pkt_match, match)  
 
 
@@ -568,20 +291,7 @@ def match_ethernet_type(self,of_ports,priority=None):
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
     match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_TYPE
-    msg = message.flow_mod()
-    msg.out_port = ofp.OFPP_NONE
-    msg.command = ofp.OFPFC_ADD
-    msg.buffer_id = 0xffffffff
-    msg.match = match
-    if priority != None :
-        msg.priority = priority
-
-    act = action.action_output()
-    act.port = of_ports[1]
-    msg.actions.add(act)
-
-    self.controller.message_send(msg)
-    do_barrier(self.controller)
+    match_send_flowadd(self, match, priority, of_ports[1])
     return (pkt_matchtype,match)
 
    
