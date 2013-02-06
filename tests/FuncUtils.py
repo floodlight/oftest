@@ -281,6 +281,30 @@ def match_icmp_code(self,of_ports,priority=None):
     match_send_flowadd(self, match, priority, of_ports[1])
     return (pkt_match, match)  
 
+def match_arp_sender(self,of_ports,priority=None):
+    #Generate Match_Arp_Sender
+
+    #Create a simple icmp packet and generate match on arp sender flow
+    pkt_match = simple_arp_packet()
+    match = parse.packet_to_flow_match(pkt_match)
+    self.assertTrue(match is not None, "Could not generate flow match from pkt")
+
+    match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_TYPE ^ofp.OFPFW_NW_PROTO ^ofp.OFPFW_NW_SRC_MASK
+    match_send_flowadd(self, match, priority, of_ports[1])
+    return (pkt_match, match)  
+
+def match_arp_target(self,of_ports,priority=None):
+    #Generate Match_Arp_Target
+
+    #Create a simple icmp packet and generate match on arp target flow
+    pkt_match = simple_arp_packet()
+    match = parse.packet_to_flow_match(pkt_match)
+    self.assertTrue(match is not None, "Could not generate flow match from pkt")
+
+    match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_TYPE ^ofp.OFPFW_NW_PROTO ^ofp.OFPFW_NW_DST_MASK
+    match_send_flowadd(self, match, priority, of_ports[1])
+    return (pkt_match, match)  
+
 
 def match_ethernet_type(self,of_ports,priority=None):
     #Generate a Match_Ethernet_Type flow
