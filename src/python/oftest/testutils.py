@@ -989,7 +989,7 @@ def skip_message_emit(parent, s):
 
     skipped_test_count += 1
     logging.info("Skipping: " + s)
-    if oftest.config["dbg_level"] < logging.WARNING:
+    if oftest.config["debug"] < logging.WARNING:
         sys.stderr.write("(skipped) ")
     else:
         sys.stderr.write("(S)")

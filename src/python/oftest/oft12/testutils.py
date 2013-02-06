@@ -1193,7 +1193,7 @@ def skip_message_emit(parent, s):
 
     skipped_test_count += 1
     logging.info("Skipping: " + s)
-    if parent.config["dbg_level"] < logging.WARNING:
+    if parent.config["debug"] < logging.WARNING:
         sys.stderr.write("(skipped) ")
     else:
         sys.stderr.write("(S)")
