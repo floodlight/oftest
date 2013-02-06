@@ -229,6 +229,43 @@ def simple_icmp_packet(pktlen=60,
 
     return pkt
 
+def simple_arp_packet(pktlen=60, 
+                      dl_dst='ff:ff:ff:ff:ff:ff',
+                      dl_src='00:06:07:08:09:0a',
+                      arp_op=1,
+                      ip_snd='192.168.0.1',
+                      ip_tgt='192.168.0.2',
+                      hw_snd='00:06:07:08:09:0a',
+                      hw_tgt='00:00:00:00:00:00',
+                      ):
+    """
+    Return a simple ARP packet
+
+    Supports a few parameters:
+    @param len Length of packet in bytes w/o CRC
+    @param dl_dst Destinatino MAC
+    @param dl_src Source MAC
+    @param arp_op Operation (1=request, 2=reply)
+    @param ip_snd Sender IP
+    @param ip_tgt Target IP
+    @param hw_snd Sender hardware address
+    @param hw_tgt Target hardware address
+
+    Generates a simple ARP REQUEST.  Users
+    shouldn't assume anything about this packet other than that
+    it is a valid ethernet/ARP frame.
+    """
+
+    if MINSIZE > pktlen:
+        pktlen = MINSIZE
+
+    pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+          scapy.ARP(hwsrc=hw_snd, hwdst=hw_tgt, pdst=ip_tgt, psrc=ip_snd, op=arp_op)
+
+    pkt = pkt/("0" * (pktlen - len(pkt)))
+
+    return pkt
+
 def simple_eth_packet(pktlen=60,
                       dl_dst='00:01:02:03:04:05',
                       dl_src='01:80:c2:00:00:00',
