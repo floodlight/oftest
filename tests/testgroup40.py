@@ -497,7 +497,7 @@ class Grp40No140(base_tests.SimpleProtocol):
         request = message.flow_mod()
         request.match = match
         request.command = ofp.OFPFC_ADD
-        request.flags = request.flags|ofp.OFPFF_EMERG|ofp.OFPFF_SEND_FLOW_REM
+        request.flags = request.flags|ofp.OFPFF_EMERG
         act = action.action_output()
         act.port = of_ports[1]
         request.actions.add(act)
@@ -506,8 +506,9 @@ class Grp40No140(base_tests.SimpleProtocol):
         self.assertTrue(rv != -1, "Flow addition failed.")
         
         # Delete the emergency flow
-        
+        nonstrict_delete_emer(self,match)
         nonstrict_delete(self,match)
+
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPFF_SEND_FLOW_REM ,
                                                timeout=2)
         self.assertTrue(response is None, 

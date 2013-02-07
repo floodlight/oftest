@@ -865,6 +865,40 @@ def nonstrict_delete(self,match,priority=None):
     self.assertEqual(do_barrier(self.controller),0, "Barrier failed")
 
 
+def nonstrict_delete_emer(self,match,priority=None):
+# Issue Non_Strict Delete Emer
+        
+    #Create flow_mod message, command DELETE for an emergency flow
+    msg6 = message.flow_mod()
+    msg6.out_port = ofp.OFPP_NONE
+    msg6.command = ofp.OFPFC_DELETE
+    msg6.buffer_id = 0xffffffff
+    msg6.match = match
+    msg6.flags = msg6.flags | ofp.OFPFF_EMERG
+    
+    if priority != None :
+        msg6.priority = priority
+
+    rv = self.controller.message_send(msg6)
+    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.assertEqual(do_barrier(self.controller),0, "Barrier failed")
+
+
+def delete_all_flows_emer(ctrl):
+    """
+    Delete all emergency flows on the switch
+    @param ctrl The controller object for the test
+    """
+
+    logging.info("Deleting all emergency flows")
+    msg = message.flow_mod()
+    msg.match.wildcards = ofp.OFPFW_ALL
+    msg.out_port = ofp.OFPP_NONE
+    msg.command = ofp.OFPFC_DELETE
+    msg.flags = msg6.flags | ofp.OFPFF_EMERG
+    msg.buffer_id = 0xffffffff
+    return ctrl.message_send(msg)
+
 ###########################################################################################################################################################
 
 def send_packet(obj, pkt, ingress_port, egress_port):

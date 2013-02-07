@@ -270,9 +270,6 @@ class Grp10No90(unittest.TestCase):
         self.assertTrue(connection_lost != False, "Connection did not drop due to echo-timeout")
 
 
-
-        
-
 class Grp10No120(base_tests.SimpleDataPlane):
     """
     If the switch supports Emergency-Mode,
@@ -289,6 +286,9 @@ class Grp10No120(base_tests.SimpleDataPlane):
         
         #Clear switch state
         rv = delete_all_flows(self.controller)
+        self.assertEqual(rv, 0, "Failed to delete all flows")
+
+        rv = delete_all_flows_emer(self,controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
         
         #Insert any standard flow entry 
