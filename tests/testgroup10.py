@@ -54,6 +54,10 @@ class Grp10No10(base_tests.SimpleDataPlane):
         #Shutdown the control channel
         self.controller.shutdown()
 
+        request = message.echo_request()
+        (response, pkt) = self.controller.transact(request)
+        self.assertNotEqual(response.header.type, ofp.OFPT_ECHO_REPLY,'response is echo_reply')
+
         #Send a simple tcp packet on ingress_port
         logging.info("Sending simple tcp packet ...")
         packet = simple_tcp_packet()
@@ -285,8 +289,8 @@ class Grp10No120(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 0, "Not enough ports for test")
         
         #Clear switch state
-        #rv = delete_all_flows(self.controller)
-        #self.assertEqual(rv, 0, "Failed to delete all flows")
+        rv = delete_all_flows(self.controller)
+        self.assertEqual(rv, 0, "Failed to delete all flows")
 
         rv = delete_all_flows_emer(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")

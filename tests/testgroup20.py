@@ -104,6 +104,8 @@ class Grp20No30(base_tests.SimpleProtocol):
         #Insert a flow entry matching on ingress_port
         (pkt,match) = wildcard_all_except_ingress(self,of_ports)
 
+        sleep(1)
+
         # Send Table_Stats_Request and verify flow gets inserted.
         verify_tablestats(self,expect_active=1)
 
