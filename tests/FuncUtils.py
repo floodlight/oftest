@@ -895,7 +895,7 @@ def delete_all_flows_emer(ctrl):
     msg.match.wildcards = ofp.OFPFW_ALL
     msg.out_port = ofp.OFPP_NONE
     msg.command = ofp.OFPFC_DELETE
-    msg.flags = msg6.flags | ofp.OFPFF_EMERG
+    msg.flags = msg.flags | ofp.OFPFF_EMERG
     msg.buffer_id = 0xffffffff
     return ctrl.message_send(msg)
 
