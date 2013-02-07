@@ -285,8 +285,8 @@ class Grp10No120(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 0, "Not enough ports for test")
         
         #Clear switch state
-        rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        #rv = delete_all_flows(self.controller)
+        #self.assertEqual(rv, 0, "Failed to delete all flows")
 
         rv = delete_all_flows_emer(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
