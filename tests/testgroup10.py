@@ -288,7 +288,7 @@ class Grp10No120(base_tests.SimpleDataPlane):
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-        rv = delete_all_flows_emer(self,controller)
+        rv = delete_all_flows_emer(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
         
         #Insert any standard flow entry 
