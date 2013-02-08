@@ -356,7 +356,7 @@ class Grp10No140(base_tests.SimpleDataPlane):
         egress_port = of_ports[1]
         yes_ports=[egress_port]
         no_ports = set(of_ports).difference(yes_ports)
-        receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
+        receive_pkt_check(self.dataplane,test_packet,yes_ports,no_ports,self)
 
 
 
