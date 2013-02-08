@@ -54,9 +54,10 @@ class Grp10No10(base_tests.SimpleDataPlane):
         #Shutdown the control channel
         self.controller.shutdown()
         sleep(15) 
-        # TODO: Remove sleep 
+        # TODO: Remove sleep as sleep time cannot be generalised for all switches 
+        # Because sleeping time will vary from Sw to Sw configuration (No. of retries)
         # Instead send continous packets to verify control channel disconnection and Sw startup Behaviour
-        
+      
         #Send a simple tcp packet on ingress_port
         logging.info("Sending simple tcp packet ...")
         packet = simple_tcp_packet()
