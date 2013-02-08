@@ -131,7 +131,7 @@ class Grp30No90(base_tests.SimpleDataPlane):
         # Send the Test Packet and verify packet recieved
         logging.info("Packet should be forwarded to egress_port")
         egress_port=of_ports[1]
-        no_ports=set(of_ports).difference[egress_port]
+        no_ports=set(of_ports).difference(egress_port)
         yes_ports=of_ports[1]
         receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
                        
