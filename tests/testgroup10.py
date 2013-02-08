@@ -345,9 +345,6 @@ class Grp10No140(base_tests.SimpleDataPlane):
         self.assertTrue(rv != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
             
-        # Send Table_Stats_Request and verify flow gets inserted.
-        verify_tablestats(self,expect_active=1)
-
         #Shutdown the controller 
         self.controller.shutdown()
         sleep(15)
@@ -404,7 +401,7 @@ class Grp10No150(base_tests.SimpleDataPlane):
 
         #Shutdown the controller 
         self.controller.shutdown()
-        sleep(15)
+        sleep(5)
 
         #TBD remove sleeps with continous packet sending 
 
