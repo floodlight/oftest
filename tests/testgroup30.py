@@ -37,15 +37,15 @@ class Grp30No40(base_tests.SimpleDataPlane):
         #Retrieve Port Configuration
         logging.info("Sends Features Request and retrieve Port Configuration from reply")
         (hw_addr, port_config, advert) = \
-            port_config_get(self.controller, of_ports[0])
+            port_config_get(self.controller, of_ports[1])
         self.assertTrue(port_config is not None, "Did not get port config")
 
-        logging.debug("Port Down bit " + str(of_ports[0]) + " is now " + 
+        logging.debug("Port Down bit " + str(of_ports[1]) + " is now " + 
                            str(port_config & ofp.OFPPC_PORT_DOWN))
         
         #Modify Port Configuration 
         logging.info("Modify Port Configuration using Port Modification Message:OFPPC_PORT_DOWN")
-        rv = port_config_set(self.controller, of_ports[0],
+        rv = port_config_set(self.controller, of_ports[1],
                              port_config ^ ofp.OFPPC_PORT_DOWN, ofp.OFPPC_PORT_DOWN)
         self.assertTrue(rv != -1, "Error sending port mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
@@ -59,16 +59,16 @@ class Grp30No40(base_tests.SimpleDataPlane):
         
         # Verify change took place with features request
         logging.info("Verify the change and then set it back")
-        (hw_addr, port_config2, advert) = port_config_get(self.controller, of_ports[0])
+        (hw_addr, port_config2, advert) = port_config_get(self.controller, of_ports[1])
         
-        logging.debug("No flood bit port " + str(of_ports[0]) + " is now " + 
+        logging.debug("No flood bit port " + str(of_ports[1]) + " is now " + 
                            str(port_config2 & ofp.OFPPC_PORT_DOWN))
         self.assertTrue(port_config2 is not None, "Did not get port config2")
         self.assertTrue(port_config2 & ofp.OFPPC_PORT_DOWN !=
                         port_config & ofp.OFPPC_PORT_DOWN,
                         "Bit change did not take")
         # Set it back
-        rv = port_config_set(self.controller, of_ports[0],port_config,
+        rv = port_config_set(self.controller, of_ports[1],port_config,
                              ofp.OFPPC_PORT_DOWN)
         self.assertTrue(rv != -1, "Error sending port mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
