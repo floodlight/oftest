@@ -350,7 +350,7 @@ class Grp10No140(base_tests.SimpleDataPlane):
 
         #Shutdown the controller 
         self.controller.shutdown()
-        self.controller.join()
+        sleep(15)
 
         #Send matching packet 
         self.dataplane.send(of_ports[0], str(test_packet))
@@ -404,7 +404,9 @@ class Grp10No150(base_tests.SimpleDataPlane):
 
         #Shutdown the controller 
         self.controller.shutdown()
-        self.controller.join()
+        sleep(15)
+
+        #TBD remove sleeps with continous packet sending 
 
         #Send matching packet 
         self.dataplane.send(of_ports[0], str(pkt))
@@ -415,6 +417,7 @@ class Grp10No150(base_tests.SimpleDataPlane):
         no_ports = set(of_ports).difference([egress_port])
         receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
 
+        #Sleeping for flow to timeout 
         sleep(10)
 
         #Send matching packet 
