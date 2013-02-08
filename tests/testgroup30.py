@@ -92,6 +92,12 @@ class Grp30No90(base_tests.SimpleDataPlane):
         of_ports = config["port_map"].keys()
         of_ports.sort()
 
+        #Retrieve Port Configuration
+        logging.info("Sends Features Request and retrieve Port Configuration from reply")
+        (hw_addr, port_config, advert) = \
+            port_config_get(self.controller, of_ports[0])
+        self.assertTrue(port_config is not None, "Did not get port config")
+       
         #Modify Port Configuration 
         logging.info("Modify Port Configuration using Port Modification Message:OFPT_PORT_MOD")
         ofp.OFPPC_NO_FWD = 1 
@@ -110,4 +116,22 @@ class Grp30No90(base_tests.SimpleDataPlane):
         yes_ports=[]
         receive_pkt_check(self.dataplane,packet,yes_ports,no_ports,self)
                        
-  
+		#Set it back
+        logging.info("Modify Port Configuration using Port Modification Message:OFPT_PORT_MOD")
+        ofp.OFPPC_NO_FWD = 0 
+        rv = port_config_set(self.controller, of_ports[0],
+                             port_config | ofp.OFPPC_NO_FWD, ofp.OFPPC_NO_FWD)
+        self.assertTrue(rv != -1, "Error sending port mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+		
+		# Insert a flow matching on ingress_port with action A (output to of_port[1])  
+        logging.info("Verify change took place by sending packets to port[0]")  
+        (pkt,match) = wildcard_all_except_ingress(self,of_ports)
+
+        # Send the Test Packet and verify packet recieved
+        logging.info("Packet should be forwarded to egress_port")
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference[egress_port]
+        yes_ports=of_ports[1]
+        receive_pkt_check(self.dataplane,packet,yes_ports,no_ports,self)
+                       
