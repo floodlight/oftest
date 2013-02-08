@@ -236,7 +236,7 @@ class Grp10No90(unittest.TestCase):
             port=config["controller_port"])
         # clean_shutdown should be set to False to force quit app
         self.clean_shutdown = False
-        self.controller.initial_hello=False
+        self.controller.initial_hello=True
         self.controller.start()
         #@todo Add an option to wait for a pkt transaction to ensure version
         # compatibilty?
@@ -258,20 +258,14 @@ class Grp10No90(unittest.TestCase):
         
     def runTest(self):
 
-        logging.info("Running TestNo90 EchoTimeout ") 
-       
-        request = message.hello()
-        timeout = test_param_get('timeout',default = 60)
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv == 0, "Error sending out message")
-
-        for i in range(timeout): 
-            if not self.controller.active:
-                raise Exception("Test Passed")  
-            sleep(1)
-
-        connection_lost = False
-        self.assertTrue(connection_lost != False, "Connection did not drop due to echo-timeout")
+        logging.info("Running TestNo90 EchoTimeout ")
+        sleep(3)
+        # When the switch loses control channel , it starts retries for control channel connection by sending Hello messages
+        # Polling for Hello Messages 
+        (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
+                                               timeout=30)
+        self.assertTrue(response is not None, 
+                               'Switch did not Lose connection due to Echo timeouts') 
 
 
 class Grp10No120(base_tests.SimpleDataPlane):
@@ -303,8 +297,9 @@ class Grp10No120(base_tests.SimpleDataPlane):
 
         #Shutdown the controller 
         self.controller.shutdown()
-        self.controller.join()
-
+        sleep(15)
+        # Remove sleep and send continous packets to verify control channel disconnection
+        
         #Send matching packet 
         self.dataplane.send(of_ports[0], str(pkt))
 
