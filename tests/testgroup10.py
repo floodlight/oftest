@@ -259,7 +259,7 @@ class Grp10No90(unittest.TestCase):
     def runTest(self):
 
         logging.info("Running TestNo90 EchoTimeout ")
-        sleep(3)
+        sleep(10)
         # When the switch loses control channel , it starts retries for control channel connection by sending Hello messages
         # Polling for Hello Messages 
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
@@ -299,7 +299,7 @@ class Grp10No120(base_tests.SimpleDataPlane):
         self.controller.shutdown()
         sleep(15)
         # Remove sleep and send continous packets to verify control channel disconnection
-        
+
         #Send matching packet 
         self.dataplane.send(of_ports[0], str(pkt))
 
