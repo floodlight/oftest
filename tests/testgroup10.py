@@ -347,7 +347,7 @@ class Grp10No140(base_tests.SimpleDataPlane):
             
         #Shutdown the controller 
         self.controller.shutdown()
-        sleep(15)
+        sleep(15) #For connection retries from the switch to exhaust 
 
         #Send matching packet 
         self.dataplane.send(of_ports[0], str(test_packet))
