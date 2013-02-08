@@ -125,8 +125,7 @@ class Grp30No90(base_tests.SimpleDataPlane):
                              port_config & ofp.OFPPC_NO_FWD, ofp.OFPPC_NO_FWD)
         self.assertTrue(rv != -1, "Error sending port mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
-		
-		sleep(5)
+        
 		# Insert a flow matching on ingress_port with action A (output to of_port[1])  
         logging.info("Verify change took place by sending packets to port[0]")  
         (pkt,match) = wildcard_all_except_ingress(self,of_ports)
