@@ -53,11 +53,10 @@ class Grp10No10(base_tests.SimpleDataPlane):
 
         #Shutdown the control channel
         self.controller.shutdown()
-
-        request = message.echo_request()
-        (response, pkt) = self.controller.transact(request)
-        self.assertNotEqual(response.header.type, ofp.OFPT_ECHO_REPLY,'response is echo_reply')
-
+        sleep(15) 
+        # TODO: Remove sleep 
+        # Instead send continous packets to verify control channel disconnection and Sw startup Behaviour
+        
         #Send a simple tcp packet on ingress_port
         logging.info("Sending simple tcp packet ...")
         packet = simple_tcp_packet()
