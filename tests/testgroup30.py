@@ -114,7 +114,7 @@ class Grp30No90(base_tests.SimpleDataPlane):
         logging.info("Packet should not be forwarded to any dataplane port")
         no_ports=set(of_ports)
         yes_ports=[]
-        receive_pkt_check(self.dataplane,packet,yes_ports,no_ports,self)
+        receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
                        
 		#Set it back
         logging.info("Modify Port Configuration using Port Modification Message:OFPT_PORT_MOD")
@@ -133,5 +133,5 @@ class Grp30No90(base_tests.SimpleDataPlane):
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference[egress_port]
         yes_ports=of_ports[1]
-        receive_pkt_check(self.dataplane,packet,yes_ports,no_ports,self)
+        receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
                        
