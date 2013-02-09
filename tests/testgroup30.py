@@ -140,11 +140,11 @@ class Grp30No90(base_tests.SimpleDataPlane):
         
         logging.debug("No flood bit port " + str(of_ports[0]) + " is now " + 
                            str(port_config2 & ofp.OFPPC_NO_FWD))
-		self.assertTrue(port_config2 is not None, "Did not get port config2")
+
+        self.assertTrue(port_config2 is not None, "Did not get port config2")
         self.assertTrue(port_config2 & ofp.OFPPC_NO_FWD !=
                         port_config & ofp.OFPPC_NO_FWD,
                         "Bit change did not take")
-
         sleep(5)
 
         #Send matching packet 
