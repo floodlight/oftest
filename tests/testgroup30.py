@@ -136,7 +136,7 @@ class Grp30No90(base_tests.SimpleDataPlane):
         self.assertTrue(rv != -1, "Error sending port mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-        sleep(5)
+        sleep(10)
 
         # Verify change took place with features request
         logging.info("Verify the change and then set it back")
