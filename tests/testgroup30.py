@@ -136,7 +136,7 @@ class Grp30No90(base_tests.SimpleDataPlane):
         self.assertTrue(rv != -1, "Error sending port mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-        sleep(10)
+        sleep(5)
 
         # Verify change took place with features request
         logging.info("Verify the change and then set it back")
@@ -157,3 +157,65 @@ class Grp30No90(base_tests.SimpleDataPlane):
         yes_ports= of_ports[1]
         no_ports = set(of_ports).difference(yes_ports)
         receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
+
+
+
+class Grp30No100(base_tests.SimpleDataPlane):
+    """ 
+    Modify the behavior of physical port using Port Modification Messages
+    Change OFPPC_NO_PACKET_IN flag and verify change took place with Features Request"""
+
+    def runTest(self):
+
+        logging.info("Running Grp90No30b PortModPacketIn Test")
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+
+        #Retrieve Port Configuration
+        logging.info("Sends Features Request and retrieve Port Configuration from reply")
+        (hw_addr, port_config, advert) = \
+            port_config_get(self.controller, of_ports[0])
+        self.assertTrue(port_config is not None, "Did not get port config")
+        logging.debug("No flood bit port " + str(of_ports[0]) + " is now " + 
+                           str(port_config & ofp.OFPPC_NO_PACKET_IN))
+
+        #Modify Port Configuration 
+        logging.info("Modify Port Configuration using Port Modification Message:OFPPC_NO_PACKET_IN")
+        rv = port_config_set(self.controller, of_ports[0],
+                             port_config ^ ofp.OFPPC_NO_PACKET_IN, ofp.OFPPC_NO_PACKET_IN)
+        self.assertTrue(rv != -1, "Error sending port mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+		
+		sleep(5)
+
+        # Verify change took place with features request
+        logging.info("Verify the change and then set it back")
+        (hw_addr, port_config2, advert) = port_config_get(self.controller, of_ports[0])
+        
+        logging.debug("No flood bit port " + str(of_ports[0]) + " is now " + 
+                           str(port_config2 & ofp.OFPPC_NO_PACKET_IN))
+
+        self.assertTrue(port_config2 is not None, "Did not get port config2")
+        self.assertTrue(port_config2 & ofp.OFPPC_NO_PACKET_IN !=
+                        port_config & ofp.OFPPC_NO_PACKET_IN,
+                        "Bit change did not take")
+
+        #Send Test_packet
+        pkt = simple_tcp_packet()
+        self.dataplane.send(of_ports[0], str(pkt))
+        #Verify PacketIn event gets triggered
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
+        self.assertTrue(response is None, "PacketIn received,even though NO_PACKET_IN flag is set")
+        
+        # Set it back
+        rv = port_config_set(self.controller, of_ports[0],port_config,
+                             ofp.OFPPC_NO_PACKET_IN)
+        self.assertTrue(rv != -1, "Error sending port mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        #Send Test_packet
+        pkt = simple_tcp_packet()
+        self.dataplane.send(of_ports[0], str(pkt))
+        #Verify PacketIn event gets triggered
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
+        self.assertTrue(response is not None, "PacketIn not received, please check port_config and NO_PACKET_IN flag ")
