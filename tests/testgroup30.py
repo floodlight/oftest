@@ -25,7 +25,7 @@ from FuncUtils import *
 
 class Grp30No40(base_tests.SimpleDataPlane):
     
-    """ Modify the behavior of physical port using Port Modification Messages
+    """Modify the behavior of physical port using Port Modification Messages
     Change OFPPC_PORT_DOWN flag  and verify change takes place by Port_Status Message"""
 
     def runTest(self):
@@ -34,7 +34,7 @@ class Grp30No40(base_tests.SimpleDataPlane):
         of_ports = config["port_map"].keys()
         of_ports.sort()
 
-        #Retrieve Port Configuration
+        #Retrieve Port Configuration --- 
         logging.info("Sends Features Request and retrieve Port Configuration from reply")
         (hw_addr, port_config, advert) = \
             port_config_get(self.controller, of_ports[1])
@@ -55,7 +55,7 @@ class Grp30No40(base_tests.SimpleDataPlane):
         (response, raw) = self.controller.poll(ofp.OFPT_PORT_STATUS, timeout=15)
         
         self.assertTrue(response is not None,
-                        'Port Status Message not generated')
+                        'Port Status Message not generated. Please note ports could not be configured')
         
         # Verify change took place with features request
         logging.info("Verify the change and then set it back")
@@ -78,19 +78,18 @@ class Grp30No40(base_tests.SimpleDataPlane):
         (response, raw) = self.controller.poll(ofp.OFPT_PORT_STATUS, timeout=15)
         
         self.assertTrue(response is not None,
-                        'Port Status Message not generated')
+                        'Port Status Message not generated,Please note: Port config could not be set back to default ')
         
 
 
 class Grp30No90(base_tests.SimpleDataPlane):
-    
     """ 
     Modify the behavior of physical port using Port Modification Messages
     Change OFPPC_NO_FWD flag and verify change took place with Features Request"""
 
     def runTest(self):
 
-        logging.info("Running Grp30No90a Drop all packets Test")
+        logging.info("Running Grp30No90 PortModFwd Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
 
@@ -99,41 +98,61 @@ class Grp30No90(base_tests.SimpleDataPlane):
         (hw_addr, port_config, advert) = \
             port_config_get(self.controller, of_ports[0])
         self.assertTrue(port_config is not None, "Did not get port config")
-       
-        #Modify Port Configuration 
+        logging.debug("No flood bit port " + str(of_ports[0]) + " is now " + 
+                           str(port_config & ofp.OFPPC_NO_FWD))
+
+		#Modify Port Configuration 
         logging.info("Modify Port Configuration using Port Modification Message:OFPPC_NO_FWD")
-        ofp.OFPPC_NO_FWD = 1 
         rv = port_config_set(self.controller, of_ports[0],
-                             port_config | ofp.OFPPC_NO_FWD, ofp.OFPPC_NO_FWD)
+                             port_config ^ ofp.OFPPC_NO_FWD, ofp.OFPPC_NO_FWD)
         self.assertTrue(rv != -1, "Error sending port mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+		# Verify change took place with features request
+        logging.info("Verify the change and then set it back")
+        (hw_addr, port_config2, advert) = port_config_get(self.controller, of_ports[0])
+        
+        logging.debug("No flood bit port " + str(of_ports[0]) + " is now " + 
+                           str(port_config2 & ofp.OFPPC_NO_FWD))
+		self.assertTrue(port_config2 is not None, "Did not get port config2")
+        self.assertTrue(port_config2 & ofp.OFPPC_NO_FWD !=
+                        port_config & ofp.OFPPC_NO_FWD,
+                        "Bit change did not take")
+        sleep(5)
+
+        #Insert an All Wildcarded flow.
+        (pkt,match) = wildcard_all(self,of_ports)
+        #Send matching packet 
+        self.dataplane.send(of_ports[0], str(pkt))
+		#Verify packet does not implement the action specified in the flow
+        yes_ports=[]
+        no_ports = set(of_ports)
+        receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
+
+		# Set it back
+        rv = port_config_set(self.controller, of_ports[0],port_config,
+                             ofp.OFPPC_NO_FWD)
+        self.assertTrue(rv != -1, "Error sending port mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        # Verify change took place with features request
+        logging.info("Verify the change and then set it back")
+        (hw_addr, port_config2, advert) = port_config_get(self.controller, of_ports[0])
+        
+        logging.debug("No flood bit port " + str(of_ports[0]) + " is now " + 
+                           str(port_config2 & ofp.OFPPC_NO_FWD))
+		self.assertTrue(port_config2 is not None, "Did not get port config2")
+        self.assertTrue(port_config2 & ofp.OFPPC_NO_FWD !=
+                        port_config & ofp.OFPPC_NO_FWD,
+                        "Bit change did not take")
 
         sleep(5)
-	
-        # Insert a flow matching on ingress_port with action A (output to of_port[1])  
-        logging.info("Verify change took place by sending packets to port[0]")  
-        (pkt,match) = wildcard_all_except_ingress(self,of_ports)
 
-        # Send the Test Packet and packet dropped. 
-        logging.info("Packet should not be forwarded to any dataplane port")
-        no_ports=set(of_ports)
-        yes_ports=[]
-        receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
-                       
-		#Set it back
-        logging.info("Modify Port Configuration using Port Modification Message:OFPPC_NO_FWD")
-        ofp.OFPPC_NO_FWD = 0 
-        rv = port_config_set(self.controller, of_ports[0],
-                             port_config & ofp.OFPPC_NO_FWD, ofp.OFPPC_NO_FWD)
-        self.assertTrue(rv != -1, "Error sending port mod")
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        #Send matching packet 
+        self.dataplane.send(of_ports[0], str(pkt))
 
-		# Insert a flow matching on ingress_port with action A (output to of_port[1])  
-        logging.info("Verify change took place by sending packets to port[0]")  
-        (pkt,match) = wildcard_all_except_ingress(self,of_ports)
-
-        # Send the Test Packet and verify packet recieved
-        egress_port = of_ports[1]
+		#Verify packet implements the action specified in the flow
+		egress_port = of_ports[1]
         yes_ports=[egress_port]
-        no_ports = set(of_ports).difference(yes_ports)
-        receive_pkt_check(self.dataplane,test_packet,yes_ports,no_ports,self)
+        no_ports = set(of_ports).difference(egress_port)
+        receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
