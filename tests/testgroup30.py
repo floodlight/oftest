@@ -96,23 +96,23 @@ class Grp30No90(base_tests.SimpleDataPlane):
         #Retrieve Port Configuration
         logging.info("Sends Features Request and retrieve Port Configuration from reply")
         (hw_addr, port_config, advert) = \
-            port_config_get(self.controller, of_ports[0])
+            port_config_get(self.controller, of_ports[1])
         self.assertTrue(port_config is not None, "Did not get port config")
-        logging.debug("No flood bit port " + str(of_ports[0]) + " is now " + 
+        logging.debug("No flood bit port " + str(of_ports[1]) + " is now " + 
                            str(port_config & ofp.OFPPC_NO_FWD))
 
 		#Modify Port Configuration 
         logging.info("Modify Port Configuration using Port Modification Message:OFPPC_NO_FWD")
-        rv = port_config_set(self.controller, of_ports[0],
+        rv = port_config_set(self.controller, of_ports[1],
                              port_config ^ ofp.OFPPC_NO_FWD, ofp.OFPPC_NO_FWD)
         self.assertTrue(rv != -1, "Error sending port mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
 		# Verify change took place with features request
         logging.info("Verify the change and then set it back")
-        (hw_addr, port_config2, advert) = port_config_get(self.controller, of_ports[0])
+        (hw_addr, port_config2, advert) = port_config_get(self.controller, of_ports[1])
         
-        logging.debug("No flood bit port " + str(of_ports[0]) + " is now " + str(port_config2 & ofp.OFPPC_NO_FWD))
+        logging.debug("No flood bit port " + str(of_ports[1]) + " is now " + str(port_config2 & ofp.OFPPC_NO_FWD))
         self.assertTrue(port_config2 is not None, "Did not get port config2")
         self.assertTrue(port_config2 & ofp.OFPPC_NO_FWD !=
                         port_config & ofp.OFPPC_NO_FWD,
@@ -122,14 +122,15 @@ class Grp30No90(base_tests.SimpleDataPlane):
         #Insert an All Wildcarded flow.
         (pkt,match) = wildcard_all(self,of_ports)
         #Send matching packet 
-        self.dataplane.send(of_ports[0], str(pkt))
+        self.dataplane.send(of_ports[1], str(pkt))
+		
 		#Verify packet does not implement the action specified in the flow
         yes_ports=[]
         no_ports = set(of_ports)
         receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
 
 		# Set it back
-        rv = port_config_set(self.controller, of_ports[0],port_config,
+        rv = port_config_set(self.controller, of_ports[1],port_config,
                              ofp.OFPPC_NO_FWD)
         self.assertTrue(rv != -1, "Error sending port mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
@@ -138,7 +139,7 @@ class Grp30No90(base_tests.SimpleDataPlane):
         logging.info("Verify the change and then set it back")
         (hw_addr, port_config2, advert) = port_config_get(self.controller, of_ports[0])
         
-        logging.debug("No flood bit port " + str(of_ports[0]) + " is now " + 
+        logging.debug("No flood bit port " + str(of_ports[1]) + " is now " + 
                            str(port_config2 & ofp.OFPPC_NO_FWD))
 
         self.assertTrue(port_config2 is not None, "Did not get port config2")
@@ -148,9 +149,9 @@ class Grp30No90(base_tests.SimpleDataPlane):
         sleep(5)
 
         #Send matching packet 
-        self.dataplane.send(of_ports[0], str(pkt))
+        self.dataplane.send(of_ports[1], str(pkt))
 
 		#Verify packet implements the action specified in the flow
-        yes_ports=of_ports[1]
+        yes_ports= of_ports[1]
         no_ports = set(of_ports).difference(yes_ports)
         receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
