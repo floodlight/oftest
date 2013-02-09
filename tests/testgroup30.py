@@ -215,7 +215,7 @@ class Grp30No100(base_tests.SimpleDataPlane):
         self.assertTrue(rv != -1, "Error sending port mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-        sleep(15)
+        sleep(5)
 
         #Send Test_packet
         pkt = simple_tcp_packet()
