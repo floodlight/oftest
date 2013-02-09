@@ -108,7 +108,7 @@ class Grp30No90(base_tests.SimpleDataPlane):
         self.assertTrue(rv != -1, "Error sending port mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-        sleep(15)
+        sleep(5)
 
         #TBD: Remove sleep with continous Features Requests being sent 
 
@@ -138,7 +138,7 @@ class Grp30No90(base_tests.SimpleDataPlane):
         self.assertTrue(rv != -1, "Error sending port mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-        sleep(15)
+        sleep(5)
         #TBD: Remove sleep with continous Features Requests being sent 
 
         # Verify change took place with features request
@@ -191,7 +191,7 @@ class Grp30No100(base_tests.SimpleDataPlane):
 	
 		# Verify change took place with features request
         logging.info("Verify the change and then set it back")
-        sleep(15)
+        sleep(5)
         (hw_addr, port_config2, advert) = port_config_get(self.controller, of_ports[0])
         
         logging.debug("No flood bit port " + str(of_ports[0]) + " is now " + 
