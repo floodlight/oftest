@@ -184,7 +184,7 @@ class Grp30No100(base_tests.SimpleDataPlane):
         rv = port_config_set(self.controller, of_ports[0],
                              port_config ^ ofp.OFPPC_NO_PACKET_IN, ofp.OFPPC_NO_PACKET_IN)
         self.assertTrue(rv != -1, "Error sending port mod")
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed"))
 		
 		sleep(5)
 
