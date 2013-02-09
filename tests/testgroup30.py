@@ -184,11 +184,10 @@ class Grp30No100(base_tests.SimpleDataPlane):
         rv = port_config_set(self.controller, of_ports[0],
                              port_config ^ ofp.OFPPC_NO_PACKET_IN, ofp.OFPPC_NO_PACKET_IN)
         self.assertTrue(rv != -1, "Error sending port mod")
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed"))
-		
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 		sleep(5)
-
-        # Verify change took place with features request
+		
+		# Verify change took place with features request
         logging.info("Verify the change and then set it back")
         (hw_addr, port_config2, advert) = port_config_get(self.controller, of_ports[0])
         
