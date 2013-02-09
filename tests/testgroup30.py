@@ -151,8 +151,6 @@ class Grp30No90(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt))
 
 		#Verify packet implements the action specified in the flow
-		
-		egress_port = of_ports[1]
-        yes_ports=[egress_port]
-        no_ports = set(of_ports).difference(egress_port)
+        yes_ports=of_ports[1]
+        no_ports = set(of_ports).difference(yes_ports)
         receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
