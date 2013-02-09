@@ -108,6 +108,8 @@ class Grp30No90(base_tests.SimpleDataPlane):
         self.assertTrue(rv != -1, "Error sending port mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
+        sleep(5)
+
 		# Verify change took place with features request
         logging.info("Verify the change and then set it back")
         (hw_addr, port_config2, advert) = port_config_get(self.controller, of_ports[1])
@@ -117,7 +119,6 @@ class Grp30No90(base_tests.SimpleDataPlane):
         self.assertTrue(port_config2 & ofp.OFPPC_NO_FWD !=
                         port_config & ofp.OFPPC_NO_FWD,
                         "Bit change did not take")
-        sleep(5)
 
         #Insert an All Wildcarded flow.
         (pkt,match) = wildcard_all(self,of_ports)
@@ -135,9 +136,11 @@ class Grp30No90(base_tests.SimpleDataPlane):
         self.assertTrue(rv != -1, "Error sending port mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
+        sleep(5)
+
         # Verify change took place with features request
         logging.info("Verify the change and then set it back")
-        (hw_addr, port_config2, advert) = port_config_get(self.controller, of_ports[0])
+        (hw_addr, port_config2, advert) = port_config_get(self.controller, of_ports[1])
         
         logging.debug("No flood bit port " + str(of_ports[1]) + " is now " + 
                            str(port_config2 & ofp.OFPPC_NO_FWD))
@@ -146,7 +149,6 @@ class Grp30No90(base_tests.SimpleDataPlane):
         self.assertTrue(port_config2 & ofp.OFPPC_NO_FWD !=
                         port_config & ofp.OFPPC_NO_FWD,
                         "Bit change did not take")
-        sleep(5)
 
         #Send matching packet 
         self.dataplane.send(of_ports[1], str(pkt))
