@@ -644,6 +644,7 @@ class Flood(base_tests.SimpleDataPlane):
     """
     Flood to all ports except ingress
 
+    Make sure noflood bit is off on all ports
     Generate a packet
     Generate and install a matching flow
     Add action to flood the packet
@@ -661,6 +662,14 @@ class Flood(base_tests.SimpleDataPlane):
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
         act = action.action_output()
+
+        for of_port in of_ports:
+            # Clear relevant bits that might block ports
+            rv = port_config_set(self.controller, of_port, 0,
+                                 ofp.OFPPC_NO_FLOOD | ofp.OFPPC_NO_FWD |
+                                 ofp.OFPPC_PORT_DOWN)
+            self.assertTrue(rv == 0, "Did not set port config")
+            logging.debug("Enabled and cleared no-flood for port " + str(of_port))
 
         for ingress_port in of_ports:
             delete_all_flows(self.controller)
