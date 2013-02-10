@@ -164,14 +164,14 @@ class Grp40No30(base_tests.SimpleDataPlane):
                 logging.info("Recieved" + str(item.packet_count) + " packets")
                 logging.info("Received " + str(item.byte_count) + "bytes")
             
-            if packet_count != None  and  packet_count != packet_counter: continue
-            if byte_count != None  and  byte_count != byte_counter: continue
+            if packet_counter == None : continue
+            if byte_counter == None : continue
             break
 
-        if packet_count == None :
+        if packet_counter == None :
             self.assertEqual(packet_count,item.packet_count,"packet_count counter did not increment")
-        if byte_count == None :   
-            self.assertEqual(byte_count,item.byte_count,"byte_count counter is not incremented correctly")
+        if byte_counter == None :   
+            self.assertEqual(byte_count,item.byte_count,"byte_count counter did not increment")
 
         #Send Identical flow 
         (pkt1,match1) = wildcard_all(self,of_ports)
