@@ -95,6 +95,8 @@ class Grp60No20(base_tests.SimpleDataPlane):
         byte_count = num_pkts*len(str(pkt))
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
+
+        logging.info("expected byte counter:"+str(byte_count))
          
         #Verify Recieved Packets/Bytes Per Flow  
         verify_flowstats(self,match,byte_count=byte_count)
@@ -255,6 +257,7 @@ class Grp60No70(base_tests.SimpleDataPlane):
             self.dataplane.send(of_ports[0],str(pkt))
 
         byt_count = byte_count+counter[2]
+        logging.info("expected rx_byte counter:"+str(byt_count))
 
         #Verify recieved_bytes counters 
         verify_portstats(self,of_ports[0],rx_byte=byt_count)
