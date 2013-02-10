@@ -173,6 +173,8 @@ class Grp40No30(base_tests.SimpleDataPlane):
         if byte_counter == None :   
             self.assertEqual(byte_count,item.byte_count,"byte_count counter did not increment")
 
+        print 'reached here'
+
         #Send Identical flow 
         (pkt1,match1) = wildcard_all(self,of_ports)
 
