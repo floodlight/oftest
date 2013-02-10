@@ -143,9 +143,34 @@ class Grp40No30(base_tests.SimpleDataPlane):
         # Send Packet (to increment counters like byte_count and packet_count)
         send_packet(self,pkt,of_ports[0],of_ports[1])
 
-        # Verify Flow counters have incremented
-        verify_flowstats(self,match,byte_count=len(str(pkt)),packet_count=1)
-        
+        # Verify Flow counters have incremented 
+        stat_req = message.flow_stats_request()
+        stat_req.match = match
+        stat_req.table_id = 0xff
+        stat_req.out_port = ofp.OFPP_NONE
+    
+        for i in range(0,60):
+        logging.info("Sending stats request")
+        response, pkt = self.controller.transact(stat_req,
+                                                     timeout=5)
+        self.assertTrue(response is not None,"No response to stats request")
+        packet_counter = 0
+        byte_counter = 0 
+        sleep(1)
+        for item in response.stats:
+            packet_counter += item.packet_count
+            byte_counter += item.byte_count
+            logging.info("Recieved" + str(item.packet_count) + " packets")
+            logging.info("Received " + str(item.byte_count) + "bytes")
+        if packet_count != None  and  packet_count != packet_counter: continue
+        if byte_count != None  and  byte_count != byte_counter: continue
+        break
+
+        if packet_count == None :
+        self.assertEqual(packet_count,item.packet_count,"packet_count counter did not increment")
+        if byte_count == None :   
+        self.assertEqual(byte_count,item.byte_count,"byte_count counter is not incremented correctly")
+
         #Send Identical flow 
         (pkt1,match1) = wildcard_all(self,of_ports)
 
