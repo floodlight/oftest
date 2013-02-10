@@ -387,7 +387,7 @@ class Grp10No150(base_tests.SimpleDataPlane):
         msg = message.flow_mod()
         msg.command = ofp.OFPFC_ADD
         msg.match = match
-        msg.hard_timeout = 10       
+        msg.hard_timeout = 25       
         act = action.action_output()
         act.port = of_ports[1]
         self.assertTrue(msg.actions.add(act), "could not add action")
@@ -401,7 +401,7 @@ class Grp10No150(base_tests.SimpleDataPlane):
 
         #Shutdown the controller 
         self.controller.shutdown()
-        sleep(5)
+        sleep(15)
 
         #TBD remove sleeps with continous packet sending 
 
