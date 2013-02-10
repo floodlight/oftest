@@ -150,21 +150,23 @@ class Grp40No30(base_tests.SimpleDataPlane):
         stat_req.out_port = ofp.OFPP_NONE
     
         for i in range(0,60):
-        logging.info("Sending stats request")
-        response, pkt = self.controller.transact(stat_req,
+            logging.info("Sending stats request")
+            response, pkt = self.controller.transact(stat_req,
                                                      timeout=5)
-        self.assertTrue(response is not None,"No response to stats request")
-        packet_counter = 0
-        byte_counter = 0 
-        sleep(1)
-        for item in response.stats:
-            packet_counter += item.packet_count
-            byte_counter += item.byte_count
-            logging.info("Recieved" + str(item.packet_count) + " packets")
-            logging.info("Received " + str(item.byte_count) + "bytes")
-        if packet_count != None  and  packet_count != packet_counter: continue
-        if byte_count != None  and  byte_count != byte_counter: continue
-        break
+            self.assertTrue(response is not None,"No response to stats request")
+            packet_counter = 0
+            byte_counter = 0 
+            sleep(1)
+            
+            for item in response.stats:
+                packet_counter += item.packet_count
+                byte_counter += item.byte_count
+                logging.info("Recieved" + str(item.packet_count) + " packets")
+                logging.info("Received " + str(item.byte_count) + "bytes")
+            
+            if packet_count != None  and  packet_count != packet_counter: continue
+            if byte_count != None  and  byte_count != byte_counter: continue
+            break
 
         if packet_count == None :
         self.assertEqual(packet_count,item.packet_count,"packet_count counter did not increment")
