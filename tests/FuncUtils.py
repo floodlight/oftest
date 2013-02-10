@@ -720,9 +720,9 @@ def verify_flowstats(self,match,byte_count=None,packet_count=None):
             packet_counter += item.packet_count
             byte_counter += item.byte_count
 
-            logging.info("Recieved" + str(item.packet_count) + " packets")
+            logging.info("packet_counter" + str(item.packet_count) + " packets")
            
-            logging.info("Received " + str(item.byte_count) + "bytes")
+            logging.info("byte_counter" + str(item.byte_count) + "bytes")
            
         if packet_count != None  and  packet_count != packet_counter: continue
         if byte_count != None  and  byte_count != byte_counter: continue
@@ -764,10 +764,10 @@ def verify_portstats(self, port,tx_packets=None,rx_packets=None,rx_byte=None,tx_
             sentb += item.tx_bytes
            
             
-            logging.info("Sent " + str(sentp) + " packets")
-            logging.info("Received " + str(recvp) + " packets")
-            logging.info("Received " + str(recvb) + "bytes")
-            logging.info("Sent" + str(sentb) + "bytes")
+            logging.info("Tx_packet counter " + str(sentp) + " packets")
+            logging.info("Rx_packet counter " + str(recvp) + " packets")
+            logging.info("Rx_byte counter" + str(recvb) + "bytes")
+            logging.info("Tx_byte counter" + str(sentb) + "bytes")
     
         if tx_packets != None  and  tx_packets != sentp: continue
         if rx_packets != None  and  rx_packets != recvp: continue 
