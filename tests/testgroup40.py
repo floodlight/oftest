@@ -172,9 +172,7 @@ class Grp40No30(base_tests.SimpleDataPlane):
             self.assertEqual(packet_count,item.packet_count,"packet_count counter did not increment")
         if byte_counter == None :   
             self.assertEqual(byte_count,item.byte_count,"byte_count counter did not increment")
-
-        print 'reached here'
-
+        
         #Send Identical flow 
         (pkt1,match1) = wildcard_all(self,of_ports)
 
@@ -348,8 +346,8 @@ class Grp40No100(base_tests.SimpleDataPlane):
         #Send Packet matching the flow thus incrementing counters like packet_count,byte_count
         send_packet(self,pkt,of_ports[0],of_ports[1])
         
-	#Verify flow counters
-        verify_flowstats(self,match,byte_count=len(str(pkt)),packet_count=1)
+	    #Verify flow counters
+        verify_flowstats(self,match,packet_count=1)
 
         #Modify flow- 1 
         modify_flow_action(self,of_ports,match)
@@ -358,7 +356,7 @@ class Grp40No100(base_tests.SimpleDataPlane):
         send_packet(self,pkt,of_ports[0],of_ports[2])
         
         #Verify flow counters are preserved
-        verify_flowstats(self,match,byte_count=(2*len(str(pkt))),packet_count=2)
+        verify_flowstats(self,match,packet_count=2)
 
 
 class Grp40No110(base_tests.SimpleDataPlane):
