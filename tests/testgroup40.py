@@ -169,9 +169,9 @@ class Grp40No30(base_tests.SimpleDataPlane):
             break
 
         if packet_count == None :
-        self.assertEqual(packet_count,item.packet_count,"packet_count counter did not increment")
+            self.assertEqual(packet_count,item.packet_count,"packet_count counter did not increment")
         if byte_count == None :   
-        self.assertEqual(byte_count,item.byte_count,"byte_count counter is not incremented correctly")
+            self.assertEqual(byte_count,item.byte_count,"byte_count counter is not incremented correctly")
 
         #Send Identical flow 
         (pkt1,match1) = wildcard_all(self,of_ports)
