@@ -756,9 +756,6 @@ class Grp40No180(base_tests.SimpleDataPlane):
         self.assertTrue(rv1 != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-        #Verify flow gets inserted
-        verify_tablestats(self,expect_active=1)
-        
         # Verify flow removed message is recieved.
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_FLOW_REMOVED,
                                                timeout=5)
