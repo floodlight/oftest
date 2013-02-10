@@ -835,7 +835,7 @@ class Grp40No200(base_tests.SimpleDataPlane):
 
         logging.info("Inserting flow entry with hard_timeout set and send_flow_removed_message flag not set")
         logging.info("Expecting the flow entry to delete, but no flow removed message")
-	#sleep(10)
+	   
         # Insert a flow with hard_timeout = 1 but no Send_Flow_Rem flag set
         pkt = simple_tcp_packet()
         match3 = parse.packet_to_flow_match(pkt)
