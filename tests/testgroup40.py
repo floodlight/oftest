@@ -391,7 +391,7 @@ class Grp40No110(base_tests.SimpleDataPlane):
         send_packet(self,pkt,of_ports[0],of_ports[1])
 
         # Verify flow counters of the flow-1
-        verify_flowstats(self,match,byte_count=len(str(pkt)),packet_count=1)
+        verify_flowstats(self,match,packet_count=1)
 
         # Strict-Modify flow- 1 
         strict_modify_flow_action(self,of_ports[2],match,priority=100)
@@ -400,7 +400,7 @@ class Grp40No110(base_tests.SimpleDataPlane):
         send_packet(self,pkt,of_ports[0],of_ports[2])
         
         # Verify flow counters are preserved
-        verify_flowstats(self,match,byte_count=(2*len(str(pkt))),packet_count=2)
+        verify_flowstats(self,match,packet_count=2)
 
 
 class Grp40No120(base_tests.SimpleDataPlane):
