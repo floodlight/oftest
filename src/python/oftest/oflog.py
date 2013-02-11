@@ -1,5 +1,6 @@
 # @author Jonathan Stout
 from subprocess import Popen
+import json
 import logging
 import netifaces
 import os
@@ -39,6 +40,7 @@ failed tests...
 pubDir = ""
 pubName = ""
 wiresharkMap = {}
+pubResults = False
  
 def get_logger(name):
     global pubName
@@ -46,9 +48,12 @@ def get_logger(name):
     LOG = logging.getLogger(pubName)
     LOG.setLevel(logging.DEBUG)
     
-    logDir = "%slogs/%s" % (pubDir, pubName)
-    os.makedirs(logDir)
-    h = logging.FileHandler(logDir+"/trace.log")
+    h = logging.FileHandler("oft.log")
+    if should_publish():
+        logDir = "%sresult/logs/%s" % (pubDir, pubName)
+        os.makedirs(logDir)
+        if should_publish():
+            h = logging.FileHandler(logDir+"/trace.log")
     h.setLevel(logging.DEBUG)
     
     f = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -60,14 +65,16 @@ def start_wireshark():
     global wiresharkMap
     global pubDir
     global pubName
-    for iface in wiresharkMap:
-        fd = "%slogs/%s/%s.pcap" % (pubDir, pubName, iface)
-        wiresharkMap[iface] = Popen(["tshark", "-i", str(iface), "-w", fd, "-q"], stdout=None)
+    if should_publish():
+        for iface in wiresharkMap:
+            fd = "%sresult/logs/%s/%s.pcap" % (pubDir, pubName, iface)
+            wiresharkMap[iface] = Popen(["tshark", "-i", str(iface), "-w", fd, "-q"], stdout=None)
         
 def stop_wireshark():
     global wiresharkMap
-    for iface in wiresharkMap:
-        wiresharkMap[iface].terminate()
+    if should_publish():
+        for iface in wiresharkMap:
+            wiresharkMap[iface].terminate()
  
 def find_iface(addy):
     for iface in netifaces.interfaces():
@@ -80,8 +87,14 @@ def find_iface(addy):
     return None
  
 def set_publish_directory(directory):
+    global pubResults
     global pubDir
+    pubResults = True
     pubDir = directory
+
+def should_publish():
+    global pubResults
+    return pubResults
  
 def set_wireshark_config(ctrlAddr, portMap):
     global wiresharkMap
@@ -96,17 +109,27 @@ def publish_asserts_and_results(res):
     asserts = {"errors" : {}, "failures" : {}, "skipped" : {}}
     results = {}
  
-    for e in res.errors():
-        asserts["errors"][e[0].__name__] = e[1]
-    for f in res.failures():
-        asserts["failures"][f[0].__name__] = f[1]
-    for s in res.skipped():
-        asserts["skipped"][s[0].__name__] = s[1]
+    for e in res.errors:
+        asserts["errors"][e[0].__class__.__name__] = e[1]
+    for f in res.failures:
+        asserts["failures"][f[0].__class__.__name__] = f[1]
+    # New in python 2.7
+    #for s in res.skipped:
+    #    asserts["skipped"][s[0].__class__.__name__] = s[1]
     # Publish asserts
+    write_json_tofile(asserts, "asserts.json")
  
-    results["run"] = res.testsRun()
-    results["errors"] = len(res.errors())
-    results["failed"] = len(res.failures())
-    results["skipped"] = len(res.skipped())
-    results["passed"] = results["run"] - (results["errors"]+results["failed"]+results["skipped"])
+    results["run"] = res.testsRun
+    results["errors"] = len(res.errors)
+    results["failed"] = len(res.failures)
+    # New in python 2.7
+    #results["skipped"] = len(res.skipped)
+    results["passed"] = results["run"] - (results["errors"]+results["failed"])
     # Publish results
+    write_json_tofile(results, "results.json")
+
+def write_json_tofile(data, fd):
+    f = open(pubDir+"result/"+fd, "w")
+    json.dump(data, f)
+    f.close()
+
