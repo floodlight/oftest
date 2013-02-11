@@ -64,7 +64,7 @@ class Grp90No10(base_tests.SimpleDataPlane):
         self.assertEqual(response.reason,ofp.OFPPR_ADD,"The reason field of Port Status Message is incorrect")
 
 
-class Grp90No20(base_tests.SimpleDataPlane):
+class Grp90No30a(base_tests.SimpleDataPlane):
     
     """ Modify the behavior of physical port using Port Modification Messages
     Change OFPPC_NO_FLOOD flag  and verify change takes place with features request """
@@ -108,7 +108,7 @@ class Grp90No20(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
 
-class Grp90No30a(base_tests.SimpleDataPlane):
+class Grp90No30b(base_tests.SimpleDataPlane):
     
     """ 
     Modify the behavior of physical port using Port Modification Messages
@@ -153,7 +153,7 @@ class Grp90No30a(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
 
-class Grp90No30b(base_tests.SimpleDataPlane):
+class Grp90No30c(base_tests.SimpleDataPlane):
     """ 
     Modify the behavior of physical port using Port Modification Messages
     Change OFPPC_NO_PACKET_IN flag and verify change took place with Features Request"""

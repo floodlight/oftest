@@ -720,9 +720,9 @@ def verify_flowstats(self,match,byte_count=None,packet_count=None):
             packet_counter += item.packet_count
             byte_counter += item.byte_count
 
-            logging.info("Recieved" + str(item.packet_count) + " packets")
+            logging.info("packet_counter" + str(item.packet_count) + " packets")
            
-            logging.info("Received " + str(item.byte_count) + "bytes")
+            logging.info("byte_counter" + str(item.byte_count) + "bytes")
            
         if packet_count != None  and  packet_count != packet_counter: continue
         if byte_count != None  and  byte_count != byte_counter: continue
@@ -764,10 +764,10 @@ def verify_portstats(self, port,tx_packets=None,rx_packets=None,rx_byte=None,tx_
             sentb += item.tx_bytes
            
             
-            logging.info("Sent " + str(sentp) + " packets")
-            logging.info("Received " + str(recvp) + " packets")
-            logging.info("Received " + str(recvb) + "bytes")
-            logging.info("Sent" + str(sentb) + "bytes")
+            logging.info("Tx_packet counter " + str(sentp) + " packets")
+            logging.info("Rx_packet counter " + str(recvp) + " packets")
+            logging.info("Rx_byte counter" + str(recvb) + "bytes")
+            logging.info("Tx_byte counter" + str(sentb) + "bytes")
     
         if tx_packets != None  and  tx_packets != sentp: continue
         if rx_packets != None  and  rx_packets != recvp: continue 
@@ -864,6 +864,40 @@ def nonstrict_delete(self,match,priority=None):
     self.assertTrue(rv != -1, "Error installing flow mod")
     self.assertEqual(do_barrier(self.controller),0, "Barrier failed")
 
+
+def nonstrict_delete_emer(self,match,priority=None):
+# Issue Non_Strict Delete Emer
+        
+    #Create flow_mod message, command DELETE for an emergency flow
+    msg6 = message.flow_mod()
+    msg6.out_port = ofp.OFPP_NONE
+    msg6.command = ofp.OFPFC_DELETE
+    msg6.buffer_id = 0xffffffff
+    msg6.match = match
+    msg6.flags = msg6.flags | ofp.OFPFF_EMERG
+    
+    if priority != None :
+        msg6.priority = priority
+
+    rv = self.controller.message_send(msg6)
+    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.assertEqual(do_barrier(self.controller),0, "Barrier failed")
+
+
+def delete_all_flows_emer(ctrl):
+    """
+    Delete all emergency flows on the switch
+    @param ctrl The controller object for the test
+    """
+
+    logging.info("Deleting all emergency flows")
+    msg = message.flow_mod()
+    msg.match.wildcards = ofp.OFPFW_ALL
+    msg.out_port = ofp.OFPP_NONE
+    msg.command = ofp.OFPFC_DELETE
+    msg.flags = msg.flags | ofp.OFPFF_EMERG
+    msg.buffer_id = 0xffffffff
+    return ctrl.message_send(msg)
 
 ###########################################################################################################################################################
 

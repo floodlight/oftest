@@ -53,7 +53,11 @@ class Grp10No10(base_tests.SimpleDataPlane):
 
         #Shutdown the control channel
         self.controller.shutdown()
-
+        sleep(15) 
+        # TODO: Remove sleep as sleep time cannot be generalised for all switches 
+        # Because sleeping time will vary from Sw to Sw configuration (No. of retries)
+        # Instead send continous packets to verify control channel disconnection and Sw startup Behaviour
+      
         #Send a simple tcp packet on ingress_port
         logging.info("Sending simple tcp packet ...")
         packet = simple_tcp_packet()
@@ -232,7 +236,7 @@ class Grp10No90(unittest.TestCase):
             port=config["controller_port"])
         # clean_shutdown should be set to False to force quit app
         self.clean_shutdown = False
-        self.controller.initial_hello=False
+        self.controller.initial_hello=True
         self.controller.start()
         #@todo Add an option to wait for a pkt transaction to ensure version
         # compatibilty?
@@ -254,24 +258,15 @@ class Grp10No90(unittest.TestCase):
         
     def runTest(self):
 
-        logging.info("Running TestNo90 EchoTimeout ") 
-       
-        request = message.hello()
-        timeout = test_param_get('timeout',default = 60)
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv == 0, "Error sending out message")
+        logging.info("Running TestNo90 EchoTimeout ")
+        sleep(10)
+        # When the switch loses control channel , it starts retries for control channel connection by sending Hello messages
+        # Polling for Hello Messages 
+        (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
+                                               timeout=30)
+        self.assertTrue(response is not None, 
+                               'Switch did not Lose connection due to Echo timeouts') 
 
-        for i in range(timeout): 
-            if not self.controller.active:
-                raise Exception("Test Passed")  
-            sleep(1)
-
-        connection_lost = False
-        self.assertTrue(connection_lost != False, "Connection did not drop due to echo-timeout")
-
-
-
-        
 
 class Grp10No120(base_tests.SimpleDataPlane):
     """
@@ -290,6 +285,9 @@ class Grp10No120(base_tests.SimpleDataPlane):
         #Clear switch state
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
+
+        rv = delete_all_flows_emer(self.controller)
+        self.assertEqual(rv, 0, "Failed to delete all flows")
         
         #Insert any standard flow entry 
         (pkt,match) = wildcard_all_except_ingress(self,of_ports)
@@ -299,7 +297,8 @@ class Grp10No120(base_tests.SimpleDataPlane):
 
         #Shutdown the controller 
         self.controller.shutdown()
-        self.controller.join()
+        sleep(15)
+        # Remove sleep and send continous packets to verify control channel disconnection
 
         #Send matching packet 
         self.dataplane.send(of_ports[0], str(pkt))
@@ -346,21 +345,18 @@ class Grp10No140(base_tests.SimpleDataPlane):
         self.assertTrue(rv != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
             
-        # Send Table_Stats_Request and verify flow gets inserted.
-        verify_tablestats(self,expect_active=1)
-
         #Shutdown the controller 
         self.controller.shutdown()
-        self.controller.join()
+        sleep(15) #For connection retries from the switch to exhaust 
 
         #Send matching packet 
         self.dataplane.send(of_ports[0], str(test_packet))
 
         #Verify packet implements the action specified in the emergency flow
-        egress_port = of_ports(1)
+        egress_port = of_ports[1]
         yes_ports=[egress_port]
         no_ports = set(of_ports).difference(yes_ports)
-        receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
+        receive_pkt_check(self.dataplane,test_packet,yes_ports,no_ports,self)
 
 
 
@@ -391,7 +387,7 @@ class Grp10No150(base_tests.SimpleDataPlane):
         msg = message.flow_mod()
         msg.command = ofp.OFPFC_ADD
         msg.match = match
-        msg.hard_timeout = 10       
+        msg.hard_timeout = 25       
         act = action.action_output()
         act.port = of_ports[1]
         self.assertTrue(msg.actions.add(act), "could not add action")
@@ -405,7 +401,9 @@ class Grp10No150(base_tests.SimpleDataPlane):
 
         #Shutdown the controller 
         self.controller.shutdown()
-        self.controller.join()
+        sleep(15)
+
+        #TBD remove sleeps with continous packet sending 
 
         #Send matching packet 
         self.dataplane.send(of_ports[0], str(pkt))
@@ -416,6 +414,7 @@ class Grp10No150(base_tests.SimpleDataPlane):
         no_ports = set(of_ports).difference([egress_port])
         receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
 
+        #Sleeping for flow to timeout 
         sleep(10)
 
         #Send matching packet 

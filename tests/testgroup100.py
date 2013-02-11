@@ -161,7 +161,7 @@ class Grp100No90(base_tests.SimpleProtocol):
         header=ofp.ofp_header() 
         header.type = ofp.OFPT_STATS_REQUEST
         # normal the header length is 12bytes changed it to 18bytes
-        header.length=18;
+        header.length=180;
         packed=header.pack()+stats_request.pack()
         rv=self.controller.message_send(packed)
         self.assertTrue(rv != -1,"Unable to send the message")
@@ -195,7 +195,7 @@ class Grp100No110(base_tests.SimpleProtocol):
 
         pkt=simple_tcp_packet()
         request = flow_msg_create(self, pkt, ing_port=of_ports[0], egr_ports=of_ports[1])
-        request.buffer_id=-10 #incorrect buffer id
+        request.buffer_id= -10 #incorrect buffer id
 
         rv = self.controller.message_send(request)
         self.assertTrue(rv==0,"Unable to send the message")
