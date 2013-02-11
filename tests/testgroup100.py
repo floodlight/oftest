@@ -193,12 +193,16 @@ class Grp100No110(base_tests.SimpleProtocol):
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
-        pkt=simple_tcp_packet()
-        request = flow_msg_create(self, pkt, ing_port=of_ports[0], egr_ports=of_ports[1])
-        request.buffer_id= -10 #incorrect buffer id
+        msg = message.packet_out()
+        msg.buffer_id = 173
+        act = action.action_output()
+        act.port = of_ports[1]
+        self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
 
-        rv = self.controller.message_send(request)
-        self.assertTrue(rv==0,"Unable to send the message")
+        logging.info("PacketOut to: " + str(of_port[1]))
+        rv = self.controller.message_send(msg)
+        self.assertTrue(rv == 0, "Error sending out message")
+        
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,
                                                timeout=5)
         self.assertTrue(response is not None,
