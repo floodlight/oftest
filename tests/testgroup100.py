@@ -199,10 +199,10 @@ class Grp100No110(base_tests.SimpleProtocol):
         act.port = of_ports[1]
         self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
 
-        logging.info("PacketOut to: " + str(of_port[1]))
+        logging.info("PacketOut to: " + str(of_ports[1]))
         rv = self.controller.message_send(msg)
         self.assertTrue(rv == 0, "Error sending out message")
-        
+
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,
                                                timeout=5)
         self.assertTrue(response is not None,
