@@ -23,6 +23,7 @@ import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.parse as parse
 import oftest.base_tests as base_tests
+import oftest.oflog as oflog
 
 import oftest.illegal_message as illegal_message
 
@@ -40,7 +41,7 @@ class Grp10No10(base_tests.SimpleDataPlane):
      
        
     def runTest(self):
-
+        logging = oflog.get_logger(__name__)
         logging.info("Running TestNo10 SwStartup test")
 
         of_ports = config["port_map"].keys()
