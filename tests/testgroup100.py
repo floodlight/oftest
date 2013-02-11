@@ -195,7 +195,7 @@ class Grp100No110(base_tests.SimpleProtocol):
 
         pkt=simple_tcp_packet()
         request = flow_msg_create(self, pkt, ing_port=of_ports[0], egr_ports=of_ports[1])
-        request.buffer_id= 173 #incorrect buffer id
+        request.buffer_id= -10 #incorrect buffer id
 
         rv = self.controller.message_send(request)
         self.assertTrue(rv==0,"Unable to send the message")
