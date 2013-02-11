@@ -112,6 +112,7 @@ if os.path.exists(os.path.join(pydir, 'oftest')):
 
 import oftest
 from oftest import config
+from oftest import oflog
 
 try:
     import oftest.message
@@ -556,6 +557,7 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 if __name__ == "__main__":
     logging.info("*** TEST RUN START: " + time.asctime())
+    oflog.set_wireshark_config(config["controller_host"], config["port_map"])
     result = unittest.TextTestRunner(verbosity=_verb).run(suite)
     if oftest.testutils.skipped_test_count > 0:
         ts = " tests"
