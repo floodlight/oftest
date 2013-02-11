@@ -108,7 +108,7 @@ class Grp90No20(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
 
-class Grp90No30a(base_tests.SimpleDataPlane):
+class Grp90No30(base_tests.SimpleDataPlane):
     
     """ 
     Modify the behavior of physical port using Port Modification Messages
