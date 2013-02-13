@@ -47,7 +47,9 @@ class Grp50No10(base_tests.SimpleDataPlane):
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
-    
+        
+        sleep(2)
+        
         #Insert an All Wildcarded flow.
         wildcard_all(self,of_ports)
 
@@ -395,7 +397,7 @@ class Grp50No80b(base_tests.SimpleDataPlane):
         sleep(2)
 
         #Create a flow for match on ip_src_address (wildcard all)
-        val=32 #/* IP source address wildcard bit count
+        val=0 #/* IP source address wildcard bit count
         (pkt,match) = match_ip_src(self,of_ports,val)
 
         #Send Packet matching the flow 
@@ -434,7 +436,7 @@ class Grp50No80c(base_tests.SimpleDataPlane):
         sleep(2)
 
         #Create a flow for match on ip_src_address, ignore the LSB of the address 
-        val=25 #/* IP source address wildcard bit count 
+        val=1 #/* IP source address wildcard bit count 
         (pkt,match) = match_ip_src(self,of_ports,val)
 
         #Send Packet matching the flow 
@@ -560,7 +562,7 @@ class Grp50No90c(base_tests.SimpleDataPlane):
         sleep(2)
 
         #Create a flow for match on ip_src_address, ignore the LSB of the address 
-        val=25 #/* IP address wildcard bit count 
+        val=1 #/* IP address wildcard bit count 
         (pkt,match) = match_ip_dst(self,of_ports,val)
 
         #Send Packet matching the flow 
