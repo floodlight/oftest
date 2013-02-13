@@ -31,7 +31,13 @@ def match_ip_src(self,of_ports,wildcard_bits,priority=None):
     # @ can take values from 0 (exact-match) 32 (for wild-card all)
     val = wildcard_bits
     wildcards = (ofp.OFPFW_ALL & ~ofp.OFPFW_NW_SRC_MASK) | (val << ofp.OFPFW_NW_SRC_SHIFT)
-    print hex(ofp.OFPFW_NW_SRC_MASK)
+    
+    x = hex(ofp.OFPFW_NW_SRC_MASK)
+    print x 
+    y = ~x
+    print y
+
+    print wildcards
 
     msg = message.flow_mod()
     msg.match = match
