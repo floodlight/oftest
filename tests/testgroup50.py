@@ -228,6 +228,8 @@ class Grp50No50(base_tests.SimpleDataPlane):
         logging.info("Sending matching and non-matching ethernet packets")
         logging.info("Verifying only matching packets implements the action specified in the flow")
 
+        sleep(5)        
+
         #Insert a Match on Ethernet-Type flow
         (pkt,match) = match_ethernet_type(self,of_ports)   
 
