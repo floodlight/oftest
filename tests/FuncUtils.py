@@ -30,7 +30,7 @@ def match_ip_src(self,of_ports,wildcard_bits,priority=None):
     # @param val is number of bits we need to wild-card in the ip_src add
     # @ can take values from 0 (exact-match) 32 (for wild-card all)
     val = wildcard_bits
-    wildcards = (ofp.OFPFW_ALL & ~ofp.OFPFW_NW_SRC_MASK) | (val << ofp.OFPFW_NW_SRC_SHIFT)
+    match.wildcards = (ofp.OFPFW_ALL & ~ofp.OFPFW_NW_SRC_MASK) | (val << ofp.OFPFW_NW_SRC_SHIFT)
     
     x = hex(ofp.OFPFW_NW_SRC_MASK)
 
@@ -62,7 +62,7 @@ def match_ip_dst(self,of_ports,wildcard_bits,priority=None):
     # @ can take values from 0 (exact-match) 32 (for wild-card all)
     #val = wildcard_bits
     
-    match.wildcard=4293935055
+    match.wildcards=4293935055
 
     #(ofp.OFPFW_ALL & ~ofp.OFPFW_NW_SRC_MASK) | (val << ofp.OFPFW_NW_DST_SHIFT)
 
