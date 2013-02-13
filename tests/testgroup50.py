@@ -1051,8 +1051,13 @@ class Grp50No180(base_tests.SimpleDataPlane):
         logging.info("Sending packets matching both the flows ")
         logging.info("Verifying matching packets implements the action specified in the exact match flow")
 
+        sleep(2)
+
         #Insert two Overlapping Flows : Exact Match and Wildcard All.
         (pkt,match) = exact_match_with_prio(self,of_ports,priority=10) 
+
+        sleep(2)
+        
         (pkt2,match2) = wildcard_all(self,of_ports,priority=20);  
         
         #Sending packet matching both the flows , 
