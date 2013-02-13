@@ -33,9 +33,8 @@ def match_ip_src(self,of_ports,wildcard_bits,priority=None):
     wildcards = (ofp.OFPFW_ALL & ~ofp.OFPFW_NW_SRC_MASK) | (val << ofp.OFPFW_NW_SRC_SHIFT)
     
     x = hex(ofp.OFPFW_NW_SRC_MASK)
-
     print x 
-    print wildcards
+    print hex(wildcards)
 
     msg = message.flow_mod()
     msg.match = match
@@ -63,13 +62,10 @@ def match_ip_dst(self,of_ports,wildcard_bits,priority=None):
     # @ can take values from 0 (exact-match) 32 (for wild-card all)
     val = wildcard_bits
 
-    wildcards = (ofp.OFPFW_ALL & 1) | (val << ofp.OFPFW_NW_DST_SHIFT)
-    print OFPFW_ALL
+    wildcards = (ofp.OFPFW_ALL & ~ofp.OFPFW_NW_SRC_MASK) | (val << ofp.OFPFW_NW_DST_SHIFT)
 
-    print "mask"
     print hex(ofp.OFPFW_NW_DST_MASK)
     print hex(wildcards)
-    print 
 
     msg = message.flow_mod()
     msg.match = match
