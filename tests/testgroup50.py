@@ -228,7 +228,7 @@ class Grp50No50(base_tests.SimpleDataPlane):
         logging.info("Sending matching and non-matching ethernet packets")
         logging.info("Verifying only matching packets implements the action specified in the flow")
 
-        sleep(10)        
+        sleep(5)        
 
         #Insert a Match on Ethernet-Type flow
         (pkt,match) = match_ethernet_type(self,of_ports)   
@@ -240,9 +240,17 @@ class Grp50No50(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
         #Sending non matching packet , 
-        pkt2 = simple_eth_packet(dl_type=0x0806);
-        self.dataplane.send(of_ports[0], str(pkt2))
+        #pkt2 = simple_eth_packet(dl_type=0x0806);
+        #self.dataplane.send(of_ports[0], str(pkt2))
         
+        #Send simple tcp packet
+        #pkt2 = simple_tcp_packet();
+        #self.dataplane.send(of_ports[0], str(pkt2))
+
+        #Send non-matching packet 
+        pkt3 = simple_eth_packet(dl_type=0x0805)
+        self.dataplane.send(of_ports[0],str(pkt3))
+
         #verify Packetin event gets triggered.
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non-matching packet")
