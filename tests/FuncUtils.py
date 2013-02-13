@@ -36,8 +36,8 @@ def match_ip_src(self,of_ports,wildcard_bits,priority=None):
     #wildcards = val << 8
     #print wildcards
 
-    wildcards = (~ofp.OFPFW_ALL) | (val << ofp.OFPFW_NW_SRC_SHIFT)
-
+    wildcards = ofp.OFPFW_ALL
+    
     msg = message.flow_mod()
     msg.match = match
     if priority != None :
