@@ -353,12 +353,24 @@ class Grp50No80a(base_tests.SimpleDataPlane):
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
-
+        
         sleep(2)
 
-        #Create a flow for match on ip_src_address (exact match)
-        val = 0 #no. of bits to be wildcarded in the flow 
-        (pkt,match) = match_ip_src_exact(self,of_ports,val)
+        #Create a simple tcp packet and generate match on ip src address , exact match 
+        pkt = simple_tcp_packet(ip_src='192.168.100.100')
+        match = parse.packet_to_flow_match(pkt)
+        #Wildcards -- 
+        match.wildcards = 0xffffc0cf 
+        msg = message.flow_mod()
+        msg.match = match
+        act = action.action_output()
+        act.port = of_ports[1]
+        rv = msg.actions.add(act)
+        self.assertTrue(rv, "Could not add output action " + 
+                        str(of_ports[1]))
+        rv = self.controller.message_send(msg)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")  
 
         #Send Packet matching the flow 
         self.dataplane.send(of_ports[0], str(pkt))
@@ -396,10 +408,21 @@ class Grp50No80b(base_tests.SimpleDataPlane):
 
         sleep(2)
 
-        #Create a flow for match on ip_src_address (wildcard all)
-        val=0 #/* IP source address wildcard bit count
-        (pkt,match) = match_ip_src_wildcard(self,of_ports,val)
-
+        #Create a simple tcp packet and generate match on ip src address 
+        pkt = simple_tcp_packet(ip_src='192.168.100.100')
+        match = parse.packet_to_flow_match(pkt)
+        match.wildcards = 0xffffffcf
+        msg = message.flow_mod()
+        msg.match = match
+        act = action.action_output()
+        act.port = of_ports[1]
+        rv = msg.actions.add(act)
+        self.assertTrue(rv, "Could not add output action " + 
+                            str(of_ports[1]))
+        rv = self.controller.message_send(msg)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed") 
+        
         #Send Packet matching the flow 
         self.dataplane.send(of_ports[0], str(pkt))
 
@@ -483,9 +506,20 @@ class Grp50No90a(base_tests.SimpleDataPlane):
         sleep(2)
 
         #Create a flow for match on ip_dst_address (exact match)
-        val=0 #/* IP destination address wildcard bit count
-        (pkt,match) = match_ip_dst(self,of_ports,val)
-
+        pkt = simple_tcp_packet(ip_src='192.168.100.100')
+        match = parse.packet_to_flow_match(pkt)
+        match.wildcards = 0x3ff03fcf
+        msg = message.flow_mod()
+        msg.match = match
+        act = action.action_output()
+        act.port = of_ports[1]
+        rv = msg.actions.add(act)
+        self.assertTrue(rv, "Could not add output action " + 
+                            str(of_ports[1]))
+        rv = self.controller.message_send(msg)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed") 
+        
         #Send Packet matching the flow 
         self.dataplane.send(of_ports[0], str(pkt))
 
