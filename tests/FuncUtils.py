@@ -65,10 +65,6 @@ def match_ip_dst(self,of_ports,wildcard_bits,priority=None):
     match.wildcards=4293935055
 
     #(ofp.OFPFW_ALL & ~ofp.OFPFW_NW_SRC_MASK) | (val << ofp.OFPFW_NW_DST_SHIFT)
-
-    print hex(ofp.OFPFW_NW_DST_MASK)
-    print hex(wildcards)
-
     msg = message.flow_mod()
     msg.match = match
     if priority != None :
