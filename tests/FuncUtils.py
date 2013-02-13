@@ -59,7 +59,8 @@ def match_ip_dst(self,of_ports,wildcard_bits,priority=None):
     # @ can take values from 0 (exact-match) 32 (for wild-card all)
     val = wildcard_bits
 
-    wildcards = (ofp.OFPFW_ALL & ofp.OFPFW_NW_DST_MASK) | (val << ofp.OFPFW_NW_DST_SHIFT)
+    wildcards = (ofp.OFPFW_ALL & 1) | (val << ofp.OFPFW_NW_DST_SHIFT)
+    print hex(ofp.OFPFW_NW_DST_MASK)
 
     msg = message.flow_mod()
     msg.match = match
