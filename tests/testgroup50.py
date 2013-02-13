@@ -238,15 +238,7 @@ class Grp50No50(base_tests.SimpleDataPlane):
 
         #Verify packet implements the action specified in the flow
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
-
-        #Sending non matching packet , 
-        #pkt2 = simple_eth_packet(dl_type=0x0806);
-        #self.dataplane.send(of_ports[0], str(pkt2))
         
-        #Send simple tcp packet
-        #pkt2 = simple_tcp_packet();
-        #self.dataplane.send(of_ports[0], str(pkt2))
-
         #Send non-matching packet 
         pkt3 = simple_eth_packet(dl_type=0x0805)
         self.dataplane.send(of_ports[0],str(pkt3))
@@ -936,7 +928,7 @@ class Grp50No140(base_tests.SimpleDataPlane):
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 
         #Sending non matching packet (only ether_type is different) , verify Packetin event gets triggered.
-        pkt2 = simple_eth_packet(dl_type=0x0806,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:01:01:02');
+        pkt2 = simple_eth_packet(dl_type=0x0805,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:01:01:02');
         self.dataplane.send(of_ports[0], str(pkt2))
         
         #Verify packet_in event gets triggered
