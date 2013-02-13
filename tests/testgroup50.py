@@ -392,6 +392,8 @@ class Grp50No80b(base_tests.SimpleDataPlane):
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
 
+        sleep(2)
+
         #Create a flow for match on ip_src_address (wildcard all)
         val=32 #/* IP source address wildcard bit count
         (pkt,match) = match_ip_src(self,of_ports,val)
