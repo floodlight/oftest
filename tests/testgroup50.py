@@ -352,6 +352,8 @@ class Grp50No80a(base_tests.SimpleDataPlane):
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
 
+        sleep(2)
+
         #Create a flow for match on ip_src_address (exact match)
         val=0 #no. of bits to be wildcarded in the flow 
         (pkt,match) = match_ip_src(self,of_ports,val)
@@ -1055,6 +1057,7 @@ class Grp50No180(base_tests.SimpleDataPlane):
 
         #Insert two Overlapping Flows : Exact Match and Wildcard All.
         (pkt,match) = exact_match_with_prio(self,of_ports,priority=10) 
+        
         sleep(2)
 
         (pkt2,match2) = wildcard_all(self,of_ports,priority=20)
