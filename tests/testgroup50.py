@@ -1055,10 +1055,9 @@ class Grp50No180(base_tests.SimpleDataPlane):
 
         #Insert two Overlapping Flows : Exact Match and Wildcard All.
         (pkt,match) = exact_match_with_prio(self,of_ports,priority=10) 
-
         sleep(2)
-        
-        (pkt2,match2) = wildcard_all(self,of_ports,priority=20);  
+
+        (pkt2,match2) = wildcard_all(self,of_ports,priority=20)
         
         #Sending packet matching both the flows , 
         self.dataplane.send(of_ports[0], str(pkt2))
