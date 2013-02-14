@@ -157,6 +157,7 @@ class Grp100No90(base_tests.SimpleProtocol):
         #In Message module at pack time the length is computed
         #avoid this by using cstruct module
         logging.info("Sending stats_request message..")
+        sleep(2)
         stats_request = ofp.ofp_stats_request()
         header=ofp.ofp_header() 
         header.type = ofp.OFPT_STATS_REQUEST
@@ -187,14 +188,14 @@ class Grp100No110(base_tests.SimpleProtocol):
     """
     def runTest(self):
 
-        logging.info("Running Grp100No110 BadRequestBadLength test")
+        logging.info("Running Grp100No110 BadRequestBufferUnknown test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         msg = message.packet_out()
-        msg.buffer_id = 173
+        msg.buffer_id = 173 #Random buffer_id 
         act = action.action_output()
         act.port = of_ports[1]
         self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
