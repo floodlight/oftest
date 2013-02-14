@@ -999,7 +999,7 @@ class Grp50No150(base_tests.SimpleDataPlane):
         sleep(2)
 
         #Create a flow for match on ip_dst_address & ip_src_address (exact match))
-        pkt = simple_tcp_packet(ip_src=192.168.100.100,ip_dst=192.168.100.200)
+        pkt = simple_tcp_packet(ip_src='192.168.100.100',ip_dst='192.168.100.200')
         match = parse.packet_to_flow_match(pkt)
         match.wildcards = 0x3ff000cf
         msg = message.flow_mod()
@@ -1020,7 +1020,7 @@ class Grp50No150(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
         #Send a non-matching packet , verify it also matches the flow_entry
-        pkt2 = simple_tcp_packet(ip_src=192.168.100.100,ip_dst=192.168.100.300)
+        pkt2 = simple_tcp_packet(ip_src='192.168.100.100',ip_dst='192.168.100.300')
         self.dataplane.send(of_ports[0], str(pkt2))
         
         #Verify packet_in event gets triggered
