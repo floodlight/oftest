@@ -19,91 +19,6 @@ from time import sleep
 
 #################### Functions for various types of flow_mod  ##########################################################################################
 
-
-def match_ip_src_exact(self,of_ports,wildcard_bits,priority=None):
-    #Generate match on ip_src address 
-
-    #Create a simple tcp packet and generate match on ip src address 
-    pkt = simple_tcp_packet(ip_src='192.168.100.100')
-    match = parse.packet_to_flow_match(pkt)
-    
-    # @param val is number of bits we need to wild-card in the ip_src add
-    # @ can take values from 0 (exact-match) 32 (for wild-card all)
-    #val = wildcard_bits
-    #match.wildcards = (ofp.OFPFW_ALL & ~ofp.OFPFW_NW_SRC_MASK) | (val << ofp.OFPFW_NW_SRC_SHIFT)
-
-    match.wildcards = 0xffffc0cf
-    msg = message.flow_mod()
-    msg.match = match
-    if priority != None :
-        msg.priority = priority
-    act = action.action_output()
-    act.port = of_ports[1]
-    rv = msg.actions.add(act)
-    self.assertTrue(rv, "Could not add output action " + 
-                        str(of_ports[1]))
-    rv = self.controller.message_send(msg)
-    self.assertTrue(rv != -1, "Error installing flow mod")
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")  
-    return (pkt,match)
-
-def match_ip_src_wildcard(self,of_ports,wildcard_bits,priority=None):
-    #Generate match on ip_src address 
-
-    #Create a simple tcp packet and generate match on ip src address 
-    pkt = simple_tcp_packet(ip_src='192.168.100.100')
-    match = parse.packet_to_flow_match(pkt)
-    
-    # @param val is number of bits we need to wild-card in the ip_src add
-    # @ can take values from 0 (exact-match) 32 (for wild-card all)
-    val = wildcard_bits
-    #match.wildcards = (ofp.OFPFW_ALL & ~ofp.OFPFW_NW_SRC_MASK) | (val << ofp.OFPFW_NW_SRC_SHIFT)
-    
-    match.wildcards = 0xffffffcf
-    msg = message.flow_mod()
-    msg.match = match
-    if priority != None :
-        msg.priority = priority
-    act = action.action_output()
-    act.port = of_ports[1]
-    rv = msg.actions.add(act)
-    self.assertTrue(rv, "Could not add output action " + 
-                        str(of_ports[1]))
-    rv = self.controller.message_send(msg)
-    self.assertTrue(rv != -1, "Error installing flow mod")
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")  
-    return (pkt,match)
-
-
-
-def match_ip_dst(self,of_ports,wildcard_bits,priority=None):
-    #Generate match on ip_dst address 
-
-    #Create a simple tcp packet and generate match on ip src address 
-    pkt = simple_tcp_packet(ip_dst='192.168.100.100')
-    match = parse.packet_to_flow_match(pkt)
-    
-    # @param val is number of bits we need to wild-card in the ip_src add
-    # @ can take values from 0 (exact-match) 32 (for wild-card all)
-    #val = wildcard_bits
-    
-    match.wildcards=4293935055
-    
-    #(ofp.OFPFW_ALL & ~ofp.OFPFW_NW_SRC_MASK) | (val << ofp.OFPFW_NW_DST_SHIFT)
-    msg = message.flow_mod()
-    msg.match = match
-    if priority != None :
-        msg.priority = priority
-    act = action.action_output()
-    act.port = of_ports[1]
-    rv = msg.actions.add(act)
-    self.assertTrue(rv, "Could not add output action " + 
-                        str(of_ports[1]))
-    rv = self.controller.message_send(msg)
-    self.assertTrue(rv != -1, "Error installing flow mod")
-    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")  
-    return (pkt,match)
-
 def exact_match(self,of_ports,priority=None):
 # Generate ExactMatch flow .
 
@@ -160,7 +75,57 @@ def exact_match_with_prio(self,of_ports,priority=None):
 
     return (pkt_exactflow,match)         
        
+def match_icmp_type(self,of_ports,priority=None):
+    #Generate Match on icmp type
 
+        #Create a simple icmp packet and generate match on icmp type
+    pkt = simple_icmp_packet(icmp_type=8)
+    match = parse.packet_to_flow_match(pkt)
+    self.assertTrue(match is not None, "Could not generate flow match from pkt")
+
+    match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_TYPE^ofp.OFPFW_NW_PROTO^ofp.OFPFW_TP_SRC 
+    msg = message.flow_mod()
+    msg.out_port = ofp.OFPP_NONE
+    msg.command = ofp.OFPFC_ADD
+    msg.buffer_id = 0xffffffff
+    msg.match = match
+    if priority != None :
+        msg.priority = priority
+    act = action.action_output()
+    act.port = of_ports[1]
+    self.assertTrue(msg.actions.add(act), "could not add action")
+
+    rv = self.controller.message_send(msg)
+    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+    return (pkt,match)
+
+def match_icmp_code(self,of_ports,priority=None):
+    #Generate Match on icmp code
+
+        #Create a simple icmp packet and generate match on icmp type
+    pkt = simple_icmp_packet(icmp_type=3,icmp_code=0)
+    match = parse.packet_to_flow_match(pkt)
+    self.assertTrue(match is not None, "Could not generate flow match from pkt")
+
+    match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_TYPE^ofp.OFPFW_NW_PROTO^ofp.OFPFW_TP_SRC^ofp.OFPFW_TP_DST
+    msg = message.flow_mod()
+    msg.out_port = ofp.OFPP_NONE
+    msg.command = ofp.OFPFC_ADD
+    msg.buffer_id = 0xffffffff
+    msg.match = match
+    if priority != None :
+        msg.priority = priority
+    act = action.action_output()
+    act.port = of_ports[1]
+    self.assertTrue(msg.actions.add(act), "could not add action")
+
+    rv = self.controller.message_send(msg)
+    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+    return (pkt,match)
 def match_all_except_source_address(self,of_ports,priority=None):
 # Generate Match_All_Except_Source_Address flow
         
