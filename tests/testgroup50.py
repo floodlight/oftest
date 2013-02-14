@@ -1028,7 +1028,7 @@ class Grp50No150(base_tests.SimpleDataPlane):
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 
         #Send a non-matching packet , verify it also matches the flow_entry
-        pkt3 = simple_tcp_packet(ip_src=192.168.100.300,ip_dst=192.168.100.200)
+        pkt3 = simple_tcp_packet(ip_src='192.168.100.300',ip_dst='192.168.100.200')
         self.dataplane.send(of_ports[0], str(pkt3))
 
 
