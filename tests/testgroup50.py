@@ -570,18 +570,17 @@ class Grp50No90b(base_tests.SimpleDataPlane):
         self.assertTrue(rv != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed") 
         
-
         #Send Packet matching the flow 
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet implements the action specified in the flow
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
-        #Send a non-matching packet , verify packet_in gets triggered
-        pkt2 = simple_tcp_packet(ip_dst='149.165.130.66')
+        #Send a non-matching packet , verify it also matches the flow_entry
+        pkt2 = simple_tcp_packet(ip_src='149.165.130.66')
         self.dataplane.send(of_ports[0], str(pkt2))
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        receive_pkt_check(self.dataplane,pkt2,[yes_ports],no_ports,self)
+
 
 
 class Grp50No90c(base_tests.SimpleDataPlane):
