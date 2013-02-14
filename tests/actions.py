@@ -514,8 +514,9 @@ class VlanPrio1(base_tests.SimpleDataPlane):
         #Create a untagged packet to be sent and an expected packet with vid = 0 , vlan_priority set. 
         vlan_id = 0
         vlan_pcp = 1
-        pkt = simple_tcp_packet(pktlen=60)
-        exp_pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vlan_id,dl_vlan_pcp=vlan_pcp, pktlen=64)
+        pktlen = 64 if config["minsize"] < 64 else config["minsize"]
+        pkt = simple_tcp_packet(pktlen=pktlen)
+        exp_pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vlan_id,dl_vlan_pcp=vlan_pcp, pktlen=pktlen + 4)
         act = action.action_set_vlan_pcp()
         act.vlan_pcp = vlan_pcp
 

@@ -2089,6 +2089,9 @@ class DirectBadPacketBase(base_tests.SimpleDataPlane):
         logging.info("Inserting catch-all flow")
         request2 = message.flow_mod()
         request2.match = self.createMatch()
+        request2.match.wildcards &= ~ofp.OFPFW_IN_PORT
+        request2.match.in_port = ingress_port
+
         request2.priority = 0
         act = action.action_output()
         act.port = ofp.OFPP_IN_PORT
@@ -2097,9 +2100,13 @@ class DirectBadPacketBase(base_tests.SimpleDataPlane):
 
         do_barrier(self.controller)
 
+        pkt_str = str(pkt)
+        if config["minsize"] > len(str(pkt)):
+            pkt_str += '0' * (config["minsize"] - len(str(pkt)))
+
         logging.info("Sending packet to dp port " + 
                        str(ingress_port))
-        self.dataplane.send(ingress_port, str(pkt))
+        self.dataplane.send(ingress_port, pkt_str)
 
         exp_pkt_arg = None
         exp_port = None
