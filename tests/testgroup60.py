@@ -86,6 +86,8 @@ class Grp60No20(base_tests.SimpleDataPlane):
         logging.info("Insert any flow")
         logging.info("Sending N Packets matching the flow")
         logging.info("Verify byte counters increment in accordance")
+
+        sleep(2)
         
         #Create a Match on Ingress flow
         (pkt,match) = wildcard_all_except_ingress(self,of_ports)
@@ -243,6 +245,8 @@ class Grp60No70(base_tests.SimpleDataPlane):
         logging.info("Insert any flow matching on in_port=ingress_port")
         logging.info("Send N Packets matching the flow on ingress_port P ")
         logging.info("Send Port_Stats Request for Port P , verify recieved bytes counters are incrementing in accordance")
+
+        sleep(2)
         
         #Insert a flow with match on all ingress port
         (pkt, match ) = wildcard_all_except_ingress(self,of_ports)
@@ -282,6 +286,8 @@ class Grp60No80(base_tests.SimpleDataPlane):
         logging.info("Insert any flow matching on in_port=ingress_port,action = output to egress_port T")
         logging.info("Send N Packets matching the flow on ingress_port P ")
         logging.info("Send Port_Stats Request for Port T , verify trasmitted bytes counters are incrementing in accordance")
+
+        sleep(2)
         
         #Insert a flow with match on all ingress port
         (pkt, match ) = wildcard_all_except_ingress(self,of_ports)
@@ -671,6 +677,8 @@ class Grp60No210(base_tests.SimpleDataPlane):
         #Get Current Table Stats
         (current_lookedup,current_matched,current_active) = get_tablestats(self)
 
+        sleep(2)
+
         #Insert a flow with match on all ingress port
         (pkt, match ) = wildcard_all_except_ingress(self,of_ports)
 
@@ -685,7 +693,9 @@ class Grp60No210(base_tests.SimpleDataPlane):
             self.dataplane.send(of_ports[1],str(pkt))
 
         new_lookup = num_sends+num_sends2+current_lookedup
+        logging.info("expected_lookup:"+str(new_lookup))
         new_matched = num_sends+current_matched
+        logging.info("expected_matched:"+str(new_matched))
 
         #Verify lookup_count and matched_count counters.
         verify_tablestats(self,expect_lookup=new_lookup,expect_match=new_matched)
