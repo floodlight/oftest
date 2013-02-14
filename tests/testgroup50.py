@@ -458,9 +458,20 @@ class Grp50No80c(base_tests.SimpleDataPlane):
 
         sleep(2)
 
-        #Create a flow for match on ip_src_address, ignore the LSB of the address 
-        val=1 #/* IP source address wildcard bit count 
-        (pkt,match) = match_ip_src(self,of_ports,val)
+        #Create a simple tcp packet and generate match on ip src address 
+        pkt = simple_tcp_packet(ip_src='192.168.100.100')
+        match = parse.packet_to_flow_match(pkt)
+        match.wildcards = 0x3fffd9cf
+        msg = message.flow_mod()
+        msg.match = match
+        act = action.action_output()
+        act.port = of_ports[1]
+        rv = msg.actions.add(act)
+        self.assertTrue(rv, "Could not add output action " + 
+                            str(of_ports[1]))
+        rv = self.controller.message_send(msg)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed") 
 
         #Send Packet matching the flow 
         self.dataplane.send(of_ports[0], str(pkt))
