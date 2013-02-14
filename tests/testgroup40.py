@@ -745,6 +745,8 @@ class Grp40No180(base_tests.SimpleDataPlane):
         logging.info("Inserting flow entry with idle_timeout set. Also send_flow_removed_message flag set")
         logging.info("Expecting the flow entry to delete with given idle_timeout")
 
+        sleep(2)
+
         #Insert a flow entry with idle_timeout=1.Send_Flow_Rem flag set
         msg9 = message.flow_mod()
         msg9.match.wildcards = ofp.OFPFW_ALL
@@ -788,6 +790,8 @@ class Grp40No190(base_tests.SimpleDataPlane):
 
         logging.info("Inserting flow entry with hard_timeout set. Also send_flow_removed_message flag set")
         logging.info("Expecting the flow entry to delete with given hard_timeout")
+
+        sleep(2)
 
         # Insert a flow entry with hardtimeout=1 and send_flow_removed flag set
         msg9 = message.flow_mod()
