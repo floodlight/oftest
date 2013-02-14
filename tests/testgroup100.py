@@ -165,7 +165,6 @@ class Grp100No90(base_tests.SimpleProtocol):
         packed=header.pack()+stats_request.pack()
         rv=self.controller.message_send(packed)
         self.assertTrue(rv != -1,"Unable to send the message")
-
         logging.info("Waiting for OFPT_ERROR message..")
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,         
                                                timeout=5)
