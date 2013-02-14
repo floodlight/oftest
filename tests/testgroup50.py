@@ -734,7 +734,7 @@ class Grp50No110(base_tests.SimpleDataPlane):
 
 class Grp50No120a(base_tests.SimpleDataPlane):
     
-    """Verify match on Single header field -- Tcp Source Port,  """
+    """Verify match on Single header field -- Tcp Source Port"""
     
     def runTest(self):
 
@@ -884,7 +884,7 @@ class Grp50No130b(base_tests.SimpleDataPlane):
 
 class Grp50No131(base_tests.SimpleDataPlane):
     
-    """Verify match on Single header field -- Udp Source Port, """
+    """Verify match on Single header field -- Udp Source Port """
     
     def runTest(self):
 
@@ -920,48 +920,6 @@ class Grp50No131(base_tests.SimpleDataPlane):
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 
-
-class Grp50No132(base_tests.SimpleDataPlane):
-    
-    """Verify match on Single header field -- Udp Destination Port """
-    
-    def runTest(self):
-
-        logging.info("Running Grp50No132 Udp Destination Port test")
-
-        of_ports = config["port_map"].keys()
-        of_ports.sort()
-        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
-    
-        #Clear Switch State
-        delete_all_flows(self.controller)
-
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
-        
-        logging.info("Inserting a flow with match on Udp Destination Port ")
-        logging.info("Sending matching and non-matching packets")
-        logging.info("Verifying matching packets implements the action specified in the flow")
-
-        (pkt,match) = match_udp_dst(self,of_ports)
-
-        #Sending packet matching the tcp_dport, verify it implements the action
-        self.dataplane.send(of_ports[0], str(pkt))
-
-        #Verify packet implements the action specified in the flow
-        receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
-
-        #Sending non matching packet , verify Packetin event gets triggered.
-        pkt2 = simple_udp_packet(udp_dport=541);
-        self.dataplane.send(of_ports[0], str(pkt2))
-        
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=10)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
-
-
-      
-     
 class Grp50No140(base_tests.SimpleDataPlane):
     
     """Verify match on multiple header field -- Ethernet Type, Ethernet Source Address, Ethernet Destination Address """
@@ -1016,6 +974,62 @@ class Grp50No140(base_tests.SimpleDataPlane):
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 
+
+class Grp50No150(base_tests.SimpleDataPlane):
+
+    """"Verify match on single Header Field Field -- IP_DST_ADDRESS 
+    Generates an wildcard match here"""
+
+    def runTest(self):
+
+        logging.info("Running Grp50No90b Ip_Dst test")
+
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+    
+        #Clear Switch State
+        rv = delete_all_flows(self.controller)
+        self.assertEqual(rv, 0, "Failed to delete all flows")
+
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+
+        sleep(2)
+
+        #Create a flow for match on ip_dst_address & ip_src_address (exact match))
+        pkt = simple_tcp_packet(ip_src='192.168.100.100', ip_dst='192.168.100.200')
+        match = parse.packet_to_flow_match(pkt)
+        match.wildcards = 0x3ff000cf
+        msg = message.flow_mod()
+        msg.match = match
+        act = action.action_output()
+        act.port = of_ports[1]
+        rv = msg.actions.add(act)
+        self.assertTrue(rv, "Could not add output action " + 
+                            str(of_ports[1]))
+        rv = self.controller.message_send(msg)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed") 
+        
+        #Send Packet matching the flow 
+        self.dataplane.send(of_ports[0], str(pkt))
+
+        #Verify packet implements the action specified in the flow
+        receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
+
+        #Send a non-matching packet , verify it also matches the flow_entry
+        pkt2 = simple_tcp_packet(ip_src='192.168.100.100',ip_dst='192.168.100.300')
+        self.dataplane.send(of_ports[0], str(pkt2))
+        
+        #Verify packet_in event gets triggered
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
+        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+
+        #Send a non-matching packet , verify it also matches the flow_entry
+        pkt3 = simple_tcp_packet(ip_src='192.168.100.300',ip_dst='192.168.100.200')
+        self.dataplane.send(of_ports[0], str(pkt3))
 
 
 
