@@ -617,9 +617,20 @@ class Grp50No90c(base_tests.SimpleDataPlane):
 
         sleep(2)
 
-        #Create a flow for match on ip_src_address, ignore the LSB of the address 
-        val=1 #/* IP address wildcard bit count 
-        (pkt,match) = match_ip_dst(self,of_ports,val)
+        #Create a flow for match on ip_dst_address (wildcard match))
+        pkt = simple_tcp_packet(ip_src='192.168.100.100')
+        match = parse.packet_to_flow_match(pkt)
+        match.wildcards = 0x3ff67fcf
+        msg = message.flow_mod()
+        msg.match = match
+        act = action.action_output()
+        act.port = of_ports[1]
+        rv = msg.actions.add(act)
+        self.assertTrue(rv, "Could not add output action " + 
+                            str(of_ports[1]))
+        rv = self.controller.message_send(msg)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed") 
 
         #Send Packet matching the flow 
         self.dataplane.send(of_ports[0], str(pkt))
@@ -628,14 +639,14 @@ class Grp50No90c(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
         #Send a non-matching packet , with only LSB different than the ip-address matched against
-        pkt2 = simple_tcp_packet(ip_dst='192.168.100.101')
+        pkt2 = simple_tcp_packet(ip_dst='192.156.100.101')
         self.dataplane.send(of_ports[0], str(pkt2))
 
         #Verify packet implements the action specified in the flow
         receive_pkt_check(self.dataplane,pkt2,[yes_ports],no_ports,self)
         
         #Send a non-matching packet , verify packet_in gets triggered
-        pkt3 = simple_tcp_packet(ip_dst='192.168.100.111')
+        pkt3 = simple_tcp_packet(ip_dst='200.168.100.100')
         self.dataplane.send(of_ports[0], str(pkt3))
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
