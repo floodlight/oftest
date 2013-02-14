@@ -480,14 +480,14 @@ class Grp50No80c(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
         #Send a non-matching packet , with only LSB different than the ip-address matched against
-        pkt2 = simple_tcp_packet(ip_src='192.168.100.101')
+        pkt2 = simple_tcp_packet(ip_src='192.170.100.101')
         self.dataplane.send(of_ports[0], str(pkt2))
 
         #Verify packet implements the action specified in the flow
         receive_pkt_check(self.dataplane,pkt2,[yes_ports],no_ports,self)
         
         #Send a non-matching packet , verify packet_in gets triggered
-        pkt3 = simple_tcp_packet(ip_src='192.168.100.111')
+        pkt3 = simple_tcp_packet(ip_src='193.168.100.100')
         self.dataplane.send(of_ports[0], str(pkt3))
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
