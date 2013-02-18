@@ -244,12 +244,13 @@ class Grp40No80(base_tests.SimpleProtocol):
 
         logging.info("Inserting an emergency flow with timeout values")
         logging.info("Expecting switch to generate error ")
+
+        sleep(2)
         
         #Insert an emergency flow 
         pkt = simple_tcp_packet()
         match = parse.packet_to_flow_match(pkt)
         match.in_port = of_ports[0]
-        
         request = message.flow_mod()
         request.match = match
         request.command = ofp.OFPFC_ADD
@@ -259,7 +260,6 @@ class Grp40No80(base_tests.SimpleProtocol):
         
         act = action.action_output()
         act.port = of_ports[1]
-        
         request.actions.add(act)
         logging.info("Inserting flow")
         rv = self.controller.message_send(request)
