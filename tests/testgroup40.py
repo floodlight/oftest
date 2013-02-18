@@ -253,7 +253,7 @@ class Grp40No80(base_tests.SimpleProtocol):
         request = message.flow_mod()
         request.match = match
         request.command = ofp.OFPFC_ADD
-        request.flags = request.flags|ofp.OFPFF_EMERG
+        request.flags = request.flags | ofp.OFPFF_EMERG
         request.hard_timeout =9
         request.idle_timeout =9
         
@@ -267,7 +267,7 @@ class Grp40No80(base_tests.SimpleProtocol):
 
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-        #Verify OFPET_FLOW_MOD_FAILED/OFPFMFC_OVERLAP error is recieved on the control plane
+        #Verify OFPET_FLOW_MOD_FAILED/BAD_EMER_TIMEOUT error is recieved on the control plane
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,         
                                                timeout=5)
         self.assertTrue(response is not None, 
