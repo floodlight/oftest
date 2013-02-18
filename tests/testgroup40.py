@@ -226,7 +226,7 @@ class Grp40No50(base_tests.SimpleProtocol):
             if count > 10:   # Too many tries
                 break
   
-class Grp40No50(base_tests.SimpleProtocol): 
+class Grp40No80(base_tests.SimpleProtocol): 
 
     """Timeout values are not allowed for emergency flows"""
 
@@ -276,9 +276,6 @@ class Grp40No50(base_tests.SimpleProtocol):
                                'Error message type is not flow mod failed ') 
         self.assertTrue(response.code==ofp.OFPFMFC_BAD_EMERG_TIMEOUT, 
                                'Error Message code is not bad emergency timeout')
-
-
-
 
 
 class Grp40No90(base_tests.SimpleDataPlane):
