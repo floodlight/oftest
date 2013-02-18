@@ -4,6 +4,7 @@ import json
 import logging
 import netifaces
 import os
+import time
  
 """
 oflog.py
@@ -11,10 +12,9 @@ Provides Loggers for oftest cases, and easy to use wireshark
 logging.
  
 Test case writers use three main functions.
-1. get_logger(name) - Returns a Logger for testcase name.
-2. start_wireshark - Starts a tshark capture on each network
-interface.
-3. stop_wireshark - Terminates each running wireshark capture.
+1. get_logger() - Returns a Logger for each testcase.
+2. @wireshark_capture decorator Uses tshark to capture network
+traffic while function is being run.
  
 oflog is configured using two methods.
 1. set_publish_directory(directory) - Records all logs under
@@ -41,19 +41,47 @@ pubDir = ""
 pubName = ""
 wiresharkMap = {}
 pubResults = False
- 
-def get_logger(name):
+
+def wireshark_capture(f):
+    """
+    Decorator to wrap Testcases. Gives
+    a one second buffer for wireshark to
+    start and stop if publishing is enabled.
+    """
+    def pub(*args, **kargs):
+        create_log_directory(str(args[0].__class__.__name__))
+        start_wireshark()
+        time.sleep(1)
+        f(*args, **kargs)
+        stop_wireshark()
+        time.sleep(1)
+    global pubResults
+    if pubResults:
+        return pub
+    else:
+        return f
+
+def create_log_directory(dirName):
+    global pubDir
     global pubName
-    pubName = name
+    pubName = dirName
+    logDir = "%sresult/logs/%s" % (pubDir, pubName)
+    try:
+        Popen(["rm", "-rf", logDir],stdout=None)
+        time.sleep(1)
+    except:
+        pass
+    finally:
+        os.makedirs(logDir)
+
+def get_logger():
     LOG = logging.getLogger(pubName)
     LOG.setLevel(logging.DEBUG)
     
     h = logging.FileHandler("oft.log")
     if should_publish():
         logDir = "%sresult/logs/%s" % (pubDir, pubName)
-        os.makedirs(logDir)
-        if should_publish():
-            h = logging.FileHandler(logDir+"/trace.log")
+        h = logging.FileHandler(logDir+"/trace.log")
     h.setLevel(logging.DEBUG)
     
     f = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -62,20 +90,14 @@ def get_logger(name):
     return LOG
  
 def start_wireshark():
-    global wiresharkMap
-    global pubDir
-    global pubName
-    if should_publish():
-        for iface in wiresharkMap:
-            fd = "%sresult/logs/%s/%s.pcap" % (pubDir, pubName, wiresharkMap[iface][1])
-            wiresharkMap[iface][0] = Popen(["tshark", "-i", str(iface), "-w", fd, "-q"], stdout=None)
-        
+    for iface in wiresharkMap:
+        fd = "%sresult/logs/%s/%s.pcap" % (pubDir, pubName, wiresharkMap[iface][1])
+        wiresharkMap[iface][0] = Popen(["tshark", "-i", str(iface), "-w", fd, "-q"], stdout=None)
+
 def stop_wireshark():
-    global wiresharkMap
-    if should_publish():
-        for iface in wiresharkMap:
-            wiresharkMap[iface][0].terminate()
- 
+    for iface in wiresharkMap:
+        wiresharkMap[iface][0].terminate()
+
 def find_iface(addy):
     for iface in netifaces.interfaces():
         try:
@@ -93,14 +115,13 @@ def set_publish_directory(directory):
     pubDir = directory
 
 def should_publish():
-    global pubResults
     return pubResults
  
-def set_wireshark_config(ctrlAddr, portMap):
+def set_config(ctrlAddr, portMap):
     global wiresharkMap
     for k in portMap:
         iface = portMap[k]
-        # [pid, dataX]
+        # [pid, "dataX"]
         wiresharkMap[iface] = [None, "data"+str(k)]
     # Controller's iface is not included in a config. Look it up.
     iface = find_iface(ctrlAddr)
@@ -114,18 +135,13 @@ def publish_asserts_and_results(res):
         asserts["errors"][e[0].__class__.__name__] = e[1]
     for f in res.failures:
         asserts["failures"][f[0].__class__.__name__] = f[1]
-    # New in python 2.7
-    #for s in res.skipped:
-    #    asserts["skipped"][s[0].__class__.__name__] = s[1]
-    # Publish asserts
     write_json_tofile(asserts, "asserts.json")
  
     results["run"] = res.testsRun
     results["errors"] = len(res.errors)
     results["failed"] = len(res.failures)
-    # New in python 2.7
-    #results["skipped"] = len(res.skipped)
     results["passed"] = results["run"] - (results["errors"]+results["failed"])
+    results["skipped"] = results["run"] - (results["errors"]+results["failed"]+results["passed"])
     # Publish results
     write_json_tofile(results, "results.json")
 
@@ -133,4 +149,3 @@ def write_json_tofile(data, fd):
     f = open(pubDir+"result/"+fd, "w")
     json.dump(data, f)
     f.close()
-

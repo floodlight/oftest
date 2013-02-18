@@ -283,7 +283,7 @@ def config_setup(cfg_dflt):
     parser.add_option("--priority", type="int",
                       help="Minimum test priority",
                       default=0)
-    parser.add_option("--publish", type="string", dest="publish",
+    parser.add_option("--publish", type="string", dest="publish", default=None,
                       help="Publish test logs to specified directory")
 
     # Might need this if other parsers want command line
@@ -319,6 +319,10 @@ def logging_setup(config):
     logging.basicConfig(filename=config["log_file"],
                         level=config["dbg_level"],
                         format=_format, datefmt=_datefmt)
+
+    if config["publish"]:
+        oflog.set_publish_directory(config["publish"])
+
 
 def load_test_modules(config):
     """
@@ -500,19 +504,12 @@ if config["list_test_names"]:
                 print "%s.%s" % (modname, testname)
     sys.exit(0)
 
-# Generate the test suite
-#@todo Decide if multiple suites are ever needed
-suite = unittest.TestSuite()
-
-for (modname, (mod, tests)) in test_modules.items():
-    for (testname, test) in tests.items():
-        if test_prio_get(test) >= config["priority"]:
-            logging.info("Adding test " + modname + "." + testname)
-            suite.addTest(test())
+##############################################
+# Old Testsuite Generation position
 
 # Allow platforms to import each other
 sys.path.append(config["platform_dir"])
-
+##############################################
 # Load the platform module
 platform_name = config["platform"]
 logging.info("Importing platform: " + platform_name)
@@ -534,6 +531,7 @@ if not config["port_map"]:
 
 logging.debug("Configuration: " + str(config))
 logging.info("OF port map: " + str(config["port_map"]))
+oflog.set_config(config["controller_host"], config["port_map"])
 
 if config["dbg_level"] == logging.CRITICAL:
     _verb = 0
@@ -553,9 +551,21 @@ if os.getuid() != 0 and not config["allow_user"]:
 if config["random_seed"] is not None:
     logging.info("Random seed: %d" % config["random_seed"])
     random.seed(config["random_seed"])
+##############################################
+# New Testsuite Generation position
 
-if config["publish"]:
-    oflog.set_publish_directory("")
+# Generate the test suite
+#@todo Decide if multiple suites are ever needed
+suite = unittest.TestSuite()
+
+for (modname, (mod, tests)) in test_modules.items():
+    for (testname, test) in tests.items():
+        if test_prio_get(test) >= config["priority"]:
+            logging.info("Adding test " + modname + "." + testname)
+            suite.addTest(test())
+
+
+##############################################
 
 # Remove python's signal handler which raises KeyboardError. Exiting from an
 # exception waits for all threads to terminate which might not happen.
@@ -563,11 +573,10 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 if __name__ == "__main__":
     logging.info("*** TEST RUN START: " + time.asctime())
-    if oflog.should_publish():
-        oflog.set_wireshark_config(config["controller_host"], config["port_map"])
     result = unittest.TextTestRunner(verbosity=_verb).run(suite)
     if oflog.should_publish():
         oflog.publish_asserts_and_results(result)
+
     if oftest.testutils.skipped_test_count > 0:
         ts = " tests"
         if oftest.testutils.skipped_test_count == 1: ts = " test"

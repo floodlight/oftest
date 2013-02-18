@@ -23,10 +23,10 @@ import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.parse as parse
 import oftest.base_tests as base_tests
-import oftest.oflog as oflog
 
 import oftest.illegal_message as illegal_message
 
+from oftest.oflog import *
 from oftest.testutils import *
 from time import sleep
 from FuncUtils import *
@@ -39,9 +39,9 @@ class Grp10No10(base_tests.SimpleDataPlane):
     i.e switch does not behave like a learning switch
     """
 
+    @wireshark_capture
     def runTest(self):
-        logging = oflog.get_logger(self.__class__.__name__)
-        oflog.start_wireshark()
+        logging = get_logger()
         logging.info("Running TestNo10 SwStartup test")
 
         of_ports = config["port_map"].keys()
@@ -76,7 +76,6 @@ class Grp10No10(base_tests.SimpleDataPlane):
         no_ports=set(of_ports)
         yes_ports=[]
         receive_pkt_check(self.dataplane,packet,yes_ports,no_ports,self)
-        oflog.stop_wireshark()
 
         
 class Grp10No20(base_tests.SimpleProtocol):
