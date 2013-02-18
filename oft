@@ -475,6 +475,9 @@ except:
 if not config["port_map"]:
     die("Interface port map was not defined by the platform. Exiting.")
 
+logging.debug("Configuration: " + str(config))
+logging.info("OF port map: " + str(config["port_map"]))
+
 # Load config for publishing logs
 if config["publish"]:
     oflog.set_config(config["publish"], config["controller_host"], config["port_map"])
@@ -527,9 +530,6 @@ if config["list_test_names"]:
                 print "%s.%s" % (modname, testname)
     sys.exit(0)
 
-logging.debug("Configuration: " + str(config))
-logging.info("OF port map: " + str(config["port_map"]))
-
 if config["dbg_level"] == logging.CRITICAL:
     _verb = 0
 elif config["dbg_level"] >= logging.WARNING:
@@ -548,9 +548,6 @@ if os.getuid() != 0 and not config["allow_user"]:
 if config["random_seed"] is not None:
     logging.info("Random seed: %d" % config["random_seed"])
     random.seed(config["random_seed"])
-##############################################
-# New Testsuite Generation position
-
 
 # Generate the test suite
 #@todo Decide if multiple suites are ever needed
