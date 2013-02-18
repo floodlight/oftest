@@ -183,7 +183,7 @@ class Grp40No30(base_tests.SimpleDataPlane):
         verify_flowstats(self,match,byte_count=0,packet_count=0)
 
 
-class Grp40No40(base_tests.SimpleProtocol):
+class Grp40No50(base_tests.SimpleProtocol):
     
     """When the output to switch port action refers to a port that will never be valid ,
     the switch generates an OFPT_ERROR msg , with type field OFPT_BAD_ACTION and code field OFPBAC_BAD_OUT_PORT
