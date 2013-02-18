@@ -186,7 +186,7 @@ def match_ethernet_dst_address(self,of_ports,priority=None):
     #Generate Match_Ethernet_Dst_Address flow
 
     #Create a simple tcp packet and generate match on ethernet dst address flow
-    pkt_matchdst = simple_eth_packet(dl_dst='00:01:01:01:01:01')
+    pkt_matchdst = simple_eth_packet(dl_dst='78:84:3c:e9:fb:5a')
     match = parse.packet_to_flow_match(pkt_matchdst)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
