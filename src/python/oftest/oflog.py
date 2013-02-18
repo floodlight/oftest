@@ -36,6 +36,7 @@ pubDir = ""
 pubName = ""
 wiresharkMap = {}
 pubResults = False
+DEVNULL = None
 
 def wireshark_capture(f):
     """
@@ -87,7 +88,7 @@ def get_logger():
 def start_wireshark():
     for iface in wiresharkMap:
         fd = "%sresult/logs/%s/%s.pcap" % (pubDir, pubName, wiresharkMap[iface][1])
-        wiresharkMap[iface][0] = Popen(["tshark", "-i", str(iface), "-w", fd, "-q"], stdout=None)
+        wiresharkMap[iface][0] = Popen(["tshark", "-i", str(iface), "-w", fd, "-q"], stdout=DEVNULL, stderr=DEVNULL)
 
 def stop_wireshark():
     for iface in wiresharkMap:
@@ -113,6 +114,10 @@ def set_config(directory, ctrlAddr, portMap):
 
     pubDir = directory
     pubResults = True
+
+    global DEVNULL
+    DEVNULL = open(os.devnull, 'w')
+
     for k in portMap:
         iface = portMap[k]
         # [pid, "dataX"]
@@ -122,6 +127,9 @@ def set_config(directory, ctrlAddr, portMap):
     wiresharkMap[iface] = [None, "ctrl"]
  
 def publish_asserts_and_results(res):
+    global DEVNULL
+    DEVNULL.close()
+
     if not should_publish():
         return
 
