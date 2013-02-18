@@ -77,7 +77,7 @@ class Grp10No10(base_tests.SimpleDataPlane):
         yes_ports=[]
         receive_pkt_check(self.dataplane,packet,yes_ports,no_ports,self)
 
-        
+
 class Grp10No20(base_tests.SimpleProtocol):
     """
     Configure control channel on switch
@@ -87,11 +87,10 @@ class Grp10No20(base_tests.SimpleProtocol):
     Note : If tcp port is other than 6633, make sure sw is also configured to listen on the alternate port
     """
     
+    @wireshark_capture
     def runTest(self):
-
         # Send echo_request to verify connection
-        logging = oflog.get_logger(self.__class__.__name__)
-        oflog.start_wireshark()
+        logging = get_logger()
         logging.info("Running TestNo20 UserConfigPort test")
 
         request = message.echo_request()
@@ -103,7 +102,6 @@ class Grp10No20(base_tests.SimpleProtocol):
         self.assertEqual(len(response.data), 0, 'response data non-empty')
 
         logging.info("Configured host : " + str(config["controller_host"]) + "Configured port : " + str(config["controller_port"]))
-        oflog.stop_wireshark()
 
 class Grp10No60(base_tests.SimpleDataPlane):
     """
@@ -111,9 +109,9 @@ class Grp10No60(base_tests.SimpleDataPlane):
     
     @of_version can be passed from command line , default is 0x01
     """
+    @wireshark_capture
     def runTest(self):
-        logging = oflog.get_logger(self.__class__.__name__)
-        oflog.start_wireshark()
+        logging = get_logger()
         logging.info("Running TestNo60 Version Announcement test")
         
         of_version = test_param_get('version',default = 0x01)
@@ -125,7 +123,7 @@ class Grp10No60(base_tests.SimpleDataPlane):
         self.assertTrue(response is not None, 
                                'Switch did not exchange hello message in return') 
         self.assertTrue(response.header.version == of_version, 'switch openflow-version field is not 1.0.0') 
-        oflog.stop_wireshark()
+
 
 class Grp10No70(base_tests.SimpleProtocol):
     """
@@ -155,10 +153,9 @@ class Grp10No70(base_tests.SimpleProtocol):
             raise Exception("Controller startup failed (no switch addr)")
         #logging.info("Connected " + str(self.controller.switch_addr))
         
-        
+    @wireshark_capture 
     def runTest(self):
-        logging = oflog.get_logger(self.__class__.__name__)
-        oflog.start_wireshark()
+        logging = get_logger()
 
         logging.info("Running TestNo70 VersionNegotiation Test") 
         of_version = test_param_get('version',default = 0x01)               
@@ -175,7 +172,7 @@ class Grp10No70(base_tests.SimpleProtocol):
                 
         self.assertTrue(response is None, 
                                'Switch did not negotiate on the version')  
-        oflog.stop_wireshark()
+
 
 class Grp10No80(base_tests.SimpleProtocol):
     """
@@ -184,7 +181,6 @@ class Grp10No80(base_tests.SimpleProtocol):
     if no common version can be negotiated
     """
     def setUp(self):
-
         #This is almost same as setUp in SimpleProtcocol except that intial hello is set to false
         self.controller = controller.Controller(
             host=config["controller_host"],
@@ -206,10 +202,9 @@ class Grp10No80(base_tests.SimpleProtocol):
             raise Exception("Controller startup failed (no switch addr)")
         #logging.info("Connected " + str(self.controller.switch_addr))
         
-        
+    @wireshark_capture    
     def runTest(self):
-        logging = oflog.get_logger(self.__class__.__name__)
-        oflog.start_wireshark()
+        logging = get_logger()
 
         logging.info("Running TestNo80 No Common Version Test")                
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,         
@@ -229,7 +224,6 @@ class Grp10No80(base_tests.SimpleProtocol):
                                'Message field type is not HELLO_FAILED') 
         self.assertTrue(response.code==ofp.OFPHFC_INCOMPATIBLE, 
                         'Message field code is not OFPHFC_INCOMPATIBLE')        
-        oflog.stop_wireshark()
 
 
 class Grp10No90(unittest.TestCase):
@@ -263,10 +257,10 @@ class Grp10No90(unittest.TestCase):
         self.controller.shutdown()
         if self.clean_shutdown:
             self.controller.join()    
-        
+    
+    @wireshark_capture    
     def runTest(self):
-        logging = oflog.get_logger(self.__class__.__name__)
-        oflog.start_wireshark()
+        logging = get_logger()
 
         logging.info("Running TestNo90 EchoTimeout ")
         sleep(10)
@@ -276,7 +270,7 @@ class Grp10No90(unittest.TestCase):
                                                timeout=30)
         self.assertTrue(response is not None, 
                                'Switch did not Lose connection due to Echo timeouts') 
-        oflog.stop_wireshark()
+
 
 class Grp10No120(base_tests.SimpleDataPlane):
     """
@@ -284,10 +278,9 @@ class Grp10No120(base_tests.SimpleDataPlane):
     then verify 
     1. Emergency mode removes standard flow entries after the control channel disconnection
     """
-  
+    @wireshark_capture
     def runTest(self):
-        logging = oflog.get_logger(self.__class__.__name__)
-        oflog.start_wireshark()
+        logging = get_logger()
 
         logging.info("Running TestNo120 EmergencyMode test ") 
 
@@ -320,7 +313,6 @@ class Grp10No120(base_tests.SimpleDataPlane):
         yes_ports=[]
         no_ports = set(of_ports)
         receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
-        oflog.stop_wireshark()
 
 
 class Grp10No140(base_tests.SimpleDataPlane):
@@ -329,10 +321,9 @@ class Grp10No140(base_tests.SimpleDataPlane):
     then verify 
     1. Emergency flows can be added , they are active after control channel gets disconnected
     """
-  
+    @wireshark_capture
     def runTest(self):
-        logging = oflog.get_logger(self.__class__.__name__)
-        oflog.start_wireshark()
+        logging = get_logger()
 
         logging.info("Running EmergencyMode2 test ") 
 
@@ -372,17 +363,15 @@ class Grp10No140(base_tests.SimpleDataPlane):
         yes_ports=[egress_port]
         no_ports = set(of_ports).difference(yes_ports)
         receive_pkt_check(self.dataplane,test_packet,yes_ports,no_ports,self)
-        oflog.stop_wireshark()
 
 
 class Grp10No150(base_tests.SimpleDataPlane):
     """If switch does not support Emergency mode , it should support fail-secure mode
     (refer spec 1.0.1).
     Verify even after the control channel disconnection, the standard flows timeout normally"""
-
+    @wireshark_capture
     def runTest(self):
-        logging = oflog.get_logger(self.__class__.__name__)
-        oflog.start_wireshark()
+        logging = get_logger()
 
         logging.info("Running FailSecureMode test ") 
 
@@ -443,5 +432,3 @@ class Grp10No150(base_tests.SimpleDataPlane):
         yes_ports=[]
         no_ports = set(of_ports)
         receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
-        oflog.stop_wireshark()
-

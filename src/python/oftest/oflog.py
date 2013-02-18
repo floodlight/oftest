@@ -108,17 +108,16 @@ def find_iface(addy):
             pass
     return None
  
-def set_publish_directory(directory):
-    global pubResults
-    global pubDir
-    pubResults = True
-    pubDir = directory
-
 def should_publish():
     return pubResults
  
-def set_config(ctrlAddr, portMap):
+def set_config(directory, ctrlAddr, portMap):
     global wiresharkMap
+    global pubDir
+    global pubResults
+
+    pubDir = directory
+    pubResults = True
     for k in portMap:
         iface = portMap[k]
         # [pid, "dataX"]
@@ -128,6 +127,9 @@ def set_config(ctrlAddr, portMap):
     wiresharkMap[iface] = [None, "ctrl"]
  
 def publish_asserts_and_results(res):
+    if not should_publish():
+        return
+
     asserts = {"errors" : {}, "failures" : {}, "skipped" : {}}
     results = {}
  
