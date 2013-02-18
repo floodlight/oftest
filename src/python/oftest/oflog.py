@@ -13,28 +13,23 @@ logging.
  
 Test case writers use three main functions.
 1. get_logger() - Returns a Logger for each testcase.
-2. @wireshark_capture decorator Uses tshark to capture network
+2. @wireshark_capture - Decorator Uses tshark to capture network
 traffic while function is being run.
  
-oflog is configured using two methods.
-1. set_publish_directory(directory) - Records all logs under
-directory. directory *must* end in '/'. 
-2. set_wireshark_config(ctrlAddr, portMap) - Configures
+oflog is configured using one method.
+1. set_config(directory, ctrlAddr, portMap) - Records all logs
+under directory. directory *must* end in '/'. Also configures
 wireshark to log the interface associated with ctrlAddr and all
 other data plane interfaces.
  
-oflog also creates a test result summary from the result of
-unittest.TextTestRunner(...).run(...). record_summary creates
-two files.
-1. assert.json - which contains a trace of each failed testcase and
-testcase error...
-{ "Grp100No160" : "trace..." }
- 
-2. results.json - which contains a dict of tests_run, skipped, and
-failed tests...
-{ "Grp100No160" : { "tests_run" : 0 }, { "skipped" : [...] },
-{ "failed" : [...] } }
-1. record_summary(result)
+oflog also creates two result files from a TestResult object
+with publish_asserts_and_results().
+1. assert.json - Contains a trace of each failed testcase
+and testcase error...
+{ "failures" : {"Grp100No160" : "trace..." }, "errors" : {...} }
+2. results.json - Contains a count of tests run and their
+results...
+{"failed": 3, "skipped": 0, "errors": 0, "run": 9, "passed": 6}
 """
  
 pubDir = ""
