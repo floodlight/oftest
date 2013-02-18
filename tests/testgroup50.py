@@ -99,6 +99,8 @@ class Grp50No20(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
+        sleep(2)
+
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
@@ -130,7 +132,7 @@ class Grp50No30(base_tests.SimpleDataPlane):
     
     def runTest(self):
 
-        logging.info("Running Ethernet Src Address Grp50No20 test")
+        logging.info("Running Ethernet Src Address Grp50No30 test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -147,6 +149,8 @@ class Grp50No30(base_tests.SimpleDataPlane):
         logging.info("Inserting a flow with match on Ethernet Source Address ")
         logging.info("Sending matching and non-matching ethernet packets")
         logging.info("Verifying only matching packets implements the action specified in the flow")
+
+        sleep(2)
 
         #Insert a Match On Ethernet Src Address flow
         (pkt,match) = match_ethernet_src_address(self,of_ports)   
@@ -170,7 +174,7 @@ class Grp50No40(base_tests.SimpleDataPlane):
 
     def runTest(self):
 
-        logging.info("Running Grp50No20 Ethernet Dst Address test")
+        logging.info("Running Grp50No40 Ethernet Dst Address test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -188,6 +192,8 @@ class Grp50No40(base_tests.SimpleDataPlane):
         logging.info("Sending matching and non-matching ethernet packets")
         logging.info("Verifying only matching packets implements the action specified in the flow")
         
+        sleep(2)
+
         #Insert a Match on Destination Address flow   
         (pkt,match) = match_ethernet_dst_address(self,of_ports)
         
@@ -230,7 +236,7 @@ class Grp50No50(base_tests.SimpleDataPlane):
         logging.info("Sending matching and non-matching ethernet packets")
         logging.info("Verifying only matching packets implements the action specified in the flow")
 
-        sleep(5)        
+        sleep(2)        
 
         #Insert a Match on Ethernet-Type flow
         (pkt,match) = match_ethernet_type(self,of_ports)   
@@ -274,6 +280,8 @@ class Grp50No60(base_tests.SimpleDataPlane):
         logging.info("Inserting a flow with match on VLAN ID ")
         logging.info("Sending matching and non-matching tagged packets")
         logging.info("Verifying matching packets implements the action specified in the flow")
+
+        sleep(2)
     
         #Create a flow with match on Vlan Id
         (pkt,match) = match_vlan_id(self,of_ports)
@@ -307,6 +315,8 @@ class Grp50No70(base_tests.SimpleDataPlane):
         #Clear Switch State
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
+
+        sleep(2)
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
@@ -668,6 +678,8 @@ class Grp50No100(base_tests.SimpleDataPlane):
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
+        sleep(2)
+
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
@@ -712,6 +724,8 @@ class Grp50No110(base_tests.SimpleDataPlane):
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
+
+        sleep(2)
     
         logging.info("Inserting a flow with match on Ip_Tos ")
         logging.info("Sending matching and non-matching tcp/ip packets")
@@ -751,7 +765,8 @@ class Grp50No120a(base_tests.SimpleDataPlane):
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
-    
+        
+        sleep(2)
         logging.info("Inserting a flow with match on Tcp Tcp Source Port ")
         logging.info("Sending matching and non-matching tcp packets")
         logging.info("Verifying matching packets implements the action specified in the flow")
@@ -791,6 +806,7 @@ class Grp50No120b(base_tests.SimpleDataPlane):
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
 
+        sleep(2)
         (pkt,match) = match_icmp_type(self,of_ports)   
 
         #Sending packet matching the tcp_sport, verify it implements the action
@@ -881,44 +897,6 @@ class Grp50No130b(base_tests.SimpleDataPlane):
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 
-
-class Grp50No131(base_tests.SimpleDataPlane):
-    
-    """Verify match on Single header field -- Udp Source Port """
-    
-    def runTest(self):
-
-        logging.info("Running Grp50No131 Udp Src Port test")
-
-        of_ports = config["port_map"].keys()
-        of_ports.sort()
-        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
-    
-        #Clear Switch State
-        delete_all_flows(self.controller)
-
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
-    
-        logging.info("Inserting a flow with match on Udp Udp Source Port ")
-        logging.info("Sending matching and non-matching tcp packets")
-        logging.info("Verifying matching packets implements the action specified in the flow")
-
-        (pkt,match) = match_udp_src(self,of_ports)
-
-        #Sending packet matching the tcp_sport, verify it implements the action
-        self.dataplane.send(of_ports[0], str(pkt))
-
-        #Verify packet implements the action specified in the flow
-        receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
-
-        #Sending non matching packet , verify Packetin event gets triggered.
-        pkt2 = simple_udp_packet(udp_sport=540);
-        self.dataplane.send(of_ports[0], str(pkt2))
-        
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 
 class Grp50No140(base_tests.SimpleDataPlane):
     
