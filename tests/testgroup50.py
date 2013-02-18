@@ -1028,6 +1028,8 @@ class Grp50No160(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
+        sleep(2)
+
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
@@ -1078,6 +1080,8 @@ class Grp50No170(base_tests.SimpleDataPlane):
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
+
+        sleep(2)
         
         logging.info("Inserting a flow with match for Exact Match ")
         logging.info("Sending matching and non-matching packets")
@@ -1157,6 +1161,8 @@ class Grp50No190(base_tests.SimpleDataPlane):
         #Clear Switch State
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
+
+        sleep(2)
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
