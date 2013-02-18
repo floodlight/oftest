@@ -283,8 +283,8 @@ def config_setup(cfg_dflt):
     parser.add_option("--priority", type="int",
                       help="Minimum test priority",
                       default=0)
-    parser.add_option("--publish", action="store_true",
-                      help="Publish all oflogs")
+    parser.add_option("--publish", type="string", dest="publish",
+                      help="Publish test logs to specified directory")
 
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False

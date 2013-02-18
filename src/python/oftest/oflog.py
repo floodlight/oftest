@@ -67,14 +67,14 @@ def start_wireshark():
     global pubName
     if should_publish():
         for iface in wiresharkMap:
-            fd = "%sresult/logs/%s/%s.pcap" % (pubDir, pubName, iface)
-            wiresharkMap[iface] = Popen(["tshark", "-i", str(iface), "-w", fd, "-q"], stdout=None)
+            fd = "%sresult/logs/%s/%s.pcap" % (pubDir, pubName, wiresharkMap[iface][1])
+            wiresharkMap[iface][0] = Popen(["tshark", "-i", str(iface), "-w", fd, "-q"], stdout=None)
         
 def stop_wireshark():
     global wiresharkMap
     if should_publish():
         for iface in wiresharkMap:
-            wiresharkMap[iface].terminate()
+            wiresharkMap[iface][0].terminate()
  
 def find_iface(addy):
     for iface in netifaces.interfaces():
@@ -100,10 +100,11 @@ def set_wireshark_config(ctrlAddr, portMap):
     global wiresharkMap
     for k in portMap:
         iface = portMap[k]
-        wiresharkMap[iface] = None
+        # [pid, dataX]
+        wiresharkMap[iface] = [None, "data"+str(k)]
     # Controller's iface is not included in a config. Look it up.
     iface = find_iface(ctrlAddr)
-    wiresharkMap[iface] = None
+    wiresharkMap[iface] = [None, "ctrl"]
  
 def publish_asserts_and_results(res):
     asserts = {"errors" : {}, "failures" : {}, "skipped" : {}}
