@@ -74,7 +74,7 @@ class Grp100No10(base_tests.SimpleProtocol):
                                'Error code is not OFPHFC_INCOMPATIBLE')
     
 
-class Grp100No20(base_tests.SimpleProtocol):
+class Grp100No30(base_tests.SimpleProtocol):
     """When the header in the request msg  
     contains a version field which is not supported by the switch , 
     it generates OFPT_ERROR_msg with Type field OFPET_BAD_REQUEST 
@@ -102,7 +102,7 @@ class Grp100No20(base_tests.SimpleProtocol):
                                'Error code is not OFPBRC_BAD_VERSION')
 
 
-class Grp100No30(base_tests.SimpleProtocol):
+class Grp100No40(base_tests.SimpleProtocol):
     """When the header in the request msg contains a type field which is not 
    supported by the switch ,it generates an OFPT_ERROR msg with the Type Field OFPET_BAD_REQUEST
    and code field OFPBRC_BAD_TYPE

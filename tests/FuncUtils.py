@@ -126,6 +126,7 @@ def match_icmp_code(self,of_ports,priority=None):
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     return (pkt,match)
+
 def match_all_except_source_address(self,of_ports,priority=None):
 # Generate Match_All_Except_Source_Address flow
         
@@ -778,8 +779,6 @@ def verify_flowstats(self,match,byte_count=None,packet_count=None):
         if byte_count != None  and  byte_count != byte_counter: continue
         break
 
-        
-    
     if packet_count != None :
         self.assertEqual(packet_count,item.packet_count,"packet_count counter is not incremented correctly")
 
