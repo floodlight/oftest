@@ -433,7 +433,7 @@ class Grp70No90(base_tests.SimpleDataPlane):
 
 
 
-class Grp70No130(base_tests.SimpleDataPlane):
+class Grp70No120(base_tests.SimpleDataPlane):
     
     """AddVlanTag : Adds VLAN Tag to untagged packet."""
 
@@ -474,7 +474,7 @@ class Grp70No130(base_tests.SimpleDataPlane):
                         exp_pkt=exp_pkt, action_list=[vid_act])
 
 
-class Grp70No140(base_tests.SimpleDataPlane):
+class Grp70No130(base_tests.SimpleDataPlane):
 
     """ModifyVlanTag : Modifies VLAN Tag to tagged packet."""
     
@@ -512,7 +512,7 @@ class Grp70No140(base_tests.SimpleDataPlane):
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt,
                         action_list=[vid_act])
 
-class Grp70No150(base_tests.SimpleDataPlane):
+class Grp70No140(base_tests.SimpleDataPlane):
    
     """AddVlanPrioUntaggedPkt : Add VLAN priority to untagged packet."""
     
@@ -552,7 +552,7 @@ class Grp70No150(base_tests.SimpleDataPlane):
 
 
         
-class Grp70No160(base_tests.SimpleDataPlane):
+class Grp70No150(base_tests.SimpleDataPlane):
     
     """ModifyVlanPrio : Modify VLAN priority to tagged packet."""
     
