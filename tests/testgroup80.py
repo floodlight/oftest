@@ -450,7 +450,7 @@ class Grp80No300a(base_tests.SimpleDataPlane):
         self.assertTrue(len(response.data) == len(str(pkt)), "Complete Data packet was not sent")
 
 
-class Grp80No300a(base_tests.SimpleDataPlane):
+class Grp80No300b(base_tests.SimpleDataPlane):
 
     """Verify the packet_in message body, when packet_in is generated due to action output to controller"""
 
