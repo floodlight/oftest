@@ -30,26 +30,43 @@ class Grp80No20(base_tests.SimpleDataPlane):
     """Verify switch should be able to receive OFPT_HELLO messages with body , 
         but it should ignore the contents of the body"""
 
-    def runTest(self):
+    def setUp(self):
+
+        #This is almost same as setUp in SimpleProtcocol except that intial hello is set to false
+        self.controller = controller.Controller(
+            host=config["controller_host"],
+            port=config["controller_port"])
+        # clean_shutdown should be set to False to force quit app
+        self.clean_shutdown = True
+        #set initial hello to False
+        self.controller.initial_hello=False
+        self.controller.start()
+        #@todo Add an option to wait for a pkt transaction to ensure version
+        # compatibilty?
+        self.controller.connect(timeout=20)
+        # By default, respond to echo requests
+        self.controller.keep_alive = True
+        if not self.controller.active:
+            raise Exception("Controller startup failed")
+        if self.controller.switch_addr is None: 
+            raise Exception("Controller startup failed (no switch addr)")
+        logging.info("Connected " + str(self.controller.switch_addr))
         
-        logging.info("Running Grp80No20 Hello test")
+        
+    def runTest(self):
 
-        #Send Hello message
-        logging.info("Sending Hello...")
-        request = message.hello()
-        request.data = 'OpenFlow Will Rule The World'
-        rv=self.controller.message_send(request)
-        self.assertTrue(rv is not None,"Unable to send the message")
-
-        #Verify Hello message in response 
-        logging.info("Waiting for a Hello on the control plane with same xid,version--1.0.0 and data field empty")
-        (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
-                                               timeout=1)
-        self.assertTrue(response is not None, 
-                               'Switch did not exchange hello message in return') 
-        self.assertEqual(len(response.data), 0, 'Response data field non-empty')
-        self.assertTrue(response.header.version == 0x01, 'Openflow-version field is not 1.0.0')
-
+        logging.info("Running Grp80No20 HelloWithBody Test")            
+        (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,         
+                                              timeout=5)
+        request = message.hello()   
+        request.data = "Openflow rules the world"                                            
+        rv = self.controller.message_send(request)      
+        
+        logging.info("Verify switch does not generate an error")
+        (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,         
+                                               timeout=5)
+        self.assertTrue(response is None, 
+                               'Switch did not ignore the body of the Hello message')  
 
 
 class Grp80No30(base_tests.SimpleProtocol):
