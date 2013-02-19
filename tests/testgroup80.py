@@ -98,7 +98,7 @@ class Grp80No30(base_tests.SimpleProtocol):
                                'Switch did not reply with error message')
         self.assertTrue(response.type==ofp.OFPET_BAD_REQUEST, 
                                'Message field type is not OFPET_BAD_REQUEST') 
-        self.assertTrue(response.type==ofp.OFPET_BAD_REQUEST, 
+        self.assertTrue(response.code==ofp.OFPBRC_BAD_VERSION, 
                                'Message field code is not OFPBRC_BAD_VERSION')
 
 
