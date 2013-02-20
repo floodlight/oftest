@@ -2749,6 +2749,51 @@ class DirectVlanPackets(DirectBadPacketBase):
                 scapy.IP(),
             self.RESULT_NOMATCH
         )
+        testPacket("IP matching - VLAN tag",
+            self.createMatch(dl_dst=parse_mac(dl_dst), dl_src=parse_mac(dl_src),
+                             dl_type=0x0800,
+                             nw_src=parse_ip(ip_src), nw_dst=parse_ip(ip_dst)),
+            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+                scapy.Dot1Q(prio=5, vlan=1000)/ \
+                scapy.IP(src=ip_src, dst=ip_dst),
+            self.RESULT_MATCH
+        )
+        # XXX:
+        # - Matching on VLAN ID and Prio
+        # - Actions
+
+@nonstandard
+class DirectVlanPacketsDoubleTagged(DirectVlanPackets):
+    """
+    VLAN parsing for double tagged packets.  Spec is ambiguous about
+    the treatment of these cases, so broken out to be non-standard
+    """
+    def runTest(self):
+        dl_dst='00:01:02:03:04:05'
+        dl_src='00:06:07:08:09:0a'
+        ip_src='192.168.0.1'
+        ip_dst='192.168.0.2'
+        ip_src2='192.168.1.1'
+        ip_dst2='192.168.1.2'
+        ip_tos=0
+        tcp_sport=1234
+        tcp_dport=80
+
+        def testPacket(title, match, pkt, result):
+            pkts = []
+    
+            self.assertTrue(match is not None, 
+                            "Could not generate flow match from pkt")
+            match.wildcards &= ~ofp.OFPFW_IN_PORT
+            
+            pkts.append([
+                "%s" % title,
+                pkt,
+                result,
+            ])
+    
+            act = action.action_output()
+            self.testPktsAgainstFlow(pkts, act, match)
         testPacket("Ether matching with double VLAN tag - Wrong type match",
             self.createMatch(dl_dst=parse_mac(dl_dst), dl_src=parse_mac(dl_src),
                              dl_type=0x800),
@@ -2767,18 +2812,6 @@ class DirectVlanPackets(DirectBadPacketBase):
                 scapy.IP(),
             self.RESULT_MATCH
         )
-        testPacket("IP matching - VLAN tag",
-            self.createMatch(dl_dst=parse_mac(dl_dst), dl_src=parse_mac(dl_src),
-                             dl_type=0x0800,
-                             nw_src=parse_ip(ip_src), nw_dst=parse_ip(ip_dst)),
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
-                scapy.Dot1Q(prio=5, vlan=1000)/ \
-                scapy.IP(src=ip_src, dst=ip_dst),
-            self.RESULT_MATCH
-        )
-        # XXX:
-        # - Matching on VLAN ID and Prio
-        # - Actions
 
     
 
