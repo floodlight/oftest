@@ -824,13 +824,13 @@ def verify_portstats(self, port,tx_packets=None,rx_packets=None,rx_byte=None,tx_
         break
         
     if (tx_packets != None):
-        self.assertEqual(tx_packets,item.tx_packets,"rx_packets counter is not incremented correctly")
+        self.assertEqual(tx_packets,sentp,"rx_packets counter is not incremented correctly")
     if (rx_packets != None):
-        self.assertEqual(rx_packets,item.rx_packets,"tx_packets counter is not incremented correctly")
+        self.assertEqual(rx_packets,recvp,"tx_packets counter is not incremented correctly")
     if (rx_byte != None):
-        self.assertEqual(rx_byte,item.rx_bytes,"rx_bytes counter is not incremented correctly")
+        self.assertEqual(rx_byte,recvb,"rx_bytes counter is not incremented correctly")
     if (tx_byte != None):
-        self.assertEqual(tx_byte,item.tx_bytes,"tx_bytes counter is not incremented correctly")
+        self.assertEqual(tx_byte,sentb,"tx_bytes counter is not incremented correctly")
 
 
 def verify_queuestats(self,port_num,queue_id,expect_packet=None,expect_byte=None):
