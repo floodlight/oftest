@@ -171,6 +171,8 @@ class Grp60No50(base_tests.SimpleDataPlane):
         logging.info("Insert a flow with match on ingress_port")
         logging.info("Send N Packets on an ingress_port P ")
         logging.info("Send Port_Stats Request for Port P , verify recieved packets counters are incrementing in accordance")
+
+        sleep(2)
         
         #Insert a flow with match on all ingress port
         (pkt, match ) = wildcard_all_except_ingress(self,of_ports)
@@ -184,7 +186,6 @@ class Grp60No50(base_tests.SimpleDataPlane):
             self.dataplane.send(of_ports[0],str(pkt))
 
         pkts = num_pkts+counter[0]
-
         #Verify recieved packet counters 
         verify_portstats(self,of_ports[0],rx_packets=pkts)
 
