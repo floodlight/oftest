@@ -823,8 +823,6 @@ def verify_portstats(self, port,tx_packets=None,rx_packets=None,rx_byte=None,tx_
         
         break
         
-        
-
     if (tx_packets != None):
         self.assertEqual(tx_packets,item.tx_packets,"rx_packets counter is not incremented correctly")
     if (rx_packets != None):
