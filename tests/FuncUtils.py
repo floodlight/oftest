@@ -798,8 +798,6 @@ def verify_portstats(self, port,tx_packets=None,rx_packets=None,rx_byte=None,tx_
                                                 timeout=5)
         self.assertTrue(response is not None, 
                        "No response to stats request")
-        self.assertTrue(len(response.stats) == 1,
-                       "Did not receive port stats reply")
 
         sentp = recvp = 0
         sentb = recvb = 0
