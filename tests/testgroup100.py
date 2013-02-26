@@ -157,6 +157,7 @@ class Grp100No90(base_tests.SimpleProtocol):
         #In Message module at pack time the length is computed
         #avoid this by using cstruct module
         logging.info("Sending stats_request message..")
+        sleep(0.2)
         stats_request = ofp.ofp_stats_request()
         header=ofp.ofp_header() 
         header.type = ofp.OFPT_STATS_REQUEST
