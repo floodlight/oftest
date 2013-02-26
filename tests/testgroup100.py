@@ -404,7 +404,7 @@ class Grp100No190(base_tests.SimpleProtocol):
         #Create flow_mod message with lot of actions
         flow_mod_msg = message.flow_mod()
         # add a lot of actions
-        no = 6000
+        no = 10000
         for i in range(no):
             act = action.action_output()
             act.port = of_ports[1]
