@@ -373,14 +373,15 @@ class Grp80No280b(base_tests.SimpleDataPlane):
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
+        sleep(2)
+
         #Create a simple tcp packet
         pkt = simple_tcp_packet()
         match = parse.packet_to_flow_match(pkt)
         self.assertTrue(match is not None, "Could not generate flow match from pkt")
         match.wildcards=ofp.OFPFW_ALL
         match.in_port = of_ports[0]
-
-
+        
         max_len = [0 ,32 ,64,100]
         
         for bytes in max_len :
