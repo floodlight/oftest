@@ -392,6 +392,10 @@ class Grp100No190(base_tests.SimpleProtocol):
     def runTest(self):
         
         logging.info("Running BadActionTooMany Grp100No190 test")
+
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         
         #Clear switch state
         rc = delete_all_flows(self.controller)
