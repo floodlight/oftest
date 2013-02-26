@@ -402,7 +402,8 @@ class Grp100No190(base_tests.SimpleProtocol):
         # add a lot of actions
         no = random.randint(2000, 4000)
         for i in range(0, no):
-            act = action.action_enqueue()
+            act = action.action_output()
+            act.port = of_ports[1]
             self.assertTrue(flow_mod_msg.actions.add(act), "Could not add action")
 
         logging.info("Sending flow_mod message...")
