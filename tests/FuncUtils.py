@@ -336,7 +336,7 @@ def match_vlan_pcp(self,of_ports,priority=None):
     #Generate Match_Vlan_Priority
 
     #Create a simple tcp packet and generate match on ethernet dst address flow
-    pkt_matchvlanpcp = simple_tcp_packet(dl_vlan_enable=True,dl_vlan=1,dl_vlan_pcp=10)
+    pkt_matchvlanpcp = simple_tcp_packet(dl_vlan_enable=True,dl_vlan=1,dl_vlan_pcp=1)
     match = parse.packet_to_flow_match(pkt_matchvlanpcp)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
@@ -546,9 +546,6 @@ def match_ethernet_type(self,of_ports,priority=None):
     self.assertTrue(rv != -1, "Error installing flow mod")
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
     return (pkt_matchtype,match)
-
-   
-   
 
 def strict_modify_flow_action(self,egress_port,match,priority=None):
 # Strict Modify the flow Action 
