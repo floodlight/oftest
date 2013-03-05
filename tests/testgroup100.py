@@ -161,7 +161,7 @@ class Grp100No90(base_tests.SimpleProtocol):
         header=ofp.ofp_header() 
         header.type = ofp.OFPT_STATS_REQUEST
         # normal the header length is 12bytes changed it to 18bytes
-        header.length=12;
+        header.length=18;
         packed=header.pack()+stats_request.pack()
         sleep(2)
         rv=self.controller.message_send(packed)
