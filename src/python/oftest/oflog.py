@@ -1,8 +1,7 @@
 # @author Jonathan Stout
-from subprocess import Popen
+from subprocess import Popen, check_output
 import json
 import logging
-import netifaces
 import os
 import time
  
@@ -94,16 +93,6 @@ def stop_wireshark():
     for iface in wiresharkMap:
         wiresharkMap[iface][0].terminate()
 
-def find_iface(addy):
-    for iface in netifaces.interfaces():
-        try:
-            for a in netifaces.ifaddresses(iface)[netifaces.AF_INET]:
-                if a['addr'] == addy:
-                    return iface
-        except KeyError:
-            pass
-    return None
- 
 def should_publish():
     return pubResults
  
@@ -125,7 +114,22 @@ def set_config(directory, ctrlAddr, portMap):
     # Controller's iface is not included in a config. Look it up.
     iface = find_iface(ctrlAddr)
     wiresharkMap[iface] = [None, "ctrl"]
- 
+
+def find_iface(ip="127.0.0.1"):
+    """
+    Parses ifconfig to return the interface associated with ip.
+    """
+    data = check_output(["ifconfig | grep 'mtu\|inet'"], shell=True)
+    data = data.split("\n")[:-1]
+    interface = None
+
+    for line in data:
+        a = line.strip(" \t").split(" ")
+        if a[0][-1] == ":":
+            interface = a[0][:-1]
+        if a[0] == "inet" and a[1] == ip:
+            return interface
+
 def publish_asserts_and_results(res):
     global DEVNULL
     DEVNULL.close()
