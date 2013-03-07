@@ -1140,4 +1140,66 @@ assert(parse_version("1.0") == set(["1.0"]))
 assert(parse_version("1.0,1.2,1.3") == set(["1.0", "1.2", "1.3"]))
 assert(parse_version("1.0+") == set(["1.0", "1.1", "1.2", "1.3"]))
 
+def get_stats(test, req):
+    """
+    Retrieve a list of stats entries. Handles OFPSF_REPLY_MORE.
+    """
+    stats = []
+    reply, _ = test.controller.transact(req)
+    test.assertTrue(reply is not None, "No response to stats request")
+    stats.extend(reply.stats)
+    while reply.flags & of10.OFPSF_REPLY_MORE != 0:
+        reply, pkt = self.controller.poll(exp_msg=of10.OFPT_STATS_REPLY)
+        test.assertTrue(reply is not None, "No response to stats request")
+        stats.extend(reply.stats)
+    return stats
+
+def get_flow_stats(test, match, table_id=0xff, out_port=of10.cstruct.OFPP_NONE):
+    """
+    Retrieve a list of flow stats entries.
+    """
+    req = of10.message.flow_stats_request(match=match,
+                                          table_id=table_id,
+                                          out_port=out_port)
+    return get_stats(test, req)
+
+def verify_flow_stats(test, match, table_id=0xff,
+                      out_port=of10.cstruct.OFPP_NONE,
+                      initial=[],
+                      pkts=None, bytes=None):
+    """
+    Verify that flow stats changed as expected.
+
+    Optionally takes an 'initial' list of stats entries, as returned by
+    get_flow_stats(). If 'initial' is not given the counters are assumed to
+    begin at 0.
+    """
+    def accumulate(stats):
+        pkts_acc = bytes_acc = 0
+        for stat in stats:
+            pkts_acc += stat.packet_count
+            bytes_acc += stat.byte_count
+        return (pkts_acc, bytes_acc)
+
+    pkts_before, bytes_before = accumulate(initial)
+
+    # Wait 10s for counters to update
+    pkt_diff = byte_diff = None
+    for i in range(0, 100):
+        stats = get_flow_stats(test, match, table_id=table_id, out_port=out_port)
+        pkts_after, bytes_after = accumulate(stats)
+        pkt_diff = pkts_after - pkts_before
+        byte_diff = bytes_after - bytes_before
+        if (pkts == None or pkt_diff >= pkts) and \
+           (bytes == None or byte_diff >= bytes):
+            break
+        sleep(0.1)
+
+    if pkts != None:
+        test.assertEquals(pkt_diff, pkts, "Flow packet counter not updated properly (expected increase of %d, got increase of %d)" % (pkts, pkt_diff))
+
+    if bytes != None:
+        test.assertEquals(byte_diff, bytes, "Flow byte counter not updated properly (expected increase of %d, got increase of %d)" % (bytes, byte_diff))
+
+
 __all__ = list(set(locals()) - _import_blacklist)

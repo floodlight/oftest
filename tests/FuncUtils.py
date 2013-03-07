@@ -512,44 +512,6 @@ def verify_tablestats(self,expect_lookup=None,expect_match=None,expect_active=No
         self.assertEqual(expect_active, active ,"active counter is not incremented properly")
 
 
-def verify_flowstats(self,match,byte_count=None,packet_count=None):
-    # Verify flow counters : byte_count and packet_count
-
-    stat_req = message.flow_stats_request()
-    stat_req.match = match
-    stat_req.table_id = 0xff
-    stat_req.out_port = ofp.OFPP_NONE
-    
-    for i in range(0,100):
-        logging.info("Sending stats request")
-        # TODO: move REPLY_MORE handling to controller.transact?
-        response, pkt = self.controller.transact(stat_req,
-                                                     timeout=5)
-        self.assertTrue(response is not None,"No response to stats request")
-
-        packet_counter = 0
-        byte_counter = 0 
-
-        for item in response.stats:
-            packet_counter += item.packet_count
-            byte_counter += item.byte_count
-
-        logging.info("Received %d packets", packet_counter)
-        logging.info("Received %d bytes", byte_counter)
-
-        if (packet_count == None or packet_counter >= packet_count) and \
-           (byte_count == None or byte_counter >= byte_count):
-            break
-
-        sleep(0.1)
-    
-    if packet_count != None :
-        self.assertEqual(packet_count, packet_counter, "packet_count counter is not incremented correctly")
-
-    if byte_count != None :   
-        self.assertEqual(byte_count, byte_counter, "byte_count counter is not incremented correctly")
-
-
 def verify_portstats(self, port,tx_packets=None,rx_packets=None,rx_byte=None,tx_byte=None):
 
     

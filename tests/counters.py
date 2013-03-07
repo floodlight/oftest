@@ -60,9 +60,9 @@ class PktPerFlow(base_tests.SimpleDataPlane):
         num_pkts = 5 
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
-         
-        #Verify Recieved Packets/Bytes Per Flow  
-        verify_flowstats(self,match,packet_count=num_pkts)
+
+        # Verify the packet counter was updated
+        verify_flow_stats(self, match, pkts=num_pkts)
 
 
 class BytPerFlow(base_tests.SimpleDataPlane):
@@ -93,9 +93,9 @@ class BytPerFlow(base_tests.SimpleDataPlane):
         byte_count = num_pkts*len(str(pkt))
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
-         
-        #Verify Recieved Packets/Bytes Per Flow  
-        verify_flowstats(self,match,byte_count=byte_count)
+
+        # Verify the byte counter was updated
+        verify_flow_stats(self, match, bytes=byte_count)
 
 
 class DurationPerFlow(base_tests.SimpleDataPlane):
