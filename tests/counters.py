@@ -164,17 +164,15 @@ class RxPktPerPort(base_tests.SimpleDataPlane):
         (pkt, match ) = wildcard_all_except_ingress(self,of_ports)
 
         # Send Port_Stats request for the ingress port (retrieve old counter state)
-        (counter) = get_portstats(self,of_ports[0])
+        initial_stats = get_port_stats(self, of_ports[0])
 
         # Send packets matching the flow
         num_pkts = 5 
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
 
-        pkts = num_pkts+counter[0]
-
         #Verify recieved packet counters 
-        verify_portstats(self,of_ports[0],rx_packets=pkts)
+        verify_port_stats(self, of_ports[0], initial=initial_stats, rx_pkts=num_pkts)
 
 class TxPktPerPort(base_tests.SimpleDataPlane):
 
@@ -198,18 +196,17 @@ class TxPktPerPort(base_tests.SimpleDataPlane):
         #Insert a flow with match on all ingress port
         (pkt,match) = wildcard_all_except_ingress(self,of_ports)
         
-        # Send Port_Stats request for the ingress port (retrieve old counter state)
-        (counter) = get_portstats(self,of_ports[1])
+        # Send Port_Stats request for the egress port (retrieve old counter state)
+        initial_stats = get_port_stats(self, of_ports[1])
         
         #Send packets matching the flow
         num_pkts = 5
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
-
-        pkts = num_pkts+counter[1]
         
         #Verify transmitted_packet counters 
-        verify_portstats(self,of_ports[1],tx_packets=pkts)
+        verify_port_stats(self, of_ports[1], initial=initial_stats,
+                          tx_pkts=num_pkts)
 
 
 
@@ -236,7 +233,7 @@ class RxBytPerPort(base_tests.SimpleDataPlane):
         (pkt, match ) = wildcard_all_except_ingress(self,of_ports)
 
         # Send Port_Stats request for the ingress port (retrieve current counter state)
-        (counter) = get_portstats(self,of_ports[0])
+        initial_stats = get_port_stats(self, of_ports[0])
            
         #Send packets matching the flow.
         num_pkts = 5
@@ -244,10 +241,9 @@ class RxBytPerPort(base_tests.SimpleDataPlane):
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
 
-        byt_count = byte_count+counter[2]
-
         #Verify recieved_bytes counters 
-        verify_portstats(self,of_ports[0],rx_byte=byt_count)
+        verify_port_stats(self, of_ports[0], initial=initial_stats,
+                          rx_bytes=byte_count)
 
 
 class TxBytPerPort(base_tests.SimpleDataPlane):
@@ -272,19 +268,18 @@ class TxBytPerPort(base_tests.SimpleDataPlane):
         #Insert a flow with match on all ingress port
         (pkt, match ) = wildcard_all_except_ingress(self,of_ports)
 
-        # Send Port_Stats request for the ingress port (retrieve current counter state)
-        (counter) = get_portstats(self,of_ports[1])
+        # Send Port_Stats request for the egress port (retrieve current counter state)
+        initial_stats = get_port_stats(self, of_ports[1])
         
         #Send packets matching the flow.
         num_pkts = 5
         byte_count = num_pkts*len(str(pkt))
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
-
-        byt_count = byte_count+counter[3]
         
         #Verify trasmitted_bytes counters 
-        verify_portstats(self,of_ports[1],tx_byte=byt_count)
+        verify_port_stats(self, of_ports[1], initial=initial_stats,
+                          tx_bytes=byte_count)
 
 class ActiveCount(base_tests.SimpleDataPlane):
 
