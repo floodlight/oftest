@@ -460,8 +460,11 @@ if config["list"]:
     print "\nTest List:"
     for (modname, (mod, tests)) in test_modules.items():
         mod_count += 1
-        desc = mod.__doc__.strip()
-        desc = desc.split('\n')[0]
+        try:
+            desc = mod.__doc__.strip()
+            desc = desc.split('\n')[0]
+        except:
+            desc = "No description"
         start_str = "  Module " + mod.__name__ + ": "
         print start_str + _space_to(22, start_str) + desc
         for (testname, test) in tests.items():
