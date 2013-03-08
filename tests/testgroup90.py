@@ -25,10 +25,11 @@ class Grp90No10(base_tests.SimpleDataPlane):
     """Verify Port Status Messages are sent to the controller 
     whenever physical ports are added, modified or deleted"""
 
-    priority = -1
+    #priority = -1 #This would skip the set
     
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp90No10 PortStatusMessage Test")
         of_ports = config["port_map"].keys()
         
@@ -68,9 +69,9 @@ class Grp90No30a(base_tests.SimpleDataPlane):
     
     """ Modify the behavior of physical port using Port Modification Messages
     Change OFPPC_NO_FLOOD flag  and verify change takes place with features request """
-
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp90No20 PortModFlood Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -113,9 +114,9 @@ class Grp90No30b(base_tests.SimpleDataPlane):
     """ 
     Modify the behavior of physical port using Port Modification Messages
     Change OFPPC_NO_FWD flag and verify change took place with Features Request"""
-
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running PortModFwd Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -157,9 +158,10 @@ class Grp90No30c(base_tests.SimpleDataPlane):
     """ 
     Modify the behavior of physical port using Port Modification Messages
     Change OFPPC_NO_PACKET_IN flag and verify change took place with Features Request"""
-
+    @wireshark_capture
     def runTest(self):
 
+        logging = get_logger()
         logging.info("Running Grp90No30b PortModPacketIn Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -200,8 +202,9 @@ class Grp90No30c(base_tests.SimpleDataPlane):
 class Grp90No40(base_tests.SimpleDataPlane):
     
     """Verify Description Stats message body """
-    
+    @wireshark_capture
     def runTest(self):
+        logging = get_logger()
         logging.info("Running DescStatsGet test")
         
         logging.info("Sending stats request")
@@ -236,9 +239,9 @@ class Grp90No110(base_tests.SimpleProtocol):
 
     """Verify Queue Configuration Reply message body """
 
-      
+    @wireshark_capture  
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running QueueConfigRequest")
 
         of_ports = config["port_map"].keys()

@@ -27,8 +27,9 @@ class Grp40No10(base_tests.SimpleDataPlane):
     """Verify that if overlap check flag is set in the flow entry and an overlapping flow is inserted then an error 
         is generated and switch refuses flow entry"""
     
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp40No10 Overlap_Checking test")
        
         of_ports = config["port_map"].keys()
@@ -87,8 +88,9 @@ class Grp40No20(base_tests.SimpleDataPlane):
 
     """Verify that without overlap check flag set, Grp40No20overlapping flows can be created."""  
     
+    @wireshark_capture
     def runTest(self):
-     
+        logging = get_logger()
         logging.info("Running Grp40No20 No_Overlap_Checking test")
 
         of_ports = config["port_map"].keys()
@@ -119,8 +121,9 @@ class Grp40No30(base_tests.SimpleDataPlane):
     
     """Verify that adding two identical flows overwrites the existing one and clears counters"""
 
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp40No30 Identical_Flows test ")
 
         of_ports = config["port_map"].keys()
@@ -191,9 +194,9 @@ class Grp40No50(base_tests.SimpleProtocol):
     Some switches may generate an OFPT_ERROR , with type field FLOW_MOD_FAILED and code permission errors 
     (this is also acceptable)
     """
-
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp40No40 NeverValidPort test")
 
         # pick a random bad port number
@@ -229,9 +232,9 @@ class Grp40No50(base_tests.SimpleProtocol):
 class Grp40No80(base_tests.SimpleProtocol): 
 
     """Timeout values are not allowed for emergency flows"""
-
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp40No50 Emergency_Flow_Timeout test")
         
         of_ports = config["port_map"].keys()
@@ -282,8 +285,9 @@ class Grp40No90(base_tests.SimpleDataPlane):
 
     """If a modify does not match an existing flow, the flow gets added """
     
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp40No90 Missing_Modify_Add test")
 
         of_ports = config["port_map"].keys()
@@ -321,9 +325,9 @@ class Grp40No90(base_tests.SimpleDataPlane):
 class Grp40No100(base_tests.SimpleDataPlane):
 
     """A modified flow preserves counters"""
-    
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp40No100 Modify_Action test ")
 
         of_ports = config["port_map"].keys()
@@ -359,9 +363,9 @@ class Grp40No100(base_tests.SimpleDataPlane):
 class Grp40No110(base_tests.SimpleDataPlane):
 
     """Strict Modify Flow also changes action preserves counters"""
-
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp40No110 Strict_Modify_Action test")
 
         of_ports = config["port_map"].keys()
@@ -403,9 +407,9 @@ class Grp40No110(base_tests.SimpleDataPlane):
 class Grp40No120(base_tests.SimpleDataPlane):
     
     """Request deletion of non-existing flow"""
-    
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Delete_NonExisting_Flow Grp40No120 test begins")
 
         of_ports = config["port_map"].keys()
@@ -439,9 +443,9 @@ class Grp40No130(base_tests.SimpleDataPlane):
     """Check deletion of flows happens and generates messages as configured.
     If Send Flow removed message Flag is set in the flow entry, the flow deletion of that respective flow should generate the flow removed message, 
     vice versa also exists """
-
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp40No130 Send_Flow_Rem test ")
 
         of_ports = config["port_map"].keys()
@@ -499,9 +503,9 @@ class Grp40No140(base_tests.SimpleProtocol):
 
     """Delete emergency flow and verify no message is generated.An emergency flow deletion will not generate flow-removed messages even if 
     Send Flow removed message flag was set during the emergency flow entry"""
-
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp40No140 Delete_Emer_Flow")
 
         of_ports = config["port_map"].keys()
@@ -543,9 +547,9 @@ class Grp40No150(base_tests.SimpleDataPlane):
 
     """Delete and verify strict and non-strict behaviors
     This test compares the behavior of delete strict and non-strict"""
-
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Strict_Vs_Nonstrict Grp40No150 test begins")
         
         of_ports = config["port_map"].keys()
@@ -631,8 +635,9 @@ class Grp40No160(base_tests.SimpleDataPlane):
     """Delete flows filtered by action outport.If the out_port field in the delete command contains a value other than OFPP_NONE,
     it introduces a constraint when matching. This constraint is that the rule must contain an output action directed at that port."""
 
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Outport1 Grp40No160 test begins")
 
         of_ports = config["port_map"].keys()
@@ -688,8 +693,9 @@ class Grp40No170(base_tests.SimpleDataPlane):
 
     """Add, modify flows with outport set. This field is ignored by ADD, MODIFY, and MODIFY STRICT messages."""
 
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp40No170 Outport2 test ")
 
         of_ports = config["port_map"].keys()
@@ -726,9 +732,9 @@ class Grp40No170(base_tests.SimpleDataPlane):
 class Grp40No180(base_tests.SimpleDataPlane):
 
     """ Verify that idle timeout is implemented"""
-
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp40No180 Idle_Timeout test ")
 
         of_ports = config["port_map"].keys()
@@ -773,8 +779,9 @@ class Grp40No190(base_tests.SimpleDataPlane):
 
     """ Verify that hard timeout is implemented """
 
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Hard_Timeout test ")
         
         of_ports = config["port_map"].keys()
@@ -821,9 +828,9 @@ class Grp40No200(base_tests.SimpleDataPlane):
     Flow removed messages being generated when flag is set, is already tested in the above tests 
     So here, we test the vice-versa condition"""
 
-    
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Flow_Timeout test ")
         
         of_ports = config["port_map"].keys()

@@ -30,8 +30,9 @@ class Grp80No20(base_tests.SimpleDataPlane):
     """Verify switch should be able to receive OFPT_HELLO messages with body , 
         but it should ignore the contents of the body"""
 
+    @wireshark_capture 
     def setUp(self):
-
+        logging = get_logger()
         #This is almost same as setUp in SimpleProtcocol except that intial hello is set to false
         self.controller = controller.Controller(
             host=config["controller_host"],
@@ -79,9 +80,9 @@ class Grp80No30(base_tests.SimpleProtocol):
     it generates OFPT_ERROR_msg with Type field OFPET_BAD_REQUEST 
     and code field OFPBRC_BAD_VERSION
     """
-    
+    @wireshark_capture 
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp80No30 Error Msg test")
 
         #Send Echo Request
@@ -108,8 +109,9 @@ class Grp80No40(base_tests.SimpleProtocol):
     """Verify if OFPT_ECHO_REQUEST has data field,
     switch responds back with OFPT_ECHO_REPLY with data field copied into it. """
 
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp80No40 EchoWithData test")
         
         #Send Echo Request 
@@ -137,8 +139,9 @@ class Grp80No40(base_tests.SimpleProtocol):
 class Grp80No60(base_tests.SimpleProtocol):
     """Verify the body of Features Reply message"""
 
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp80No60 Features Reply Body test")
 
         of_ports = config["port_map"].keys()
@@ -222,9 +225,9 @@ class Grp80No60(base_tests.SimpleProtocol):
 class Grp80No210(base_tests.SimpleProtocol):
 
     """Verify the body of OFPT_GET_CONFIG_REPLY message """
-
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp80No220 GetConfigReply Test")
        
         #Send get_config_request
@@ -256,9 +259,9 @@ class Grp80No210(base_tests.SimpleProtocol):
 class Grp80No270(base_tests.SimpleProtocol):
 
     """Verify OFPT_SET_CONFIG is implemented"""
-
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp80No270 SetConfigRequest Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -313,9 +316,9 @@ class Grp80No280a(base_tests.SimpleDataPlane):
     """ When packet_in is triggered due to a flow table miss,
         verify the data sent in packet_in varies in accordance with the
         miss_send_len field set in OFPT_SET_CONFIG"""
-
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp80No280a PacketInSizeMiss Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -362,9 +365,9 @@ class Grp80No280b(base_tests.SimpleDataPlane):
         verify the data sent in packet_in varies in accordance with the
         max_len field set in action_output"""
 
-    
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running PacketInSizeAction Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -424,8 +427,9 @@ class Grp80No300a(base_tests.SimpleDataPlane):
     """Verify the packet_in message body, 
     when packet_in is triggered due to a flow table miss"""
 
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp80No300a PacketInBodyMiss Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -471,9 +475,9 @@ class Grp80No300a(base_tests.SimpleDataPlane):
 class Grp80No300b(base_tests.SimpleDataPlane):
 
     """Verify the packet_in message body, when packet_in is generated due to action output to controller"""
-
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp80No300a PacketInBodyAction Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
