@@ -106,6 +106,8 @@ class Grp20No30(base_tests.SimpleProtocol):
         logging.info("Inserting a flow entry")
         logging.info("Expecting active_count=1 in table_stats_reply")
 
+        sleep(1)
+
         #Insert a flow entry matching on ingress_port
         (pkt,match) = wildcard_all_except_ingress(self,of_ports)
 
