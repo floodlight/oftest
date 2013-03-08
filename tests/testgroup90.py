@@ -14,6 +14,7 @@ import oftest.action as action
 import oftest.parse as parse
 import oftest.base_tests as base_tests
 
+from oftest.oflog import *
 from oftest.testutils import *
 from time import sleep
 from FuncUtils import *

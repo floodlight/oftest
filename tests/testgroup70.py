@@ -21,6 +21,7 @@ import oftest.action as action
 import oftest.parse as parse
 import oftest.base_tests as base_tests
 
+from oftest.oflog import *
 from oftest.testutils import *
 from time import sleep
 from FuncUtils import *
@@ -85,7 +86,7 @@ class Grp70No20(base_tests.SimpleDataPlane):
 
     @wireshark_capture
     def runTest(self):
-        
+
         logging = get_logger()
         logging.info("Running Grp70No20 Announcement test")
 
@@ -134,7 +135,7 @@ class Grp70No30(base_tests.SimpleDataPlane):
 
     @wireshark_capture
     def runTest(self):
-        
+
         logging = get_logger()
         logging.info("Running Grp70No30 Forward_All test")
 
@@ -247,7 +248,7 @@ class Grp70No50(base_tests.SimpleDataPlane):
 
     @wireshark_capture
     def runTest(self):
-        
+
         logging = get_logger()
         logging.info("Running Grp70No50 Forward_Local test")
 
@@ -300,7 +301,7 @@ class Grp70No60(base_tests.SimpleDataPlane):
 
     @wireshark_capture
     def runTest(self):
-        
+
         logging = get_logger()
         logging.info("Running Grp70No60 Forward_Table test")
 
@@ -342,7 +343,7 @@ class Grp70No70(base_tests.SimpleDataPlane):
 
     @wireshark_capture
     def runTest(self):
-        
+
         logging = get_logger()
         logging.info("Running Grp70No70 Forward_Inport test")
 
@@ -400,7 +401,7 @@ class Grp70No90(base_tests.SimpleDataPlane):
     
     @wireshark_capture
     def runTest(self):
-        
+
         logging = get_logger()
         logging.info("Running Grp70No90 Forward_Flood test")
         of_ports = config["port_map"].keys()
@@ -455,7 +456,7 @@ class Grp70No120(base_tests.SimpleDataPlane):
 
     @wireshark_capture
     def runTest(self):
-        
+
         logging = get_logger()
         logging.info("Running Grp70No130 Add_vlan_tag test")
 
@@ -498,7 +499,7 @@ class Grp70No130(base_tests.SimpleDataPlane):
     
     @wireshark_capture
     def runTest(self):
-        
+
         logging = get_logger()
         logging.info("Running Modify_Vlan_Tag test")
 
@@ -538,7 +539,7 @@ class Grp70No140(base_tests.SimpleDataPlane):
     
     @wireshark_capture
     def runTest(self):
-        
+
         logging = get_logger()
         logging.info("Running vlan_Prio_1 test")
 
@@ -622,7 +623,7 @@ class Grp70No180(base_tests.SimpleDataPlane):
 
     @wireshark_capture
     def runTest(self):
-        
+
         logging = get_logger()
         logging.info("Running Grp70No180 Modify_L2_Src test")
 
@@ -659,7 +660,7 @@ class Grp70No190(base_tests.SimpleDataPlane):
 
     @wireshark_capture
     def runTest(self):
-        
+
         logging = get_logger()
         logging.info("Running Grp70No190 Modify_L2_Dst test")
 
@@ -695,7 +696,7 @@ class Grp70No200(base_tests.SimpleDataPlane):
 
     @wireshark_capture
     def runTest(self):
-        
+
         logging = get_logger()
         logging.info("Running Grp70No200 Modify_L3_Src test")
 
@@ -731,7 +732,7 @@ class Grp70No210(base_tests.SimpleDataPlane):
     
     @wireshark_capture
     def runTest(self):
-        
+
         logging = get_logger()
         logging.info("Running Modify_L3_Dst test")
 
@@ -767,7 +768,7 @@ class Grp70No220(base_tests.SimpleDataPlane):
     
     @wireshark_capture
     def runTest(self):
-        
+
         logging = get_logger()
         logging.info("Running Grp70No220 Modify_Tos test")
 
@@ -804,7 +805,7 @@ class Grp70No230(base_tests.SimpleDataPlane):
     
     @wireshark_capture
     def runTest(self):
-        
+
         logging = get_logger()
         logging.info("Running Grp70No230 Modify_L4_Src test")
 
@@ -840,7 +841,7 @@ class Grp70No240(base_tests.SimpleDataPlane):
 
     @wireshark_capture    
     def runTest(self):
-        
+
         logging = get_logger()
         logging.info("Running Modify_L4_Dst test")
 
