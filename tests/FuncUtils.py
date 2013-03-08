@@ -512,43 +512,6 @@ def verify_tablestats(self,expect_lookup=None,expect_match=None,expect_active=No
         self.assertEqual(expect_active, active ,"active counter is not incremented properly")
 
 
-def verify_queuestats(self,port_num,queue_id,expect_packet=None,expect_byte=None):
-    
-    # Verify queue counters : tx_packets and tx_bytes
-
-    request = message.queue_stats_request()
-    request.port_no  = port_num
-    request.queue_id = queue_id
-    
-    for i in range(0,100):
-
-        logging.info("Sending stats request")
-     
-        (queue_stats, p) = self.controller.transact(request)
-        self.assertNotEqual(queue_stats, None, "Queue stats request failed")
-        packet_counter = 0
-        byte_counter = 0 
-        
-        for item in queue_stats.stats:
-            packet_counter += item.tx_packets
-            byte_counter += item.tx_bytes
-
-            logging.info("Transmitted" + str(packet_counter) + " packets")
-            logging.info("Transmitted" + str(byte_counter) + "bytes")
-           
-        if (expect_packet == None or packet_counter == expect_packet) and \
-           (expect_byte == None or byte_counter == expect_byte):
-            break
-
-        sleep(0.1)
-    
-    if expect_packet != None :
-        self.assertEqual(packet_counter,expect_packet,"tx_packets counter is not incremented correctly")
-
-    if expect_byte != None :   
-        self.assertEqual(byte_counter,expect_byte,"tx_bytes counter is not incremented correctly")
-
-
 ############################## Various delete commands #############################################################################################
 
 def strict_delete(self,match,priority=None):

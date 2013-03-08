@@ -374,7 +374,7 @@ class TxPktPerQueue(base_tests.SimpleDataPlane):
                 delete_all_flows(self.controller)
 
                 # Get Queue stats for selected egress queue only
-                (qs_before,p) = get_queuestats(self,egress_port,egress_queue_id)
+                initial_stats = get_queue_stats(self, egress_port, egress_queue_id)
 
                 #Insert a flow with enqueue action to queues configured on egress_port
                 (pkt,match) = enqueue(self,ingress_port,egress_port,egress_queue_id)
@@ -382,9 +382,8 @@ class TxPktPerQueue(base_tests.SimpleDataPlane):
                 #Send packet on the ingress_port and verify its received on egress_port
                 send_packet(self,pkt,ingress_port,egress_port)
                 
-                expected_packets = qs_before.stats[0].tx_packets+1
-
-                verify_queuestats(self,egress_port,egress_queue_id,expect_packet=expected_packets)
+                verify_queue_stats(self, egress_port, egress_queue_id,
+                                   initial=initial_stats, pkts=1)
        
 
 class TxBytPerQueue(base_tests.SimpleDataPlane):
@@ -413,7 +412,7 @@ class TxBytPerQueue(base_tests.SimpleDataPlane):
                 delete_all_flows(self.controller)
 
                 # Get Queue stats for selected egress queue only
-                (qs_before,p) = get_queuestats(self,egress_port,egress_queue_id)
+                initial_stats = get_queue_stats(self, egress_port, egress_queue_id)
 
                 #Insert a flow with enqueue action to queues configured on egress_port
                 (pkt,match) = enqueue(self,ingress_port,egress_port,egress_queue_id)
@@ -421,9 +420,9 @@ class TxBytPerQueue(base_tests.SimpleDataPlane):
                 #Send packet on the ingress_port and verify its received on egress_port
                 send_packet(self,pkt,ingress_port,egress_port)
                 
-                expected_bytes = qs_before.stats[0].tx_bytes+len(str(pkt))
-
-                verify_queuestats(self,egress_port,egress_queue_id,expect_byte=expected_bytes)
+                verify_queue_stats(self, egress_port, egress_queue_id,
+                                   initial=initial_stats,
+                                   bytes=len(str(pkt)))
        
        
 class RxDrops(base_tests.SimpleDataPlane):

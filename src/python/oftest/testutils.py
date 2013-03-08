@@ -1170,6 +1170,13 @@ def get_port_stats(test, port_no):
     req = of10.message.port_stats_request(port_no=port_no)
     return get_stats(test, req)
 
+def get_queue_stats(test, port_no, queue_id):
+    """
+    Retrieve a list of queue stats entries.
+    """
+    req = of10.message.queue_stats_request(port_no=port_no, queue_id=queue_id)
+    return get_stats(test, req)
+
 def verify_flow_stats(test, match, table_id=0xff,
                       out_port=of10.cstruct.OFPP_NONE,
                       initial=[],
@@ -1256,5 +1263,41 @@ def verify_port_stats(test, port,
     if (rx_bytes != None):
         test.assertEqual(rx_bytes,rx_bytes_diff,"Port RX byte counter is not updated correctly (expected increase of %d, got increase of %d)" % (rx_bytes, rx_bytes_diff))
 
+def verify_queue_stats(test, port_no, queue_id,
+                       initial=[],
+                       pkts=None, bytes=None):
+    """
+    Verify that queue stats changed as expected.
+
+    Optionally takes an 'initial' list of stats entries, as returned by
+    get_queue_stats(). If 'initial' is not given the counters are assumed to
+    begin at 0.
+    """
+    def accumulate(stats):
+        pkts_acc = bytes_acc = 0
+        for stat in stats:
+            pkts_acc += stat.tx_packets
+            bytes_acc += stat.tx_bytes
+        return (pkts_acc, bytes_acc)
+
+    pkts_before, bytes_before = accumulate(initial)
+
+    # Wait 10s for counters to update
+    pkt_diff = byte_diff = None
+    for i in range(0, 100):
+        stats = get_queue_stats(test, port_no, queue_id)
+        pkts_after, bytes_after = accumulate(stats)
+        pkt_diff = pkts_after - pkts_before
+        byte_diff = bytes_after - bytes_before
+        if (pkts == None or pkt_diff >= pkts) and \
+           (bytes == None or byte_diff >= bytes):
+            break
+        sleep(0.1)
+
+    if pkts != None:
+        test.assertEquals(pkt_diff, pkts, "Queue packet counter not updated properly (expected increase of %d, got increase of %d)" % (pkts, pkt_diff))
+
+    if bytes != None:
+        test.assertEquals(byte_diff, bytes, "Queue byte counter not updated properly (expected increase of %d, got increase of %d)" % (bytes, byte_diff))
 
 __all__ = list(set(locals()) - _import_blacklist)
