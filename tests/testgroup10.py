@@ -30,7 +30,7 @@ from oftest.oflog import *
 from oftest.testutils import *
 from time import sleep
 from FuncUtils import *
-from serial_failover import *
+#from serial_failover import *
 
 class Grp10No10(base_tests.SimpleDataPlane):
     """
