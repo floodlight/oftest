@@ -1213,7 +1213,8 @@ def verify_flow_stats(test, match, table_id=0xff,
         test.assertEquals(pkt_diff, pkts, "Flow packet counter not updated properly (expected increase of %d, got increase of %d)" % (pkts, pkt_diff))
 
     if bytes != None:
-        test.assertEquals(byte_diff, bytes, "Flow byte counter not updated properly (expected increase of %d, got increase of %d)" % (bytes, byte_diff))
+        test.assertTrue(byte_diff >= bytes and byte_diff <= bytes*1.1,
+                        "Flow byte counter not updated properly (expected increase of %d, got increase of %d)" % (bytes, byte_diff))
 
 def verify_port_stats(test, port,
                       initial=[],
@@ -1249,8 +1250,8 @@ def verify_port_stats(test, port,
         rx_bytes_diff = rx_bytes_after - rx_bytes_before
         if (tx_pkts == None or tx_pkts == tx_pkts_diff) and \
            (rx_pkts == None or rx_pkts == rx_pkts_diff) and \
-           (tx_bytes == None or tx_bytes == tx_bytes_diff) and \
-           (rx_bytes == None or rx_bytes == rx_bytes_diff):
+           (tx_bytes == None or tx_bytes <= tx_bytes_diff) and \
+           (rx_bytes == None or rx_bytes <= rx_bytes_diff):
             break
         time.sleep(0.1)
 
@@ -1259,9 +1260,11 @@ def verify_port_stats(test, port,
     if (rx_pkts != None):
         test.assertEqual(rx_pkts,rx_pkts_diff,"Port RX packet counter is not updated correctly (expected increase of %d, got increase of %d)" % (rx_pkts, rx_pkts_diff))
     if (tx_bytes != None):
-        test.assertEqual(tx_bytes,tx_bytes_diff,"Port TX byte counter is not updated correctly (expected increase of %d, got increase of %d)" % (tx_bytes, tx_bytes_diff))
+        test.assertTrue(tx_bytes_diff >= tx_bytes and tx_bytes_diff <= tx_bytes*1.1,
+                        "Port TX byte counter is not updated correctly (expected increase of %d, got increase of %d)" % (tx_bytes, tx_bytes_diff))
     if (rx_bytes != None):
-        test.assertEqual(rx_bytes,rx_bytes_diff,"Port RX byte counter is not updated correctly (expected increase of %d, got increase of %d)" % (rx_bytes, rx_bytes_diff))
+        test.assertTrue(rx_bytes_diff >= rx_bytes and rx_bytes_diff <= rx_bytes*1.1,
+                        "Port RX byte counter is not updated correctly (expected increase of %d, got increase of %d)" % (rx_bytes, rx_bytes_diff))
 
 def verify_queue_stats(test, port_no, queue_id,
                        initial=[],
@@ -1298,6 +1301,7 @@ def verify_queue_stats(test, port_no, queue_id,
         test.assertEquals(pkt_diff, pkts, "Queue packet counter not updated properly (expected increase of %d, got increase of %d)" % (pkts, pkt_diff))
 
     if bytes != None:
-        test.assertEquals(byte_diff, bytes, "Queue byte counter not updated properly (expected increase of %d, got increase of %d)" % (bytes, byte_diff))
+        test.assertTrue(byte_diff >= bytes and byte_diff <= bytes*1.1,
+                        "Queue byte counter not updated properly (expected increase of %d, got increase of %d)" % (bytes, byte_diff))
 
 __all__ = list(set(locals()) - _import_blacklist)
