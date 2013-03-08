@@ -236,6 +236,7 @@ class Grp20No70(base_tests.SimpleDataPlane):
         logging.info("Expecting the packet on appropriate dataplane port")
 
         for dp_port in of_ports:
+            
             for outpkt, opt in [
                 (simple_tcp_packet(), "simple TCP packet"),
                 (simple_eth_packet(), "simple Ethernet packet"),
@@ -308,7 +309,7 @@ class Grp20No90(base_tests.SimpleDataPlane):
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
-        ingress_port = of_ports[2]
+        ingress_port = of_ports[3]
 
         #Clear Switch state
         rc = delete_all_flows(self.controller)
