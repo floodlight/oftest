@@ -140,7 +140,7 @@ class IdenticalFlows(base_tests.SimpleDataPlane):
         send_packet(self,pkt,of_ports[0],of_ports[1])
 
         # Verify Flow counters have incremented
-        verify_flowstats(self,match,byte_count=len(str(pkt)),packet_count=1)
+        verify_flow_stats(self, match, pkts=1, bytes=len(str(pkt)))
         
         #Send Identical flow 
         (pkt1,match1) = wildcard_all(self,of_ports)
@@ -149,7 +149,7 @@ class IdenticalFlows(base_tests.SimpleDataPlane):
         verify_tablestats(self,expect_active=1)
 
         # Verify Flow counters reset
-        verify_flowstats(self,match,byte_count=0,packet_count=0)
+        verify_flow_stats(self, match, pkts=0, bytes=0)
 
    
 class EmerFlowTimeout(base_tests.SimpleProtocol): 
@@ -265,7 +265,7 @@ class ModifyAction(base_tests.SimpleDataPlane):
         send_packet(self,pkt,of_ports[0],of_ports[1])
 
         #Verify flow counters
-        verify_flowstats(self,match,byte_count=len(str(pkt)),packet_count=1)
+        verify_flow_stats(self, match, pkts=1, bytes=len(str(pkt)))
 
         #Modify flow- 1 
         modify_flow_action(self,of_ports,match)
@@ -274,7 +274,7 @@ class ModifyAction(base_tests.SimpleDataPlane):
         send_packet(self,pkt,of_ports[0],of_ports[2])
         
         #Verify flow counters are preserved
-        verify_flowstats(self,match,byte_count=(2*len(str(pkt))),packet_count=2)
+        verify_flow_stats(self, match, pkts=2, bytes=len(str(pkt))*2)
 
 
 class StrictModifyAction(base_tests.SimpleDataPlane):
@@ -308,7 +308,7 @@ class StrictModifyAction(base_tests.SimpleDataPlane):
         send_packet(self,pkt,of_ports[0],of_ports[1])
 
         # Verify flow counters of the flow-1
-        verify_flowstats(self,match,byte_count=len(str(pkt)),packet_count=1)
+        verify_flow_stats(self, match, pkts=1, bytes=len(str(pkt)))
 
         # Strict-Modify flow- 1 
         strict_modify_flow_action(self,of_ports[2],match,priority=100)
@@ -317,7 +317,7 @@ class StrictModifyAction(base_tests.SimpleDataPlane):
         send_packet(self,pkt,of_ports[0],of_ports[2])
         
         # Verify flow counters are preserved
-        verify_flowstats(self,match,byte_count=(2*len(str(pkt))),packet_count=2)
+        verify_flow_stats(self, match, pkts=2, bytes=2*len(str(pkt)))
 
 
 class DeleteNonexistingFlow(base_tests.SimpleDataPlane):

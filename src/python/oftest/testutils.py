@@ -1140,4 +1140,168 @@ assert(parse_version("1.0") == set(["1.0"]))
 assert(parse_version("1.0,1.2,1.3") == set(["1.0", "1.2", "1.3"]))
 assert(parse_version("1.0+") == set(["1.0", "1.1", "1.2", "1.3"]))
 
+def get_stats(test, req):
+    """
+    Retrieve a list of stats entries. Handles OFPSF_REPLY_MORE.
+    """
+    stats = []
+    reply, _ = test.controller.transact(req)
+    test.assertTrue(reply is not None, "No response to stats request")
+    stats.extend(reply.stats)
+    while reply.flags & of10.OFPSF_REPLY_MORE != 0:
+        reply, pkt = self.controller.poll(exp_msg=of10.OFPT_STATS_REPLY)
+        test.assertTrue(reply is not None, "No response to stats request")
+        stats.extend(reply.stats)
+    return stats
+
+def get_flow_stats(test, match, table_id=0xff, out_port=of10.cstruct.OFPP_NONE):
+    """
+    Retrieve a list of flow stats entries.
+    """
+    req = of10.message.flow_stats_request(match=match,
+                                          table_id=table_id,
+                                          out_port=out_port)
+    return get_stats(test, req)
+
+def get_port_stats(test, port_no):
+    """
+    Retrieve a list of port stats entries.
+    """
+    req = of10.message.port_stats_request(port_no=port_no)
+    return get_stats(test, req)
+
+def get_queue_stats(test, port_no, queue_id):
+    """
+    Retrieve a list of queue stats entries.
+    """
+    req = of10.message.queue_stats_request(port_no=port_no, queue_id=queue_id)
+    return get_stats(test, req)
+
+def verify_flow_stats(test, match, table_id=0xff,
+                      out_port=of10.cstruct.OFPP_NONE,
+                      initial=[],
+                      pkts=None, bytes=None):
+    """
+    Verify that flow stats changed as expected.
+
+    Optionally takes an 'initial' list of stats entries, as returned by
+    get_flow_stats(). If 'initial' is not given the counters are assumed to
+    begin at 0.
+    """
+    def accumulate(stats):
+        pkts_acc = bytes_acc = 0
+        for stat in stats:
+            pkts_acc += stat.packet_count
+            bytes_acc += stat.byte_count
+        return (pkts_acc, bytes_acc)
+
+    pkts_before, bytes_before = accumulate(initial)
+
+    # Wait 10s for counters to update
+    pkt_diff = byte_diff = None
+    for i in range(0, 100):
+        stats = get_flow_stats(test, match, table_id=table_id, out_port=out_port)
+        pkts_after, bytes_after = accumulate(stats)
+        pkt_diff = pkts_after - pkts_before
+        byte_diff = bytes_after - bytes_before
+        if (pkts == None or pkt_diff >= pkts) and \
+           (bytes == None or byte_diff >= bytes):
+            break
+        sleep(0.1)
+
+    if pkts != None:
+        test.assertEquals(pkt_diff, pkts, "Flow packet counter not updated properly (expected increase of %d, got increase of %d)" % (pkts, pkt_diff))
+
+    if bytes != None:
+        test.assertTrue(byte_diff >= bytes and byte_diff <= bytes*1.1,
+                        "Flow byte counter not updated properly (expected increase of %d, got increase of %d)" % (bytes, byte_diff))
+
+def verify_port_stats(test, port,
+                      initial=[],
+                      tx_pkts=None, rx_pkts=None,
+                      tx_bytes=None, rx_bytes=None):
+    """
+    Verify that port stats changed as expected.
+
+    Optionally takes an 'initial' list of stats entries, as returned by
+    get_port_stats(). If 'initial' is not given the counters are assumed to
+    begin at 0.
+    """
+    def accumulate(stats):
+        tx_pkts_acc = rx_pkts_acc = tx_bytes_acc = rx_bytes_acc = 0
+        for stat in stats:
+            tx_pkts_acc += stat.tx_packets
+            rx_pkts_acc += stat.rx_packets
+            tx_bytes_acc += stat.tx_bytes
+            rx_bytes_acc += stat.rx_bytes
+        return (tx_pkts_acc, rx_pkts_acc, tx_bytes_acc, rx_bytes_acc)
+
+    tx_pkts_before, rx_pkts_before, \
+        tx_bytes_before, rx_bytes_before = accumulate(initial)
+
+    # Wait 10s for counters to update
+    for i in range(0, 100):
+        stats = get_port_stats(test, port)
+        tx_pkts_after, rx_pkts_after, \
+            tx_bytes_after, rx_bytes_after = accumulate(stats)
+        tx_pkts_diff = tx_pkts_after - tx_pkts_before
+        rx_pkts_diff = rx_pkts_after - rx_pkts_before
+        tx_bytes_diff = tx_bytes_after - tx_bytes_before
+        rx_bytes_diff = rx_bytes_after - rx_bytes_before
+        if (tx_pkts == None or tx_pkts == tx_pkts_diff) and \
+           (rx_pkts == None or rx_pkts == rx_pkts_diff) and \
+           (tx_bytes == None or tx_bytes <= tx_bytes_diff) and \
+           (rx_bytes == None or rx_bytes <= rx_bytes_diff):
+            break
+        time.sleep(0.1)
+
+    if (tx_pkts != None):
+        test.assertEqual(tx_pkts,tx_pkts_diff,"Port TX packet counter is not updated correctly (expected increase of %d, got increase of %d)" % (tx_pkts, tx_pkts_diff))
+    if (rx_pkts != None):
+        test.assertEqual(rx_pkts,rx_pkts_diff,"Port RX packet counter is not updated correctly (expected increase of %d, got increase of %d)" % (rx_pkts, rx_pkts_diff))
+    if (tx_bytes != None):
+        test.assertTrue(tx_bytes_diff >= tx_bytes and tx_bytes_diff <= tx_bytes*1.1,
+                        "Port TX byte counter is not updated correctly (expected increase of %d, got increase of %d)" % (tx_bytes, tx_bytes_diff))
+    if (rx_bytes != None):
+        test.assertTrue(rx_bytes_diff >= rx_bytes and rx_bytes_diff <= rx_bytes*1.1,
+                        "Port RX byte counter is not updated correctly (expected increase of %d, got increase of %d)" % (rx_bytes, rx_bytes_diff))
+
+def verify_queue_stats(test, port_no, queue_id,
+                       initial=[],
+                       pkts=None, bytes=None):
+    """
+    Verify that queue stats changed as expected.
+
+    Optionally takes an 'initial' list of stats entries, as returned by
+    get_queue_stats(). If 'initial' is not given the counters are assumed to
+    begin at 0.
+    """
+    def accumulate(stats):
+        pkts_acc = bytes_acc = 0
+        for stat in stats:
+            pkts_acc += stat.tx_packets
+            bytes_acc += stat.tx_bytes
+        return (pkts_acc, bytes_acc)
+
+    pkts_before, bytes_before = accumulate(initial)
+
+    # Wait 10s for counters to update
+    pkt_diff = byte_diff = None
+    for i in range(0, 100):
+        stats = get_queue_stats(test, port_no, queue_id)
+        pkts_after, bytes_after = accumulate(stats)
+        pkt_diff = pkts_after - pkts_before
+        byte_diff = bytes_after - bytes_before
+        if (pkts == None or pkt_diff >= pkts) and \
+           (bytes == None or byte_diff >= bytes):
+            break
+        sleep(0.1)
+
+    if pkts != None:
+        test.assertEquals(pkt_diff, pkts, "Queue packet counter not updated properly (expected increase of %d, got increase of %d)" % (pkts, pkt_diff))
+
+    if bytes != None:
+        test.assertTrue(byte_diff >= bytes and byte_diff <= bytes*1.1,
+                        "Queue byte counter not updated properly (expected increase of %d, got increase of %d)" % (bytes, byte_diff))
+
 __all__ = list(set(locals()) - _import_blacklist)
