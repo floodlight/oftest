@@ -308,7 +308,7 @@ class Grp20No90(base_tests.SimpleDataPlane):
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
-        ingress_port = of_ports[0]
+        ingress_port = of_ports[2]
 
         #Clear Switch state
         rc = delete_all_flows(self.controller)
