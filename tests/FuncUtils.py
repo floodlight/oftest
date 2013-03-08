@@ -5,7 +5,7 @@ import copy
 import random
 
 import oftest.controller as controller
-import oftest.cstruct as ofp
+import ofp
 import oftest.message as message
 import oftest.dataplane as dataplane
 import oftest.action as action

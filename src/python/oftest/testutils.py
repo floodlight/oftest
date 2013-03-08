@@ -16,7 +16,7 @@ except:
 import oftest
 import oftest.controller
 import oftest.dataplane
-import of10.cstruct
+import of10
 import of10.message
 import of10.action
 import of10.parse
@@ -41,9 +41,9 @@ def delete_all_flows(ctrl):
 
     logging.info("Deleting all flows")
     msg = of10.message.flow_mod()
-    msg.match.wildcards = of10.cstruct.OFPFW_ALL
-    msg.out_port = of10.cstruct.OFPP_NONE
-    msg.command = of10.cstruct.OFPFC_DELETE
+    msg.match.wildcards = of10.OFPFW_ALL
+    msg.out_port = of10.OFPP_NONE
+    msg.command = of10.OFPFC_DELETE
     msg.buffer_id = 0xffffffff
     ctrl.message_send(msg)
     return 0 # for backwards compatibility
@@ -51,8 +51,8 @@ def delete_all_flows(ctrl):
 def required_wildcards(parent):
     w = test_param_get('required_wildcards', default='default')
     if w == 'l3-l4':
-        return (of10.cstruct.OFPFW_NW_SRC_ALL | of10.cstruct.OFPFW_NW_DST_ALL | of10.cstruct.OFPFW_NW_TOS
-                | of10.cstruct.OFPFW_NW_PROTO | of10.cstruct.OFPFW_TP_SRC | of10.cstruct.OFPFW_TP_DST)
+        return (of10.OFPFW_NW_SRC_ALL | of10.OFPFW_NW_DST_ALL | of10.OFPFW_NW_TOS
+                | of10.OFPFW_NW_PROTO | of10.OFPFW_TP_SRC | of10.OFPFW_TP_DST)
     else:
         return 0
 
@@ -461,7 +461,7 @@ def receive_pkt_verify(parent, egr_ports, exp_pkt, ing_port):
     # Expect a packet from each port on egr port list
     for egr_port in egr_port_list:
         check_port = egr_port
-        if egr_port == of10.cstruct.OFPP_IN_PORT:
+        if egr_port == of10.OFPP_IN_PORT:
             check_port = ing_port
         (rcv_port, rcv_pkt, pkt_time) = parent.dataplane.poll(
             port_number=check_port, exp_pkt=exp_pkt_arg)
@@ -517,7 +517,7 @@ def match_verify(parent, req_match, res_match):
                        'Match failed: dl_type: ' + str(req_match.dl_type) +
                        " != " + str(res_match.dl_type))
 
-    if (not(req_match.wildcards & of10.cstruct.OFPFW_DL_TYPE)
+    if (not(req_match.wildcards & of10.OFPFW_DL_TYPE)
         and (req_match.dl_type == IP_ETHERTYPE)):
         parent.assertEqual(req_match.nw_tos, res_match.nw_tos,
                            'Match failed: nw_tos: ' + str(req_match.nw_tos) +
@@ -532,7 +532,7 @@ def match_verify(parent, req_match, res_match):
                            'Match failed: nw_dst: ' + str(req_match.nw_dst) +
                            " != " + str(res_match.nw_dst))
 
-        if (not(req_match.wildcards & of10.cstruct.OFPFW_NW_PROTO)
+        if (not(req_match.wildcards & of10.OFPFW_NW_PROTO)
             and ((req_match.nw_proto == TCP_PROTOCOL)
                  or (req_match.nw_proto == UDP_PROTOCOL))):
             parent.assertEqual(req_match.tp_src, res_match.tp_src,
@@ -565,7 +565,7 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None
     if wildcards is None:
         wildcards = required_wildcards(parent)
     if in_band:
-        wildcards &= ~of10.cstruct.OFPFW_IN_PORT
+        wildcards &= ~of10.OFPFW_IN_PORT
     match.wildcards = wildcards
     match.in_port = ing_port
 
@@ -578,7 +578,7 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None
     request.match = match
     request.buffer_id = 0xffffffff
     if check_expire:
-        request.flags |= of10.cstruct.OFPFF_SEND_FLOW_REM
+        request.flags |= of10.OFPFF_SEND_FLOW_REM
         request.hard_timeout = 1
 
     if action_list is not None:
@@ -750,7 +750,7 @@ def flow_match_test(parent, port_map, wildcards=None, dl_vlan=-1, pkt=None,
         egr_ports = get_egr_list(parent, of_ports, egr_count, 
                                  exclude_list=[ingress_port])
         if ing_port:
-            egr_ports.append(of10.cstruct.OFPP_IN_PORT)
+            egr_ports.append(of10.OFPP_IN_PORT)
         if len(egr_ports) == 0:
             parent.assertTrue(0, "Failed to generate egress port list")
 
@@ -770,7 +770,7 @@ def flow_match_test(parent, port_map, wildcards=None, dl_vlan=-1, pkt=None,
     egr_ports = get_egr_list(parent, of_ports, egr_count,
                              exclude_list=[ingress_port])
     if ing_port:
-        egr_ports.append(of10.cstruct.OFPP_IN_PORT)
+        egr_ports.append(of10.OFPP_IN_PORT)
     flow_match_test_pktout(parent, ingress_port, egr_ports,
                            dl_vlan=dl_vlan,
                            pkt=pkt, exp_pkt=exp_pkt,
@@ -970,9 +970,9 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
 # If in_band is true, then only drop from first test port
 def flow_mod_gen(port_map, in_band):
     request = of10.message.flow_mod()
-    request.match.wildcards = of10.cstruct.OFPFW_ALL
+    request.match.wildcards = of10.OFPFW_ALL
     if in_band:
-        request.match.wildcards = of10.cstruct.OFPFW_ALL - of10.cstruct.OFPFW_IN_PORT
+        request.match.wildcards = of10.OFPFW_ALL - of10.OFPFW_IN_PORT
         for of_port, ifname in port_map.items(): # Grab first port
             break
         request.match.in_port = of_port
@@ -1003,10 +1003,10 @@ def all_stats_get(parent):
     lookups, matched
     """
     stat_req = of10.message.aggregate_stats_request()
-    stat_req.match = of10.cstruct.ofp_match()
-    stat_req.match.wildcards = of10.cstruct.OFPFW_ALL
+    stat_req.match = of10.ofp_match()
+    stat_req.match.wildcards = of10.OFPFW_ALL
     stat_req.table_id = 0xff
-    stat_req.out_port = of10.cstruct.OFPP_NONE
+    stat_req.out_port = of10.OFPP_NONE
 
     rv = {}
 
@@ -1154,7 +1154,7 @@ def get_stats(test, req):
         stats.extend(reply.stats)
     return stats
 
-def get_flow_stats(test, match, table_id=0xff, out_port=of10.cstruct.OFPP_NONE):
+def get_flow_stats(test, match, table_id=0xff, out_port=of10.OFPP_NONE):
     """
     Retrieve a list of flow stats entries.
     """
@@ -1178,7 +1178,7 @@ def get_queue_stats(test, port_no, queue_id):
     return get_stats(test, req)
 
 def verify_flow_stats(test, match, table_id=0xff,
-                      out_port=of10.cstruct.OFPP_NONE,
+                      out_port=of10.OFPP_NONE,
                       initial=[],
                       pkts=None, bytes=None):
     """

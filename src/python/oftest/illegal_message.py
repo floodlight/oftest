@@ -2,7 +2,7 @@
 Support an illegal message
 """
 
-from cstruct import *
+import of10
 
 ILLEGAL_MESSAGE_TYPE=217
 
@@ -23,7 +23,7 @@ class illegal_message_type:
     """
 
     def __init__(self):
-        self.header = ofp_header()
+        self.header = of10.ofp_header()
         self.header.type = ILLEGAL_MESSAGE_TYPE
         self.data = ""
 
@@ -63,7 +63,7 @@ class illegal_message_type:
         string.
 
         """
-        length = OFP_HEADER_BYTES
+        length = of10.OFP_HEADER_BYTES
 
         length += len(self.data)
         return length
