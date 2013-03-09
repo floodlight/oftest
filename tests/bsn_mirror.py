@@ -11,7 +11,7 @@ import oftest.base_tests as base_tests
 
 from oftest.testutils import *
 
-class bsn_action_mirror(ofp.action.action_vendor):
+class bsn_action_mirror(ofp.action.vendor):
     def __init__(self):
         self.type = ofp.OFPAT_VENDOR
         self.len = 24
@@ -139,7 +139,7 @@ class BSNMirrorAction(base_tests.SimpleDataPlane):
         act2 = bsn_action_mirror()
         act2.dest_port = mirror_ports[1]
         act2.copy_stage = 0
-        act3 = ofp.action.action_output()
+        act3 = ofp.action.output()
         act3.port = ports[1]
         flow_mod = ofp.message.flow_mod()
         flow_mod.match = match

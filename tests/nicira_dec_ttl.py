@@ -7,19 +7,19 @@ import oftest.base_tests as base_tests
 
 from oftest.testutils import *
 
-class action_nx_dec_ttl(ofp.action.action_vendor):
+class action_nx_dec_ttl(ofp.action.vendor):
     def __init__(self):
-        ofp.action.action_vendor.__init__(self)
+        ofp.action.vendor.__init__(self)
         self.vendor = 0x00002320
 
     def pack(self):
-        return ofp.action.action_vendor.pack(self) + struct.pack("!HHL", 18, 0x0, 0x0)
+        return ofp.action.vendor.pack(self) + struct.pack("!HHL", 18, 0x0, 0x0)
 
     def __len__(self):
         return 16
 
     def show(self, prefix=''):
-        return prefix + 'dec_ttl: ' + '\n' + ofp.action.action_vendor.show(self)
+        return prefix + 'dec_ttl: ' + '\n' + ofp.action.vendor.show(self)
 
 @nonstandard
 class TtlDecrement(base_tests.SimpleDataPlane):

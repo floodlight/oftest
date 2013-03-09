@@ -104,7 +104,7 @@ class DirectPacket(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = ofp.action.action_output()
+        act = ofp.action.output()
 
         for idx in range(len(of_ports)):
             delete_all_flows(self.controller)
@@ -173,7 +173,7 @@ class DirectPacketController(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None,
                         "Could not generate flow match from pkt")
-        act = ofp.action.action_output()
+        act = ofp.action.output()
 
         delete_all_flows(self.controller)
 
@@ -251,7 +251,7 @@ class DirectPacketQueue(base_tests.SimpleDataPlane):
         (queue_stats, p) = self.controller.transact(request)
         self.assertNotEqual(queue_stats, None, "Queue stats request failed")
 
-        act = ofp.action.action_enqueue()
+        act = ofp.action.enqueue()
 
         for idx in range(len(of_ports)):
             ingress_port = of_ports[idx]
@@ -376,7 +376,7 @@ class DirectPacketControllerQueue(base_tests.SimpleDataPlane):
             skip_message_emit(self, "Enqueue packet to controller")
             return
 
-        act = ofp.action.action_enqueue()
+        act = ofp.action.enqueue()
 
         for idx in range(len(of_ports)):
             ingress_port = of_ports[idx]
@@ -501,7 +501,7 @@ class DirectTwoPorts(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = ofp.action.action_output()
+        act = ofp.action.output()
 
         for idx in range(len(of_ports)):
             delete_all_flows(self.controller)
@@ -559,7 +559,7 @@ class DirectMCNonIngress(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = ofp.action.action_output()
+        act = ofp.action.output()
 
         for ingress_port in of_ports:
             delete_all_flows(self.controller)
@@ -611,7 +611,7 @@ class DirectMC(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = ofp.action.action_output()
+        act = ofp.action.output()
 
         for ingress_port in of_ports:
             delete_all_flows(self.controller)
@@ -659,7 +659,7 @@ class Flood(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = ofp.action.action_output()
+        act = ofp.action.output()
 
         for of_port in of_ports:
             # Clear relevant bits that might block ports
@@ -713,7 +713,7 @@ class FloodPlusIngress(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = ofp.action.action_output()
+        act = ofp.action.output()
 
         for ingress_port in of_ports:
             delete_all_flows(self.controller)
@@ -758,7 +758,7 @@ class All(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = ofp.action.action_output()
+        act = ofp.action.output()
 
         for ingress_port in of_ports:
             delete_all_flows(self.controller)
@@ -804,7 +804,7 @@ class AllPlusIngress(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = ofp.action.action_output()
+        act = ofp.action.output()
 
         for ingress_port in of_ports:
             delete_all_flows(self.controller)
@@ -851,7 +851,7 @@ class FloodMinusPort(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = ofp.action.action_output()
+        act = ofp.action.output()
 
         # Clear OFPPC_NO_FLOOD on each port
         for of_port in of_ports:
@@ -1263,7 +1263,7 @@ class AddVLANTag(BaseMatchCase):
         pkt = simple_tcp_packet(pktlen=len)
         exp_pkt = simple_tcp_packet(pktlen=len_w_vid, dl_vlan_enable=True, 
                                     dl_vlan=new_vid)
-        vid_act = ofp.action.action_set_vlan_vid()
+        vid_act = ofp.action.set_vlan_vid()
         vid_act.vlan_vid = new_vid
 
         flow_match_test(self, config["port_map"], pkt=pkt, 
@@ -1318,7 +1318,7 @@ class ModifyVID(BaseMatchCase):
 
         pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=old_vid)
         exp_pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=new_vid)
-        vid_act = ofp.action.action_set_vlan_vid()
+        vid_act = ofp.action.set_vlan_vid()
         vid_act.vlan_vid = new_vid
 
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt,
@@ -1362,7 +1362,7 @@ class ModifyVIDWithTagMatchWildcarded(BaseMatchCase):
                                     dl_vlan=new_vid)
         wildcards = (required_wildcards(self) | ofp.OFPFW_DL_VLAN |
                      ofp.OFPFW_DL_VLAN_PCP)
-        vid_act = ofp.action.action_set_vlan_vid()
+        vid_act = ofp.action.set_vlan_vid()
         vid_act.vlan_vid = new_vid
         request = flow_msg_create(self, untagged_pkt, ing_port=ing_port, 
                                   wildcards=wildcards, egr_ports=egr_ports,
@@ -1394,7 +1394,7 @@ class ModifyVlanPcp(BaseMatchCase):
 
         pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vid, dl_vlan_pcp=old_vlan_pcp)
         exp_pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vid, dl_vlan_pcp=new_vlan_pcp)
-        vid_act = ofp.action.action_set_vlan_pcp()
+        vid_act = ofp.action.set_vlan_pcp()
         vid_act.vlan_pcp = new_vlan_pcp
 
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt,
@@ -1416,7 +1416,7 @@ class StripVLANTag(BaseMatchCase):
         pkt = simple_tcp_packet(pktlen=len_w_vid, dl_vlan_enable=True, 
                                 dl_vlan=old_vid)
         exp_pkt = simple_tcp_packet(pktlen=len)
-        vid_act = ofp.action.action_strip_vlan()
+        vid_act = ofp.action.strip_vlan()
 
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt,
                         action_list=[vid_act])
@@ -1440,7 +1440,7 @@ class StripVLANTagWithTagMatchWildcarded(BaseMatchCase):
         exp_pkt = simple_tcp_packet(pktlen=len_untagged)
         wildcards = (required_wildcards(self) | ofp.OFPFW_DL_VLAN |
                      ofp.OFPFW_DL_VLAN_PCP)
-        vid_act = ofp.action.action_strip_vlan()
+        vid_act = ofp.action.strip_vlan()
 
         flow_match_test(self, config["port_map"], 
                         wildcards=wildcards,
@@ -1749,8 +1749,8 @@ class FlowToggle(BaseMatchCase):
         logging.info("Running flow toggle with %d flows, %d iterations" %
                        (flow_count, iter_count))
         acts = []
-        acts.append(ofp.action.action_output())
-        acts.append(ofp.action.action_output())
+        acts.append(ofp.action.output())
+        acts.append(ofp.action.output())
     
         of_ports = config["port_map"].keys()
         if len(of_ports) < 3:
@@ -1945,7 +1945,7 @@ class MatchEach(base_tests.SimpleDataPlane):
                 request.match = match
                 request.buffer_id = 0xffffffff
                 request.priority = priority
-                act = ofp.action.action_output()
+                act = ofp.action.output()
                 act.port = output_port
                 request.actions.add(act)
                 logging.info("Inserting flow")
@@ -2091,7 +2091,7 @@ class DirectBadPacketBase(base_tests.SimpleDataPlane):
         request2.match.in_port = ingress_port
 
         request2.priority = 0
-        act = ofp.action.action_output()
+        act = ofp.action.output()
         act.port = ofp.OFPP_IN_PORT
         request2.actions.add(act)
         self.controller.message_send(request2)
@@ -2181,7 +2181,7 @@ class DirectBadIpTcpPacketsBase(DirectBadPacketBase):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         
         def testPacket(title, pkt, result):
-            act = ofp.action.action_output()
+            act = ofp.action.output()
             pkts = [
                 [title, pkt, result]
             ]
@@ -2377,7 +2377,7 @@ class DirectBadLlcPackets(DirectBadPacketBase):
             self.assertTrue(match is not None, 
                             "Could not generate flow match from pkt")
             match.wildcards &= ~ofp.OFPFW_IN_PORT
-            act = ofp.action.action_output()
+            act = ofp.action.output()
             
             self.testPktsAgainstFlow(
                 [[
@@ -2413,7 +2413,7 @@ class DirectBadLlcPackets(DirectBadPacketBase):
                     scapy.Ether(dst=dl_dst, src=dl_src, type=len(llc)) / llc,
                     self.RESULT_MATCH,
                 ]],
-                ofp.action.action_output(), match
+                ofp.action.output(), match
             )
     
             # Corrupt length field
@@ -2424,7 +2424,7 @@ class DirectBadLlcPackets(DirectBadPacketBase):
                     scapy.Ether(dst=dl_dst, src=dl_src, type=ethLen) / llc,
                     self.RESULT_ANY,
                 ]],
-                ofp.action.action_output(), match
+                ofp.action.output(), match
             )
             
         def testPacketEthSrcDstTypeMatch(title, llc, is_snap_ip):
@@ -2446,7 +2446,7 @@ class DirectBadLlcPackets(DirectBadPacketBase):
                     scapy.Ether(dst=dl_dst, src=dl_src, type=len(llc)) / llc,
                     is_match,
                 ]],
-                ofp.action.action_output(), match
+                ofp.action.output(), match
             )
     
             # Corrupt length field
@@ -2457,7 +2457,7 @@ class DirectBadLlcPackets(DirectBadPacketBase):
                     scapy.Ether(dst=dl_dst, src=dl_src, type=ethLen) / llc,
                     self.RESULT_ANY,
                 ]],
-                ofp.action.action_output(), match
+                ofp.action.output(), match
             )
 
         def testPacket(title, llc, is_snap_ip):
@@ -2539,7 +2539,7 @@ class DirectLlcPackets(DirectBadPacketBase):
                 scapy.Ether(dst=dl_dst, src=dl_src, type=len(llc)) / llc,
                 result,
             ])
-            act = ofp.action.action_output()
+            act = ofp.action.output()
             self.testPktsAgainstFlow(pkts, act, match)
     
         def testPacketEthTypeNotEth(title, llc, is_snap):
@@ -2559,7 +2559,7 @@ class DirectLlcPackets(DirectBadPacketBase):
                 scapy.Ether(dst=dl_dst, src=dl_src, type=len(llc)) / llc,
                 result,
             ])
-            act = ofp.action.action_output()
+            act = ofp.action.output()
             self.testPktsAgainstFlow(pkts, act, match)
     
         def testPacket(title, llc, is_snap):
@@ -2648,7 +2648,7 @@ class DirectArpPackets(DirectBadPacketBase):
                 result,
             ])
     
-            act = ofp.action.action_output()
+            act = ofp.action.output()
             self.testPktsAgainstFlow(pkts, act, match)
             
         testPacket("Basic ARP",
@@ -2693,7 +2693,7 @@ class DirectVlanPackets(DirectBadPacketBase):
                 result,
             ])
     
-            act = ofp.action.action_output()
+            act = ofp.action.output()
             self.testPktsAgainstFlow(pkts, act, match)
 
         testPacket("Basic MAC matching - IPv4 payload",
@@ -2790,7 +2790,7 @@ class DirectVlanPacketsDoubleTagged(DirectVlanPackets):
                 result,
             ])
     
-            act = ofp.action.action_output()
+            act = ofp.action.output()
             self.testPktsAgainstFlow(pkts, act, match)
         testPacket("Ether matching with double VLAN tag - Wrong type match",
             self.createMatch(dl_dst=parse_mac(dl_dst), dl_src=parse_mac(dl_src),

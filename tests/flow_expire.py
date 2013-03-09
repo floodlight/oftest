@@ -42,7 +42,7 @@ class FlowExpire(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = ofp.action.action_output()
+        act = ofp.action.output()
 
         of_ports = config["port_map"].keys()
         of_ports.sort()

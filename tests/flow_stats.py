@@ -125,7 +125,7 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = ofp.action.action_output()
+        act = ofp.action.output()
 
         # build flow
         ingress_port = of_ports[0];
@@ -191,7 +191,7 @@ class TwoFlowStats(base_tests.SimpleDataPlane):
         flow_mod_msg.buffer_id = 0xffffffff
         flow_mod_msg.idle_timeout = 0
         flow_mod_msg.hard_timeout = 0
-        act = ofp.action.action_output()
+        act = ofp.action.output()
         act.port = egress_port
         flow_mod_msg.actions.add(act)
 
@@ -316,7 +316,7 @@ class AggregateStats(base_tests.SimpleDataPlane):
         flow_mod_msg.buffer_id = 0xffffffff
         flow_mod_msg.idle_timeout = 0
         flow_mod_msg.hard_timeout = 0
-        act = ofp.action.action_output()
+        act = ofp.action.output()
         act.port = egress_port
         flow_mod_msg.actions.add(act)
 
@@ -474,7 +474,7 @@ class DeletedFlowStats(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None,
                         "Could not generate flow match from pkt")
-        act = ofp.action.action_output()
+        act = ofp.action.output()
 
         # build flow
         ingress_port = of_ports[0];

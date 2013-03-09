@@ -219,7 +219,7 @@ class PacketOut(base_tests.SimpleDataPlane):
             
                 msg = ofp.message.packet_out()
                 msg.data = str(outpkt)
-                act = ofp.action.action_output()
+                act = ofp.action.output()
                 act.port = dp_port
                 msg.actions.add(act)
 

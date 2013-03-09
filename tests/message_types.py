@@ -361,7 +361,7 @@ class PacketInSizeAction(base_tests.SimpleDataPlane):
             request = ofp.message.flow_mod()
             request.match = match
             request.buffer_id = 0xffffffff
-            act = ofp.action.action_output()
+            act = ofp.action.output()
             act.port = ofp.OFPP_CONTROLLER
             act.max_len = bytes 
             request.actions.add(act)
@@ -459,7 +459,7 @@ class PacketInBodyAction(base_tests.SimpleDataPlane):
         #Insert a flow entry with action output to controller 
         request = ofp.message.flow_mod()
         request.match = match
-        act = ofp.action.action_output()
+        act = ofp.action.output()
         act.port = ofp.OFPP_CONTROLLER
         act.max_len = 65535 # Send the complete packet and do not buffer
         request.actions.add(act)

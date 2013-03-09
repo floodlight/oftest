@@ -26,7 +26,7 @@ def match_send_flowadd(self, match, priority, port):
     msg.match = match
     if priority != None :
         msg.priority = priority
-    act = ofp.action.action_output()
+    act = ofp.action.output()
     act.port = port 
     msg.actions.add(act)
     self.controller.message_send(msg)
@@ -328,7 +328,7 @@ def strict_modify_flow_action(self,egress_port,match,priority=None):
     msg5.cookie = random.randint(0,9007199254740992)
     msg5.command = ofp.OFPFC_MODIFY_STRICT
     msg5.buffer_id = 0xffffffff
-    act5 = ofp.action.action_output()
+    act5 = ofp.action.output()
     act5.port = egress_port
     msg5.actions.add(act5)
 
@@ -350,7 +350,7 @@ def modify_flow_action(self,of_ports,match,priority=None):
     #out_port will be ignored for flow adds and flow modify (here for test-case Add_Modify_With_Outport)
     msg8.out_port = of_ports[3]
     msg8.buffer_id = 0xffffffff
-    act8 = ofp.action.action_output()
+    act8 = ofp.action.output()
     act8.port = of_ports[2]
     msg8.actions.add(act8)
 
@@ -374,7 +374,7 @@ def enqueue(self,ingress_port,egress_port,egress_queue_id):
     request = ofp.message.flow_mod()
     request.match = match
     request.buffer_id = 0xffffffff
-    act = ofp.action.action_enqueue()
+    act = ofp.action.enqueue()
     act.port     = egress_port
     act.queue_id = egress_queue_id
     request.actions.add(act)

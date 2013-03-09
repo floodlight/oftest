@@ -526,38 +526,38 @@ class Flow_Cfg:
                 pass                    # OUTPUT actions must come last
             elif a == ofp.OFPAT_SET_VLAN_VID:
                if not strip_vlanf:
-                  act = ofp.action.action_set_vlan_vid()
+                  act = ofp.action.set_vlan_vid()
                   act.vlan_vid = fi.rand_vlan()
                   set_vlanf = True
             elif a == ofp.OFPAT_SET_VLAN_PCP:
                if not strip_vlanf:
-                  act = ofp.action.action_set_vlan_pcp()
+                  act = ofp.action.set_vlan_pcp()
                   act.vlan_pcp = random.randint(0, (1 << 3) - 1)
                   set_vlanf = True
             elif a == ofp.OFPAT_STRIP_VLAN:
                if not set_vlanf:
-                  act = ofp.action.action_strip_vlan()
+                  act = ofp.action.strip_vlan()
                   strip_vlanf = True
             elif a == ofp.OFPAT_SET_DL_SRC:
-                act = ofp.action.action_set_dl_src()
+                act = ofp.action.set_dl_src()
                 act.dl_addr = fi.rand_dl_addr()
             elif a == ofp.OFPAT_SET_DL_DST:
-                act = ofp.action.action_set_dl_dst()
+                act = ofp.action.set_dl_dst()
                 act.dl_addr = fi.rand_dl_addr()
             elif a == ofp.OFPAT_SET_NW_SRC:
-                act = ofp.action.action_set_nw_src()
+                act = ofp.action.set_nw_src()
                 act.nw_addr = fi.rand_ip_addr()
             elif a == ofp.OFPAT_SET_NW_DST:
-                act = ofp.action.action_set_nw_dst()
+                act = ofp.action.set_nw_dst()
                 act.nw_addr = fi.rand_ip_addr()
             elif a == ofp.OFPAT_SET_NW_TOS:
-                act = ofp.action.action_set_nw_tos()
+                act = ofp.action.set_nw_tos()
                 act.nw_tos = fi.rand_ip_tos()
             elif a == ofp.OFPAT_SET_TP_SRC:
-                act = ofp.action.action_set_tp_src()
+                act = ofp.action.set_tp_src()
                 act.tp_port = fi.rand_l4_port()
             elif a == ofp.OFPAT_SET_TP_DST:
-                act = ofp.action.action_set_tp_dst()
+                act = ofp.action.set_tp_dst()
                 act.tp_port = fi.rand_l4_port()
             elif a == ofp.OFPAT_ENQUEUE:
                 pass                    # Enqueue actions must come last
@@ -571,7 +571,7 @@ class Flow_Cfg:
             # In not forecd, one third of the time, include ENQUEUE actions
             # at end of list
             # At most 1 ENQUEUE action
-            act = ofp.action.action_enqueue()
+            act = ofp.action.enqueue()
             (act.port, act.queue_id) = rand_pick(valid_queues)
             self.actions.add(act)
         if (((1 << ofp.OFPAT_OUTPUT) & actions_force) != 0 \
@@ -586,7 +586,7 @@ class Flow_Cfg:
                 else random.randint(1, len(valid_ports))
             port_idxs = port_idxs[0 : n]
             for pi in port_idxs:
-                act = ofp.action.action_output()
+                act = ofp.action.output()
                 act.port = valid_ports[pi]
                 if act.port != ofp.OFPP_IN_PORT \
                    or wildcard_get(self.match.wildcards, ofp.OFPFW_IN_PORT) == 0:
@@ -636,45 +636,45 @@ class Flow_Cfg:
                 port_idxs = shuffle(range(len(valid_ports)))
                 port_idxs = port_idxs[0 : random.randint(1, len(valid_ports))]
                 for pi in port_idxs:
-                    act = ofp.action.action_output()
+                    act = ofp.action.output()
                     act.port = valid_ports[pi]
                     self.actions.add(act)
             elif a == ofp.OFPAT_SET_VLAN_VID:
-                act = ofp.action.action_set_vlan_vid()
+                act = ofp.action.set_vlan_vid()
                 act.vlan_vid = fi.rand_vlan()
                 self.actions.add(act)
             elif a == ofp.OFPAT_SET_VLAN_PCP:
-                act = ofp.action.action_set_vlan_pcp()
+                act = ofp.action.set_vlan_pcp()
                 act.vlan_pcp = random.randint(0, (1 << 3) - 1)
             elif a == ofp.OFPAT_STRIP_VLAN:
-                act = ofp.action.action_strip_vlan()
+                act = ofp.action.strip_vlan()
                 self.actions.add(act)
             elif a == ofp.OFPAT_SET_DL_SRC:
-                act = ofp.action.action_set_dl_src()
+                act = ofp.action.set_dl_src()
                 act.dl_addr = fi.rand_dl_addr()
                 self.actions.add(act)
             elif a == ofp.OFPAT_SET_DL_DST:
-                act = ofp.action.action_set_dl_dst()
+                act = ofp.action.set_dl_dst()
                 act.dl_addr = fi.rand_dl_addr()
                 self.actions.add(act)
             elif a == ofp.OFPAT_SET_NW_SRC:
-                act = ofp.action.action_set_nw_src()
+                act = ofp.action.set_nw_src()
                 act.nw_addr = fi.rand_ip_addr()
                 self.actions.add(act)
             elif a == ofp.OFPAT_SET_NW_DST:
-                act = ofp.action.action_set_nw_dst()
+                act = ofp.action.set_nw_dst()
                 act.nw_addr = fi.rand_ip_addr()
                 self.actions.add(act)
             elif a == ofp.OFPAT_SET_NW_TOS:
-                act = ofp.action.action_set_nw_tos()
+                act = ofp.action.set_nw_tos()
                 act.nw_tos = fi.rand_ip_tos()
                 self.actions.add(act)
             elif a == ofp.OFPAT_SET_TP_SRC:
-                act = ofp.action.action_set_tp_src()
+                act = ofp.action.set_tp_src()
                 act.tp_port = fi.rand_l4_port()
                 self.actions.add(act)
             elif a == ofp.OFPAT_SET_TP_DST:
-                act = ofp.action.action_set_tp_dst()
+                act = ofp.action.set_tp_dst()
                 act.tp_port = fi.rand_l4_port()
                 self.actions.add(act)
             elif a == ofp.OFPAT_ENQUEUE:
@@ -684,7 +684,7 @@ class Flow_Cfg:
                 qidxs = shuffle(range(len(valid_queues)))
                 qidxs = qidxs[0 : random.randint(1, len(valid_queues))]
                 for qi in qidxs:
-                    act = ofp.action.action_enqueue()
+                    act = ofp.action.enqueue()
                     (act.port, act.queue_id) = valid_queues[qi]
                     self.actions.add(act)
 

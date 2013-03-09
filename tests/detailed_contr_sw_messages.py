@@ -59,7 +59,7 @@ class OverlapChecking(base_tests.SimpleDataPlane):
         msg3.cookie = random.randint(0,9007199254740992)
         msg3.buffer_id = 0xffffffff
        
-        act3 = ofp.action.action_output()
+        act3 = ofp.action.output()
         act3.port = of_ports[1]
         msg3.actions.add(act3)
         self.controller.message_send(msg3)
@@ -180,7 +180,7 @@ class EmerFlowTimeout(base_tests.SimpleProtocol):
         request.hard_timeout =9
         request.idle_timeout =9
         
-        act = ofp.action.action_output()
+        act = ofp.action.output()
         act.port = of_ports[1]
         
         request.actions.add(act)
@@ -226,7 +226,7 @@ class MissingModifyAdd(base_tests.SimpleDataPlane):
         request.match.in_port = of_ports[0]
         request.cookie = random.randint(0,9007199254740992)
         request.buffer_id = 0xffffffff
-        act3 = ofp.action.action_output()
+        act3 = ofp.action.output()
         act3.port = of_ports[1]
         request.actions.add(act3)
 
@@ -436,7 +436,7 @@ class DeleteEmerFlow(base_tests.SimpleProtocol):
         request.match = match
         request.command = ofp.OFPFC_ADD
         request.flags = request.flags|ofp.OFPFF_EMERG|ofp.OFPFF_SEND_FLOW_REM
-        act = ofp.action.action_output()
+        act = ofp.action.output()
         act.port = of_ports[1]
         request.actions.add(act)
 
@@ -753,7 +753,7 @@ class FlowTimeout(base_tests.SimpleDataPlane):
         msg3.hard_timeout = 1
         msg3.buffer_id = 0xffffffff
         msg3.match = match3
-        act3 = ofp.action.action_output()
+        act3 = ofp.action.output()
         act3.port = of_ports[1]
         msg3.actions.add(act3)
 

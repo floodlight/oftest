@@ -58,7 +58,7 @@ class LoadBarrier(base_tests.SimpleProtocol):
         match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         match.in_port = lb_port
-        act = ofp.action.action_output()
+        act = ofp.action.output()
         act.port = lb_port + 1
 
         request = ofp.message.flow_mod()
@@ -68,7 +68,7 @@ class LoadBarrier(base_tests.SimpleProtocol):
         request.buffer_id = 0xffffffff
         request.actions.add(act)
 
-        act = ofp.action.action_output()
+        act = ofp.action.output()
         act.port = ofp.OFPP_CONTROLLER
         request.actions.add(act)
 
@@ -79,7 +79,7 @@ class LoadBarrier(base_tests.SimpleProtocol):
         msg = ofp.message.packet_out()
         msg.in_port = lb_port
         msg.data = str(pkt)
-        act = ofp.action.action_output()
+        act = ofp.action.output()
         act.port = lb_port + 1
         msg.actions.add(act)
         logging.info("Sleeping before starting storm")
@@ -168,7 +168,7 @@ class PacketOutLoad(base_tests.SimpleDataPlane):
                msg = ofp.message.packet_out()
                msg.in_port = ofp.OFPP_NONE
                msg.data = str(outpkt)
-               act = ofp.action.action_output()
+               act = ofp.action.output()
                act.port = dp_port
                msg.actions.add(act)
 
@@ -213,7 +213,7 @@ class FlowModLoad(base_tests.SimpleProtocol):
             match.wildcards = ofp.OFPFW_ALL & ~ofp.OFPFW_DL_VLAN & ~ofp.OFPFW_DL_DST
             match.dl_vlan = ofp.OFP_VLAN_NONE
             match.dl_dst = [0, 1, 2, 3, i / 256, i % 256]
-            act = ofp.action.action_output()
+            act = ofp.action.output()
             act.port = ofp.OFPP_CONTROLLER
             request = ofp.message.flow_mod()
             request.command = ofp.OFPFC_ADD
