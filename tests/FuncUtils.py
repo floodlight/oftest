@@ -6,9 +6,7 @@ import random
 
 import oftest.controller as controller
 import ofp
-import oftest.message as message
 import oftest.dataplane as dataplane
-import oftest.action as action
 import oftest.parse as parse
 import logging
 import types
@@ -20,7 +18,7 @@ from time import sleep
 #################### Functions for various types of flow_mod  ##########################################################################################
 
 def match_send_flowadd(self, match, priority, port):
-    msg = message.flow_mod()
+    msg = ofp.message.flow_mod()
     msg.out_port = ofp.OFPP_NONE
     msg.command = ofp.OFPFC_ADD
     # msg.cookie = random.randint(0,9007199254740992)
@@ -28,7 +26,7 @@ def match_send_flowadd(self, match, priority, port):
     msg.match = match
     if priority != None :
         msg.priority = priority
-    act = action.action_output()
+    act = ofp.action.action_output()
     act.port = port 
     msg.actions.add(act)
     self.controller.message_send(msg)
@@ -325,12 +323,12 @@ def strict_modify_flow_action(self,egress_port,match,priority=None):
 # Strict Modify the flow Action 
         
     #Create a flow_mod message , command MODIFY_STRICT
-    msg5 = message.flow_mod()
+    msg5 = ofp.message.flow_mod()
     msg5.match = match
     msg5.cookie = random.randint(0,9007199254740992)
     msg5.command = ofp.OFPFC_MODIFY_STRICT
     msg5.buffer_id = 0xffffffff
-    act5 = action.action_output()
+    act5 = ofp.action.action_output()
     act5.port = egress_port
     msg5.actions.add(act5)
 
@@ -345,14 +343,14 @@ def modify_flow_action(self,of_ports,match,priority=None):
 # Modify the flow action
         
     #Create a flow_mod message , command MODIFY 
-    msg8 = message.flow_mod()
+    msg8 = ofp.message.flow_mod()
     msg8.match = match
     msg8.cookie = random.randint(0,9007199254740992)
     msg8.command = ofp.OFPFC_MODIFY
     #out_port will be ignored for flow adds and flow modify (here for test-case Add_Modify_With_Outport)
     msg8.out_port = of_ports[3]
     msg8.buffer_id = 0xffffffff
-    act8 = action.action_output()
+    act8 = ofp.action.action_output()
     act8.port = of_ports[2]
     msg8.actions.add(act8)
 
@@ -373,10 +371,10 @@ def enqueue(self,ingress_port,egress_port,egress_queue_id):
             "Could not generate flow match from pkt")
     
     match.in_port = ingress_port
-    request = message.flow_mod()
+    request = ofp.message.flow_mod()
     request.match = match
     request.buffer_id = 0xffffffff
-    act = action.action_enqueue()
+    act = ofp.action.action_enqueue()
     act.port     = egress_port
     act.queue_id = egress_queue_id
     request.actions.add(act)
@@ -391,7 +389,7 @@ def enqueue(self,ingress_port,egress_port,egress_queue_id):
 def get_flowstats(self,match):
     # Generate flow_stats request
     
-    stat_req = message.flow_stats_request()
+    stat_req = ofp.message.flow_stats_request()
     stat_req.match = match
     stat_req.table_id = 0xff
     stat_req.out_port = ofp.OFPP_NONE
@@ -405,7 +403,7 @@ def get_flowstats(self,match):
 def get_portstats(self,port_num):
 
 # Return all the port counters in the form a tuple 
-    port_stats_req = message.port_stats_request()
+    port_stats_req = ofp.message.port_stats_request()
     port_stats_req.port_no = port_num  
     response,pkt = self.controller.transact(port_stats_req)
     self.assertTrue(response is not None,"No response received for port stats request") 
@@ -443,7 +441,7 @@ def get_portstats(self,port_num):
 def get_queuestats(self,port_num,queue_id):
 #Generate Queue Stats request 
 
-    request = message.queue_stats_request()
+    request = ofp.message.queue_stats_request()
     request.port_no  = port_num
     request.queue_id = queue_id
     (queue_stats, p) = self.controller.transact(request)
@@ -454,7 +452,7 @@ def get_queuestats(self,port_num,queue_id):
 def get_tablestats(self):
 # Send Table_Stats request (retrieve current table counters )
 
-    stat_req = message.table_stats_request()
+    stat_req = ofp.message.table_stats_request()
     response, pkt = self.controller.transact(stat_req,
                                                      timeout=5)
     self.assertTrue(response is not None, 
@@ -474,7 +472,7 @@ def get_tablestats(self):
 
 def verify_tablestats(self,expect_lookup=None,expect_match=None,expect_active=None):
 
-    stat_req = message.table_stats_request()
+    stat_req = ofp.message.table_stats_request()
     
     for i in range(0,100):
 
@@ -518,7 +516,7 @@ def strict_delete(self,match,priority=None):
 # Issue Strict Delete 
         
     #Create flow_mod message, command DELETE_STRICT
-    msg4 = message.flow_mod()
+    msg4 = ofp.message.flow_mod()
     msg4.out_port = ofp.OFPP_NONE
     msg4.command = ofp.OFPFC_DELETE_STRICT
     msg4.buffer_id = 0xffffffff
@@ -535,7 +533,7 @@ def nonstrict_delete(self,match,priority=None):
 # Issue Non_Strict Delete 
         
     #Create flow_mod message, command DELETE
-    msg6 = message.flow_mod()
+    msg6 = ofp.message.flow_mod()
     msg6.out_port = ofp.OFPP_NONE
     msg6.command = ofp.OFPFC_DELETE
     msg6.buffer_id = 0xffffffff
@@ -574,7 +572,7 @@ def sw_supported_actions(parent,use_cache=False):
 
     cache_supported_actions = None
     if cache_supported_actions is None or not use_cache:
-        request = message.features_request()
+        request = ofp.message.features_request()
         (reply, pkt) = parent.controller.transact(request)
         parent.assertTrue(reply is not None, "Did not get response to ftr req")
         cache_supported_actions = reply.actions

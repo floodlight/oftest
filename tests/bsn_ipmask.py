@@ -7,7 +7,6 @@ import scapy
 from oftest import config
 import oftest.controller as controller
 import ofp
-import oftest.message as message
 import oftest.base_tests as base_tests
 
 from oftest.testutils import *
@@ -48,7 +47,7 @@ class BSNConfigIPMask(base_tests.SimpleDataPlane):
         given wildcard index
         """
         logging.info("Setting index %d to mask is %s" % (index, mask))
-        m = message.vendor()
+        m = ofp.message.vendor()
         m.vendor = 0x005c16c7
         m.data = struct.pack("!LBBBBL", 0, index, 0, 0, 0, mask)
         self.controller.message_send(m)
@@ -58,7 +57,7 @@ class BSNConfigIPMask(base_tests.SimpleDataPlane):
         Use the BSN_GET_IP_MASK_REQUEST vendor command to get the current IP mask
         for the given wildcard index
         """
-        m = message.vendor()
+        m = ofp.message.vendor()
         m.vendor = 0x005c16c7
         m.data = struct.pack( "!LBBBBL", 1, index, 0, 0, 0, 0 )
         self.controller.message_send(m)

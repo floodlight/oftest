@@ -7,7 +7,6 @@ import logging
 from oftest import config
 import oftest.controller as controller
 import ofp
-import oftest.message as message
 import oftest.base_tests as base_tests
 
 from oftest.testutils import *
@@ -31,7 +30,7 @@ class NiciraRoleRequest(base_tests.SimpleDataPlane):
         given wildcard index
         """
         logging.info("Sending role request %s" % role)
-        m = message.vendor()
+        m = ofp.message.vendor()
         m.vendor = NXT_VENDOR
         m.data = struct.pack("!LL", NXT_ROLE_REQUEST, NXT_ROLE_VALUE[role])
         return m

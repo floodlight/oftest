@@ -10,9 +10,7 @@ import unittest
 from oftest import config
 import oftest.controller as controller
 import ofp
-import oftest.message as message
 import oftest.dataplane as dataplane
-import oftest.action as action
 import oftest.parse as parse
 import oftest.base_tests as base_tests
 
@@ -38,7 +36,7 @@ def flow_caps_common(obj, is_exact=True):
         break;
     match.in_port = port
     match.nw_src = 1
-    request = message.flow_mod()
+    request = ofp.message.flow_mod()
     count_check = 101  # fixme:  better way to determine this.
     if is_exact:
         match.wildcards = 0
@@ -49,7 +47,7 @@ def flow_caps_common(obj, is_exact=True):
     request.buffer_id = 0xffffffff      # set to NONE
     logging.info(request.show())
 
-    tstats = message.table_stats_request()
+    tstats = ofp.message.table_stats_request()
     try:  # Determine the table index to check (or "all")
         table_idx = config["caps_table_idx"]
     except:

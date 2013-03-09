@@ -7,7 +7,6 @@ import logging
 from oftest import config
 import oftest.controller as controller
 import ofp
-import oftest.message as message
 import oftest.base_tests as base_tests
 
 from oftest.testutils import *
@@ -23,7 +22,7 @@ class BSNShellCommand(base_tests.SimpleDataPlane):
         Use the BSN_SHELL_COMMAND vendor command to run the given command
         and receive the output
         """
-        m = message.vendor()
+        m = ofp.message.vendor()
         m.vendor = 0x005c16c7
         m.data = struct.pack("!LL", 6, 0) + cmd
         rc = self.controller.message_send(m)

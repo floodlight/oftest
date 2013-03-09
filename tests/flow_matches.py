@@ -13,9 +13,7 @@ import random
 from oftest import config
 import oftest.controller as controller
 import ofp
-import oftest.message as message
 import oftest.dataplane as dataplane
-import oftest.action as action
 import oftest.parse as parse
 import oftest.base_tests as base_tests
 import time

@@ -15,9 +15,7 @@ import time
 from oftest import config
 import oftest.controller as controller
 import ofp
-import oftest.message as message
 import oftest.dataplane as dataplane
-import oftest.action as action
 import oftest.parse as parse
 import oftest.base_tests as base_tests
 
@@ -51,7 +49,7 @@ class NoAction(base_tests.SimpleDataPlane):
         match.wildcards=ofp.OFPFW_ALL
         match.in_port = of_ports[0]
         
-        msg = message.flow_mod()
+        msg = ofp.message.flow_mod()
         msg.out_port = ofp.OFPP_NONE
         msg.command = ofp.OFPFC_ADD
         msg.buffer_id = 0xffffffff
@@ -87,7 +85,7 @@ class Announcement(base_tests.SimpleDataPlane):
         logging.info("Expecting Features Reply with supported actions")
 
         # Sending Features_Request
-        request = message.features_request()
+        request = ofp.message.features_request()
         (reply, pkt) = self.controller.transact(request)
         self.assertTrue(reply is not None, "Failed to get any reply")
         self.assertEqual(reply.header.type, ofp.OFPT_FEATURES_REPLY,'Response is not Features_reply')
@@ -144,7 +142,7 @@ class ForwardAll(base_tests.SimpleDataPlane):
         #Create a packet
         pkt = simple_tcp_packet()
         match = parse.packet_to_flow_match(pkt)
-        act = action.action_output()
+        act = ofp.action.action_output()
 
         #Delete all flows 
         delete_all_flows(self.controller)
@@ -152,7 +150,7 @@ class ForwardAll(base_tests.SimpleDataPlane):
         match.in_port = ingress_port
 
         #Create a flow mod with action.port = OFPP_ALL
-        request = message.flow_mod()
+        request = ofp.message.flow_mod()
         request.match = match
         request.match.wildcards = ofp.OFPFW_ALL&~ofp.OFPFW_IN_PORT
         act.port = ofp.OFPP_ALL
@@ -195,7 +193,7 @@ class ForwardController(base_tests.SimpleDataPlane):
         #Create packet
         pkt = simple_tcp_packet()
         match = parse.packet_to_flow_match(pkt)
-        act = action.action_output()
+        act = ofp.action.action_output()
 
         for ingress_port in of_ports:
             #Delete all flows 
@@ -204,7 +202,7 @@ class ForwardController(base_tests.SimpleDataPlane):
             match.in_port = ingress_port
             
             #Create a flow mod message
-            request = message.flow_mod()
+            request = ofp.message.flow_mod()
             request.match = match
             act.port = ofp.OFPP_CONTROLLER
             request.actions.add(act)
@@ -247,7 +245,7 @@ class ForwardLocal(base_tests.SimpleDataPlane):
         #Clear switch state
         pkt = simple_tcp_packet()
         match = parse.packet_to_flow_match(pkt)
-        act = action.action_output()
+        act = ofp.action.action_output()
 
         for ingress_port in of_ports:
             #Delete the flows
@@ -255,7 +253,7 @@ class ForwardLocal(base_tests.SimpleDataPlane):
 
             match.in_port = ingress_port
             #Create flow mod message
-            request = message.flow_mod()
+            request = ofp.message.flow_mod()
             request.match = match
             act.port = ofp.OFPP_LOCAL
             request.actions.add(act)
@@ -295,7 +293,7 @@ class ForwardFlood(base_tests.SimpleDataPlane):
         #Create a packet
         pkt = simple_tcp_packet()
         match = parse.packet_to_flow_match(pkt)
-        act = action.action_output()
+        act = ofp.action.action_output()
 
         #Delete all flows 
         delete_all_flows(self.controller)
@@ -303,7 +301,7 @@ class ForwardFlood(base_tests.SimpleDataPlane):
         match.in_port = ingress_port
 
         #Create a flow mod with action.port = OFPP_ALL
-        request = message.flow_mod()
+        request = ofp.message.flow_mod()
         request.match = match
         request.match.wildcards = ofp.OFPFW_ALL&~ofp.OFPFW_IN_PORT
         act.port = ofp.OFPP_FLOOD
@@ -345,7 +343,7 @@ class ForwardInport(base_tests.SimpleDataPlane):
         #Create a packet
         pkt = simple_tcp_packet()
         match = parse.packet_to_flow_match(pkt)
-        act = action.action_output()
+        act = ofp.action.action_output()
 
         #Delete the flows
         delete_all_flows(self.controller)
@@ -353,7 +351,7 @@ class ForwardInport(base_tests.SimpleDataPlane):
         match.in_port = ingress_port
 
         # Create a flow mod message
-        request = message.flow_mod()
+        request = ofp.message.flow_mod()
         request.match = match
         act.port = ofp.OFPP_IN_PORT
             
@@ -396,10 +394,10 @@ class ForwardTable(base_tests.SimpleDataPlane):
         (pkt,match) = wildcard_all(self,of_ports)
         
         #Create a packet out message
-        pkt_out =message.packet_out();
+        pkt_out =ofp.message.packet_out();
         pkt_out.data = str(pkt)
         pkt_out.in_port = of_ports[0]
-        act = action.action_output()
+        act = ofp.action.action_output()
         act.port = ofp.OFPP_TABLE
         pkt_out.actions.add(act)
         self.controller.message_send(pkt_out)
@@ -442,7 +440,7 @@ class AddVlanTag(base_tests.SimpleDataPlane):
         pkt = simple_tcp_packet(pktlen=len_wo_vid)
         exp_pkt = simple_tcp_packet(pktlen=len_w_vid, dl_vlan_enable=True, 
                                     dl_vlan=new_vid,dl_vlan_pcp=0)
-        vid_act = action.action_set_vlan_vid()
+        vid_act = ofp.action.action_set_vlan_vid()
         vid_act.vlan_vid = new_vid
 
         #Insert flow with action -- set vid , Send packet matching the flow, Verify recieved packet is expected packet
@@ -479,7 +477,7 @@ class ModifyVlanTag(base_tests.SimpleDataPlane):
         new_vid = 3
         pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=old_vid)
         exp_pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=new_vid)
-        vid_act = action.action_set_vlan_vid()
+        vid_act = ofp.action.action_set_vlan_vid()
         vid_act.vlan_vid = new_vid
         
         #Insert flow with action -- set vid , Send packet matching the flow.Verify recieved packet is expected packet.
@@ -517,7 +515,7 @@ class VlanPrio1(base_tests.SimpleDataPlane):
         pktlen = 64 if config["minsize"] < 64 else config["minsize"]
         pkt = simple_tcp_packet(pktlen=pktlen)
         exp_pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vlan_id,dl_vlan_pcp=vlan_pcp, pktlen=pktlen + 4)
-        act = action.action_set_vlan_pcp()
+        act = ofp.action.action_set_vlan_pcp()
         act.vlan_pcp = vlan_pcp
 
         #Insert flow with action -- set vLAN priority, Send packet matching the flow, Verify recieved packet is expected packet
@@ -556,7 +554,7 @@ class VlanPrio2(base_tests.SimpleDataPlane):
         new_vlan_pcp = 3
         pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vid, dl_vlan_pcp=old_vlan_pcp)
         exp_pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vid, dl_vlan_pcp=new_vlan_pcp)
-        vid_act = action.action_set_vlan_pcp()
+        vid_act = ofp.action.action_set_vlan_pcp()
         vid_act.vlan_pcp = new_vlan_pcp
 
         #Insert flow with action -- set vLAN priority, Send tagged packet matching the flow, Verify recieved packet is expected packet

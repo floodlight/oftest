@@ -7,14 +7,11 @@ import logging
 from oftest import config
 import oftest.controller as controller
 import ofp
-import oftest.message as message
-import oftest.action as action
-import oftest.action_list as action_list
 import oftest.base_tests as base_tests
 
 from oftest.testutils import *
 
-class bsn_action_mirror(action.action_vendor):
+class bsn_action_mirror(ofp.action.action_vendor):
     def __init__(self):
         self.type = ofp.OFPAT_VENDOR
         self.len = 24
@@ -87,7 +84,7 @@ class BSNMirrorAction(base_tests.SimpleDataPlane):
         Use the BSN_SET_MIRRORING vendor command to enable/disable
         mirror action support
         """
-        m = message.vendor()
+        m = ofp.message.vendor()
         m.vendor = 0x005c16c7
         m.data = struct.pack("!LBBBB", 3, enabled, 0, 0, 0)
         self.controller.message_send(m)
@@ -97,7 +94,7 @@ class BSNMirrorAction(base_tests.SimpleDataPlane):
         Use the BSN_GET_MIRRORING_REQUEST vendor command to get the
         enabled/disabled state of mirror action support
         """
-        m = message.vendor()
+        m = ofp.message.vendor()
         m.vendor = 0x005c16c7
         m.data = struct.pack("!LBBBB", 4, 0, 0, 0, 0)
         self.controller.message_send(m)
@@ -117,7 +114,7 @@ class BSNMirrorAction(base_tests.SimpleDataPlane):
 
         logging.info("Checking that mirror ports are not reported")
         self.assertEqual(bool(self.bsn_get_mirroring()), False)
-        m, r = self.controller.transact(message.features_request(), 2)
+        m, r = self.controller.transact(ofp.message.features_request(), 2)
         p = dict([(pt.port_no, pt) for pt in m.ports])
         self.assertFalse(mirror_ports[0] in p or mirror_ports[1] in p,
                          "Mirror port in features reply")
@@ -127,7 +124,7 @@ class BSNMirrorAction(base_tests.SimpleDataPlane):
 
         logging.info("Checking that mirror ports are reported")
         self.assertEqual(bool(self.bsn_get_mirroring()), True)
-        m, r = self.controller.transact(message.features_request(), 2)
+        m, r = self.controller.transact(ofp.message.features_request(), 2)
         p = dict([(pt.port_no, pt) for pt in m.ports])
         self.assertTrue(mirror_ports[0] in p and mirror_ports[1] in p,
                         "Mirror port not in features reply")
@@ -142,9 +139,9 @@ class BSNMirrorAction(base_tests.SimpleDataPlane):
         act2 = bsn_action_mirror()
         act2.dest_port = mirror_ports[1]
         act2.copy_stage = 0
-        act3 = action.action_output()
+        act3 = ofp.action.action_output()
         act3.port = ports[1]
-        flow_mod = message.flow_mod()
+        flow_mod = ofp.message.flow_mod()
         flow_mod.match = match
         flow_mod.actions.add(act1)
         flow_mod.actions.add(act2)

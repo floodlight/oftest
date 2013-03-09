@@ -7,9 +7,7 @@ import logging
 from oftest import config
 import oftest.controller as controller
 import ofp
-import oftest.message as message
 import oftest.dataplane as dataplane
-import oftest.action as action
 import oftest.base_tests as base_tests
 
 from oftest.testutils import *

@@ -68,9 +68,7 @@ import copy
 from oftest import config
 import oftest.controller  as controller
 import ofp
-import oftest.message     as message
 import oftest.dataplane   as dataplane
-import oftest.action      as action
 import oftest.action_list as action_list
 import oftest.parse       as parse
 import pktact
@@ -528,38 +526,38 @@ class Flow_Cfg:
                 pass                    # OUTPUT actions must come last
             elif a == ofp.OFPAT_SET_VLAN_VID:
                if not strip_vlanf:
-                  act = action.action_set_vlan_vid()
+                  act = ofp.action.action_set_vlan_vid()
                   act.vlan_vid = fi.rand_vlan()
                   set_vlanf = True
             elif a == ofp.OFPAT_SET_VLAN_PCP:
                if not strip_vlanf:
-                  act = action.action_set_vlan_pcp()
+                  act = ofp.action.action_set_vlan_pcp()
                   act.vlan_pcp = random.randint(0, (1 << 3) - 1)
                   set_vlanf = True
             elif a == ofp.OFPAT_STRIP_VLAN:
                if not set_vlanf:
-                  act = action.action_strip_vlan()
+                  act = ofp.action.action_strip_vlan()
                   strip_vlanf = True
             elif a == ofp.OFPAT_SET_DL_SRC:
-                act = action.action_set_dl_src()
+                act = ofp.action.action_set_dl_src()
                 act.dl_addr = fi.rand_dl_addr()
             elif a == ofp.OFPAT_SET_DL_DST:
-                act = action.action_set_dl_dst()
+                act = ofp.action.action_set_dl_dst()
                 act.dl_addr = fi.rand_dl_addr()
             elif a == ofp.OFPAT_SET_NW_SRC:
-                act = action.action_set_nw_src()
+                act = ofp.action.action_set_nw_src()
                 act.nw_addr = fi.rand_ip_addr()
             elif a == ofp.OFPAT_SET_NW_DST:
-                act = action.action_set_nw_dst()
+                act = ofp.action.action_set_nw_dst()
                 act.nw_addr = fi.rand_ip_addr()
             elif a == ofp.OFPAT_SET_NW_TOS:
-                act = action.action_set_nw_tos()
+                act = ofp.action.action_set_nw_tos()
                 act.nw_tos = fi.rand_ip_tos()
             elif a == ofp.OFPAT_SET_TP_SRC:
-                act = action.action_set_tp_src()
+                act = ofp.action.action_set_tp_src()
                 act.tp_port = fi.rand_l4_port()
             elif a == ofp.OFPAT_SET_TP_DST:
-                act = action.action_set_tp_dst()
+                act = ofp.action.action_set_tp_dst()
                 act.tp_port = fi.rand_l4_port()
             elif a == ofp.OFPAT_ENQUEUE:
                 pass                    # Enqueue actions must come last
@@ -573,7 +571,7 @@ class Flow_Cfg:
             # In not forecd, one third of the time, include ENQUEUE actions
             # at end of list
             # At most 1 ENQUEUE action
-            act = action.action_enqueue()
+            act = ofp.action.action_enqueue()
             (act.port, act.queue_id) = rand_pick(valid_queues)
             self.actions.add(act)
         if (((1 << ofp.OFPAT_OUTPUT) & actions_force) != 0 \
@@ -588,7 +586,7 @@ class Flow_Cfg:
                 else random.randint(1, len(valid_ports))
             port_idxs = port_idxs[0 : n]
             for pi in port_idxs:
-                act = action.action_output()
+                act = ofp.action.action_output()
                 act.port = valid_ports[pi]
                 if act.port != ofp.OFPP_IN_PORT \
                    or wildcard_get(self.match.wildcards, ofp.OFPFW_IN_PORT) == 0:
@@ -638,45 +636,45 @@ class Flow_Cfg:
                 port_idxs = shuffle(range(len(valid_ports)))
                 port_idxs = port_idxs[0 : random.randint(1, len(valid_ports))]
                 for pi in port_idxs:
-                    act = action.action_output()
+                    act = ofp.action.action_output()
                     act.port = valid_ports[pi]
                     self.actions.add(act)
             elif a == ofp.OFPAT_SET_VLAN_VID:
-                act = action.action_set_vlan_vid()
+                act = ofp.action.action_set_vlan_vid()
                 act.vlan_vid = fi.rand_vlan()
                 self.actions.add(act)
             elif a == ofp.OFPAT_SET_VLAN_PCP:
-                act = action.action_set_vlan_pcp()
+                act = ofp.action.action_set_vlan_pcp()
                 act.vlan_pcp = random.randint(0, (1 << 3) - 1)
             elif a == ofp.OFPAT_STRIP_VLAN:
-                act = action.action_strip_vlan()
+                act = ofp.action.action_strip_vlan()
                 self.actions.add(act)
             elif a == ofp.OFPAT_SET_DL_SRC:
-                act = action.action_set_dl_src()
+                act = ofp.action.action_set_dl_src()
                 act.dl_addr = fi.rand_dl_addr()
                 self.actions.add(act)
             elif a == ofp.OFPAT_SET_DL_DST:
-                act = action.action_set_dl_dst()
+                act = ofp.action.action_set_dl_dst()
                 act.dl_addr = fi.rand_dl_addr()
                 self.actions.add(act)
             elif a == ofp.OFPAT_SET_NW_SRC:
-                act = action.action_set_nw_src()
+                act = ofp.action.action_set_nw_src()
                 act.nw_addr = fi.rand_ip_addr()
                 self.actions.add(act)
             elif a == ofp.OFPAT_SET_NW_DST:
-                act = action.action_set_nw_dst()
+                act = ofp.action.action_set_nw_dst()
                 act.nw_addr = fi.rand_ip_addr()
                 self.actions.add(act)
             elif a == ofp.OFPAT_SET_NW_TOS:
-                act = action.action_set_nw_tos()
+                act = ofp.action.action_set_nw_tos()
                 act.nw_tos = fi.rand_ip_tos()
                 self.actions.add(act)
             elif a == ofp.OFPAT_SET_TP_SRC:
-                act = action.action_set_tp_src()
+                act = ofp.action.action_set_tp_src()
                 act.tp_port = fi.rand_l4_port()
                 self.actions.add(act)
             elif a == ofp.OFPAT_SET_TP_DST:
-                act = action.action_set_tp_dst()
+                act = ofp.action.action_set_tp_dst()
                 act.tp_port = fi.rand_l4_port()
                 self.actions.add(act)
             elif a == ofp.OFPAT_ENQUEUE:
@@ -686,7 +684,7 @@ class Flow_Cfg:
                 qidxs = shuffle(range(len(valid_queues)))
                 qidxs = qidxs[0 : random.randint(1, len(valid_queues))]
                 for qi in qidxs:
-                    act = action.action_enqueue()
+                    act = ofp.action.action_enqueue()
                     (act.port, act.queue_id) = valid_queues[qi]
                     self.actions.add(act)
 
@@ -1228,7 +1226,7 @@ class Switch:
 
     def features_get(self):
         # Get switch features
-        request = message.features_request()
+        request = ofp.message.features_request()
         (self.sw_features, pkt) = self.controller.transact(request)
         if self.sw_features is None:
             logging.error("Get switch features failed")
@@ -1270,7 +1268,7 @@ class Switch:
 
     def tbl_stats_get(self):
         # Get table stats
-        request = message.table_stats_request()
+        request = ofp.message.table_stats_request()
         (self.tbl_stats, pkt) = self.controller.transact(request)
         if self.tbl_stats is None:
             logging.error("Get table stats failed")
@@ -1297,7 +1295,7 @@ class Switch:
 
     def queue_stats_get(self):
         # Get queue stats
-        request = message.queue_stats_request()
+        request = ofp.message.queue_stats_request()
         request.port_no  = ofp.OFPP_ALL
         request.queue_id = ofp.OFPQ_ALL
         (self.queue_stats, pkt) = self.controller.transact(request)
@@ -1325,7 +1323,7 @@ class Switch:
                 )
 
     def flow_stats_get(self, limit = 10000):
-        request = message.flow_stats_request()
+        request = ofp.message.flow_stats_request()
         query_match           = ofp.ofp_match()
         query_match.wildcards = ofp.OFPFW_ALL
         request.match    = query_match
@@ -1355,7 +1353,7 @@ class Switch:
         return (n > 0)
 
     def flow_add(self, flow_cfg, overlapf = False):
-        flow_mod_msg = message.flow_mod()
+        flow_mod_msg = ofp.message.flow_mod()
         flow_mod_msg.command     = ofp.OFPFC_ADD
         flow_mod_msg.buffer_id   = 0xffffffff
         flow_cfg.to_flow_mod_msg(flow_mod_msg)
@@ -1371,7 +1369,7 @@ class Switch:
         return True
 
     def flow_mod(self, flow_cfg, strictf):
-        flow_mod_msg = message.flow_mod()
+        flow_mod_msg = ofp.message.flow_mod()
         flow_mod_msg.command     = ofp.OFPFC_MODIFY_STRICT if strictf \
                                    else ofp.OFPFC_MODIFY
         flow_mod_msg.buffer_id   = 0xffffffff
@@ -1384,7 +1382,7 @@ class Switch:
         return True
 
     def flow_del(self, flow_cfg, strictf):
-        flow_mod_msg = message.flow_mod()
+        flow_mod_msg = ofp.message.flow_mod()
         flow_mod_msg.command     = ofp.OFPFC_DELETE_STRICT if strictf \
                                    else ofp.OFPFC_DELETE
         flow_mod_msg.buffer_id   = 0xffffffff
@@ -1399,7 +1397,7 @@ class Switch:
         return True
 
     def barrier(self):
-        barrier = message.barrier_request()
+        barrier = ofp.message.barrier_request()
         (resp, pkt) = self.controller.transact(barrier, 30)
         return (resp is not None)
 

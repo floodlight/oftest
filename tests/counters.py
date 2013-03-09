@@ -12,9 +12,7 @@ import random
 from oftest import config
 import oftest.controller as controller
 import ofp
-import oftest.message as message
 import oftest.dataplane as dataplane
-import oftest.action as action
 import oftest.parse as parse
 import oftest.base_tests as base_tests
 import time
@@ -122,7 +120,7 @@ class DurationPerFlow(base_tests.SimpleDataPlane):
         (pkt,match) = wildcard_all_except_ingress(self,of_ports)
     
         #Create flow_stats request 
-        stat_req = message.flow_stats_request()
+        stat_req = ofp.message.flow_stats_request()
         stat_req.match= match
         stat_req.table_id = 0xff
         stat_req.out_port = ofp.OFPP_NONE

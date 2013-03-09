@@ -12,9 +12,7 @@ import random
 from oftest import config
 import oftest.controller as controller
 import ofp
-import oftest.message as message
 import oftest.dataplane as dataplane
-import oftest.action as action
 import oftest.parse as parse
 import oftest.base_tests as base_tests
 
@@ -54,14 +52,14 @@ class OverlapChecking(base_tests.SimpleDataPlane):
         match3.wildcards = ofp.OFPFW_ALL-ofp.OFPFW_IN_PORT
         match3.in_port = of_ports[0]
 
-        msg3 = message.flow_mod()
+        msg3 = ofp.message.flow_mod()
         msg3.command = ofp.OFPFC_ADD
         msg3.match = match3
         msg3.flags |= ofp.OFPFF_CHECK_OVERLAP
         msg3.cookie = random.randint(0,9007199254740992)
         msg3.buffer_id = 0xffffffff
        
-        act3 = action.action_output()
+        act3 = ofp.action.action_output()
         act3.port = of_ports[1]
         msg3.actions.add(act3)
         self.controller.message_send(msg3)
@@ -175,14 +173,14 @@ class EmerFlowTimeout(base_tests.SimpleProtocol):
         match = parse.packet_to_flow_match(pkt)
         match.in_port = of_ports[0]
         
-        request = message.flow_mod()
+        request = ofp.message.flow_mod()
         request.match = match
         request.command = ofp.OFPFC_ADD
         request.flags = request.flags|ofp.OFPFF_EMERG
         request.hard_timeout =9
         request.idle_timeout =9
         
-        act = action.action_output()
+        act = ofp.action.action_output()
         act.port = of_ports[1]
         
         request.actions.add(act)
@@ -222,13 +220,13 @@ class MissingModifyAdd(base_tests.SimpleDataPlane):
 
         #Generate a flow-mod,command OFPC_MODIFY 
 
-        request = message.flow_mod()
+        request = ofp.message.flow_mod()
         request.command = ofp.OFPFC_MODIFY
         request.match.wildcards = ofp.OFPFW_ALL-ofp.OFPFW_IN_PORT
         request.match.in_port = of_ports[0]
         request.cookie = random.randint(0,9007199254740992)
         request.buffer_id = 0xffffffff
-        act3 = action.action_output()
+        act3 = ofp.action.action_output()
         act3.port = of_ports[1]
         request.actions.add(act3)
 
@@ -339,7 +337,7 @@ class DeleteNonexistingFlow(base_tests.SimpleDataPlane):
         logging.info("Expecting switch to ignore the command , without generating errors")
 
         # Issue a delete command 
-        msg = message.flow_mod()
+        msg = ofp.message.flow_mod()
         msg.match.wildcards = ofp.OFPFW_ALL
         msg.out_port = ofp.OFPP_NONE
         msg.command = ofp.OFPFC_DELETE
@@ -391,7 +389,7 @@ class SendFlowRem(base_tests.SimpleDataPlane):
                         'Received flow removed message for the flow with flow_rem flag not set')
         
         # Insert another flow F' with OFPFF_SEND_FLOW_REM flag set.
-        msg9 = message.flow_mod()
+        msg9 = ofp.message.flow_mod()
         msg9.match.wildcards = ofp.OFPFW_ALL
         msg9.cookie = random.randint(0,9007199254740992)
         msg9.buffer_id = 0xffffffff
@@ -434,11 +432,11 @@ class DeleteEmerFlow(base_tests.SimpleProtocol):
         pkt = simple_tcp_packet()
         match = parse.packet_to_flow_match(pkt)
         match.in_port = of_ports[0]
-        request = message.flow_mod()
+        request = ofp.message.flow_mod()
         request.match = match
         request.command = ofp.OFPFC_ADD
         request.flags = request.flags|ofp.OFPFF_EMERG|ofp.OFPFF_SEND_FLOW_REM
-        act = action.action_output()
+        act = ofp.action.action_output()
         act.port = of_ports[1]
         request.actions.add(act)
 
@@ -566,7 +564,7 @@ class Outport1(base_tests.SimpleDataPlane):
         verify_tablestats(self,expect_active=1)
 
         #Send delete command matching the flow-1 but with contraint out_port = of_port[2]
-        msg7 = message.flow_mod()
+        msg7 = ofp.message.flow_mod()
         msg7.out_port = of_ports[2]
         msg7.command = ofp.OFPFC_DELETE
         msg7.buffer_id = 0xffffffff
@@ -582,7 +580,7 @@ class Outport1(base_tests.SimpleDataPlane):
         logging.info("Expecting switch to delete the flow")
 
         #Send Delete command with contraint out_port = of_ports[1]
-        msg7 = message.flow_mod()
+        msg7 = ofp.message.flow_mod()
         msg7.out_port = of_ports[1]
         msg7.command = ofp.OFPFC_DELETE
         msg7.buffer_id = 0xffffffff
@@ -614,7 +612,7 @@ class IdleTimeout(base_tests.SimpleDataPlane):
         logging.info("Expecting the flow entry to delete with given idle_timeout")
 
         #Insert a flow entry with idle_timeout=1.Send_Flow_Rem flag set
-        msg9 = message.flow_mod()
+        msg9 = ofp.message.flow_mod()
         msg9.match.wildcards = ofp.OFPFW_ALL
         msg9.cookie = random.randint(0,9007199254740992)
         msg9.buffer_id = 0xffffffff
@@ -696,7 +694,7 @@ class HardTimeout(base_tests.SimpleDataPlane):
         logging.info("Expecting the flow entry to delete with given hard_timeout")
 
         # Insert a flow entry with hardtimeout=1 and send_flow_removed flag set
-        msg9 = message.flow_mod()
+        msg9 = ofp.message.flow_mod()
         msg9.match.wildcards = ofp.OFPFW_ALL
         msg9.cookie = random.randint(0,9007199254740992)
         msg9.buffer_id = 0xffffffff
@@ -747,7 +745,7 @@ class FlowTimeout(base_tests.SimpleDataPlane):
         self.assertTrue(match3 is not None, "Could not generate flow match from pkt")
         match3.wildcards = ofp.OFPFW_ALL-ofp.OFPFW_IN_PORT
         match3.in_port = of_ports[0]
-        msg3 = message.flow_mod()
+        msg3 = ofp.message.flow_mod()
         msg3.out_port = of_ports[2] # ignored by flow add,flow modify 
         msg3.command = ofp.OFPFC_ADD
         msg3.cookie = random.randint(0,9007199254740992)
@@ -755,7 +753,7 @@ class FlowTimeout(base_tests.SimpleDataPlane):
         msg3.hard_timeout = 1
         msg3.buffer_id = 0xffffffff
         msg3.match = match3
-        act3 = action.action_output()
+        act3 = ofp.action.action_output()
         act3.port = of_ports[1]
         msg3.actions.add(act3)
 

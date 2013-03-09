@@ -13,9 +13,7 @@ import random
 from oftest import config
 import oftest.controller as controller
 import ofp
-import oftest.message as message
 import oftest.dataplane as dataplane
-import oftest.action as action
 
 from oftest.testutils import *
 
@@ -90,7 +88,7 @@ class HandshakeNoFeaturesRequest(BaseHandshake):
         logging.info("TCP Connected " + 
                      str(self.controllers[0].switch_addr))
         logging.info("Sending hello")
-        self.controllers[0].message_send(message.hello())
+        self.controllers[0].message_send(ofp.message.hello())
 
         logging.info("Features request not sent, waiting for timeout")
 
@@ -163,7 +161,7 @@ class CompleteHandshake(BaseHandshake):
                     if con.cstate == 0:
                         logging.info(condesc + "Sending hello to " +
                                      str(con.switch_addr))
-                        con.message_send(message.hello())
+                        con.message_send(ofp.message.hello())
                         con.cstate = 1
                         con.count = 0
                     elif con.cstate == 1:
@@ -185,7 +183,7 @@ class CompleteHandshake(BaseHandshake):
                     elif con.cstate == 2:
                         logging.info(condesc + "Sending features request to " +
                                      str(con.switch_addr))
-                        con.message_send(message.features_request())
+                        con.message_send(ofp.message.features_request())
                         con.cstate = 3
                         con.count = 0
                     elif con.cstate == 3:
