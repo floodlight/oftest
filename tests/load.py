@@ -66,11 +66,11 @@ class LoadBarrier(base_tests.SimpleProtocol):
         request.hard_timeout = 2 * barrier_count
 
         request.buffer_id = 0xffffffff
-        request.actions.add(act)
+        request.actions.append(act)
 
         act = ofp.action.output()
         act.port = ofp.OFPP_CONTROLLER
-        request.actions.add(act)
+        request.actions.append(act)
 
         self.controller.message_send(request)
         do_barrier(self.controller)
@@ -81,7 +81,7 @@ class LoadBarrier(base_tests.SimpleProtocol):
         msg.data = str(pkt)
         act = ofp.action.output()
         act.port = lb_port + 1
-        msg.actions.add(act)
+        msg.actions.append(act)
         logging.info("Sleeping before starting storm")
         time.sleep(1) # Root causing issue with fast disconnects
         logging.info("Sending packet out to %d" % (lb_port + 1))
@@ -170,7 +170,7 @@ class PacketOutLoad(base_tests.SimpleDataPlane):
                msg.data = str(outpkt)
                act = ofp.action.output()
                act.port = dp_port
-               msg.actions.add(act)
+               msg.actions.append(act)
 
                logging.info("PacketOutLoad to: " + str(dp_port))
                for count in range(100):
@@ -221,7 +221,7 @@ class FlowModLoad(base_tests.SimpleProtocol):
             request.priority = num_flows - i
             request.out_port = ofp.OFPP_NONE
             request.match = match
-            request.actions.add(act)
+            request.actions.append(act)
             requests.append(request)
 
         for i in range(3):

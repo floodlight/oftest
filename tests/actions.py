@@ -154,7 +154,7 @@ class ForwardAll(base_tests.SimpleDataPlane):
         request.match = match
         request.match.wildcards = ofp.OFPFW_ALL&~ofp.OFPFW_IN_PORT
         act.port = ofp.OFPP_ALL
-        request.actions.add(act)
+        request.actions.append(act)
         
         logging.info("Inserting flow")
         self.controller.message_send(request)
@@ -205,7 +205,7 @@ class ForwardController(base_tests.SimpleDataPlane):
             request = ofp.message.flow_mod()
             request.match = match
             act.port = ofp.OFPP_CONTROLLER
-            request.actions.add(act)
+            request.actions.append(act)
 
             logging.info("Inserting flow")
             self.controller.message_send(request)
@@ -256,7 +256,7 @@ class ForwardLocal(base_tests.SimpleDataPlane):
             request = ofp.message.flow_mod()
             request.match = match
             act.port = ofp.OFPP_LOCAL
-            request.actions.add(act)
+            request.actions.append(act)
 
             logging.info("Inserting flow")
             self.controller.message_send(request)
@@ -305,7 +305,7 @@ class ForwardFlood(base_tests.SimpleDataPlane):
         request.match = match
         request.match.wildcards = ofp.OFPFW_ALL&~ofp.OFPFW_IN_PORT
         act.port = ofp.OFPP_FLOOD
-        request.actions.add(act)
+        request.actions.append(act)
         
         logging.info("Inserting flow")
         self.controller.message_send(request)
@@ -355,7 +355,7 @@ class ForwardInport(base_tests.SimpleDataPlane):
         request.match = match
         act.port = ofp.OFPP_IN_PORT
             
-        request.actions.add(act)
+        request.actions.append(act)
         logging.info("Inserting flow")
         self.controller.message_send(request)
         do_barrier(self.controller)
@@ -399,7 +399,7 @@ class ForwardTable(base_tests.SimpleDataPlane):
         pkt_out.in_port = of_ports[0]
         act = ofp.action.output()
         act.port = ofp.OFPP_TABLE
-        pkt_out.actions.add(act)
+        pkt_out.actions.append(act)
         self.controller.message_send(pkt_out)
 
         #Verifying packet out message recieved on the expected dataplane port. 

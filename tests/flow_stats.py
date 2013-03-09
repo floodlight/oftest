@@ -141,7 +141,7 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
         flow_mod_msg.hard_timeout = 65000
         flow_mod_msg.priority = 100
         act.port = egress_port
-        flow_mod_msg.actions.add(act)
+        flow_mod_msg.actions.append(act)
        
         # send flow
         logging.info("Inserting flow")
@@ -193,7 +193,7 @@ class TwoFlowStats(base_tests.SimpleDataPlane):
         flow_mod_msg.hard_timeout = 0
         act = ofp.action.output()
         act.port = egress_port
-        flow_mod_msg.actions.add(act)
+        flow_mod_msg.actions.append(act)
 
         logging.info("Ingress " + str(ingress_port) + 
                        " to egress " + str(egress_port))
@@ -318,7 +318,7 @@ class AggregateStats(base_tests.SimpleDataPlane):
         flow_mod_msg.hard_timeout = 0
         act = ofp.action.output()
         act.port = egress_port
-        flow_mod_msg.actions.add(act)
+        flow_mod_msg.actions.append(act)
 
         logging.info("Ingress " + str(ingress_port) + 
                        " to egress " + str(egress_port))
@@ -491,7 +491,7 @@ class DeletedFlowStats(base_tests.SimpleDataPlane):
         flow_mod_msg.priority = 100
         flow_mod_msg.flags = ofp.OFPFF_SEND_FLOW_REM
         act.port = egress_port
-        flow_mod_msg.actions.add(act)
+        flow_mod_msg.actions.append(act)
 
         # send flow
         logging.info("Inserting flow")

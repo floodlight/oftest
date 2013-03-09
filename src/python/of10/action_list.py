@@ -108,11 +108,11 @@ class action_list(object):
             bytes_done += hdr.len
         return cur_string
 
-    def add(self, action):
+    def append(self, action):
         """
-        Add an action to an action list
+        Append an action to an action list
 
-        @param action The action to add
+        @param action The action to append
 
         """
         if not isinstance(action, action_class_list):

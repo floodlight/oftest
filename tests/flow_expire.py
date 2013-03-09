@@ -62,7 +62,7 @@ class FlowExpire(base_tests.SimpleDataPlane):
         request.idle_timeout = 1
         request.flags |= ofp.OFPFF_SEND_FLOW_REM
         act.port = egress_port
-        request.actions.add(act)
+        request.actions.append(act)
         
         logging.info("Inserting flow")
         self.controller.message_send(request)

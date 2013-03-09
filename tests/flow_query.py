@@ -562,7 +562,7 @@ class Flow_Cfg:
             elif a == ofp.OFPAT_ENQUEUE:
                 pass                    # Enqueue actions must come last
             if act:
-                self.actions.add(act)
+                self.actions.append(act)
                 
         p = random.randint(1, 100)
         if (((1 << ofp.OFPAT_ENQUEUE) & actions_force) != 0 or p <= 33) \
@@ -573,7 +573,7 @@ class Flow_Cfg:
             # At most 1 ENQUEUE action
             act = ofp.action.enqueue()
             (act.port, act.queue_id) = rand_pick(valid_queues)
-            self.actions.add(act)
+            self.actions.append(act)
         if (((1 << ofp.OFPAT_OUTPUT) & actions_force) != 0 \
             or (p > 33 and p <= 66) \
             ) \
@@ -591,7 +591,7 @@ class Flow_Cfg:
                 if act.port != ofp.OFPP_IN_PORT \
                    or wildcard_get(self.match.wildcards, ofp.OFPFW_IN_PORT) == 0:
                     # OUTPUT(IN_PORT) only valid if OFPFW_IN_PORT not wildcarded
-                    self.actions.add(act)
+                    self.actions.append(act)
         else:
             # One third of the time, include neither
             pass
@@ -638,45 +638,45 @@ class Flow_Cfg:
                 for pi in port_idxs:
                     act = ofp.action.output()
                     act.port = valid_ports[pi]
-                    self.actions.add(act)
+                    self.actions.append(act)
             elif a == ofp.OFPAT_SET_VLAN_VID:
                 act = ofp.action.set_vlan_vid()
                 act.vlan_vid = fi.rand_vlan()
-                self.actions.add(act)
+                self.actions.append(act)
             elif a == ofp.OFPAT_SET_VLAN_PCP:
                 act = ofp.action.set_vlan_pcp()
                 act.vlan_pcp = random.randint(0, (1 << 3) - 1)
             elif a == ofp.OFPAT_STRIP_VLAN:
                 act = ofp.action.strip_vlan()
-                self.actions.add(act)
+                self.actions.append(act)
             elif a == ofp.OFPAT_SET_DL_SRC:
                 act = ofp.action.set_dl_src()
                 act.dl_addr = fi.rand_dl_addr()
-                self.actions.add(act)
+                self.actions.append(act)
             elif a == ofp.OFPAT_SET_DL_DST:
                 act = ofp.action.set_dl_dst()
                 act.dl_addr = fi.rand_dl_addr()
-                self.actions.add(act)
+                self.actions.append(act)
             elif a == ofp.OFPAT_SET_NW_SRC:
                 act = ofp.action.set_nw_src()
                 act.nw_addr = fi.rand_ip_addr()
-                self.actions.add(act)
+                self.actions.append(act)
             elif a == ofp.OFPAT_SET_NW_DST:
                 act = ofp.action.set_nw_dst()
                 act.nw_addr = fi.rand_ip_addr()
-                self.actions.add(act)
+                self.actions.append(act)
             elif a == ofp.OFPAT_SET_NW_TOS:
                 act = ofp.action.set_nw_tos()
                 act.nw_tos = fi.rand_ip_tos()
-                self.actions.add(act)
+                self.actions.append(act)
             elif a == ofp.OFPAT_SET_TP_SRC:
                 act = ofp.action.set_tp_src()
                 act.tp_port = fi.rand_l4_port()
-                self.actions.add(act)
+                self.actions.append(act)
             elif a == ofp.OFPAT_SET_TP_DST:
                 act = ofp.action.set_tp_dst()
                 act.tp_port = fi.rand_l4_port()
-                self.actions.add(act)
+                self.actions.append(act)
             elif a == ofp.OFPAT_ENQUEUE:
                 # TBD - Enqueue actions are clustered in list, spread them out?
                 if len(valid_queues) == 0:
@@ -686,7 +686,7 @@ class Flow_Cfg:
                 for qi in qidxs:
                     act = ofp.action.enqueue()
                     (act.port, act.queue_id) = valid_queues[qi]
-                    self.actions.add(act)
+                    self.actions.append(act)
 
         return self
 

@@ -170,7 +170,7 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
         flow_mod_msg.idle_timeout = 0
         flow_mod_msg.hard_timeout = 0
         act.port = egress_port
-        flow_mod_msg.actions.add(act)
+        flow_mod_msg.actions.append(act)
        
         # send flow
         logging.info("Inserting flow")
@@ -216,7 +216,7 @@ class MultiFlowStats(base_tests.SimpleDataPlane):
         flow_mod_msg.hard_timeout = 0
         act = ofp.action.output()
         act.port = egress_port
-        flow_mod_msg.actions.add(act)
+        flow_mod_msg.actions.append(act)
 
         logging.info("Ingress " + str(ingress_port) + 
                        " to egress " + str(egress_port))
@@ -293,7 +293,7 @@ class AllPortStats(base_tests.SimpleDataPlane):
         flow_mod_msg.hard_timeout = 0
         act = ofp.action.output()
         act.port = egress_port
-        flow_mod_msg.actions.add(act)
+        flow_mod_msg.actions.append(act)
 
         logging.info("Ingress " + str(ingress_port) + 
                        " to egress " + str(egress_port))

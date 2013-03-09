@@ -28,7 +28,7 @@ def match_send_flowadd(self, match, priority, port):
         msg.priority = priority
     act = ofp.action.output()
     act.port = port 
-    msg.actions.add(act)
+    msg.actions.append(act)
     self.controller.message_send(msg)
     do_barrier(self.controller)
 
@@ -330,7 +330,7 @@ def strict_modify_flow_action(self,egress_port,match,priority=None):
     msg5.buffer_id = 0xffffffff
     act5 = ofp.action.output()
     act5.port = egress_port
-    msg5.actions.add(act5)
+    msg5.actions.append(act5)
 
     if priority != None :
         msg5.priority = priority
@@ -352,7 +352,7 @@ def modify_flow_action(self,of_ports,match,priority=None):
     msg8.buffer_id = 0xffffffff
     act8 = ofp.action.output()
     act8.port = of_ports[2]
-    msg8.actions.add(act8)
+    msg8.actions.append(act8)
 
     if priority != None :
         msg8.priority = priority
@@ -377,7 +377,7 @@ def enqueue(self,ingress_port,egress_port,egress_queue_id):
     act = ofp.action.enqueue()
     act.port     = egress_port
     act.queue_id = egress_queue_id
-    request.actions.add(act)
+    request.actions.append(act)
     
     logging.info("Inserting flow")
     self.controller.message_send(request)

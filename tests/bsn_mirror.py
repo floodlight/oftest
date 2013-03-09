@@ -143,9 +143,9 @@ class BSNMirrorAction(base_tests.SimpleDataPlane):
         act3.port = ports[1]
         flow_mod = ofp.message.flow_mod()
         flow_mod.match = match
-        flow_mod.actions.add(act1)
-        flow_mod.actions.add(act2)
-        flow_mod.actions.add(act3)
+        flow_mod.actions.append(act1)
+        flow_mod.actions.append(act2)
+        flow_mod.actions.append(act3)
         delete_all_flows(self.controller)
         self.controller.message_send(flow_mod)
         do_barrier(self.controller)

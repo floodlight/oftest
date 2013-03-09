@@ -221,7 +221,7 @@ class PacketOut(base_tests.SimpleDataPlane):
                 msg.data = str(outpkt)
                 act = ofp.action.output()
                 act.port = dp_port
-                msg.actions.add(act)
+                msg.actions.append(act)
 
                 logging.info("PacketOut to: " + str(dp_port))
                 self.controller.message_send(msg)
