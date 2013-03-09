@@ -120,34 +120,6 @@ class action_list(object):
         self.actions.append(copy.deepcopy(action))
         return True # for backwards compatibility
 
-    def remove_type(self, type):
-        """
-        Remove the first action on the list of the given type
-
-        @param type The type of action to search
-
-        @return The object removed, if any; otherwise None
-
-        """
-        for index in xrange(len(self.actions)):
-            if self.actions[index].type == type:
-                return self.actions.pop(index)
-        return None
-
-    def find_type(self, type):
-        """
-        Find the first action on the list of the given type
-
-        @param type The type of action to search
-
-        @return The object with the matching type if any; otherwise None
-
-        """
-        for index in xrange(len(self.actions)):
-            if self.actions[index].type == type:
-                return self.actions[index]
-        return None
-
     def extend(self, other):
         """
         Add the actions in other to this list
