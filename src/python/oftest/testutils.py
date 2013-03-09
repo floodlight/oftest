@@ -1207,7 +1207,7 @@ def verify_flow_stats(test, match, table_id=0xff,
         if (pkts == None or pkt_diff >= pkts) and \
            (bytes == None or byte_diff >= bytes):
             break
-        sleep(0.1)
+        time.sleep(0.1)
 
     if pkts != None:
         test.assertEquals(pkt_diff, pkts, "Flow packet counter not updated properly (expected increase of %d, got increase of %d)" % (pkts, pkt_diff))
@@ -1295,7 +1295,7 @@ def verify_queue_stats(test, port_no, queue_id,
         if (pkts == None or pkt_diff >= pkts) and \
            (bytes == None or byte_diff >= bytes):
             break
-        sleep(0.1)
+        time.sleep(0.1)
 
     if pkts != None:
         test.assertEquals(pkt_diff, pkts, "Queue packet counter not updated properly (expected increase of %d, got increase of %d)" % (pkts, pkt_diff))
