@@ -968,7 +968,8 @@ class flow_mod(ofp_flow_mod):
         outstr += self.header.show(prefix + '  ')
         outstr += ofp_flow_mod.show(self, prefix)
         outstr += prefix + "List actions\n"
-        outstr += self.actions.show(prefix + '  ')
+        for obj in self.actions:
+            outstr += obj.show(prefix + "  ")
         return outstr
 
     def __eq__(self, other):
@@ -1646,7 +1647,8 @@ class packet_out(ofp_packet_out):
         outstr += self.header.show(prefix + '  ')
         outstr += ofp_packet_out.show(self, prefix)
         outstr += prefix + "List actions\n"
-        outstr += self.actions.show(prefix + '  ')
+        for obj in self.actions:
+            outstr += obj.show(prefix + "  ")
         outstr += prefix + 'data is of length ' + str(len(self.data)) + '\n'
         ##@todo Fix this circular reference
         # if len(self.data) > 0:
@@ -2666,7 +2668,9 @@ class flow_stats_entry(ofp_flow_stats):
     def show(self, prefix=''):
         outstr = prefix + "flow_stats_entry\n"
         outstr += ofp_flow_stats.show(self, prefix + '  ')
-        outstr += self.actions.show(prefix + '  ')
+        outstr += prefix + "List actions\n"
+        for obj in self.actions:
+            outstr += obj.show(prefix + '  ')
         return outstr
 
     def __eq__(self, other):

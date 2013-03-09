@@ -429,7 +429,8 @@ def gen_message_wrapper(msg):
             _p3("outstr += obj.show(prefix + '  ')")
         else:
             _p2('outstr += prefix + "List ' + list_var + '\\n"')
-            _p2('outstr += self.' + list_var + ".show(prefix + '  ')")
+            _p2('for obj in self.' + list_var + ':')
+            _p3('outstr += obj.show(prefix + "  ")')
     if has_string:
         _p2("outstr += prefix + 'data is of length ' + str(len(self.data)) + '\\n'")
         _p2("##@todo Fix this circular reference")
@@ -705,7 +706,9 @@ class flow_stats_entry(ofp_flow_stats):
     def show(self, prefix=''):
         outstr = prefix + "flow_stats_entry\\n"
         outstr += ofp_flow_stats.show(self, prefix + '  ')
-        outstr += self.actions.show(prefix + '  ')
+        outstr += prefix + "List actions\\n"
+        for obj in self.actions:
+            outstr += obj.show(prefix + '  ')
         return outstr
 
     def __eq__(self, other):

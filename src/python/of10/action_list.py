@@ -143,19 +143,12 @@ class action_list(object):
             length += act.__len__()
         return length
 
+    def __iter__(self):
+        return self.actions.__iter__()
+
     def __eq__(self, other):
         if type(self) != type(other): return False
         if self.actions != other.actions: return False
         return True
 
     def __ne__(self, other): return not self.__eq__(other)
-        
-    def show(self, prefix=''):
-        outstr = prefix + "Action List with " + str(len(self.actions)) + \
-            " actions\n"
-        count = 0
-        for obj in self.actions:
-            count += 1
-            outstr += prefix + "  Action " + str(count) + ": \n"
-            outstr += obj.show(prefix + '    ')
-        return outstr
