@@ -56,11 +56,12 @@ class Grp10No10(base_tests.SimpleDataPlane):
         # Keep sending the packets till the control plane gets shutdown
         pkt = simple_tcp_packet()
         try :
-            for x in range (0,2) :
+            for x in range (0,15) :
+                
                 self.dataplane.send(ingress_port, str(pkt))
                 yes_ports=set(of_ports).difference([ingress_port])
                 no_ports = []
-                #receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
+                receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
         
         except AssertionError :
         
@@ -79,8 +80,6 @@ class Grp10No10(base_tests.SimpleDataPlane):
             no_ports=set(of_ports)
             yes_ports=[]
             receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
-            print AssertionError
-
         else :
 
             self.assertTrue(AssertionError is None, "Failed to shutdown the control plane")
