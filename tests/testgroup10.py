@@ -83,7 +83,7 @@ class Grp10No10(base_tests.SimpleDataPlane):
 
         else :
 
-            logging.assertTrue(AssertionError is None, "Failed to shutdown the control plane")
+            self.assertTrue(AssertionError is None, "Failed to shutdown the control plane")
 
 class Grp10No20(base_tests.SimpleProtocol):
     """
