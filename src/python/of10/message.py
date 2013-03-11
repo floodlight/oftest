@@ -904,8 +904,6 @@ class flow_mod(ofp_flow_mod):
                 setattr(self, k, v)
             else:
                 raise NameError("field %s does not exist in %s" % (k, self.__class__))
-        # Coerce keyword arg into list type
-        self.actions = action_list(self.actions)
 
 
     def pack(self):
@@ -919,7 +917,7 @@ class flow_mod(ofp_flow_mod):
         packed = self.header.pack()
 
         packed += ofp_flow_mod.pack(self)
-        packed += self.actions.pack()
+        packed += action_list(self.actions).pack()
         return packed
 
     def unpack(self, binary_string):
@@ -935,7 +933,9 @@ class flow_mod(ofp_flow_mod):
 
         binary_string = ofp_flow_mod.unpack(self, binary_string)
         ai_len = self.header.length - (OFP_FLOW_MOD_BYTES + OFP_HEADER_BYTES)
-        binary_string = self.actions.unpack(binary_string, bytes=ai_len)
+        obj = action_list()
+        binary_string = obj.unpack(binary_string, bytes=ai_len)
+        self.actions = list(obj)
         # Fixme: If no self.data, add check for data remaining
         return binary_string
 
@@ -950,7 +950,8 @@ class flow_mod(ofp_flow_mod):
         length = OFP_HEADER_BYTES
 
         length += ofp_flow_mod.__len__(self)
-        length += len(self.actions)
+        for obj in self.actions:
+            length += len(obj)
         return length
 
     def show(self, prefix=''):
@@ -1580,8 +1581,6 @@ class packet_out(ofp_packet_out):
                 setattr(self, k, v)
             else:
                 raise NameError("field %s does not exist in %s" % (k, self.__class__))
-        # Coerce keyword arg into list type
-        self.actions = action_list(self.actions)
 
 
     def pack(self):
@@ -1594,9 +1593,11 @@ class packet_out(ofp_packet_out):
         self.header.length = len(self)
         packed = self.header.pack()
 
-        self.actions_len = len(self.actions)
+        self.actions_len = 0
+        for obj in self.actions:
+            self.actions_len += len(obj)
         packed += ofp_packet_out.pack(self)
-        packed += self.actions.pack()
+        packed += action_list(self.actions).pack()
         packed += self.data
         return packed
 
@@ -1612,7 +1613,9 @@ class packet_out(ofp_packet_out):
         binary_string = self.header.unpack(binary_string)
 
         binary_string = ofp_packet_out.unpack(self, binary_string)
-        binary_string = self.actions.unpack(binary_string, bytes=self.actions_len)
+        obj = action_list()
+        binary_string = obj.unpack(binary_string, bytes=self.actions_len)
+        self.actions = list(obj)
         self.data = binary_string
         binary_string = ''
         return binary_string
@@ -1628,7 +1631,8 @@ class packet_out(ofp_packet_out):
         length = OFP_HEADER_BYTES
 
         length += ofp_packet_out.__len__(self)
-        length += len(self.actions)
+        for obj in self.actions:
+            length += len(obj)
         length += len(self.data)
         return length
 
@@ -2642,12 +2646,12 @@ class flow_stats_entry(ofp_flow_stats):
     """
     def __init__(self):
         ofp_flow_stats.__init__(self)
-        self.actions = action_list()
+        self.actions = []
 
     def pack(self, assertstruct=True):
         self.length = len(self)
         packed = ofp_flow_stats.pack(self, assertstruct)
-        packed += self.actions.pack()
+        packed += action_list(self.actions).pack()
         if len(packed) != self.length:
             print("ERROR: flow_stats_entry pack length not equal",
                   self.length, len(packed))
@@ -2659,7 +2663,9 @@ class flow_stats_entry(ofp_flow_stats):
         if ai_len < 0:
             print("ERROR: flow_stats_entry unpack length too small",
                   self.length)
-        binary_string = self.actions.unpack(binary_string, bytes=ai_len)
+        obj = action_list()
+        binary_string = obj.unpack(binary_string, bytes=ai_len)
+        self.actions = list(obj)
         return binary_string
 
     def __len__(self):

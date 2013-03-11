@@ -310,9 +310,6 @@ def gen_message_wrapper(msg):
     _p4('setattr(self, k, v)')
     _p3('else:')
     _p4('raise NameError("field %s does not exist in %s" % (k, self.__class__))')
-    if has_list and list_type != None:
-        _p2('# Coerce keyword arg into list type')
-        _p2('self.%(list_var)s = %(list_type)s(self.%(list_var)s)' % dict(list_type=list_type, list_var=list_var))
 
     print """
 
@@ -329,7 +326,9 @@ def gen_message_wrapper(msg):
 
     # Have to special case the action length calculation for pkt out
     if msg == 'packet_out':
-        _p2('self.actions_len = len(self.actions)')
+        _p2('self.actions_len = 0')
+        _p2('for obj in self.actions:')
+        _p3('self.actions_len += len(obj)')
     if has_core_members:
         _p2("packed += " + parent + ".pack(self)")
     if has_list:
@@ -337,7 +336,7 @@ def gen_message_wrapper(msg):
             _p2('for obj in self.' + list_var + ':')
             _p3('packed += obj.pack()')
         else:
-            _p2('packed += self.' + list_var + '.pack()')
+            _p2('packed += ' + list_type + '(self.' + list_var + ').pack()')
     if has_string:
         _p2('packed += self.data')
     _p2("return packed")
@@ -367,15 +366,21 @@ def gen_message_wrapper(msg):
             _p2("for obj in self." + list_var + ":")
             _p3("binary_string = obj.unpack(binary_string)")
         elif msg == "packet_out":  # Special case this
-            _p2('binary_string = self.actions.unpack(' + 
+            _p2("obj = action_list()")
+            _p2('binary_string = obj.unpack(' + 
                 'binary_string, bytes=self.actions_len)')
+            _p2("self.actions = list(obj)")
         elif msg == "flow_mod":  # Special case this
             _p2("ai_len = self.header.length - (OFP_FLOW_MOD_BYTES + " + 
                 "OFP_HEADER_BYTES)")
-            _p2("binary_string = self.actions.unpack(binary_string, " +
+            _p2("obj = action_list()")
+            _p2("binary_string = obj.unpack(binary_string, " +
                 "bytes=ai_len)")
+            _p2("self.actions = list(obj)")
         else:
-            _p2("binary_string = self." + list_var + ".unpack(binary_string)")
+            _p2("obj = " + list_type + "()")
+            _p2("binary_string = obj.unpack(binary_string)")
+            _p2("self." + list_var + " = list(obj)")
     if has_string:
         _p2("self.data = binary_string")
         _p2("binary_string = ''")
@@ -397,11 +402,8 @@ def gen_message_wrapper(msg):
     if has_core_members:
         _p2("length += " + parent + ".__len__(self)")
     if has_list:
-        if list_type == None:
-            _p2("for obj in self." + list_var + ":")
-            _p3("length += len(obj)")
-        else:
-            _p2("length += len(self." + list_var + ")")
+        _p2("for obj in self." + list_var + ":")
+        _p3("length += len(obj)")
     if has_string:
         _p2("length += len(self.data)")
     _p2("return length")
@@ -680,12 +682,12 @@ class flow_stats_entry(ofp_flow_stats):
     \"""
     def __init__(self):
         ofp_flow_stats.__init__(self)
-        self.actions = action_list()
+        self.actions = []
 
     def pack(self, assertstruct=True):
         self.length = len(self)
         packed = ofp_flow_stats.pack(self, assertstruct)
-        packed += self.actions.pack()
+        packed += action_list(self.actions).pack()
         if len(packed) != self.length:
             print("ERROR: flow_stats_entry pack length not equal",
                   self.length, len(packed))
@@ -697,7 +699,9 @@ class flow_stats_entry(ofp_flow_stats):
         if ai_len < 0:
             print("ERROR: flow_stats_entry unpack length too small",
                   self.length)
-        binary_string = self.actions.unpack(binary_string, bytes=ai_len)
+        obj = action_list()
+        binary_string = obj.unpack(binary_string, bytes=ai_len)
+        self.actions = list(obj)
         return binary_string
 
     def __len__(self):

@@ -69,7 +69,6 @@ from oftest import config
 import oftest.controller  as controller
 import ofp
 import oftest.dataplane   as dataplane
-import oftest.action_list as action_list
 import oftest.parse       as parse
 import pktact
 import oftest.base_tests as base_tests
@@ -333,7 +332,7 @@ class Flow_Cfg:
     # - idle_timeout
     # - hard_timeout
     # - priority
-    # - action_list
+    # - actions
 
     def __init__(self):
         self.priority        = 0
@@ -341,7 +340,7 @@ class Flow_Cfg:
         self.match.wildcards = ofp.OFPFW_ALL
         self.idle_timeout    = 0
         self.hard_timeout    = 0
-        self.actions         = action_list.action_list()
+        self.actions         = []
 
     # {pri, match} is considered a flow key
     def key_equal(self, x):
@@ -396,8 +395,8 @@ class Flow_Cfg:
         if test_param_get("conservative_ordered_actions", True):
             # Compare actions lists as unordered
             
-            aa = copy.deepcopy(x.actions.actions)
-            for a in self.actions.actions:
+            aa = copy.deepcopy(x.actions)
+            for a in self.actions:
                 i = 0
                 while i < len(aa):
                     if a == aa[i]:
@@ -473,7 +472,7 @@ class Flow_Cfg:
         result = result + (", cookie=%d" % self.cookie)
         result = result + (", idle_timeout=%d" % self.idle_timeout)
         result = result + (", hard_timeout=%d" % self.hard_timeout)
-        for a in self.actions.actions:
+        for a in self.actions:
             result = result + (", action=%s" % ofp.ofp_action_type_map[a.type])
             if a.type == ofp.OFPAT_OUTPUT:
                 result = result + ("(%d)" % (a.port))
@@ -519,7 +518,7 @@ class Flow_Cfg:
 
         set_vlanf   = False
         strip_vlanf = False
-        self.actions = action_list.action_list()
+        self.actions = []
         for a in actions:
             act = None
             if a == ofp.OFPAT_OUTPUT:
@@ -627,7 +626,7 @@ class Flow_Cfg:
 
         actions = shuffle(actions)
 
-        self.actions = action_list.action_list()
+        self.actions = []
         for a in actions:
             if a == ofp.OFPAT_OUTPUT:
                 # TBD - Output actions are clustered in list, spread them out?

@@ -501,7 +501,6 @@ class DirectTwoPorts(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = ofp.action.output()
 
         for idx in range(len(of_ports)):
             delete_all_flows(self.controller)
@@ -518,10 +517,8 @@ class DirectTwoPorts(base_tests.SimpleDataPlane):
             request = ofp.message.flow_mod()
             request.match = match
             request.buffer_id = 0xffffffff
-            act.port = egress_port1
-            request.actions.append(act)
-            act.port = egress_port2
-            request.actions.append(act)
+            request.actions.append(ofp.action.output(port=egress_port1))
+            request.actions.append(ofp.action.output(port=egress_port2))
             # logging.info(request.show())
 
             logging.info("Inserting flow")
@@ -559,7 +556,6 @@ class DirectMCNonIngress(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = ofp.action.output()
 
         for ingress_port in of_ports:
             delete_all_flows(self.controller)
@@ -574,8 +570,7 @@ class DirectMCNonIngress(base_tests.SimpleDataPlane):
             for egress_port in of_ports:
                 if egress_port == ingress_port:
                     continue
-                act.port = egress_port
-                request.actions.append(act)
+                request.actions.append(ofp.action.output(port=egress_port))
             logging.debug(request.show())
 
             logging.info("Inserting flow")
@@ -611,7 +606,6 @@ class DirectMC(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = ofp.action.output()
 
         for ingress_port in of_ports:
             delete_all_flows(self.controller)
@@ -623,6 +617,7 @@ class DirectMC(base_tests.SimpleDataPlane):
             request.match = match
             request.buffer_id = 0xffffffff
             for egress_port in of_ports:
+                act = ofp.action.output()
                 if egress_port == ingress_port:
                     act.port = ofp.OFPP_IN_PORT
                 else:
@@ -713,7 +708,6 @@ class FloodPlusIngress(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = ofp.action.output()
 
         for ingress_port in of_ports:
             delete_all_flows(self.controller)
@@ -724,10 +718,8 @@ class FloodPlusIngress(base_tests.SimpleDataPlane):
             request = ofp.message.flow_mod()
             request.match = match
             request.buffer_id = 0xffffffff
-            act.port = ofp.OFPP_FLOOD
-            request.actions.append(act)
-            act.port = ofp.OFPP_IN_PORT
-            request.actions.append(act)
+            request.actions.append(ofp.action.output(port=ofp.OFPP_FLOOD))
+            request.actions.append(ofp.action.output(port=ofp.OFPP_IN_PORT))
             logging.info(request.show())
 
             logging.info("Inserting flow")
@@ -804,7 +796,6 @@ class AllPlusIngress(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = ofp.action.output()
 
         for ingress_port in of_ports:
             delete_all_flows(self.controller)
@@ -815,10 +806,8 @@ class AllPlusIngress(base_tests.SimpleDataPlane):
             request = ofp.message.flow_mod()
             request.match = match
             request.buffer_id = 0xffffffff
-            act.port = ofp.OFPP_ALL
-            request.actions.append(act)
-            act.port = ofp.OFPP_IN_PORT
-            request.actions.append(act)
+            request.actions.append(ofp.action.output(port=ofp.OFPP_ALL))
+            request.actions.append(ofp.action.output(port=ofp.OFPP_IN_PORT))
             logging.info(request.show())
 
             logging.info("Inserting flow")
