@@ -57,10 +57,10 @@ class Grp10No10(base_tests.SimpleDataPlane):
         pkt = simple_tcp_packet()
         try :
             for x in range (0,20) :
-            self.dataplane.send(ingress_port, str(pkt))
-            yes_ports=set(of_ports)
-            no_ports = []
-            receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
+                self.dataplane.send(ingress_port, str(pkt))
+                yes_ports=set(of_ports)
+                no_ports = []
+                receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
 
         finally : 
         
