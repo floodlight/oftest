@@ -541,7 +541,7 @@ class --TYPE--_stats_request(ofp_stats_request, ofp_--TYPE--_stats_request):
         ofp_stats_request.__init__(self)
         ofp_--TYPE--_stats_request.__init__(self)
         self.header.type = OFPT_STATS_REQUEST
-        self.type = --STATS_NAME--
+        self.stats_type = --STATS_NAME--
         for (k, v) in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)

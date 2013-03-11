@@ -797,7 +797,7 @@ class ofp_stats_request:
         """Initialize
         Declare members and default values
         """
-        self.type = 0
+        self.stats_type = 0
         self.flags = 0
 
     def __assert(self):
@@ -813,7 +813,7 @@ class ofp_stats_request:
             if(not self.__assert()[0]):
                 return None
         packed = ""
-        packed += struct.pack("!HH", self.type, self.flags)
+        packed += struct.pack("!HH", self.stats_type, self.flags)
         return packed
 
     def unpack(self, binaryString):
@@ -826,7 +826,7 @@ class ofp_stats_request:
         fmt = '!HH'
         start = 0
         end = start + struct.calcsize(fmt)
-        (self.type, self.flags) = struct.unpack(fmt,  binaryString[start:end])
+        (self.stats_type, self.flags) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[4:]
 
     def __len__(self):
@@ -839,7 +839,7 @@ class ofp_stats_request:
         """Return True if self and other have same values
         """
         if type(self) != type(other): return False
-        if self.type !=  other.type: return False
+        if self.stats_type !=  other.stats_type: return False
         if self.flags !=  other.flags: return False
         return True
 
@@ -849,7 +849,7 @@ class ofp_stats_request:
         """Generate string showing basic members of structure
         """
         outstr = ''
-        outstr += prefix + 'type: ' + str(self.type) + '\n'
+        outstr += prefix + 'stats_type: ' + str(self.stats_type) + '\n'
         outstr += prefix + 'flags: ' + str(self.flags) + '\n'
         return outstr
 
@@ -2010,7 +2010,7 @@ class ofp_stats_reply:
         """Initialize
         Declare members and default values
         """
-        self.type = 0
+        self.stats_type = 0
         self.flags = 0
 
     def __assert(self):
@@ -2026,7 +2026,7 @@ class ofp_stats_reply:
             if(not self.__assert()[0]):
                 return None
         packed = ""
-        packed += struct.pack("!HH", self.type, self.flags)
+        packed += struct.pack("!HH", self.stats_type, self.flags)
         return packed
 
     def unpack(self, binaryString):
@@ -2039,7 +2039,7 @@ class ofp_stats_reply:
         fmt = '!HH'
         start = 0
         end = start + struct.calcsize(fmt)
-        (self.type, self.flags) = struct.unpack(fmt,  binaryString[start:end])
+        (self.stats_type, self.flags) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[4:]
 
     def __len__(self):
@@ -2052,7 +2052,7 @@ class ofp_stats_reply:
         """Return True if self and other have same values
         """
         if type(self) != type(other): return False
-        if self.type !=  other.type: return False
+        if self.stats_type !=  other.stats_type: return False
         if self.flags !=  other.flags: return False
         return True
 
@@ -2062,7 +2062,7 @@ class ofp_stats_reply:
         """Generate string showing basic members of structure
         """
         outstr = ''
-        outstr += prefix + 'type: ' + str(self.type) + '\n'
+        outstr += prefix + 'stats_type: ' + str(self.stats_type) + '\n'
         outstr += prefix + 'flags: ' + str(self.flags) + '\n'
         return outstr
 

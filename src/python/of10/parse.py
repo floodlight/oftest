@@ -103,7 +103,7 @@ def _of_message_to_object(binary_string):
         sub_hdr = message.ofp_stats_request()
         sub_hdr.unpack(binary_string[cstruct.OFP_HEADER_BYTES:])
         try:
-            obj = stats_request_to_class_map[sub_hdr.type]()
+            obj = stats_request_to_class_map[sub_hdr.stats_type]()
         except KeyError:
             obj = None
         return obj
@@ -111,7 +111,7 @@ def _of_message_to_object(binary_string):
         sub_hdr = message.ofp_stats_reply()
         sub_hdr.unpack(binary_string[cstruct.OFP_HEADER_BYTES:])
         try:
-            obj = stats_reply_to_class_map[sub_hdr.type]()
+            obj = stats_reply_to_class_map[sub_hdr.stats_type]()
         except KeyError:
             obj = None
         return obj

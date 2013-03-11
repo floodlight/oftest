@@ -68,7 +68,7 @@ class_to_members_map = {
                                        'port_no'
                                       ],
     'ofp_stats_request'             : [
-                                       'type',
+                                       'stats_type',
                                        'flags'
                                       ],
     'ofp_aggregate_stats_request'   : [
@@ -144,7 +144,7 @@ class_to_members_map = {
                                        'vendor'
                                       ],
     'ofp_stats_reply'               : [
-                                       'type',
+                                       'stats_type',
                                        'flags'
                                       ],
     'ofp_queue_stats_request'       : [

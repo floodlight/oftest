@@ -2247,7 +2247,7 @@ class stats_reply(ofp_stats_reply):
     @arg type: The message type (OFPT_STATS_REPLY=17)
 
     Data members inherited from ofp_stats_reply:
-    @arg type
+    @arg stats_type
     @arg flags
 
     """
@@ -2354,7 +2354,7 @@ class stats_request(ofp_stats_request):
     @arg type: The message type (OFPT_STATS_REQUEST=16)
 
     Data members inherited from ofp_stats_request:
-    @arg type
+    @arg stats_type
     @arg flags
 
     """
@@ -2696,7 +2696,7 @@ class aggregate_stats_request(ofp_stats_request, ofp_aggregate_stats_request):
         ofp_stats_request.__init__(self)
         ofp_aggregate_stats_request.__init__(self)
         self.header.type = OFPT_STATS_REQUEST
-        self.type = OFPST_AGGREGATE
+        self.stats_type = OFPST_AGGREGATE
         for (k, v) in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
@@ -2805,7 +2805,7 @@ class desc_stats_request(ofp_stats_request, ofp_desc_stats_request):
         ofp_stats_request.__init__(self)
         ofp_desc_stats_request.__init__(self)
         self.header.type = OFPT_STATS_REQUEST
-        self.type = OFPST_DESC
+        self.stats_type = OFPST_DESC
         for (k, v) in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
@@ -2914,7 +2914,7 @@ class flow_stats_request(ofp_stats_request, ofp_flow_stats_request):
         ofp_stats_request.__init__(self)
         ofp_flow_stats_request.__init__(self)
         self.header.type = OFPT_STATS_REQUEST
-        self.type = OFPST_FLOW
+        self.stats_type = OFPST_FLOW
         for (k, v) in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
@@ -3023,7 +3023,7 @@ class port_stats_request(ofp_stats_request, ofp_port_stats_request):
         ofp_stats_request.__init__(self)
         ofp_port_stats_request.__init__(self)
         self.header.type = OFPT_STATS_REQUEST
-        self.type = OFPST_PORT
+        self.stats_type = OFPST_PORT
         for (k, v) in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
@@ -3132,7 +3132,7 @@ class queue_stats_request(ofp_stats_request, ofp_queue_stats_request):
         ofp_stats_request.__init__(self)
         ofp_queue_stats_request.__init__(self)
         self.header.type = OFPT_STATS_REQUEST
-        self.type = OFPST_QUEUE
+        self.stats_type = OFPST_QUEUE
         for (k, v) in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
@@ -3241,7 +3241,7 @@ class table_stats_request(ofp_stats_request, ofp_table_stats_request):
         ofp_stats_request.__init__(self)
         ofp_table_stats_request.__init__(self)
         self.header.type = OFPT_STATS_REQUEST
-        self.type = OFPST_TABLE
+        self.stats_type = OFPST_TABLE
         for (k, v) in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)

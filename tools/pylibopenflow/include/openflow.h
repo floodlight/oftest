@@ -735,7 +735,7 @@ enum ofp_stats_types {
 
 struct ofp_stats_request {
     struct ofp_header header;
-    uint16_t type;              /* One of the OFPST_* constants. */
+    uint16_t stats_type;              /* One of the OFPST_* constants. */
     uint16_t flags;             /* OFPSF_REQ_* flags (none yet defined). */
     uint8_t body[0];            /* Body of the request. */
 };
@@ -747,7 +747,7 @@ enum ofp_stats_reply_flags {
 
 struct ofp_stats_reply {
     struct ofp_header header;
-    uint16_t type;              /* One of the OFPST_* constants. */
+    uint16_t stats_type;              /* One of the OFPST_* constants. */
     uint16_t flags;             /* OFPSF_REPLY_* flags. */
     uint8_t body[0];            /* Body of the reply. */
 };
