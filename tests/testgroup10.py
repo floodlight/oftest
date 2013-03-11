@@ -78,7 +78,7 @@ class Grp10No10(base_tests.SimpleDataPlane):
             logging.info("Packet should not be forwarded to any dataplane port")
             no_ports=set(of_ports)
             yes_ports=[]
-            receive_pkt_check(self.dataplane,packet,yes_ports,no_ports,self)
+            receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
 
 
 class Grp10No20(base_tests.SimpleProtocol):
