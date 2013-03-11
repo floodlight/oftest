@@ -69,7 +69,7 @@ class Grp10No10(base_tests.SimpleDataPlane):
             logging.info("Sending simple tcp packet ...")
             self.dataplane.send(ingress_port, str(pkt))
         
-            #Verify packet_in should be not generated 
+            #Verify packet_in should not be generated 
             logging.info("No packet_in should be generated")
             (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=10)
             self.assertTrue(response is None,
@@ -106,10 +106,9 @@ class Grp10No20(base_tests.SimpleProtocol):
         self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,'response is not echo_reply')
         self.assertEqual(request.header.xid, response.header.xid,
                          'response xid != request xid')
-        self.assertTrue(response.header.version == 0x01, 'switch openflow-version field is not 1.0.1')
-        self.assertEqual(len(response.data), 0, 'response data non-empty')
-
+        self.assertTrue(response.header.version == 0x01, 'switch openflow-version field is not 1.0')
         logging.info("Configured host : " + str(config["controller_host"]) + "Configured port : " + str(config["controller_port"]))
+
 
 class Grp10No60(base_tests.SimpleDataPlane):
     """
@@ -118,10 +117,29 @@ class Grp10No60(base_tests.SimpleDataPlane):
     @of_version can be passed from command line , default is 0x01
     """
     @wireshark_capture
-    def runTest(self):
+
+    def setUp(self):
         logging = get_logger()
-        logging.info("Running TestNo60 Version Announcement test")
-        
+        #This is almost same as setUp in SimpleProtocol except that intial hello is set to false
+        self.controller = controller.Controller(
+            host=config["controller_host"],
+            port=config["controller_port"])
+        # clean_shutdown should be set to False to force quit app
+        self.clean_shutdown = True
+        #set initial hello to False
+        self.controller.initial_hello=False
+        self.controller.start()
+        self.controller.connect(timeout=20)
+        # By default, respond to echo requests
+        self.controller.keep_alive = True
+        if not self.controller.active:
+            raise Exception("Controller startup failed")
+        if self.controller.switch_addr is None: 
+            raise Exception("Controller startup failed (no switch addr)")
+        logging.info("Connected " + str(self.controller.switch_addr))
+
+    def runTest(self):
+        logging.info("Running Test Grp10No60 Version Announcement test")
         of_version = test_param_get('version',default = 0x01)
         request = message.hello()  
         rv = self.controller.message_send(request)  
@@ -130,7 +148,7 @@ class Grp10No60(base_tests.SimpleDataPlane):
                                                timeout=5)
         self.assertTrue(response is not None, 
                                'Switch did not exchange hello message in return') 
-        self.assertTrue(response.header.version == of_version, 'switch openflow-version field is not 1.0.0') 
+        self.assertTrue(response.header.version == of_version, 'switch openflow-version field is not correct') 
 
 
 class Grp10No70(base_tests.SimpleProtocol):
