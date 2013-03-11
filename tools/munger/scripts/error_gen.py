@@ -39,6 +39,7 @@ class --TYPE--_error_msg(ofp_error_msg):
         ofp_error_msg.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_ERROR
+        self.xid = None
         self.err_type = --ERROR_NAME--
         self.data = ""
 

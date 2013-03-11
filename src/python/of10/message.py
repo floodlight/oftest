@@ -127,6 +127,7 @@ class barrier_reply(ofp_header):
         ofp_header.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_BARRIER_REPLY
+        self.xid = None
         for (k, v) in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
@@ -233,6 +234,7 @@ class barrier_request(ofp_header):
         ofp_header.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_BARRIER_REQUEST
+        self.xid = None
         for (k, v) in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
@@ -340,6 +342,7 @@ class echo_reply(ofp_header):
         ofp_header.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_ECHO_REPLY
+        self.xid = None
         self.data = ""
         for (k, v) in kwargs.items():
             if hasattr(self, k):
@@ -460,6 +463,7 @@ class echo_request(ofp_header):
         ofp_header.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_ECHO_REQUEST
+        self.xid = None
         self.data = ""
         for (k, v) in kwargs.items():
             if hasattr(self, k):
@@ -582,6 +586,7 @@ class error(ofp_error_msg):
         ofp_error_msg.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_ERROR
+        self.xid = None
         self.data = ""
         for (k, v) in kwargs.items():
             if hasattr(self, k):
@@ -707,6 +712,7 @@ class features_reply(ofp_switch_features):
         ofp_switch_features.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_FEATURES_REPLY
+        self.xid = None
         self.ports = []
         for (k, v) in kwargs.items():
             if hasattr(self, k):
@@ -826,6 +832,7 @@ class features_request(ofp_header):
         ofp_header.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_FEATURES_REQUEST
+        self.xid = None
         for (k, v) in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
@@ -942,6 +949,7 @@ class flow_mod(ofp_flow_mod):
         ofp_flow_mod.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_FLOW_MOD
+        self.xid = None
         self.actions = []
         for (k, v) in kwargs.items():
             if hasattr(self, k):
@@ -1069,6 +1077,7 @@ class flow_removed(ofp_flow_removed):
         ofp_flow_removed.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_FLOW_REMOVED
+        self.xid = None
         for (k, v) in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
@@ -1177,6 +1186,7 @@ class get_config_reply(ofp_switch_config):
         ofp_switch_config.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_GET_CONFIG_REPLY
+        self.xid = None
         for (k, v) in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
@@ -1283,6 +1293,7 @@ class get_config_request(ofp_header):
         ofp_header.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_GET_CONFIG_REQUEST
+        self.xid = None
         for (k, v) in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
@@ -1390,6 +1401,7 @@ class hello(ofp_header):
         ofp_header.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_HELLO
+        self.xid = None
         self.data = ""
         for (k, v) in kwargs.items():
             if hasattr(self, k):
@@ -1514,6 +1526,7 @@ class packet_in(ofp_packet_in):
         ofp_packet_in.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_PACKET_IN
+        self.xid = None
         self.data = ""
         for (k, v) in kwargs.items():
             if hasattr(self, k):
@@ -1638,6 +1651,7 @@ class packet_out(ofp_packet_out):
         ofp_packet_out.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_PACKET_OUT
+        self.xid = None
         self.actions = []
         self.data = ""
         for (k, v) in kwargs.items():
@@ -1776,6 +1790,7 @@ class port_mod(ofp_port_mod):
         ofp_port_mod.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_PORT_MOD
+        self.xid = None
         for (k, v) in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
@@ -1884,6 +1899,7 @@ class port_status(ofp_port_status):
         ofp_port_status.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_PORT_STATUS
+        self.xid = None
         for (k, v) in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
@@ -1992,6 +2008,7 @@ class queue_get_config_reply(ofp_queue_get_config_reply):
         ofp_queue_get_config_reply.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_QUEUE_GET_CONFIG_REPLY
+        self.xid = None
         self.queues = []
         for (k, v) in kwargs.items():
             if hasattr(self, k):
@@ -2110,6 +2127,7 @@ class queue_get_config_request(ofp_queue_get_config_request):
         ofp_queue_get_config_request.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_QUEUE_GET_CONFIG_REQUEST
+        self.xid = None
         for (k, v) in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
@@ -2218,6 +2236,7 @@ class set_config(ofp_switch_config):
         ofp_switch_config.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_SET_CONFIG
+        self.xid = None
         for (k, v) in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
@@ -2326,6 +2345,7 @@ class stats_reply(ofp_stats_reply):
         ofp_stats_reply.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_STATS_REPLY
+        self.xid = None
         for (k, v) in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
@@ -2434,6 +2454,7 @@ class stats_request(ofp_stats_request):
         ofp_stats_request.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_STATS_REQUEST
+        self.xid = None
         for (k, v) in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
@@ -2542,6 +2563,7 @@ class vendor(ofp_vendor_header):
         ofp_vendor_header.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_VENDOR
+        self.xid = None
         self.data = ""
         for (k, v) in kwargs.items():
             if hasattr(self, k):
@@ -2765,6 +2787,7 @@ class aggregate_stats_request(ofp_stats_request, ofp_aggregate_stats_request):
         ofp_aggregate_stats_request.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_STATS_REQUEST
+        self.xid = None
         self.stats_type = OFPST_AGGREGATE
         for (k, v) in kwargs.items():
             if hasattr(self, k):
@@ -2813,6 +2836,7 @@ class aggregate_stats_reply(ofp_stats_reply):
         ofp_stats_reply.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_STATS_REPLY
+        self.xid = None
         self.stats_type = OFPST_AGGREGATE
         # stats: Array of type aggregate_stats_entry
         self.entries = []
@@ -2868,6 +2892,7 @@ class desc_stats_request(ofp_stats_request, ofp_desc_stats_request):
         ofp_desc_stats_request.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_STATS_REQUEST
+        self.xid = None
         self.stats_type = OFPST_DESC
         for (k, v) in kwargs.items():
             if hasattr(self, k):
@@ -2916,6 +2941,7 @@ class desc_stats_reply(ofp_stats_reply):
         ofp_stats_reply.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_STATS_REPLY
+        self.xid = None
         self.stats_type = OFPST_DESC
         # stats: Array of type desc_stats_entry
         self.entries = []
@@ -2971,6 +2997,7 @@ class flow_stats_request(ofp_stats_request, ofp_flow_stats_request):
         ofp_flow_stats_request.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_STATS_REQUEST
+        self.xid = None
         self.stats_type = OFPST_FLOW
         for (k, v) in kwargs.items():
             if hasattr(self, k):
@@ -3019,6 +3046,7 @@ class flow_stats_reply(ofp_stats_reply):
         ofp_stats_reply.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_STATS_REPLY
+        self.xid = None
         self.stats_type = OFPST_FLOW
         # stats: Array of type flow_stats_entry
         self.entries = []
@@ -3074,6 +3102,7 @@ class port_stats_request(ofp_stats_request, ofp_port_stats_request):
         ofp_port_stats_request.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_STATS_REQUEST
+        self.xid = None
         self.stats_type = OFPST_PORT
         for (k, v) in kwargs.items():
             if hasattr(self, k):
@@ -3122,6 +3151,7 @@ class port_stats_reply(ofp_stats_reply):
         ofp_stats_reply.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_STATS_REPLY
+        self.xid = None
         self.stats_type = OFPST_PORT
         # stats: Array of type port_stats_entry
         self.entries = []
@@ -3177,6 +3207,7 @@ class queue_stats_request(ofp_stats_request, ofp_queue_stats_request):
         ofp_queue_stats_request.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_STATS_REQUEST
+        self.xid = None
         self.stats_type = OFPST_QUEUE
         for (k, v) in kwargs.items():
             if hasattr(self, k):
@@ -3225,6 +3256,7 @@ class queue_stats_reply(ofp_stats_reply):
         ofp_stats_reply.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_STATS_REPLY
+        self.xid = None
         self.stats_type = OFPST_QUEUE
         # stats: Array of type queue_stats_entry
         self.entries = []
@@ -3280,6 +3312,7 @@ class table_stats_request(ofp_stats_request, ofp_table_stats_request):
         ofp_table_stats_request.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_STATS_REQUEST
+        self.xid = None
         self.stats_type = OFPST_TABLE
         for (k, v) in kwargs.items():
             if hasattr(self, k):
@@ -3328,6 +3361,7 @@ class table_stats_reply(ofp_stats_reply):
         ofp_stats_reply.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_STATS_REPLY
+        self.xid = None
         self.stats_type = OFPST_TABLE
         # stats: Array of type table_stats_entry
         self.entries = []

@@ -297,6 +297,7 @@ def gen_message_wrapper(msg):
         _p2(parent + ".__init__(self)")
     _p2("self.version = OFP_VERSION")
     _p2("self.type = " + msg_name)
+    _p2("self.xid = None")
     if has_list:
         _p2('self.' + list_var + ' = []')
     if has_string:
@@ -534,6 +535,7 @@ class --TYPE--_stats_request(ofp_stats_request, ofp_--TYPE--_stats_request):
         ofp_--TYPE--_stats_request.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_STATS_REQUEST
+        self.xid = None
         self.stats_type = --STATS_NAME--
         for (k, v) in kwargs.items():
             if hasattr(self, k):
@@ -593,6 +595,7 @@ class --TYPE--_stats_reply(ofp_stats_reply):
         ofp_stats_reply.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_STATS_REPLY
+        self.xid = None
         self.stats_type = --STATS_NAME--
         # stats: Array of type --TYPE--_stats_entry
         self.entries = []

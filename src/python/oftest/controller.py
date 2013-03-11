@@ -256,7 +256,7 @@ class Controller(Thread):
                         rep = ofp.message.echo_reply()
                         rep.xid = hdr.xid
                         # Ignoring additional data
-                        self.message_send(rep.pack(), zero_xid=True)
+                        self.message_send(rep.pack())
                         continue
 
                 # Log error messages
@@ -610,7 +610,7 @@ class Controller(Thread):
         else:
             return (None, None)
 
-    def transact(self, msg, timeout=-1, zero_xid=False):
+    def transact(self, msg, timeout=-1):
         """
         Run a message transaction with the switch
 
@@ -620,13 +620,9 @@ class Controller(Thread):
 
         @param msg The message object to send; must not be a string
         @param timeout The timeout in seconds; if -1 use default.
-        @param zero_xid Normally, if the XID is 0 an XID will be generated
-        for the message.  Set zero_xid to override this behavior
-        @return The matching message object or None if unsuccessful
-
         """
 
-        if not zero_xid and msg.xid == 0:
+        if msg.xid == None:
             msg.xid = ofutils.gen_xid()
 
         self.logger.debug("Running transaction %d" % msg.xid)
@@ -653,16 +649,12 @@ class Controller(Thread):
             self.logger.warning("No response for xid " + str(self.xid))
         return (resp, pkt)
 
-    def message_send(self, msg, zero_xid=False):
+    def message_send(self, msg):
         """
         Send the message to the switch
 
         @param msg A string or OpenFlow message object to be forwarded to
         the switch.
-        @param zero_xid If msg is an OpenFlow object (not a string) and if
-        the XID in the header is 0, then an XID will be generated
-        for the message.  Set zero_xid to override this behavior (and keep an
-        existing 0 xid)
         """
 
         if not self.switch_socket:
@@ -670,7 +662,7 @@ class Controller(Thread):
             raise Exception("no socket")
         #@todo If not string, try to pack
         if type(msg) != type(""):
-            if msg.xid == 0 and not zero_xid:
+            if msg.xid == None:
                 msg.xid = ofutils.gen_xid()
             outpkt = msg.pack()
         else:

@@ -19,6 +19,7 @@ class hello_failed_error_msg(ofp_error_msg):
         ofp_error_msg.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_ERROR
+        self.xid = None
         self.err_type = OFPET_HELLO_FAILED
         self.data = ""
 
@@ -66,6 +67,7 @@ class bad_request_error_msg(ofp_error_msg):
         ofp_error_msg.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_ERROR
+        self.xid = None
         self.err_type = OFPET_BAD_REQUEST
         self.data = ""
 
@@ -113,6 +115,7 @@ class bad_action_error_msg(ofp_error_msg):
         ofp_error_msg.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_ERROR
+        self.xid = None
         self.err_type = OFPET_BAD_ACTION
         self.data = ""
 
@@ -160,6 +163,7 @@ class flow_mod_failed_error_msg(ofp_error_msg):
         ofp_error_msg.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_ERROR
+        self.xid = None
         self.err_type = OFPET_FLOW_MOD_FAILED
         self.data = ""
 
@@ -207,6 +211,7 @@ class port_mod_failed_error_msg(ofp_error_msg):
         ofp_error_msg.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_ERROR
+        self.xid = None
         self.err_type = OFPET_PORT_MOD_FAILED
         self.data = ""
 
@@ -254,6 +259,7 @@ class queue_op_failed_error_msg(ofp_error_msg):
         ofp_error_msg.__init__(self)
         self.version = OFP_VERSION
         self.type = OFPT_ERROR
+        self.xid = None
         self.err_type = OFPET_QUEUE_OP_FAILED
         self.data = ""
 

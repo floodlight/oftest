@@ -29,6 +29,7 @@ class illegal_message_type(of10.ofp_header):
         of10.ofp_header.__init__(self)
         self.version = of10.OFP_VERSION
         self.type = ILLEGAL_MESSAGE_TYPE
+        self.xid = None
         self.data = ""
         for (k, v) in kwargs.items():
             if hasattr(self, k):
