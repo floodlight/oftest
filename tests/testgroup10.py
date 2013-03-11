@@ -59,9 +59,9 @@ class Grp10No10(base_tests.SimpleDataPlane):
             for x in range (0,15) :
                 
                 self.dataplane.send(ingress_port, str(pkt))
-                yes_ports=set(of_ports).difference([ingress_port])
-                no_ports = []
-                receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
+                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=10)
+                self.assertTrue(response is not None,
+                                'PacketIn is not generated--Control plane is down')
         
         except AssertionError :
         
@@ -80,9 +80,11 @@ class Grp10No10(base_tests.SimpleDataPlane):
             no_ports=set(of_ports)
             yes_ports=[]
             receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
+            assertionerr = True
+        
         else :
 
-            self.assertTrue(AssertionError is None, "Failed to shutdown the control plane")
+            self.assertTrue(assertionerr is True, "Failed to shutdown the control plane")
 
 class Grp10No20(base_tests.SimpleProtocol):
     """
