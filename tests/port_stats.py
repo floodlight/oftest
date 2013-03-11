@@ -67,9 +67,9 @@ def getStats(obj, port):
     response, pkt = obj.controller.transact(stat_req, timeout=2)
     obj.assertTrue(response is not None, 
                     "No response to stats request")
-    obj.assertTrue(len(response.stats) == 1,
+    obj.assertTrue(len(response.entries) == 1,
                     "Did not receive port stats reply")
-    for item in response.stats:
+    for item in response.entries:
         logging.info("Sent " + str(item.tx_packets) + " packets")
         packet_sent = item.tx_packets
         packet_recv = item.rx_packets
@@ -84,10 +84,10 @@ def getAllStats(obj):
     response, pkt = obj.controller.transact(stat_req, timeout=2)
     obj.assertTrue(response is not None, 
                     "No response to stats request")
-    obj.assertTrue(len(response.stats) >= 3,
+    obj.assertTrue(len(response.entries) >= 3,
                     "Did not receive all port stats reply")
     stats = {}
-    for item in response.stats:
+    for item in response.entries:
         stats[ item.port_no ] = ( item.tx_packets, item.rx_packets )
     return stats
 
@@ -104,9 +104,9 @@ def verifyStats(obj, port, test_timeout, packet_sent, packet_recv):
                                                 timeout=test_timeout)
         obj.assertTrue(response is not None, 
                        "No response to stats request")
-        obj.assertTrue(len(response.stats) == 1,
+        obj.assertTrue(len(response.entries) == 1,
                        "Did not receive port stats reply")
-        for item in response.stats:
+        for item in response.entries:
             sent = item.tx_packets
             recv = item.rx_packets
             logging.info("Sent " + str(item.tx_packets) + " packets")

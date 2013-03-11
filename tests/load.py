@@ -203,7 +203,7 @@ class FlowModLoad(base_tests.SimpleProtocol):
 
         # Some switches report an extremely high max_entries that would cause
         # us to run out of memory attempting to create all the flow-mods.
-        num_flows = min(msg.stats[0].max_entries, 32678)
+        num_flows = min(msg.entries[0].max_entries, 32678)
 
         logging.info("Creating %d flow-mods messages", num_flows)
 

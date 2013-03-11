@@ -73,10 +73,10 @@ def flow_caps_common(obj, is_exact=True):
             logging.info(response.show())
             if table_idx == -1:  # Accumulate for all tables
                 active_flows = 0
-                for stats in response.stats:
+                for stats in response.entries:
                     active_flows += stats.active_count
             else: # Table index to use specified in config
-                active_flows = response.stats[table_idx].active_count
+                active_flows = response.entries[table_idx].active_count
             if active_flows != flow_count:
                 break
 

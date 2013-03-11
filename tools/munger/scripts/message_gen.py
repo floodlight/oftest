@@ -605,13 +605,13 @@ class --TYPE--_stats_reply(ofp_stats_reply):
         self.header.type = OFPT_STATS_REPLY
         self.type = --STATS_NAME--
         # stats: Array of type --TYPE--_stats_entry
-        self.stats = []
+        self.entries = []
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)
         packed = self.header.pack()
         packed += ofp_stats_reply.pack(self)
-        for obj in self.stats:
+        for obj in self.entries:
             packed += obj.pack()
         return packed
 
@@ -622,14 +622,14 @@ class --TYPE--_stats_reply(ofp_stats_reply):
         while len(binary_string) >= len(dummy):
             obj = --TYPE--_stats_entry()
             binary_string = obj.unpack(binary_string)
-            self.stats.append(obj)
+            self.entries.append(obj)
         if len(binary_string) != 0:
             print "ERROR unpacking --TYPE-- stats string: extra bytes"
         return binary_string
 
     def __len__(self):
         length = len(self.header) + OFP_STATS_REPLY_BYTES
-        for obj in self.stats:
+        for obj in self.entries:
             length += len(obj)
         return length
 
@@ -638,8 +638,8 @@ class --TYPE--_stats_reply(ofp_stats_reply):
         outstr += prefix + "ofp header:\\n"
         outstr += self.header.show(prefix + '  ')
         outstr += ofp_stats_reply.show(self)
-        outstr += prefix + "Stats array of length " + str(len(self.stats)) + '\\n'
-        for obj in self.stats:
+        outstr += prefix + "Stats array of length " + str(len(self.entries)) + '\\n'
+        for obj in self.entries:
             outstr += obj.show()
         return outstr
 
@@ -647,7 +647,7 @@ class --TYPE--_stats_reply(ofp_stats_reply):
         if type(self) != type(other): return False
         return (self.header == other.header and
                 ofp_stats_reply.__eq__(self, other) and
-                self.stats == other.stats)
+                self.entries == other.entries)
 
     def __ne__(self, other): return not self.__eq__(other)
 """

@@ -683,7 +683,7 @@ class DescStatsReplyBody(base_tests.SimpleDataPlane):
         serial_num = ""
         dp_decription = ""
 
-        for stats in response.stats:
+        for stats in response.entries:
 
             mfr_desc += stats.mfr_desc
             hw_desc += stats.hw_desc

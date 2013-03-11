@@ -1011,9 +1011,9 @@ def all_stats_get(parent):
     rv = {}
 
     (reply, pkt) = parent.controller.transact(stat_req)
-    parent.assertTrue(len(reply.stats) == 1, "Did not receive flow stats reply")
+    parent.assertTrue(len(reply.entries) == 1, "Did not receive flow stats reply")
 
-    for obj in reply.stats:
+    for obj in reply.entries:
         (rv["flows"], rv["packets"], rv["bytes"]) = (obj.flow_count, 
                                                   obj.packet_count, obj.byte_count)
         break
@@ -1023,7 +1023,7 @@ def all_stats_get(parent):
 
     
     (rv["active"], rv["lookups"], rv["matched"]) = (0,0,0)
-    for obj in reply.stats:
+    for obj in reply.entries:
         rv["active"] += obj.active_count
         rv["lookups"] += obj.lookup_count
         rv["matched"] += obj.matched_count
@@ -1147,11 +1147,11 @@ def get_stats(test, req):
     stats = []
     reply, _ = test.controller.transact(req)
     test.assertTrue(reply is not None, "No response to stats request")
-    stats.extend(reply.stats)
+    stats.extend(reply.entries)
     while reply.flags & of10.OFPSF_REPLY_MORE != 0:
         reply, pkt = self.controller.poll(exp_msg=of10.OFPT_STATS_REPLY)
         test.assertTrue(reply is not None, "No response to stats request")
-        stats.extend(reply.stats)
+        stats.extend(reply.entries)
     return stats
 
 def get_flow_stats(test, match, table_id=0xff, out_port=of10.OFPP_NONE):

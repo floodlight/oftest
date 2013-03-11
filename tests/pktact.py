@@ -223,7 +223,7 @@ class DirectPacketQueue(base_tests.SimpleDataPlane):
 
     def portQueuesGet(self, queue_stats, port_num):
         result = []
-        for qs in queue_stats.stats:
+        for qs in queue_stats.entries:
             if qs.port_no != port_num:
                 continue
             result.append(qs.queue_id)
@@ -322,8 +322,8 @@ class DirectPacketQueue(base_tests.SimpleDataPlane):
                 # Make sure that tx packet counter for selected egress queue was
                 # incremented
 
-                self.assertEqual(qs_after.stats[0].tx_packets, \
-                                 qs_before.stats[0].tx_packets + 1, \
+                self.assertEqual(qs_after.entries[0].tx_packets, \
+                                 qs_before.entries[0].tx_packets + 1, \
                                  "Verification of egress queue tx packet count failed"
                                  )
                     
@@ -345,7 +345,7 @@ class DirectPacketControllerQueue(base_tests.SimpleDataPlane):
 
     def portQueuesGet(self, queue_stats, port_num):
         result = []
-        for qs in queue_stats.stats:
+        for qs in queue_stats.entries:
             if qs.port_no != port_num:
                 continue
             result.append(qs.queue_id)
@@ -461,8 +461,8 @@ class DirectPacketControllerQueue(base_tests.SimpleDataPlane):
                 # Make sure that tx packet counter for selected egress queue was
                 # incremented
 
-                self.assertEqual(qs_after.stats[0].tx_packets, \
-                                 qs_before.stats[0].tx_packets + 1, \
+                self.assertEqual(qs_after.entries[0].tx_packets, \
+                                 qs_before.entries[0].tx_packets + 1, \
                                  "Verification of egress queue tx packet count failed"
                                  )
                     

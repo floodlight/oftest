@@ -2749,13 +2749,13 @@ class aggregate_stats_reply(ofp_stats_reply):
         self.header.type = OFPT_STATS_REPLY
         self.type = OFPST_AGGREGATE
         # stats: Array of type aggregate_stats_entry
-        self.stats = []
+        self.entries = []
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)
         packed = self.header.pack()
         packed += ofp_stats_reply.pack(self)
-        for obj in self.stats:
+        for obj in self.entries:
             packed += obj.pack()
         return packed
 
@@ -2766,14 +2766,14 @@ class aggregate_stats_reply(ofp_stats_reply):
         while len(binary_string) >= len(dummy):
             obj = aggregate_stats_entry()
             binary_string = obj.unpack(binary_string)
-            self.stats.append(obj)
+            self.entries.append(obj)
         if len(binary_string) != 0:
             print "ERROR unpacking aggregate stats string: extra bytes"
         return binary_string
 
     def __len__(self):
         length = len(self.header) + OFP_STATS_REPLY_BYTES
-        for obj in self.stats:
+        for obj in self.entries:
             length += len(obj)
         return length
 
@@ -2782,8 +2782,8 @@ class aggregate_stats_reply(ofp_stats_reply):
         outstr += prefix + "ofp header:\n"
         outstr += self.header.show(prefix + '  ')
         outstr += ofp_stats_reply.show(self)
-        outstr += prefix + "Stats array of length " + str(len(self.stats)) + '\n'
-        for obj in self.stats:
+        outstr += prefix + "Stats array of length " + str(len(self.entries)) + '\n'
+        for obj in self.entries:
             outstr += obj.show()
         return outstr
 
@@ -2791,7 +2791,7 @@ class aggregate_stats_reply(ofp_stats_reply):
         if type(self) != type(other): return False
         return (self.header == other.header and
                 ofp_stats_reply.__eq__(self, other) and
-                self.stats == other.stats)
+                self.entries == other.entries)
 
     def __ne__(self, other): return not self.__eq__(other)
 
@@ -2858,13 +2858,13 @@ class desc_stats_reply(ofp_stats_reply):
         self.header.type = OFPT_STATS_REPLY
         self.type = OFPST_DESC
         # stats: Array of type desc_stats_entry
-        self.stats = []
+        self.entries = []
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)
         packed = self.header.pack()
         packed += ofp_stats_reply.pack(self)
-        for obj in self.stats:
+        for obj in self.entries:
             packed += obj.pack()
         return packed
 
@@ -2875,14 +2875,14 @@ class desc_stats_reply(ofp_stats_reply):
         while len(binary_string) >= len(dummy):
             obj = desc_stats_entry()
             binary_string = obj.unpack(binary_string)
-            self.stats.append(obj)
+            self.entries.append(obj)
         if len(binary_string) != 0:
             print "ERROR unpacking desc stats string: extra bytes"
         return binary_string
 
     def __len__(self):
         length = len(self.header) + OFP_STATS_REPLY_BYTES
-        for obj in self.stats:
+        for obj in self.entries:
             length += len(obj)
         return length
 
@@ -2891,8 +2891,8 @@ class desc_stats_reply(ofp_stats_reply):
         outstr += prefix + "ofp header:\n"
         outstr += self.header.show(prefix + '  ')
         outstr += ofp_stats_reply.show(self)
-        outstr += prefix + "Stats array of length " + str(len(self.stats)) + '\n'
-        for obj in self.stats:
+        outstr += prefix + "Stats array of length " + str(len(self.entries)) + '\n'
+        for obj in self.entries:
             outstr += obj.show()
         return outstr
 
@@ -2900,7 +2900,7 @@ class desc_stats_reply(ofp_stats_reply):
         if type(self) != type(other): return False
         return (self.header == other.header and
                 ofp_stats_reply.__eq__(self, other) and
-                self.stats == other.stats)
+                self.entries == other.entries)
 
     def __ne__(self, other): return not self.__eq__(other)
 
@@ -2967,13 +2967,13 @@ class flow_stats_reply(ofp_stats_reply):
         self.header.type = OFPT_STATS_REPLY
         self.type = OFPST_FLOW
         # stats: Array of type flow_stats_entry
-        self.stats = []
+        self.entries = []
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)
         packed = self.header.pack()
         packed += ofp_stats_reply.pack(self)
-        for obj in self.stats:
+        for obj in self.entries:
             packed += obj.pack()
         return packed
 
@@ -2984,14 +2984,14 @@ class flow_stats_reply(ofp_stats_reply):
         while len(binary_string) >= len(dummy):
             obj = flow_stats_entry()
             binary_string = obj.unpack(binary_string)
-            self.stats.append(obj)
+            self.entries.append(obj)
         if len(binary_string) != 0:
             print "ERROR unpacking flow stats string: extra bytes"
         return binary_string
 
     def __len__(self):
         length = len(self.header) + OFP_STATS_REPLY_BYTES
-        for obj in self.stats:
+        for obj in self.entries:
             length += len(obj)
         return length
 
@@ -3000,8 +3000,8 @@ class flow_stats_reply(ofp_stats_reply):
         outstr += prefix + "ofp header:\n"
         outstr += self.header.show(prefix + '  ')
         outstr += ofp_stats_reply.show(self)
-        outstr += prefix + "Stats array of length " + str(len(self.stats)) + '\n'
-        for obj in self.stats:
+        outstr += prefix + "Stats array of length " + str(len(self.entries)) + '\n'
+        for obj in self.entries:
             outstr += obj.show()
         return outstr
 
@@ -3009,7 +3009,7 @@ class flow_stats_reply(ofp_stats_reply):
         if type(self) != type(other): return False
         return (self.header == other.header and
                 ofp_stats_reply.__eq__(self, other) and
-                self.stats == other.stats)
+                self.entries == other.entries)
 
     def __ne__(self, other): return not self.__eq__(other)
 
@@ -3076,13 +3076,13 @@ class port_stats_reply(ofp_stats_reply):
         self.header.type = OFPT_STATS_REPLY
         self.type = OFPST_PORT
         # stats: Array of type port_stats_entry
-        self.stats = []
+        self.entries = []
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)
         packed = self.header.pack()
         packed += ofp_stats_reply.pack(self)
-        for obj in self.stats:
+        for obj in self.entries:
             packed += obj.pack()
         return packed
 
@@ -3093,14 +3093,14 @@ class port_stats_reply(ofp_stats_reply):
         while len(binary_string) >= len(dummy):
             obj = port_stats_entry()
             binary_string = obj.unpack(binary_string)
-            self.stats.append(obj)
+            self.entries.append(obj)
         if len(binary_string) != 0:
             print "ERROR unpacking port stats string: extra bytes"
         return binary_string
 
     def __len__(self):
         length = len(self.header) + OFP_STATS_REPLY_BYTES
-        for obj in self.stats:
+        for obj in self.entries:
             length += len(obj)
         return length
 
@@ -3109,8 +3109,8 @@ class port_stats_reply(ofp_stats_reply):
         outstr += prefix + "ofp header:\n"
         outstr += self.header.show(prefix + '  ')
         outstr += ofp_stats_reply.show(self)
-        outstr += prefix + "Stats array of length " + str(len(self.stats)) + '\n'
-        for obj in self.stats:
+        outstr += prefix + "Stats array of length " + str(len(self.entries)) + '\n'
+        for obj in self.entries:
             outstr += obj.show()
         return outstr
 
@@ -3118,7 +3118,7 @@ class port_stats_reply(ofp_stats_reply):
         if type(self) != type(other): return False
         return (self.header == other.header and
                 ofp_stats_reply.__eq__(self, other) and
-                self.stats == other.stats)
+                self.entries == other.entries)
 
     def __ne__(self, other): return not self.__eq__(other)
 
@@ -3185,13 +3185,13 @@ class queue_stats_reply(ofp_stats_reply):
         self.header.type = OFPT_STATS_REPLY
         self.type = OFPST_QUEUE
         # stats: Array of type queue_stats_entry
-        self.stats = []
+        self.entries = []
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)
         packed = self.header.pack()
         packed += ofp_stats_reply.pack(self)
-        for obj in self.stats:
+        for obj in self.entries:
             packed += obj.pack()
         return packed
 
@@ -3202,14 +3202,14 @@ class queue_stats_reply(ofp_stats_reply):
         while len(binary_string) >= len(dummy):
             obj = queue_stats_entry()
             binary_string = obj.unpack(binary_string)
-            self.stats.append(obj)
+            self.entries.append(obj)
         if len(binary_string) != 0:
             print "ERROR unpacking queue stats string: extra bytes"
         return binary_string
 
     def __len__(self):
         length = len(self.header) + OFP_STATS_REPLY_BYTES
-        for obj in self.stats:
+        for obj in self.entries:
             length += len(obj)
         return length
 
@@ -3218,8 +3218,8 @@ class queue_stats_reply(ofp_stats_reply):
         outstr += prefix + "ofp header:\n"
         outstr += self.header.show(prefix + '  ')
         outstr += ofp_stats_reply.show(self)
-        outstr += prefix + "Stats array of length " + str(len(self.stats)) + '\n'
-        for obj in self.stats:
+        outstr += prefix + "Stats array of length " + str(len(self.entries)) + '\n'
+        for obj in self.entries:
             outstr += obj.show()
         return outstr
 
@@ -3227,7 +3227,7 @@ class queue_stats_reply(ofp_stats_reply):
         if type(self) != type(other): return False
         return (self.header == other.header and
                 ofp_stats_reply.__eq__(self, other) and
-                self.stats == other.stats)
+                self.entries == other.entries)
 
     def __ne__(self, other): return not self.__eq__(other)
 
@@ -3294,13 +3294,13 @@ class table_stats_reply(ofp_stats_reply):
         self.header.type = OFPT_STATS_REPLY
         self.type = OFPST_TABLE
         # stats: Array of type table_stats_entry
-        self.stats = []
+        self.entries = []
 
     def pack(self, assertstruct=True):
         self.header.length = len(self)
         packed = self.header.pack()
         packed += ofp_stats_reply.pack(self)
-        for obj in self.stats:
+        for obj in self.entries:
             packed += obj.pack()
         return packed
 
@@ -3311,14 +3311,14 @@ class table_stats_reply(ofp_stats_reply):
         while len(binary_string) >= len(dummy):
             obj = table_stats_entry()
             binary_string = obj.unpack(binary_string)
-            self.stats.append(obj)
+            self.entries.append(obj)
         if len(binary_string) != 0:
             print "ERROR unpacking table stats string: extra bytes"
         return binary_string
 
     def __len__(self):
         length = len(self.header) + OFP_STATS_REPLY_BYTES
-        for obj in self.stats:
+        for obj in self.entries:
             length += len(obj)
         return length
 
@@ -3327,8 +3327,8 @@ class table_stats_reply(ofp_stats_reply):
         outstr += prefix + "ofp header:\n"
         outstr += self.header.show(prefix + '  ')
         outstr += ofp_stats_reply.show(self)
-        outstr += prefix + "Stats array of length " + str(len(self.stats)) + '\n'
-        for obj in self.stats:
+        outstr += prefix + "Stats array of length " + str(len(self.entries)) + '\n'
+        for obj in self.entries:
             outstr += obj.show()
         return outstr
 
@@ -3336,7 +3336,7 @@ class table_stats_reply(ofp_stats_reply):
         if type(self) != type(other): return False
         return (self.header == other.header and
                 ofp_stats_reply.__eq__(self, other) and
-                self.stats == other.stats)
+                self.entries == other.entries)
 
     def __ne__(self, other): return not self.__eq__(other)
 

@@ -1162,7 +1162,7 @@ class Flow_Tbl:
             fc = Flow_Cfg()
             fc.rand(fi, \
                     wildcards_force, \
-                    sw.tbl_stats.stats[tbl].wildcards, \
+                    sw.tbl_stats.entries[tbl].wildcards, \
                     sw.sw_features.actions, \
                     sw.valid_ports, \
                     sw.valid_queues \
@@ -1174,7 +1174,7 @@ class Flow_Tbl:
             self.insert(fc)
             i = i + 1
             j = j + 1
-            if j >= sw.tbl_stats.stats[tbl].max_entries:
+            if j >= sw.tbl_stats.entries[tbl].max_entries:
                 tbl = tbl + 1
                 j = 0
 
@@ -1273,7 +1273,7 @@ class Switch:
             logging.error("Get table stats failed")
             return False
         i = 0
-        for ts in self.tbl_stats.stats:
+        for ts in self.tbl_stats.entries:
             logging.info("Supported wildcards for table %d reported by switch:"
                            % (i)
                            )
@@ -1302,7 +1302,7 @@ class Switch:
             logging.error("Get queue stats failed")
             return False
         self.valid_queues = map(lambda x: (x.port_no, x.queue_id), \
-                                self.queue_stats.stats \
+                                self.queue_stats.entries \
                                 )
         logging.info("(Port, queue) pairs reported by switch:")
         logging.info(self.valid_queues)
@@ -1342,9 +1342,9 @@ class Switch:
             if n == 0:
                 self.flow_stats = resp
             else:
-                self.flow_stats.stats.extend(resp.stats)
+                self.flow_stats.entries.extend(resp.entries)
             n = n + 1
-            if len(self.flow_stats.stats) > limit:
+            if len(self.flow_stats.entries) > limit:
                 logging.error("Too many flows returned")
                 return False
             if (resp.flags & 1) == 0:
@@ -1451,7 +1451,7 @@ class Switch:
             logging.error("Get table stats failed")
             return False
         n = 0
-        for ts in self.tbl_stats.stats:
+        for ts in self.tbl_stats.entries:
             n = n + ts.active_count
         logging.info("Table stats reported %d active flows" \
                           % (n) \
@@ -1466,18 +1466,18 @@ class Switch:
         if not self.flow_stats_get():
             logging.error("Get flow stats failed")
             return False
-        logging.info("Retrieved %d flows" % (len(self.flow_stats.stats)))
+        logging.info("Retrieved %d flows" % (len(self.flow_stats.entries)))
     
         # Verify flows returned by switch
     
-        if len(self.flow_stats.stats) != self.flow_tbl.count():
+        if len(self.flow_stats.entries) != self.flow_tbl.count():
             logging.error("Switch reported incorrect number of flows")
             result = False
     
         logging.info("Verifying received flows")
         for fc in self.flow_tbl.values():
             fc.matched = False
-        for fs in self.flow_stats.stats:
+        for fs in self.flow_stats.entries:
             flow_in = Flow_Cfg()
             flow_in.from_flow_stat(fs)
             logging.info("Received flow:")
@@ -1593,7 +1593,7 @@ class Flow_Add_5(base_tests.SimpleProtocol):
             # Number of flows requested was 0
             # => Generate max number of flows
 
-            for ts in sw.tbl_stats.stats:
+            for ts in sw.tbl_stats.entries:
                 num_flows = num_flows + ts.max_entries
 
         logging.info("Generating %d flows" % (num_flows))        
@@ -1702,7 +1702,7 @@ class Flow_Add_5_1(base_tests.SimpleProtocol):
             fc = Flow_Cfg()
             fc.rand(fi, \
                     required_wildcards(self), \
-                    sw.tbl_stats.stats[0].wildcards, \
+                    sw.tbl_stats.entries[0].wildcards, \
                     sw.sw_features.actions, \
                     sw.valid_ports, \
                     sw.valid_queues \
@@ -1805,7 +1805,7 @@ class Flow_Add_6(base_tests.SimpleProtocol):
                         )
 
         num_flows = 0
-        for ts in sw.tbl_stats.stats:
+        for ts in sw.tbl_stats.entries:
             num_flows = num_flows + ts.max_entries
 
         logging.info("Switch capacity is %d flows" % (num_flows))        
@@ -1850,7 +1850,7 @@ class Flow_Add_6(base_tests.SimpleProtocol):
             fc = Flow_Cfg()
             fc.rand(fi, \
                     required_wildcards(self), \
-                    sw.tbl_stats.stats[0].wildcards, \
+                    sw.tbl_stats.entries[0].wildcards, \
                     sw.sw_features.actions, \
                     sw.valid_ports, \
                     sw.valid_queues \
@@ -1946,7 +1946,7 @@ class Flow_Add_7(base_tests.SimpleProtocol):
         fc = Flow_Cfg()
         fc.rand(fi, \
                 required_wildcards(self), \
-                sw.tbl_stats.stats[0].wildcards, \
+                sw.tbl_stats.entries[0].wildcards, \
                 sw.sw_features.actions, \
                 sw.valid_ports, \
                 sw.valid_queues \
@@ -2068,7 +2068,7 @@ class Flow_Add_8(base_tests.SimpleProtocol):
         while True:
             fc.rand(fi, \
                     required_wildcards(self), \
-                    sw.tbl_stats.stats[0].wildcards, \
+                    sw.tbl_stats.entries[0].wildcards, \
                     sw.sw_features.actions, \
                     sw.valid_ports, \
                     sw.valid_queues \
@@ -2193,7 +2193,7 @@ class Flow_Mod_1(base_tests.SimpleProtocol):
         fc = Flow_Cfg()
         fc.rand(fi, \
                 required_wildcards(self), \
-                sw.tbl_stats.stats[0].wildcards, \
+                sw.tbl_stats.entries[0].wildcards, \
                 sw.sw_features.actions, \
                 sw.valid_ports, \
                 sw.valid_queues \
@@ -2469,7 +2469,7 @@ class Flow_Mod_3(base_tests.SimpleProtocol):
         fc = Flow_Cfg()
         fc.rand(fi, \
                 required_wildcards(self), \
-                sw.tbl_stats.stats[0].wildcards, \
+                sw.tbl_stats.entries[0].wildcards, \
                 sw.sw_features.actions, \
                 sw.valid_ports, \
                 sw.valid_queues \
@@ -2561,7 +2561,7 @@ class Flow_Mod_3_1(base_tests.SimpleProtocol):
         fc = Flow_Cfg()
         fc.rand(fi, \
                 required_wildcards(self), \
-                sw.tbl_stats.stats[0].wildcards, \
+                sw.tbl_stats.entries[0].wildcards, \
                 sw.sw_features.actions, \
                 sw.valid_ports, \
                 sw.valid_queues \
@@ -2676,7 +2676,7 @@ class Flow_Del_1(base_tests.SimpleProtocol):
         fc = Flow_Cfg()
         fc.rand(fi, \
                 required_wildcards(self), \
-                sw.tbl_stats.stats[0].wildcards, \
+                sw.tbl_stats.entries[0].wildcards, \
                 sw.sw_features.actions, \
                 sw.valid_ports, \
                 sw.valid_queues \
@@ -2955,7 +2955,7 @@ class Flow_Del_4(base_tests.SimpleProtocol):
         fc = Flow_Cfg()
         fc.rand(fi, \
                 required_wildcards(self), \
-                sw.tbl_stats.stats[0].wildcards, \
+                sw.tbl_stats.entries[0].wildcards, \
                 sw.sw_features.actions, \
                 sw.valid_ports, \
                 sw.valid_queues \

@@ -416,7 +416,7 @@ class TableModConfig(base_tests.SimpleProtocol):
             request = ofp.message.table_stats_request()
             response, _ = self.controller.transact(request)
             try:
-                table_stats = [x for x in response.stats if x.table_id == table_id][0]
+                table_stats = [x for x in response.entries if x.table_id == table_id][0]
             except IndexError:
                 raise AssertionError("table id %d not found" % table_id)
             return table_stats.config

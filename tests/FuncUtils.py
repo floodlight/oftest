@@ -422,7 +422,7 @@ def get_portstats(self,port_num):
     tx_err=0
 
 
-    for obj in response.stats:
+    for obj in response.entries:
         rx_pkts += obj.rx_packets
         tx_pkts += obj.tx_packets
         rx_byts += obj.rx_bytes
@@ -461,7 +461,7 @@ def get_tablestats(self):
     current_matched = 0
     current_active = 0 
 
-    for obj in response.stats:
+    for obj in response.entries:
         current_lookedup += obj.lookup_count
         current_matched  += obj.matched_count
         current_active += obj.active_count
@@ -486,7 +486,7 @@ def verify_tablestats(self,expect_lookup=None,expect_match=None,expect_active=No
         matched = 0 
         active = 0
         
-        for item in response.stats:
+        for item in response.entries:
             lookedup += item.lookup_count
             matched += item.matched_count
             active += item.active_count

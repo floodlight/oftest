@@ -24,7 +24,7 @@ from FuncUtils import*
 
 def port_queues_get(self, queue_stats, port_num):
             result = []
-            for qs in queue_stats.stats:
+            for qs in queue_stats.entries:
                 if qs.port_no != port_num:
                     continue
                 result.append(qs.queue_id)
@@ -131,9 +131,9 @@ class DurationPerFlow(base_tests.SimpleDataPlane):
         response, pkt = self.controller.transact(stat_req)
         
         self.assertTrue(response is not None,"No response to stats request")
-        self.assertTrue(len(response.stats) == 1,"Did not receive flow stats reply")
+        self.assertTrue(len(response.entries) == 1,"Did not receive flow stats reply")
         
-        stat = response.stats[0]
+        stat = response.entries[0]
         logging.info("Duration of flow is %d s %d ns", stat.duration_sec, stat.duration_nsec) 
         self.assertTrue(stat.duration_sec == expected_duration, "Flow stats reply incorrect")
 
