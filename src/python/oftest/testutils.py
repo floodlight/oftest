@@ -40,10 +40,9 @@ def delete_all_flows(ctrl):
     """
 
     logging.info("Deleting all flows")
-    msg = of10.message.flow_mod()
+    msg = of10.message.flow_delete()
     msg.match.wildcards = of10.OFPFW_ALL
     msg.out_port = of10.OFPP_NONE
-    msg.command = of10.OFPFC_DELETE
     msg.buffer_id = 0xffffffff
     ctrl.message_send(msg)
     return 0 # for backwards compatibility
@@ -574,7 +573,7 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None
     else:
         egr_port_list = [egr_ports]
 
-    request = of10.message.flow_mod()
+    request = of10.message.flow_add()
     request.match = match
     request.buffer_id = 0xffffffff
     if check_expire:
@@ -969,7 +968,7 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
 # Generate a simple "drop" flow mod
 # If in_band is true, then only drop from first test port
 def flow_mod_gen(port_map, in_band):
-    request = of10.message.flow_mod()
+    request = of10.message.flow_add()
     request.match.wildcards = of10.OFPFW_ALL
     if in_band:
         request.match.wildcards = of10.OFPFW_ALL - of10.OFPFW_IN_PORT

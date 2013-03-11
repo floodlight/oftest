@@ -1348,8 +1348,7 @@ class Switch:
         return (n > 0)
 
     def flow_add(self, flow_cfg, overlapf = False):
-        flow_mod_msg = ofp.message.flow_mod()
-        flow_mod_msg.command     = ofp.OFPFC_ADD
+        flow_mod_msg = ofp.message.flow_add()
         flow_mod_msg.buffer_id   = 0xffffffff
         flow_cfg.to_flow_mod_msg(flow_mod_msg)
         if overlapf:
@@ -1364,9 +1363,10 @@ class Switch:
         return True
 
     def flow_mod(self, flow_cfg, strictf):
-        flow_mod_msg = ofp.message.flow_mod()
-        flow_mod_msg.command     = ofp.OFPFC_MODIFY_STRICT if strictf \
-                                   else ofp.OFPFC_MODIFY
+        if strictf:
+            flow_mod_msg = ofp.message.flow_modify_strict()
+        else:
+            flow_mod_msg = ofp.message.flow_modify()
         flow_mod_msg.buffer_id   = 0xffffffff
         flow_cfg.to_flow_mod_msg(flow_mod_msg)
         flow_mod_msg.xid = random.randrange(1,0xffffffff)
@@ -1377,9 +1377,10 @@ class Switch:
         return True
 
     def flow_del(self, flow_cfg, strictf):
-        flow_mod_msg = ofp.message.flow_mod()
-        flow_mod_msg.command     = ofp.OFPFC_DELETE_STRICT if strictf \
-                                   else ofp.OFPFC_DELETE
+        if strictf:
+            flow_mod_msg = ofp.message.flow_delete_strict()
+        else:
+            flow_mod_msg = ofp.message.flow_delete()
         flow_mod_msg.buffer_id   = 0xffffffff
         # TBD - "out_port" filtering of deletes needs to be tested
         flow_mod_msg.out_port    = ofp.OFPP_NONE

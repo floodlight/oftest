@@ -141,7 +141,7 @@ class BSNMirrorAction(base_tests.SimpleDataPlane):
         act2.copy_stage = 0
         act3 = ofp.action.output()
         act3.port = ports[1]
-        flow_mod = ofp.message.flow_mod()
+        flow_mod = ofp.message.flow_add()
         flow_mod.match = match
         flow_mod.actions.append(act1)
         flow_mod.actions.append(act2)

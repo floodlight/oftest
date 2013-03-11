@@ -61,7 +61,7 @@ class LoadBarrier(base_tests.SimpleProtocol):
         act = ofp.action.output()
         act.port = lb_port + 1
 
-        request = ofp.message.flow_mod()
+        request = ofp.message.flow_add()
         request.match = match
         request.hard_timeout = 2 * barrier_count
 
@@ -215,8 +215,7 @@ class FlowModLoad(base_tests.SimpleProtocol):
             match.eth_dst = [0, 1, 2, 3, i / 256, i % 256]
             act = ofp.action.output()
             act.port = ofp.OFPP_CONTROLLER
-            request = ofp.message.flow_mod()
-            request.command = ofp.OFPFC_ADD
+            request = ofp.message.flow_add()
             request.buffer_id = 0xffffffff
             request.priority = num_flows - i
             request.out_port = ofp.OFPP_NONE

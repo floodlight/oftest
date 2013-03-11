@@ -806,6 +806,36 @@ message_type_list = (
     )
 """
 
+    print """
+_flow_mod = flow_mod
+flow_mod = None
+
+class flow_add(_flow_mod):
+    def __init__(self, **kwargs):
+        _flow_mod.__init__(self, **kwargs)
+        self.command = OFPFC_ADD
+
+class flow_modify(_flow_mod):
+    def __init__(self, **kwargs):
+        _flow_mod.__init__(self, **kwargs)
+        self.command = OFPFC_MODIFY
+
+class flow_modify_strict(_flow_mod):
+    def __init__(self, **kwargs):
+        _flow_mod.__init__(self, **kwargs)
+        self.command = OFPFC_MODIFY_STRICT
+
+class flow_delete(_flow_mod):
+    def __init__(self, **kwargs):
+        _flow_mod.__init__(self, **kwargs)
+        self.command = OFPFC_DELETE
+
+class flow_delete_strict(_flow_mod):
+    def __init__(self, **kwargs):
+        _flow_mod.__init__(self, **kwargs)
+        self.command = OFPFC_DELETE_STRICT
+"""
+
 #
 # OFP match variants
 #  ICMP 0x801 (?) ==> icmp_type/code replace tp_src/dst

@@ -163,7 +163,7 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
         logging.info("Ingress " + str(ingress_port) + 
                        " to egress " + str(egress_port))
         match.in_port = ingress_port
-        flow_mod_msg = ofp.message.flow_mod()
+        flow_mod_msg = ofp.message.flow_add()
         flow_mod_msg.match = match
         flow_mod_msg.cookie = random.randint(0,9007199254740992)
         flow_mod_msg.buffer_id = 0xffffffff
@@ -208,7 +208,7 @@ class MultiFlowStats(base_tests.SimpleDataPlane):
                         "Could not generate flow match from pkt")
         match.in_port = ingress_port
         
-        flow_mod_msg = ofp.message.flow_mod()
+        flow_mod_msg = ofp.message.flow_add()
         flow_mod_msg.match = match
         flow_mod_msg.cookie = random.randint(0,9007199254740992)
         flow_mod_msg.buffer_id = 0xffffffff
@@ -285,7 +285,7 @@ class AllPortStats(base_tests.SimpleDataPlane):
                         "Could not generate flow match from pkt")
         match.in_port = ingress_port
         
-        flow_mod_msg = ofp.message.flow_mod()
+        flow_mod_msg = ofp.message.flow_add()
         flow_mod_msg.match = match
         flow_mod_msg.cookie = random.randint(0,9007199254740992)
         flow_mod_msg.buffer_id = 0xffffffff

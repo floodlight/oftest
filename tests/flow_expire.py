@@ -55,7 +55,7 @@ class FlowExpire(base_tests.SimpleDataPlane):
         
         match.in_port = ingress_port
         
-        request = ofp.message.flow_mod()
+        request = ofp.message.flow_add()
         request.match = match
         request.cookie = random.randint(0,9007199254740992)
         request.buffer_id = 0xffffffff

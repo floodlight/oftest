@@ -36,7 +36,7 @@ def flow_caps_common(obj, is_exact=True):
         break;
     match.in_port = port
     match.ipv4_src = 1
-    request = ofp.message.flow_mod()
+    request = ofp.message.flow_add()
     count_check = 101  # fixme:  better way to determine this.
     if is_exact:
         match.wildcards = 0

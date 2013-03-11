@@ -18,9 +18,8 @@ from time import sleep
 #################### Functions for various types of flow_mod  ##########################################################################################
 
 def match_send_flowadd(self, match, priority, port):
-    msg = ofp.message.flow_mod()
+    msg = ofp.message.flow_add()
     msg.out_port = ofp.OFPP_NONE
-    msg.command = ofp.OFPFC_ADD
     # msg.cookie = random.randint(0,9007199254740992)
     msg.buffer_id = 0xffffffff
     msg.match = match
@@ -323,10 +322,9 @@ def strict_modify_flow_action(self,egress_port,match,priority=None):
 # Strict Modify the flow Action 
         
     #Create a flow_mod message , command MODIFY_STRICT
-    msg5 = ofp.message.flow_mod()
+    msg5 = ofp.message.flow_modify_strict()
     msg5.match = match
     msg5.cookie = random.randint(0,9007199254740992)
-    msg5.command = ofp.OFPFC_MODIFY_STRICT
     msg5.buffer_id = 0xffffffff
     act5 = ofp.action.output()
     act5.port = egress_port
@@ -343,10 +341,9 @@ def modify_flow_action(self,of_ports,match,priority=None):
 # Modify the flow action
         
     #Create a flow_mod message , command MODIFY 
-    msg8 = ofp.message.flow_mod()
+    msg8 = ofp.message.flow_modify()
     msg8.match = match
     msg8.cookie = random.randint(0,9007199254740992)
-    msg8.command = ofp.OFPFC_MODIFY
     #out_port will be ignored for flow adds and flow modify (here for test-case Add_Modify_With_Outport)
     msg8.out_port = of_ports[3]
     msg8.buffer_id = 0xffffffff
@@ -371,7 +368,7 @@ def enqueue(self,ingress_port,egress_port,egress_queue_id):
             "Could not generate flow match from pkt")
     
     match.in_port = ingress_port
-    request = ofp.message.flow_mod()
+    request = ofp.message.flow_add()
     request.match = match
     request.buffer_id = 0xffffffff
     act = ofp.action.enqueue()
@@ -516,9 +513,8 @@ def strict_delete(self,match,priority=None):
 # Issue Strict Delete 
         
     #Create flow_mod message, command DELETE_STRICT
-    msg4 = ofp.message.flow_mod()
+    msg4 = ofp.message.flow_delete_strict()
     msg4.out_port = ofp.OFPP_NONE
-    msg4.command = ofp.OFPFC_DELETE_STRICT
     msg4.buffer_id = 0xffffffff
     msg4.match = match
 
@@ -533,9 +529,8 @@ def nonstrict_delete(self,match,priority=None):
 # Issue Non_Strict Delete 
         
     #Create flow_mod message, command DELETE
-    msg6 = ofp.message.flow_mod()
+    msg6 = ofp.message.flow_delete()
     msg6.out_port = ofp.OFPP_NONE
-    msg6.command = ofp.OFPFC_DELETE
     msg6.buffer_id = 0xffffffff
     msg6.match = match
 

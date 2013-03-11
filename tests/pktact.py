@@ -116,7 +116,7 @@ class DirectPacket(base_tests.SimpleDataPlane):
 
             match.in_port = ingress_port
 
-            request = ofp.message.flow_mod()
+            request = ofp.message.flow_add()
             request.match = match
 
             request.buffer_id = 0xffffffff
@@ -180,7 +180,7 @@ class DirectPacketController(base_tests.SimpleDataPlane):
         ingress_port = of_ports[0]
         match.in_port = ingress_port
 
-        request = ofp.message.flow_mod()
+        request = ofp.message.flow_add()
         request.match = match
 
         request.buffer_id = 0xffffffff
@@ -267,7 +267,7 @@ class DirectPacketQueue(base_tests.SimpleDataPlane):
 
                 match.in_port = ingress_port
                 
-                request = ofp.message.flow_mod()
+                request = ofp.message.flow_add()
                 request.match = match
 
                 request.buffer_id = 0xffffffff
@@ -396,7 +396,7 @@ class DirectPacketControllerQueue(base_tests.SimpleDataPlane):
 
                 match.in_port = ingress_port
                 
-                request = ofp.message.flow_mod()
+                request = ofp.message.flow_add()
                 request.match = match
 
                 request.buffer_id = 0xffffffff
@@ -514,7 +514,7 @@ class DirectTwoPorts(base_tests.SimpleDataPlane):
 
             match.in_port = ingress_port
 
-            request = ofp.message.flow_mod()
+            request = ofp.message.flow_add()
             request.match = match
             request.buffer_id = 0xffffffff
             request.actions.append(ofp.action.output(port=egress_port1))
@@ -564,7 +564,7 @@ class DirectMCNonIngress(base_tests.SimpleDataPlane):
                            " all non-ingress ports")
             match.in_port = ingress_port
 
-            request = ofp.message.flow_mod()
+            request = ofp.message.flow_add()
             request.match = match
             request.buffer_id = 0xffffffff
             for egress_port in of_ports:
@@ -613,7 +613,7 @@ class DirectMC(base_tests.SimpleDataPlane):
             logging.info("Ingress " + str(ingress_port) + " to all ports")
             match.in_port = ingress_port
 
-            request = ofp.message.flow_mod()
+            request = ofp.message.flow_add()
             request.match = match
             request.buffer_id = 0xffffffff
             for egress_port in of_ports:
@@ -670,7 +670,7 @@ class Flood(base_tests.SimpleDataPlane):
             logging.info("Ingress " + str(ingress_port) + " to all ports")
             match.in_port = ingress_port
 
-            request = ofp.message.flow_mod()
+            request = ofp.message.flow_add()
             request.match = match
             request.buffer_id = 0xffffffff
             act.port = ofp.OFPP_FLOOD
@@ -715,7 +715,7 @@ class FloodPlusIngress(base_tests.SimpleDataPlane):
             logging.info("Ingress " + str(ingress_port) + " to all ports")
             match.in_port = ingress_port
 
-            request = ofp.message.flow_mod()
+            request = ofp.message.flow_add()
             request.match = match
             request.buffer_id = 0xffffffff
             request.actions.append(ofp.action.output(port=ofp.OFPP_FLOOD))
@@ -758,7 +758,7 @@ class All(base_tests.SimpleDataPlane):
             logging.info("Ingress " + str(ingress_port) + " to all ports")
             match.in_port = ingress_port
 
-            request = ofp.message.flow_mod()
+            request = ofp.message.flow_add()
             request.match = match
             request.buffer_id = 0xffffffff
             act.port = ofp.OFPP_ALL
@@ -803,7 +803,7 @@ class AllPlusIngress(base_tests.SimpleDataPlane):
             logging.info("Ingress " + str(ingress_port) + " to all ports")
             match.in_port = ingress_port
 
-            request = ofp.message.flow_mod()
+            request = ofp.message.flow_add()
             request.match = match
             request.buffer_id = 0xffffffff
             request.actions.append(ofp.action.output(port=ofp.OFPP_ALL))
@@ -860,7 +860,7 @@ class FloodMinusPort(base_tests.SimpleDataPlane):
 
             match.in_port = ingress_port
 
-            request = ofp.message.flow_mod()
+            request = ofp.message.flow_add()
             request.match = match
             request.buffer_id = 0xffffffff
             act.port = ofp.OFPP_FLOOD
@@ -1022,10 +1022,10 @@ class SingleWildcardMatchPriority(BaseMatchCase):
         
     def removeFlow(self, prio):
         if self.flowMsgs.has_key(prio):
-            msg = self.flowMsgs[prio]
-            msg.command = ofp.OFPFC_DELETE_STRICT
-            # This *must* be set for DELETE
-            msg.out_port = ofp.OFPP_NONE
+            old_msg = self.flowMsgs[prio]
+            msg = ofp.message.flow_delete_strict(out_port=ofp.OFPP_NONE,
+                                                 match=old_msg.match,
+                                                 priority=old_msg.priority)
             logging.debug("Remove flow with priority " + str(prio))
             self.controller.message_send(msg)
             do_barrier(self.controller)
@@ -1758,13 +1758,12 @@ class FlowToggle(BaseMatchCase):
         for toggle in range(2):
             for f_idx in range(flow_count):
                 pkt = simple_tcp_packet(tcp_sport=f_idx)
-                msg = ofp.message.flow_mod()
+                msg = ofp.message.flow_add()
                 match = packet_to_flow_match(self, pkt)
                 match.in_port = of_ports[2]
                 match.wildcards = wildcards
                 msg.match = match
                 msg.buffer_id = 0xffffffff
-                msg.command = ofp.OFPFC_ADD
                 msg.actions.append(acts[toggle])
                 flows[toggle].append(msg)
 
@@ -1930,7 +1929,7 @@ class MatchEach(base_tests.SimpleDataPlane):
                     else:
                         new = ~orig & mask
                     setattr(match, field, new)
-                request = ofp.message.flow_mod()
+                request = ofp.message.flow_add()
                 request.match = match
                 request.buffer_id = 0xffffffff
                 request.priority = priority
@@ -2060,7 +2059,7 @@ class DirectBadPacketBase(base_tests.SimpleDataPlane):
 
         match.in_port = ingress_port
 
-        request = ofp.message.flow_mod()
+        request = ofp.message.flow_add()
         request.match = match
         request.priority = 1
 
@@ -2074,7 +2073,7 @@ class DirectBadPacketBase(base_tests.SimpleDataPlane):
 
         # This flow speeds up negative tests
         logging.info("Inserting catch-all flow")
-        request2 = ofp.message.flow_mod()
+        request2 = ofp.message.flow_add()
         request2.match = self.createMatch()
         request2.match.wildcards &= ~ofp.OFPFW_IN_PORT
         request2.match.in_port = ingress_port

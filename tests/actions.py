@@ -49,9 +49,8 @@ class NoAction(base_tests.SimpleDataPlane):
         match.wildcards=ofp.OFPFW_ALL
         match.in_port = of_ports[0]
         
-        msg = ofp.message.flow_mod()
+        msg = ofp.message.flow_add()
         msg.out_port = ofp.OFPP_NONE
-        msg.command = ofp.OFPFC_ADD
         msg.buffer_id = 0xffffffff
         msg.match = match
         self.controller.message_send(msg)
@@ -150,7 +149,7 @@ class ForwardAll(base_tests.SimpleDataPlane):
         match.in_port = ingress_port
 
         #Create a flow mod with action.port = OFPP_ALL
-        request = ofp.message.flow_mod()
+        request = ofp.message.flow_add()
         request.match = match
         request.match.wildcards = ofp.OFPFW_ALL&~ofp.OFPFW_IN_PORT
         act.port = ofp.OFPP_ALL
@@ -202,7 +201,7 @@ class ForwardController(base_tests.SimpleDataPlane):
             match.in_port = ingress_port
             
             #Create a flow mod message
-            request = ofp.message.flow_mod()
+            request = ofp.message.flow_add()
             request.match = match
             act.port = ofp.OFPP_CONTROLLER
             request.actions.append(act)
@@ -253,7 +252,7 @@ class ForwardLocal(base_tests.SimpleDataPlane):
 
             match.in_port = ingress_port
             #Create flow mod message
-            request = ofp.message.flow_mod()
+            request = ofp.message.flow_add()
             request.match = match
             act.port = ofp.OFPP_LOCAL
             request.actions.append(act)
@@ -301,7 +300,7 @@ class ForwardFlood(base_tests.SimpleDataPlane):
         match.in_port = ingress_port
 
         #Create a flow mod with action.port = OFPP_ALL
-        request = ofp.message.flow_mod()
+        request = ofp.message.flow_add()
         request.match = match
         request.match.wildcards = ofp.OFPFW_ALL&~ofp.OFPFW_IN_PORT
         act.port = ofp.OFPP_FLOOD
@@ -351,7 +350,7 @@ class ForwardInport(base_tests.SimpleDataPlane):
         match.in_port = ingress_port
 
         # Create a flow mod message
-        request = ofp.message.flow_mod()
+        request = ofp.message.flow_add()
         request.match = match
         act.port = ofp.OFPP_IN_PORT
             
