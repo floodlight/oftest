@@ -4,7 +4,7 @@ import struct
 class ofp_phy_port:
     """Automatically generated Python class for ofp_phy_port
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -114,7 +114,7 @@ class ofp_phy_port:
 class ofp_aggregate_stats_reply:
     """Automatically generated Python class for ofp_aggregate_stats_reply
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -197,7 +197,7 @@ class ofp_aggregate_stats_reply:
 class ofp_table_stats:
     """Automatically generated Python class for ofp_table_stats
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -303,7 +303,7 @@ class ofp_table_stats:
 class ofp_flow_removed:
     """Automatically generated Python class for ofp_flow_removed
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -416,7 +416,7 @@ class ofp_flow_removed:
 class ofp_port_stats:
     """Automatically generated Python class for ofp_port_stats
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -534,7 +534,7 @@ class ofp_port_stats:
 class ofp_queue_stats:
     """Automatically generated Python class for ofp_queue_stats
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -628,7 +628,7 @@ class ofp_queue_stats:
 class ofp_action_tp_port:
     """Automatically generated Python class for ofp_action_tp_port
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -711,7 +711,7 @@ class ofp_action_tp_port:
 class ofp_port_stats_request:
     """Automatically generated Python class for ofp_port_stats_request
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -788,7 +788,7 @@ class ofp_port_stats_request:
 class ofp_stats_request:
     """Automatically generated Python class for ofp_stats_request
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -857,7 +857,7 @@ class ofp_stats_request:
 class ofp_hello:
     """Automatically generated Python class for ofp_hello
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -915,7 +915,7 @@ class ofp_hello:
 class ofp_aggregate_stats_request:
     """Automatically generated Python class for ofp_aggregate_stats_request
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -994,7 +994,7 @@ class ofp_aggregate_stats_request:
 class ofp_port_status:
     """Automatically generated Python class for ofp_port_status
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -1079,7 +1079,7 @@ class ofp_port_status:
 class ofp_action_header:
     """Automatically generated Python class for ofp_action_header
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -1159,7 +1159,7 @@ class ofp_action_header:
 class ofp_port_mod:
     """Automatically generated Python class for ofp_port_mod
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -1262,7 +1262,7 @@ class ofp_port_mod:
 class ofp_action_vlan_vid:
     """Automatically generated Python class for ofp_action_vlan_vid
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -1345,7 +1345,7 @@ class ofp_action_vlan_vid:
 class ofp_action_output:
     """Automatically generated Python class for ofp_action_output
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -1420,7 +1420,7 @@ class ofp_action_output:
 class ofp_switch_config:
     """Automatically generated Python class for ofp_switch_config
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -1489,7 +1489,7 @@ class ofp_switch_config:
 class ofp_action_nw_tos:
     """Automatically generated Python class for ofp_action_nw_tos
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -1572,7 +1572,7 @@ class ofp_action_nw_tos:
 class ofp_queue_get_config_reply:
     """Automatically generated Python class for ofp_queue_get_config_reply
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -1649,7 +1649,7 @@ class ofp_queue_get_config_reply:
 class ofp_packet_in:
     """Automatically generated Python class for ofp_packet_in
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -1726,7 +1726,7 @@ class ofp_packet_in:
 class ofp_flow_stats:
     """Automatically generated Python class for ofp_flow_stats
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -1850,7 +1850,7 @@ class ofp_flow_stats:
 class ofp_flow_stats_request:
     """Automatically generated Python class for ofp_flow_stats_request
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -1929,7 +1929,7 @@ class ofp_flow_stats_request:
 class ofp_action_vendor_header:
     """Automatically generated Python class for ofp_action_vendor_header
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -2001,7 +2001,7 @@ class ofp_action_vendor_header:
 class ofp_stats_reply:
     """Automatically generated Python class for ofp_stats_reply
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -2070,7 +2070,7 @@ class ofp_stats_reply:
 class ofp_queue_stats_request:
     """Automatically generated Python class for ofp_queue_stats_request
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -2155,7 +2155,7 @@ class ofp_queue_stats_request:
 class ofp_desc_stats:
     """Automatically generated Python class for ofp_desc_stats
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -2258,7 +2258,7 @@ class ofp_desc_stats:
 class ofp_queue_get_config_request:
     """Automatically generated Python class for ofp_queue_get_config_request
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -2335,7 +2335,7 @@ class ofp_queue_get_config_request:
 class ofp_packet_queue:
     """Automatically generated Python class for ofp_packet_queue
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -2415,7 +2415,7 @@ class ofp_packet_queue:
 class ofp_action_dl_addr:
     """Automatically generated Python class for ofp_action_dl_addr
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -2507,7 +2507,7 @@ class ofp_action_dl_addr:
 class ofp_queue_prop_header:
     """Automatically generated Python class for ofp_queue_prop_header
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -2587,7 +2587,7 @@ class ofp_queue_prop_header:
 class ofp_queue_prop_min_rate:
     """Automatically generated Python class for ofp_queue_prop_min_rate
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -2672,7 +2672,7 @@ class ofp_queue_prop_min_rate:
 class ofp_action_enqueue:
     """Automatically generated Python class for ofp_action_enqueue
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -2763,7 +2763,7 @@ class ofp_action_enqueue:
 class ofp_switch_features:
     """Automatically generated Python class for ofp_switch_features
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -2857,7 +2857,7 @@ class ofp_switch_features:
 class ofp_match:
     """Automatically generated Python class for ofp_match
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -2868,31 +2868,31 @@ class ofp_match:
         """
         self.wildcards = 0
         self.in_port = 0
-        self.dl_src= [0,0,0,0,0,0]
-        self.dl_dst= [0,0,0,0,0,0]
-        self.dl_vlan = 0
-        self.dl_vlan_pcp = 0
+        self.eth_src= [0,0,0,0,0,0]
+        self.eth_dst= [0,0,0,0,0,0]
+        self.vlan_vid = 0
+        self.vlan_pcp = 0
         self.pad1 = 0
-        self.dl_type = 0
-        self.nw_tos = 0
-        self.nw_proto = 0
+        self.eth_type = 0
+        self.ip_dscp = 0
+        self.ip_proto = 0
         self.pad2= [0,0]
-        self.nw_src = 0
-        self.nw_dst = 0
-        self.tp_src = 0
-        self.tp_dst = 0
+        self.ipv4_src = 0
+        self.ipv4_dst = 0
+        self.tcp_src = 0
+        self.tcp_dst = 0
 
     def __assert(self):
         """Sanity check
         """
-        if(not isinstance(self.dl_src, list)):
-            return (False, "self.dl_src is not list as expected.")
-        if(len(self.dl_src) != 6):
-            return (False, "self.dl_src is not of size 6 as expected.")
-        if(not isinstance(self.dl_dst, list)):
-            return (False, "self.dl_dst is not list as expected.")
-        if(len(self.dl_dst) != 6):
-            return (False, "self.dl_dst is not of size 6 as expected.")
+        if(not isinstance(self.eth_src, list)):
+            return (False, "self.eth_src is not list as expected.")
+        if(len(self.eth_src) != 6):
+            return (False, "self.eth_src is not of size 6 as expected.")
+        if(not isinstance(self.eth_dst, list)):
+            return (False, "self.eth_dst is not list as expected.")
+        if(len(self.eth_dst) != 6):
+            return (False, "self.eth_dst is not of size 6 as expected.")
         if(not isinstance(self.pad2, list)):
             return (False, "self.pad2 is not list as expected.")
         if(len(self.pad2) != 2):
@@ -2908,11 +2908,11 @@ class ofp_match:
                 return None
         packed = ""
         packed += struct.pack("!LH", self.wildcards, self.in_port)
-        packed += struct.pack("!BBBBBB", self.dl_src[0], self.dl_src[1], self.dl_src[2], self.dl_src[3], self.dl_src[4], self.dl_src[5])
-        packed += struct.pack("!BBBBBB", self.dl_dst[0], self.dl_dst[1], self.dl_dst[2], self.dl_dst[3], self.dl_dst[4], self.dl_dst[5])
-        packed += struct.pack("!HBBHBB", self.dl_vlan, self.dl_vlan_pcp, self.pad1, self.dl_type, self.nw_tos, self.nw_proto)
+        packed += struct.pack("!BBBBBB", self.eth_src[0], self.eth_src[1], self.eth_src[2], self.eth_src[3], self.eth_src[4], self.eth_src[5])
+        packed += struct.pack("!BBBBBB", self.eth_dst[0], self.eth_dst[1], self.eth_dst[2], self.eth_dst[3], self.eth_dst[4], self.eth_dst[5])
+        packed += struct.pack("!HBBHBB", self.vlan_vid, self.vlan_pcp, self.pad1, self.eth_type, self.ip_dscp, self.ip_proto)
         packed += struct.pack("!BB", self.pad2[0], self.pad2[1])
-        packed += struct.pack("!LLHH", self.nw_src, self.nw_dst, self.tp_src, self.tp_dst)
+        packed += struct.pack("!LLHH", self.ipv4_src, self.ipv4_dst, self.tcp_src, self.tcp_dst)
         return packed
 
     def unpack(self, binaryString):
@@ -2929,15 +2929,15 @@ class ofp_match:
         fmt = '!BBBBBB'
         start = 6
         end = start + struct.calcsize(fmt)
-        (self.dl_src[0], self.dl_src[1], self.dl_src[2], self.dl_src[3], self.dl_src[4], self.dl_src[5]) = struct.unpack(fmt, binaryString[start:end])
+        (self.eth_src[0], self.eth_src[1], self.eth_src[2], self.eth_src[3], self.eth_src[4], self.eth_src[5]) = struct.unpack(fmt, binaryString[start:end])
         fmt = '!BBBBBB'
         start = 12
         end = start + struct.calcsize(fmt)
-        (self.dl_dst[0], self.dl_dst[1], self.dl_dst[2], self.dl_dst[3], self.dl_dst[4], self.dl_dst[5]) = struct.unpack(fmt, binaryString[start:end])
+        (self.eth_dst[0], self.eth_dst[1], self.eth_dst[2], self.eth_dst[3], self.eth_dst[4], self.eth_dst[5]) = struct.unpack(fmt, binaryString[start:end])
         fmt = '!HBBHBB'
         start = 18
         end = start + struct.calcsize(fmt)
-        (self.dl_vlan, self.dl_vlan_pcp, self.pad1, self.dl_type, self.nw_tos, self.nw_proto) = struct.unpack(fmt,  binaryString[start:end])
+        (self.vlan_vid, self.vlan_pcp, self.pad1, self.eth_type, self.ip_dscp, self.ip_proto) = struct.unpack(fmt,  binaryString[start:end])
         fmt = '!BB'
         start = 26
         end = start + struct.calcsize(fmt)
@@ -2945,7 +2945,7 @@ class ofp_match:
         fmt = '!LLHH'
         start = 28
         end = start + struct.calcsize(fmt)
-        (self.nw_src, self.nw_dst, self.tp_src, self.tp_dst) = struct.unpack(fmt,  binaryString[start:end])
+        (self.ipv4_src, self.ipv4_dst, self.tcp_src, self.tcp_dst) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[40:]
 
     def __len__(self):
@@ -2960,19 +2960,19 @@ class ofp_match:
         if type(self) != type(other): return False
         if self.wildcards !=  other.wildcards: return False
         if self.in_port !=  other.in_port: return False
-        if self.dl_src !=  other.dl_src: return False
-        if self.dl_dst !=  other.dl_dst: return False
-        if self.dl_vlan !=  other.dl_vlan: return False
-        if self.dl_vlan_pcp !=  other.dl_vlan_pcp: return False
+        if self.eth_src !=  other.eth_src: return False
+        if self.eth_dst !=  other.eth_dst: return False
+        if self.vlan_vid !=  other.vlan_vid: return False
+        if self.vlan_pcp !=  other.vlan_pcp: return False
         if self.pad1 !=  other.pad1: return False
-        if self.dl_type !=  other.dl_type: return False
-        if self.nw_tos !=  other.nw_tos: return False
-        if self.nw_proto !=  other.nw_proto: return False
+        if self.eth_type !=  other.eth_type: return False
+        if self.ip_dscp !=  other.ip_dscp: return False
+        if self.ip_proto !=  other.ip_proto: return False
         if self.pad2 !=  other.pad2: return False
-        if self.nw_src !=  other.nw_src: return False
-        if self.nw_dst !=  other.nw_dst: return False
-        if self.tp_src !=  other.tp_src: return False
-        if self.tp_dst !=  other.tp_dst: return False
+        if self.ipv4_src !=  other.ipv4_src: return False
+        if self.ipv4_dst !=  other.ipv4_dst: return False
+        if self.tcp_src !=  other.tcp_src: return False
+        if self.tcp_dst !=  other.tcp_dst: return False
         return True
 
     def __ne__(self, other): return not self.__eq__(other)
@@ -2983,24 +2983,24 @@ class ofp_match:
         outstr = ''
         outstr += prefix + 'wildcards: ' + str(self.wildcards) + '\n'
         outstr += prefix + 'in_port: ' + str(self.in_port) + '\n'
-        outstr += prefix + 'dl_src: ' + str(self.dl_src) + '\n'
-        outstr += prefix + 'dl_dst: ' + str(self.dl_dst) + '\n'
-        outstr += prefix + 'dl_vlan: ' + str(self.dl_vlan) + '\n'
-        outstr += prefix + 'dl_vlan_pcp: ' + str(self.dl_vlan_pcp) + '\n'
-        outstr += prefix + 'dl_type: ' + str(self.dl_type) + '\n'
-        outstr += prefix + 'nw_tos: ' + str(self.nw_tos) + '\n'
-        outstr += prefix + 'nw_proto: ' + str(self.nw_proto) + '\n'
-        outstr += prefix + 'nw_src: ' + str(self.nw_src) + '\n'
-        outstr += prefix + 'nw_dst: ' + str(self.nw_dst) + '\n'
-        outstr += prefix + 'tp_src: ' + str(self.tp_src) + '\n'
-        outstr += prefix + 'tp_dst: ' + str(self.tp_dst) + '\n'
+        outstr += prefix + 'eth_src: ' + str(self.eth_src) + '\n'
+        outstr += prefix + 'eth_dst: ' + str(self.eth_dst) + '\n'
+        outstr += prefix + 'vlan_vid: ' + str(self.vlan_vid) + '\n'
+        outstr += prefix + 'vlan_pcp: ' + str(self.vlan_pcp) + '\n'
+        outstr += prefix + 'eth_type: ' + str(self.eth_type) + '\n'
+        outstr += prefix + 'ip_dscp: ' + str(self.ip_dscp) + '\n'
+        outstr += prefix + 'ip_proto: ' + str(self.ip_proto) + '\n'
+        outstr += prefix + 'ipv4_src: ' + str(self.ipv4_src) + '\n'
+        outstr += prefix + 'ipv4_dst: ' + str(self.ipv4_dst) + '\n'
+        outstr += prefix + 'tcp_src: ' + str(self.tcp_src) + '\n'
+        outstr += prefix + 'tcp_dst: ' + str(self.tcp_dst) + '\n'
         return outstr
 
 
 class ofp_header:
     """Automatically generated Python class for ofp_header
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -3077,7 +3077,7 @@ class ofp_header:
 class ofp_vendor_header:
     """Automatically generated Python class for ofp_vendor_header
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -3143,7 +3143,7 @@ class ofp_vendor_header:
 class ofp_packet_out:
     """Automatically generated Python class for ofp_packet_out
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -3215,7 +3215,7 @@ class ofp_packet_out:
 class ofp_action_nw_addr:
     """Automatically generated Python class for ofp_action_nw_addr
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -3287,7 +3287,7 @@ class ofp_action_nw_addr:
 class ofp_action_vlan_pcp:
     """Automatically generated Python class for ofp_action_vlan_pcp
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -3370,7 +3370,7 @@ class ofp_action_vlan_pcp:
 class ofp_flow_mod:
     """Automatically generated Python class for ofp_flow_mod
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays
@@ -3465,7 +3465,7 @@ class ofp_flow_mod:
 class ofp_error_msg:
     """Automatically generated Python class for ofp_error_msg
 
-    Date 2013-01-06
+    Date 2013-03-11
     Created by of.pythonize.pythonizer
     Core structure: Messages do not include ofp_header
     Does not include var-length arrays

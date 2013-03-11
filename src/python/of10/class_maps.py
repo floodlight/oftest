@@ -194,17 +194,17 @@ class_to_members_map = {
     'ofp_match'                     : [
                                        'wildcards',
                                        'in_port',
-                                       'dl_src',
-                                       'dl_dst',
-                                       'dl_vlan',
-                                       'dl_vlan_pcp',
-                                       'dl_type',
-                                       'nw_tos',
-                                       'nw_proto',
-                                       'nw_src',
-                                       'nw_dst',
-                                       'tp_src',
-                                       'tp_dst'
+                                       'eth_src',
+                                       'eth_dst',
+                                       'vlan_vid',
+                                       'vlan_pcp',
+                                       'eth_type',
+                                       'ip_dscp',
+                                       'ip_proto',
+                                       'ipv4_src',
+                                       'ipv4_dst',
+                                       'tcp_src',
+                                       'tcp_dst'
                                       ],
     'ofp_header'                    : [
                                        'version',

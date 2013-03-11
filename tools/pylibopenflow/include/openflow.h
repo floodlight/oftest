@@ -520,20 +520,20 @@ enum ofp_flow_wildcards {
 struct ofp_match {
     uint32_t wildcards;        /* Wildcard fields. */
     uint16_t in_port;          /* Input switch port. */
-    uint8_t dl_src[OFP_ETH_ALEN]; /* Ethernet source address. */
-    uint8_t dl_dst[OFP_ETH_ALEN]; /* Ethernet destination address. */
-    uint16_t dl_vlan;          /* Input VLAN id. */
-    uint8_t dl_vlan_pcp;       /* Input VLAN priority. */
+    uint8_t eth_src[OFP_ETH_ALEN]; /* Ethernet source address. */
+    uint8_t eth_dst[OFP_ETH_ALEN]; /* Ethernet destination address. */
+    uint16_t vlan_vid;          /* Input VLAN id. */
+    uint8_t vlan_pcp;       /* Input VLAN priority. */
     uint8_t pad1[1];           /* Align to 64-bits */
-    uint16_t dl_type;          /* Ethernet frame type. */
-    uint8_t nw_tos;            /* IP ToS (actually DSCP field, 6 bits). */
-    uint8_t nw_proto;          /* IP protocol or lower 8 bits of
+    uint16_t eth_type;          /* Ethernet frame type. */
+    uint8_t ip_dscp;            /* IP ToS (actually DSCP field, 6 bits). */
+    uint8_t ip_proto;          /* IP protocol or lower 8 bits of
                                 * ARP opcode. */
     uint8_t pad2[2];           /* Align to 64-bits */
-    uint32_t nw_src;           /* IP source address. */
-    uint32_t nw_dst;           /* IP destination address. */
-    uint16_t tp_src;           /* TCP/UDP source port. */
-    uint16_t tp_dst;           /* TCP/UDP destination port. */
+    uint32_t ipv4_src;           /* IP source address. */
+    uint32_t ipv4_dst;           /* IP destination address. */
+    uint16_t tcp_src;           /* TCP/UDP source port. */
+    uint16_t tcp_dst;           /* TCP/UDP destination port. */
 };
 OFP_ASSERT(sizeof(struct ofp_match) == 40);
 
