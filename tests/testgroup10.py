@@ -58,27 +58,27 @@ class Grp10No10(base_tests.SimpleDataPlane):
         try :
             for x in range (0,20) :
                 self.dataplane.send(ingress_port, str(pkt))
-                yes_ports=set(of_ports)
+                yes_ports=set(of_ports).difference(ingress_port)
                 no_ports = []
                 receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
 
-        finally : 
+        except AssertionError , break 
         
-            #Send a simple tcp packet on ingress_port
-            logging.info("Sending simple tcp packet ...")
-            self.dataplane.send(ingress_port, str(pkt))
+        #Send a simple tcp packet on ingress_port
+        logging.info("Sending simple tcp packet ...")
+        self.dataplane.send(ingress_port, str(pkt))
         
-            #Verify packet_in should be not generated 
-            logging.info("No packet_in should be generated")
-            (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=10)
-            self.assertTrue(response is None,
-                         'PacketIn is generated')
+        #Verify packet_in should be not generated 
+        logging.info("No packet_in should be generated")
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=10)
+        self.assertTrue(response is None,
+                        'PacketIn is generated')
 
-            #Verify dataplane packet should not be forwarded
-            logging.info("Packet should not be forwarded to any dataplane port")
-            no_ports=set(of_ports)
-            yes_ports=[]
-            receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
+        #Verify dataplane packet should not be forwarded
+        logging.info("Packet should not be forwarded to any dataplane port")
+        no_ports=set(of_ports)
+        yes_ports=[]
+        receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
 
 
 class Grp10No20(base_tests.SimpleProtocol):
