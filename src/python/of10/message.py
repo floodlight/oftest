@@ -538,7 +538,7 @@ class error(ofp_error_msg):
     @arg type: The message type (OFPT_ERROR=1)
 
     Data members inherited from ofp_error_msg:
-    @arg type
+    @arg err_type
     @arg code
     @arg data: Binary string following message members
 

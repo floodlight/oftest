@@ -688,7 +688,7 @@ enum ofp_queue_op_failed_code {
 struct ofp_error_msg {
     struct ofp_header header;
 
-    uint16_t type;
+    uint16_t err_type;
     uint16_t code;
     uint8_t data[0];          /* Variable-length data.  Interpreted based
                                  on the type and code. */

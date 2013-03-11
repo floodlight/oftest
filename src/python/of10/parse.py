@@ -118,7 +118,7 @@ def _of_message_to_object(binary_string):
     elif hdr.type == cstruct.OFPT_ERROR:
         sub_hdr = message.ofp_error_msg()
         sub_hdr.unpack(binary_string[cstruct.OFP_HEADER_BYTES:])
-        return error_to_class_map[sub_hdr.type]()
+        return error_to_class_map[sub_hdr.err_type]()
     else:
         parse_logger.error("Cannot parse pkt to message")
         return None

@@ -73,7 +73,7 @@ class OverlapChecking(base_tests.SimpleDataPlane):
                                                timeout=5)
         self.assertTrue(response is not None, 
                                'Switch did not reply with error message') 
-        self.assertTrue(response.type==ofp.OFPET_FLOW_MOD_FAILED, 
+        self.assertTrue(response.err_type==ofp.OFPET_FLOW_MOD_FAILED, 
                                'Error message type is not flow mod failed ') 
         self.assertTrue(response.code==ofp.OFPFMFC_OVERLAP, 
                                'Error Message code is not overlap')
@@ -194,7 +194,7 @@ class EmerFlowTimeout(base_tests.SimpleProtocol):
                                                timeout=5)
         self.assertTrue(response is not None, 
                                'Switch did not reply with error message') 
-        self.assertTrue(response.type==ofp.OFPET_FLOW_MOD_FAILED, 
+        self.assertTrue(response.err_type==ofp.OFPET_FLOW_MOD_FAILED, 
                                'Error message type is not flow mod failed ') 
         self.assertTrue(response.code==ofp.OFPFMFC_BAD_EMERG_TIMEOUT, 
                                'Error Message code is not bad emergency timeout')

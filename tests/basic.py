@@ -394,7 +394,7 @@ class BadMessage(base_tests.SimpleProtocol):
         self.assertTrue(reply is not None, "Did not get response to bad req")
         self.assertTrue(reply.header.type == ofp.OFPT_ERROR,
                         "reply not an error message")
-        self.assertTrue(reply.type == ofp.OFPET_BAD_REQUEST,
+        self.assertTrue(reply.err_type == ofp.OFPET_BAD_REQUEST,
                         "reply error type is not bad request")
         self.assertTrue(reply.code == ofp.OFPBRC_BAD_TYPE,
                         "reply error code is not bad type")

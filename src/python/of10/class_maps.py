@@ -242,7 +242,7 @@ class_to_members_map = {
                                        'flags'
                                       ],
     'ofp_error_msg'                 : [
-                                       'type',
+                                       'err_type',
                                        'code'
                                       ],
     '_ignore' : []

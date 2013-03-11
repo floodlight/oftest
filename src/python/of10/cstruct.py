@@ -3474,7 +3474,7 @@ class ofp_error_msg:
         """Initialize
         Declare members and default values
         """
-        self.type = 0
+        self.err_type = 0
         self.code = 0
 
     def __assert(self):
@@ -3490,7 +3490,7 @@ class ofp_error_msg:
             if(not self.__assert()[0]):
                 return None
         packed = ""
-        packed += struct.pack("!HH", self.type, self.code)
+        packed += struct.pack("!HH", self.err_type, self.code)
         return packed
 
     def unpack(self, binaryString):
@@ -3503,7 +3503,7 @@ class ofp_error_msg:
         fmt = '!HH'
         start = 0
         end = start + struct.calcsize(fmt)
-        (self.type, self.code) = struct.unpack(fmt,  binaryString[start:end])
+        (self.err_type, self.code) = struct.unpack(fmt,  binaryString[start:end])
         return binaryString[4:]
 
     def __len__(self):
@@ -3516,7 +3516,7 @@ class ofp_error_msg:
         """Return True if self and other have same values
         """
         if type(self) != type(other): return False
-        if self.type !=  other.type: return False
+        if self.err_type !=  other.err_type: return False
         if self.code !=  other.code: return False
         return True
 
@@ -3526,7 +3526,7 @@ class ofp_error_msg:
         """Generate string showing basic members of structure
         """
         outstr = ''
-        outstr += prefix + 'type: ' + str(self.type) + '\n'
+        outstr += prefix + 'err_type: ' + str(self.err_type) + '\n'
         outstr += prefix + 'code: ' + str(self.code) + '\n'
         return outstr
 
