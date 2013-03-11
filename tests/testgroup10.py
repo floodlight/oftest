@@ -56,7 +56,7 @@ class Grp10No10(base_tests.SimpleDataPlane):
         # Keep sending the packets till the control plane gets shutdown
         pkt = simple_tcp_packet()
         try :
-            for x in range (0,20) :
+            for x in range (0,2) :
                 self.dataplane.send(ingress_port, str(pkt))
                 yes_ports=set(of_ports).difference([ingress_port])
                 no_ports = []
