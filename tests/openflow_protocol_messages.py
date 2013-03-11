@@ -300,7 +300,7 @@ class Hello(base_tests.SimpleDataPlane):
                                                timeout=1)
         self.assertTrue(response is not None, 
                                'Switch did not exchange hello message in return') 
-        self.assertTrue(response.header.version == 0x01, 'switch openflow-version field is not 1.0.0')
+        self.assertTrue(response.version == 0x01, 'switch openflow-version field is not 1.0.0')
 
 
 
@@ -320,10 +320,10 @@ class EchoWithoutBody(base_tests.SimpleProtocol):
         # Send echo_request
         request = ofp.message.echo_request()
         (response, pkt) = self.controller.transact(request)
-        self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,'response is not echo_reply')
-        self.assertEqual(request.header.xid, response.header.xid,
+        self.assertEqual(response.type, ofp.OFPT_ECHO_REPLY,'response is not echo_reply')
+        self.assertEqual(request.xid, response.xid,
                          'response xid != request xid')
-        self.assertTrue(response.header.version == 0x01, 'switch openflow-version field is not 1.0.1')
+        self.assertTrue(response.version == 0x01, 'switch openflow-version field is not 1.0.1')
         self.assertEqual(len(response.data), 0, 'response data non-empty')
 
 
@@ -343,8 +343,8 @@ class BarrierRequestReply(base_tests.SimpleProtocol):
         #Send Barrier Request
         request = ofp.message.barrier_request()
         (response,pkt) = self.controller.transact(request)
-        self.assertEqual(response.header.type, ofp.OFPT_BARRIER_REPLY,'response is not barrier_reply')
-        self.assertEqual(request.header.xid, response.header.xid,
+        self.assertEqual(response.type, ofp.OFPT_BARRIER_REPLY,'response is not barrier_reply')
+        self.assertEqual(request.xid, response.xid,
                          'response xid != request xid')
 
 

@@ -37,30 +37,28 @@ class --TYPE--_error_msg(ofp_error_msg):
     \"""
     def __init__(self):
         ofp_error_msg.__init__(self)
-        self.header = ofp_header()
-        self.header.type = OFPT_ERROR
-        self.type = --ERROR_NAME--
+        self.version = OFP_VERSION
+        self.type = OFPT_ERROR
+        self.err_type = --ERROR_NAME--
         self.data = ""
 
     def pack(self, assertstruct=True):
         self.header.length = self.__len__()
-        packed = self.header.pack()
+        packed = ""
         packed += ofp_error_msg.pack(self)
         packed += self.data
         return packed
 
     def unpack(self, binary_string):
-        binary_string = self.header.unpack(binary_string)
         binary_string = ofp_error_msg.unpack(self, binary_string)
         self.data = binary_string
         return ""
 
     def __len__(self):
-        return OFP_HEADER_BYTES + OFP_ERROR_MSG_BYTES + len(self.data)
+        return OFP_ERROR_MSG_BYTES + len(self.data)
 
     def show(self, prefix=''):
         outstr = prefix + "--TYPE--_error_msg\\m"
-        outstr += self.header.show(prefix + '  ')
         outstr += ofp_error_msg.show(self, prefix + '  ')
         outstr += prefix + "data is of length " + str(len(self.data)) + '\\n'
         ##@todo Consider trying to parse the string
@@ -68,8 +66,7 @@ class --TYPE--_error_msg(ofp_error_msg):
 
     def __eq__(self, other):
         if type(self) != type(other): return False
-        return (self.header == other.header and
-                ofp_error_msg.__eq__(self, other) and
+        return (ofp_error_msg.__eq__(self, other) and
                 self.data == other.data)
 
     def __ne__(self, other): return not self.__eq__(other)

@@ -6,26 +6,36 @@ import of10
 
 ILLEGAL_MESSAGE_TYPE=217
 
-class illegal_message_type:
+class illegal_message_type(of10.ofp_header):
     """
-    Wrapper class for illegal message
+    Wrapper class for illegal_message_type
 
     OpenFlow message header: length, version, xid, type
     @arg length: The total length of the message
     @arg version: The OpenFlow version (1)
     @arg xid: The transaction ID
-    @arg type: The message type (OFPT_ECHO_REQUEST=2)
+    @arg type: The message type (ILLEGAL_MESSAGE_TYPE=217)
 
+    Data members inherited from ofp_header:
+    @arg version
+    @arg type
+    @arg length
+    @arg xid
     @arg data: Binary string following message members
 
-    The message type is set to "illegal" and the pack assert
-    check for the OF header is disabled
     """
 
-    def __init__(self):
-        self.header = of10.ofp_header()
-        self.header.type = ILLEGAL_MESSAGE_TYPE
+    def __init__(self, **kwargs):
+        of10.ofp_header.__init__(self)
+        self.version = of10.OFP_VERSION
+        self.type = ILLEGAL_MESSAGE_TYPE
         self.data = ""
+        for (k, v) in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise NameError("field %s does not exist in %s" % (k, self.__class__))
+
 
     def pack(self):
         """
@@ -34,9 +44,10 @@ class illegal_message_type:
         @return The packed string which can go on the wire
 
         """
-        self.header.length = len(self)
-        packed = self.header.pack(assertstruct=False)
+        self.length = len(self)
+        packed = ""
 
+        packed += of10.ofp_header.pack(self, assertstruct=False)
         packed += self.data
         return packed
 
@@ -49,8 +60,8 @@ class illegal_message_type:
         @return The remainder of binary_string that was not parsed.
 
         """
-        binary_string = self.header.unpack(binary_string)
 
+        binary_string = of10.ofp_header.unpack(self, binary_string)
         self.data = binary_string
         binary_string = ''
         return binary_string
@@ -63,8 +74,9 @@ class illegal_message_type:
         string.
 
         """
-        length = of10.OFP_HEADER_BYTES
+        length = 0
 
+        length += of10.ofp_header.__len__(self)
         length += len(self.data)
         return length
 
@@ -77,12 +89,18 @@ class illegal_message_type:
 
         """
 
-        outstr = prefix + 'illegal_message (' + \
-            str(ILLEGAL_MESSAGE_TYPE) + ')\n'
+        outstr = prefix + 'illegal_message (217)\n'
         prefix += '  '
         outstr += prefix + 'ofp header\n'
-        outstr += self.header.show(prefix + '  ')
+        outstr += of10.ofp_header.show(self, prefix)
         outstr += prefix + 'data is of length ' + str(len(self.data)) + '\n'
+        ##@todo Fix this circular reference
+        # if len(self.data) > 0:
+            # obj = of_message_parse(self.data)
+            # if obj != None:
+                # outstr += obj.show(prefix)
+            # else:
+                # outstr += prefix + "Unable to parse data\n"
         return outstr
 
     def __eq__(self, other):
@@ -93,8 +111,8 @@ class illegal_message_type:
 
         """
         if type(self) != type(other): return False
-        if not self.header.__eq__(other.header): return False
 
+        if not of10.ofp_header.__eq__(self, other): return False
         if self.data != other.data: return False
         return True
 

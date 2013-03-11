@@ -286,8 +286,8 @@ class ctype_parser:
                               self.is_primitive(typename),size)
             else:
                 #Not array
-                if IGNORE_OFP_HEADER and typename == "ofp_header":
-                    return None
+                if typename == "ofp_header":
+                    return "ofp_header"
                 if (self.is_primitive(typename)):
                     return cprimitive(typename, name)
                 else:
@@ -382,7 +382,12 @@ class cheaderfile(textfile):
                 cstru = cstruct(structname)
                 for val in values:
                     presult = typeparser.parse_type(val)
-                    if (presult != None):
+                    if presult == "ofp_header":
+                        cstru.members.append(cprimitive("uint8_t", "version"))
+                        cstru.members.append(cprimitive("uint8_t", "type"))
+                        cstru.members.append(cprimitive("uint16_t", "length"))
+                        cstru.members.append(cprimitive("uint32_t", "xid"))
+                    elif (presult != None):
                         cstru.members.append(presult)
                 self.structs[structname] = cstru
         #Expand all structs

@@ -254,26 +254,26 @@ class Controller(Thread):
                     if hdr.type == ofp.OFPT_ECHO_REQUEST:
                         self.logger.debug("Responding to echo request")
                         rep = ofp.message.echo_reply()
-                        rep.header.xid = hdr.xid
+                        rep.xid = hdr.xid
                         # Ignoring additional data
                         self.message_send(rep.pack(), zero_xid=True)
                         continue
 
                 # Log error messages
                 if hdr.type == ofp.OFPT_ERROR:
-                    if msg.type in ofp.ofp_error_type_map:
-                        type_str = ofp.ofp_error_type_map[msg.type]
-                        if msg.type == ofp.OFPET_HELLO_FAILED:
+                    if msg.err_type in ofp.ofp_error_type_map:
+                        type_str = ofp.ofp_error_type_map[msg.err_type]
+                        if msg.err_type == ofp.OFPET_HELLO_FAILED:
                             code_map = ofp.ofp_hello_failed_code_map
-                        elif msg.type == ofp.OFPET_BAD_REQUEST:
+                        elif msg.err_type == ofp.OFPET_BAD_REQUEST:
                             code_map = ofp.ofp_bad_request_code_map
-                        elif msg.type == ofp.OFPET_BAD_ACTION:
+                        elif msg.err_type == ofp.OFPET_BAD_ACTION:
                             code_map = ofp.ofp_bad_action_code_map
-                        elif msg.type == ofp.OFPET_FLOW_MOD_FAILED:
+                        elif msg.err_type == ofp.OFPET_FLOW_MOD_FAILED:
                             code_map = ofp.ofp_flow_mod_failed_code_map
-                        elif msg.type == ofp.OFPET_PORT_MOD_FAILED:
+                        elif msg.err_type == ofp.OFPET_PORT_MOD_FAILED:
                             code_map = ofp.ofp_port_mod_failed_code_map
-                        elif msg.type == ofp.OFPET_QUEUE_OP_FAILED:
+                        elif msg.err_type == ofp.OFPET_QUEUE_OP_FAILED:
                             code_map = ofp.ofp_queue_op_failed_code_map
                         else:
                             code_map = None
@@ -285,7 +285,7 @@ class Controller(Thread):
                     else:
                         type_str = "unknown"
                     self.logger.warn("Received error message: xid=%d type=%s (%d) code=%s (%d)",
-                                     hdr.xid, type_str, msg.type, code_str, msg.code)
+                                     hdr.xid, type_str, msg.err_type, code_str, msg.code)
 
                 # Now check for message handlers; preference is given to
                 # handlers for a specific packet
@@ -592,8 +592,8 @@ class Controller(Thread):
                     self.logger.debug("Looking for %s" % ofp.ofp_type_map[exp_msg])
                     for i in range(len(self.packets)):
                         msg = self.packets[i][0]
-                        self.logger.debug("Checking packets[%d] (%s)" % (i, ofp.ofp_type_map[msg.header.type]))
-                        if msg.header.type == exp_msg:
+                        self.logger.debug("Checking packets[%d] (%s)" % (i, ofp.ofp_type_map[msg.type]))
+                        if msg.type == exp_msg:
                             (msg, pkt) = self.packets.pop(i)
                             return (msg, pkt)
             # Not found
@@ -626,21 +626,21 @@ class Controller(Thread):
 
         """
 
-        if not zero_xid and msg.header.xid == 0:
-            msg.header.xid = ofutils.gen_xid()
+        if not zero_xid and msg.xid == 0:
+            msg.xid = ofutils.gen_xid()
 
-        self.logger.debug("Running transaction %d" % msg.header.xid)
+        self.logger.debug("Running transaction %d" % msg.xid)
 
         with self.xid_cv:
             if self.xid:
                 self.logger.error("Can only run one transaction at a time")
                 return (None, None)
 
-            self.xid = msg.header.xid
+            self.xid = msg.xid
             self.xid_response = None
             self.message_send(msg.pack())
 
-            self.logger.debug("Waiting for transaction %d" % msg.header.xid)
+            self.logger.debug("Waiting for transaction %d" % msg.xid)
             ofutils.timed_wait(self.xid_cv, lambda: self.xid_response, timeout=timeout)
 
             if self.xid_response:
@@ -670,8 +670,8 @@ class Controller(Thread):
             raise Exception("no socket")
         #@todo If not string, try to pack
         if type(msg) != type(""):
-            if msg.header.xid == 0 and not zero_xid:
-                msg.header.xid = ofutils.gen_xid()
+            if msg.xid == 0 and not zero_xid:
+                msg.xid = ofutils.gen_xid()
             outpkt = msg.pack()
         else:
             outpkt = msg

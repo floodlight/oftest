@@ -88,7 +88,7 @@ class Announcement(base_tests.SimpleDataPlane):
         request = ofp.message.features_request()
         (reply, pkt) = self.controller.transact(request)
         self.assertTrue(reply is not None, "Failed to get any reply")
-        self.assertEqual(reply.header.type, ofp.OFPT_FEATURES_REPLY,'Response is not Features_reply')
+        self.assertEqual(reply.type, ofp.OFPT_FEATURES_REPLY,'Response is not Features_reply')
         
         supported_actions =[]
         if(reply.actions &1<<ofp.OFPAT_OUTPUT):

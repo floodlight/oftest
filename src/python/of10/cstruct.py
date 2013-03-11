@@ -312,6 +312,10 @@ class ofp_flow_removed:
         """Initialize
         Declare members and default values
         """
+        self.version = 0
+        self.type = 0
+        self.length = 0
+        self.xid = 0
         self.match = ofp_match()
         self.cookie = 0
         self.priority = 0
@@ -343,6 +347,7 @@ class ofp_flow_removed:
             if(not self.__assert()[0]):
                 return None
         packed = ""
+        packed += struct.pack("!BBHL", self.version, self.type, self.length, self.xid)
         packed += self.match.pack()
         packed += struct.pack("!QHBBLLH", self.cookie, self.priority, self.reason, self.pad, self.duration_sec, self.duration_nsec, self.idle_timeout)
         packed += struct.pack("!BB", self.pad2[0], self.pad2[1])
@@ -354,33 +359,41 @@ class ofp_flow_removed:
         Do not unpack empty array used as placeholder
         since they can contain heterogeneous type
         """
-        if (len(binaryString) < 80):
+        if (len(binaryString) < 88):
             return binaryString
-        self.match.unpack(binaryString[0:])
+        fmt = '!BBHL'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.version, self.type, self.length, self.xid) = struct.unpack(fmt,  binaryString[start:end])
+        self.match.unpack(binaryString[8:])
         fmt = '!QHBBLLH'
-        start = 40
+        start = 48
         end = start + struct.calcsize(fmt)
         (self.cookie, self.priority, self.reason, self.pad, self.duration_sec, self.duration_nsec, self.idle_timeout) = struct.unpack(fmt,  binaryString[start:end])
         fmt = '!BB'
-        start = 62
+        start = 70
         end = start + struct.calcsize(fmt)
         (self.pad2[0], self.pad2[1]) = struct.unpack(fmt, binaryString[start:end])
         fmt = '!QQ'
-        start = 64
+        start = 72
         end = start + struct.calcsize(fmt)
         (self.packet_count, self.byte_count) = struct.unpack(fmt,  binaryString[start:end])
-        return binaryString[80:]
+        return binaryString[88:]
 
     def __len__(self):
         """Return length of message
         """
-        l = 80
+        l = 88
         return l
 
     def __eq__(self, other):
         """Return True if self and other have same values
         """
         if type(self) != type(other): return False
+        if self.version !=  other.version: return False
+        if self.type !=  other.type: return False
+        if self.length !=  other.length: return False
+        if self.xid !=  other.xid: return False
         if self.match !=  other.match: return False
         if self.cookie !=  other.cookie: return False
         if self.priority !=  other.priority: return False
@@ -400,6 +413,10 @@ class ofp_flow_removed:
         """Generate string showing basic members of structure
         """
         outstr = ''
+        outstr += prefix + 'version: ' + str(self.version) + '\n'
+        outstr += prefix + 'type: ' + str(self.type) + '\n'
+        outstr += prefix + 'length: ' + str(self.length) + '\n'
+        outstr += prefix + 'xid: ' + str(self.xid) + '\n'
         outstr += prefix + 'match: \n' 
         outstr += self.match.show(prefix + '  ')
         outstr += prefix + 'cookie: ' + str(self.cookie) + '\n'
@@ -797,6 +814,10 @@ class ofp_stats_request:
         """Initialize
         Declare members and default values
         """
+        self.version = 0
+        self.type = 0
+        self.length = 0
+        self.xid = 0
         self.stats_type = 0
         self.flags = 0
 
@@ -813,7 +834,7 @@ class ofp_stats_request:
             if(not self.__assert()[0]):
                 return None
         packed = ""
-        packed += struct.pack("!HH", self.stats_type, self.flags)
+        packed += struct.pack("!BBHLHH", self.version, self.type, self.length, self.xid, self.stats_type, self.flags)
         return packed
 
     def unpack(self, binaryString):
@@ -821,24 +842,28 @@ class ofp_stats_request:
         Do not unpack empty array used as placeholder
         since they can contain heterogeneous type
         """
-        if (len(binaryString) < 4):
+        if (len(binaryString) < 12):
             return binaryString
-        fmt = '!HH'
+        fmt = '!BBHLHH'
         start = 0
         end = start + struct.calcsize(fmt)
-        (self.stats_type, self.flags) = struct.unpack(fmt,  binaryString[start:end])
-        return binaryString[4:]
+        (self.version, self.type, self.length, self.xid, self.stats_type, self.flags) = struct.unpack(fmt,  binaryString[start:end])
+        return binaryString[12:]
 
     def __len__(self):
         """Return length of message
         """
-        l = 4
+        l = 12
         return l
 
     def __eq__(self, other):
         """Return True if self and other have same values
         """
         if type(self) != type(other): return False
+        if self.version !=  other.version: return False
+        if self.type !=  other.type: return False
+        if self.length !=  other.length: return False
+        if self.xid !=  other.xid: return False
         if self.stats_type !=  other.stats_type: return False
         if self.flags !=  other.flags: return False
         return True
@@ -849,6 +874,10 @@ class ofp_stats_request:
         """Generate string showing basic members of structure
         """
         outstr = ''
+        outstr += prefix + 'version: ' + str(self.version) + '\n'
+        outstr += prefix + 'type: ' + str(self.type) + '\n'
+        outstr += prefix + 'length: ' + str(self.length) + '\n'
+        outstr += prefix + 'xid: ' + str(self.xid) + '\n'
         outstr += prefix + 'stats_type: ' + str(self.stats_type) + '\n'
         outstr += prefix + 'flags: ' + str(self.flags) + '\n'
         return outstr
@@ -866,6 +895,10 @@ class ofp_hello:
         """Initialize
         Declare members and default values
         """
+        self.version = 0
+        self.type = 0
+        self.length = 0
+        self.xid = 0
 
     def __assert(self):
         """Sanity check
@@ -880,6 +913,7 @@ class ofp_hello:
             if(not self.__assert()[0]):
                 return None
         packed = ""
+        packed += struct.pack("!BBHL", self.version, self.type, self.length, self.xid)
         return packed
 
     def unpack(self, binaryString):
@@ -887,20 +921,28 @@ class ofp_hello:
         Do not unpack empty array used as placeholder
         since they can contain heterogeneous type
         """
-        if (len(binaryString) < 0):
+        if (len(binaryString) < 8):
             return binaryString
-        return binaryString[0:]
+        fmt = '!BBHL'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.version, self.type, self.length, self.xid) = struct.unpack(fmt,  binaryString[start:end])
+        return binaryString[8:]
 
     def __len__(self):
         """Return length of message
         """
-        l = 0
+        l = 8
         return l
 
     def __eq__(self, other):
         """Return True if self and other have same values
         """
         if type(self) != type(other): return False
+        if self.version !=  other.version: return False
+        if self.type !=  other.type: return False
+        if self.length !=  other.length: return False
+        if self.xid !=  other.xid: return False
         return True
 
     def __ne__(self, other): return not self.__eq__(other)
@@ -909,6 +951,10 @@ class ofp_hello:
         """Generate string showing basic members of structure
         """
         outstr = ''
+        outstr += prefix + 'version: ' + str(self.version) + '\n'
+        outstr += prefix + 'type: ' + str(self.type) + '\n'
+        outstr += prefix + 'length: ' + str(self.length) + '\n'
+        outstr += prefix + 'xid: ' + str(self.xid) + '\n'
         return outstr
 
 
@@ -1003,6 +1049,10 @@ class ofp_port_status:
         """Initialize
         Declare members and default values
         """
+        self.version = 0
+        self.type = 0
+        self.length = 0
+        self.xid = 0
         self.reason = 0
         self.pad= [0,0,0,0,0,0,0]
         self.desc = ofp_phy_port()
@@ -1026,7 +1076,7 @@ class ofp_port_status:
             if(not self.__assert()[0]):
                 return None
         packed = ""
-        packed += struct.pack("!B", self.reason)
+        packed += struct.pack("!BBHLB", self.version, self.type, self.length, self.xid, self.reason)
         packed += struct.pack("!BBBBBBB", self.pad[0], self.pad[1], self.pad[2], self.pad[3], self.pad[4], self.pad[5], self.pad[6])
         packed += self.desc.pack()
         return packed
@@ -1036,29 +1086,33 @@ class ofp_port_status:
         Do not unpack empty array used as placeholder
         since they can contain heterogeneous type
         """
-        if (len(binaryString) < 56):
+        if (len(binaryString) < 64):
             return binaryString
-        fmt = '!B'
+        fmt = '!BBHLB'
         start = 0
         end = start + struct.calcsize(fmt)
-        (self.reason,) = struct.unpack(fmt, binaryString[start:end])
+        (self.version, self.type, self.length, self.xid, self.reason) = struct.unpack(fmt,  binaryString[start:end])
         fmt = '!BBBBBBB'
-        start = 1
+        start = 9
         end = start + struct.calcsize(fmt)
         (self.pad[0], self.pad[1], self.pad[2], self.pad[3], self.pad[4], self.pad[5], self.pad[6]) = struct.unpack(fmt, binaryString[start:end])
-        self.desc.unpack(binaryString[8:])
-        return binaryString[56:]
+        self.desc.unpack(binaryString[16:])
+        return binaryString[64:]
 
     def __len__(self):
         """Return length of message
         """
-        l = 56
+        l = 64
         return l
 
     def __eq__(self, other):
         """Return True if self and other have same values
         """
         if type(self) != type(other): return False
+        if self.version !=  other.version: return False
+        if self.type !=  other.type: return False
+        if self.length !=  other.length: return False
+        if self.xid !=  other.xid: return False
         if self.reason !=  other.reason: return False
         if self.pad !=  other.pad: return False
         if self.desc !=  other.desc: return False
@@ -1070,6 +1124,10 @@ class ofp_port_status:
         """Generate string showing basic members of structure
         """
         outstr = ''
+        outstr += prefix + 'version: ' + str(self.version) + '\n'
+        outstr += prefix + 'type: ' + str(self.type) + '\n'
+        outstr += prefix + 'length: ' + str(self.length) + '\n'
+        outstr += prefix + 'xid: ' + str(self.xid) + '\n'
         outstr += prefix + 'reason: ' + str(self.reason) + '\n'
         outstr += prefix + 'desc: \n' 
         outstr += self.desc.show(prefix + '  ')
@@ -1168,6 +1226,10 @@ class ofp_port_mod:
         """Initialize
         Declare members and default values
         """
+        self.version = 0
+        self.type = 0
+        self.length = 0
+        self.xid = 0
         self.port_no = 0
         self.hw_addr= [0,0,0,0,0,0]
         self.config = 0
@@ -1196,7 +1258,7 @@ class ofp_port_mod:
             if(not self.__assert()[0]):
                 return None
         packed = ""
-        packed += struct.pack("!H", self.port_no)
+        packed += struct.pack("!BBHLH", self.version, self.type, self.length, self.xid, self.port_no)
         packed += struct.pack("!BBBBBB", self.hw_addr[0], self.hw_addr[1], self.hw_addr[2], self.hw_addr[3], self.hw_addr[4], self.hw_addr[5])
         packed += struct.pack("!LLL", self.config, self.mask, self.advertise)
         packed += struct.pack("!BBBB", self.pad[0], self.pad[1], self.pad[2], self.pad[3])
@@ -1207,36 +1269,40 @@ class ofp_port_mod:
         Do not unpack empty array used as placeholder
         since they can contain heterogeneous type
         """
-        if (len(binaryString) < 24):
+        if (len(binaryString) < 32):
             return binaryString
-        fmt = '!H'
+        fmt = '!BBHLH'
         start = 0
         end = start + struct.calcsize(fmt)
-        (self.port_no,) = struct.unpack(fmt, binaryString[start:end])
+        (self.version, self.type, self.length, self.xid, self.port_no) = struct.unpack(fmt,  binaryString[start:end])
         fmt = '!BBBBBB'
-        start = 2
+        start = 10
         end = start + struct.calcsize(fmt)
         (self.hw_addr[0], self.hw_addr[1], self.hw_addr[2], self.hw_addr[3], self.hw_addr[4], self.hw_addr[5]) = struct.unpack(fmt, binaryString[start:end])
         fmt = '!LLL'
-        start = 8
+        start = 16
         end = start + struct.calcsize(fmt)
         (self.config, self.mask, self.advertise) = struct.unpack(fmt,  binaryString[start:end])
         fmt = '!BBBB'
-        start = 20
+        start = 28
         end = start + struct.calcsize(fmt)
         (self.pad[0], self.pad[1], self.pad[2], self.pad[3]) = struct.unpack(fmt, binaryString[start:end])
-        return binaryString[24:]
+        return binaryString[32:]
 
     def __len__(self):
         """Return length of message
         """
-        l = 24
+        l = 32
         return l
 
     def __eq__(self, other):
         """Return True if self and other have same values
         """
         if type(self) != type(other): return False
+        if self.version !=  other.version: return False
+        if self.type !=  other.type: return False
+        if self.length !=  other.length: return False
+        if self.xid !=  other.xid: return False
         if self.port_no !=  other.port_no: return False
         if self.hw_addr !=  other.hw_addr: return False
         if self.config !=  other.config: return False
@@ -1251,6 +1317,10 @@ class ofp_port_mod:
         """Generate string showing basic members of structure
         """
         outstr = ''
+        outstr += prefix + 'version: ' + str(self.version) + '\n'
+        outstr += prefix + 'type: ' + str(self.type) + '\n'
+        outstr += prefix + 'length: ' + str(self.length) + '\n'
+        outstr += prefix + 'xid: ' + str(self.xid) + '\n'
         outstr += prefix + 'port_no: ' + str(self.port_no) + '\n'
         outstr += prefix + 'hw_addr: ' + str(self.hw_addr) + '\n'
         outstr += prefix + 'config: ' + str(self.config) + '\n'
@@ -1429,6 +1499,10 @@ class ofp_switch_config:
         """Initialize
         Declare members and default values
         """
+        self.version = 0
+        self.type = 0
+        self.length = 0
+        self.xid = 0
         self.flags = 0
         self.miss_send_len = 128
 
@@ -1445,7 +1519,7 @@ class ofp_switch_config:
             if(not self.__assert()[0]):
                 return None
         packed = ""
-        packed += struct.pack("!HH", self.flags, self.miss_send_len)
+        packed += struct.pack("!BBHLHH", self.version, self.type, self.length, self.xid, self.flags, self.miss_send_len)
         return packed
 
     def unpack(self, binaryString):
@@ -1453,24 +1527,28 @@ class ofp_switch_config:
         Do not unpack empty array used as placeholder
         since they can contain heterogeneous type
         """
-        if (len(binaryString) < 4):
+        if (len(binaryString) < 12):
             return binaryString
-        fmt = '!HH'
+        fmt = '!BBHLHH'
         start = 0
         end = start + struct.calcsize(fmt)
-        (self.flags, self.miss_send_len) = struct.unpack(fmt,  binaryString[start:end])
-        return binaryString[4:]
+        (self.version, self.type, self.length, self.xid, self.flags, self.miss_send_len) = struct.unpack(fmt,  binaryString[start:end])
+        return binaryString[12:]
 
     def __len__(self):
         """Return length of message
         """
-        l = 4
+        l = 12
         return l
 
     def __eq__(self, other):
         """Return True if self and other have same values
         """
         if type(self) != type(other): return False
+        if self.version !=  other.version: return False
+        if self.type !=  other.type: return False
+        if self.length !=  other.length: return False
+        if self.xid !=  other.xid: return False
         if self.flags !=  other.flags: return False
         if self.miss_send_len !=  other.miss_send_len: return False
         return True
@@ -1481,6 +1559,10 @@ class ofp_switch_config:
         """Generate string showing basic members of structure
         """
         outstr = ''
+        outstr += prefix + 'version: ' + str(self.version) + '\n'
+        outstr += prefix + 'type: ' + str(self.type) + '\n'
+        outstr += prefix + 'length: ' + str(self.length) + '\n'
+        outstr += prefix + 'xid: ' + str(self.xid) + '\n'
         outstr += prefix + 'flags: ' + str(self.flags) + '\n'
         outstr += prefix + 'miss_send_len: ' + str(self.miss_send_len) + '\n'
         return outstr
@@ -1581,6 +1663,10 @@ class ofp_queue_get_config_reply:
         """Initialize
         Declare members and default values
         """
+        self.version = 0
+        self.type = 0
+        self.length = 0
+        self.xid = 0
         self.port = 0
         self.pad= [0,0,0,0,0,0]
 
@@ -1601,7 +1687,7 @@ class ofp_queue_get_config_reply:
             if(not self.__assert()[0]):
                 return None
         packed = ""
-        packed += struct.pack("!H", self.port)
+        packed += struct.pack("!BBHLH", self.version, self.type, self.length, self.xid, self.port)
         packed += struct.pack("!BBBBBB", self.pad[0], self.pad[1], self.pad[2], self.pad[3], self.pad[4], self.pad[5])
         return packed
 
@@ -1610,28 +1696,32 @@ class ofp_queue_get_config_reply:
         Do not unpack empty array used as placeholder
         since they can contain heterogeneous type
         """
-        if (len(binaryString) < 8):
+        if (len(binaryString) < 16):
             return binaryString
-        fmt = '!H'
+        fmt = '!BBHLH'
         start = 0
         end = start + struct.calcsize(fmt)
-        (self.port,) = struct.unpack(fmt, binaryString[start:end])
+        (self.version, self.type, self.length, self.xid, self.port) = struct.unpack(fmt,  binaryString[start:end])
         fmt = '!BBBBBB'
-        start = 2
+        start = 10
         end = start + struct.calcsize(fmt)
         (self.pad[0], self.pad[1], self.pad[2], self.pad[3], self.pad[4], self.pad[5]) = struct.unpack(fmt, binaryString[start:end])
-        return binaryString[8:]
+        return binaryString[16:]
 
     def __len__(self):
         """Return length of message
         """
-        l = 8
+        l = 16
         return l
 
     def __eq__(self, other):
         """Return True if self and other have same values
         """
         if type(self) != type(other): return False
+        if self.version !=  other.version: return False
+        if self.type !=  other.type: return False
+        if self.length !=  other.length: return False
+        if self.xid !=  other.xid: return False
         if self.port !=  other.port: return False
         if self.pad !=  other.pad: return False
         return True
@@ -1642,6 +1732,10 @@ class ofp_queue_get_config_reply:
         """Generate string showing basic members of structure
         """
         outstr = ''
+        outstr += prefix + 'version: ' + str(self.version) + '\n'
+        outstr += prefix + 'type: ' + str(self.type) + '\n'
+        outstr += prefix + 'length: ' + str(self.length) + '\n'
+        outstr += prefix + 'xid: ' + str(self.xid) + '\n'
         outstr += prefix + 'port: ' + str(self.port) + '\n'
         return outstr
 
@@ -1658,6 +1752,10 @@ class ofp_packet_in:
         """Initialize
         Declare members and default values
         """
+        self.version = 0
+        self.type = 0
+        self.length = 0
+        self.xid = 0
         self.buffer_id = 0
         self.total_len = 0
         self.in_port = 0
@@ -1677,7 +1775,7 @@ class ofp_packet_in:
             if(not self.__assert()[0]):
                 return None
         packed = ""
-        packed += struct.pack("!LHHBB", self.buffer_id, self.total_len, self.in_port, self.reason, self.pad)
+        packed += struct.pack("!BBHLLHHBB", self.version, self.type, self.length, self.xid, self.buffer_id, self.total_len, self.in_port, self.reason, self.pad)
         return packed
 
     def unpack(self, binaryString):
@@ -1685,24 +1783,28 @@ class ofp_packet_in:
         Do not unpack empty array used as placeholder
         since they can contain heterogeneous type
         """
-        if (len(binaryString) < 10):
+        if (len(binaryString) < 18):
             return binaryString
-        fmt = '!LHHBB'
+        fmt = '!BBHLLHHBB'
         start = 0
         end = start + struct.calcsize(fmt)
-        (self.buffer_id, self.total_len, self.in_port, self.reason, self.pad) = struct.unpack(fmt,  binaryString[start:end])
-        return binaryString[10:]
+        (self.version, self.type, self.length, self.xid, self.buffer_id, self.total_len, self.in_port, self.reason, self.pad) = struct.unpack(fmt,  binaryString[start:end])
+        return binaryString[18:]
 
     def __len__(self):
         """Return length of message
         """
-        l = 10
+        l = 18
         return l
 
     def __eq__(self, other):
         """Return True if self and other have same values
         """
         if type(self) != type(other): return False
+        if self.version !=  other.version: return False
+        if self.type !=  other.type: return False
+        if self.length !=  other.length: return False
+        if self.xid !=  other.xid: return False
         if self.buffer_id !=  other.buffer_id: return False
         if self.total_len !=  other.total_len: return False
         if self.in_port !=  other.in_port: return False
@@ -1716,6 +1818,10 @@ class ofp_packet_in:
         """Generate string showing basic members of structure
         """
         outstr = ''
+        outstr += prefix + 'version: ' + str(self.version) + '\n'
+        outstr += prefix + 'type: ' + str(self.type) + '\n'
+        outstr += prefix + 'length: ' + str(self.length) + '\n'
+        outstr += prefix + 'xid: ' + str(self.xid) + '\n'
         outstr += prefix + 'buffer_id: ' + str(self.buffer_id) + '\n'
         outstr += prefix + 'total_len: ' + str(self.total_len) + '\n'
         outstr += prefix + 'in_port: ' + str(self.in_port) + '\n'
@@ -2010,6 +2116,10 @@ class ofp_stats_reply:
         """Initialize
         Declare members and default values
         """
+        self.version = 0
+        self.type = 0
+        self.length = 0
+        self.xid = 0
         self.stats_type = 0
         self.flags = 0
 
@@ -2026,7 +2136,7 @@ class ofp_stats_reply:
             if(not self.__assert()[0]):
                 return None
         packed = ""
-        packed += struct.pack("!HH", self.stats_type, self.flags)
+        packed += struct.pack("!BBHLHH", self.version, self.type, self.length, self.xid, self.stats_type, self.flags)
         return packed
 
     def unpack(self, binaryString):
@@ -2034,24 +2144,28 @@ class ofp_stats_reply:
         Do not unpack empty array used as placeholder
         since they can contain heterogeneous type
         """
-        if (len(binaryString) < 4):
+        if (len(binaryString) < 12):
             return binaryString
-        fmt = '!HH'
+        fmt = '!BBHLHH'
         start = 0
         end = start + struct.calcsize(fmt)
-        (self.stats_type, self.flags) = struct.unpack(fmt,  binaryString[start:end])
-        return binaryString[4:]
+        (self.version, self.type, self.length, self.xid, self.stats_type, self.flags) = struct.unpack(fmt,  binaryString[start:end])
+        return binaryString[12:]
 
     def __len__(self):
         """Return length of message
         """
-        l = 4
+        l = 12
         return l
 
     def __eq__(self, other):
         """Return True if self and other have same values
         """
         if type(self) != type(other): return False
+        if self.version !=  other.version: return False
+        if self.type !=  other.type: return False
+        if self.length !=  other.length: return False
+        if self.xid !=  other.xid: return False
         if self.stats_type !=  other.stats_type: return False
         if self.flags !=  other.flags: return False
         return True
@@ -2062,6 +2176,10 @@ class ofp_stats_reply:
         """Generate string showing basic members of structure
         """
         outstr = ''
+        outstr += prefix + 'version: ' + str(self.version) + '\n'
+        outstr += prefix + 'type: ' + str(self.type) + '\n'
+        outstr += prefix + 'length: ' + str(self.length) + '\n'
+        outstr += prefix + 'xid: ' + str(self.xid) + '\n'
         outstr += prefix + 'stats_type: ' + str(self.stats_type) + '\n'
         outstr += prefix + 'flags: ' + str(self.flags) + '\n'
         return outstr
@@ -2267,6 +2385,10 @@ class ofp_queue_get_config_request:
         """Initialize
         Declare members and default values
         """
+        self.version = 0
+        self.type = 0
+        self.length = 0
+        self.xid = 0
         self.port = 0
         self.pad= [0,0]
 
@@ -2287,7 +2409,7 @@ class ofp_queue_get_config_request:
             if(not self.__assert()[0]):
                 return None
         packed = ""
-        packed += struct.pack("!H", self.port)
+        packed += struct.pack("!BBHLH", self.version, self.type, self.length, self.xid, self.port)
         packed += struct.pack("!BB", self.pad[0], self.pad[1])
         return packed
 
@@ -2296,28 +2418,32 @@ class ofp_queue_get_config_request:
         Do not unpack empty array used as placeholder
         since they can contain heterogeneous type
         """
-        if (len(binaryString) < 4):
+        if (len(binaryString) < 12):
             return binaryString
-        fmt = '!H'
+        fmt = '!BBHLH'
         start = 0
         end = start + struct.calcsize(fmt)
-        (self.port,) = struct.unpack(fmt, binaryString[start:end])
+        (self.version, self.type, self.length, self.xid, self.port) = struct.unpack(fmt,  binaryString[start:end])
         fmt = '!BB'
-        start = 2
+        start = 10
         end = start + struct.calcsize(fmt)
         (self.pad[0], self.pad[1]) = struct.unpack(fmt, binaryString[start:end])
-        return binaryString[4:]
+        return binaryString[12:]
 
     def __len__(self):
         """Return length of message
         """
-        l = 4
+        l = 12
         return l
 
     def __eq__(self, other):
         """Return True if self and other have same values
         """
         if type(self) != type(other): return False
+        if self.version !=  other.version: return False
+        if self.type !=  other.type: return False
+        if self.length !=  other.length: return False
+        if self.xid !=  other.xid: return False
         if self.port !=  other.port: return False
         if self.pad !=  other.pad: return False
         return True
@@ -2328,6 +2454,10 @@ class ofp_queue_get_config_request:
         """Generate string showing basic members of structure
         """
         outstr = ''
+        outstr += prefix + 'version: ' + str(self.version) + '\n'
+        outstr += prefix + 'type: ' + str(self.type) + '\n'
+        outstr += prefix + 'length: ' + str(self.length) + '\n'
+        outstr += prefix + 'xid: ' + str(self.xid) + '\n'
         outstr += prefix + 'port: ' + str(self.port) + '\n'
         return outstr
 
@@ -2772,6 +2902,10 @@ class ofp_switch_features:
         """Initialize
         Declare members and default values
         """
+        self.version = 0
+        self.type = 0
+        self.length = 0
+        self.xid = 0
         self.datapath_id = 0
         self.n_buffers = 0
         self.n_tables = 0
@@ -2796,7 +2930,7 @@ class ofp_switch_features:
             if(not self.__assert()[0]):
                 return None
         packed = ""
-        packed += struct.pack("!QLB", self.datapath_id, self.n_buffers, self.n_tables)
+        packed += struct.pack("!BBHLQLB", self.version, self.type, self.length, self.xid, self.datapath_id, self.n_buffers, self.n_tables)
         packed += struct.pack("!BBB", self.pad[0], self.pad[1], self.pad[2])
         packed += struct.pack("!LL", self.capabilities, self.actions)
         return packed
@@ -2806,32 +2940,36 @@ class ofp_switch_features:
         Do not unpack empty array used as placeholder
         since they can contain heterogeneous type
         """
-        if (len(binaryString) < 24):
+        if (len(binaryString) < 32):
             return binaryString
-        fmt = '!QLB'
+        fmt = '!BBHLQLB'
         start = 0
         end = start + struct.calcsize(fmt)
-        (self.datapath_id, self.n_buffers, self.n_tables) = struct.unpack(fmt,  binaryString[start:end])
+        (self.version, self.type, self.length, self.xid, self.datapath_id, self.n_buffers, self.n_tables) = struct.unpack(fmt,  binaryString[start:end])
         fmt = '!BBB'
-        start = 13
+        start = 21
         end = start + struct.calcsize(fmt)
         (self.pad[0], self.pad[1], self.pad[2]) = struct.unpack(fmt, binaryString[start:end])
         fmt = '!LL'
-        start = 16
+        start = 24
         end = start + struct.calcsize(fmt)
         (self.capabilities, self.actions) = struct.unpack(fmt,  binaryString[start:end])
-        return binaryString[24:]
+        return binaryString[32:]
 
     def __len__(self):
         """Return length of message
         """
-        l = 24
+        l = 32
         return l
 
     def __eq__(self, other):
         """Return True if self and other have same values
         """
         if type(self) != type(other): return False
+        if self.version !=  other.version: return False
+        if self.type !=  other.type: return False
+        if self.length !=  other.length: return False
+        if self.xid !=  other.xid: return False
         if self.datapath_id !=  other.datapath_id: return False
         if self.n_buffers !=  other.n_buffers: return False
         if self.n_tables !=  other.n_tables: return False
@@ -2846,6 +2984,10 @@ class ofp_switch_features:
         """Generate string showing basic members of structure
         """
         outstr = ''
+        outstr += prefix + 'version: ' + str(self.version) + '\n'
+        outstr += prefix + 'type: ' + str(self.type) + '\n'
+        outstr += prefix + 'length: ' + str(self.length) + '\n'
+        outstr += prefix + 'xid: ' + str(self.xid) + '\n'
         outstr += prefix + 'datapath_id: ' + str(self.datapath_id) + '\n'
         outstr += prefix + 'n_buffers: ' + str(self.n_buffers) + '\n'
         outstr += prefix + 'n_tables: ' + str(self.n_tables) + '\n'
@@ -3086,6 +3228,10 @@ class ofp_vendor_header:
         """Initialize
         Declare members and default values
         """
+        self.version = 0
+        self.type = 0
+        self.length = 0
+        self.xid = 0
         self.vendor = 0
 
     def __assert(self):
@@ -3101,7 +3247,7 @@ class ofp_vendor_header:
             if(not self.__assert()[0]):
                 return None
         packed = ""
-        packed += struct.pack("!L", self.vendor)
+        packed += struct.pack("!BBHLL", self.version, self.type, self.length, self.xid, self.vendor)
         return packed
 
     def unpack(self, binaryString):
@@ -3109,24 +3255,28 @@ class ofp_vendor_header:
         Do not unpack empty array used as placeholder
         since they can contain heterogeneous type
         """
-        if (len(binaryString) < 4):
+        if (len(binaryString) < 12):
             return binaryString
-        fmt = '!L'
+        fmt = '!BBHLL'
         start = 0
         end = start + struct.calcsize(fmt)
-        (self.vendor,) = struct.unpack(fmt, binaryString[start:end])
-        return binaryString[4:]
+        (self.version, self.type, self.length, self.xid, self.vendor) = struct.unpack(fmt,  binaryString[start:end])
+        return binaryString[12:]
 
     def __len__(self):
         """Return length of message
         """
-        l = 4
+        l = 12
         return l
 
     def __eq__(self, other):
         """Return True if self and other have same values
         """
         if type(self) != type(other): return False
+        if self.version !=  other.version: return False
+        if self.type !=  other.type: return False
+        if self.length !=  other.length: return False
+        if self.xid !=  other.xid: return False
         if self.vendor !=  other.vendor: return False
         return True
 
@@ -3136,6 +3286,10 @@ class ofp_vendor_header:
         """Generate string showing basic members of structure
         """
         outstr = ''
+        outstr += prefix + 'version: ' + str(self.version) + '\n'
+        outstr += prefix + 'type: ' + str(self.type) + '\n'
+        outstr += prefix + 'length: ' + str(self.length) + '\n'
+        outstr += prefix + 'xid: ' + str(self.xid) + '\n'
         outstr += prefix + 'vendor: ' + str(self.vendor) + '\n'
         return outstr
 
@@ -3152,6 +3306,10 @@ class ofp_packet_out:
         """Initialize
         Declare members and default values
         """
+        self.version = 0
+        self.type = 0
+        self.length = 0
+        self.xid = 0
         self.buffer_id = 4294967295
         self.in_port = 0
         self.actions_len = 0
@@ -3169,7 +3327,7 @@ class ofp_packet_out:
             if(not self.__assert()[0]):
                 return None
         packed = ""
-        packed += struct.pack("!LHH", self.buffer_id, self.in_port, self.actions_len)
+        packed += struct.pack("!BBHLLHH", self.version, self.type, self.length, self.xid, self.buffer_id, self.in_port, self.actions_len)
         return packed
 
     def unpack(self, binaryString):
@@ -3177,24 +3335,28 @@ class ofp_packet_out:
         Do not unpack empty array used as placeholder
         since they can contain heterogeneous type
         """
-        if (len(binaryString) < 8):
+        if (len(binaryString) < 16):
             return binaryString
-        fmt = '!LHH'
+        fmt = '!BBHLLHH'
         start = 0
         end = start + struct.calcsize(fmt)
-        (self.buffer_id, self.in_port, self.actions_len) = struct.unpack(fmt,  binaryString[start:end])
-        return binaryString[8:]
+        (self.version, self.type, self.length, self.xid, self.buffer_id, self.in_port, self.actions_len) = struct.unpack(fmt,  binaryString[start:end])
+        return binaryString[16:]
 
     def __len__(self):
         """Return length of message
         """
-        l = 8
+        l = 16
         return l
 
     def __eq__(self, other):
         """Return True if self and other have same values
         """
         if type(self) != type(other): return False
+        if self.version !=  other.version: return False
+        if self.type !=  other.type: return False
+        if self.length !=  other.length: return False
+        if self.xid !=  other.xid: return False
         if self.buffer_id !=  other.buffer_id: return False
         if self.in_port !=  other.in_port: return False
         if self.actions_len !=  other.actions_len: return False
@@ -3206,6 +3368,10 @@ class ofp_packet_out:
         """Generate string showing basic members of structure
         """
         outstr = ''
+        outstr += prefix + 'version: ' + str(self.version) + '\n'
+        outstr += prefix + 'type: ' + str(self.type) + '\n'
+        outstr += prefix + 'length: ' + str(self.length) + '\n'
+        outstr += prefix + 'xid: ' + str(self.xid) + '\n'
         outstr += prefix + 'buffer_id: ' + str(self.buffer_id) + '\n'
         outstr += prefix + 'in_port: ' + str(self.in_port) + '\n'
         outstr += prefix + 'actions_len: ' + str(self.actions_len) + '\n'
@@ -3379,6 +3545,10 @@ class ofp_flow_mod:
         """Initialize
         Declare members and default values
         """
+        self.version = 0
+        self.type = 0
+        self.length = 0
+        self.xid = 0
         self.match = ofp_match()
         self.cookie = 0
         self.command = 0
@@ -3404,6 +3574,7 @@ class ofp_flow_mod:
             if(not self.__assert()[0]):
                 return None
         packed = ""
+        packed += struct.pack("!BBHL", self.version, self.type, self.length, self.xid)
         packed += self.match.pack()
         packed += struct.pack("!QHHHHLHH", self.cookie, self.command, self.idle_timeout, self.hard_timeout, self.priority, self.buffer_id, self.out_port, self.flags)
         return packed
@@ -3413,25 +3584,33 @@ class ofp_flow_mod:
         Do not unpack empty array used as placeholder
         since they can contain heterogeneous type
         """
-        if (len(binaryString) < 64):
+        if (len(binaryString) < 72):
             return binaryString
-        self.match.unpack(binaryString[0:])
+        fmt = '!BBHL'
+        start = 0
+        end = start + struct.calcsize(fmt)
+        (self.version, self.type, self.length, self.xid) = struct.unpack(fmt,  binaryString[start:end])
+        self.match.unpack(binaryString[8:])
         fmt = '!QHHHHLHH'
-        start = 40
+        start = 48
         end = start + struct.calcsize(fmt)
         (self.cookie, self.command, self.idle_timeout, self.hard_timeout, self.priority, self.buffer_id, self.out_port, self.flags) = struct.unpack(fmt,  binaryString[start:end])
-        return binaryString[64:]
+        return binaryString[72:]
 
     def __len__(self):
         """Return length of message
         """
-        l = 64
+        l = 72
         return l
 
     def __eq__(self, other):
         """Return True if self and other have same values
         """
         if type(self) != type(other): return False
+        if self.version !=  other.version: return False
+        if self.type !=  other.type: return False
+        if self.length !=  other.length: return False
+        if self.xid !=  other.xid: return False
         if self.match !=  other.match: return False
         if self.cookie !=  other.cookie: return False
         if self.command !=  other.command: return False
@@ -3449,6 +3628,10 @@ class ofp_flow_mod:
         """Generate string showing basic members of structure
         """
         outstr = ''
+        outstr += prefix + 'version: ' + str(self.version) + '\n'
+        outstr += prefix + 'type: ' + str(self.type) + '\n'
+        outstr += prefix + 'length: ' + str(self.length) + '\n'
+        outstr += prefix + 'xid: ' + str(self.xid) + '\n'
         outstr += prefix + 'match: \n' 
         outstr += self.match.show(prefix + '  ')
         outstr += prefix + 'cookie: ' + str(self.cookie) + '\n'
@@ -3474,6 +3657,10 @@ class ofp_error_msg:
         """Initialize
         Declare members and default values
         """
+        self.version = 0
+        self.type = 0
+        self.length = 0
+        self.xid = 0
         self.err_type = 0
         self.code = 0
 
@@ -3490,7 +3677,7 @@ class ofp_error_msg:
             if(not self.__assert()[0]):
                 return None
         packed = ""
-        packed += struct.pack("!HH", self.err_type, self.code)
+        packed += struct.pack("!BBHLHH", self.version, self.type, self.length, self.xid, self.err_type, self.code)
         return packed
 
     def unpack(self, binaryString):
@@ -3498,24 +3685,28 @@ class ofp_error_msg:
         Do not unpack empty array used as placeholder
         since they can contain heterogeneous type
         """
-        if (len(binaryString) < 4):
+        if (len(binaryString) < 12):
             return binaryString
-        fmt = '!HH'
+        fmt = '!BBHLHH'
         start = 0
         end = start + struct.calcsize(fmt)
-        (self.err_type, self.code) = struct.unpack(fmt,  binaryString[start:end])
-        return binaryString[4:]
+        (self.version, self.type, self.length, self.xid, self.err_type, self.code) = struct.unpack(fmt,  binaryString[start:end])
+        return binaryString[12:]
 
     def __len__(self):
         """Return length of message
         """
-        l = 4
+        l = 12
         return l
 
     def __eq__(self, other):
         """Return True if self and other have same values
         """
         if type(self) != type(other): return False
+        if self.version !=  other.version: return False
+        if self.type !=  other.type: return False
+        if self.length !=  other.length: return False
+        if self.xid !=  other.xid: return False
         if self.err_type !=  other.err_type: return False
         if self.code !=  other.code: return False
         return True
@@ -3526,6 +3717,10 @@ class ofp_error_msg:
         """Generate string showing basic members of structure
         """
         outstr = ''
+        outstr += prefix + 'version: ' + str(self.version) + '\n'
+        outstr += prefix + 'type: ' + str(self.type) + '\n'
+        outstr += prefix + 'length: ' + str(self.length) + '\n'
+        outstr += prefix + 'xid: ' + str(self.xid) + '\n'
         outstr += prefix + 'err_type: ' + str(self.err_type) + '\n'
         outstr += prefix + 'code: ' + str(self.code) + '\n'
         return outstr
@@ -3990,32 +4185,32 @@ OFP_ACTION_VLAN_VID_BYTES = 8
 OFP_AGGREGATE_STATS_REPLY_BYTES = 24
 OFP_AGGREGATE_STATS_REQUEST_BYTES = 44
 OFP_DESC_STATS_BYTES = 1056
-OFP_ERROR_MSG_BYTES = 4
-OFP_FLOW_MOD_BYTES = 64
-OFP_FLOW_REMOVED_BYTES = 80
+OFP_ERROR_MSG_BYTES = 12
+OFP_FLOW_MOD_BYTES = 72
+OFP_FLOW_REMOVED_BYTES = 88
 OFP_FLOW_STATS_BYTES = 88
 OFP_FLOW_STATS_REQUEST_BYTES = 44
 OFP_HEADER_BYTES = 8
-OFP_HELLO_BYTES = 0
+OFP_HELLO_BYTES = 8
 OFP_MATCH_BYTES = 40
-OFP_PACKET_IN_BYTES = 10
-OFP_PACKET_OUT_BYTES = 8
+OFP_PACKET_IN_BYTES = 18
+OFP_PACKET_OUT_BYTES = 16
 OFP_PACKET_QUEUE_BYTES = 8
 OFP_PHY_PORT_BYTES = 48
-OFP_PORT_MOD_BYTES = 24
+OFP_PORT_MOD_BYTES = 32
 OFP_PORT_STATS_BYTES = 104
 OFP_PORT_STATS_REQUEST_BYTES = 8
-OFP_PORT_STATUS_BYTES = 56
-OFP_QUEUE_GET_CONFIG_REPLY_BYTES = 8
-OFP_QUEUE_GET_CONFIG_REQUEST_BYTES = 4
+OFP_PORT_STATUS_BYTES = 64
+OFP_QUEUE_GET_CONFIG_REPLY_BYTES = 16
+OFP_QUEUE_GET_CONFIG_REQUEST_BYTES = 12
 OFP_QUEUE_PROP_HEADER_BYTES = 8
 OFP_QUEUE_PROP_MIN_RATE_BYTES = 16
 OFP_QUEUE_STATS_BYTES = 32
 OFP_QUEUE_STATS_REQUEST_BYTES = 8
-OFP_STATS_REPLY_BYTES = 4
-OFP_STATS_REQUEST_BYTES = 4
-OFP_SWITCH_CONFIG_BYTES = 4
-OFP_SWITCH_FEATURES_BYTES = 24
+OFP_STATS_REPLY_BYTES = 12
+OFP_STATS_REQUEST_BYTES = 12
+OFP_SWITCH_CONFIG_BYTES = 12
+OFP_SWITCH_FEATURES_BYTES = 32
 OFP_TABLE_STATS_BYTES = 64
-OFP_VENDOR_HEADER_BYTES = 4
+OFP_VENDOR_HEADER_BYTES = 12
 

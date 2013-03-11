@@ -45,7 +45,7 @@ class HelloWithBody(base_tests.SimpleDataPlane):
         self.assertTrue(response is not None, 
                                'Switch did not exchange hello message in return') 
         self.assertEqual(len(response.data), 0, 'Response data field non-empty')
-        self.assertTrue(response.header.version == 0x01, 'Openflow-version field is not 1.0.0')
+        self.assertTrue(response.version == 0x01, 'Openflow-version field is not 1.0.0')
 
 
 class EchoWithData(base_tests.SimpleProtocol):
@@ -69,9 +69,9 @@ class EchoWithData(base_tests.SimpleProtocol):
                                                timeout=1)
         self.assertTrue(response is not None,
                         "Did not get echo reply (with data)")
-        self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,
+        self.assertEqual(response.type, ofp.OFPT_ECHO_REPLY,
                          'Response is not echo_reply')
-        self.assertEqual(request.header.xid, response.header.xid,
+        self.assertEqual(request.xid, response.xid,
                          'Response xid does not match the request Xid')
         self.assertEqual(request.data, response.data,
                          'Response data does not match request data')
@@ -95,7 +95,7 @@ class ErrorMsg(base_tests.SimpleProtocol):
         #Send Echo Request
         logging.info("Sending a Echo request with a version which is not supported by the switch")
         request=ofp.message.echo_request()
-        request.header.version=0  
+        request.version=0  
         self.controller.message_send(request)
 
         logging.info("Waiting for a OFPT_ERROR msg on the control plane...") 
@@ -126,8 +126,8 @@ class FeaturesReplyBody(base_tests.SimpleProtocol):
         request = ofp.message.features_request()
         (reply, pkt) = self.controller.transact(request)
         self.assertTrue(reply is not None, "Failed to get any reply")
-        self.assertEqual(reply.header.type, ofp.OFPT_FEATURES_REPLY,'Response is not Features_reply')
-        self.assertEqual(reply.header.xid,request.header.xid,'Transaction id does not match')
+        self.assertEqual(reply.type, ofp.OFPT_FEATURES_REPLY,'Response is not Features_reply')
+        self.assertEqual(reply.xid,request.xid,'Transaction id does not match')
         
         supported_actions =[]
         if(reply.actions &1<<ofp.OFPAT_OUTPUT):
@@ -211,8 +211,8 @@ class GetConfigReply(base_tests.SimpleProtocol):
         #Verify get_config_reply is recieved
         logging.info("Expecting GetConfigReply ")
         self.assertTrue(reply is not None, "Failed to get any reply")
-        self.assertEqual(reply.header.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
-        self.assertEqual(reply.header.xid,request.header.xid,'Transaction id does not match')
+        self.assertEqual(reply.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
+        self.assertEqual(reply.xid,request.xid,'Transaction id does not match')
 
         if reply.miss_send_len == 0 :
            logging.info ("the switch must send zero-size packet_in message")
@@ -244,7 +244,7 @@ class SetConfigRequest(base_tests.SimpleProtocol):
         request = ofp.message.get_config_request()
         (reply, pkt) = self.controller.transact(request)
         self.assertTrue(reply is not None, "Failed to get any reply")
-        self.assertEqual(reply.header.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
+        self.assertEqual(reply.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
 
         miss_send_len = 0
         miss_send_len = reply.miss_send_len
@@ -277,7 +277,7 @@ class SetConfigRequest(base_tests.SimpleProtocol):
 
         (rep, pkt) = self.controller.transact(request)
         self.assertTrue(rep is not None, "Failed to get any reply")
-        self.assertEqual(rep.header.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
+        self.assertEqual(rep.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
         self.assertEqual(rep.miss_send_len,new_miss_send_len, "miss_send_len configuration parameter could not be set")
         self.assertEqual(rep.flags,new_flags, "frag flags could not be set")
       
@@ -717,10 +717,10 @@ class QueueConfigReply(base_tests.SimpleProtocol):
         response, pkt = self.controller.transact(request)
         self.assertTrue(response is not None,
                         "Did not get reply ")
-        self.assertTrue(response.header.type == ofp.OFPT_QUEUE_GET_CONFIG_REPLY, "Reply is not Queue Config Reply")
+        self.assertTrue(response.type == ofp.OFPT_QUEUE_GET_CONFIG_REPLY, "Reply is not Queue Config Reply")
 
         #Verify Reply Body
-        self.assertEqual(response.header.xid, request.header.xid , "Transaction Id in reply is not same as request")
+        self.assertEqual(response.xid, request.xid , "Transaction Id in reply is not same as request")
         self.assertEqual(response.port,request.port , "Port queried does not match ")
         queues = []
         queues = response.queues

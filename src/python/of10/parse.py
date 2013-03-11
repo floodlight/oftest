@@ -96,12 +96,13 @@ def _of_message_to_object(binary_string):
     """
     hdr = message.ofp_header()
     hdr.unpack(binary_string)
+    logging.info(hdr.show())
     # FIXME: Add error detection
     if not hdr.type in msg_type_subclassed:
         return msg_type_to_class_map[hdr.type]()
     if hdr.type == cstruct.OFPT_STATS_REQUEST:
         sub_hdr = message.ofp_stats_request()
-        sub_hdr.unpack(binary_string[cstruct.OFP_HEADER_BYTES:])
+        sub_hdr.unpack(binary_string)
         try:
             obj = stats_request_to_class_map[sub_hdr.stats_type]()
         except KeyError:
@@ -109,7 +110,7 @@ def _of_message_to_object(binary_string):
         return obj
     elif hdr.type == cstruct.OFPT_STATS_REPLY:
         sub_hdr = message.ofp_stats_reply()
-        sub_hdr.unpack(binary_string[cstruct.OFP_HEADER_BYTES:])
+        sub_hdr.unpack(binary_string)
         try:
             obj = stats_reply_to_class_map[sub_hdr.stats_type]()
         except KeyError:
@@ -117,7 +118,7 @@ def _of_message_to_object(binary_string):
         return obj
     elif hdr.type == cstruct.OFPT_ERROR:
         sub_hdr = message.ofp_error_msg()
-        sub_hdr.unpack(binary_string[cstruct.OFP_HEADER_BYTES:])
+        sub_hdr.unpack(binary_string)
         return error_to_class_map[sub_hdr.err_type]()
     else:
         parse_logger.error("Cannot parse pkt to message")

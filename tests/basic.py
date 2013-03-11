@@ -41,9 +41,9 @@ class Echo(base_tests.SimpleProtocol):
         response, pkt = self.controller.transact(request)
         self.assertTrue(response is not None,
                         "Did not get echo reply")
-        self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,
+        self.assertEqual(response.type, ofp.OFPT_ECHO_REPLY,
                          'response is not echo_reply')
-        self.assertEqual(request.header.xid, response.header.xid,
+        self.assertEqual(request.xid, response.xid,
                          'response xid != request xid')
         self.assertEqual(len(response.data), 0, 'response data non-empty')
 
@@ -56,9 +56,9 @@ class EchoWithData(base_tests.SimpleProtocol):
         response, pkt = self.controller.transact(request)
         self.assertTrue(response is not None,
                         "Did not get echo reply (with data)")
-        self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,
+        self.assertEqual(response.type, ofp.OFPT_ECHO_REPLY,
                          'response is not echo_reply')
-        self.assertEqual(request.header.xid, response.header.xid,
+        self.assertEqual(request.xid, response.xid,
                          'response xid != request xid')
         self.assertEqual(request.data, response.data,
                          'response data does not match request')
@@ -391,9 +391,11 @@ class BadMessage(base_tests.SimpleProtocol):
         request = illegal_message.illegal_message_type()
 
         reply, pkt = self.controller.transact(request)
+        logging.info(repr(pkt))
         self.assertTrue(reply is not None, "Did not get response to bad req")
-        self.assertTrue(reply.header.type == ofp.OFPT_ERROR,
+        self.assertTrue(reply.type == ofp.OFPT_ERROR,
                         "reply not an error message")
+        logging.info(reply.err_type)
         self.assertTrue(reply.err_type == ofp.OFPET_BAD_REQUEST,
                         "reply error type is not bad request")
         self.assertTrue(reply.code == ofp.OFPBRC_BAD_TYPE,

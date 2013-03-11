@@ -1203,16 +1203,12 @@ class Switch:
 
     def error_handler(self, controller, msg, rawmsg):
         logging.info("Got an ERROR message, type=%d, code=%d" \
-                          % (msg.type, msg.code) \
+                          % (msg.err_type, msg.code) \
                           )
-        logging.info("Message header:")
-        logging.info(msg.header.show())
         self.error_msgs.append(msg)
 
     def removed_handler(self, controller, msg, rawmsg):
         logging.info("Got a REMOVED message")
-        logging.info("Message header:")
-        logging.info(msg.header.show())
         self.removed_msgs.append(msg)
 
     def controller_set(self, controller):
@@ -1360,9 +1356,9 @@ class Switch:
             flow_mod_msg.flags = flow_mod_msg.flags | ofp.OFPFF_CHECK_OVERLAP
         if flow_cfg.send_rem:
             flow_mod_msg.flags = flow_mod_msg.flags | ofp.OFPFF_SEND_FLOW_REM
-        flow_mod_msg.header.xid = random.randrange(1,0xffffffff)
+        flow_mod_msg.xid = random.randrange(1,0xffffffff)
         logging.info("Sending flow_mod(add), xid=%d"
-                        % (flow_mod_msg.header.xid)
+                        % (flow_mod_msg.xid)
                         )
         self.controller.message_send(flow_mod_msg)
         return True
@@ -1373,9 +1369,9 @@ class Switch:
                                    else ofp.OFPFC_MODIFY
         flow_mod_msg.buffer_id   = 0xffffffff
         flow_cfg.to_flow_mod_msg(flow_mod_msg)
-        flow_mod_msg.header.xid = random.randrange(1,0xffffffff)
+        flow_mod_msg.xid = random.randrange(1,0xffffffff)
         logging.info("Sending flow_mod(mod), xid=%d"
-                        % (flow_mod_msg.header.xid)
+                        % (flow_mod_msg.xid)
                         )
         self.controller.message_send(flow_mod_msg)
         return True
@@ -1388,9 +1384,9 @@ class Switch:
         # TBD - "out_port" filtering of deletes needs to be tested
         flow_mod_msg.out_port    = ofp.OFPP_NONE
         flow_cfg.to_flow_mod_msg(flow_mod_msg)
-        flow_mod_msg.header.xid = random.randrange(1,0xffffffff)
+        flow_mod_msg.xid = random.randrange(1,0xffffffff)
         logging.info("Sending flow_mod(del), xid=%d"
-                        % (flow_mod_msg.header.xid)
+                        % (flow_mod_msg.xid)
                         )
         self.controller.message_send(flow_mod_msg)
         return True
@@ -1416,7 +1412,7 @@ class Switch:
                             )
             f = False
             for e in self.error_msgs:
-                if e.type == type and e.code == code:
+                if e.err_type == type and e.code == code:
                     logging.info("Got it")
                     f = True
             if not f:

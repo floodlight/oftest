@@ -372,7 +372,7 @@ class DirectPacketControllerQueue(base_tests.SimpleDataPlane):
         request.queue_id = ofp.OFPQ_ALL
         (queue_stats, p) = self.controller.transact(request)
         self.assertNotEqual(queue_stats, None, "Queue stats request failed")
-        if queue_stats.header.type == ofp.OFPT_ERROR:
+        if queue_stats.type == ofp.OFPT_ERROR:
             skip_message_emit(self, "Enqueue packet to controller")
             return
 

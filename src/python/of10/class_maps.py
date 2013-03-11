@@ -27,6 +27,10 @@ class_to_members_map = {
                                        'matched_count'
                                       ],
     'ofp_flow_removed'              : [
+                                       'version',
+                                       'type',
+                                       'length',
+                                       'xid',
                                        'match',
                                        'cookie',
                                        'priority',
@@ -68,8 +72,18 @@ class_to_members_map = {
                                        'port_no'
                                       ],
     'ofp_stats_request'             : [
+                                       'version',
+                                       'type',
+                                       'length',
+                                       'xid',
                                        'stats_type',
                                        'flags'
+                                      ],
+    'ofp_hello'                     : [
+                                       'version',
+                                       'type',
+                                       'length',
+                                       'xid'
                                       ],
     'ofp_aggregate_stats_request'   : [
                                        'match',
@@ -77,6 +91,10 @@ class_to_members_map = {
                                        'out_port'
                                       ],
     'ofp_port_status'               : [
+                                       'version',
+                                       'type',
+                                       'length',
+                                       'xid',
                                        'reason',
                                        'desc'
                                       ],
@@ -85,6 +103,10 @@ class_to_members_map = {
                                        'len'
                                       ],
     'ofp_port_mod'                  : [
+                                       'version',
+                                       'type',
+                                       'length',
+                                       'xid',
                                        'port_no',
                                        'hw_addr',
                                        'config',
@@ -103,6 +125,10 @@ class_to_members_map = {
                                        'max_len'
                                       ],
     'ofp_switch_config'             : [
+                                       'version',
+                                       'type',
+                                       'length',
+                                       'xid',
                                        'flags',
                                        'miss_send_len'
                                       ],
@@ -112,9 +138,17 @@ class_to_members_map = {
                                        'nw_tos'
                                       ],
     'ofp_queue_get_config_reply'    : [
+                                       'version',
+                                       'type',
+                                       'length',
+                                       'xid',
                                        'port'
                                       ],
     'ofp_packet_in'                 : [
+                                       'version',
+                                       'type',
+                                       'length',
+                                       'xid',
                                        'buffer_id',
                                        'total_len',
                                        'in_port',
@@ -144,6 +178,10 @@ class_to_members_map = {
                                        'vendor'
                                       ],
     'ofp_stats_reply'               : [
+                                       'version',
+                                       'type',
+                                       'length',
+                                       'xid',
                                        'stats_type',
                                        'flags'
                                       ],
@@ -159,6 +197,10 @@ class_to_members_map = {
                                        'dp_desc'
                                       ],
     'ofp_queue_get_config_request'  : [
+                                       'version',
+                                       'type',
+                                       'length',
+                                       'xid',
                                        'port'
                                       ],
     'ofp_packet_queue'              : [
@@ -185,6 +227,10 @@ class_to_members_map = {
                                        'queue_id'
                                       ],
     'ofp_switch_features'           : [
+                                       'version',
+                                       'type',
+                                       'length',
+                                       'xid',
                                        'datapath_id',
                                        'n_buffers',
                                        'n_tables',
@@ -213,9 +259,17 @@ class_to_members_map = {
                                        'xid'
                                       ],
     'ofp_vendor_header'             : [
+                                       'version',
+                                       'type',
+                                       'length',
+                                       'xid',
                                        'vendor'
                                       ],
     'ofp_packet_out'                : [
+                                       'version',
+                                       'type',
+                                       'length',
+                                       'xid',
                                        'buffer_id',
                                        'in_port',
                                        'actions_len'
@@ -231,6 +285,10 @@ class_to_members_map = {
                                        'vlan_pcp'
                                       ],
     'ofp_flow_mod'                  : [
+                                       'version',
+                                       'type',
+                                       'length',
+                                       'xid',
                                        'match',
                                        'cookie',
                                        'command',
@@ -242,6 +300,10 @@ class_to_members_map = {
                                        'flags'
                                       ],
     'ofp_error_msg'                 : [
+                                       'version',
+                                       'type',
+                                       'length',
+                                       'xid',
                                        'err_type',
                                        'code'
                                       ],
