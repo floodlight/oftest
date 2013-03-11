@@ -1,6 +1,4 @@
 """
-Duplicated copy for Lab Use 
-
 These tests fall under Conformance Test-Suite (OF-SWITCH-1.0.0 TestCases).
 Refer Documentation -- Detailed testing methodology 
     <Some of test-cases are directly taken from oftest> """
@@ -23,14 +21,12 @@ import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.parse as parse
 import oftest.base_tests as base_tests
-
 import oftest.illegal_message as illegal_message
 
 from oftest.oflog import *
 from oftest.testutils import *
 from time import sleep
 from FuncUtils import *
-#from serial_failover import *
 
 class Grp10No10(base_tests.SimpleDataPlane):
     """
@@ -41,12 +37,14 @@ class Grp10No10(base_tests.SimpleDataPlane):
 
     @wireshark_capture
     def runTest(self):
+        
         logging = get_logger()
         logging.info("Running TestNo10 SwStartup test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+        ingress_port=of_ports[0]
 
         #Clear Switch State
         rc = delete_all_flows(self.controller)
@@ -54,28 +52,33 @@ class Grp10No10(base_tests.SimpleDataPlane):
 
         #Shutdown the control channel
         self.controller.shutdown()
-        sleep(15) 
-        # TODO: Remove sleep as sleep time cannot be generalised for all switches 
-        # Because sleeping time will vary from Sw to Sw configuration (No. of retries)
-        # Instead send continous packets to verify control channel disconnection and Sw startup Behaviour
-      
-        #Send a simple tcp packet on ingress_port
-        logging.info("Sending simple tcp packet ...")
-        packet = simple_tcp_packet()
-        ingress_port = of_ports[0]
-        self.dataplane.send(ingress_port, str(packet))
         
-        #Verify packet_in should be not generated 
-        logging.info("No packet_in should be generated")
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=10)
-        self.assertTrue(response is None,
-                        'PacketIn is generated')
+        # Keep sending the packets till the control plane gets shutdown
+        pkt = simple_tcp_packet()
+        try :
+            for x in range (0,20) :
+            self.dataplane.send(ingress_port, str(pkt))
+            yes_ports=set(of_ports)
+            no_ports = []
+            receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
 
-        #Verify dataplane packet should not be forwarded
-        logging.info("Packet should not be forwarded to any dataplane port")
-        no_ports=set(of_ports)
-        yes_ports=[]
-        receive_pkt_check(self.dataplane,packet,yes_ports,no_ports,self)
+        finally : 
+        
+            #Send a simple tcp packet on ingress_port
+            logging.info("Sending simple tcp packet ...")
+            self.dataplane.send(ingress_port, str(packet))
+        
+            #Verify packet_in should be not generated 
+            logging.info("No packet_in should be generated")
+            (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=10)
+            self.assertTrue(response is None,
+                         'PacketIn is generated')
+
+            #Verify dataplane packet should not be forwarded
+            logging.info("Packet should not be forwarded to any dataplane port")
+            no_ports=set(of_ports)
+            yes_ports=[]
+            receive_pkt_check(self.dataplane,packet,yes_ports,no_ports,self)
 
 
 class Grp10No20(base_tests.SimpleProtocol):
