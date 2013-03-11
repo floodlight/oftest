@@ -66,7 +66,7 @@ class Grp10No10(base_tests.SimpleDataPlane):
         
             #Send a simple tcp packet on ingress_port
             logging.info("Sending simple tcp packet ...")
-            self.dataplane.send(ingress_port, str(packet))
+            self.dataplane.send(ingress_port, str(pkt))
         
             #Verify packet_in should be not generated 
             logging.info("No packet_in should be generated")
