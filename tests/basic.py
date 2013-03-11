@@ -84,7 +84,7 @@ class PacketIn(base_tests.SimpleDataPlane):
         for of_port in config["port_map"].keys():
             for pkt, pt in [
                (simple_tcp_packet(), "simple TCP packet"),
-               (simple_tcp_packet(dl_vlan_enable=True,dl_vlan=vid,pktlen=108), 
+               (simple_tcp_packet(dl_vlan_enable=True,vlan_vid=vid,pktlen=108), 
                 "simple tagged TCP packet"),
                (simple_eth_packet(), "simple Ethernet packet"),
                (simple_eth_packet(pktlen=40), "tiny Ethernet packet")]:
@@ -133,7 +133,7 @@ class PacketInBroadcastCheck(base_tests.SimpleDataPlane):
 
         of_ports = config["port_map"].keys()
         d_port = of_ports[0]
-        pkt = simple_eth_packet(dl_dst='ff:ff:ff:ff:ff:ff')
+        pkt = simple_eth_packet(eth_dst='ff:ff:ff:ff:ff:ff')
 
         logging.info("BCast Leak Test, send to port %s" % d_port)
         self.dataplane.send(d_port, str(pkt))

@@ -924,7 +924,7 @@ class ExactMatchTagged(BaseMatchCase):
 
     def runTest(self):
         vid = test_param_get('vid', default=TEST_VID_DEFAULT)
-        flow_match_test(self, config["port_map"], dl_vlan=vid)
+        flow_match_test(self, config["port_map"], vlan_vid=vid)
 
 @disabled
 class ExactMatchTaggedMany(BaseMatchCase):
@@ -934,10 +934,10 @@ class ExactMatchTaggedMany(BaseMatchCase):
 
     def runTest(self):
         for vid in range(2,100,10):
-            flow_match_test(self, config["port_map"], dl_vlan=vid, max_test=5)
+            flow_match_test(self, config["port_map"], vlan_vid=vid, max_test=5)
         for vid in range(100,4000,389):
-            flow_match_test(self, config["port_map"], dl_vlan=vid, max_test=5)
-        flow_match_test(self, config["port_map"], dl_vlan=4094, max_test=5)
+            flow_match_test(self, config["port_map"], vlan_vid=vid, max_test=5)
+        flow_match_test(self, config["port_map"], vlan_vid=4094, max_test=5)
 
 class SingleWildcardMatchPriority(BaseMatchCase):
     """
@@ -1161,11 +1161,11 @@ class SingleWildcardMatch(BaseMatchCase):
             wc |= required_wildcards(self)
             if wc & ofp.OFPFW_DL_VLAN:
                 # Set nonzero VLAN id to avoid sending priority-tagged packet
-                dl_vlan = vid
+                vlan_vid = vid
             else:
-                dl_vlan = -1
+                vlan_vid = -1
             flow_match_test(self, config["port_map"], wildcards=wc, 
-                            dl_vlan=dl_vlan, max_test=10)
+                            vlan_vid=vlan_vid, max_test=10)
 
 class SingleWildcardMatchTagged(BaseMatchCase):
     """
@@ -1175,7 +1175,7 @@ class SingleWildcardMatchTagged(BaseMatchCase):
         vid = test_param_get('vid', default=TEST_VID_DEFAULT)
         for wc in WILDCARD_VALUES:
             wc |= required_wildcards(self)
-            flow_match_test(self, config["port_map"], wildcards=wc, dl_vlan=vid,
+            flow_match_test(self, config["port_map"], wildcards=wc, vlan_vid=vid,
                             max_test=10)
 
 class AllExceptOneWildcardMatch(BaseMatchCase):
@@ -1195,11 +1195,11 @@ class AllExceptOneWildcardMatch(BaseMatchCase):
             all_exp_one_wildcard |= required_wildcards(self)
             if all_exp_one_wildcard & ofp.OFPFW_DL_VLAN:
                 # Set nonzero VLAN id to avoid sending priority-tagged packet
-                dl_vlan = vid
+                vlan_vid = vid
             else:
-                dl_vlan = -1
+                vlan_vid = -1
             flow_match_test(self, config["port_map"], wildcards=all_exp_one_wildcard,
-                            dl_vlan=dl_vlan)
+                            vlan_vid=vlan_vid)
 
 class AllExceptOneWildcardMatchTagged(BaseMatchCase):
     """
@@ -1210,7 +1210,7 @@ class AllExceptOneWildcardMatchTagged(BaseMatchCase):
         for all_exp_one_wildcard in NO_WILDCARD_VALUES:
             all_exp_one_wildcard |= required_wildcards(self)
             flow_match_test(self, config["port_map"], wildcards=all_exp_one_wildcard,
-                            dl_vlan=vid)
+                            vlan_vid=vid)
 
 class AllWildcardMatch(BaseMatchCase):
     """
@@ -1233,7 +1233,7 @@ class AllWildcardMatchTagged(BaseMatchCase):
     def runTest(self):
         vid = test_param_get('vid', default=TEST_VID_DEFAULT)
         flow_match_test(self, config["port_map"], wildcards=ofp.OFPFW_ALL, 
-                        dl_vlan=vid)
+                        vlan_vid=vid)
 
 @group('smoke')
 class AddVLANTag(BaseMatchCase):
@@ -1251,7 +1251,7 @@ class AddVLANTag(BaseMatchCase):
         len_w_vid = 104
         pkt = simple_tcp_packet(pktlen=len)
         exp_pkt = simple_tcp_packet(pktlen=len_w_vid, dl_vlan_enable=True, 
-                                    dl_vlan=new_vid)
+                                    vlan_vid=new_vid)
         vid_act = ofp.action.set_vlan_vid()
         vid_act.vlan_vid = new_vid
 
@@ -1281,7 +1281,7 @@ class PacketOnlyTagged(base_tests.DataPlaneOnly):
 
     def runTest(self):
         vid = test_param_get('vid', default=TEST_VID_DEFAULT)
-        pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vid)
+        pkt = simple_tcp_packet(dl_vlan_enable=True, vlan_vid=vid)
         of_ports = config["port_map"].keys()
         of_ports.sort()
         ing_port = of_ports[0]
@@ -1305,8 +1305,8 @@ class ModifyVID(BaseMatchCase):
             skip_message_emit(self, "Modify VLAN tag test")
             return
 
-        pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=old_vid)
-        exp_pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=new_vid)
+        pkt = simple_tcp_packet(dl_vlan_enable=True, vlan_vid=old_vid)
+        exp_pkt = simple_tcp_packet(dl_vlan_enable=True, vlan_vid=new_vid)
         vid_act = ofp.action.set_vlan_vid()
         vid_act.vlan_vid = new_vid
 
@@ -1346,9 +1346,9 @@ class ModifyVIDWithTagMatchWildcarded(BaseMatchCase):
         len_w_vid = 104
         untagged_pkt = simple_tcp_packet(pktlen=len_untagged)
         tagged_pkt = simple_tcp_packet(pktlen=len_w_vid, 
-                                       dl_vlan_enable=True, dl_vlan=old_vid)
+                                       dl_vlan_enable=True, vlan_vid=old_vid)
         exp_pkt = simple_tcp_packet(pktlen=len_w_vid, dl_vlan_enable=True,
-                                    dl_vlan=new_vid)
+                                    vlan_vid=new_vid)
         wildcards = (required_wildcards(self) | ofp.OFPFW_DL_VLAN |
                      ofp.OFPFW_DL_VLAN_PCP)
         vid_act = ofp.action.set_vlan_vid()
@@ -1381,8 +1381,8 @@ class ModifyVlanPcp(BaseMatchCase):
             skip_message_emit(self, "Modify VLAN priority test")
             return
 
-        pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vid, dl_vlan_pcp=old_vlan_pcp)
-        exp_pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vid, dl_vlan_pcp=new_vlan_pcp)
+        pkt = simple_tcp_packet(dl_vlan_enable=True, vlan_vid=vid, vlan_pcp=old_vlan_pcp)
+        exp_pkt = simple_tcp_packet(dl_vlan_enable=True, vlan_vid=vid, vlan_pcp=new_vlan_pcp)
         vid_act = ofp.action.set_vlan_pcp()
         vid_act.vlan_pcp = new_vlan_pcp
 
@@ -1403,7 +1403,7 @@ class StripVLANTag(BaseMatchCase):
         len_w_vid = 104
         len = 100
         pkt = simple_tcp_packet(pktlen=len_w_vid, dl_vlan_enable=True, 
-                                dl_vlan=old_vid)
+                                vlan_vid=old_vid)
         exp_pkt = simple_tcp_packet(pktlen=len)
         vid_act = ofp.action.strip_vlan()
 
@@ -1425,7 +1425,7 @@ class StripVLANTagWithTagMatchWildcarded(BaseMatchCase):
         len_w_vid = 104
         len_untagged = 100
         pkt = simple_tcp_packet(pktlen=len_w_vid, dl_vlan_enable=True, 
-                                dl_vlan=old_vid)
+                                vlan_vid=old_vid)
         exp_pkt = simple_tcp_packet(pktlen=len_untagged)
         wildcards = (required_wildcards(self) | ofp.OFPFW_DL_VLAN |
                      ofp.OFPFW_DL_VLAN_PCP)
@@ -1441,13 +1441,13 @@ def init_pkt_args():
     Pass back a dictionary with default packet arguments
     """
     args = {}
-    args["dl_src"] = '00:23:45:67:89:AB'
+    args["eth_src"] = '00:23:45:67:89:AB'
 
     dl_vlan_enable=False
-    dl_vlan=-1
+    vlan_vid=-1
     if config["test-params"]["vid"]:
         dl_vlan_enable=True
-        dl_vlan = config["test-params"]["vid"]
+        vlan_vid = config["test-params"]["vid"]
 
 # Unpack operator is ** on a dictionary
 
@@ -1463,7 +1463,7 @@ class ModifyL2Src(BaseMatchCase):
             skip_message_emit(self, "ModifyL2Src test")
             return
 
-        (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_src'],
+        (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['eth_src'],
                                                 check_test_params=True)
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
@@ -1478,7 +1478,7 @@ class ModifyL2Dst(BaseMatchCase):
             skip_message_emit(self, "ModifyL2dst test")
             return
 
-        (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_dst'],
+        (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['eth_dst'],
                                                 check_test_params=True)
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
@@ -1598,7 +1598,7 @@ class ModifyL2DstMC(BaseMatchCase):
             skip_message_emit(self, "ModifyL2dstMC test")
             return
 
-        (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_dst'],
+        (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['eth_dst'],
                                                 check_test_params=True)
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2, egr_count=-1)
@@ -1613,7 +1613,7 @@ class ModifyL2DstIngress(BaseMatchCase):
             skip_message_emit(self, "ModifyL2dstIngress test")
             return
 
-        (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_dst'],
+        (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['eth_dst'],
                                                 check_test_params=True)
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2, egr_count=0,
@@ -1629,7 +1629,7 @@ class ModifyL2DstIngressMC(BaseMatchCase):
             skip_message_emit(self, "ModifyL2dstMC test")
             return
 
-        (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_dst'],
+        (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['eth_dst'],
                                                 check_test_params=True)
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2, egr_count=-1,
@@ -1645,7 +1645,7 @@ class ModifyL2SrcMC(BaseMatchCase):
             skip_message_emit(self, "ModifyL2SrcMC test")
             return
 
-        (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_src'],
+        (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['eth_src'],
                                                 check_test_params=True)
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2, egr_count=-1)
@@ -1661,7 +1661,7 @@ class ModifyL2SrcDstMC(BaseMatchCase):
             skip_message_emit(self, "ModifyL2SrcDstMC test")
             return
 
-        mod_fields = ['dl_dst', 'dl_src']
+        mod_fields = ['eth_dst', 'eth_src']
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=mod_fields,
                                                 check_test_params=True)
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
@@ -1678,7 +1678,7 @@ class ModifyL2DstVIDMC(BaseMatchCase):
             skip_message_emit(self, "ModifyL2DstVIDMC test")
             return
 
-        mod_fields = ['dl_dst', 'dl_vlan']
+        mod_fields = ['eth_dst', 'vlan_vid']
         (pkt, exp_pkt, acts) = pkt_action_setup(self, 
              start_field_vals={'dl_vlan_enable':True}, mod_fields=mod_fields,
                                                 check_test_params=True)
@@ -1694,11 +1694,11 @@ class ModifyAll(BaseMatchCase):
         sup_acts = self.supported_actions
 
         sup_map = {
-            "dl_dst" : ofp.OFPAT_SET_DL_DST,
-            "dl_src" : ofp.OFPAT_SET_DL_SRC,
+            "eth_dst" : ofp.OFPAT_SET_DL_DST,
+            "eth_src" : ofp.OFPAT_SET_DL_SRC,
             "dl_vlan_enable" : ofp.OFPAT_SET_VLAN_VID,
-            "dl_vlan" : ofp.OFPAT_SET_VLAN_VID,
-            "dl_vlan_pcp" : ofp.OFPAT_SET_VLAN_PCP,
+            "vlan_vid" : ofp.OFPAT_SET_VLAN_VID,
+            "vlan_pcp" : ofp.OFPAT_SET_VLAN_PCP,
             "ip_src" : ofp.OFPAT_SET_NW_SRC,
             "ip_dst" : ofp.OFPAT_SET_NW_DST,
             "ip_tos" : ofp.OFPAT_SET_NW_TOS,
@@ -1910,7 +1910,7 @@ class MatchEach(base_tests.SimpleDataPlane):
 
         delete_all_flows(self.controller)
 
-        pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=2)
+        pkt = simple_tcp_packet(dl_vlan_enable=True, vlan_vid=2)
         ingress_port = of_ports[0]
         egress_port = of_ports[1]
 
@@ -1966,26 +1966,26 @@ class MatchEach(base_tests.SimpleDataPlane):
         wildcards = required_wildcards(self)
         # TODO in_port
         if not (wildcards & ofp.OFPFW_DL_SRC):
-            testField("dl_src", [0xff]*6)
+            testField("eth_src", [0xff]*6)
         if not (wildcards & ofp.OFPFW_DL_DST):
-            testField("dl_dst", [0xff]*6)
+            testField("eth_dst", [0xff]*6)
         if not (wildcards & ofp.OFPFW_DL_TYPE):
-            testField("dl_type", 0xffff)
+            testField("eth_type", 0xffff)
         if not (wildcards & ofp.OFPFW_DL_VLAN):
-            testField("dl_vlan", 0xfff)
-        # TODO dl_vlan_pcp
+            testField("vlan_vid", 0xfff)
+        # TODO vlan_pcp
         if not (wildcards & ofp.OFPFW_NW_SRC_ALL):
-            testField("nw_src", 0xffffffff)
+            testField("ipv4_src", 0xffffffff)
         if not (wildcards & ofp.OFPFW_NW_DST_ALL):
-            testField("nw_dst", 0xffffffff)
+            testField("ipv4_dst", 0xffffffff)
         if not (wildcards & ofp.OFPFW_NW_TOS):
-            testField("nw_tos", 0x3f)
+            testField("ip_dscp", 0x3f)
         if not (wildcards & ofp.OFPFW_NW_PROTO):
-            testField("nw_proto", 0xff)
+            testField("ip_proto", 0xff)
         if not (wildcards & ofp.OFPFW_TP_SRC):
-            testField("tp_src", 0xffff)
+            testField("tcp_src", 0xffff)
         if not (wildcards & ofp.OFPFW_TP_DST):
-            testField("tp_dst", 0xffff)
+            testField("tcp_dst", 0xffff)
 
 class DirectBadPacketBase(base_tests.SimpleDataPlane):
     """
@@ -2018,16 +2018,16 @@ class DirectBadPacketBase(base_tests.SimpleDataPlane):
         match = ofp.ofp_match()
         match.wildcards = ofp.OFPFW_ALL
         fields = {
-            'dl_dst': ofp.OFPFW_DL_DST,
-            'dl_src': ofp.OFPFW_DL_SRC,
-            'dl_type': ofp.OFPFW_DL_TYPE,
-            'dl_vlan': ofp.OFPFW_DL_VLAN,
-            'nw_src': ofp.OFPFW_NW_SRC_MASK,
-            'nw_dst': ofp.OFPFW_NW_DST_MASK,
-            'nw_tos': ofp.OFPFW_NW_TOS,
-            'nw_proto': ofp.OFPFW_NW_PROTO,
-            'tp_src': ofp.OFPFW_TP_SRC,
-            'tp_dst': ofp.OFPFW_TP_DST,
+            'eth_dst': ofp.OFPFW_DL_DST,
+            'eth_src': ofp.OFPFW_DL_SRC,
+            'eth_type': ofp.OFPFW_DL_TYPE,
+            'vlan_vid': ofp.OFPFW_DL_VLAN,
+            'ipv4_src': ofp.OFPFW_NW_SRC_MASK,
+            'ipv4_dst': ofp.OFPFW_NW_DST_MASK,
+            'ip_dscp': ofp.OFPFW_NW_TOS,
+            'ip_proto': ofp.OFPFW_NW_PROTO,
+            'tcp_src': ofp.OFPFW_TP_SRC,
+            'tcp_dst': ofp.OFPFW_TP_DST,
         }
         for key in kwargs:
             setattr(match, key, kwargs[key])
@@ -2142,8 +2142,8 @@ class DirectBadIpTcpPacketsBase(DirectBadPacketBase):
         pass
 
     def runTestWithProto(self, protoName = 'TCP'):
-        dl_dst='00:01:02:03:04:05'
-        dl_src='00:06:07:08:09:0a'
+        eth_dst='00:01:02:03:04:05'
+        eth_src='00:06:07:08:09:0a'
         ip_src='192.168.0.1'
         ip_dst='192.168.0.2'
         ip_tos=0
@@ -2161,7 +2161,7 @@ class DirectBadIpTcpPacketsBase(DirectBadPacketBase):
         else:
             raise Exception("Passed in unknown proto name")
 
-        match_pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+        match_pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
             scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
             tp(sport=tcp_sport, dport=tcp_dport)
         match = packet_to_flow_match(self, match_pkt)
@@ -2178,32 +2178,32 @@ class DirectBadIpTcpPacketsBase(DirectBadPacketBase):
         
         # Try incomplete IP headers
         testPacket("Incomplete IP header (1 bytes)",
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 str(scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, proto=proto))[0:1],
             self.RESULT_NOMATCH,
         )
         testPacket("Incomplete IP header (2 bytes)",
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 str(scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, proto=proto))[0:2],
             self.RESULT_NOMATCH,
         )
         testPacket("Incomplete IP header (3 bytes)",
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 str(scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, proto=proto))[0:3],
             self.RESULT_NOMATCH,
         )
         testPacket("Incomplete IP header (12 bytes)",
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 str(scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, proto=proto))[0:12],
             self.RESULT_NOMATCH,
         )
         testPacket("Incomplete IP header (16 bytes)",
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 str(scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, proto=proto))[0:16],
             self.RESULT_NOMATCH,
         )
         testPacket("Incomplete IP header (19 bytes)",
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 str(scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, proto=proto))[0:19],
             self.RESULT_NOMATCH,
         )
@@ -2213,29 +2213,29 @@ class DirectBadIpTcpPacketsBase(DirectBadPacketBase):
         # we initiatlize once with a non-matching full packet and once with a 
         # matching full packet.
         testPacket("Non-Matching TCP packet, warming buffer",
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, proto=proto)/ \
                 tp(sport=tcp_sport, dport=tcp_dport + 1),
             self.RESULT_NOMATCH,
         )
         testPacket("Missing TCP header, buffer warmed with non-match",
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, proto=proto),
             self.RESULT_NOMATCH,
         )
         testPacket("Matching TCP packet, warming buffer",
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, proto=proto)/ \
                 tp(sport=tcp_sport, dport=tcp_dport),
             self.RESULT_MATCH,
         )
         testPacket("Missing TCP header, buffer warmed with match",
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, proto=proto),
             self.RESULT_NOMATCH,
         )
         testPacket("Truncated TCP header: 2 bytes",
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, proto=proto)/ \
                 (str(tp(sport=tcp_sport, dport=tcp_dport))[0:2]),
             self.RESULT_NOMATCH,
@@ -2265,27 +2265,27 @@ class DirectBadIpTcpPacketsBase(DirectBadPacketBase):
             self.RESULT_NOMATCH,
         )
         testPacket("Missing TCP header, corrupt ihl",
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ihl=0xf, proto=proto),
             self.RESULT_NOMATCH,
         )
         testPacket("Missing TCP header, corrupt total length",
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, proto=proto, len= 100),
             self.RESULT_NOMATCH,
         )
         testPacket("Missing TCP header, corrupt ihl and total length",
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ihl=0xf, proto=proto, len=43),
             self.RESULT_NOMATCH,
         )
         testPacket("Incomplete IP header (12 bytes), corrupt ihl and total length",
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 str(scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, proto=proto, ihl=10, len=43))[0:12],
             self.RESULT_NOMATCH,
         )
         testPacket("Incomplete IP header (16 bytes), corrupt ihl and total length",
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 str(scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, proto=proto, ihl=10, len=43))[0:16],
             self.RESULT_NOMATCH,
         )
@@ -2294,7 +2294,7 @@ class DirectBadIpTcpPacketsBase(DirectBadPacketBase):
         # destination ports. As that is all we care about during matching, some
         # implementations may match and some may drop the packet
         testPacket("Incomplete TCP header: src/dst port present",
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, proto=proto)/ \
                 (str(tp(sport=tcp_sport, dport=tcp_dport))[0:4]),
             self.RESULT_ANY,
@@ -2303,7 +2303,7 @@ class DirectBadIpTcpPacketsBase(DirectBadPacketBase):
         for i in range(1):
             for length in range(40 / 4): # IPv4 options are a maximum of 40 in length
                 bytes = "".join([("%c" % random.randint(0, 255)) for x in range(length * 4)])
-                eth = scapy.Ether(dst=dl_dst, src=dl_src)
+                eth = scapy.Ether(dst=eth_dst, src=eth_src)
                 ip = scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ihl=5 + length, proto=proto)
                 tcp = tp(sport=tcp_sport, dport=tcp_dport+1)
                 pkt = eth / ip
@@ -2314,7 +2314,7 @@ class DirectBadIpTcpPacketsBase(DirectBadPacketBase):
                     self.RESULT_NOMATCH
                 )
 
-                eth = scapy.Ether(dst=dl_dst, src=dl_src)
+                eth = scapy.Ether(dst=eth_dst, src=eth_src)
                 ip = scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ihl=5 + length, proto=proto)
                 tcp = tp(sport=tcp_sport, dport=tcp_dport)
                 pkt = eth / ip
@@ -2346,8 +2346,8 @@ class DirectBadLlcPackets(DirectBadPacketBase):
     Verify LLC/SNAP parsing and matching. Focus on packet corruptions 
     """
     def runTest(self):
-        dl_dst='00:01:02:03:04:05'
-        dl_src='00:06:07:08:09:0a'
+        eth_dst='00:01:02:03:04:05'
+        eth_src='00:06:07:08:09:0a'
         ip_src='192.168.0.1'
         ip_dst='192.168.0.2'
         ip_tos=0
@@ -2359,7 +2359,7 @@ class DirectBadLlcPackets(DirectBadPacketBase):
         IS_NOT_SNAP_IP = 3
 
         def testPacketTcpMatch(title, llc):
-            match_pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            match_pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos)/ \
                 scapy.TCP(sport=tcp_sport, dport=tcp_dport)
             match = packet_to_flow_match(self, match_pkt)
@@ -2371,7 +2371,7 @@ class DirectBadLlcPackets(DirectBadPacketBase):
             self.testPktsAgainstFlow(
                 [[
                     "TCP match - LLC frame correct length - %s" % title,
-                    scapy.Ether(dst=dl_dst, src=dl_src, type=len(llc)) / llc,
+                    scapy.Ether(dst=eth_dst, src=eth_src, type=len(llc)) / llc,
                     self.RESULT_ANY,
                 ]],
                 act, match
@@ -2382,7 +2382,7 @@ class DirectBadLlcPackets(DirectBadPacketBase):
             self.testPktsAgainstFlow(
                 [[
                     "TCP match - LLC frame corrupted length - %s" % title,
-                    scapy.Ether(dst=dl_dst, src=dl_src, type=ethLen) / llc,
+                    scapy.Ether(dst=eth_dst, src=eth_src, type=ethLen) / llc,
                     self.RESULT_ANY,
                 ]],
                 act, match
@@ -2390,7 +2390,7 @@ class DirectBadLlcPackets(DirectBadPacketBase):
 
         def testPacketEthSrcDstMatch(title, llc):
             # Matching based on Ethernet source and destination
-            match_pkt = scapy.Ether(dst=dl_dst, src=dl_src)
+            match_pkt = scapy.Ether(dst=eth_dst, src=eth_src)
             match = packet_to_flow_match(self, match_pkt)
             self.assertTrue(match is not None, 
                             "Could not generate flow match from pkt")
@@ -2399,7 +2399,7 @@ class DirectBadLlcPackets(DirectBadPacketBase):
             self.testPktsAgainstFlow(
                 [[
                     "Eth addr match - LLC frame correct length- %s" % title,
-                    scapy.Ether(dst=dl_dst, src=dl_src, type=len(llc)) / llc,
+                    scapy.Ether(dst=eth_dst, src=eth_src, type=len(llc)) / llc,
                     self.RESULT_MATCH,
                 ]],
                 ofp.action.output(), match
@@ -2410,7 +2410,7 @@ class DirectBadLlcPackets(DirectBadPacketBase):
             self.testPktsAgainstFlow(
                 [[
                     "Eth addr match - LLC frame corrupted length- %s" % title,
-                    scapy.Ether(dst=dl_dst, src=dl_src, type=ethLen) / llc,
+                    scapy.Ether(dst=eth_dst, src=eth_src, type=ethLen) / llc,
                     self.RESULT_ANY,
                 ]],
                 ofp.action.output(), match
@@ -2418,7 +2418,7 @@ class DirectBadLlcPackets(DirectBadPacketBase):
             
         def testPacketEthSrcDstTypeMatch(title, llc, is_snap_ip):
             # Matching based on Ethernet source, destination and type
-            match_pkt = scapy.Ether(dst=dl_dst, src=dl_src, type=0x800)
+            match_pkt = scapy.Ether(dst=eth_dst, src=eth_src, type=0x800)
             match = packet_to_flow_match(self, match_pkt)
             self.assertTrue(match is not None, 
                             "Could not generate flow match from pkt")
@@ -2432,7 +2432,7 @@ class DirectBadLlcPackets(DirectBadPacketBase):
             self.testPktsAgainstFlow(
                 [[
                     "Eth addr+type match - LLC frame correct length - %s" % title,
-                    scapy.Ether(dst=dl_dst, src=dl_src, type=len(llc)) / llc,
+                    scapy.Ether(dst=eth_dst, src=eth_src, type=len(llc)) / llc,
                     is_match,
                 ]],
                 ofp.action.output(), match
@@ -2443,7 +2443,7 @@ class DirectBadLlcPackets(DirectBadPacketBase):
             self.testPktsAgainstFlow(
                 [[
                     "Eth addr+type match - LLC frame corrupted length - %s" % title,
-                    scapy.Ether(dst=dl_dst, src=dl_src, type=ethLen) / llc,
+                    scapy.Ether(dst=eth_dst, src=eth_src, type=ethLen) / llc,
                     self.RESULT_ANY,
                 ]],
                 ofp.action.output(), match
@@ -2499,8 +2499,8 @@ class DirectLlcPackets(DirectBadPacketBase):
     Verify LLC/SNAP parsing (valid and corrupted packets) and matching
     """
     def runTest(self):
-        dl_dst='00:01:02:03:04:05'
-        dl_src='00:06:07:08:09:0a'
+        eth_dst='00:01:02:03:04:05'
+        eth_src='00:06:07:08:09:0a'
         ip_src='192.168.0.1'
         ip_dst='192.168.0.2'
         ip_tos=0
@@ -2513,7 +2513,7 @@ class DirectLlcPackets(DirectBadPacketBase):
         IS_NOT_SNAP = 3
 
         def testPacketEthTypeIP(title, llc, is_snap):
-            match_pkt = scapy.Ether(dst=dl_dst, src=dl_src, type=0x800)
+            match_pkt = scapy.Ether(dst=eth_dst, src=eth_src, type=0x800)
             match = packet_to_flow_match(self, match_pkt)
             self.assertTrue(match is not None, 
                             "Could not generate flow match from pkt")
@@ -2525,14 +2525,14 @@ class DirectLlcPackets(DirectBadPacketBase):
                 result = self.RESULT_MATCH
             pkts.append([
                 "Ether type 0x800 match - %s" % title,
-                scapy.Ether(dst=dl_dst, src=dl_src, type=len(llc)) / llc,
+                scapy.Ether(dst=eth_dst, src=eth_src, type=len(llc)) / llc,
                 result,
             ])
             act = ofp.action.output()
             self.testPktsAgainstFlow(pkts, act, match)
     
         def testPacketEthTypeNotEth(title, llc, is_snap):
-            match_pkt = scapy.Ether(dst = dl_dst, src = dl_src, 
+            match_pkt = scapy.Ether(dst = eth_dst, src = eth_src, 
                                     type = ofp.OFP_DL_TYPE_NOT_ETH_TYPE)
             match = packet_to_flow_match(self, match_pkt)
             self.assertTrue(match is not None, 
@@ -2545,7 +2545,7 @@ class DirectLlcPackets(DirectBadPacketBase):
                 result = self.RESULT_NOMATCH
             pkts.append([
                 "Ether type OFP_DL_TYPE_NOT_ETH_TYPE match - %s" % title,
-                scapy.Ether(dst=dl_dst, src=dl_src, type=len(llc)) / llc,
+                scapy.Ether(dst=eth_dst, src=eth_src, type=len(llc)) / llc,
                 result,
             ])
             act = ofp.action.output()
@@ -2612,8 +2612,8 @@ class DirectArpPackets(DirectBadPacketBase):
         self.testArpHandling()
 
     def testArpHandling(self):
-        dl_dst='00:01:02:03:04:05'
-        dl_src='00:06:07:08:09:0a'
+        eth_dst='00:01:02:03:04:05'
+        eth_src='00:06:07:08:09:0a'
         ip_src='192.168.0.1'
         ip_dst='192.168.0.2'
         ip_src2='192.168.1.1'
@@ -2625,7 +2625,7 @@ class DirectArpPackets(DirectBadPacketBase):
         def testPacket(title, arp_match, arp_pkt, result):
             pkts = []
     
-            match_pkt = scapy.Ether(dst=dl_dst, src=dl_src) / arp_match
+            match_pkt = scapy.Ether(dst=eth_dst, src=eth_src) / arp_match
             match = packet_to_flow_match(self, match_pkt)
             self.assertTrue(match is not None, 
                             "Could not generate flow match from pkt")
@@ -2633,7 +2633,7 @@ class DirectArpPackets(DirectBadPacketBase):
             
             pkts.append([
                 title,
-                scapy.Ether(dst=dl_dst, src=dl_src) / arp_pkt,
+                scapy.Ether(dst=eth_dst, src=eth_src) / arp_pkt,
                 result,
             ])
     
@@ -2642,7 +2642,7 @@ class DirectArpPackets(DirectBadPacketBase):
             
         testPacket("Basic ARP",
             scapy.ARP(psrc=ip_src, pdst=ip_dst, op = 1),
-            scapy.ARP(hwdst = '00:00:00:00:00:00', hwsrc = dl_src,
+            scapy.ARP(hwdst = '00:00:00:00:00:00', hwsrc = eth_src,
                       psrc = ip_src, pdst = ip_dst, hwlen = 6, plen = 4,
                       ptype = 0x800, hwtype = 1, op = 1),
             self.RESULT_MATCH
@@ -2659,8 +2659,8 @@ class DirectVlanPackets(DirectBadPacketBase):
     Verify VLAN parsing (valid and corrupted packets) and ARP matching
     """
     def runTest(self):
-        dl_dst='00:01:02:03:04:05'
-        dl_src='00:06:07:08:09:0a'
+        eth_dst='00:01:02:03:04:05'
+        eth_src='00:06:07:08:09:0a'
         ip_src='192.168.0.1'
         ip_dst='192.168.0.2'
         ip_src2='192.168.1.1'
@@ -2686,61 +2686,61 @@ class DirectVlanPackets(DirectBadPacketBase):
             self.testPktsAgainstFlow(pkts, act, match)
 
         testPacket("Basic MAC matching - IPv4 payload",
-            self.createMatch(dl_dst=parse_mac(dl_dst), dl_src=parse_mac(dl_src)),
-            scapy.Ether(dst=dl_dst, src=dl_src, type=0x800) / scapy.IP(),
+            self.createMatch(eth_dst=parse_mac(eth_dst), eth_src=parse_mac(eth_src)),
+            scapy.Ether(dst=eth_dst, src=eth_src, type=0x800) / scapy.IP(),
             self.RESULT_MATCH
         )
         testPacket("Basic MAC matching - VMware beacon - no payload",
-            self.createMatch(dl_dst=parse_mac(dl_dst), dl_src=parse_mac(dl_src)),
-            scapy.Ether(dst=dl_dst, src=dl_src, type=0x8922),
+            self.createMatch(eth_dst=parse_mac(eth_dst), eth_src=parse_mac(eth_src)),
+            scapy.Ether(dst=eth_dst, src=eth_src, type=0x8922),
             self.RESULT_MATCH
         )
         testPacket("Basic MAC matching - VMware beacon - with payload",
-            self.createMatch(dl_dst=parse_mac(dl_dst), dl_src=parse_mac(dl_src)),
-            scapy.Ether(dst=dl_dst, src=dl_src, type=0x8922)/ ("X" * 1),
+            self.createMatch(eth_dst=parse_mac(eth_dst), eth_src=parse_mac(eth_src)),
+            scapy.Ether(dst=eth_dst, src=eth_src, type=0x8922)/ ("X" * 1),
             self.RESULT_MATCH
         )
         testPacket("Basic MAC matching - IPv6 payload",
-            self.createMatch(dl_dst=parse_mac(dl_dst), dl_src=parse_mac(dl_src)),
-            scapy.Ether(dst=dl_dst, src=dl_src) / scapy.IPv6(),
+            self.createMatch(eth_dst=parse_mac(eth_dst), eth_src=parse_mac(eth_src)),
+            scapy.Ether(dst=eth_dst, src=eth_src) / scapy.IPv6(),
             self.RESULT_MATCH
         )
         testPacket("Basic MAC matching with VLAN tag present",
-            self.createMatch(dl_dst=parse_mac(dl_dst), dl_src=parse_mac(dl_src)),
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            self.createMatch(eth_dst=parse_mac(eth_dst), eth_src=parse_mac(eth_src)),
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.Dot1Q(prio=5, vlan=1000)/ \
                 scapy.IP(),
             self.RESULT_MATCH
         )
         testPacket("Basic MAC matching with VLAN tag present",
-            self.createMatch(dl_dst=parse_mac(dl_dst), dl_src=parse_mac(dl_src),
-                             dl_type=0x800),
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            self.createMatch(eth_dst=parse_mac(eth_dst), eth_src=parse_mac(eth_src),
+                             eth_type=0x800),
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.Dot1Q(prio=5, vlan=1000)/ \
                 scapy.IP(),
             self.RESULT_MATCH
         )
         testPacket("Ether matching with VLAN tag present - No type match",
-            self.createMatch(dl_dst=parse_mac(dl_dst), dl_src=parse_mac(dl_src),
-                             dl_type=0x801),
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            self.createMatch(eth_dst=parse_mac(eth_dst), eth_src=parse_mac(eth_src),
+                             eth_type=0x801),
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.Dot1Q(prio=5, vlan=1000)/ \
                 scapy.IP(),
             self.RESULT_NOMATCH
         )
         testPacket("Ether matching with VLAN tag present - No type match 0x8100",
-            self.createMatch(dl_dst=parse_mac(dl_dst), dl_src=parse_mac(dl_src),
-                             dl_type=0x8100),
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            self.createMatch(eth_dst=parse_mac(eth_dst), eth_src=parse_mac(eth_src),
+                             eth_type=0x8100),
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.Dot1Q(prio=5, vlan=1000)/ \
                 scapy.IP(),
             self.RESULT_NOMATCH
         )
         testPacket("IP matching - VLAN tag",
-            self.createMatch(dl_dst=parse_mac(dl_dst), dl_src=parse_mac(dl_src),
-                             dl_type=0x0800,
-                             nw_src=parse_ip(ip_src), nw_dst=parse_ip(ip_dst)),
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            self.createMatch(eth_dst=parse_mac(eth_dst), eth_src=parse_mac(eth_src),
+                             eth_type=0x0800,
+                             ipv4_src=parse_ip(ip_src), ipv4_dst=parse_ip(ip_dst)),
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.Dot1Q(prio=5, vlan=1000)/ \
                 scapy.IP(src=ip_src, dst=ip_dst),
             self.RESULT_MATCH
@@ -2756,8 +2756,8 @@ class DirectVlanPacketsDoubleTagged(DirectVlanPackets):
     the treatment of these cases, so broken out to be non-standard
     """
     def runTest(self):
-        dl_dst='00:01:02:03:04:05'
-        dl_src='00:06:07:08:09:0a'
+        eth_dst='00:01:02:03:04:05'
+        eth_src='00:06:07:08:09:0a'
         ip_src='192.168.0.1'
         ip_dst='192.168.0.2'
         ip_src2='192.168.1.1'
@@ -2782,18 +2782,18 @@ class DirectVlanPacketsDoubleTagged(DirectVlanPackets):
             act = ofp.action.output()
             self.testPktsAgainstFlow(pkts, act, match)
         testPacket("Ether matching with double VLAN tag - Wrong type match",
-            self.createMatch(dl_dst=parse_mac(dl_dst), dl_src=parse_mac(dl_src),
-                             dl_type=0x800),
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            self.createMatch(eth_dst=parse_mac(eth_dst), eth_src=parse_mac(eth_src),
+                             eth_type=0x800),
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.Dot1Q(prio=5, vlan=1000)/ \
                 scapy.Dot1Q(prio=3, vlan=1005)/ \
                 scapy.IP(),
             self.RESULT_NOMATCH
         )
         testPacket("Ether matching with double VLAN tag - Type match",
-            self.createMatch(dl_dst=parse_mac(dl_dst), dl_src=parse_mac(dl_src),
-                             dl_type=0x8100),
-            scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            self.createMatch(eth_dst=parse_mac(eth_dst), eth_src=parse_mac(eth_src),
+                             eth_type=0x8100),
+            scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.Dot1Q(prio=5, vlan=1000)/ \
                 scapy.Dot1Q(prio=3, vlan=1005)/ \
                 scapy.IP(),

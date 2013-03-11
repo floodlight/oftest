@@ -35,7 +35,7 @@ def flow_caps_common(obj, is_exact=True):
     for port in of_ports:
         break;
     match.in_port = port
-    match.nw_src = 1
+    match.ipv4_src = 1
     request = ofp.message.flow_mod()
     count_check = 101  # fixme:  better way to determine this.
     if is_exact:
@@ -63,7 +63,7 @@ def flow_caps_common(obj, is_exact=True):
     logging.info("Check every " + str(count_check) + " inserts")
 
     while True:
-        request.match.nw_src += 1
+        request.match.ipv4_src += 1
         obj.controller.message_send(request)
         flow_count += 1
         if flow_count % count_check == 0:

@@ -58,17 +58,17 @@ class parser:
         return prefix+"match wildcards:%x" % dic[nameprefix+"wildcards"][0]+\
                " inport="+str(dic[nameprefix+"in_port"][0])+\
                prefix+"     "+\
-               " ethertype="+str(dic[nameprefix+"dl_type"][0])+\
-               " vlan="+str(dic[nameprefix+"dl_vlan"][0])+\
-               " "+self.eth_describe(dic[nameprefix+"dl_src"])+"->"+\
-               self.eth_describe(dic[nameprefix+"dl_dst"])+\
+               " ethertype="+str(dic[nameprefix+"eth_type"][0])+\
+               " vlan="+str(dic[nameprefix+"vlan_vid"][0])+\
+               " "+self.eth_describe(dic[nameprefix+"eth_src"])+"->"+\
+               self.eth_describe(dic[nameprefix+"eth_dst"])+\
                prefix+"     "+\
-               " ipproto="+str(dic[nameprefix+"nw_proto"][0])+\
-               " "+self.ip_describe(dic[nameprefix+"nw_src"][0])+\
-               "->"+self.ip_describe(dic[nameprefix+"nw_src"][0])+\
+               " ipproto="+str(dic[nameprefix+"ip_proto"][0])+\
+               " "+self.ip_describe(dic[nameprefix+"ipv4_src"][0])+\
+               "->"+self.ip_describe(dic[nameprefix+"ipv4_src"][0])+\
                prefix+"     "+\
-               " transport "+str(dic[nameprefix+"tp_src"][0])+\
-               "->"+str(dic[nameprefix+"tp_dst"][0])
+               " transport "+str(dic[nameprefix+"tcp_src"][0])+\
+               "->"+str(dic[nameprefix+"tcp_dst"][0])
                
     def switch_config_describe(self, packet):
         """Parse OpenFlow switch config and return description

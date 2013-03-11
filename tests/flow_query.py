@@ -353,41 +353,41 @@ class Flow_Cfg:
            and self.match.in_port != x.match.in_port:
             return False
         if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_DST) == 0 \
-           and self.match.dl_dst != x.match.dl_dst:
+           and self.match.eth_dst != x.match.eth_dst:
             return False
         if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_SRC) == 0 \
-           and self.match.dl_src != x.match.dl_src:
+           and self.match.eth_src != x.match.eth_src:
             return False
         if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_VLAN) == 0 \
-           and self.match.dl_vlan != x.match.dl_vlan:
+           and self.match.vlan_vid != x.match.vlan_vid:
             return False
         if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_VLAN_PCP) == 0 \
-           and self.match.dl_vlan_pcp != x.match.dl_vlan_pcp:
+           and self.match.vlan_pcp != x.match.vlan_pcp:
             return False
         if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_TYPE) == 0 \
-           and self.match.dl_type != x.match.dl_type:
+           and self.match.eth_type != x.match.eth_type:
             return False
         if wildcard_get(self.match.wildcards, ofp.OFPFW_NW_TOS) == 0 \
-           and self.match.nw_tos != x.match.nw_tos:
+           and self.match.ip_dscp != x.match.ip_dscp:
             return False
         if wildcard_get(self.match.wildcards, ofp.OFPFW_NW_PROTO) == 0 \
-           and self.match.nw_proto != x.match.nw_proto:
+           and self.match.ip_proto != x.match.ip_proto:
             return False
         n = wildcard_get(self.match.wildcards, ofp.OFPFW_NW_SRC_MASK)
         if n < 32:
             m = ~((1 << n) - 1)
-            if (self.match.nw_src & m) != (x.match.nw_src & m):
+            if (self.match.ipv4_src & m) != (x.match.ipv4_src & m):
                 return False
         n = wildcard_get(self.match.wildcards, ofp.OFPFW_NW_DST_MASK)
         if n < 32:
             m = ~((1 << n) - 1)
-            if (self.match.nw_dst & m) != (x.match.nw_dst & m):
+            if (self.match.ipv4_dst & m) != (x.match.ipv4_dst & m):
                 return False
         if wildcard_get(self.match.wildcards, ofp.OFPFW_TP_SRC) == 0 \
-               and self.match.tp_src != x.match.tp_src:
+               and self.match.tcp_src != x.match.tcp_src:
             return False
         if wildcard_get(self.match.wildcards, ofp.OFPFW_TP_DST) == 0 \
-               and self.match.tp_dst != x.match.tp_dst:
+               and self.match.tcp_dst != x.match.tcp_dst:
             return False
         return True
 
@@ -431,37 +431,37 @@ class Flow_Cfg:
         if wildcard_get(self.match.wildcards, ofp.OFPFW_IN_PORT) == 0:
             result = result + (", in_port=%d" % (self.match.in_port))
         if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_DST) == 0:
-            result = result + (", dl_dst=%s" \
-                               % (dl_addr_to_str(self.match.dl_dst)) \
+            result = result + (", eth_dst=%s" \
+                               % (dl_addr_to_str(self.match.eth_dst)) \
                                )
         if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_SRC) == 0:
-            result = result + (", dl_src=%s" \
-                               % (dl_addr_to_str(self.match.dl_src)) \
+            result = result + (", eth_src=%s" \
+                               % (dl_addr_to_str(self.match.eth_src)) \
                                )
         if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_VLAN) == 0:
-            result = result + (", dl_vlan=%d" % (self.match.dl_vlan))
+            result = result + (", vlan_vid=%d" % (self.match.vlan_vid))
         if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_VLAN_PCP) == 0:
-            result = result + (", dl_vlan_pcp=%d" % (self.match.dl_vlan_pcp))
+            result = result + (", vlan_pcp=%d" % (self.match.vlan_pcp))
         if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_TYPE) == 0:
-            result = result + (", dl_type=0x%x" % (self.match.dl_type))
+            result = result + (", eth_type=0x%x" % (self.match.eth_type))
         if wildcard_get(self.match.wildcards, ofp.OFPFW_NW_TOS) == 0:
-            result = result + (", nw_tos=0x%x" % (self.match.nw_tos))
+            result = result + (", ip_dscp=0x%x" % (self.match.ip_dscp))
         if wildcard_get(self.match.wildcards, ofp.OFPFW_NW_PROTO) == 0:
-            result = result + (", nw_proto=%d" % (self.match.nw_proto))
+            result = result + (", ip_proto=%d" % (self.match.ip_proto))
         n = wildcard_get(self.match.wildcards, ofp.OFPFW_NW_SRC_MASK)
         if n < 32:
-            result = result + (", nw_src=%s" % \
-                               (ip_addr_to_str(self.match.nw_src, 32 - n)) \
+            result = result + (", ipv4_src=%s" % \
+                               (ip_addr_to_str(self.match.ipv4_src, 32 - n)) \
                                )
         n = wildcard_get(self.match.wildcards, ofp.OFPFW_NW_DST_MASK)
         if n < 32:
-            result = result + (", nw_dst=%s" % \
-                               (ip_addr_to_str(self.match.nw_dst, 32 - n)) \
+            result = result + (", ipv4_dst=%s" % \
+                               (ip_addr_to_str(self.match.ipv4_dst, 32 - n)) \
                                )
         if wildcard_get(self.match.wildcards, ofp.OFPFW_TP_SRC) == 0:
-            result = result + (", tp_src=%d" % self.match.tp_src)
+            result = result + (", tcp_src=%d" % self.match.tcp_src)
         if wildcard_get(self.match.wildcards, ofp.OFPFW_TP_DST) == 0:
-            result = result + (", tp_dst=%d" % self.match.tp_dst)
+            result = result + (", tcp_dst=%d" % self.match.tcp_dst)
         return result
 
     def __eq__(self, x):
@@ -551,7 +551,7 @@ class Flow_Cfg:
                 act.nw_addr = fi.rand_ip_addr()
             elif a == ofp.OFPAT_SET_NW_TOS:
                 act = ofp.action.set_nw_tos()
-                act.nw_tos = fi.rand_ip_tos()
+                act.ip_dscp = fi.rand_ip_tos()
             elif a == ofp.OFPAT_SET_TP_SRC:
                 act = ofp.action.set_tp_src()
                 act.tp_port = fi.rand_l4_port()
@@ -666,7 +666,7 @@ class Flow_Cfg:
                 self.actions.append(act)
             elif a == ofp.OFPAT_SET_NW_TOS:
                 act = ofp.action.set_nw_tos()
-                act.nw_tos = fi.rand_ip_tos()
+                act.ip_dscp = fi.rand_ip_tos()
                 self.actions.append(act)
             elif a == ofp.OFPAT_SET_TP_SRC:
                 act = ofp.action.set_tp_src()
@@ -730,7 +730,7 @@ class Flow_Cfg:
                     or exact \
                     or flip_coin() \
                     ):
-            self.match.dl_dst = fi.rand_dl_addr()
+            self.match.eth_dst = fi.rand_dl_addr()
         else:
             self.match.wildcards = wildcard_set(self.match.wildcards, \
                                                 ofp.OFPFW_DL_DST, \
@@ -742,7 +742,7 @@ class Flow_Cfg:
                     or exact \
                     or flip_coin() \
                     ):
-            self.match.dl_src = fi.rand_dl_addr()
+            self.match.eth_src = fi.rand_dl_addr()
         else:
             self.match.wildcards = wildcard_set(self.match.wildcards, \
                                                 ofp.OFPFW_DL_SRC, \
@@ -754,7 +754,7 @@ class Flow_Cfg:
                     or exact \
                     or flip_coin() \
                     ):
-            self.match.dl_vlan = fi.rand_vlan()
+            self.match.vlan_vid = fi.rand_vlan()
         else:
             self.match.wildcards = wildcard_set(self.match.wildcards, \
                                                 ofp.OFPFW_DL_VLAN, \
@@ -766,7 +766,7 @@ class Flow_Cfg:
                     or exact \
                     or flip_coin() \
                     ):
-            self.match.dl_vlan_pcp = random.randint(0, (1 << 3) - 1)
+            self.match.vlan_pcp = random.randint(0, (1 << 3) - 1)
         else:
             self.match.wildcards = wildcard_set(self.match.wildcards, \
                                                 ofp.OFPFW_DL_VLAN_PCP, \
@@ -778,7 +778,7 @@ class Flow_Cfg:
                     or exact \
                     or flip_coin() \
                     ):
-            self.match.dl_type = fi.rand_ethertype()
+            self.match.eth_type = fi.rand_ethertype()
         else:
             self.match.wildcards = wildcard_set(self.match.wildcards, \
                                                 ofp.OFPFW_DL_TYPE, \
@@ -799,11 +799,11 @@ class Flow_Cfg:
                                             n \
                                             )
         if n < 32:
-            self.match.nw_src    = fi.rand_ip_addr() & ~((1 << n) - 1)
+            self.match.ipv4_src    = fi.rand_ip_addr() & ~((1 << n) - 1)
             # Specifying any IP address match other than all bits
             # don't care requires that Ethertype is one of {IP, ARP}
             if flip_coin():
-                self.match.dl_type   = rand_pick([0x0800, 0x0806])
+                self.match.eth_type   = rand_pick([0x0800, 0x0806])
                 self.match.wildcards = wildcard_set(self.match.wildcards, \
                                                     ofp.OFPFW_DL_TYPE, \
                                                     0 \
@@ -823,11 +823,11 @@ class Flow_Cfg:
                                             n \
                                             )
         if n < 32:
-            self.match.nw_dst    = fi.rand_ip_addr() & ~((1 << n) - 1)
+            self.match.ipv4_dst    = fi.rand_ip_addr() & ~((1 << n) - 1)
             # Specifying any IP address match other than all bits
             # don't care requires that Ethertype is one of {IP, ARP}
             if flip_coin():
-                self.match.dl_type   = rand_pick([0x0800, 0x0806])
+                self.match.eth_type   = rand_pick([0x0800, 0x0806])
                 self.match.wildcards = wildcard_set(self.match.wildcards, \
                                                     ofp.OFPFW_DL_TYPE, \
                                                     0 \
@@ -838,10 +838,10 @@ class Flow_Cfg:
                     or exact \
                     or flip_coin() \
                     ):
-            self.match.nw_tos = fi.rand_ip_tos()
+            self.match.ip_dscp = fi.rand_ip_tos()
             # Specifying a TOS value requires that Ethertype is IP
             if flip_coin():
-                self.match.dl_type   = 0x0800
+                self.match.eth_type   = 0x0800
                 self.match.wildcards = wildcard_set(self.match.wildcards, \
                                                     ofp.OFPFW_DL_TYPE, \
                                                     0 \
@@ -852,16 +852,16 @@ class Flow_Cfg:
                                                 1 \
                                                 )
 
-        # Known issue on OVS with specifying nw_proto w/o dl_type as IP
+        # Known issue on OVS with specifying ip_proto w/o eth_type as IP
         if wildcard_get(wildcards_force, ofp.OFPFW_NW_PROTO) == 0 \
                and (wildcard_get(valid_wildcards, ofp.OFPFW_NW_PROTO) == 0 \
                     or exact \
                     or flip_coin() \
                     ):
-            self.match.nw_proto = fi.rand_ip_proto()
+            self.match.ip_proto = fi.rand_ip_proto()
             # Specifying an IP protocol requires that Ethertype is IP
             if flip_coin():
-                self.match.dl_type   = 0x0800
+                self.match.eth_type   = 0x0800
                 self.match.wildcards = wildcard_set(self.match.wildcards, \
                                                     ofp.OFPFW_DL_TYPE, \
                                                     0 \
@@ -877,23 +877,23 @@ class Flow_Cfg:
                     or exact\
                     or flip_coin() \
                     ):
-            self.match.tp_src = fi.rand_l4_port()
+            self.match.tcp_src = fi.rand_l4_port()
             # Specifying a L4 port requires that IP protcol is
             # one of {ICMP, TCP, UDP}
             if flip_coin():
-                self.match.nw_proto = rand_pick([1, 6, 17])
+                self.match.ip_proto = rand_pick([1, 6, 17])
                 self.match.wildcards = wildcard_set(self.match.wildcards, \
                                                     ofp.OFPFW_NW_PROTO, \
                                                     0 \
                                                     )
                 # Specifying a L4 port requirues that Ethertype is IP
-                self.match.dl_type   = 0x0800
+                self.match.eth_type   = 0x0800
                 self.match.wildcards = wildcard_set(self.match.wildcards, \
                                                     ofp.OFPFW_DL_TYPE, \
                                                     0 \
                                                     )
-                if self.match.nw_proto == 1:
-                    self.match.tp_src = self.match.tp_src & 0xff
+                if self.match.ip_proto == 1:
+                    self.match.tcp_src = self.match.tcp_src & 0xff
         else:
             self.match.wildcards = wildcard_set(self.match.wildcards, \
                                                 ofp.OFPFW_TP_SRC, \
@@ -905,23 +905,23 @@ class Flow_Cfg:
                     or exact \
                     or flip_coin() \
                     ):
-            self.match.tp_dst = fi.rand_l4_port()
+            self.match.tcp_dst = fi.rand_l4_port()
             # Specifying a L4 port requires that IP protcol is
             # one of {ICMP, TCP, UDP}
             if flip_coin():
-                self.match.nw_proto = rand_pick([1, 6, 17])
+                self.match.ip_proto = rand_pick([1, 6, 17])
                 self.match.wildcards = wildcard_set(self.match.wildcards, \
                                                     ofp.OFPFW_NW_PROTO, \
                                                     0 \
                                                     )
                 # Specifying a L4 port requirues that Ethertype is IP
-                self.match.dl_type   = 0x0800
+                self.match.eth_type   = 0x0800
                 self.match.wildcards = wildcard_set(self.match.wildcards, \
                                                     ofp.OFPFW_DL_TYPE, \
                                                     0 \
                                                     )
-                if self.match.nw_proto == 1:
-                    self.match.tp_dst = self.match.tp_dst & 0xff
+                if self.match.ip_proto == 1:
+                    self.match.tcp_dst = self.match.tcp_dst & 0xff
         else:
             self.match.wildcards = wildcard_set(self.match.wildcards, \
                                                 ofp.OFPFW_TP_DST, \
@@ -947,7 +947,7 @@ class Flow_Cfg:
 
     # Return flow cfg in canonical form
     # - There are dependencies between flow qualifiers, e.g. it only makes
-    #   sense to qualify nw_proto if dl_type is qualified to be 0x0800 (IP).
+    #   sense to qualify ip_proto if eth_type is qualified to be 0x0800 (IP).
     #   The canonical form of flow match criteria will "wildcard out"
     #   all such cases.
     def canonical(self):
@@ -960,10 +960,10 @@ class Flow_Cfg:
                                                   )
 
         if wildcard_get(result.match.wildcards, ofp.OFPFW_DL_TYPE) != 0 \
-               or result.match.dl_type not in [0x0800, 0x0806]:
+               or result.match.eth_type not in [0x0800, 0x0806]:
             # dl_tyoe is wildcarded, or specified as something other
             # than IP or ARP
-            # => nw_src, nw_dst, nw_proto cannot be specified,
+            # => ipv4_src, ipv4_dst, ip_proto cannot be specified,
             # must be wildcarded
             result.match.wildcards = wildcard_set(result.match.wildcards, \
                                                   ofp.OFPFW_NW_SRC_MASK, \
@@ -979,9 +979,9 @@ class Flow_Cfg:
                                                   )
 
         if wildcard_get(result.match.wildcards, ofp.OFPFW_DL_TYPE) != 0 \
-               or result.match.dl_type != 0x0800:
-            # dl_type is wildcarded, or specified as something other than IP
-            # => nw_tos, tp_src and tp_dst cannot be specified,
+               or result.match.eth_type != 0x0800:
+            # eth_type is wildcarded, or specified as something other than IP
+            # => ip_dscp, tcp_src and tcp_dst cannot be specified,
             #    must be wildcarded
             result.match.wildcards = wildcard_set(result.match.wildcards, \
                                                   ofp.OFPFW_NW_TOS, \
@@ -1009,10 +1009,10 @@ class Flow_Cfg:
                                                   )
             
         if wildcard_get(result.match.wildcards, ofp.OFPFW_NW_PROTO) != 0 \
-               or result.match.nw_proto not in [1, 6, 17]:
-            # nw_proto is wildcarded, or specified as something other than ICMP,
+               or result.match.ip_proto not in [1, 6, 17]:
+            # ip_proto is wildcarded, or specified as something other than ICMP,
             # TCP or UDP
-            # => tp_src and tp_dst cannot be specified, must be wildcarded
+            # => tcp_src and tcp_dst cannot be specified, must be wildcarded
             result.match.wildcards = wildcard_set(result.match.wildcards, \
                                                   ofp.OFPFW_TP_SRC, \
                                                   1 \
@@ -1038,43 +1038,43 @@ class Flow_Cfg:
                 return False            # Receiver more specific
         if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_VLAN) == 0:
             if wildcard_get(x.match.wildcards, ofp.OFPFW_DL_VLAN) == 0:
-                if self.match.dl_vlan != x.match.dl_vlan:
+                if self.match.vlan_vid != x.match.vlan_vid:
                     return False        # Both specified, and not equal
             elif delf:
                 return False            # Receiver more specific
         if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_SRC) == 0:
             if wildcard_get(x.match.wildcards, ofp.OFPFW_DL_SRC) == 0:
-                if self.match.dl_src != x.match.dl_src:
+                if self.match.eth_src != x.match.eth_src:
                     return False        # Both specified, and not equal
             elif delf:
                 return False            # Receiver more specific
         if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_DST) == 0:
             if wildcard_get(x.match.wildcards, ofp.OFPFW_DL_DST) == 0:
-                if self.match.dl_dst != x.match.dl_dst:
+                if self.match.eth_dst != x.match.eth_dst:
                     return False        # Both specified, and not equal
             elif delf:
                 return False            # Receiver more specific
         if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_TYPE) == 0:
             if wildcard_get(x.match.wildcards, ofp.OFPFW_DL_TYPE) == 0:
-                if self.match.dl_type != x.match.dl_type:
+                if self.match.eth_type != x.match.eth_type:
                     return False        # Both specified, and not equal
             elif delf:
                 return False            # Recevier more specific
         if wildcard_get(self.match.wildcards, ofp.OFPFW_NW_PROTO) == 0:
             if wildcard_get(x.match.wildcards, ofp.OFPFW_NW_PROTO) == 0:
-                if self.match.nw_proto != x.match.nw_proto:
+                if self.match.ip_proto != x.match.ip_proto:
                     return False        # Both specified, and not equal
             elif delf:
                 return False            # Receiver more specific
         if wildcard_get(self.match.wildcards, ofp.OFPFW_TP_SRC) == 0:
             if wildcard_get(x.match.wildcards, ofp.OFPFW_TP_SRC) == 0:
-                if self.match.tp_src != x.match.tp_src:
+                if self.match.tcp_src != x.match.tcp_src:
                     return False        # Both specified, and not equal
             elif delf:
                 return False            # Receiver more specific
         if wildcard_get(self.match.wildcards, ofp.OFPFW_TP_DST) == 0:
             if wildcard_get(x.match.wildcards, ofp.OFPFW_TP_DST) == 0:
-                if self.match.tp_dst != x.match.tp_dst:
+                if self.match.tcp_dst != x.match.tcp_dst:
                     return False        # Both specified, and not equal
             elif delf:
                 return False            # Receiver more specific
@@ -1084,7 +1084,7 @@ class Flow_Cfg:
             return False                # Receiver more specific
         if (na < 32 and nb < 32):
             m = ~((1 << na) - 1) & ~((1 << nb) - 1)
-            if (self.match.nw_src & m) != (x.match.nw_src & m):
+            if (self.match.ipv4_src & m) != (x.match.ipv4_src & m):
                 return False            # Overlapping bits not equal
         na = wildcard_get(self.match.wildcards, ofp.OFPFW_NW_DST_MASK)
         nb = wildcard_get(x.match.wildcards, ofp.OFPFW_NW_DST_MASK)
@@ -1092,17 +1092,17 @@ class Flow_Cfg:
             return False                # Receiver more specific
         if (na < 32 and nb < 32):
             m = ~((1 << na) - 1) & ~((1 << nb) - 1)
-            if (self.match.nw_dst & m) != (x.match.nw_dst & m):
+            if (self.match.ipv4_dst & m) != (x.match.ipv4_dst & m):
                 return False            # Overlapping bits not equal
         if wildcard_get(self.match.wildcards, ofp.OFPFW_DL_VLAN_PCP) == 0:
             if wildcard_get(x.match.wildcards, ofp.OFPFW_DL_VLAN_PCP) == 0:
-                if self.match.dl_vlan_pcp != x.match.dl_vlan_pcp:
+                if self.match.vlan_pcp != x.match.vlan_pcp:
                     return False        # Both specified, and not equal
             elif delf:
                 return False            # Receiver more specific
         if wildcard_get(self.match.wildcards, ofp.OFPFW_NW_TOS) == 0:
             if wildcard_get(x.match.wildcards, ofp.OFPFW_NW_TOS) == 0:
-                if self.match.nw_tos != x.match.nw_tos:
+                if self.match.ip_dscp != x.match.ip_dscp:
                     return False        # Both specified, and not equal
             elif delf:
                 return False            # Receiver more specific

@@ -239,7 +239,7 @@ class MultiFlowStats(base_tests.SimpleDataPlane):
         pkt1 = simple_tcp_packet()
         flow_mod_msg1 = self.buildFlowModMsg(pkt1, ingress_port, egress_port1)
        
-        pkt2 = simple_tcp_packet(dl_src='0:7:7:7:7:7')
+        pkt2 = simple_tcp_packet(eth_src='0:7:7:7:7:7')
         flow_mod_msg2 = self.buildFlowModMsg(pkt2, ingress_port, egress_port2)
        
         logging.info("Inserting flow1")
@@ -315,7 +315,7 @@ class AllPortStats(base_tests.SimpleDataPlane):
         pkt1 = simple_tcp_packet()
         flow_mod_msg1 = self.buildFlowModMsg(pkt1, port0, port1)
        
-        pkt2 = simple_tcp_packet(dl_src='0:7:7:7:7:7')
+        pkt2 = simple_tcp_packet(eth_src='0:7:7:7:7:7')
         flow_mod_msg2 = self.buildFlowModMsg(pkt2, port0, port2)
        
         logging.info("Inserting flow1")

@@ -40,7 +40,7 @@ def exact_match(self,of_ports,priority=None):
     match = parse.packet_to_flow_match(pkt_exactflow)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
     match.in_port = of_ports[0]
-    #match.nw_src = 1
+    #match.ipv4_src = 1
     match.wildcards=0
     match_send_flowadd(self, match, priority, of_ports[1])
     return (pkt_exactflow,match)
@@ -53,7 +53,7 @@ def exact_match_with_prio(self,of_ports,priority=None):
     match = parse.packet_to_flow_match(pkt_exactflow)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
     match.in_port = of_ports[0]
-    #match.nw_src = 1
+    #match.ipv4_src = 1
     match.wildcards=0
     match_send_flowadd(self, match, priority, of_ports[2])
     return (pkt_exactflow,match)         
@@ -67,7 +67,7 @@ def match_all_except_source_address(self,of_ports,priority=None):
     match1 = parse.packet_to_flow_match(pkt_wildcardsrc)
     self.assertTrue(match1 is not None, "Could not generate flow match from pkt")
     match1.in_port = of_ports[0]
-    #match1.nw_src = 1
+    #match1.ipv4_src = 1
     match1.wildcards = ofp.OFPFW_DL_SRC
     match_send_flowadd(self, match1, priority, of_ports[1])
     return (pkt_wildcardsrc,match1)
@@ -76,7 +76,7 @@ def match_ethernet_src_address(self,of_ports,priority=None):
     #Generate Match_Ethernet_SrC_Address flow
 
     #Create a simple tcp packet and generate match on ethernet src address flow
-    pkt_MatchSrc = simple_eth_packet(dl_src='00:01:01:01:01:01')
+    pkt_MatchSrc = simple_eth_packet(eth_src='00:01:01:01:01:01')
     match = parse.packet_to_flow_match(pkt_MatchSrc)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
     match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_SRC
@@ -87,7 +87,7 @@ def match_ethernet_dst_address(self,of_ports,priority=None):
     #Generate Match_Ethernet_Dst_Address flow
 
     #Create a simple tcp packet and generate match on ethernet dst address flow
-    pkt_matchdst = simple_eth_packet(dl_dst='00:01:01:01:01:01')
+    pkt_matchdst = simple_eth_packet(eth_dst='00:01:01:01:01:01')
     match = parse.packet_to_flow_match(pkt_matchdst)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
@@ -136,7 +136,7 @@ def match_vlan_id(self,of_ports,priority=None):
     #Generate Match_Vlan_Id
 
     #Create a simple tcp packet and generate match on ethernet dst address flow
-    pkt_matchvlanid = simple_tcp_packet(dl_vlan_enable=True,dl_vlan=1)
+    pkt_matchvlanid = simple_tcp_packet(dl_vlan_enable=True,vlan_vid=1)
     match = parse.packet_to_flow_match(pkt_matchvlanid)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
@@ -148,7 +148,7 @@ def match_vlan_pcp(self,of_ports,priority=None):
     #Generate Match_Vlan_Priority
 
     #Create a simple tcp packet and generate match on ethernet dst address flow
-    pkt_matchvlanpcp = simple_tcp_packet(dl_vlan_enable=True,dl_vlan=1,dl_vlan_pcp=5)
+    pkt_matchvlanpcp = simple_tcp_packet(dl_vlan_enable=True,vlan_vid=1,vlan_pcp=5)
     match = parse.packet_to_flow_match(pkt_matchvlanpcp)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
@@ -161,7 +161,7 @@ def match_mul_l2(self,of_ports,priority=None):
     #Generate Match_Mul_L2 flow
 
     #Create a simple eth packet and generate match on ethernet protocol flow
-    pkt_mulL2 = simple_eth_packet(dl_type=0x88cc,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:01:01:02')
+    pkt_mulL2 = simple_eth_packet(eth_type=0x88cc,eth_src='00:01:01:01:01:01',eth_dst='00:01:01:01:01:02')
     match = parse.packet_to_flow_match(pkt_mulL2)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
@@ -308,7 +308,7 @@ def match_ethernet_type(self,of_ports,priority=None):
     #Generate a Match_Ethernet_Type flow
 
     #Create a simple tcp packet and generate match on ethernet type flow
-    pkt_matchtype = simple_eth_packet(dl_type=0x88cc)
+    pkt_matchtype = simple_eth_packet(eth_type=0x88cc)
     match = parse.packet_to_flow_match(pkt_matchtype)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 

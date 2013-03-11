@@ -50,11 +50,11 @@ class AllWildcardMatch(base_tests.SimpleDataPlane):
         wildcard_all(self,of_ports)
 
         #check for different  match fields and verify packet implements the action specified in the flow
-        pkt1 = simple_tcp_packet(dl_src="00:01:01:01:01:01");
+        pkt1 = simple_tcp_packet(eth_src="00:01:01:01:01:01");
         self.dataplane.send(of_ports[0], str(pkt1))
         receive_pkt_check(self.dataplane,pkt1,[yes_ports],no_ports,self)
        
-        pkt2 = simple_tcp_packet(dl_dst="00:01:01:01:01:01");    
+        pkt2 = simple_tcp_packet(eth_dst="00:01:01:01:01:01");    
         self.dataplane.send(of_ports[0], str(pkt2))
         receive_pkt_check(self.dataplane,pkt2,[yes_ports],no_ports,self)
         
@@ -113,7 +113,7 @@ class EthernetSrcAddress(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
         #Sending non matching packet , verify Packetin event gets triggered.
-        pkt2 = simple_eth_packet(dl_src='00:01:01:01:01:02');
+        pkt2 = simple_eth_packet(eth_src='00:01:01:01:01:02');
         self.dataplane.send(of_ports[0], str(pkt2))
         
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
@@ -152,7 +152,7 @@ class EthernetDstAddress(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
         
         #Send Non-matching packet
-        pkt2 = simple_eth_packet(dl_dst='00:01:01:01:01:02');
+        pkt2 = simple_eth_packet(eth_dst='00:01:01:01:01:02');
         self.dataplane.send(of_ports[0], str(pkt2))
         
         #Verify PacketIn event gets triggered
@@ -193,7 +193,7 @@ class EthernetType(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
         #Sending non matching packet , 
-        pkt2 = simple_eth_packet(dl_type=0x0806);
+        pkt2 = simple_eth_packet(eth_type=0x0806);
         self.dataplane.send(of_ports[0], str(pkt2))
         
         #verify Packetin event gets triggered.
@@ -271,7 +271,7 @@ class VlanId(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
         
         #Send Non-matching packet, i.e packet with different Vlan Id
-        pkt2 = simple_tcp_packet(dl_vlan_enable=True,dl_vlan=4);
+        pkt2 = simple_tcp_packet(dl_vlan_enable=True,vlan_vid=4);
         self.dataplane.send(of_ports[0], str(pkt2))
         
         #Verify PacketIn event gets triggered
@@ -311,7 +311,7 @@ class VlanPCP(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
         
         #Send tagged packet with same vlan_id but different vlan priority
-        pkt2 = simple_tcp_packet(dl_vlan_enable=True,dl_vlan=1,dl_vlan_pcp=20);
+        pkt2 = simple_tcp_packet(dl_vlan_enable=True,vlan_vid=1,vlan_pcp=20);
         self.dataplane.send(of_ports[0], str(pkt2))
 
         #Verify Packet_In event gets triggered
@@ -343,28 +343,28 @@ class MultipleHeaderFieldL2(base_tests.SimpleDataPlane):
 
         (pkt,match) = match_mul_l2(self,of_ports)   
 
-        #Send eth packet matching the dl_type field, verify it implements the action
+        #Send eth packet matching the eth_type field, verify it implements the action
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet implements the action specified in the flow
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
-        #Sending non matching packet (only dl_dst is different) , verify Packetin event gets triggered.
-        pkt2 = simple_eth_packet(dl_type=0x88cc,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:02:01:01');
+        #Sending non matching packet (only eth_dst is different) , verify Packetin event gets triggered.
+        pkt2 = simple_eth_packet(eth_type=0x88cc,eth_src='00:01:01:01:01:01',eth_dst='00:01:01:02:01:01');
         self.dataplane.send(of_ports[0], str(pkt2))
         
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 
-        #Sending non matching packet (only dl_src is different) , verify Packetin event gets triggered.
-        pkt2 = simple_eth_packet(dl_type=0x88cc,dl_src='00:01:01:01:01:02',dl_dst='00:01:01:01:01:02');
+        #Sending non matching packet (only eth_src is different) , verify Packetin event gets triggered.
+        pkt2 = simple_eth_packet(eth_type=0x88cc,eth_src='00:01:01:01:01:02',eth_dst='00:01:01:01:01:02');
         self.dataplane.send(of_ports[0], str(pkt2))
         
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 
         #Sending non matching packet (only ether_type is different) , verify Packetin event gets triggered.
-        pkt2 = simple_eth_packet(dl_type=0x0806,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:01:01:02');
+        pkt2 = simple_eth_packet(eth_type=0x0806,eth_src='00:01:01:01:01:01',eth_dst='00:01:01:01:01:02');
         self.dataplane.send(of_ports[0], str(pkt2))
         
         #Verify packet_in event gets triggered

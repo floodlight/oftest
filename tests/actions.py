@@ -439,7 +439,7 @@ class AddVlanTag(base_tests.SimpleDataPlane):
         len_w_vid = 104
         pkt = simple_tcp_packet(pktlen=len_wo_vid)
         exp_pkt = simple_tcp_packet(pktlen=len_w_vid, dl_vlan_enable=True, 
-                                    dl_vlan=new_vid,dl_vlan_pcp=0)
+                                    vlan_vid=new_vid,vlan_pcp=0)
         vid_act = ofp.action.set_vlan_vid()
         vid_act.vlan_vid = new_vid
 
@@ -475,8 +475,8 @@ class ModifyVlanTag(base_tests.SimpleDataPlane):
         #Create a tagged packet with old_vid to be sent, and expected packet with new_vid
         old_vid = 2
         new_vid = 3
-        pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=old_vid)
-        exp_pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=new_vid)
+        pkt = simple_tcp_packet(dl_vlan_enable=True, vlan_vid=old_vid)
+        exp_pkt = simple_tcp_packet(dl_vlan_enable=True, vlan_vid=new_vid)
         vid_act = ofp.action.set_vlan_vid()
         vid_act.vlan_vid = new_vid
         
@@ -514,7 +514,7 @@ class VlanPrio1(base_tests.SimpleDataPlane):
         vlan_pcp = 1
         pktlen = 64 if config["minsize"] < 64 else config["minsize"]
         pkt = simple_tcp_packet(pktlen=pktlen)
-        exp_pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vlan_id,dl_vlan_pcp=vlan_pcp, pktlen=pktlen + 4)
+        exp_pkt = simple_tcp_packet(dl_vlan_enable=True, vlan_vid=vlan_id,vlan_pcp=vlan_pcp, pktlen=pktlen + 4)
         act = ofp.action.set_vlan_pcp()
         act.vlan_pcp = vlan_pcp
 
@@ -552,8 +552,8 @@ class VlanPrio2(base_tests.SimpleDataPlane):
         vid          = 123
         old_vlan_pcp = 2
         new_vlan_pcp = 3
-        pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vid, dl_vlan_pcp=old_vlan_pcp)
-        exp_pkt = simple_tcp_packet(dl_vlan_enable=True, dl_vlan=vid, dl_vlan_pcp=new_vlan_pcp)
+        pkt = simple_tcp_packet(dl_vlan_enable=True, vlan_vid=vid, vlan_pcp=old_vlan_pcp)
+        exp_pkt = simple_tcp_packet(dl_vlan_enable=True, vlan_vid=vid, vlan_pcp=new_vlan_pcp)
         vid_act = ofp.action.set_vlan_pcp()
         vid_act.vlan_pcp = new_vlan_pcp
 
@@ -587,8 +587,8 @@ class ModifyL2Src(base_tests.SimpleDataPlane):
             skip_message_emit(self, "modify_l2_src test skipped")
             return
 
-        #Create packet to be sent and expected packet with dl_src set to specified value
-        (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_src'],
+        #Create packet to be sent and expected packet with eth_src set to specified value
+        (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['eth_src'],
                                                 check_test_params=True)
         
         #Insert flow with action -- set src address, Send packet matching the flow, Verify recieved packet is expected packet
@@ -621,8 +621,8 @@ class ModifyL2Dst(base_tests.SimpleDataPlane):
             skip_message_emit(self, "modify_l2_dst test skipped")
             return
 
-        #Create packet to be sent and expected packet with dl_src set to specified value
-        (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['dl_dst'],
+        #Create packet to be sent and expected packet with eth_src set to specified value
+        (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['eth_dst'],
                                                 check_test_params=True)
         
         #Insert flow with action -- set dst address, Send packet matching the flow, Verify recieved packet is expected packet
@@ -654,7 +654,7 @@ class ModifyL3Src(base_tests.SimpleDataPlane):
             skip_message_emit(self, "modify_l3_src test")
             return
 
-        #Create packet to be sent and expected packet with nw_src set to specified value
+        #Create packet to be sent and expected packet with ipv4_src set to specified value
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['ip_src'],
                                                 check_test_params=True)
         
@@ -687,7 +687,7 @@ class ModifyL3Dst(base_tests.SimpleDataPlane):
             skip_message_emit(self, "modify_l3_dst test skipped")
             return
         
-        #Create packet to be sent and expected packet with nw_dst set to specified value
+        #Create packet to be sent and expected packet with ipv4_dst set to specified value
         (pkt, exp_pkt, acts) = pkt_action_setup(self, mod_fields=['ip_dst'],
                                                 check_test_params=True)
         

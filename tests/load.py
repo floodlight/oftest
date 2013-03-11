@@ -211,8 +211,8 @@ class FlowModLoad(base_tests.SimpleProtocol):
         for i in range(num_flows):
             match = ofp.ofp_match()
             match.wildcards = ofp.OFPFW_ALL & ~ofp.OFPFW_DL_VLAN & ~ofp.OFPFW_DL_DST
-            match.dl_vlan = ofp.OFP_VLAN_NONE
-            match.dl_dst = [0, 1, 2, 3, i / 256, i % 256]
+            match.vlan_vid = ofp.OFP_VLAN_NONE
+            match.eth_dst = [0, 1, 2, 3, i / 256, i % 256]
             act = ofp.action.output()
             act.port = ofp.OFPP_CONTROLLER
             request = ofp.message.flow_mod()

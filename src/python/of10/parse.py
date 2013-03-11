@@ -172,13 +172,13 @@ def of_header_parse(binary_string, raw=False):
     return hdr
 
 map_wc_field_to_match_member = {
-    'OFPFW_DL_VLAN'                 : 'dl_vlan',
-    'OFPFW_DL_SRC'                  : 'dl_src',
-    'OFPFW_DL_DST'                  : 'dl_dst',
-    'OFPFW_DL_TYPE'                 : 'dl_type',
-    'OFPFW_NW_PROTO'                : 'nw_proto',
-    'OFPFW_TP_SRC'                  : 'tp_src',
-    'OFPFW_TP_DST'                  : 'tp_dst',
+    'OFPFW_DL_VLAN'                 : 'vlan_vid',
+    'OFPFW_DL_SRC'                  : 'eth_src',
+    'OFPFW_DL_DST'                  : 'eth_dst',
+    'OFPFW_DL_TYPE'                 : 'eth_type',
+    'OFPFW_NW_PROTO'                : 'ip_proto',
+    'OFPFW_TP_SRC'                  : 'tcp_src',
+    'OFPFW_TP_DST'                  : 'tcp_dst',
     'OFPFW_NW_SRC_SHIFT'            : 'nw_src_shift',
     'OFPFW_NW_SRC_BITS'             : 'nw_src_bits',
     'OFPFW_NW_SRC_MASK'             : 'nw_src_mask',
@@ -187,8 +187,8 @@ map_wc_field_to_match_member = {
     'OFPFW_NW_DST_BITS'             : 'nw_dst_bits',
     'OFPFW_NW_DST_MASK'             : 'nw_dst_mask',
     'OFPFW_NW_DST_ALL'              : 'nw_dst_all',
-    'OFPFW_DL_VLAN_PCP'             : 'dl_vlan_pcp',
-    'OFPFW_NW_TOS'                  : 'nw_tos'
+    'OFPFW_DL_VLAN_PCP'             : 'vlan_pcp',
+    'OFPFW_NW_TOS'                  : 'ip_dscp'
 }
 
 
@@ -287,57 +287,57 @@ def packet_to_flow_match(packet, pkt_format="L2"):
     match = cstruct.ofp_match()
     match.wildcards = cstruct.OFPFW_ALL
     #@todo Check if packet is other than L2 format
-    match.dl_dst = parse_mac(ether.dst)
+    match.eth_dst = parse_mac(ether.dst)
     match.wildcards &= ~cstruct.OFPFW_DL_DST
-    match.dl_src = parse_mac(ether.src)
+    match.eth_src = parse_mac(ether.src)
     match.wildcards &= ~cstruct.OFPFW_DL_SRC
-    match.dl_type = ether.type
+    match.eth_type = ether.type
     match.wildcards &= ~cstruct.OFPFW_DL_TYPE
 
     if dot1q:
-        match.dl_vlan = dot1q.vlan
-        match.dl_vlan_pcp = dot1q.prio
-        match.dl_type = dot1q.type
+        match.vlan_vid = dot1q.vlan
+        match.vlan_pcp = dot1q.prio
+        match.eth_type = dot1q.type
     else:
-        match.dl_vlan = cstruct.OFP_VLAN_NONE
-        match.dl_vlan_pcp = 0
+        match.vlan_vid = cstruct.OFP_VLAN_NONE
+        match.vlan_pcp = 0
     match.wildcards &= ~cstruct.OFPFW_DL_VLAN
     match.wildcards &= ~cstruct.OFPFW_DL_VLAN_PCP
 
     if ip:
-        match.nw_src = parse_ip(ip.src)
+        match.ipv4_src = parse_ip(ip.src)
         match.wildcards &= ~cstruct.OFPFW_NW_SRC_MASK
-        match.nw_dst = parse_ip(ip.dst)
+        match.ipv4_dst = parse_ip(ip.dst)
         match.wildcards &= ~cstruct.OFPFW_NW_DST_MASK
-        match.nw_tos = ip.tos
+        match.ip_dscp = ip.tos
         match.wildcards &= ~cstruct.OFPFW_NW_TOS
 
     if tcp:
-        match.nw_proto = 6
+        match.ip_proto = 6
         match.wildcards &= ~cstruct.OFPFW_NW_PROTO
     elif not tcp and udp:
         tcp = udp
-        match.nw_proto = 17
+        match.ip_proto = 17
         match.wildcards &= ~cstruct.OFPFW_NW_PROTO
 
     if tcp:
-        match.tp_src = tcp.sport
+        match.tcp_src = tcp.sport
         match.wildcards &= ~cstruct.OFPFW_TP_SRC
-        match.tp_dst = tcp.dport
+        match.tcp_dst = tcp.dport
         match.wildcards &= ~cstruct.OFPFW_TP_DST
 
     if icmp:
-        match.nw_proto = 1
-        match.tp_src = icmp.type
-        match.tp_dst = icmp.code
+        match.ip_proto = 1
+        match.tcp_src = icmp.type
+        match.tcp_dst = icmp.code
         match.wildcards &= ~cstruct.OFPFW_NW_PROTO
 
     if arp:
-        match.nw_proto = arp.op
+        match.ip_proto = arp.op
         match.wildcards &= ~cstruct.OFPFW_NW_PROTO
-        match.nw_src = parse_ip(arp.psrc)
+        match.ipv4_src = parse_ip(arp.psrc)
         match.wildcards &= ~cstruct.OFPFW_NW_SRC_MASK
-        match.nw_dst = parse_ip(arp.pdst)
+        match.ipv4_dst = parse_ip(arp.pdst)
         match.wildcards &= ~cstruct.OFPFW_NW_DST_MASK
 
     return match
