@@ -22,7 +22,7 @@ from time import sleep
 from FuncUtils import*
 
 
-
+@disabled
 class HelloWithBody(base_tests.SimpleDataPlane):
 
     """Verify switch should be able to receive OFPT_HELLO messages with body , 
