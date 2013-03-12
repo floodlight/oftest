@@ -240,7 +240,6 @@ def wildcard_all(self,of_ports,priority=None):
 def wildcard_all_except_ingress(self,of_ports,priority=None):
 # Generate Wildcard_All_Except_Ingress_port flow
         
-
     #Create a simple tcp packet and generate wildcard all except ingress_port flow.
     pkt_matchingress = simple_tcp_packet()
     match3 = parse.packet_to_flow_match(pkt_matchingress)
@@ -257,7 +256,8 @@ def wildcard_all_except_ingress(self,of_ports,priority=None):
     msg3.idle_timeout = 0
     msg3.hard_timeout = 0
     msg3.buffer_id = 0xffffffff
-       
+
+    cookie = msg3.cookie   
     act3 = action.action_output()
     act3.port = of_ports[1]
     self.assertTrue(msg3.actions.add(act3), "could not add action")
@@ -269,7 +269,7 @@ def wildcard_all_except_ingress(self,of_ports,priority=None):
     self.assertTrue(rv != -1, "Error installing flow mod")
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-    return (pkt_matchingress,match3,msg3.cookie)
+    return (pkt_matchingress,match3,cookie)
 
 def wildcard_all_except_ingress1(self,of_ports,priority=None):
 # Generate Wildcard_All_Except_Ingress_port flow with action output to port egress_port 2 
@@ -617,7 +617,7 @@ def enqueue(self,ingress_port,egress_port,egress_queue_id):
 
 
 ###########################   Verify Stats Functions   ###########################################################################################
-def get_flowstats(self,match,cookie):
+def get_flowstats(self,cookie,match):
     # Generate flow_stats request
     
     stat_req = message.flow_stats_request()

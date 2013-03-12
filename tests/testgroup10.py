@@ -324,7 +324,7 @@ class Grp10No120(base_tests.SimpleDataPlane):
         (pkt,match,cookie) = wildcard_all_except_ingress(self,of_ports)
 
         #Ensure switch reports back with only one flow entry , ensure the flow entry is not some stray flow entry
-        get_flowstats(self,match=ofp.OFPFW_ALL,cookie)
+        get_flowstats(self,cookie,match=ofp.OFPFW_ALL)
 
         #Shutdown the controller 
         self.controller.shutdown()
