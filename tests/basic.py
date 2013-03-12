@@ -41,9 +41,9 @@ class Echo(base_tests.SimpleProtocol):
         response, pkt = self.controller.transact(request)
         self.assertTrue(response is not None,
                         "Did not get echo reply")
-        self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,
+        self.assertEqual(response.type, ofp.OFPT_ECHO_REPLY,
                          'response is not echo_reply')
-        self.assertEqual(request.header.xid, response.header.xid,
+        self.assertEqual(request.xid, response.xid,
                          'response xid != request xid')
         self.assertEqual(len(response.data), 0, 'response data non-empty')
 
@@ -56,9 +56,9 @@ class EchoWithData(base_tests.SimpleProtocol):
         response, pkt = self.controller.transact(request)
         self.assertTrue(response is not None,
                         "Did not get echo reply (with data)")
-        self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,
+        self.assertEqual(response.type, ofp.OFPT_ECHO_REPLY,
                          'response is not echo_reply')
-        self.assertEqual(request.header.xid, response.header.xid,
+        self.assertEqual(request.xid, response.xid,
                          'response xid != request xid')
         self.assertEqual(request.data, response.data,
                          'response data does not match request')
@@ -84,7 +84,7 @@ class PacketIn(base_tests.SimpleDataPlane):
         for of_port in config["port_map"].keys():
             for pkt, pt in [
                (simple_tcp_packet(), "simple TCP packet"),
-               (simple_tcp_packet(dl_vlan_enable=True,dl_vlan=vid,pktlen=108), 
+               (simple_tcp_packet(dl_vlan_enable=True,vlan_vid=vid,pktlen=108), 
                 "simple tagged TCP packet"),
                (simple_eth_packet(), "simple Ethernet packet"),
                (simple_eth_packet(pktlen=40), "tiny Ethernet packet")]:
@@ -133,7 +133,7 @@ class PacketInBroadcastCheck(base_tests.SimpleDataPlane):
 
         of_ports = config["port_map"].keys()
         d_port = of_ports[0]
-        pkt = simple_eth_packet(dl_dst='ff:ff:ff:ff:ff:ff')
+        pkt = simple_eth_packet(eth_dst='ff:ff:ff:ff:ff:ff')
 
         logging.info("BCast Leak Test, send to port %s" % d_port)
         self.dataplane.send(d_port, str(pkt))
@@ -391,10 +391,12 @@ class BadMessage(base_tests.SimpleProtocol):
         request = illegal_message.illegal_message_type()
 
         reply, pkt = self.controller.transact(request)
+        logging.info(repr(pkt))
         self.assertTrue(reply is not None, "Did not get response to bad req")
-        self.assertTrue(reply.header.type == ofp.OFPT_ERROR,
+        self.assertTrue(reply.type == ofp.OFPT_ERROR,
                         "reply not an error message")
-        self.assertTrue(reply.type == ofp.OFPET_BAD_REQUEST,
+        logging.info(reply.err_type)
+        self.assertTrue(reply.err_type == ofp.OFPET_BAD_REQUEST,
                         "reply error type is not bad request")
         self.assertTrue(reply.code == ofp.OFPBRC_BAD_TYPE,
                         "reply error code is not bad type")
@@ -416,7 +418,7 @@ class TableModConfig(base_tests.SimpleProtocol):
             request = ofp.message.table_stats_request()
             response, _ = self.controller.transact(request)
             try:
-                table_stats = [x for x in response.stats if x.table_id == table_id][0]
+                table_stats = [x for x in response.entries if x.table_id == table_id][0]
             except IndexError:
                 raise AssertionError("table id %d not found" % table_id)
             return table_stats.config

@@ -2,107 +2,42 @@
 Support an illegal message
 """
 
-from cstruct import *
+import struct
+import ofp
 
-ILLEGAL_MESSAGE_TYPE=217
+class illegal_message_type(object):
+    version = ofp.OFP_VERSION
+    type = 217
 
-class illegal_message_type:
-    """
-    Wrapper class for illegal message
-
-    OpenFlow message header: length, version, xid, type
-    @arg length: The total length of the message
-    @arg version: The OpenFlow version (1)
-    @arg xid: The transaction ID
-    @arg type: The message type (OFPT_ECHO_REQUEST=2)
-
-    @arg data: Binary string following message members
-
-    The message type is set to "illegal" and the pack assert
-    check for the OF header is disabled
-    """
-
-    def __init__(self):
-        self.header = ofp_header()
-        self.header.type = ILLEGAL_MESSAGE_TYPE
-        self.data = ""
+    def __init__(self, xid=None):
+        self.xid = xid
 
     def pack(self):
-        """
-        Pack object into string
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
 
-        @return The packed string which can go on the wire
-
-        """
-        self.header.length = len(self)
-        packed = self.header.pack(assertstruct=False)
-
-        packed += self.data
-        return packed
-
-    def unpack(self, binary_string):
-        """
-        Unpack object from a binary string
-
-        @param binary_string The wire protocol byte string holding the object
-        represented as an array of bytes.
-        @return The remainder of binary_string that was not parsed.
-
-        """
-        binary_string = self.header.unpack(binary_string)
-
-        self.data = binary_string
-        binary_string = ''
-        return binary_string
-
-    def __len__(self):
-        """
-        Return the length of this object once packed into a string
-
-        @return An integer representing the number bytes in the packed
-        string.
-
-        """
-        length = OFP_HEADER_BYTES
-
-        length += len(self.data)
-        return length
-
-    def show(self, prefix=''):
-        """
-        Generate a string (with multiple lines) describing the contents
-        of the object in a readable manner
-
-        @param prefix Pre-pended at the beginning of each line.
-
-        """
-
-        outstr = prefix + 'illegal_message (' + \
-            str(ILLEGAL_MESSAGE_TYPE) + ')\n'
-        prefix += '  '
-        outstr += prefix + 'ofp header\n'
-        outstr += self.header.show(prefix + '  ')
-        outstr += prefix + 'data is of length ' + str(len(self.data)) + '\n'
-        return outstr
+    @staticmethod
+    def unpack(buf):
+        raise NotImplementedError()
 
     def __eq__(self, other):
-        """
-        Return True if self and other hold the same data
-
-        @param other Other object in comparison
-
-        """
         if type(self) != type(other): return False
-        if not self.header.__eq__(other.header): return False
-
-        if self.data != other.data: return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
         return True
 
     def __ne__(self, other):
-        """
-        Return True if self and other do not hold the same data
-
-        @param other Other object in comparison
-
-        """
         return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        return "illegal_message_type"

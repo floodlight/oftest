@@ -5,10 +5,8 @@ import copy
 import random
 
 import oftest.controller as controller
-import oftest.cstruct as ofp
-import oftest.message as message
+import ofp
 import oftest.dataplane as dataplane
-import oftest.action as action
 import oftest.parse as parse
 import logging
 import types
@@ -20,17 +18,16 @@ from time import sleep
 #################### Functions for various types of flow_mod  ##########################################################################################
 
 def match_send_flowadd(self, match, priority, port):
-    msg = message.flow_mod()
+    msg = ofp.message.flow_add()
     msg.out_port = ofp.OFPP_NONE
-    msg.command = ofp.OFPFC_ADD
     # msg.cookie = random.randint(0,9007199254740992)
     msg.buffer_id = 0xffffffff
     msg.match = match
     if priority != None :
         msg.priority = priority
-    act = action.action_output()
+    act = ofp.action.output()
     act.port = port 
-    msg.actions.add(act)
+    msg.actions.append(act)
     self.controller.message_send(msg)
     do_barrier(self.controller)
 
@@ -42,7 +39,7 @@ def exact_match(self,of_ports,priority=None):
     match = parse.packet_to_flow_match(pkt_exactflow)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
     match.in_port = of_ports[0]
-    #match.nw_src = 1
+    #match.ipv4_src = 1
     match.wildcards=0
     match_send_flowadd(self, match, priority, of_ports[1])
     return (pkt_exactflow,match)
@@ -55,7 +52,7 @@ def exact_match_with_prio(self,of_ports,priority=None):
     match = parse.packet_to_flow_match(pkt_exactflow)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
     match.in_port = of_ports[0]
-    #match.nw_src = 1
+    #match.ipv4_src = 1
     match.wildcards=0
     match_send_flowadd(self, match, priority, of_ports[2])
     return (pkt_exactflow,match)         
@@ -69,7 +66,7 @@ def match_all_except_source_address(self,of_ports,priority=None):
     match1 = parse.packet_to_flow_match(pkt_wildcardsrc)
     self.assertTrue(match1 is not None, "Could not generate flow match from pkt")
     match1.in_port = of_ports[0]
-    #match1.nw_src = 1
+    #match1.ipv4_src = 1
     match1.wildcards = ofp.OFPFW_DL_SRC
     match_send_flowadd(self, match1, priority, of_ports[1])
     return (pkt_wildcardsrc,match1)
@@ -78,7 +75,7 @@ def match_ethernet_src_address(self,of_ports,priority=None):
     #Generate Match_Ethernet_SrC_Address flow
 
     #Create a simple tcp packet and generate match on ethernet src address flow
-    pkt_MatchSrc = simple_eth_packet(dl_src='00:01:01:01:01:01')
+    pkt_MatchSrc = simple_eth_packet(eth_src='00:01:01:01:01:01')
     match = parse.packet_to_flow_match(pkt_MatchSrc)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
     match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_SRC
@@ -89,7 +86,7 @@ def match_ethernet_dst_address(self,of_ports,priority=None):
     #Generate Match_Ethernet_Dst_Address flow
 
     #Create a simple tcp packet and generate match on ethernet dst address flow
-    pkt_matchdst = simple_eth_packet(dl_dst='00:01:01:01:01:01')
+    pkt_matchdst = simple_eth_packet(eth_dst='00:01:01:01:01:01')
     match = parse.packet_to_flow_match(pkt_matchdst)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
@@ -138,7 +135,7 @@ def match_vlan_id(self,of_ports,priority=None):
     #Generate Match_Vlan_Id
 
     #Create a simple tcp packet and generate match on ethernet dst address flow
-    pkt_matchvlanid = simple_tcp_packet(dl_vlan_enable=True,dl_vlan=1)
+    pkt_matchvlanid = simple_tcp_packet(dl_vlan_enable=True,vlan_vid=1)
     match = parse.packet_to_flow_match(pkt_matchvlanid)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
@@ -150,7 +147,7 @@ def match_vlan_pcp(self,of_ports,priority=None):
     #Generate Match_Vlan_Priority
 
     #Create a simple tcp packet and generate match on ethernet dst address flow
-    pkt_matchvlanpcp = simple_tcp_packet(dl_vlan_enable=True,dl_vlan=1,dl_vlan_pcp=5)
+    pkt_matchvlanpcp = simple_tcp_packet(dl_vlan_enable=True,vlan_vid=1,vlan_pcp=5)
     match = parse.packet_to_flow_match(pkt_matchvlanpcp)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
@@ -163,7 +160,7 @@ def match_mul_l2(self,of_ports,priority=None):
     #Generate Match_Mul_L2 flow
 
     #Create a simple eth packet and generate match on ethernet protocol flow
-    pkt_mulL2 = simple_eth_packet(dl_type=0x88cc,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:01:01:02')
+    pkt_mulL2 = simple_eth_packet(eth_type=0x88cc,eth_src='00:01:01:01:01:01',eth_dst='00:01:01:01:01:02')
     match = parse.packet_to_flow_match(pkt_mulL2)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
@@ -310,7 +307,7 @@ def match_ethernet_type(self,of_ports,priority=None):
     #Generate a Match_Ethernet_Type flow
 
     #Create a simple tcp packet and generate match on ethernet type flow
-    pkt_matchtype = simple_eth_packet(dl_type=0x88cc)
+    pkt_matchtype = simple_eth_packet(eth_type=0x88cc)
     match = parse.packet_to_flow_match(pkt_matchtype)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
@@ -325,14 +322,13 @@ def strict_modify_flow_action(self,egress_port,match,priority=None):
 # Strict Modify the flow Action 
         
     #Create a flow_mod message , command MODIFY_STRICT
-    msg5 = message.flow_mod()
+    msg5 = ofp.message.flow_modify_strict()
     msg5.match = match
     msg5.cookie = random.randint(0,9007199254740992)
-    msg5.command = ofp.OFPFC_MODIFY_STRICT
     msg5.buffer_id = 0xffffffff
-    act5 = action.action_output()
+    act5 = ofp.action.output()
     act5.port = egress_port
-    msg5.actions.add(act5)
+    msg5.actions.append(act5)
 
     if priority != None :
         msg5.priority = priority
@@ -345,16 +341,15 @@ def modify_flow_action(self,of_ports,match,priority=None):
 # Modify the flow action
         
     #Create a flow_mod message , command MODIFY 
-    msg8 = message.flow_mod()
+    msg8 = ofp.message.flow_modify()
     msg8.match = match
     msg8.cookie = random.randint(0,9007199254740992)
-    msg8.command = ofp.OFPFC_MODIFY
     #out_port will be ignored for flow adds and flow modify (here for test-case Add_Modify_With_Outport)
     msg8.out_port = of_ports[3]
     msg8.buffer_id = 0xffffffff
-    act8 = action.action_output()
+    act8 = ofp.action.output()
     act8.port = of_ports[2]
-    msg8.actions.add(act8)
+    msg8.actions.append(act8)
 
     if priority != None :
         msg8.priority = priority
@@ -373,13 +368,13 @@ def enqueue(self,ingress_port,egress_port,egress_queue_id):
             "Could not generate flow match from pkt")
     
     match.in_port = ingress_port
-    request = message.flow_mod()
+    request = ofp.message.flow_add()
     request.match = match
     request.buffer_id = 0xffffffff
-    act = action.action_enqueue()
+    act = ofp.action.enqueue()
     act.port     = egress_port
     act.queue_id = egress_queue_id
-    request.actions.add(act)
+    request.actions.append(act)
     
     logging.info("Inserting flow")
     self.controller.message_send(request)
@@ -391,7 +386,7 @@ def enqueue(self,ingress_port,egress_port,egress_queue_id):
 def get_flowstats(self,match):
     # Generate flow_stats request
     
-    stat_req = message.flow_stats_request()
+    stat_req = ofp.message.flow_stats_request()
     stat_req.match = match
     stat_req.table_id = 0xff
     stat_req.out_port = ofp.OFPP_NONE
@@ -405,7 +400,7 @@ def get_flowstats(self,match):
 def get_portstats(self,port_num):
 
 # Return all the port counters in the form a tuple 
-    port_stats_req = message.port_stats_request()
+    port_stats_req = ofp.message.port_stats_request()
     port_stats_req.port_no = port_num  
     response,pkt = self.controller.transact(port_stats_req)
     self.assertTrue(response is not None,"No response received for port stats request") 
@@ -424,7 +419,7 @@ def get_portstats(self,port_num):
     tx_err=0
 
 
-    for obj in response.stats:
+    for obj in response.entries:
         rx_pkts += obj.rx_packets
         tx_pkts += obj.tx_packets
         rx_byts += obj.rx_bytes
@@ -443,7 +438,7 @@ def get_portstats(self,port_num):
 def get_queuestats(self,port_num,queue_id):
 #Generate Queue Stats request 
 
-    request = message.queue_stats_request()
+    request = ofp.message.queue_stats_request()
     request.port_no  = port_num
     request.queue_id = queue_id
     (queue_stats, p) = self.controller.transact(request)
@@ -454,7 +449,7 @@ def get_queuestats(self,port_num,queue_id):
 def get_tablestats(self):
 # Send Table_Stats request (retrieve current table counters )
 
-    stat_req = message.table_stats_request()
+    stat_req = ofp.message.table_stats_request()
     response, pkt = self.controller.transact(stat_req,
                                                      timeout=5)
     self.assertTrue(response is not None, 
@@ -463,7 +458,7 @@ def get_tablestats(self):
     current_matched = 0
     current_active = 0 
 
-    for obj in response.stats:
+    for obj in response.entries:
         current_lookedup += obj.lookup_count
         current_matched  += obj.matched_count
         current_active += obj.active_count
@@ -474,7 +469,7 @@ def get_tablestats(self):
 
 def verify_tablestats(self,expect_lookup=None,expect_match=None,expect_active=None):
 
-    stat_req = message.table_stats_request()
+    stat_req = ofp.message.table_stats_request()
     
     for i in range(0,100):
 
@@ -488,7 +483,7 @@ def verify_tablestats(self,expect_lookup=None,expect_match=None,expect_active=No
         matched = 0 
         active = 0
         
-        for item in response.stats:
+        for item in response.entries:
             lookedup += item.lookup_count
             matched += item.matched_count
             active += item.active_count
@@ -518,9 +513,8 @@ def strict_delete(self,match,priority=None):
 # Issue Strict Delete 
         
     #Create flow_mod message, command DELETE_STRICT
-    msg4 = message.flow_mod()
+    msg4 = ofp.message.flow_delete_strict()
     msg4.out_port = ofp.OFPP_NONE
-    msg4.command = ofp.OFPFC_DELETE_STRICT
     msg4.buffer_id = 0xffffffff
     msg4.match = match
 
@@ -535,9 +529,8 @@ def nonstrict_delete(self,match,priority=None):
 # Issue Non_Strict Delete 
         
     #Create flow_mod message, command DELETE
-    msg6 = message.flow_mod()
+    msg6 = ofp.message.flow_delete()
     msg6.out_port = ofp.OFPP_NONE
-    msg6.command = ofp.OFPFC_DELETE
     msg6.buffer_id = 0xffffffff
     msg6.match = match
 
@@ -574,7 +567,7 @@ def sw_supported_actions(parent,use_cache=False):
 
     cache_supported_actions = None
     if cache_supported_actions is None or not use_cache:
-        request = message.features_request()
+        request = ofp.message.features_request()
         (reply, pkt) = parent.controller.transact(request)
         parent.assertTrue(reply is not None, "Did not get response to ftr req")
         cache_supported_actions = reply.actions

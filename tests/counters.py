@@ -11,10 +11,8 @@ import random
 
 from oftest import config
 import oftest.controller as controller
-import oftest.cstruct as ofp
-import oftest.message as message
+import ofp
 import oftest.dataplane as dataplane
-import oftest.action as action
 import oftest.parse as parse
 import oftest.base_tests as base_tests
 import time
@@ -26,7 +24,7 @@ from FuncUtils import*
 
 def port_queues_get(self, queue_stats, port_num):
             result = []
-            for qs in queue_stats.stats:
+            for qs in queue_stats.entries:
                 if qs.port_no != port_num:
                     continue
                 result.append(qs.queue_id)
@@ -122,7 +120,7 @@ class DurationPerFlow(base_tests.SimpleDataPlane):
         (pkt,match) = wildcard_all_except_ingress(self,of_ports)
     
         #Create flow_stats request 
-        stat_req = message.flow_stats_request()
+        stat_req = ofp.message.flow_stats_request()
         stat_req.match= match
         stat_req.table_id = 0xff
         stat_req.out_port = ofp.OFPP_NONE
@@ -133,9 +131,9 @@ class DurationPerFlow(base_tests.SimpleDataPlane):
         response, pkt = self.controller.transact(stat_req)
         
         self.assertTrue(response is not None,"No response to stats request")
-        self.assertTrue(len(response.stats) == 1,"Did not receive flow stats reply")
+        self.assertTrue(len(response.entries) == 1,"Did not receive flow stats reply")
         
-        stat = response.stats[0]
+        stat = response.entries[0]
         logging.info("Duration of flow is %d s %d ns", stat.duration_sec, stat.duration_nsec) 
         self.assertTrue(stat.duration_sec == expected_duration, "Flow stats reply incorrect")
 

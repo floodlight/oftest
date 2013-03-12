@@ -9,10 +9,8 @@ import unittest
 
 from oftest import config
 import oftest.controller as controller
-import oftest.cstruct as ofp
-import oftest.message as message
+import ofp
 import oftest.dataplane as dataplane
-import oftest.action as action
 import oftest.parse as parse
 import oftest.base_tests as base_tests
 
@@ -37,8 +35,8 @@ def flow_caps_common(obj, is_exact=True):
     for port in of_ports:
         break;
     match.in_port = port
-    match.nw_src = 1
-    request = message.flow_mod()
+    match.ipv4_src = 1
+    request = ofp.message.flow_add()
     count_check = 101  # fixme:  better way to determine this.
     if is_exact:
         match.wildcards = 0
@@ -49,7 +47,7 @@ def flow_caps_common(obj, is_exact=True):
     request.buffer_id = 0xffffffff      # set to NONE
     logging.info(request.show())
 
-    tstats = message.table_stats_request()
+    tstats = ofp.message.table_stats_request()
     try:  # Determine the table index to check (or "all")
         table_idx = config["caps_table_idx"]
     except:
@@ -65,7 +63,7 @@ def flow_caps_common(obj, is_exact=True):
     logging.info("Check every " + str(count_check) + " inserts")
 
     while True:
-        request.match.nw_src += 1
+        request.match.ipv4_src += 1
         obj.controller.message_send(request)
         flow_count += 1
         if flow_count % count_check == 0:
@@ -75,10 +73,10 @@ def flow_caps_common(obj, is_exact=True):
             logging.info(response.show())
             if table_idx == -1:  # Accumulate for all tables
                 active_flows = 0
-                for stats in response.stats:
+                for stats in response.entries:
                     active_flows += stats.active_count
             else: # Table index to use specified in config
-                active_flows = response.stats[table_idx].active_count
+                active_flows = response.entries[table_idx].active_count
             if active_flows != flow_count:
                 break
 

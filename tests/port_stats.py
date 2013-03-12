@@ -11,10 +11,8 @@ import random
 
 from oftest import config
 import oftest.controller as controller
-import oftest.cstruct as ofp
-import oftest.message as message
+import ofp
 import oftest.dataplane as dataplane
-import oftest.action as action
 import oftest.parse as parse
 import oftest.base_tests as base_tests
 
@@ -62,16 +60,16 @@ def sendPacket(obj, pkt, ingress_port, egress_port, test_timeout):
                     'Response packet does not match send packet')
 
 def getStats(obj, port):
-    stat_req = message.port_stats_request()
+    stat_req = ofp.message.port_stats_request()
     stat_req.port_no = port
 
     logging.info("Sending stats request")
     response, pkt = obj.controller.transact(stat_req, timeout=2)
     obj.assertTrue(response is not None, 
                     "No response to stats request")
-    obj.assertTrue(len(response.stats) == 1,
+    obj.assertTrue(len(response.entries) == 1,
                     "Did not receive port stats reply")
-    for item in response.stats:
+    for item in response.entries:
         logging.info("Sent " + str(item.tx_packets) + " packets")
         packet_sent = item.tx_packets
         packet_recv = item.rx_packets
@@ -79,22 +77,22 @@ def getStats(obj, port):
     return packet_sent, packet_recv
 
 def getAllStats(obj):
-    stat_req = message.port_stats_request()
+    stat_req = ofp.message.port_stats_request()
     stat_req.port_no = ofp.OFPP_NONE
 
     logging.info("Sending all port stats request")
     response, pkt = obj.controller.transact(stat_req, timeout=2)
     obj.assertTrue(response is not None, 
                     "No response to stats request")
-    obj.assertTrue(len(response.stats) >= 3,
+    obj.assertTrue(len(response.entries) >= 3,
                     "Did not receive all port stats reply")
     stats = {}
-    for item in response.stats:
+    for item in response.entries:
         stats[ item.port_no ] = ( item.tx_packets, item.rx_packets )
     return stats
 
 def verifyStats(obj, port, test_timeout, packet_sent, packet_recv):
-    stat_req = message.port_stats_request()
+    stat_req = ofp.message.port_stats_request()
     stat_req.port_no = port
 
     all_packets_received = 0
@@ -106,9 +104,9 @@ def verifyStats(obj, port, test_timeout, packet_sent, packet_recv):
                                                 timeout=test_timeout)
         obj.assertTrue(response is not None, 
                        "No response to stats request")
-        obj.assertTrue(len(response.stats) == 1,
+        obj.assertTrue(len(response.entries) == 1,
                        "Did not receive port stats reply")
-        for item in response.stats:
+        for item in response.entries:
             sent = item.tx_packets
             recv = item.rx_packets
             logging.info("Sent " + str(item.tx_packets) + " packets")
@@ -157,7 +155,7 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = action.action_output()
+        act = ofp.action.output()
 
         # build flow
         ingress_port = of_ports[0];
@@ -165,14 +163,14 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
         logging.info("Ingress " + str(ingress_port) + 
                        " to egress " + str(egress_port))
         match.in_port = ingress_port
-        flow_mod_msg = message.flow_mod()
+        flow_mod_msg = ofp.message.flow_add()
         flow_mod_msg.match = match
         flow_mod_msg.cookie = random.randint(0,9007199254740992)
         flow_mod_msg.buffer_id = 0xffffffff
         flow_mod_msg.idle_timeout = 0
         flow_mod_msg.hard_timeout = 0
         act.port = egress_port
-        flow_mod_msg.actions.add(act)
+        flow_mod_msg.actions.append(act)
        
         # send flow
         logging.info("Inserting flow")
@@ -210,15 +208,15 @@ class MultiFlowStats(base_tests.SimpleDataPlane):
                         "Could not generate flow match from pkt")
         match.in_port = ingress_port
         
-        flow_mod_msg = message.flow_mod()
+        flow_mod_msg = ofp.message.flow_add()
         flow_mod_msg.match = match
         flow_mod_msg.cookie = random.randint(0,9007199254740992)
         flow_mod_msg.buffer_id = 0xffffffff
         flow_mod_msg.idle_timeout = 0
         flow_mod_msg.hard_timeout = 0
-        act = action.action_output()
+        act = ofp.action.output()
         act.port = egress_port
-        flow_mod_msg.actions.add(act)
+        flow_mod_msg.actions.append(act)
 
         logging.info("Ingress " + str(ingress_port) + 
                        " to egress " + str(egress_port))
@@ -241,7 +239,7 @@ class MultiFlowStats(base_tests.SimpleDataPlane):
         pkt1 = simple_tcp_packet()
         flow_mod_msg1 = self.buildFlowModMsg(pkt1, ingress_port, egress_port1)
        
-        pkt2 = simple_tcp_packet(dl_src='0:7:7:7:7:7')
+        pkt2 = simple_tcp_packet(eth_src='0:7:7:7:7:7')
         flow_mod_msg2 = self.buildFlowModMsg(pkt2, ingress_port, egress_port2)
        
         logging.info("Inserting flow1")
@@ -287,15 +285,15 @@ class AllPortStats(base_tests.SimpleDataPlane):
                         "Could not generate flow match from pkt")
         match.in_port = ingress_port
         
-        flow_mod_msg = message.flow_mod()
+        flow_mod_msg = ofp.message.flow_add()
         flow_mod_msg.match = match
         flow_mod_msg.cookie = random.randint(0,9007199254740992)
         flow_mod_msg.buffer_id = 0xffffffff
         flow_mod_msg.idle_timeout = 0
         flow_mod_msg.hard_timeout = 0
-        act = action.action_output()
+        act = ofp.action.output()
         act.port = egress_port
-        flow_mod_msg.actions.add(act)
+        flow_mod_msg.actions.append(act)
 
         logging.info("Ingress " + str(ingress_port) + 
                        " to egress " + str(egress_port))
@@ -317,7 +315,7 @@ class AllPortStats(base_tests.SimpleDataPlane):
         pkt1 = simple_tcp_packet()
         flow_mod_msg1 = self.buildFlowModMsg(pkt1, port0, port1)
        
-        pkt2 = simple_tcp_packet(dl_src='0:7:7:7:7:7')
+        pkt2 = simple_tcp_packet(eth_src='0:7:7:7:7:7')
         flow_mod_msg2 = self.buildFlowModMsg(pkt2, port0, port2)
        
         logging.info("Inserting flow1")

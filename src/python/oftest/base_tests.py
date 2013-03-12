@@ -44,7 +44,7 @@ class SimpleProtocol(unittest.TestCase):
             reply, pkt = self.controller.transact(request)
             self.assertTrue(reply is not None,
                             "Did not complete features_request for handshake")
-            if reply.header.version == 1:
+            if reply.version == 1:
                 self.supported_actions = reply.actions
                 logging.info("Supported actions: " + hex(self.supported_actions))
         except:

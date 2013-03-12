@@ -6,8 +6,7 @@ import logging
 
 from oftest import config
 import oftest.controller as controller
-import oftest.cstruct as ofp
-import oftest.message as message
+import ofp
 import oftest.base_tests as base_tests
 
 from oftest.testutils import *
@@ -23,23 +22,17 @@ class BSNShellCommand(base_tests.SimpleDataPlane):
         Use the BSN_SHELL_COMMAND vendor command to run the given command
         and receive the output
         """
-        m = message.vendor()
-        m.vendor = 0x005c16c7
-        m.data = struct.pack("!LL", 6, 0) + cmd
-        rc = self.controller.message_send(m)
-        self.assertNotEqual(rc, -1, "Error sending shell command")
+        m = ofp.message.bsn_shell_command(service=0, data=cmd)
+        self.controller.message_send(m)
         out = ""
         while True:
-            m, r = self.controller.poll(ofp.OFPT_VENDOR, 60)
-            self.assertEqual(m.vendor, 0x005c16c7, "Wrong vendor ID")
-            subtype = struct.unpack("!L", m.data[:4])[0]
-            if subtype == 7:
-               out += m.data[4:]
-            elif subtype == 8:
-               status = struct.unpack("!LL", m.data)[1]
-               return status, out
+            m, _ = self.controller.poll(ofp.OFPT_VENDOR, 60)
+            if isinstance(m, ofp.message.bsn_shell_output):
+                out += m.data
+            elif isinstance(m, ofp.message.bsn_shell_status):
+                return m.status, out
             else:
-               assert False, "Wrong subtype"
+                raise AssertionError("Unexpected message received")
 
     def runTest(self):
         status, out = self.bsn_shell_command("echo _one     space_")

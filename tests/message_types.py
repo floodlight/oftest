@@ -11,10 +11,8 @@ import random
 
 from oftest import config
 import oftest.controller as controller
-import oftest.cstruct as ofp
-import oftest.message as message
+import ofp
 import oftest.dataplane as dataplane
-import oftest.action as action
 import oftest.parse as parse
 import oftest.base_tests as base_tests
 import time
@@ -24,7 +22,7 @@ from time import sleep
 from FuncUtils import*
 
 
-
+@disabled
 class HelloWithBody(base_tests.SimpleDataPlane):
 
     """Verify switch should be able to receive OFPT_HELLO messages with body , 
@@ -36,7 +34,7 @@ class HelloWithBody(base_tests.SimpleDataPlane):
 
         #Send Hello message
         logging.info("Sending Hello...")
-        request = message.hello()
+        request = ofp.message.hello()
         request.data = 'OpenFlow Will Rule The World'
         self.controller.message_send(request)
 
@@ -47,7 +45,7 @@ class HelloWithBody(base_tests.SimpleDataPlane):
         self.assertTrue(response is not None, 
                                'Switch did not exchange hello message in return') 
         self.assertEqual(len(response.data), 0, 'Response data field non-empty')
-        self.assertTrue(response.header.version == 0x01, 'Openflow-version field is not 1.0.0')
+        self.assertTrue(response.version == 0x01, 'Openflow-version field is not 1.0.0')
 
 
 class EchoWithData(base_tests.SimpleProtocol):
@@ -61,7 +59,7 @@ class EchoWithData(base_tests.SimpleProtocol):
         
         #Send Echo Request 
         logging.info("Sending Echo With Data ...")
-        request = message.echo_request()
+        request = ofp.message.echo_request()
         request.data = 'OpenFlow Will Rule The World'
         self.controller.message_send(request)
 
@@ -71,9 +69,9 @@ class EchoWithData(base_tests.SimpleProtocol):
                                                timeout=1)
         self.assertTrue(response is not None,
                         "Did not get echo reply (with data)")
-        self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,
+        self.assertEqual(response.type, ofp.OFPT_ECHO_REPLY,
                          'Response is not echo_reply')
-        self.assertEqual(request.header.xid, response.header.xid,
+        self.assertEqual(request.xid, response.xid,
                          'Response xid does not match the request Xid')
         self.assertEqual(request.data, response.data,
                          'Response data does not match request data')
@@ -96,8 +94,8 @@ class ErrorMsg(base_tests.SimpleProtocol):
 
         #Send Echo Request
         logging.info("Sending a Echo request with a version which is not supported by the switch")
-        request=message.echo_request()
-        request.header.version=0  
+        request=ofp.message.echo_request()
+        request.version=0  
         self.controller.message_send(request)
 
         logging.info("Waiting for a OFPT_ERROR msg on the control plane...") 
@@ -105,7 +103,7 @@ class ErrorMsg(base_tests.SimpleProtocol):
                                                timeout=5)
         self.assertTrue(response is not None, 
                                'Switch did not reply with error message')
-        self.assertTrue(response.type==ofp.OFPET_BAD_REQUEST, 
+        self.assertTrue(response.err_type==ofp.OFPET_BAD_REQUEST, 
                                'Message field type is not OFPET_BAD_REQUEST') 
         self.assertTrue(response.code==ofp.OFPBRC_BAD_VERSION,
                         'Message field code is not OFPBRC_BAD_VERSION')
@@ -125,11 +123,11 @@ class FeaturesReplyBody(base_tests.SimpleProtocol):
 
         # Sending Features_Request
         logging.info("Sending Features_Request...")
-        request = message.features_request()
+        request = ofp.message.features_request()
         (reply, pkt) = self.controller.transact(request)
         self.assertTrue(reply is not None, "Failed to get any reply")
-        self.assertEqual(reply.header.type, ofp.OFPT_FEATURES_REPLY,'Response is not Features_reply')
-        self.assertEqual(reply.header.xid,request.header.xid,'Transaction id does not match')
+        self.assertEqual(reply.type, ofp.OFPT_FEATURES_REPLY,'Response is not Features_reply')
+        self.assertEqual(reply.xid,request.xid,'Transaction id does not match')
         
         supported_actions =[]
         if(reply.actions &1<<ofp.OFPAT_OUTPUT):
@@ -207,14 +205,14 @@ class GetConfigReply(base_tests.SimpleProtocol):
        
         #Send get_config_request
         logging.info("Sending Get Config Request...")
-        request = message.get_config_request()
+        request = ofp.message.get_config_request()
         (reply, pkt) = self.controller.transact(request)
 
         #Verify get_config_reply is recieved
         logging.info("Expecting GetConfigReply ")
         self.assertTrue(reply is not None, "Failed to get any reply")
-        self.assertEqual(reply.header.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
-        self.assertEqual(reply.header.xid,request.header.xid,'Transaction id does not match')
+        self.assertEqual(reply.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
+        self.assertEqual(reply.xid,request.xid,'Transaction id does not match')
 
         if reply.miss_send_len == 0 :
            logging.info ("the switch must send zero-size packet_in message")
@@ -243,10 +241,10 @@ class SetConfigRequest(base_tests.SimpleProtocol):
 
         #Send get_config_request -- retrive miss_send_len field
         logging.info("Sending Get Config Request ")
-        request = message.get_config_request()
+        request = ofp.message.get_config_request()
         (reply, pkt) = self.controller.transact(request)
         self.assertTrue(reply is not None, "Failed to get any reply")
-        self.assertEqual(reply.header.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
+        self.assertEqual(reply.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
 
         miss_send_len = 0
         miss_send_len = reply.miss_send_len
@@ -255,7 +253,7 @@ class SetConfigRequest(base_tests.SimpleProtocol):
 
         #Send set_config_request --- set a different miss_sen_len field and flag
         logging.info("Sending Set Config Request...")
-        req = message.set_config()
+        req = ofp.message.set_config()
         
         if miss_send_len < 65400 :# Max miss_send len is 65535
             req.miss_send_len = miss_send_len + 100
@@ -275,11 +273,11 @@ class SetConfigRequest(base_tests.SimpleProtocol):
 
         #Send get_config_request -- verify change came into effect
         logging.info("Sending Get Config Request...")
-        request = message.get_config_request()
+        request = ofp.message.get_config_request()
 
         (rep, pkt) = self.controller.transact(request)
         self.assertTrue(rep is not None, "Failed to get any reply")
-        self.assertEqual(rep.header.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
+        self.assertEqual(rep.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
         self.assertEqual(rep.miss_send_len,new_miss_send_len, "miss_send_len configuration parameter could not be set")
         self.assertEqual(rep.flags,new_flags, "frag flags could not be set")
       
@@ -304,7 +302,7 @@ class PacketInSizeMiss(base_tests.SimpleDataPlane):
         miss_send_len = [0 ,32 ,64,100]
         
         for bytes in miss_send_len :
-            req = message.set_config()
+            req = ofp.message.set_config()
             req.miss_send_len = bytes
             self.controller.message_send(req)
             sleep(1)
@@ -360,13 +358,13 @@ class PacketInSizeAction(base_tests.SimpleDataPlane):
         for bytes in max_len :
 
             #Insert a flow entry with action --output to controller
-            request = message.flow_mod()
+            request = ofp.message.flow_add()
             request.match = match
             request.buffer_id = 0xffffffff
-            act = action.action_output()
+            act = ofp.action.output()
             act.port = ofp.OFPP_CONTROLLER
             act.max_len = bytes 
-            request.actions.add(act)
+            request.actions.append(act)
             
             logging.info("Inserting flow....")
             self.controller.message_send(request)
@@ -407,7 +405,7 @@ class PacketInBodyMiss(base_tests.SimpleDataPlane):
 
         #Set miss_send_len field 
         logging.info("Sending  set_config_request to set miss_send_len... ")
-        req = message.set_config()
+        req = ofp.message.set_config()
         req.miss_send_len = 65535
         self.controller.message_send(req)
         sleep(1)
@@ -459,12 +457,12 @@ class PacketInBodyAction(base_tests.SimpleDataPlane):
         match.in_port = of_ports[0]
 
         #Insert a flow entry with action output to controller 
-        request = message.flow_mod()
+        request = ofp.message.flow_add()
         request.match = match
-        act = action.action_output()
+        act = ofp.action.output()
         act.port = ofp.OFPP_CONTROLLER
         act.max_len = 65535 # Send the complete packet and do not buffer
-        request.actions.add(act)
+        request.actions.append(act)
 
         logging.info("Inserting flow....")
         self.controller.message_send(request)
@@ -674,30 +672,16 @@ class DescStatsReplyBody(base_tests.SimpleDataPlane):
         logging.info("Running DescStatsGet test")
         
         logging.info("Sending stats request")
-        request = message.desc_stats_request()
+        request = ofp.message.desc_stats_request()
         response, pkt = self.controller.transact(request)
         self.assertTrue(response is not None,
                         "Did not get reply for desc stats")
-        
-        mfr_desc = ""
-        hw_desc = ""
-        sw_dec = ""
-        serial_num = ""
-        dp_decription = ""
 
-        for stats in response.stats:
-
-            mfr_desc += stats.mfr_desc
-            hw_desc += stats.hw_desc
-            sw_dec += stats.sw_desc
-            serial_num += stats.serial_num
-            dp_decription += stats.dp_desc
-
-        logging.info("Manufacture Description :" + mfr_desc)
-        logging.info("Hardware description : " + hw_desc)
-        logging.info("Software Description :" + sw_dec)
-        logging.info("Serial number :" + serial_num)
-        logging.info("Human readable description of datapath :" + dp_decription)
+        logging.info("Manufacture Description :" + response.mfr_desc)
+        logging.info("Hardware description : " + response.hw_desc)
+        logging.info("Software Description :" + response.sw_desc)
+        logging.info("Serial number :" + response.serial_num)
+        logging.info("Human readable description of datapath :" + response.dp_desc)
 
 
 
@@ -714,15 +698,15 @@ class QueueConfigReply(base_tests.SimpleProtocol):
         of_ports.sort()
         
         logging.info("Sending Queue Config Request ...")
-        request = message.queue_get_config_request()
+        request = ofp.message.queue_get_config_request()
         request.port = of_ports[0]
         response, pkt = self.controller.transact(request)
         self.assertTrue(response is not None,
                         "Did not get reply ")
-        self.assertTrue(response.header.type == ofp.OFPT_QUEUE_GET_CONFIG_REPLY, "Reply is not Queue Config Reply")
+        self.assertTrue(response.type == ofp.OFPT_QUEUE_GET_CONFIG_REPLY, "Reply is not Queue Config Reply")
 
         #Verify Reply Body
-        self.assertEqual(response.header.xid, request.header.xid , "Transaction Id in reply is not same as request")
+        self.assertEqual(response.xid, request.xid , "Transaction Id in reply is not same as request")
         self.assertEqual(response.port,request.port , "Port queried does not match ")
         queues = []
         queues = response.queues
