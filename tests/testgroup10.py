@@ -291,10 +291,16 @@ class Grp10No90(unittest.TestCase):
         logging.info("Running TestNo90 EchoTimeout ")
         # When the switch loses control channel , it would start retries for control channel connection by sending Hello messages
         # Hence , Polling for Hello Messages to verify control channel disconnection
-        (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
-                                               timeout=40)
+        (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ECHO_REQUEST,
+                                               timeout=15)
         self.assertTrue(response is not None, 
-                               'Switch did not Lose connection due to Echo timeouts') 
+                               'Switch is not generating Echo-Requests') 
+
+        (response1, pkt1) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
+                                               timeout=15)
+        self.assertTrue(response is not None, 
+                               'Switch did not drop connection due to Echo Timeout') 
+
 
 
 class Grp10No120(base_tests.SimpleDataPlane):
