@@ -278,11 +278,11 @@ class Grp10No90(unittest.TestCase):
             raise Exception("Controller startup failed (no switch addr)")
         logging.info("Connected " + str(self.controller.switch_addr))
     
-    #def tearDown(self):
-        #logging.info("** END TEST CASE " + str(self))
-        #self.controller.shutdown()
-        #if self.clean_shutdown:
-            #self.controller.join()    
+    def tearDown(self):
+        logging.info("** END TEST CASE " + str(self))
+        self.controller.shutdown()
+        if self.clean_shutdown:
+            self.controller.join()    
     
     @wireshark_capture    
     def runTest(self):
