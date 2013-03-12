@@ -299,6 +299,7 @@ class Grp10No90(unittest.TestCase):
 
         (response1, pkt1) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
                                                timeout=15)
+        print response1
         self.assertTrue(response is not None, 
                                'Switch did not drop connection due to Echo Timeout') 
 
