@@ -204,7 +204,7 @@ class Controller(Thread):
         offset = 0
         while offset < len(pkt):
             # Parse the header to get type
-            hdr = ofp.parse.of_header_parse(pkt[offset:])
+            hdr = ofp.message.parse_header(pkt[offset:])
             if not hdr or hdr.length == 0:
                 self.logger.error("Could not parse header")
                 self.logger.error("pkt len %d." % len(pkt))
@@ -233,7 +233,7 @@ class Controller(Thread):
                 self.disconnect()
                 return
 
-            msg = ofp.parse.of_message_parse(rawmsg)
+            msg = ofp.message.parse_message(rawmsg)
             if not msg:
                 self.parse_errors += 1
                 self.logger.warn("Could not parse message")

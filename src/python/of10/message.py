@@ -1,6 +1,7 @@
 
 # Python OpenFlow message wrapper classes
 
+import logging
 from cstruct import *
 from action_list import action_list
 from error import *
@@ -3476,4 +3477,139 @@ class flow_delete_strict(_flow_mod):
     def __init__(self, **kwargs):
         _flow_mod.__init__(self, **kwargs)
         self.command = OFPFC_DELETE_STRICT
+
+# These message types are subclassed
+msg_type_subclassed = [
+    OFPT_STATS_REQUEST,
+    OFPT_STATS_REPLY,
+    OFPT_ERROR
+]
+
+# Maps from sub-types to classes
+stats_reply_to_class_map = {
+    OFPST_DESC                      : desc_stats_reply,
+    OFPST_AGGREGATE                 : aggregate_stats_reply,
+    OFPST_FLOW                      : flow_stats_reply,
+    OFPST_TABLE                     : table_stats_reply,
+    OFPST_PORT                      : port_stats_reply,
+    OFPST_QUEUE                     : queue_stats_reply
+}
+
+stats_request_to_class_map = {
+    OFPST_DESC                      : desc_stats_request,
+    OFPST_AGGREGATE                 : aggregate_stats_request,
+    OFPST_FLOW                      : flow_stats_request,
+    OFPST_TABLE                     : table_stats_request,
+    OFPST_PORT                      : port_stats_request,
+    OFPST_QUEUE                     : queue_stats_request
+}
+
+error_to_class_map = {
+    OFPET_HELLO_FAILED              : hello_failed_error_msg,
+    OFPET_BAD_REQUEST               : bad_request_error_msg,
+    OFPET_BAD_ACTION                : bad_action_error_msg,
+    OFPET_FLOW_MOD_FAILED           : flow_mod_failed_error_msg,
+    OFPET_PORT_MOD_FAILED           : port_mod_failed_error_msg,
+    OFPET_QUEUE_OP_FAILED           : queue_op_failed_error_msg
+}
+
+# Map from header type value to the underlieing message class
+msg_type_to_class_map = {
+    OFPT_HELLO                      : hello,
+    OFPT_ERROR                      : error,
+    OFPT_ECHO_REQUEST               : echo_request,
+    OFPT_ECHO_REPLY                 : echo_reply,
+    OFPT_VENDOR                     : vendor,
+    OFPT_FEATURES_REQUEST           : features_request,
+    OFPT_FEATURES_REPLY             : features_reply,
+    OFPT_GET_CONFIG_REQUEST         : get_config_request,
+    OFPT_GET_CONFIG_REPLY           : get_config_reply,
+    OFPT_SET_CONFIG                 : set_config,
+    OFPT_PACKET_IN                  : packet_in,
+    OFPT_FLOW_REMOVED               : flow_removed,
+    OFPT_PORT_STATUS                : port_status,
+    OFPT_PACKET_OUT                 : packet_out,
+    OFPT_FLOW_MOD                   : flow_mod,
+    OFPT_PORT_MOD                   : port_mod,
+    OFPT_STATS_REQUEST              : stats_request,
+    OFPT_STATS_REPLY                : stats_reply,
+    OFPT_BARRIER_REQUEST            : barrier_request,
+    OFPT_BARRIER_REPLY              : barrier_reply,
+    OFPT_QUEUE_GET_CONFIG_REQUEST   : queue_get_config_request,
+    OFPT_QUEUE_GET_CONFIG_REPLY     : queue_get_config_reply
+}
+
+def _of_message_to_object(binary_string):
+    """
+    Map a binary string to the corresponding class.
+
+    Appropriately resolves subclasses
+    """
+    hdr = ofp_header()
+    hdr.unpack(binary_string)
+    logging.info(hdr.show())
+    # FIXME: Add error detection
+    if not hdr.type in msg_type_subclassed:
+        return msg_type_to_class_map[hdr.type]()
+    if hdr.type == OFPT_STATS_REQUEST:
+        sub_hdr = ofp_stats_request()
+        sub_hdr.unpack(binary_string)
+        try:
+            obj = stats_request_to_class_map[sub_hdr.stats_type]()
+        except KeyError:
+            obj = None
+        return obj
+    elif hdr.type == OFPT_STATS_REPLY:
+        sub_hdr = ofp_stats_reply()
+        sub_hdr.unpack(binary_string)
+        try:
+            obj = stats_reply_to_class_map[sub_hdr.stats_type]()
+        except KeyError:
+            obj = None
+        return obj
+    elif hdr.type == OFPT_ERROR:
+        sub_hdr = ofp_error_msg()
+        sub_hdr.unpack(binary_string)
+        return error_to_class_map[sub_hdr.err_type]()
+    else:
+        logging.error("Cannot parse pkt to message")
+        return None
+
+def parse_message(binary_string):
+    """
+    Parse an OpenFlow packet
+
+    Parses a raw OpenFlow packet into a Python class, with class
+    members fully populated.
+
+    @param binary_string The packet (string) to be parsed
+    @param raw If true, interpret the packet as an L2 packet.  Not
+    yet supported.
+    @return An object of some message class or None if fails
+    Note that any data beyond that parsed is not returned
+
+    """
+    obj = _of_message_to_object(binary_string)
+    if obj:
+        obj.unpack(binary_string)
+    return obj
+
+
+def parse_header(binary_string):
+    """
+    Parse only the header from an OpenFlow packet
+
+    Parses the header from a raw OpenFlow packet into a
+    an ofp_header Python class.
+
+    @param binary_string The packet (string) to be parsed
+    @param raw If true, interpret the packet as an L2 packet.  Not
+    yet supported.
+    @return An ofp_header object
+
+    """
+    hdr = ofp_header()
+    hdr.unpack(binary_string)
+    return hdr
+
 

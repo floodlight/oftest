@@ -19,7 +19,7 @@ import oftest.dataplane
 import of10
 import of10.message
 import of10.action
-import of10.parse
+import oftest.parse
 
 global skipped_test_count
 skipped_test_count = 0
@@ -544,7 +544,7 @@ def match_verify(parent, req_match, res_match):
                                " != " + str(res_match.tcp_dst))
 
 def packet_to_flow_match(parent, packet):
-    match = of10.parse.packet_to_flow_match(packet)
+    match = oftest.parse.packet_to_flow_match(packet)
     match.wildcards |= required_wildcards(parent)
     return match
 
@@ -559,7 +559,7 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None
     @param in_band if True, do not wildcard ingress port
     @param egr_ports None (drop), single port or list of ports
     """
-    match = of10.parse.packet_to_flow_match(pkt)
+    match = oftest.parse.packet_to_flow_match(pkt)
     parent.assertTrue(match is not None, "Flow match from pkt failed")
     if wildcards is None:
         wildcards = required_wildcards(parent)
@@ -817,10 +817,10 @@ def action_generate(parent, field_to_mod, mod_field_vals):
 
     if field_to_mod == 'eth_dst':
         act = of10.action.action_set_dl_dst()
-        act.dl_addr = of10.parse.parse_mac(mod_field_vals['eth_dst'])
+        act.dl_addr = oftest.parse.parse_mac(mod_field_vals['eth_dst'])
     elif field_to_mod == 'eth_src':
         act = of10.action.action_set_dl_src()
-        act.dl_addr = of10.parse.parse_mac(mod_field_vals['eth_src'])
+        act.dl_addr = oftest.parse.parse_mac(mod_field_vals['eth_src'])
     elif field_to_mod == 'dl_vlan_enable':
         if not mod_field_vals['dl_vlan_enable']: # Strip VLAN tag
             act = of10.action.action_strip_vlan()
@@ -834,10 +834,10 @@ def action_generate(parent, field_to_mod, mod_field_vals):
         act.vlan_pcp = mod_field_vals['vlan_pcp']
     elif field_to_mod == 'ip_src':
         act = of10.action.action_set_nw_src()
-        act.nw_addr = of10.parse.parse_ip(mod_field_vals['ip_src'])
+        act.nw_addr = oftest.parse.parse_ip(mod_field_vals['ip_src'])
     elif field_to_mod == 'ip_dst':
         act = of10.action.action_set_nw_dst()
-        act.nw_addr = of10.parse.parse_ip(mod_field_vals['ip_dst'])
+        act.nw_addr = oftest.parse.parse_ip(mod_field_vals['ip_dst'])
     elif field_to_mod == 'ip_tos':
         act = of10.action.action_set_nw_tos()
         act.nw_tos = mod_field_vals['ip_tos']
