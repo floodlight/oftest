@@ -3603,13 +3603,9 @@ def parse_header(binary_string):
     an ofp_header Python class.
 
     @param binary_string The packet (string) to be parsed
-    @param raw If true, interpret the packet as an L2 packet.  Not
-    yet supported.
-    @return An ofp_header object
+    @return Tuple of (verison, type, length, xid)
 
     """
-    hdr = ofp_header()
-    hdr.unpack(binary_string)
-    return hdr
+    return struct.unpack_from("!BBHL", binary_string)
 
 

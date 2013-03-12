@@ -167,6 +167,8 @@ class Controller(Thread):
         Currently filters packet in messages
         @return Boolean, True if packet should be dropped
         """
+        # XXX didn't actually check for packet-in...
+        return False
         # Add check for packet in and rate limit
         if self.filter_packet_in:
             # If we were dropping packets, report number dropped
@@ -203,33 +205,28 @@ class Controller(Thread):
         # Process each of the OF msgs inside the pkt
         offset = 0
         while offset < len(pkt):
+            if offset + 8 > len(pkt):
+                break
+
             # Parse the header to get type
-            hdr = ofp.message.parse_header(pkt[offset:])
-            if not hdr or hdr.length == 0:
-                self.logger.error("Could not parse header")
-                self.logger.error("pkt len %d." % len(pkt))
-                if hdr:
-                    self.logger.error("hdr len %d." % hdr.length)
-                self.logger.error("%s" % hex_dump_buffer(pkt[:200]))
-                self.shutdown()
-                return
+            hdr_version, hdr_type, hdr_length, hdr_xid = ofp.message.parse_header(pkt[offset:])
 
             # Extract the raw message bytes
-            if (offset + hdr.length) > len(pkt):
+            if (offset + hdr_length) > len(pkt):
                 break
-            rawmsg = pkt[offset : offset + hdr.length]
-            offset += hdr.length
+            rawmsg = pkt[offset : offset + hdr_length]
+            offset += hdr_length
 
-            if self.filter_packet(rawmsg, hdr):
-                continue
+            #if self.filter_packet(rawmsg, hdr):
+            #    continue
 
-            self.logger.debug("Msg in: buf len %d. hdr.type %s. hdr.len %d hdr.version %d hdr.xid %d" %
-                              (len(pkt), ofp.ofp_type_map[hdr.type], hdr.length, hdr.version, hdr.xid))
-            if hdr.version < ofp.OFP_VERSION:
+            self.logger.debug("Msg in: buf len %d. hdr_type %s. hdr_len %d hdr_version %d hdr_xid %d" %
+                              (len(pkt), ofp.ofp_type_map[hdr_type], hdr_length, hdr_version, hdr_xid))
+            if hdr_version < ofp.OFP_VERSION:
                 self.logger.error("Switch only supports up to OpenFlow version %d (OFTest version is %d)",
-                                  hdr.version, ofp.OFP_VERSION)
+                                  hdr_version, ofp.OFP_VERSION)
                 print "Switch only supports up to OpenFlow version %d (OFTest version is %d)" % \
-                    (hdr.version, ofp.OFP_VERSION)
+                    (hdr_version, ofp.OFP_VERSION)
                 self.disconnect()
                 return
 
@@ -242,8 +239,8 @@ class Controller(Thread):
             with self.sync:
                 # Check if transaction is waiting
                 with self.xid_cv:
-                    if self.xid and hdr.xid == self.xid:
-                        self.logger.debug("Matched expected XID " + str(hdr.xid))
+                    if self.xid and hdr_xid == self.xid:
+                        self.logger.debug("Matched expected XID " + str(hdr_xid))
                         self.xid_response = (msg, rawmsg)
                         self.xid = None
                         self.xid_cv.notify()
@@ -251,16 +248,16 @@ class Controller(Thread):
 
                 # Check if keep alive is set; if so, respond to echo requests
                 if self.keep_alive:
-                    if hdr.type == ofp.OFPT_ECHO_REQUEST:
+                    if hdr_type == ofp.OFPT_ECHO_REQUEST:
                         self.logger.debug("Responding to echo request")
                         rep = ofp.message.echo_reply()
-                        rep.xid = hdr.xid
+                        rep.xid = hdr_xid
                         # Ignoring additional data
                         self.message_send(rep.pack())
                         continue
 
                 # Log error messages
-                if hdr.type == ofp.OFPT_ERROR:
+                if hdr_type == ofp.OFPT_ERROR:
                     if msg.err_type in ofp.ofp_error_type_map:
                         type_str = ofp.ofp_error_type_map[msg.err_type]
                         if msg.err_type == ofp.OFPET_HELLO_FAILED:
@@ -285,18 +282,18 @@ class Controller(Thread):
                     else:
                         type_str = "unknown"
                     self.logger.warn("Received error message: xid=%d type=%s (%d) code=%s (%d)",
-                                     hdr.xid, type_str, msg.err_type, code_str, msg.code)
+                                     hdr_xid, type_str, msg.err_type, code_str, msg.code)
 
                 # Now check for message handlers; preference is given to
                 # handlers for a specific packet
                 handled = False
-                if hdr.type in self.handlers.keys():
-                    handled = self.handlers[hdr.type](self, msg, rawmsg)
+                if hdr_type in self.handlers.keys():
+                    handled = self.handlers[hdr_type](self, msg, rawmsg)
                 if not handled and ("all" in self.handlers.keys()):
                     handled = self.handlers["all"](self, msg, rawmsg)
 
                 if not handled: # Not handled, enqueue
-                    self.logger.debug("Enqueuing pkt type " + ofp.ofp_type_map[hdr.type])
+                    self.logger.debug("Enqueuing pkt type " + ofp.ofp_type_map[hdr_type])
                     with self.packets_cv:
                         if len(self.packets) >= self.max_pkts:
                             self.packets.pop(0)
