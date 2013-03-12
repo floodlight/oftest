@@ -304,7 +304,7 @@ def actions_bmap_to_str(bm):
     result = "{"
     sep    = ""
     for a in all_actions_list:
-        if ((1 << a) & bm) != 0:
+        if ((1 << a) & bm) != 0 and a in ofp.ofp_action_type_map:
             result = result + sep + ofp.ofp_action_type_map[a]
             sep = ", "
     result = result + "}"
@@ -473,7 +473,7 @@ class Flow_Cfg:
         result = result + (", idle_timeout=%d" % self.idle_timeout)
         result = result + (", hard_timeout=%d" % self.hard_timeout)
         for a in self.actions:
-            result = result + (", action=%s" % ofp.ofp_action_type_map[a.type])
+            result = result + (", action=%s" % ofp.ofp_action_type_map.get(a.type, "unknown"))
             if a.type == ofp.OFPAT_OUTPUT:
                 result = result + ("(%d)" % (a.port))
             elif a.type == ofp.OFPAT_SET_VLAN_VID:

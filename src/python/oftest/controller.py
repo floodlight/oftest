@@ -220,8 +220,10 @@ class Controller(Thread):
             #if self.filter_packet(rawmsg, hdr):
             #    continue
 
-            self.logger.debug("Msg in: buf len %d. hdr_type %s. hdr_len %d hdr_version %d hdr_xid %d" %
-                              (len(pkt), ofp.ofp_type_map[hdr_type], hdr_length, hdr_version, hdr_xid))
+            self.logger.debug("Msg in: version %d type %s (%d) len %d xid %d",
+                              hdr_version,
+                              ofp.ofp_type_map.get(hdr_type, "unknown"), hdr_type,
+                              hdr_length, hdr_version)
             if hdr_version < ofp.OFP_VERSION:
                 self.logger.error("Switch only supports up to OpenFlow version %d (OFTest version is %d)",
                                   hdr_version, ofp.OFP_VERSION)
@@ -281,6 +283,7 @@ class Controller(Thread):
                             code_str = "unknown"
                     else:
                         type_str = "unknown"
+                        code_str = "unknown"
                     self.logger.warn("Received error message: xid=%d type=%s (%d) code=%s (%d)",
                                      hdr_xid, type_str, msg.err_type, code_str, msg.code)
 
@@ -293,7 +296,9 @@ class Controller(Thread):
                     handled = self.handlers["all"](self, msg, rawmsg)
 
                 if not handled: # Not handled, enqueue
-                    self.logger.debug("Enqueuing pkt type " + ofp.ofp_type_map[hdr_type])
+                    self.logger.debug("Enqueuing pkt type %s (%d)",
+                                      ofp.ofp_type_map.get(hdr_type, "unknown"),
+                                      hdr_type)
                     with self.packets_cv:
                         if len(self.packets) >= self.max_pkts:
                             self.packets.pop(0)
@@ -573,8 +578,10 @@ class Controller(Thread):
         If an error occurs, (None, None) is returned
         """
 
+        exp_msg_str = ofp.ofp_type_map.get(exp_msg, "unknown (%d)" % exp_msg)
+
         if exp_msg is not None:
-            self.logger.debug("Poll for %s" % ofp.ofp_type_map[exp_msg])
+            self.logger.debug("Poll for %s", exp_msg_str)
         else:
             self.logger.debug("Poll for any OF message")
 
@@ -586,10 +593,10 @@ class Controller(Thread):
                     (msg, pkt) = self.packets.pop(0)
                     return (msg, pkt)
                 else:
-                    self.logger.debug("Looking for %s" % ofp.ofp_type_map[exp_msg])
+                    self.logger.debug("Looking for %s", exp_msg_str)
                     for i in range(len(self.packets)):
                         msg = self.packets[i][0]
-                        self.logger.debug("Checking packets[%d] (%s)" % (i, ofp.ofp_type_map[msg.type]))
+                        self.logger.debug("Checking packets[%d] (%s)", i, exp_msg_str)
                         if msg.type == exp_msg:
                             (msg, pkt) = self.packets.pop(i)
                             return (msg, pkt)
