@@ -11,67 +11,6 @@ import oftest.base_tests as base_tests
 
 from oftest.testutils import *
 
-class bsn_action_mirror(ofp.action.vendor):
-    def __init__(self):
-        self.type = ofp.OFPAT_VENDOR
-        self.len = 24
-        self.vendor = 0x005c16c7
-        self.subtype = 1
-        self.dest_port = 0
-        self.vlan_tag = 0
-        self.copy_stage = 0
-
-    def __assert(self):
-        return (True, None)
-
-    def pack(self, assertstruct=True):
-        return struct.pack("!HHLLLLBBBB", self.type, self.len, self.vendor,
-                           self.subtype, self.dest_port, self.vlan_tag,
-                           self.copy_stage, 0, 0, 0)
-
-    def unpack(self, binaryString):
-        if len(binaryString) < self.len:
-            raise Exception("too short")
-        x = struct.unpack("!HHLLLLBBBB", binaryString[:self.len])
-        if x[0] != self.type:
-            raise Exception("wrong type")
-        if x[1] != self.len:
-            raise Exception("wrong length")
-        if x[2] != self.vendor:
-            raise Exception("wrong vendor")
-        if x[3] != self.subtype:
-            raise Exception("wrong subtype")
-        self.dest_port = x[4]
-        self.vlan_tag = x[5]
-        self.copy_stage = x[6]
-        return binaryString[self.len:]
-
-    def __len__(self):
-        return self.len
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.type != other.type: return False
-        if self.len != other.len: return False
-        if self.vendor != other.vendor: return False
-        if self.subtype != other.subtype: return False
-        if self.dest_port != other.dest_port: return False
-        if self.vlan_tag != other.vlan_tag: return False
-        if self.copy_stage != other.copy_stage: return False
-        return True
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def show(self, prefix=""):
-        outstr = prefix + "action_vendor\n"
-        for f in ["type", "len", "vendor", "subtype", "dest_port", "vlan_tag",
-                  "copy_stage"]:
-            outstr += prefix + ("%s: %s\n" % (f, getattr(self, f)))
-        return outstr
-
-action_list.action_object_map[ofp.OFPAT_VENDOR] = bsn_action_mirror
-
 @nonstandard
 class BSNMirrorAction(base_tests.SimpleDataPlane):
     """
@@ -133,10 +72,10 @@ class BSNMirrorAction(base_tests.SimpleDataPlane):
         self.assertTrue(p[mirror_ports[1]].config & (1 << 31),
                         "Mirror port config flag not set in features reply")
 
-        act1 = bsn_action_mirror()
+        act1 = ofp.action.bsn_mirror()
         act1.dest_port = mirror_ports[0]
         act1.copy_stage = 0
-        act2 = bsn_action_mirror()
+        act2 = ofp.action.bsn_mirror()
         act2.dest_port = mirror_ports[1]
         act2.copy_stage = 0
         act3 = ofp.action.output()
