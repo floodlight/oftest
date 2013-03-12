@@ -209,7 +209,7 @@ class FlowModLoad(base_tests.SimpleProtocol):
 
         requests = []
         for i in range(num_flows):
-            match = ofp.ofp_match()
+            match = ofp.match()
             match.wildcards = ofp.OFPFW_ALL & ~ofp.OFPFW_DL_VLAN & ~ofp.OFPFW_DL_DST
             match.vlan_vid = ofp.OFP_VLAN_NONE
             match.eth_dst = [0, 1, 2, 3, i / 256, i % 256]

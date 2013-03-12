@@ -13,3 +13,5 @@ from cstruct import *
 # Allow accessing submodules without additional imports
 import action
 import message
+
+match = ofp_match

@@ -2014,7 +2014,7 @@ class DirectBadPacketBase(base_tests.SimpleDataPlane):
         # - action
 
     def createMatch(self, **kwargs):
-        match = ofp.ofp_match()
+        match = ofp.match()
         match.wildcards = ofp.OFPFW_ALL
         fields = {
             'eth_dst': ofp.OFPFW_DL_DST,

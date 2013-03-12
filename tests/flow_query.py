@@ -336,7 +336,7 @@ class Flow_Cfg:
 
     def __init__(self):
         self.priority        = 0
-        self.match           = ofp.ofp_match()
+        self.match           = ofp.match()
         self.match.wildcards = ofp.OFPFW_ALL
         self.idle_timeout    = 0
         self.hard_timeout    = 0
@@ -1319,7 +1319,7 @@ class Switch:
 
     def flow_stats_get(self, limit = 10000):
         request = ofp.message.flow_stats_request()
-        query_match           = ofp.ofp_match()
+        query_match           = ofp.match()
         query_match.wildcards = ofp.OFPFW_ALL
         request.match    = query_match
         request.table_id = 0xff

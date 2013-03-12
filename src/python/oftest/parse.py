@@ -126,7 +126,7 @@ def packet_to_flow_match(packet, pkt_format="L2"):
         logging.error("packet_to_flow_match: Classify error")
         return None
 
-    match = ofp.ofp_match()
+    match = ofp.match()
     match.wildcards = ofp.OFPFW_ALL
     #@todo Check if packet is other than L2 format
     match.eth_dst = parse_mac(ether.dst)

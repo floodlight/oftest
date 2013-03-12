@@ -411,7 +411,7 @@ class EmptyFlowStats(base_tests.SimpleDataPlane):
     """
     def runTest(self):
         delete_all_flows(self.controller)
-        match = ofp.ofp_match()
+        match = ofp.match()
         match.wildcards = 0
         stat_req = ofp.message.flow_stats_request()
         stat_req.match = match
@@ -431,7 +431,7 @@ class EmptyAggregateStats(base_tests.SimpleDataPlane):
     """
     def runTest(self):
         delete_all_flows(self.controller)
-        match = ofp.ofp_match()
+        match = ofp.match()
         match.wildcards = 0
         stat_req = ofp.message.aggregate_stats_request()
         stat_req.match = match

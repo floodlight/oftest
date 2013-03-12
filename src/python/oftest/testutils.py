@@ -1002,7 +1002,7 @@ def all_stats_get(parent):
     lookups, matched
     """
     stat_req = of10.message.aggregate_stats_request()
-    stat_req.match = of10.ofp_match()
+    stat_req.match = of10.match()
     stat_req.match.wildcards = of10.OFPFW_ALL
     stat_req.table_id = 0xff
     stat_req.out_port = of10.OFPP_NONE
