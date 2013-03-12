@@ -145,6 +145,7 @@ class Grp10No60(base_tests.SimpleDataPlane):
         of_version = test_param_get('version',default = 0x01)
         
         # Waiting for switch to send Hello . Initial Hello from our side is set to False.
+        # TBD: What if switch does not send Hello for the first time ?
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,         
                                                timeout=5)
         self.assertTrue(response is not None, 
@@ -178,7 +179,7 @@ class Grp10No70(base_tests.SimpleProtocol):
             raise Exception("Controller startup failed")
         if self.controller.switch_addr is None: 
             raise Exception("Controller startup failed (no switch addr)")
-        #logging.info("Connected " + str(self.controller.switch_addr))
+        logging.info("Connected " + str(self.controller.switch_addr))
         
     @wireshark_capture 
     def runTest(self):
@@ -196,7 +197,6 @@ class Grp10No70(base_tests.SimpleProtocol):
         logging.info("Verify switch does not generate an error")
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,         
                                                timeout=5)
-                
         self.assertTrue(response is None, 
                                'Switch did not negotiate on the version')  
 
@@ -270,31 +270,29 @@ class Grp10No90(unittest.TestCase):
         #@todo Add an option to wait for a pkt transaction to ensure version
         # compatibilty?
         self.controller.connect(timeout=20)
-
         # By default, respond to echo requests
         self.controller.keep_alive = False
         if not self.controller.active:
             raise Exception("Controller startup failed")
         if self.controller.switch_addr is None: 
             raise Exception("Controller startup failed (no switch addr)")
-        #logging.info("Connected " + str(self.controller.switch_addr))
+        logging.info("Connected " + str(self.controller.switch_addr))
     
-    def tearDown(self):
+    #def tearDown(self):
         #logging.info("** END TEST CASE " + str(self))
-        self.controller.shutdown()
-        if self.clean_shutdown:
-            self.controller.join()    
+        #self.controller.shutdown()
+        #if self.clean_shutdown:
+            #self.controller.join()    
     
     @wireshark_capture    
     def runTest(self):
         logging = get_logger()
 
         logging.info("Running TestNo90 EchoTimeout ")
-        sleep(10)
-        # When the switch loses control channel , it starts retries for control channel connection by sending Hello messages
-        # Polling for Hello Messages 
+        # When the switch loses control channel , it would start retries for control channel connection by sending Hello messages
+        # Hence , Polling for Hello Messages to verify control channel disconnection
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
-                                               timeout=30)
+                                               timeout=40)
         self.assertTrue(response is not None, 
                                'Switch did not Lose connection due to Echo timeouts') 
 
