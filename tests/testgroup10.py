@@ -116,10 +116,10 @@ class Grp10No60(base_tests.SimpleDataPlane):
     
     @of_version can be passed from command line , default is 0x01
     """
-    @wireshark_capture
+    
 
     def setUp(self):
-        logging = get_logger()
+        
         #This is almost same as setUp in SimpleProtocol except that intial hello is set to false
         self.controller = controller.Controller(
             host=config["controller_host"],
@@ -138,7 +138,9 @@ class Grp10No60(base_tests.SimpleDataPlane):
             raise Exception("Controller startup failed (no switch addr)")
         logging.info("Connected " + str(self.controller.switch_addr))
 
+    @wireshark_capture
     def runTest(self):
+        logging = get_logger()
         logging.info("Running Test Grp10No60 Version Announcement test")
         of_version = test_param_get('version',default = 0x01)
         request = message.hello()  
