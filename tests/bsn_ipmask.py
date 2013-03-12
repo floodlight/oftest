@@ -47,9 +47,7 @@ class BSNConfigIPMask(base_tests.SimpleDataPlane):
         given wildcard index
         """
         logging.info("Setting index %d to mask is %s" % (index, mask))
-        m = ofp.message.vendor()
-        m.vendor = 0x005c16c7
-        m.data = struct.pack("!LBBBBL", 0, index, 0, 0, 0, mask)
+        m = ofp.message.bsn_set_ip_mask(index=index, mask=mask)
         self.controller.message_send(m)
 
     def bsn_get_ip_mask(self, index):
@@ -57,16 +55,11 @@ class BSNConfigIPMask(base_tests.SimpleDataPlane):
         Use the BSN_GET_IP_MASK_REQUEST vendor command to get the current IP mask
         for the given wildcard index
         """
-        m = ofp.message.vendor()
-        m.vendor = 0x005c16c7
-        m.data = struct.pack( "!LBBBBL", 1, index, 0, 0, 0, 0 )
-        self.controller.message_send(m)
-        m, r = self.controller.poll(ofp.OFPT_VENDOR)
-        self.assertEqual(m.vendor, 0x005c16c7, "Wrong vendor ID")
-        x = struct.unpack("!LBBBBL", m.data)
-        self.assertEqual(x[0], 2, "Wrong subtype")
-        self.assertEqual(x[1], index, "Wrong index")
-        return x[5]
+        request = ofp.message.bsn_get_ip_mask_request(index=index)
+        reply, _ = self.controller.transact(request)
+        self.assertTrue(isinstance(reply, ofp.message.bsn_get_ip_mask_reply), "Wrong reply type")
+        self.assertEqual(reply.index, index, "Wrong index")
+        return reply.mask
 
     def runTest(self):
         self.assertFalse(required_wildcards(self) & ofp.OFPFW_NW_DST_ALL,

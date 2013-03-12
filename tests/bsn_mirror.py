@@ -23,9 +23,7 @@ class BSNMirrorAction(base_tests.SimpleDataPlane):
         Use the BSN_SET_MIRRORING vendor command to enable/disable
         mirror action support
         """
-        m = ofp.message.vendor()
-        m.vendor = 0x005c16c7
-        m.data = struct.pack("!LBBBB", 3, enabled, 0, 0, 0)
+        m = ofp.message.bsn_set_mirroring(report_mirror_ports=enabled)
         self.controller.message_send(m)
 
     def bsn_get_mirroring(self):
@@ -33,15 +31,10 @@ class BSNMirrorAction(base_tests.SimpleDataPlane):
         Use the BSN_GET_MIRRORING_REQUEST vendor command to get the
         enabled/disabled state of mirror action support
         """
-        m = ofp.message.vendor()
-        m.vendor = 0x005c16c7
-        m.data = struct.pack("!LBBBB", 4, 0, 0, 0, 0)
-        self.controller.message_send(m)
-        m, r = self.controller.poll(ofp.OFPT_VENDOR, 2)
-        self.assertEqual(m.vendor, 0x005c16c7, "Wrong vendor ID")
-        x = struct.unpack("!LBBBB", m.data)
-        self.assertEqual(x[0], 5, "Wrong subtype")
-        return x[1]
+        request = ofp.message.bsn_get_mirroring_request()
+        reply, _ = self.controller.transact(request)
+        self.assertTrue(isinstance(reply, ofp.message.bsn_get_mirroring_reply), "Unexpected reply type")
+        return reply.report_mirror_ports
 
     def runTest(self):
         mirror_ports = test_param_get("mirror_ports")
