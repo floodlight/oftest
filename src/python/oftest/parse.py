@@ -4,7 +4,7 @@ Utility parsing functions
 
 import sys
 import logging
-import of10 as ofp
+import ofp
 try:
     import scapy.all as scapy
 except:

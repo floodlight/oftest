@@ -2,7 +2,7 @@ import logging
 import struct
 
 from oftest import config
-import of10 as ofp
+import ofp
 import oftest.base_tests as base_tests
 
 from oftest.testutils import *

@@ -3,10 +3,10 @@ Support an illegal message
 """
 
 import struct
-import of10
+import ofp
 
 class illegal_message_type(object):
-    version = of10.OFP_VERSION
+    version = ofp.OFP_VERSION
     type = 217
 
     def __init__(self, xid=None):

@@ -16,10 +16,8 @@ except:
 import oftest
 import oftest.controller
 import oftest.dataplane
-import of10
-import of10.message
-import of10.action
 import oftest.parse
+import ofp
 
 global skipped_test_count
 skipped_test_count = 0
@@ -40,9 +38,9 @@ def delete_all_flows(ctrl):
     """
 
     logging.info("Deleting all flows")
-    msg = of10.message.flow_delete()
-    msg.match.wildcards = of10.OFPFW_ALL
-    msg.out_port = of10.OFPP_NONE
+    msg = ofp.message.flow_delete()
+    msg.match.wildcards = ofp.OFPFW_ALL
+    msg.out_port = ofp.OFPP_NONE
     msg.buffer_id = 0xffffffff
     ctrl.message_send(msg)
     return 0 # for backwards compatibility
@@ -50,8 +48,8 @@ def delete_all_flows(ctrl):
 def required_wildcards(parent):
     w = test_param_get('required_wildcards', default='default')
     if w == 'l3-l4':
-        return (of10.OFPFW_NW_SRC_ALL | of10.OFPFW_NW_DST_ALL | of10.OFPFW_NW_TOS
-                | of10.OFPFW_NW_PROTO | of10.OFPFW_TP_SRC | of10.OFPFW_TP_DST)
+        return (ofp.OFPFW_NW_SRC_ALL | ofp.OFPFW_NW_DST_ALL | ofp.OFPFW_NW_TOS
+                | ofp.OFPFW_NW_PROTO | ofp.OFPFW_TP_SRC | ofp.OFPFW_TP_DST)
     else:
         return 0
 
@@ -340,7 +338,7 @@ def do_barrier(ctrl, timeout=-1):
     Do a barrier command
     Return 0 on success, -1 on error
     """
-    b = of10.message.barrier_request()
+    b = ofp.message.barrier_request()
     (resp, pkt) = ctrl.transact(b, timeout=timeout)
     if resp is None:
         raise AssertionError("barrier failed")
@@ -357,7 +355,7 @@ def port_config_get(controller, port_no):
     @returns (hwaddr, config, advert) The hwaddress, configuration and
     advertised values
     """
-    request = of10.message.features_request()
+    request = ofp.message.features_request()
     reply, pkt = controller.transact(request)
     logging.debug(reply.show())
     if reply is None:
@@ -379,7 +377,7 @@ def port_config_set(controller, port_no, config, mask):
     configuration value according to config and mask
     """
     logging.info("Setting port " + str(port_no) + " to config " + str(config))
-    request = of10.message.features_request()
+    request = ofp.message.features_request()
     reply, pkt = controller.transact(request)
     if reply is None:
         return -1
@@ -389,7 +387,7 @@ def port_config_set(controller, port_no, config, mask):
         if reply.ports[idx].port_no == port_no:
             p = reply.ports[idx]
             break
-    mod = of10.message.port_mod()
+    mod = ofp.message.port_mod()
     mod.port_no = port_no
     if p:
         mod.hw_addr = p.hw_addr
@@ -460,7 +458,7 @@ def receive_pkt_verify(parent, egr_ports, exp_pkt, ing_port):
     # Expect a packet from each port on egr port list
     for egr_port in egr_port_list:
         check_port = egr_port
-        if egr_port == of10.OFPP_IN_PORT:
+        if egr_port == ofp.OFPP_IN_PORT:
             check_port = ing_port
         (rcv_port, rcv_pkt, pkt_time) = parent.dataplane.poll(
             port_number=check_port, exp_pkt=exp_pkt_arg)
@@ -516,7 +514,7 @@ def match_verify(parent, req_match, res_match):
                        'Match failed: eth_type: ' + str(req_match.eth_type) +
                        " != " + str(res_match.eth_type))
 
-    if (not(req_match.wildcards & of10.OFPFW_DL_TYPE)
+    if (not(req_match.wildcards & ofp.OFPFW_DL_TYPE)
         and (req_match.eth_type == IP_ETHERTYPE)):
         parent.assertEqual(req_match.ip_dscp, res_match.ip_dscp,
                            'Match failed: ip_dscp: ' + str(req_match.ip_dscp) +
@@ -531,7 +529,7 @@ def match_verify(parent, req_match, res_match):
                            'Match failed: ipv4_dst: ' + str(req_match.ipv4_dst) +
                            " != " + str(res_match.ipv4_dst))
 
-        if (not(req_match.wildcards & of10.OFPFW_NW_PROTO)
+        if (not(req_match.wildcards & ofp.OFPFW_NW_PROTO)
             and ((req_match.ip_proto == TCP_PROTOCOL)
                  or (req_match.ip_proto == UDP_PROTOCOL))):
             parent.assertEqual(req_match.tcp_src, res_match.tcp_src,
@@ -564,7 +562,7 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None
     if wildcards is None:
         wildcards = required_wildcards(parent)
     if in_band:
-        wildcards &= ~of10.OFPFW_IN_PORT
+        wildcards &= ~ofp.OFPFW_IN_PORT
     match.wildcards = wildcards
     match.in_port = ing_port
 
@@ -573,11 +571,11 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None
     else:
         egr_port_list = [egr_ports]
 
-    request = of10.message.flow_add()
+    request = ofp.message.flow_add()
     request.match = match
     request.buffer_id = 0xffffffff
     if check_expire:
-        request.flags |= of10.OFPFF_SEND_FLOW_REM
+        request.flags |= ofp.OFPFF_SEND_FLOW_REM
         request.hard_timeout = 1
 
     if action_list is not None:
@@ -588,14 +586,14 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None
     # Set up output/enqueue action if directed
     if egr_queue is not None:
         parent.assertTrue(egr_ports is not None, "Egress port not set")
-        act = of10.action.enqueue()
+        act = ofp.action.enqueue()
         for egr_port in egr_port_list:
             act.port = egr_port
             act.queue_id = egr_queue
             request.actions.append(act)
     elif egr_ports is not None:
         for egr_port in egr_port_list:
-            act = of10.action.output()
+            act = ofp.action.output()
             act.port = egr_port
             request.actions.append(act)
 
@@ -673,7 +671,7 @@ def flow_match_test_pktout(parent, ing_port, egr_ports,
     if pkt is None:
         pkt = simple_tcp_packet(dl_vlan_enable=(vlan_vid >= 0), vlan_vid=vlan_vid)
 
-    msg = of10.message.packet_out()
+    msg = ofp.message.packet_out()
     msg.in_port = ing_port
     msg.data = str(pkt)
     if action_list is not None:
@@ -683,7 +681,7 @@ def flow_match_test_pktout(parent, ing_port, egr_ports,
     # Set up output action
     if egr_ports is not None:
         for egr_port in egr_ports:
-            act = of10.action.output()
+            act = ofp.action.output()
             act.port = egr_port
             msg.actions.append(act)
 
@@ -749,7 +747,7 @@ def flow_match_test(parent, port_map, wildcards=None, vlan_vid=-1, pkt=None,
         egr_ports = get_egr_list(parent, of_ports, egr_count, 
                                  exclude_list=[ingress_port])
         if ing_port:
-            egr_ports.append(of10.OFPP_IN_PORT)
+            egr_ports.append(ofp.OFPP_IN_PORT)
         if len(egr_ports) == 0:
             parent.assertTrue(0, "Failed to generate egress port list")
 
@@ -769,7 +767,7 @@ def flow_match_test(parent, port_map, wildcards=None, vlan_vid=-1, pkt=None,
     egr_ports = get_egr_list(parent, of_ports, egr_count,
                              exclude_list=[ingress_port])
     if ing_port:
-        egr_ports.append(of10.OFPP_IN_PORT)
+        egr_ports.append(ofp.OFPP_IN_PORT)
     flow_match_test_pktout(parent, ingress_port, egr_ports,
                            vlan_vid=vlan_vid,
                            pkt=pkt, exp_pkt=exp_pkt,
@@ -816,42 +814,42 @@ def action_generate(parent, field_to_mod, mod_field_vals):
         return None
 
     if field_to_mod == 'eth_dst':
-        act = of10.action.set_dl_dst()
+        act = ofp.action.set_dl_dst()
         act.dl_addr = oftest.parse.parse_mac(mod_field_vals['eth_dst'])
     elif field_to_mod == 'eth_src':
-        act = of10.action.set_dl_src()
+        act = ofp.action.set_dl_src()
         act.dl_addr = oftest.parse.parse_mac(mod_field_vals['eth_src'])
     elif field_to_mod == 'dl_vlan_enable':
         if not mod_field_vals['dl_vlan_enable']: # Strip VLAN tag
-            act = of10.action.strip_vlan()
+            act = ofp.action.strip_vlan()
         # Add VLAN tag is handled by vlan_vid field
         # Will return None in this case
     elif field_to_mod == 'vlan_vid':
-        act = of10.action.set_vlan_vid()
+        act = ofp.action.set_vlan_vid()
         act.vlan_vid = mod_field_vals['vlan_vid']
     elif field_to_mod == 'vlan_pcp':
-        act = of10.action.set_vlan_pcp()
+        act = ofp.action.set_vlan_pcp()
         act.vlan_pcp = mod_field_vals['vlan_pcp']
     elif field_to_mod == 'ip_src':
-        act = of10.action.set_nw_src()
+        act = ofp.action.set_nw_src()
         act.nw_addr = oftest.parse.parse_ip(mod_field_vals['ip_src'])
     elif field_to_mod == 'ip_dst':
-        act = of10.action.set_nw_dst()
+        act = ofp.action.set_nw_dst()
         act.nw_addr = oftest.parse.parse_ip(mod_field_vals['ip_dst'])
     elif field_to_mod == 'ip_tos':
-        act = of10.action.set_nw_tos()
+        act = ofp.action.set_nw_tos()
         act.nw_tos = mod_field_vals['ip_tos']
     elif field_to_mod == 'tcp_sport':
-        act = of10.action.set_tp_src()
+        act = ofp.action.set_tp_src()
         act.tp_port = mod_field_vals['tcp_sport']
     elif field_to_mod == 'tcp_dport':
-        act = of10.action.set_tp_dst()
+        act = ofp.action.set_tp_dst()
         act.tp_port = mod_field_vals['tcp_dport']
     elif field_to_mod == 'udp_sport':
-        act = of10.action.set_tp_src()
+        act = ofp.action.set_tp_src()
         act.tp_port = mod_field_vals['udp_sport']
     elif field_to_mod == 'udp_dport':
-        act = of10.action.set_tp_dst()
+        act = ofp.action.set_tp_dst()
         act.tp_port = mod_field_vals['udp_dport']
     else:
         parent.assertTrue(0, "Unknown field to modify: " + str(field_to_mod))
@@ -968,10 +966,10 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
 # Generate a simple "drop" flow mod
 # If in_band is true, then only drop from first test port
 def flow_mod_gen(port_map, in_band):
-    request = of10.message.flow_add()
-    request.match.wildcards = of10.OFPFW_ALL
+    request = ofp.message.flow_add()
+    request.match.wildcards = ofp.OFPFW_ALL
     if in_band:
-        request.match.wildcards = of10.OFPFW_ALL - of10.OFPFW_IN_PORT
+        request.match.wildcards = ofp.OFPFW_ALL - ofp.OFPFW_IN_PORT
         for of_port, ifname in port_map.items(): # Grab first port
             break
         request.match.in_port = of_port
@@ -1001,11 +999,11 @@ def all_stats_get(parent):
     @returns dict with keys flows, packets, bytes, active (flows), 
     lookups, matched
     """
-    stat_req = of10.message.aggregate_stats_request()
-    stat_req.match = of10.match()
-    stat_req.match.wildcards = of10.OFPFW_ALL
+    stat_req = ofp.message.aggregate_stats_request()
+    stat_req.match = ofp.match()
+    stat_req.match.wildcards = ofp.OFPFW_ALL
     stat_req.table_id = 0xff
-    stat_req.out_port = of10.OFPP_NONE
+    stat_req.out_port = ofp.OFPP_NONE
 
     rv = {}
 
@@ -1017,7 +1015,7 @@ def all_stats_get(parent):
                                                   obj.packet_count, obj.byte_count)
         break
 
-    request = of10.message.table_stats_request()
+    request = ofp.message.table_stats_request()
     (reply , pkt) = parent.controller.transact(request)
 
     
@@ -1147,17 +1145,17 @@ def get_stats(test, req):
     reply, _ = test.controller.transact(req)
     test.assertTrue(reply is not None, "No response to stats request")
     stats.extend(reply.entries)
-    while reply.flags & of10.OFPSF_REPLY_MORE != 0:
-        reply, pkt = self.controller.poll(exp_msg=of10.OFPT_STATS_REPLY)
+    while reply.flags & ofp.OFPSF_REPLY_MORE != 0:
+        reply, pkt = self.controller.poll(exp_msg=ofp.OFPT_STATS_REPLY)
         test.assertTrue(reply is not None, "No response to stats request")
         stats.extend(reply.entries)
     return stats
 
-def get_flow_stats(test, match, table_id=0xff, out_port=of10.OFPP_NONE):
+def get_flow_stats(test, match, table_id=0xff, out_port=ofp.OFPP_NONE):
     """
     Retrieve a list of flow stats entries.
     """
-    req = of10.message.flow_stats_request(match=match,
+    req = ofp.message.flow_stats_request(match=match,
                                           table_id=table_id,
                                           out_port=out_port)
     return get_stats(test, req)
@@ -1166,18 +1164,18 @@ def get_port_stats(test, port_no):
     """
     Retrieve a list of port stats entries.
     """
-    req = of10.message.port_stats_request(port_no=port_no)
+    req = ofp.message.port_stats_request(port_no=port_no)
     return get_stats(test, req)
 
 def get_queue_stats(test, port_no, queue_id):
     """
     Retrieve a list of queue stats entries.
     """
-    req = of10.message.queue_stats_request(port_no=port_no, queue_id=queue_id)
+    req = ofp.message.queue_stats_request(port_no=port_no, queue_id=queue_id)
     return get_stats(test, req)
 
 def verify_flow_stats(test, match, table_id=0xff,
-                      out_port=of10.OFPP_NONE,
+                      out_port=ofp.OFPP_NONE,
                       initial=[],
                       pkts=None, bytes=None):
     """
