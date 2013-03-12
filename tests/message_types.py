@@ -676,26 +676,12 @@ class DescStatsReplyBody(base_tests.SimpleDataPlane):
         response, pkt = self.controller.transact(request)
         self.assertTrue(response is not None,
                         "Did not get reply for desc stats")
-        
-        mfr_desc = ""
-        hw_desc = ""
-        sw_dec = ""
-        serial_num = ""
-        dp_decription = ""
 
-        for stats in response.entries:
-
-            mfr_desc += stats.mfr_desc
-            hw_desc += stats.hw_desc
-            sw_dec += stats.sw_desc
-            serial_num += stats.serial_num
-            dp_decription += stats.dp_desc
-
-        logging.info("Manufacture Description :" + mfr_desc)
-        logging.info("Hardware description : " + hw_desc)
-        logging.info("Software Description :" + sw_dec)
-        logging.info("Serial number :" + serial_num)
-        logging.info("Human readable description of datapath :" + dp_decription)
+        logging.info("Manufacture Description :" + response.mfr_desc)
+        logging.info("Hardware description : " + response.hw_desc)
+        logging.info("Software Description :" + response.sw_desc)
+        logging.info("Serial number :" + response.serial_num)
+        logging.info("Human readable description of datapath :" + response.dp_desc)
 
 
 

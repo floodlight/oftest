@@ -339,15 +339,12 @@ class AggregateStats(base_tests.SimpleDataPlane):
                                                      timeout=test_timeout)
             self.assertTrue(response is not None, 
                             "No response to stats request")
-            self.assertTrue(len(response.entries) == 1, 
-                            "Did not receive flow stats reply")
-            for obj in response.entries:
-                self.assertTrue(obj.flow_count == flow_count,
-                                "Flow count " + str(obj.flow_count) +
-                                " does not match expected " + str(flow_count))
-                logging.info("Received " + str(obj.packet_count) + " packets")
-                if obj.packet_count == packet_count:
-                    all_packets_received = 1
+            self.assertTrue(response.flow_count == flow_count,
+                            "Flow count " + str(response.flow_count) +
+                            " does not match expected " + str(flow_count))
+            logging.info("Received " + str(response.packet_count) + " packets")
+            if response.packet_count == packet_count:
+                all_packets_received = 1
 
             if all_packets_received:
                 break
@@ -441,11 +438,9 @@ class EmptyAggregateStats(base_tests.SimpleDataPlane):
         response, pkt = self.controller.transact(stat_req)
         self.assertTrue(response is not None,
                         "No response to stats request")
-        self.assertTrue(len(response.entries) == 1,
-                        "Did not receive flow stats reply")
-        self.assertEquals(response.entries[0].flow_count, 0)
-        self.assertEquals(response.entries[0].packet_count, 0)
-        self.assertEquals(response.entries[0].byte_count, 0)
+        self.assertEquals(response.flow_count, 0)
+        self.assertEquals(response.packet_count, 0)
+        self.assertEquals(response.byte_count, 0)
 
 class DeletedFlowStats(base_tests.SimpleDataPlane):
     """
