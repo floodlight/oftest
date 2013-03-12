@@ -11,10 +11,8 @@ import random
 
 from oftest import config
 import oftest.controller as controller
-import oftest.cstruct as ofp
-import oftest.message as message
+import ofp
 import oftest.dataplane as dataplane
-import oftest.action as action
 import oftest.parse as parse
 import oftest.base_tests as base_tests
 
@@ -44,7 +42,7 @@ class FlowExpire(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = action.action_output()
+        act = ofp.action.output()
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -57,14 +55,14 @@ class FlowExpire(base_tests.SimpleDataPlane):
         
         match.in_port = ingress_port
         
-        request = message.flow_mod()
+        request = ofp.message.flow_add()
         request.match = match
         request.cookie = random.randint(0,9007199254740992)
         request.buffer_id = 0xffffffff
         request.idle_timeout = 1
         request.flags |= ofp.OFPFF_SEND_FLOW_REM
         act.port = egress_port
-        request.actions.add(act)
+        request.actions.append(act)
         
         logging.info("Inserting flow")
         self.controller.message_send(request)

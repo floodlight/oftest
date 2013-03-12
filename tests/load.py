@@ -20,10 +20,8 @@ import unittest
 
 from oftest import config
 import oftest.controller as controller
-import oftest.cstruct as ofp
-import oftest.message as message
+import ofp
 import oftest.dataplane as dataplane
-import oftest.action as action
 import oftest.parse as parse
 import oftest.base_tests as base_tests
 import time
@@ -60,30 +58,30 @@ class LoadBarrier(base_tests.SimpleProtocol):
         match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         match.in_port = lb_port
-        act = action.action_output()
+        act = ofp.action.output()
         act.port = lb_port + 1
 
-        request = message.flow_mod()
+        request = ofp.message.flow_add()
         request.match = match
         request.hard_timeout = 2 * barrier_count
 
         request.buffer_id = 0xffffffff
-        request.actions.add(act)
+        request.actions.append(act)
 
-        act = action.action_output()
+        act = ofp.action.output()
         act.port = ofp.OFPP_CONTROLLER
-        request.actions.add(act)
+        request.actions.append(act)
 
         self.controller.message_send(request)
         do_barrier(self.controller)
 
         # Create packet out and send to port lb_port + 1
-        msg = message.packet_out()
+        msg = ofp.message.packet_out()
         msg.in_port = lb_port
         msg.data = str(pkt)
-        act = action.action_output()
+        act = ofp.action.output()
         act.port = lb_port + 1
-        msg.actions.add(act)
+        msg.actions.append(act)
         logging.info("Sleeping before starting storm")
         time.sleep(1) # Root causing issue with fast disconnects
         logging.info("Sending packet out to %d" % (lb_port + 1))
@@ -167,12 +165,12 @@ class PacketOutLoad(base_tests.SimpleDataPlane):
                (simple_eth_packet(pktlen=40), "tiny Ethernet packet")]:
 
                logging.info("PKT OUT test with %s, port %s" % (opt, dp_port))
-               msg = message.packet_out()
+               msg = ofp.message.packet_out()
                msg.in_port = ofp.OFPP_NONE
                msg.data = str(outpkt)
-               act = action.action_output()
+               act = ofp.action.output()
                act.port = dp_port
-               msg.actions.add(act)
+               msg.actions.append(act)
 
                logging.info("PacketOutLoad to: " + str(dp_port))
                for count in range(100):
@@ -193,37 +191,35 @@ class PacketOutLoad(base_tests.SimpleDataPlane):
 class FlowModLoad(base_tests.SimpleProtocol):
 
     def checkBarrier(self):
-        msg, pkt = self.controller.transact(message.barrier_request(), timeout=60)
+        msg, pkt = self.controller.transact(ofp.message.barrier_request(), timeout=60)
         self.assertNotEqual(msg, None, "Barrier failed")
         while self.controller.packets:
            msg = self.controller.packets.pop(0)[0]
-           self.assertNotEqual(msg.header.type, message.OFPT_ERROR,
-                               "Error received")
+           self.assertNotEqual(msg.type, ofp.OFPT_ERROR, "Error received")
 
     def runTest(self):
-        msg, pkt = self.controller.transact(message.table_stats_request())
+        msg, pkt = self.controller.transact(ofp.message.table_stats_request())
 
         # Some switches report an extremely high max_entries that would cause
         # us to run out of memory attempting to create all the flow-mods.
-        num_flows = min(msg.stats[0].max_entries, 32678)
+        num_flows = min(msg.entries[0].max_entries, 32678)
 
         logging.info("Creating %d flow-mods messages", num_flows)
 
         requests = []
         for i in range(num_flows):
-            match = ofp.ofp_match()
+            match = ofp.match()
             match.wildcards = ofp.OFPFW_ALL & ~ofp.OFPFW_DL_VLAN & ~ofp.OFPFW_DL_DST
-            match.dl_vlan = ofp.OFP_VLAN_NONE
-            match.dl_dst = [0, 1, 2, 3, i / 256, i % 256]
-            act = action.action_output()
+            match.vlan_vid = ofp.OFP_VLAN_NONE
+            match.eth_dst = [0, 1, 2, 3, i / 256, i % 256]
+            act = ofp.action.output()
             act.port = ofp.OFPP_CONTROLLER
-            request = message.flow_mod()
-            request.command = ofp.OFPFC_ADD
+            request = ofp.message.flow_add()
             request.buffer_id = 0xffffffff
             request.priority = num_flows - i
             request.out_port = ofp.OFPP_NONE
             request.match = match
-            request.actions.add(act)
+            request.actions.append(act)
             requests.append(request)
 
         for i in range(3):

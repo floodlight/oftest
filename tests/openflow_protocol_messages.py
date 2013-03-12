@@ -12,10 +12,8 @@ import random
 
 from oftest import config
 import oftest.controller as controller
-import oftest.cstruct as ofp
-import oftest.message as message
+import ofp
 import oftest.dataplane as dataplane
-import oftest.action as action
 import oftest.parse as parse
 import oftest.base_tests as base_tests
 
@@ -41,7 +39,7 @@ class FeaturesRequest(base_tests.SimpleProtocol):
         logging.info("Sending Features_Request")
         logging.info("Expecting Features_Reply")
 
-        request = message.features_request()
+        request = ofp.message.features_request()
         self.controller.message_send(request)
         
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_FEATURES_REPLY,
@@ -69,7 +67,7 @@ class ConfigurationRequest(base_tests.SimpleProtocol):
         logging.info("Sending OFPT_GET_CONFIG_REQUEST ")
         logging.info("Expecting OFPT_GET_CONFIG_REPLY ")
 
-        request = message.get_config_request()
+        request = ofp.message.get_config_request()
         self.controller.message_send(request)
         
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_GET_CONFIG_REPLY,
@@ -219,11 +217,11 @@ class PacketOut(base_tests.SimpleDataPlane):
                 (simple_eth_packet(), "simple Ethernet packet"),
                 (simple_eth_packet(pktlen=40), "tiny Ethernet packet")]:
             
-                msg = message.packet_out()
+                msg = ofp.message.packet_out()
                 msg.data = str(outpkt)
-                act = action.action_output()
+                act = ofp.action.output()
                 act.port = dp_port
-                msg.actions.add(act)
+                msg.actions.append(act)
 
                 logging.info("PacketOut to: " + str(dp_port))
                 self.controller.message_send(msg)
@@ -297,12 +295,12 @@ class Hello(base_tests.SimpleDataPlane):
         logging.info("Expecting a Hello on the control plane with version--1.0.0")
         
         #Send Hello message
-        request = message.hello()
+        request = ofp.message.hello()
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
                                                timeout=1)
         self.assertTrue(response is not None, 
                                'Switch did not exchange hello message in return') 
-        self.assertTrue(response.header.version == 0x01, 'switch openflow-version field is not 1.0.0')
+        self.assertTrue(response.version == 0x01, 'switch openflow-version field is not 1.0.0')
 
 
 
@@ -320,12 +318,12 @@ class EchoWithoutBody(base_tests.SimpleProtocol):
         logging.info("Expecting a Echo Reply with version--1.0.0 and same xid")
 
         # Send echo_request
-        request = message.echo_request()
+        request = ofp.message.echo_request()
         (response, pkt) = self.controller.transact(request)
-        self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,'response is not echo_reply')
-        self.assertEqual(request.header.xid, response.header.xid,
+        self.assertEqual(response.type, ofp.OFPT_ECHO_REPLY,'response is not echo_reply')
+        self.assertEqual(request.xid, response.xid,
                          'response xid != request xid')
-        self.assertTrue(response.header.version == 0x01, 'switch openflow-version field is not 1.0.1')
+        self.assertTrue(response.version == 0x01, 'switch openflow-version field is not 1.0.1')
         self.assertEqual(len(response.data), 0, 'response data non-empty')
 
 
@@ -343,10 +341,10 @@ class BarrierRequestReply(base_tests.SimpleProtocol):
         logging.info("Expecting a Barrier Reply with same xid")
 
         #Send Barrier Request
-        request = message.barrier_request()
+        request = ofp.message.barrier_request()
         (response,pkt) = self.controller.transact(request)
-        self.assertEqual(response.header.type, ofp.OFPT_BARRIER_REPLY,'response is not barrier_reply')
-        self.assertEqual(request.header.xid, response.header.xid,
+        self.assertEqual(response.type, ofp.OFPT_BARRIER_REPLY,'response is not barrier_reply')
+        self.assertEqual(request.xid, response.xid,
                          'response xid != request xid')
 
 

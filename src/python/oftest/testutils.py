@@ -16,10 +16,8 @@ except:
 import oftest
 import oftest.controller
 import oftest.dataplane
-import of10.cstruct
-import of10.message
-import of10.action
-import of10.parse
+import oftest.parse
+import ofp
 
 global skipped_test_count
 skipped_test_count = 0
@@ -40,10 +38,9 @@ def delete_all_flows(ctrl):
     """
 
     logging.info("Deleting all flows")
-    msg = of10.message.flow_mod()
-    msg.match.wildcards = of10.cstruct.OFPFW_ALL
-    msg.out_port = of10.cstruct.OFPP_NONE
-    msg.command = of10.cstruct.OFPFC_DELETE
+    msg = ofp.message.flow_delete()
+    msg.match.wildcards = ofp.OFPFW_ALL
+    msg.out_port = ofp.OFPP_NONE
     msg.buffer_id = 0xffffffff
     ctrl.message_send(msg)
     return 0 # for backwards compatibility
@@ -51,17 +48,17 @@ def delete_all_flows(ctrl):
 def required_wildcards(parent):
     w = test_param_get('required_wildcards', default='default')
     if w == 'l3-l4':
-        return (of10.cstruct.OFPFW_NW_SRC_ALL | of10.cstruct.OFPFW_NW_DST_ALL | of10.cstruct.OFPFW_NW_TOS
-                | of10.cstruct.OFPFW_NW_PROTO | of10.cstruct.OFPFW_TP_SRC | of10.cstruct.OFPFW_TP_DST)
+        return (ofp.OFPFW_NW_SRC_ALL | ofp.OFPFW_NW_DST_ALL | ofp.OFPFW_NW_TOS
+                | ofp.OFPFW_NW_PROTO | ofp.OFPFW_TP_SRC | ofp.OFPFW_TP_DST)
     else:
         return 0
 
 def simple_tcp_packet(pktlen=100, 
-                      dl_dst='00:01:02:03:04:05',
-                      dl_src='00:06:07:08:09:0a',
+                      eth_dst='00:01:02:03:04:05',
+                      eth_src='00:06:07:08:09:0a',
                       dl_vlan_enable=False,
-                      dl_vlan=0,
-                      dl_vlan_pcp=0,
+                      vlan_vid=0,
+                      vlan_pcp=0,
                       dl_vlan_cfi=0,
                       ip_src='192.168.0.1',
                       ip_dst='192.168.0.2',
@@ -77,11 +74,11 @@ def simple_tcp_packet(pktlen=100,
 
     Supports a few parameters:
     @param len Length of packet in bytes w/o CRC
-    @param dl_dst Destinatino MAC
-    @param dl_src Source MAC
+    @param eth_dst Destinatino MAC
+    @param eth_src Source MAC
     @param dl_vlan_enable True if the packet is with vlan, False otherwise
-    @param dl_vlan VLAN ID
-    @param dl_vlan_pcp VLAN priority
+    @param vlan_vid VLAN ID
+    @param vlan_pcp VLAN priority
     @param ip_src IP source
     @param ip_dst IP destination
     @param ip_tos IP ToS
@@ -99,17 +96,17 @@ def simple_tcp_packet(pktlen=100,
 
     # Note Dot1Q.id is really CFI
     if (dl_vlan_enable):
-        pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-            scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi, vlan=dl_vlan)/ \
+        pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
+            scapy.Dot1Q(prio=vlan_pcp, id=dl_vlan_cfi, vlan=vlan_vid)/ \
             scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl)/ \
             scapy.TCP(sport=tcp_sport, dport=tcp_dport)
     else:
         if not ip_options:
-            pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl)/ \
                 scapy.TCP(sport=tcp_sport, dport=tcp_dport)
         else:
-            pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl, options=ip_options)/ \
                 scapy.TCP(sport=tcp_sport, dport=tcp_dport)
 
@@ -118,11 +115,11 @@ def simple_tcp_packet(pktlen=100,
     return pkt
 
 def simple_udp_packet(pktlen=100,
-                      dl_dst='00:01:02:03:04:05',
-                      dl_src='00:06:07:08:09:0a',
+                      eth_dst='00:01:02:03:04:05',
+                      eth_src='00:06:07:08:09:0a',
                       dl_vlan_enable=False,
-                      dl_vlan=0,
-                      dl_vlan_pcp=0,
+                      vlan_vid=0,
+                      vlan_pcp=0,
                       dl_vlan_cfi=0,
                       ip_src='192.168.0.1',
                       ip_dst='192.168.0.2',
@@ -138,11 +135,11 @@ def simple_udp_packet(pktlen=100,
 
     Supports a few parameters:
     @param len Length of packet in bytes w/o CRC
-    @param dl_dst Destination MAC
-    @param dl_src Source MAC
+    @param eth_dst Destination MAC
+    @param eth_src Source MAC
     @param dl_vlan_enable True if the packet is with vlan, False otherwise
-    @param dl_vlan VLAN ID
-    @param dl_vlan_pcp VLAN priority
+    @param vlan_vid VLAN ID
+    @param vlan_pcp VLAN priority
     @param ip_src IP source
     @param ip_dst IP destination
     @param ip_tos IP ToS
@@ -159,17 +156,17 @@ def simple_udp_packet(pktlen=100,
 
     # Note Dot1Q.id is really CFI
     if (dl_vlan_enable):
-        pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-            scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi, vlan=dl_vlan)/ \
+        pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
+            scapy.Dot1Q(prio=vlan_pcp, id=dl_vlan_cfi, vlan=vlan_vid)/ \
             scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl)/ \
             scapy.UDP(sport=udp_sport, dport=udp_dport)
     else:
         if not ip_options:
-            pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl)/ \
                 scapy.UDP(sport=udp_sport, dport=udp_dport)
         else:
-            pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+            pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl, options=ip_options)/ \
                 scapy.UDP(sport=udp_sport, dport=udp_dport)
 
@@ -178,11 +175,11 @@ def simple_udp_packet(pktlen=100,
     return pkt
 
 def simple_icmp_packet(pktlen=60, 
-                      dl_dst='00:01:02:03:04:05',
-                      dl_src='00:06:07:08:09:0a',
+                      eth_dst='00:01:02:03:04:05',
+                      eth_src='00:06:07:08:09:0a',
                       dl_vlan_enable=False,
-                      dl_vlan=0,
-                      dl_vlan_pcp=0,
+                      vlan_vid=0,
+                      vlan_pcp=0,
                       ip_src='192.168.0.1',
                       ip_dst='192.168.0.2',
                       ip_tos=0,
@@ -195,11 +192,11 @@ def simple_icmp_packet(pktlen=60,
 
     Supports a few parameters:
     @param len Length of packet in bytes w/o CRC
-    @param dl_dst Destinatino MAC
-    @param dl_src Source MAC
+    @param eth_dst Destinatino MAC
+    @param eth_src Source MAC
     @param dl_vlan_enable True if the packet is with vlan, False otherwise
-    @param dl_vlan VLAN ID
-    @param dl_vlan_pcp VLAN priority
+    @param vlan_vid VLAN ID
+    @param vlan_pcp VLAN priority
     @param ip_src IP source
     @param ip_dst IP destination
     @param ip_tos IP ToS
@@ -216,12 +213,12 @@ def simple_icmp_packet(pktlen=60,
         pktlen = MINSIZE
 
     if (dl_vlan_enable):
-        pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
-            scapy.Dot1Q(prio=dl_vlan_pcp, id=0, vlan=dl_vlan)/ \
+        pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
+            scapy.Dot1Q(prio=vlan_pcp, id=0, vlan=vlan_vid)/ \
             scapy.IP(src=ip_src, dst=ip_dst, ttl=ip_ttl, tos=ip_tos)/ \
             scapy.ICMP(type=icmp_type, code=icmp_code)
     else:
-        pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+        pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
             scapy.IP(src=ip_src, dst=ip_dst, ttl=ip_ttl, tos=ip_tos)/ \
             scapy.ICMP(type=icmp_type, code=icmp_code)
 
@@ -230,8 +227,8 @@ def simple_icmp_packet(pktlen=60,
     return pkt
 
 def simple_arp_packet(pktlen=60, 
-                      dl_dst='ff:ff:ff:ff:ff:ff',
-                      dl_src='00:06:07:08:09:0a',
+                      eth_dst='ff:ff:ff:ff:ff:ff',
+                      eth_src='00:06:07:08:09:0a',
                       arp_op=1,
                       ip_snd='192.168.0.1',
                       ip_tgt='192.168.0.2',
@@ -243,8 +240,8 @@ def simple_arp_packet(pktlen=60,
 
     Supports a few parameters:
     @param len Length of packet in bytes w/o CRC
-    @param dl_dst Destinatino MAC
-    @param dl_src Source MAC
+    @param eth_dst Destinatino MAC
+    @param eth_src Source MAC
     @param arp_op Operation (1=request, 2=reply)
     @param ip_snd Sender IP
     @param ip_tgt Target IP
@@ -259,7 +256,7 @@ def simple_arp_packet(pktlen=60,
     if MINSIZE > pktlen:
         pktlen = MINSIZE
 
-    pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+    pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
           scapy.ARP(hwsrc=hw_snd, hwdst=hw_tgt, pdst=ip_tgt, psrc=ip_snd, op=arp_op)
 
     pkt = pkt/("0" * (pktlen - len(pkt)))
@@ -267,27 +264,27 @@ def simple_arp_packet(pktlen=60,
     return pkt
 
 def simple_eth_packet(pktlen=60,
-                      dl_dst='00:01:02:03:04:05',
-                      dl_src='01:80:c2:00:00:00',
-                      dl_type=0x88cc):
+                      eth_dst='00:01:02:03:04:05',
+                      eth_src='01:80:c2:00:00:00',
+                      eth_type=0x88cc):
 
     if MINSIZE > pktlen:
         pktlen = MINSIZE
 
-    pkt = scapy.Ether(dst=dl_dst, src=dl_src, type=dl_type)
+    pkt = scapy.Ether(dst=eth_dst, src=eth_src, type=eth_type)
 
     pkt = pkt/("0" * (pktlen - len(pkt)))
 
     return pkt
 
 def qinq_tcp_packet(pktlen=100, 
-                    dl_dst='00:01:02:03:04:05',
-                    dl_src='00:06:07:08:09:0a',
+                    eth_dst='00:01:02:03:04:05',
+                    eth_src='00:06:07:08:09:0a',
                     dl_vlan_outer=20,
                     dl_vlan_pcp_outer=0,
                     dl_vlan_cfi_outer=0,
-                    dl_vlan=10,
-                    dl_vlan_pcp=0,
+                    vlan_vid=10,
+                    vlan_pcp=0,
                     dl_vlan_cfi=0,
                     ip_src='192.168.0.1',
                     ip_dst='192.168.0.2',
@@ -303,13 +300,13 @@ def qinq_tcp_packet(pktlen=100,
 
     Supports a few parameters:
     @param len Length of packet in bytes w/o CRC
-    @param dl_dst Destinatino MAC
-    @param dl_src Source MAC
+    @param eth_dst Destinatino MAC
+    @param eth_src Source MAC
     @param dl_vlan_outer Outer VLAN ID
     @param dl_vlan_pcp_outer Outer VLAN priority
     @param dl_vlan_cfi_outer Outer VLAN cfi bit
-    @param dl_vlan Inner VLAN ID
-    @param dl_vlan_pcp VLAN priority
+    @param vlan_vid Inner VLAN ID
+    @param vlan_pcp VLAN priority
     @param dl_vlan_cfi VLAN cfi bit
     @param ip_src IP source
     @param ip_dst IP destination
@@ -326,9 +323,9 @@ def qinq_tcp_packet(pktlen=100,
         pktlen = MINSIZE
 
     # Note Dot1Q.id is really CFI
-    pkt = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+    pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
           scapy.Dot1Q(prio=dl_vlan_pcp_outer, id=dl_vlan_cfi_outer, vlan=dl_vlan_outer)/ \
-          scapy.Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi, vlan=dl_vlan)/ \
+          scapy.Dot1Q(prio=vlan_pcp, id=dl_vlan_cfi, vlan=vlan_vid)/ \
           scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl)/ \
           scapy.TCP(sport=tcp_sport, dport=tcp_dport)
 
@@ -341,7 +338,7 @@ def do_barrier(ctrl, timeout=-1):
     Do a barrier command
     Return 0 on success, -1 on error
     """
-    b = of10.message.barrier_request()
+    b = ofp.message.barrier_request()
     (resp, pkt) = ctrl.transact(b, timeout=timeout)
     if resp is None:
         raise AssertionError("barrier failed")
@@ -358,7 +355,7 @@ def port_config_get(controller, port_no):
     @returns (hwaddr, config, advert) The hwaddress, configuration and
     advertised values
     """
-    request = of10.message.features_request()
+    request = ofp.message.features_request()
     reply, pkt = controller.transact(request)
     logging.debug(reply.show())
     if reply is None:
@@ -380,7 +377,7 @@ def port_config_set(controller, port_no, config, mask):
     configuration value according to config and mask
     """
     logging.info("Setting port " + str(port_no) + " to config " + str(config))
-    request = of10.message.features_request()
+    request = ofp.message.features_request()
     reply, pkt = controller.transact(request)
     if reply is None:
         return -1
@@ -390,7 +387,7 @@ def port_config_set(controller, port_no, config, mask):
         if reply.ports[idx].port_no == port_no:
             p = reply.ports[idx]
             break
-    mod = of10.message.port_mod()
+    mod = ofp.message.port_mod()
     mod.port_no = port_no
     if p:
         mod.hw_addr = p.hw_addr
@@ -461,7 +458,7 @@ def receive_pkt_verify(parent, egr_ports, exp_pkt, ing_port):
     # Expect a packet from each port on egr port list
     for egr_port in egr_port_list:
         check_port = egr_port
-        if egr_port == of10.cstruct.OFPP_IN_PORT:
+        if egr_port == ofp.OFPP_IN_PORT:
             check_port = ing_port
         (rcv_port, rcv_pkt, pkt_time) = parent.dataplane.poll(
             port_number=check_port, exp_pkt=exp_pkt_arg)
@@ -500,52 +497,52 @@ def match_verify(parent, req_match, res_match):
     parent.assertEqual(req_match.in_port, res_match.in_port,
                        'Match failed: in_port: ' + str(req_match.in_port) +
                        " != " + str(res_match.in_port))
-    parent.assertEqual(str(req_match.dl_src), str(res_match.dl_src),
-                       'Match failed: dl_src: ' + str(req_match.dl_src) +
-                       " != " + str(res_match.dl_src))
-    parent.assertEqual(str(req_match.dl_dst), str(res_match.dl_dst),
-                       'Match failed: dl_dst: ' + str(req_match.dl_dst) +
-                       " != " + str(res_match.dl_dst))
-    parent.assertEqual(req_match.dl_vlan, res_match.dl_vlan,
-                       'Match failed: dl_vlan: ' + str(req_match.dl_vlan) +
-                       " != " + str(res_match.dl_vlan))
-    parent.assertEqual(req_match.dl_vlan_pcp, res_match.dl_vlan_pcp,
-                       'Match failed: dl_vlan_pcp: ' + 
-                       str(req_match.dl_vlan_pcp) + " != " + 
-                       str(res_match.dl_vlan_pcp))
-    parent.assertEqual(req_match.dl_type, res_match.dl_type,
-                       'Match failed: dl_type: ' + str(req_match.dl_type) +
-                       " != " + str(res_match.dl_type))
+    parent.assertEqual(str(req_match.eth_src), str(res_match.eth_src),
+                       'Match failed: eth_src: ' + str(req_match.eth_src) +
+                       " != " + str(res_match.eth_src))
+    parent.assertEqual(str(req_match.eth_dst), str(res_match.eth_dst),
+                       'Match failed: eth_dst: ' + str(req_match.eth_dst) +
+                       " != " + str(res_match.eth_dst))
+    parent.assertEqual(req_match.vlan_vid, res_match.vlan_vid,
+                       'Match failed: vlan_vid: ' + str(req_match.vlan_vid) +
+                       " != " + str(res_match.vlan_vid))
+    parent.assertEqual(req_match.vlan_pcp, res_match.vlan_pcp,
+                       'Match failed: vlan_pcp: ' + 
+                       str(req_match.vlan_pcp) + " != " + 
+                       str(res_match.vlan_pcp))
+    parent.assertEqual(req_match.eth_type, res_match.eth_type,
+                       'Match failed: eth_type: ' + str(req_match.eth_type) +
+                       " != " + str(res_match.eth_type))
 
-    if (not(req_match.wildcards & of10.cstruct.OFPFW_DL_TYPE)
-        and (req_match.dl_type == IP_ETHERTYPE)):
-        parent.assertEqual(req_match.nw_tos, res_match.nw_tos,
-                           'Match failed: nw_tos: ' + str(req_match.nw_tos) +
-                           " != " + str(res_match.nw_tos))
-        parent.assertEqual(req_match.nw_proto, res_match.nw_proto,
-                           'Match failed: nw_proto: ' + str(req_match.nw_proto) +
-                           " != " + str(res_match.nw_proto))
-        parent.assertEqual(req_match.nw_src, res_match.nw_src,
-                           'Match failed: nw_src: ' + str(req_match.nw_src) +
-                           " != " + str(res_match.nw_src))
-        parent.assertEqual(req_match.nw_dst, res_match.nw_dst,
-                           'Match failed: nw_dst: ' + str(req_match.nw_dst) +
-                           " != " + str(res_match.nw_dst))
+    if (not(req_match.wildcards & ofp.OFPFW_DL_TYPE)
+        and (req_match.eth_type == IP_ETHERTYPE)):
+        parent.assertEqual(req_match.ip_dscp, res_match.ip_dscp,
+                           'Match failed: ip_dscp: ' + str(req_match.ip_dscp) +
+                           " != " + str(res_match.ip_dscp))
+        parent.assertEqual(req_match.ip_proto, res_match.ip_proto,
+                           'Match failed: ip_proto: ' + str(req_match.ip_proto) +
+                           " != " + str(res_match.ip_proto))
+        parent.assertEqual(req_match.ipv4_src, res_match.ipv4_src,
+                           'Match failed: ipv4_src: ' + str(req_match.ipv4_src) +
+                           " != " + str(res_match.ipv4_src))
+        parent.assertEqual(req_match.ipv4_dst, res_match.ipv4_dst,
+                           'Match failed: ipv4_dst: ' + str(req_match.ipv4_dst) +
+                           " != " + str(res_match.ipv4_dst))
 
-        if (not(req_match.wildcards & of10.cstruct.OFPFW_NW_PROTO)
-            and ((req_match.nw_proto == TCP_PROTOCOL)
-                 or (req_match.nw_proto == UDP_PROTOCOL))):
-            parent.assertEqual(req_match.tp_src, res_match.tp_src,
-                               'Match failed: tp_src: ' + 
-                               str(req_match.tp_src) +
-                               " != " + str(res_match.tp_src))
-            parent.assertEqual(req_match.tp_dst, res_match.tp_dst,
-                               'Match failed: tp_dst: ' + 
-                               str(req_match.tp_dst) +
-                               " != " + str(res_match.tp_dst))
+        if (not(req_match.wildcards & ofp.OFPFW_NW_PROTO)
+            and ((req_match.ip_proto == TCP_PROTOCOL)
+                 or (req_match.ip_proto == UDP_PROTOCOL))):
+            parent.assertEqual(req_match.tcp_src, res_match.tcp_src,
+                               'Match failed: tcp_src: ' + 
+                               str(req_match.tcp_src) +
+                               " != " + str(res_match.tcp_src))
+            parent.assertEqual(req_match.tcp_dst, res_match.tcp_dst,
+                               'Match failed: tcp_dst: ' + 
+                               str(req_match.tcp_dst) +
+                               " != " + str(res_match.tcp_dst))
 
 def packet_to_flow_match(parent, packet):
-    match = of10.parse.packet_to_flow_match(packet)
+    match = oftest.parse.packet_to_flow_match(packet)
     match.wildcards |= required_wildcards(parent)
     return match
 
@@ -560,12 +557,12 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None
     @param in_band if True, do not wildcard ingress port
     @param egr_ports None (drop), single port or list of ports
     """
-    match = of10.parse.packet_to_flow_match(pkt)
+    match = oftest.parse.packet_to_flow_match(pkt)
     parent.assertTrue(match is not None, "Flow match from pkt failed")
     if wildcards is None:
         wildcards = required_wildcards(parent)
     if in_band:
-        wildcards &= ~of10.cstruct.OFPFW_IN_PORT
+        wildcards &= ~ofp.OFPFW_IN_PORT
     match.wildcards = wildcards
     match.in_port = ing_port
 
@@ -574,31 +571,31 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None
     else:
         egr_port_list = [egr_ports]
 
-    request = of10.message.flow_mod()
+    request = ofp.message.flow_add()
     request.match = match
     request.buffer_id = 0xffffffff
     if check_expire:
-        request.flags |= of10.cstruct.OFPFF_SEND_FLOW_REM
+        request.flags |= ofp.OFPFF_SEND_FLOW_REM
         request.hard_timeout = 1
 
     if action_list is not None:
         for act in action_list:
             logging.debug("Adding action " + act.show())
-            request.actions.add(act)
+            request.actions.append(act)
 
     # Set up output/enqueue action if directed
     if egr_queue is not None:
         parent.assertTrue(egr_ports is not None, "Egress port not set")
-        act = of10.action.action_enqueue()
+        act = ofp.action.enqueue()
         for egr_port in egr_port_list:
             act.port = egr_port
             act.queue_id = egr_queue
-            request.actions.add(act)
+            request.actions.append(act)
     elif egr_ports is not None:
         for egr_port in egr_port_list:
-            act = of10.action.action_output()
+            act = ofp.action.output()
             act.port = egr_port
-            request.actions.add(act)
+            request.actions.append(act)
 
     logging.debug(request.show())
 
@@ -627,7 +624,7 @@ def flow_msg_install(parent, request, clear_table_override=None):
     do_barrier(parent.controller)
 
 def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=None,
-                              dl_vlan=-1, pkt=None, exp_pkt=None,
+                              vlan_vid=-1, pkt=None, exp_pkt=None,
                               action_list=None):
     """
     Flow match test on single TCP packet
@@ -641,9 +638,9 @@ def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=None,
         wildcards = required_wildcards(parent)
     logging.info("Pkt match test: " + str(ing_port) + " to " + 
                        str(egr_ports))
-    logging.debug("  WC: " + hex(wildcards) + " vlan: " + str(dl_vlan))
+    logging.debug("  WC: " + hex(wildcards) + " vlan: " + str(vlan_vid))
     if pkt is None:
-        pkt = simple_tcp_packet(dl_vlan_enable=(dl_vlan >= 0), dl_vlan=dl_vlan)
+        pkt = simple_tcp_packet(dl_vlan_enable=(vlan_vid >= 0), vlan_vid=vlan_vid)
 
     request = flow_msg_create(parent, pkt, ing_port=ing_port, 
                               wildcards=wildcards, egr_ports=egr_ports,
@@ -660,7 +657,7 @@ def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=None,
     receive_pkt_verify(parent, egr_ports, exp_pkt, ing_port)
 
 def flow_match_test_pktout(parent, ing_port, egr_ports,
-                           dl_vlan=-1, pkt=None, exp_pkt=None,
+                           vlan_vid=-1, pkt=None, exp_pkt=None,
                            action_list=None):
     """
     Packet-out test on single TCP packet
@@ -672,21 +669,21 @@ def flow_match_test_pktout(parent, ing_port, egr_ports,
     """
 
     if pkt is None:
-        pkt = simple_tcp_packet(dl_vlan_enable=(dl_vlan >= 0), dl_vlan=dl_vlan)
+        pkt = simple_tcp_packet(dl_vlan_enable=(vlan_vid >= 0), vlan_vid=vlan_vid)
 
-    msg = of10.message.packet_out()
+    msg = ofp.message.packet_out()
     msg.in_port = ing_port
     msg.data = str(pkt)
     if action_list is not None:
         for act in action_list:
-            msg.actions.add(act)
+            msg.actions.append(act)
 
     # Set up output action
     if egr_ports is not None:
         for egr_port in egr_ports:
-            act = of10.action.action_output()
+            act = ofp.action.output()
             act.port = egr_port
-            msg.actions.add(act)
+            msg.actions.append(act)
 
     logging.debug(msg.show())
     parent.controller.message_send(msg)
@@ -719,7 +716,7 @@ def get_egr_list(parent, of_ports, how_many, exclude_list=[]):
     logging.debug("Could not generate enough egress ports for test")
     return []
     
-def flow_match_test(parent, port_map, wildcards=None, dl_vlan=-1, pkt=None, 
+def flow_match_test(parent, port_map, wildcards=None, vlan_vid=-1, pkt=None, 
                     exp_pkt=None, action_list=None,
                     max_test=0, egr_count=1, ing_port=False):
     """
@@ -730,7 +727,7 @@ def flow_match_test(parent, port_map, wildcards=None, dl_vlan=-1, pkt=None,
     and logging
     @param pkt If not None, use this packet for ingress
     @param wildcards For flow match entry
-    @param dl_vlan If not -1, and pkt is None, create a pkt w/ VLAN tag
+    @param vlan_vid If not -1, and pkt is None, create a pkt w/ VLAN tag
     @param exp_pkt If not None, use this as the expected output pkt; els use pkt
     @param action_list Additional actions to add to flow mod
     @param egr_count Number of egress ports; -1 means get from config w/ dflt 2
@@ -750,12 +747,12 @@ def flow_match_test(parent, port_map, wildcards=None, dl_vlan=-1, pkt=None,
         egr_ports = get_egr_list(parent, of_ports, egr_count, 
                                  exclude_list=[ingress_port])
         if ing_port:
-            egr_ports.append(of10.cstruct.OFPP_IN_PORT)
+            egr_ports.append(ofp.OFPP_IN_PORT)
         if len(egr_ports) == 0:
             parent.assertTrue(0, "Failed to generate egress port list")
 
         flow_match_test_port_pair(parent, ingress_port, egr_ports, 
-                                  wildcards=wildcards, dl_vlan=dl_vlan, 
+                                  wildcards=wildcards, vlan_vid=vlan_vid, 
                                   pkt=pkt, exp_pkt=exp_pkt,
                                   action_list=action_list)
         test_count += 1
@@ -770,9 +767,9 @@ def flow_match_test(parent, port_map, wildcards=None, dl_vlan=-1, pkt=None,
     egr_ports = get_egr_list(parent, of_ports, egr_count,
                              exclude_list=[ingress_port])
     if ing_port:
-        egr_ports.append(of10.cstruct.OFPP_IN_PORT)
+        egr_ports.append(ofp.OFPP_IN_PORT)
     flow_match_test_pktout(parent, ingress_port, egr_ports,
-                           dl_vlan=dl_vlan,
+                           vlan_vid=vlan_vid,
                            pkt=pkt, exp_pkt=exp_pkt,
                            action_list=action_list)
 
@@ -816,43 +813,43 @@ def action_generate(parent, field_to_mod, mod_field_vals):
     if field_to_mod in ['pktlen']:
         return None
 
-    if field_to_mod == 'dl_dst':
-        act = of10.action.action_set_dl_dst()
-        act.dl_addr = of10.parse.parse_mac(mod_field_vals['dl_dst'])
-    elif field_to_mod == 'dl_src':
-        act = of10.action.action_set_dl_src()
-        act.dl_addr = of10.parse.parse_mac(mod_field_vals['dl_src'])
+    if field_to_mod == 'eth_dst':
+        act = ofp.action.set_dl_dst()
+        act.dl_addr = oftest.parse.parse_mac(mod_field_vals['eth_dst'])
+    elif field_to_mod == 'eth_src':
+        act = ofp.action.set_dl_src()
+        act.dl_addr = oftest.parse.parse_mac(mod_field_vals['eth_src'])
     elif field_to_mod == 'dl_vlan_enable':
         if not mod_field_vals['dl_vlan_enable']: # Strip VLAN tag
-            act = of10.action.action_strip_vlan()
-        # Add VLAN tag is handled by dl_vlan field
+            act = ofp.action.strip_vlan()
+        # Add VLAN tag is handled by vlan_vid field
         # Will return None in this case
-    elif field_to_mod == 'dl_vlan':
-        act = of10.action.action_set_vlan_vid()
-        act.vlan_vid = mod_field_vals['dl_vlan']
-    elif field_to_mod == 'dl_vlan_pcp':
-        act = of10.action.action_set_vlan_pcp()
-        act.vlan_pcp = mod_field_vals['dl_vlan_pcp']
+    elif field_to_mod == 'vlan_vid':
+        act = ofp.action.set_vlan_vid()
+        act.vlan_vid = mod_field_vals['vlan_vid']
+    elif field_to_mod == 'vlan_pcp':
+        act = ofp.action.set_vlan_pcp()
+        act.vlan_pcp = mod_field_vals['vlan_pcp']
     elif field_to_mod == 'ip_src':
-        act = of10.action.action_set_nw_src()
-        act.nw_addr = of10.parse.parse_ip(mod_field_vals['ip_src'])
+        act = ofp.action.set_nw_src()
+        act.nw_addr = oftest.parse.parse_ip(mod_field_vals['ip_src'])
     elif field_to_mod == 'ip_dst':
-        act = of10.action.action_set_nw_dst()
-        act.nw_addr = of10.parse.parse_ip(mod_field_vals['ip_dst'])
+        act = ofp.action.set_nw_dst()
+        act.nw_addr = oftest.parse.parse_ip(mod_field_vals['ip_dst'])
     elif field_to_mod == 'ip_tos':
-        act = of10.action.action_set_nw_tos()
+        act = ofp.action.set_nw_tos()
         act.nw_tos = mod_field_vals['ip_tos']
     elif field_to_mod == 'tcp_sport':
-        act = of10.action.action_set_tp_src()
+        act = ofp.action.set_tp_src()
         act.tp_port = mod_field_vals['tcp_sport']
     elif field_to_mod == 'tcp_dport':
-        act = of10.action.action_set_tp_dst()
+        act = ofp.action.set_tp_dst()
         act.tp_port = mod_field_vals['tcp_dport']
     elif field_to_mod == 'udp_sport':
-        act = of10.action.action_set_tp_src()
+        act = ofp.action.set_tp_src()
         act.tp_port = mod_field_vals['udp_sport']
     elif field_to_mod == 'udp_dport':
-        act = of10.action.action_set_tp_dst()
+        act = ofp.action.set_tp_dst()
         act.tp_port = mod_field_vals['udp_dport']
     else:
         parent.assertTrue(0, "Unknown field to modify: " + str(field_to_mod))
@@ -878,11 +875,11 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
 
     base_pkt_params = {}
     base_pkt_params['pktlen'] = 100
-    base_pkt_params['dl_dst'] = '00:DE:F0:12:34:56'
-    base_pkt_params['dl_src'] = '00:23:45:67:89:AB'
+    base_pkt_params['eth_dst'] = '00:DE:F0:12:34:56'
+    base_pkt_params['eth_src'] = '00:23:45:67:89:AB'
     base_pkt_params['dl_vlan_enable'] = False
-    base_pkt_params['dl_vlan'] = 2
-    base_pkt_params['dl_vlan_pcp'] = 0
+    base_pkt_params['vlan_vid'] = 2
+    base_pkt_params['vlan_pcp'] = 0
     base_pkt_params['ip_src'] = '192.168.0.1'
     base_pkt_params['ip_dst'] = '192.168.0.2'
     base_pkt_params['ip_tos'] = 0
@@ -897,11 +894,11 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
 
     mod_pkt_params = {}
     mod_pkt_params['pktlen'] = 100
-    mod_pkt_params['dl_dst'] = '00:21:0F:ED:CB:A9'
-    mod_pkt_params['dl_src'] = '00:ED:CB:A9:87:65'
+    mod_pkt_params['eth_dst'] = '00:21:0F:ED:CB:A9'
+    mod_pkt_params['eth_src'] = '00:ED:CB:A9:87:65'
     mod_pkt_params['dl_vlan_enable'] = False
-    mod_pkt_params['dl_vlan'] = 3
-    mod_pkt_params['dl_vlan_pcp'] = 7
+    mod_pkt_params['vlan_vid'] = 3
+    mod_pkt_params['vlan_pcp'] = 7
     mod_pkt_params['ip_src'] = '10.20.30.40'
     mod_pkt_params['ip_dst'] = '50.60.70.80'
     mod_pkt_params['ip_tos'] = 0xf0
@@ -926,9 +923,9 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
 
         if vid:
             base_pkt_params['dl_vlan_enable'] = True
-            base_pkt_params['dl_vlan'] = vid
-            if 'dl_vlan' in mod_fields:
-                mod_pkt_params['dl_vlan'] = vid + 1
+            base_pkt_params['vlan_vid'] = vid
+            if 'vlan_vid' in mod_fields:
+                mod_pkt_params['vlan_vid'] = vid + 1
 
         if add_vlan:
             base_pkt_params['dl_vlan_enable'] = False
@@ -936,8 +933,8 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
             mod_pkt_params['pktlen'] = base_pkt_params['pktlen'] + 4
             mod_fields.append('pktlen')
             mod_fields.append('dl_vlan_enable')
-            if 'dl_vlan' not in mod_fields:
-                mod_fields.append('dl_vlan')
+            if 'vlan_vid' not in mod_fields:
+                mod_fields.append('vlan_vid')
         elif strip_vlan:
             base_pkt_params['dl_vlan_enable'] = True
             mod_pkt_params['dl_vlan_enable'] = False
@@ -969,10 +966,10 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
 # Generate a simple "drop" flow mod
 # If in_band is true, then only drop from first test port
 def flow_mod_gen(port_map, in_band):
-    request = of10.message.flow_mod()
-    request.match.wildcards = of10.cstruct.OFPFW_ALL
+    request = ofp.message.flow_add()
+    request.match.wildcards = ofp.OFPFW_ALL
     if in_band:
-        request.match.wildcards = of10.cstruct.OFPFW_ALL - of10.cstruct.OFPFW_IN_PORT
+        request.match.wildcards = ofp.OFPFW_ALL - ofp.OFPFW_IN_PORT
         for of_port, ifname in port_map.items(): # Grab first port
             break
         request.match.in_port = of_port
@@ -1002,28 +999,28 @@ def all_stats_get(parent):
     @returns dict with keys flows, packets, bytes, active (flows), 
     lookups, matched
     """
-    stat_req = of10.message.aggregate_stats_request()
-    stat_req.match = of10.cstruct.ofp_match()
-    stat_req.match.wildcards = of10.cstruct.OFPFW_ALL
+    stat_req = ofp.message.aggregate_stats_request()
+    stat_req.match = ofp.match()
+    stat_req.match.wildcards = ofp.OFPFW_ALL
     stat_req.table_id = 0xff
-    stat_req.out_port = of10.cstruct.OFPP_NONE
+    stat_req.out_port = ofp.OFPP_NONE
 
     rv = {}
 
     (reply, pkt) = parent.controller.transact(stat_req)
-    parent.assertTrue(len(reply.stats) == 1, "Did not receive flow stats reply")
+    parent.assertTrue(len(reply.entries) == 1, "Did not receive flow stats reply")
 
-    for obj in reply.stats:
+    for obj in reply.entries:
         (rv["flows"], rv["packets"], rv["bytes"]) = (obj.flow_count, 
                                                   obj.packet_count, obj.byte_count)
         break
 
-    request = of10.message.table_stats_request()
+    request = ofp.message.table_stats_request()
     (reply , pkt) = parent.controller.transact(request)
 
     
     (rv["active"], rv["lookups"], rv["matched"]) = (0,0,0)
-    for obj in reply.stats:
+    for obj in reply.entries:
         rv["active"] += obj.active_count
         rv["lookups"] += obj.lookup_count
         rv["matched"] += obj.matched_count
@@ -1147,18 +1144,18 @@ def get_stats(test, req):
     stats = []
     reply, _ = test.controller.transact(req)
     test.assertTrue(reply is not None, "No response to stats request")
-    stats.extend(reply.stats)
-    while reply.flags & of10.OFPSF_REPLY_MORE != 0:
-        reply, pkt = self.controller.poll(exp_msg=of10.OFPT_STATS_REPLY)
+    stats.extend(reply.entries)
+    while reply.flags & ofp.OFPSF_REPLY_MORE != 0:
+        reply, pkt = self.controller.poll(exp_msg=ofp.OFPT_STATS_REPLY)
         test.assertTrue(reply is not None, "No response to stats request")
-        stats.extend(reply.stats)
+        stats.extend(reply.entries)
     return stats
 
-def get_flow_stats(test, match, table_id=0xff, out_port=of10.cstruct.OFPP_NONE):
+def get_flow_stats(test, match, table_id=0xff, out_port=ofp.OFPP_NONE):
     """
     Retrieve a list of flow stats entries.
     """
-    req = of10.message.flow_stats_request(match=match,
+    req = ofp.message.flow_stats_request(match=match,
                                           table_id=table_id,
                                           out_port=out_port)
     return get_stats(test, req)
@@ -1167,18 +1164,18 @@ def get_port_stats(test, port_no):
     """
     Retrieve a list of port stats entries.
     """
-    req = of10.message.port_stats_request(port_no=port_no)
+    req = ofp.message.port_stats_request(port_no=port_no)
     return get_stats(test, req)
 
 def get_queue_stats(test, port_no, queue_id):
     """
     Retrieve a list of queue stats entries.
     """
-    req = of10.message.queue_stats_request(port_no=port_no, queue_id=queue_id)
+    req = ofp.message.queue_stats_request(port_no=port_no, queue_id=queue_id)
     return get_stats(test, req)
 
 def verify_flow_stats(test, match, table_id=0xff,
-                      out_port=of10.cstruct.OFPP_NONE,
+                      out_port=ofp.OFPP_NONE,
                       initial=[],
                       pkts=None, bytes=None):
     """

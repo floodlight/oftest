@@ -36,6 +36,7 @@ import oftest
 from oftest import config
 import oftest.ofutils
 import oftest.help_formatter
+import loxi
 
 try:
     import scapy.all as scapy
@@ -350,19 +351,12 @@ logging_setup(config)
 logging.info("++++++++ " + time.asctime() + " ++++++++")
 
 # Pick an OpenFlow protocol module based on the configured version
-# This will go away once we have a single protocol module that
-# can handle all OpenFlow versions.
-if config["openflow_version"] == "1.0":
-    import of10
-    sys.modules["ofp"] = of10
-elif config["openflow_version"] == "1.1":
-    import of11
-    sys.modules["ofp"] = of11
-elif config["openflow_version"] == "1.2":
-    import of12
-    sys.modules["ofp"] = of12
-else:
-    assert(False)
+wire_versions = {
+    "1.0": 1,
+    "1.1": 2,
+    "1.2": 3,
+}
+sys.modules["ofp"] = loxi.protocol(wire_versions[config["openflow_version"]])
 
 # HACK: testutils.py imports controller.py, which needs the ofp module
 import oftest.testutils

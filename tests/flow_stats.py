@@ -12,10 +12,8 @@ import copy
 
 from oftest import config
 import oftest.controller as controller
-import oftest.cstruct as ofp
-import oftest.message as message
+import ofp
 import oftest.dataplane as dataplane
-import oftest.action as action
 import oftest.parse as parse
 import oftest.base_tests as base_tests
 
@@ -74,7 +72,7 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
     """
 
     def verifyStats(self, flow_mod_msg, match, out_port, test_timeout, packet_count):
-        stat_req = message.flow_stats_request()
+        stat_req = ofp.message.flow_stats_request()
         stat_req.match = match
         stat_req.table_id = 0xff
         stat_req.out_port = out_port
@@ -86,9 +84,9 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
                                                      timeout=test_timeout)
             self.assertTrue(response is not None, 
                             "No response to stats request")
-            self.assertTrue(len(response.stats) == 1,
+            self.assertTrue(len(response.entries) == 1,
                             "Did not receive flow stats reply")
-            for obj in response.stats:
+            for obj in response.entries:
                 # TODO: pad1 and pad2 fields may be nonzero, is this a bug?
                 # for now, just clear them so the assert is simpler
                 obj.match.pad1 = 0
@@ -127,7 +125,7 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
-        act = action.action_output()
+        act = ofp.action.output()
 
         # build flow
         ingress_port = of_ports[0];
@@ -135,7 +133,7 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
         logging.info("Ingress " + str(ingress_port) + 
                        " to egress " + str(egress_port))
         match.in_port = ingress_port
-        flow_mod_msg = message.flow_mod()
+        flow_mod_msg = ofp.message.flow_add()
         flow_mod_msg.match = copy.deepcopy(match)
         flow_mod_msg.cookie = random.randint(0,9007199254740992)
         flow_mod_msg.buffer_id = 0xffffffff
@@ -143,7 +141,7 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
         flow_mod_msg.hard_timeout = 65000
         flow_mod_msg.priority = 100
         act.port = egress_port
-        flow_mod_msg.actions.add(act)
+        flow_mod_msg.actions.append(act)
        
         # send flow
         logging.info("Inserting flow")
@@ -187,15 +185,15 @@ class TwoFlowStats(base_tests.SimpleDataPlane):
                         "Could not generate flow match from pkt")
         match.in_port = ingress_port
         
-        flow_mod_msg = message.flow_mod()
+        flow_mod_msg = ofp.message.flow_add()
         flow_mod_msg.match = match
         flow_mod_msg.cookie = random.randint(0,9007199254740992)
         flow_mod_msg.buffer_id = 0xffffffff
         flow_mod_msg.idle_timeout = 0
         flow_mod_msg.hard_timeout = 0
-        act = action.action_output()
+        act = ofp.action.output()
         act.port = egress_port
-        flow_mod_msg.actions.add(act)
+        flow_mod_msg.actions.append(act)
 
         logging.info("Ingress " + str(ingress_port) + 
                        " to egress " + str(egress_port))
@@ -204,7 +202,7 @@ class TwoFlowStats(base_tests.SimpleDataPlane):
 
     def sumStatsReplyCounts(self, response):
         total_packets = 0
-        for obj in response.stats:
+        for obj in response.entries:
             # TODO: pad1 and pad2 fields may be nonzero, is this a bug?
             # for now, just clear them so the assert is simpler
             #obj.match.pad1 = 0
@@ -217,7 +215,7 @@ class TwoFlowStats(base_tests.SimpleDataPlane):
         return total_packets
 
     def verifyStats(self, match, out_port, test_timeout, packet_count):
-        stat_req = message.flow_stats_request()
+        stat_req = ofp.message.flow_stats_request()
         stat_req.match = match
         stat_req.table_id = 0xff
         stat_req.out_port = out_port
@@ -263,7 +261,7 @@ class TwoFlowStats(base_tests.SimpleDataPlane):
         pkt1 = simple_tcp_packet()
         flow_mod_msg1 = self.buildFlowModMsg(pkt1, ingress_port, egress_port1)
        
-        pkt2 = simple_tcp_packet(dl_src='0:7:7:7:7:7')
+        pkt2 = simple_tcp_packet(eth_src='0:7:7:7:7:7')
         flow_mod_msg2 = self.buildFlowModMsg(pkt2, ingress_port, egress_port2)
        
         logging.info("Inserting flow1")
@@ -312,15 +310,15 @@ class AggregateStats(base_tests.SimpleDataPlane):
                         "Could not generate flow match from pkt")
         match.in_port = ingress_port
         
-        flow_mod_msg = message.flow_mod()
+        flow_mod_msg = ofp.message.flow_add()
         flow_mod_msg.match = match
         flow_mod_msg.cookie = random.randint(0,9007199254740992)
         flow_mod_msg.buffer_id = 0xffffffff
         flow_mod_msg.idle_timeout = 0
         flow_mod_msg.hard_timeout = 0
-        act = action.action_output()
+        act = ofp.action.output()
         act.port = egress_port
-        flow_mod_msg.actions.add(act)
+        flow_mod_msg.actions.append(act)
 
         logging.info("Ingress " + str(ingress_port) + 
                        " to egress " + str(egress_port))
@@ -329,7 +327,7 @@ class AggregateStats(base_tests.SimpleDataPlane):
 
     def verifyAggFlowStats(self, match, out_port, test_timeout, 
                            flow_count, packet_count):
-        stat_req = message.aggregate_stats_request()
+        stat_req = ofp.message.aggregate_stats_request()
         stat_req.match = match
         stat_req.table_id = 0xff
         stat_req.out_port = out_port
@@ -341,15 +339,12 @@ class AggregateStats(base_tests.SimpleDataPlane):
                                                      timeout=test_timeout)
             self.assertTrue(response is not None, 
                             "No response to stats request")
-            self.assertTrue(len(response.stats) == 1, 
-                            "Did not receive flow stats reply")
-            for obj in response.stats:
-                self.assertTrue(obj.flow_count == flow_count,
-                                "Flow count " + str(obj.flow_count) +
-                                " does not match expected " + str(flow_count))
-                logging.info("Received " + str(obj.packet_count) + " packets")
-                if obj.packet_count == packet_count:
-                    all_packets_received = 1
+            self.assertTrue(response.flow_count == flow_count,
+                            "Flow count " + str(response.flow_count) +
+                            " does not match expected " + str(flow_count))
+            logging.info("Received " + str(response.packet_count) + " packets")
+            if response.packet_count == packet_count:
+                all_packets_received = 1
 
             if all_packets_received:
                 break
@@ -374,7 +369,7 @@ class AggregateStats(base_tests.SimpleDataPlane):
         pkt1 = simple_tcp_packet()
         flow_mod_msg1 = self.buildFlowModMsg(pkt1, ingress_port, egress_port1)
        
-        pkt2 = simple_tcp_packet(dl_src='0:7:7:7:7:7')
+        pkt2 = simple_tcp_packet(eth_src='0:7:7:7:7:7')
         flow_mod_msg2 = self.buildFlowModMsg(pkt2, ingress_port, egress_port2)
        
         logging.info("Inserting flow1")
@@ -413,9 +408,9 @@ class EmptyFlowStats(base_tests.SimpleDataPlane):
     """
     def runTest(self):
         delete_all_flows(self.controller)
-        match = ofp.ofp_match()
+        match = ofp.match()
         match.wildcards = 0
-        stat_req = message.flow_stats_request()
+        stat_req = ofp.message.flow_stats_request()
         stat_req.match = match
         stat_req.table_id = 0xff
         stat_req.out_port = ofp.OFPP_NONE
@@ -423,7 +418,7 @@ class EmptyFlowStats(base_tests.SimpleDataPlane):
         response, pkt = self.controller.transact(stat_req)
         self.assertTrue(response is not None,
                         "No response to stats request")
-        self.assertEquals(len(response.stats), 0)
+        self.assertEquals(len(response.entries), 0)
         self.assertEquals(response.flags, 0)
 
 class EmptyAggregateStats(base_tests.SimpleDataPlane):
@@ -433,9 +428,9 @@ class EmptyAggregateStats(base_tests.SimpleDataPlane):
     """
     def runTest(self):
         delete_all_flows(self.controller)
-        match = ofp.ofp_match()
+        match = ofp.match()
         match.wildcards = 0
-        stat_req = message.aggregate_stats_request()
+        stat_req = ofp.message.aggregate_stats_request()
         stat_req.match = match
         stat_req.table_id = 0xff
         stat_req.out_port = ofp.OFPP_NONE
@@ -443,11 +438,9 @@ class EmptyAggregateStats(base_tests.SimpleDataPlane):
         response, pkt = self.controller.transact(stat_req)
         self.assertTrue(response is not None,
                         "No response to stats request")
-        self.assertTrue(len(response.stats) == 1,
-                        "Did not receive flow stats reply")
-        self.assertEquals(response.stats[0].flow_count, 0)
-        self.assertEquals(response.stats[0].packet_count, 0)
-        self.assertEquals(response.stats[0].byte_count, 0)
+        self.assertEquals(response.flow_count, 0)
+        self.assertEquals(response.packet_count, 0)
+        self.assertEquals(response.byte_count, 0)
 
 class DeletedFlowStats(base_tests.SimpleDataPlane):
     """
@@ -476,7 +469,7 @@ class DeletedFlowStats(base_tests.SimpleDataPlane):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         self.assertTrue(match is not None,
                         "Could not generate flow match from pkt")
-        act = action.action_output()
+        act = ofp.action.output()
 
         # build flow
         ingress_port = of_ports[0];
@@ -484,7 +477,7 @@ class DeletedFlowStats(base_tests.SimpleDataPlane):
         logging.info("Ingress " + str(ingress_port) +
                        " to egress " + str(egress_port))
         match.in_port = ingress_port
-        flow_mod_msg = message.flow_mod()
+        flow_mod_msg = ofp.message.flow_add()
         flow_mod_msg.match = copy.deepcopy(match)
         flow_mod_msg.cookie = random.randint(0,9007199254740992)
         flow_mod_msg.buffer_id = 0xffffffff
@@ -493,7 +486,7 @@ class DeletedFlowStats(base_tests.SimpleDataPlane):
         flow_mod_msg.priority = 100
         flow_mod_msg.flags = ofp.OFPFF_SEND_FLOW_REM
         act.port = egress_port
-        flow_mod_msg.actions.add(act)
+        flow_mod_msg.actions.append(act)
 
         # send flow
         logging.info("Inserting flow")
