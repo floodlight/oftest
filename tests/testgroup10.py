@@ -295,6 +295,7 @@ class Grp10No90(unittest.TestCase):
                                                timeout=15)
         self.assertTrue(response is not None, 
                                'Switch is not generating Echo-Requests') 
+        sleep(2)
 
         (response1, pkt1) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
                                                timeout=15)
