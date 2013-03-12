@@ -143,9 +143,8 @@ class Grp10No60(base_tests.SimpleDataPlane):
         logging = get_logger()
         logging.info("Running Test Grp10No60 Version Announcement test")
         of_version = test_param_get('version',default = 0x01)
-        request = message.hello()  
-        rv = self.controller.message_send(request)  
-        self.assertTrue(rv != -1, "Error sending Hello message")
+        
+        # Waiting for switch to send Hello . Initial Hello from our side is set to False.
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,         
                                                timeout=5)
         self.assertTrue(response is not None, 
