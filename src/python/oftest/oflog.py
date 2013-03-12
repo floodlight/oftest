@@ -46,10 +46,10 @@ def wireshark_capture(f):
     def pub(*args, **kargs):
         create_log_directory(str(args[0].__class__.__name__))
         start_wireshark()
-        time.sleep(1)
+        time.sleep(3)
         f(*args, **kargs)
         stop_wireshark()
-        time.sleep(1)
+        time.sleep(3)
     global pubResults
     if pubResults:
         return pub
