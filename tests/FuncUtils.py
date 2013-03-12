@@ -269,7 +269,7 @@ def wildcard_all_except_ingress(self,of_ports,priority=None):
     self.assertTrue(rv != -1, "Error installing flow mod")
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-    return (pkt_matchingress,match3)
+    return (pkt_matchingress,match3,msg3.cookie)
 
 def wildcard_all_except_ingress1(self,of_ports,priority=None):
 # Generate Wildcard_All_Except_Ingress_port flow with action output to port egress_port 2 
@@ -617,7 +617,7 @@ def enqueue(self,ingress_port,egress_port,egress_queue_id):
 
 
 ###########################   Verify Stats Functions   ###########################################################################################
-def get_flowstats(self,match):
+def get_flowstats(self,match,cookie):
     # Generate flow_stats request
     
     stat_req = message.flow_stats_request()
@@ -629,6 +629,8 @@ def get_flowstats(self,match):
     response, pkt = self.controller.transact(stat_req,
                                                      timeout=5)
     self.assertTrue(response is not None,"No response to stats request")
+    self.assertTrue(response.length == 1 , "Switch has more than one flow")
+    self.assertTrue(response.cookie == cookie, "Flow present is not our respective flow")
 
 
 def get_portstats(self,port_num):
