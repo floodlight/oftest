@@ -270,7 +270,8 @@ class Grp10No90(unittest.TestCase):
         #@todo Add an option to wait for a pkt transaction to ensure version
         # compatibilty?
         self.controller.connect(timeout=20)
-        # By default, respond to echo requests
+        # Here, Echo response is set to False, this would trigger connection to drop and hence switch will 
+        # start sending Hello messages to start a new connection
         self.controller.keep_alive = False
         if not self.controller.active:
             raise Exception("Controller startup failed")
@@ -287,7 +288,6 @@ class Grp10No90(unittest.TestCase):
     @wireshark_capture    
     def runTest(self):
         logging = get_logger()
-
         logging.info("Running TestNo90 EchoTimeout ")
         # When the switch loses control channel , it would start retries for control channel connection by sending Hello messages
         # Hence , Polling for Hello Messages to verify control channel disconnection
@@ -321,10 +321,10 @@ class Grp10No120(base_tests.SimpleDataPlane):
         self.assertEqual(rv, 0, "Failed to delete all flows")
         
         #Insert any standard flow entry 
-        (pkt,match) = wildcard_all_except_ingress(self,of_ports)
+        (pkt,match,cookie) = wildcard_all_except_ingress(self,of_ports)
 
-        # Send Table_Stats_Request and verify flow gets inserted.
-        verify_tablestats(self,expect_active=1)
+        #Ensure switch reports back with only one flow entry , ensure the flow entry is not some stray flow entry
+        get_flowstats(self,ofp.OFPFW_ALL,cookie)
 
         #Shutdown the controller 
         self.controller.shutdown()
