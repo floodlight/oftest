@@ -588,14 +588,14 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None
     # Set up output/enqueue action if directed
     if egr_queue is not None:
         parent.assertTrue(egr_ports is not None, "Egress port not set")
-        act = of10.action.action_enqueue()
+        act = of10.action.enqueue()
         for egr_port in egr_port_list:
             act.port = egr_port
             act.queue_id = egr_queue
             request.actions.append(act)
     elif egr_ports is not None:
         for egr_port in egr_port_list:
-            act = of10.action.action_output()
+            act = of10.action.output()
             act.port = egr_port
             request.actions.append(act)
 
@@ -683,7 +683,7 @@ def flow_match_test_pktout(parent, ing_port, egr_ports,
     # Set up output action
     if egr_ports is not None:
         for egr_port in egr_ports:
-            act = of10.action.action_output()
+            act = of10.action.output()
             act.port = egr_port
             msg.actions.append(act)
 
@@ -816,42 +816,42 @@ def action_generate(parent, field_to_mod, mod_field_vals):
         return None
 
     if field_to_mod == 'eth_dst':
-        act = of10.action.action_set_dl_dst()
+        act = of10.action.set_dl_dst()
         act.dl_addr = oftest.parse.parse_mac(mod_field_vals['eth_dst'])
     elif field_to_mod == 'eth_src':
-        act = of10.action.action_set_dl_src()
+        act = of10.action.set_dl_src()
         act.dl_addr = oftest.parse.parse_mac(mod_field_vals['eth_src'])
     elif field_to_mod == 'dl_vlan_enable':
         if not mod_field_vals['dl_vlan_enable']: # Strip VLAN tag
-            act = of10.action.action_strip_vlan()
+            act = of10.action.strip_vlan()
         # Add VLAN tag is handled by vlan_vid field
         # Will return None in this case
     elif field_to_mod == 'vlan_vid':
-        act = of10.action.action_set_vlan_vid()
+        act = of10.action.set_vlan_vid()
         act.vlan_vid = mod_field_vals['vlan_vid']
     elif field_to_mod == 'vlan_pcp':
-        act = of10.action.action_set_vlan_pcp()
+        act = of10.action.set_vlan_pcp()
         act.vlan_pcp = mod_field_vals['vlan_pcp']
     elif field_to_mod == 'ip_src':
-        act = of10.action.action_set_nw_src()
+        act = of10.action.set_nw_src()
         act.nw_addr = oftest.parse.parse_ip(mod_field_vals['ip_src'])
     elif field_to_mod == 'ip_dst':
-        act = of10.action.action_set_nw_dst()
+        act = of10.action.set_nw_dst()
         act.nw_addr = oftest.parse.parse_ip(mod_field_vals['ip_dst'])
     elif field_to_mod == 'ip_tos':
-        act = of10.action.action_set_nw_tos()
+        act = of10.action.set_nw_tos()
         act.nw_tos = mod_field_vals['ip_tos']
     elif field_to_mod == 'tcp_sport':
-        act = of10.action.action_set_tp_src()
+        act = of10.action.set_tp_src()
         act.tp_port = mod_field_vals['tcp_sport']
     elif field_to_mod == 'tcp_dport':
-        act = of10.action.action_set_tp_dst()
+        act = of10.action.set_tp_dst()
         act.tp_port = mod_field_vals['tcp_dport']
     elif field_to_mod == 'udp_sport':
-        act = of10.action.action_set_tp_src()
+        act = of10.action.set_tp_src()
         act.tp_port = mod_field_vals['udp_sport']
     elif field_to_mod == 'udp_dport':
-        act = of10.action.action_set_tp_dst()
+        act = of10.action.set_tp_dst()
         act.tp_port = mod_field_vals['udp_dport']
     else:
         parent.assertTrue(0, "Unknown field to modify: " + str(field_to_mod))
