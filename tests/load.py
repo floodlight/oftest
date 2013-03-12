@@ -195,8 +195,7 @@ class FlowModLoad(base_tests.SimpleProtocol):
         self.assertNotEqual(msg, None, "Barrier failed")
         while self.controller.packets:
            msg = self.controller.packets.pop(0)[0]
-           self.assertNotEqual(msg.type, ofp.message.OFPT_ERROR,
-                               "Error received")
+           self.assertNotEqual(msg.type, ofp.OFPT_ERROR, "Error received")
 
     def runTest(self):
         msg, pkt = self.controller.transact(ofp.message.table_stats_request())
