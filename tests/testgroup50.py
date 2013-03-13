@@ -162,7 +162,7 @@ class Grp50No30(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
         #Sending non matching packet , verify Packetin event gets triggered.
-        pkt2 = simple_eth_packet(dl_src='00:01:01:01:01:02');
+        pkt2 = simple_eth_packet(dl_src='00:01:01:01:01:02', dl_type = 0x0800);
         self.dataplane.send(of_ports[0], str(pkt2))
         
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
@@ -204,7 +204,7 @@ class Grp50No40(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
         
         #Send Non-matching packet
-        pkt2 = simple_eth_packet(dl_dst='00:01:01:01:01:02');
+        pkt2 = simple_eth_packet(dl_dst='00:01:01:01:01:02',dl_type = 0x0800);
         self.dataplane.send(of_ports[0], str(pkt2))
         
         #Verify PacketIn event gets triggered
@@ -248,7 +248,7 @@ class Grp50No50(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
         
         #Send non-matching packet 
-        pkt3 = simple_eth_packet(dl_type=0x0805)
+        pkt3 = simple_eth_packet(dl_type=0x0806)
         self.dataplane.send(of_ports[0],str(pkt3))
 
         #verify Packetin event gets triggered.
@@ -336,7 +336,7 @@ class Grp50No70(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
         
         #Send tagged packet with same vlan_id but different vlan priority
-        pkt2 = simple_tcp_packet(dl_vlan_enable=True,dl_vlan=1,dl_vlan_pcp=20);
+        pkt2 = simple_tcp_packet(dl_vlan_enable=True,dl_vlan=1,dl_vlan_pcp=2);
         self.dataplane.send(of_ports[0], str(pkt2))
 
         #Verify Packet_In event gets triggered
@@ -931,21 +931,21 @@ class Grp50No140(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
         #Sending non matching packet (only dl_dst is different) , verify Packetin event gets triggered.
-        pkt2 = simple_eth_packet(dl_type=0x88cc,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:02:01:01');
+        pkt2 = simple_eth_packet(dl_type=0x0800,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:02:01:01');
         self.dataplane.send(of_ports[0], str(pkt2))
         
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 
         #Sending non matching packet (only dl_src is different) , verify Packetin event gets triggered.
-        pkt2 = simple_eth_packet(dl_type=0x88cc,dl_src='00:01:01:01:01:02',dl_dst='00:01:01:01:01:02');
+        pkt2 = simple_eth_packet(dl_type=0x0800,dl_src='00:01:01:01:01:02',dl_dst='00:01:01:01:01:02');
         self.dataplane.send(of_ports[0], str(pkt2))
         
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 
         #Sending non matching packet (only ether_type is different) , verify Packetin event gets triggered.
-        pkt2 = simple_eth_packet(dl_type=0x0805,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:01:01:02');
+        pkt2 = simple_eth_packet(dl_type=0x0806,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:01:01:02');
         self.dataplane.send(of_ports[0], str(pkt2))
         
         #Verify packet_in event gets triggered
