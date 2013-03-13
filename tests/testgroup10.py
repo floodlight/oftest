@@ -64,6 +64,8 @@ class Grp10No10(base_tests.SimpleDataPlane):
                 self.assertTrue(response is not None,
                                 'PacketIn is not generated--Control plane is down')
         
+
+
         except AssertionError :
         
             #Send a simple tcp packet on ingress_port
