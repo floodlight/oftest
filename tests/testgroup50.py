@@ -244,6 +244,7 @@ class Grp50No50(base_tests.SimpleDataPlane):
 
         #Sending packet matching the flow 
         self.dataplane.send(of_ports[0], str(pkt))
+        sleep(1)
 
         #Verify packet implements the action specified in the flow
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
