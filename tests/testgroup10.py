@@ -290,17 +290,15 @@ class Grp10No90(unittest.TestCase):
         logging = get_logger()
         logging.info("Running TestNo90 EchoTimeout ")
         # When the switch loses control channel , it would start retries for control channel connection by sending Hello messages
-        # Hence , Polling for Hello Messages to verify control channel disconnection
+        # Hence , Polling for Echo request and then Hello Messages to verify control channel disconnection
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ECHO_REQUEST,
                                                timeout=15)
         self.assertTrue(response is not None, 
                                'Switch is not generating Echo-Requests') 
         (response1, pkt1) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
                                                timeout=15)
-        print response1
         self.assertTrue(response is not None, 
                                'Switch did not drop connection due to Echo Timeout') 
-
 
 
 class Grp10No120(base_tests.SimpleDataPlane):
@@ -330,20 +328,37 @@ class Grp10No120(base_tests.SimpleDataPlane):
         (pkt,match,cookie) = wildcard_all_except_ingress(self,of_ports)
 
         #Ensure switch reports back with only one flow entry , ensure the flow entry is not some stray flow entry
-        get_flowstats(self,cookie,match=ofp.OFPFW_ALL)
+        (response,pkt) = get_aggstats(self,match)
+        self.assertTrue(response.flowcount == 1 , "Inserted one flow from our side , but there are more than one flow in the switch")
+        logging.info("Sending simple tcp packet ...")
+        
+        self.dataplane.send(ingress_port, str(pkt))
+        egress_port = of_ports[1]
+        yes_ports=[egress_port]
+        no_ports = set(of_ports).difference(yes_ports)
+        receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
 
         #Shutdown the controller 
         self.controller.shutdown()
-        sleep(15)
-        # Remove sleep and send continous packets to verify control channel disconnection
 
-        #Send matching packet 
-        self.dataplane.send(of_ports[0], str(pkt))
+        # Keep sending continous packets to verify standard flow entry being removed 
+        try :
+            for x in range (0,15) :
+                self.dataplane.send(ingress_port, str(pkt))
+                egress_port = of_ports[1]
+                yes_ports=[egress_port]
+                no_ports = set(of_ports).difference(yes_ports)
+                sleep(1)
+                receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
+                assertionerr = True
+                
+        except AssertionError :
+                break
+            
+        else :
 
-        #Verify packet does not implement the action specified in the flow
-        yes_ports=[]
-        no_ports = set(of_ports)
-        receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
+            self.assertTrue(assertionerr is True, "Failed to shutdown the control plane")
+
 
 
 class Grp10No140(base_tests.SimpleDataPlane):
@@ -384,8 +399,9 @@ class Grp10No140(base_tests.SimpleDataPlane):
             
         #Shutdown the controller 
         self.controller.shutdown()
-        sleep(15) #For connection retries from the switch to exhaust 
-
+        sleep(15) 
+        #TBD:Remove sleep 
+        
         #Send matching packet 
         self.dataplane.send(of_ports[0], str(test_packet))
 
@@ -433,14 +449,23 @@ class Grp10No150(base_tests.SimpleDataPlane):
         self.assertTrue(rv != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-        # Send Table_Stats_Request and verify flow gets inserted.
-        verify_tablestats(self,expect_active=1)
+        #Ensure switch reports back with only one flow entry , ensure the flow entry is not some stray flow entry
+        (response,pkt) = get_aggstats(self,match)
+        self.assertTrue(response.flowcount == 1 , "Inserted one flow from our side , but there are more than one flow in the switch")
+        logging.info("Sending simple tcp packet ...")
+        
+        self.dataplane.send(ingress_port, str(pkt))
+        egress_port = of_ports[1]
+        yes_ports=[egress_port]
+        no_ports = set(of_ports).difference(yes_ports)
+        receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
+       
 
         #Shutdown the controller 
         self.controller.shutdown()
-        sleep(15)
-
+        
         #TBD remove sleeps with continous packet sending 
+        
 
         #Send matching packet 
         self.dataplane.send(of_ports[0], str(pkt))
