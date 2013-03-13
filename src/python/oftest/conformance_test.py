@@ -1,4 +1,4 @@
-from unittest import TestTestRunner
+from unittest import TextTestRunner
 from unittest import TextTestResult
 
 
@@ -33,13 +33,13 @@ class ConformanceTextTestResult(TextTestResult):
         self.mandatory_failures = []
         self.optional_successes = []
         self.optional_failures = []
-        self.skipped = []
 
     def addFailure(self, test, err):
         """
         Adds the pair (test, err) to either mandatory_successes
         or mandatory_failures depending on requirement specified.
         """
+        TextTestResult.addFailure(self, test, err)
         try:
             if test.mandatory:
                 self.mandatory_failures.append( (test, err) )
@@ -48,17 +48,12 @@ class ConformanceTextTestResult(TextTestResult):
             pass
         self.optional_failures.append( (test, err) )
 
-    def addSkip(self, test, reason):
-        """
-        Adds the pair (test, reason) to skipped.
-        """
-        self.skipped.append( (test, reason) )
-
     def addSuccess(self, test):
         """
         Adds the pair (test, err) to either optional_successes
         or optional_failures depending on requirement specified.
         """
+        TextTestResult.addSuccess(self, test)
         try:
             if test.mandatory:
                 self.mandatory_successes.append(test)

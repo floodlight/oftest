@@ -120,6 +120,7 @@ except:
 
 import oftest.testutils
 import oftest.ofutils
+from oftest.conformance_test import ConformanceTextTestRunner
 
 try:
     import scapy.all as scapy
@@ -559,7 +560,7 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 if __name__ == "__main__":
     logging.info("*** TEST RUN START: " + time.asctime())
-    result = unittest.TextTestRunner(verbosity=_verb).run(suite)
+    result = ConformanceTextTestRunner(verbosity=_verb).run(suite)
     if oftest.testutils.skipped_test_count > 0:
         ts = " tests"
         if oftest.testutils.skipped_test_count == 1: ts = " test"
