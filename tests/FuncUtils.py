@@ -159,7 +159,7 @@ def match_ethernet_src_address(self,of_ports,priority=None):
     #Generate Match_Ethernet_SrC_Address flow
 
     #Create a simple tcp packet and generate match on ethernet src address flow
-    pkt_MatchSrc = simple_eth_packet(dl_src='00:01:01:01:01:01',dl_type = 0x0806)
+    pkt_MatchSrc = simple_eth_packet(dl_src='00:01:01:01:01:01',dl_type = 0x88cc)
     match = parse.packet_to_flow_match(pkt_MatchSrc)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
