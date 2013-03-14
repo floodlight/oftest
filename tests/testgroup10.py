@@ -353,7 +353,7 @@ class Grp10No120(base_tests.SimpleDataPlane):
                 no_ports = set(of_ports).difference(yes_ports)
                 sleep(1)
                 receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
-                assertionerr = True; #test
+                assertionerr = True; 
                 
         except AssertionError :
                 break
