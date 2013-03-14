@@ -56,7 +56,27 @@ class Grp10No10(base_tests.SimpleDataPlane):
         # Keep sending the packets till the control plane gets shutdown
         pkt = simple_tcp_packet()
         
-	try :
+        (response, pkt)=self.controller.poll(ofp.OFPT_HELLO, timeout=15)
+	self.assertTrue(response is not None, "No hello message")
+
+
+	#Send a simple tcp packet on ingress_port
+        logging.info("Sending simple tcp packet ...")
+        self.dataplane.send(ingress_port, str(pkt))
+        
+        #Verify packet_in should not be generated 
+        logging.info("No packet_in should be generated")
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=10)
+        self.assertTrue(response is None,
+                                'PacketIn is generated')
+        logging.info("Packet should not be forwarded to any dataplane port")
+        no_ports=set(of_ports)
+        yes_ports=[]
+        receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
+      
+	
+
+	"""try :
             for x in range (0,15) :
                 
                 self.dataplane.send(ingress_port, str(pkt))
@@ -88,7 +108,8 @@ class Grp10No10(base_tests.SimpleDataPlane):
         else :
 
             self.assertTrue(assertionerr is True, "Failed to shutdown the control plane")
-
+            
+"""
 class Grp10No20(base_tests.SimpleProtocol):
     """
     Configure control channel on switch
@@ -214,8 +235,8 @@ class Grp10No80(base_tests.SimpleProtocol):
         #This is almost same as setUp in SimpleProtcocol except that intial hello is set to false
         self.controller = controller.Controller(
             host=config["controller_host"],
-            port=config["controller_port"])
         # clean_shutdown should be set to False to force quit app
+            port=config["controller_port"])
         self.clean_shutdown = True
         #set initial hello to False
         self.controller.initial_hello=False
@@ -313,7 +334,8 @@ class Grp10No120(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-
+(response, pkt)=self.controller.poll(ofp.OFPT_HELLO, timeout=15)
+	self.assertTrue(response is not None, "No hello message")
         logging.info("Running TestNo120 EmergencyMode test") 
 
         of_ports = config["port_map"].keys()
@@ -343,26 +365,13 @@ class Grp10No120(base_tests.SimpleDataPlane):
 
         #Shutdown the controller 
         self.controller.shutdown()
+        
+        self.dataplane.send(ingress_port, str(pkt))
+        yes_ports=[]
+        no_ports = set(of_ports)
+        receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
 
         # Keep sending continous packets to verify standard flow entry being removed 
-        try :
-            for x in range (0,15) :
-                self.dataplane.send(ingress_port, str(pkt))
-                egress_port = of_ports[1]
-                yes_ports=[egress_port]
-                no_ports = set(of_ports).difference(yes_ports)
-                sleep(1)
-                receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
-                assertionerr = True; 
-                
-        except AssertionError :
-                break
-            
-        else :
-
-            self.assertTrue(assertionerr is True, "Failed to shutdown the control plane")
-
-
 
 class Grp10No140(base_tests.SimpleDataPlane):
     """
@@ -402,8 +411,9 @@ class Grp10No140(base_tests.SimpleDataPlane):
             
         #Shutdown the controller 
         self.controller.shutdown()
-        sleep(15) 
-        #TBD:Remove sleep 
+        
+        (response, pkt)=self.controller.poll(ofp.OFPT_HELLO, timeout=15)
+	self.assertTrue(response is not None, "No hello message")
         
         #Send matching packet 
         self.dataplane.send(of_ports[0], str(test_packet))
