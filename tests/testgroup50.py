@@ -162,7 +162,7 @@ class Grp50No30(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
         #Sending non matching packet , verify Packetin event gets triggered.
-        pkt2 = simple_eth_packet(dl_src='00:01:01:01:01:02', dl_type = 0x0806);
+        pkt2 = simple_eth_packet(dl_src='AC-81-12-99-47-0F', dl_type = 0x0806);
         self.dataplane.send(of_ports[0], str(pkt2))
         
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
@@ -204,7 +204,7 @@ class Grp50No40(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
         
         #Send Non-matching packet
-        pkt2 = simple_eth_packet(dl_dst='00:01:01:01:01:02',dl_type = 0x0806);
+        pkt2 = simple_eth_packet(dl_dst='AC-81-12-99-47-0F',dl_type = 0x0806);
         self.dataplane.send(of_ports[0], str(pkt2))
         
         #Verify PacketIn event gets triggered
