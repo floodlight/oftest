@@ -44,7 +44,7 @@ class ConformanceTextTestResult(TextTestResult):
             if test.mandatory:
                 self.mandatory_failures.append( (test, err) )
                 return
-        except:
+        except AttributeError:
             pass
         self.optional_failures.append( (test, err) )
 
@@ -58,6 +58,6 @@ class ConformanceTextTestResult(TextTestResult):
             if test.mandatory:
                 self.mandatory_successes.append(test)
                 return
-        except:
+        except AttributeError:
             pass
         self.optional_successes.append(test)
