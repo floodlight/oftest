@@ -523,9 +523,8 @@ def match_tcp_dst(self,of_ports,priority=None):
 
 def match_ethernet_type(self,of_ports,priority=None):
     #Generate a Match_Ethernet_Type flow
-
     #Create a simple tcp packet and generate match on ethernet type flow
-    pkt_matchtype = simple_eth_packet(dl_type= 0x88cc)
+    pkt_matchtype = simple_eth_packet(dl_dst='AC:81:12:99:47:0F',dl_src ='da:c9:f1:19:72:cf',dl_type = 0x88cc)
     match = parse.packet_to_flow_match(pkt_matchtype)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
