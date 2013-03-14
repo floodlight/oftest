@@ -159,7 +159,7 @@ def match_ethernet_src_address(self,of_ports,priority=None):
     #Generate Match_Ethernet_SrC_Address flow
 
     #Create a simple tcp packet and generate match on ethernet src address flow
-    pkt_MatchSrc = simple_eth_packet(dl_src='00:01:01:01:01:01')
+    pkt_MatchSrc = simple_eth_packet(dl_src='00:01:01:01:01:01',dl_type = 0x88cc)
     match = parse.packet_to_flow_match(pkt_MatchSrc)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
@@ -187,7 +187,7 @@ def match_ethernet_dst_address(self,of_ports,priority=None):
     #Generate Match_Ethernet_Dst_Address flow
 
     #Create a simple tcp packet and generate match on ethernet dst address flow
-    pkt_matchdst = simple_eth_packet(dl_dst='78:84:3c:e9:fb:5a')
+    pkt_matchdst = simple_eth_packet(dl_dst='78:84:3c:e9:fb:5a', dl_type = 0x88cc)
     match = parse.packet_to_flow_match(pkt_matchdst)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
@@ -364,7 +364,7 @@ def match_mul_l2(self,of_ports,priority=None):
     #Generate Match_Mul_L2 flow
 
     #Create a simple eth packet and generate match on ethernet protocol flow
-    pkt_mulL2 = simple_eth_packet(dl_type=0x88cc,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:01:01:02')
+    pkt_mulL2 = simple_eth_packet(dl_type= 0x0806,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:01:01:02')
     match = parse.packet_to_flow_match(pkt_mulL2)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
@@ -525,7 +525,7 @@ def match_ethernet_type(self,of_ports,priority=None):
     #Generate a Match_Ethernet_Type flow
 
     #Create a simple tcp packet and generate match on ethernet type flow
-    pkt_matchtype = simple_eth_packet(dl_type=0x88cc)
+    pkt_matchtype = simple_eth_packet(dl_type= 0x88cc)
     match = parse.packet_to_flow_match(pkt_matchtype)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
@@ -821,9 +821,9 @@ def verify_portstats(self, port,tx_packets=None,rx_packets=None,rx_byte=None,tx_
         break
         
     if (tx_packets != None):
-        self.assertEqual(tx_packets,sentp,"rx_packets counter is not incremented correctly")
+        self.assertEqual(tx_packets,sentp,"tx_packets counter is not incremented correctly")
     if (rx_packets != None):
-        self.assertEqual(rx_packets,recvp,"tx_packets counter is not incremented correctly")
+        self.assertEqual(rx_packets,recvp,"rx_packets counter is not incremented correctly")
     if (rx_byte != None):
         self.assertEqual(rx_byte,recvb,"rx_bytes counter is not incremented correctly")
     if (tx_byte != None):
