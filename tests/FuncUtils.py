@@ -617,7 +617,7 @@ def enqueue(self,ingress_port,egress_port,egress_queue_id):
 
 
 ###########################   Verify Stats Functions   ###########################################################################################
-def get_flowstats(self,excookie,match):
+def get_flowstats(self,match):
     # Generate flow_stats request
     
     stat_req = message.flow_stats_request()
@@ -629,8 +629,21 @@ def get_flowstats(self,excookie,match):
     response, pkt = self.controller.transact(stat_req,
                                                      timeout=5)
     self.assertTrue(response is not None,"No response to stats request")
-    self.assertTrue(response.length == 1 , "Switch has more than one flow")
-    self.assertTrue(response.cookie == excookie, "Flow present is not our respective flow")
+
+
+def get_aggstats(self,match):
+    # Generate aggregate flow_stats request
+
+    stats_req =  message.aggregate_stats_request()
+    stat_req.match = match
+    stat_req.table_id = 0xff
+    stat_req.out_port = ofp.OFPP_NONE
+
+    logging.info("Sending stats request")
+    (response, pkt) = self.controller.transact(stat_req,
+                                                     timeout=5)
+    self.assertTrue(response is not None,"No response to stats request")
+    return (response,pkt)
 
 
 def get_portstats(self,port_num):
