@@ -249,7 +249,7 @@ class Grp50No50(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
         
         #Send non-matching packet 
-        pkt3 = simple_eth_packet(dl_type=0x0805)
+        pkt3 = simple_eth_packet(dl_dst='AC:81:12:99:47:0F',dl_src ='da:c9:f1:19:72:cf',dl_type = 0x0805)
         self.dataplane.send(of_ports[0],str(pkt3))
 
         #verify Packetin event gets triggered.
