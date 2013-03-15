@@ -13,7 +13,6 @@ Overview
          |-- tests
          |   `-- test cases
          `-- tools
-             |-- munger
              `-- pylibopenflow
 
     The tools directory is what processes the OpenFlow header
@@ -38,14 +37,6 @@ Overview
         oft_assert.py:   Test framework level assertion
         testutils.py:    Test utilities
         base_tests.py:   Base test classes
-
-Important Notes
-+++++++++++++++
-
-    1.  If you change any of the code generation scripts in
-    tools/munger/scripts you must re-run make -C tools/munger to
-    regenerate the OpenFlow message classes. Make sure you
-    commit the generated code.
 
 Adding Your Own Test Cases
 ++++++++++++++++++++++++++
@@ -74,22 +65,6 @@ Submitting Patches
 ++++++++++++++++++
 
     Send a pull request on GitHub to floodlight/oftest.
-
-Other Info
-++++++++++
-
-    * Build doc with
-      + cd <oftest>/tools/munger
-      + make doc
-    Places the results in <oftest>/doc/html
-    If you have problems, check the install location doxypy.py and
-    that it is set correctly in <oftest>/doc/Doxyfile
-
-    * Run lint on sources
-      + cd <oftest>/tools/munger
-      + make lint
-    Places results in <oftest>/lint/*.log
-    The file controller.log currently has some errors indicated
 
 To Do
 +++++
