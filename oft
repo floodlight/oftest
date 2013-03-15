@@ -487,6 +487,11 @@ if os.getuid() != 0 and not config["allow_user"]:
 if config["random_seed"] is not None:
     logging.info("Random seed: %d" % config["random_seed"])
     random.seed(config["random_seed"])
+else:
+    # Generate random seed and report to log file
+    seed = random.randrange(100000000)
+    logging.info("Autogen random seed: %d" % seed)
+    random.seed(seed)
 
 # Remove python's signal handler which raises KeyboardError. Exiting from an
 # exception waits for all threads to terminate which might not happen.
