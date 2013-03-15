@@ -21,6 +21,8 @@ class SimpleProtocol(unittest.TestCase):
     """
     Root class for setting up the controller
     """
+    # Assumed to be an optional test until specified otherwise.
+    mandatory = False
 
     def setUp(self):
         logging.info("** START TEST CASE " + str(self))
@@ -86,6 +88,7 @@ class SimpleProtocol(unittest.TestCase):
         if not cond:
             logging.error("** FAILED ASSERTION: " + msg)
         unittest.TestCase.assertTrue(self, cond, msg)
+
 
 class SimpleDataPlane(SimpleProtocol):
     """
