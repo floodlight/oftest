@@ -506,7 +506,7 @@ class Grp10No150(base_tests.SimpleDataPlane):
         #checking control plane connection
         logging.info("Checking for control plane connection")
         self.dataplane.send(of_ports[1], str(pkt))
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=15)
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=5)
         self.assertTrue(response is None,
                             'PacketIn is generated--Control plane is not down')
 	logging.info("Control plane connection Disconnected")
