@@ -47,40 +47,23 @@ class Grp10No10(base_tests.SimpleDataPlane):
         ingress_port=of_ports[0]
 
         #Clear Switch State
+        logging.info("Clearing all flows from the switch")
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         #Shutdown the control channel
+        logging.info("Shutting Down the Controller")
         self.controller.shutdown()
         
         # Keep sending the packets till the control plane gets shutdown
+
         pkt = simple_tcp_packet()
         
-        (response, pkt)=self.controller.poll(ofp.OFPT_HELLO, timeout=15)
-	self.assertTrue(response is not None, "No hello message")
-
-
-	#Send a simple tcp packet on ingress_port
-        logging.info("Sending simple tcp packet ...")
-        self.dataplane.send(ingress_port, str(pkt))
-        
-        #Verify packet_in should not be generated 
-        logging.info("No packet_in should be generated")
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=10)
-        self.assertTrue(response is None,
-                                'PacketIn is generated')
-        logging.info("Packet should not be forwarded to any dataplane port")
-        no_ports=set(of_ports)
-        yes_ports=[]
-        receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
-      
-	
-
-	"""try :
-            for x in range (0,15) :
-                
-                self.dataplane.send(ingress_port, str(pkt))
-                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=10)
+        assertionerr = False
+	logging.info("Checking for Control channel connection status")
+  	try :
+        	self.dataplane.send(ingress_port, str(pkt))
+                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=15)
                 self.assertTrue(response is not None,
                                 'PacketIn is not generated--Control plane is down')
         
@@ -89,14 +72,10 @@ class Grp10No10(base_tests.SimpleDataPlane):
         except AssertionError :
         
             #Send a simple tcp packet on ingress_port
+            logging.info("Control  Channel Connection not present")
             logging.info("Sending simple tcp packet ...")
             self.dataplane.send(ingress_port, str(pkt))
         
-            #Verify packet_in should not be generated 
-            logging.info("No packet_in should be generated")
-            (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=10)
-            self.assertTrue(response is None,
-                                'PacketIn is generated')
 
             #Verify dataplane packet should not be forwarded
             logging.info("Packet should not be forwarded to any dataplane port")
@@ -109,7 +88,9 @@ class Grp10No10(base_tests.SimpleDataPlane):
 
             self.assertTrue(assertionerr is True, "Failed to shutdown the control plane")
             
-"""
+      
+	
+
 class Grp10No20(base_tests.SimpleProtocol):
     """
     Configure control channel on switch
@@ -126,17 +107,19 @@ class Grp10No20(base_tests.SimpleProtocol):
         logging.info("Running TestNo20 UserConfigPort test")
 
         request = message.echo_request()
+        logging.info("Sending an Echo request message")
         (response, pkt) = self.controller.transact(request)
         self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,'response is not echo_reply')
+        logging.info("Received message type is echo_reply")
         self.assertEqual(request.header.xid, response.header.xid,
                          'response xid != request xid')
         self.assertTrue(response.header.version == 0x01, 'switch openflow-version field is not 1.0')
-        logging.info("Configured host : " + str(config["controller_host"]) + "Configured port : " + str(config["controller_port"]))
+	logging.info("Configured host : " + str(config["controller_host"]) + "Configured port : " + str(config["controller_port"]))
 
 
 class Grp10No60(base_tests.SimpleDataPlane):
     """
-    Verify HELLO response has proper openflow version reported.
+    Verify HELLO has proper openflow version reported.
     
     @of_version can be passed from command line , default is 0x01
     """
@@ -173,9 +156,10 @@ class Grp10No60(base_tests.SimpleDataPlane):
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,         
                                                timeout=5)
         self.assertTrue(response is not None, 
-                               'Switch did not exchange hello message in return') 
+                               'Switch did not exchange hello message in return')
+        logging.info("Received a Hello message from the Switch") 
         self.assertTrue(response.header.version == of_version, 'switch openflow-version field is not correct') 
-
+	logging.info("The Switch reported the correct openflow version")
 
 class Grp10No70(base_tests.SimpleProtocol):
     """
@@ -214,11 +198,10 @@ class Grp10No70(base_tests.SimpleProtocol):
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,         
                                                timeout=5)
         request = message.hello()                                               
-        logging.info("Change hello message version to 2 and send it to control plane")
         request.header.version=2
         rv = self.controller.message_send(request)      
           
-        logging.info("Verify switch does not generate an error")
+        logging.info("Verifying switch does not generate an error message for a hello message with different version type")
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,         
                                                timeout=5)
         self.assertTrue(response is None, 
@@ -261,7 +244,7 @@ class Grp10No80(base_tests.SimpleProtocol):
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,         
                                                timeout=5)
         request = message.hello()                                               
-        logging.info("Change hello message version to 0 and send it to control plane")
+        logging.info("Changing hello message version to 0 and sending it to control plane")
         request.header.version=0
         rv = self.controller.message_send(request)      
           
@@ -270,9 +253,11 @@ class Grp10No80(base_tests.SimpleProtocol):
                                                timeout=5)
                 
         self.assertTrue(response is not None, 
-                               'Switch did not reply with error message') 
+                               'Switch did not reply with error message')
+        logging.info("Error message received") 
         self.assertTrue(response.type==ofp.OFPET_HELLO_FAILED, 
-                               'Message field type is not HELLO_FAILED') 
+                               'Message field type is not HELLO_FAILED')
+        logging.info("Received message is of type HELLO_FAILED") 
         self.assertTrue(response.code==ofp.OFPHFC_INCOMPATIBLE, 
                         'Message field code is not OFPHFC_INCOMPATIBLE')        
 
@@ -315,15 +300,21 @@ class Grp10No90(unittest.TestCase):
         logging.info("Running TestNo90 EchoTimeout ")
         # When the switch loses control channel , it would start retries for control channel connection by sending Hello messages
         # Hence , Polling for Echo request and then Hello Messages to verify control channel disconnection
+	(response0, pkt0) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
+                                               timeout=1)
+        print response0
+        
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ECHO_REQUEST,
-                                               timeout=15)
+                                               timeout=20)
         self.assertTrue(response is not None, 
                                'Switch is not generating Echo-Requests') 
+ 	logging.info("Received an Echo request, waiting for echo timeout")
         (response1, pkt1) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
-                                               timeout=15)
-        self.assertTrue(response is not None, 
+                                               timeout=25)
+        print response1
+        self.assertTrue(response1 is not None, 
                                'Switch did not drop connection due to Echo Timeout') 
-
+	logging.info("Received an OFPT_HELLO message after echo timeout")
 
 class Grp10No120(base_tests.SimpleDataPlane):
     """
@@ -334,7 +325,7 @@ class Grp10No120(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-(response, pkt)=self.controller.poll(ofp.OFPT_HELLO, timeout=15)
+        (response, pkt)=self.controller.poll(ofp.OFPT_HELLO, timeout=15)
 	self.assertTrue(response is not None, "No hello message")
         logging.info("Running TestNo120 EmergencyMode test") 
 
@@ -342,19 +333,22 @@ class Grp10No120(base_tests.SimpleDataPlane):
         of_ports.sort()
         self.assertTrue(len(of_ports) > 0, "Not enough ports for test")
         
+        ingress_port=of_ports[0]
+        
         #Clear switch state
+        logging.info("Deleting all standard flows from the switch")
         rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
-
+        self.assertEqual(rv, 0, "Failed to delete all standard flows")
+	logging.info("Deleting all emergency flows from the switch")
         rv = delete_all_flows_emer(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        self.assertEqual(rv, 0, "Failed to delete all emergency flows")
         
         #Insert any standard flow entry 
         (pkt,match,cookie) = wildcard_all_except_ingress(self,of_ports)
 
         #Ensure switch reports back with only one flow entry , ensure the flow entry is not some stray flow entry
-        (response,pkt) = get_aggstats(self,match)
-        self.assertTrue(response.flowcount == 1 , "Inserted one flow from our side , but there are more than one flow in the switch")
+        rv = all_stats_get(self)
+        self.assertTrue(rv["flows"] == 1 , "Inserted one flow from our side , but there are more than one flow in the switch")
         logging.info("Sending simple tcp packet ...")
         
         self.dataplane.send(ingress_port, str(pkt))
@@ -366,11 +360,27 @@ class Grp10No120(base_tests.SimpleDataPlane):
         #Shutdown the controller 
         self.controller.shutdown()
         
-        self.dataplane.send(ingress_port, str(pkt))
-        yes_ports=[]
-        no_ports = set(of_ports)
-        receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
+        assertionerr=False
+        
+        try :
+            self.dataplane.send(of_ports[1], str(pkt))
+            (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=15)
+            self.assertTrue(response is not None,
+                                'PacketIn is not generated--Control plane is down')	
+        except AssertionError :
+        
+          #Send a simple tcp packet on ingress_port
+          logging.info("Sending simple tcp packet ...")
+          self.dataplane.send(ingress_port, str(pkt))
 
+          #Verify dataplane packet should not be forwarded
+          logging.info("Packet should not be forwarded to any dataplane port")
+          no_ports=set(of_ports)
+          yes_ports=[]
+          receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
+          assertionerr = True	
+        else :
+	  self.assertTrue(assertionerr is True, "Failed to shutdown the control plane")	          
         # Keep sending continous packets to verify standard flow entry being removed 
 
 class Grp10No140(base_tests.SimpleDataPlane):
@@ -412,17 +422,33 @@ class Grp10No140(base_tests.SimpleDataPlane):
         #Shutdown the controller 
         self.controller.shutdown()
         
-        (response, pkt)=self.controller.poll(ofp.OFPT_HELLO, timeout=15)
-	self.assertTrue(response is not None, "No hello message")
+        assertionerr=False
         
-        #Send matching packet 
-        self.dataplane.send(of_ports[0], str(test_packet))
+        pkt=simple_tcp_packet()
+        
+        try :
+            self.dataplane.send(of_ports[1], str(pkt))
+            (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=15)
+            self.assertTrue(response is not None,
+                                'PacketIn is not generated--Control plane is down')	
+        except AssertionError :
+        
+          #Send a simple tcp packet on ingress_port
+          logging.info("Sending simple tcp packet ...")
+          self.dataplane.send(of_ports[0], str(test_packet))
 
-        #Verify packet implements the action specified in the emergency flow
-        egress_port = of_ports[1]
-        yes_ports=[egress_port]
-        no_ports = set(of_ports).difference(yes_ports)
-        receive_pkt_check(self.dataplane,test_packet,yes_ports,no_ports,self)
+          #Verify dataplane packet should not be forwarded
+          
+          yes_ports=of_ports[1]
+          no_ports=set(of_ports).difference(yes_ports)
+          receive_pkt_check(self.dataplane,test_packet,yes_ports,no_ports,self)
+          logging.info("Emergency flows are active after control channel is disconnected")
+          assertionerr = True	
+        
+        else :
+	  self.assertTrue(assertionerr is True, "Failed to shutdown the control plane")
+        
+       
 
 
 class Grp10No150(base_tests.SimpleDataPlane):
@@ -453,46 +479,55 @@ class Grp10No150(base_tests.SimpleDataPlane):
         msg = message.flow_mod()
         msg.command = ofp.OFPFC_ADD
         msg.match = match
-        msg.hard_timeout = 25       
+        msg.hard_timeout = 15       
         act = action.action_output()
         act.port = of_ports[1]
         self.assertTrue(msg.actions.add(act), "could not add action")
-
+	sleep(2)
         rv = self.controller.message_send(msg)
         self.assertTrue(rv != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         #Ensure switch reports back with only one flow entry , ensure the flow entry is not some stray flow entry
-        (response,pkt) = get_aggstats(self,match)
-        self.assertTrue(response.flowcount == 1 , "Inserted one flow from our side , but there are more than one flow in the switch")
+        rv = all_stats_get(self)
+        self.assertTrue(rv["flows"] == 1 , "Inserted one flow from our side , but there are more than one flow in the switch")
         logging.info("Sending simple tcp packet ...")
-        
-        self.dataplane.send(ingress_port, str(pkt))
+        logging.info("Checking whether the flow we inserted is working")
+        self.dataplane.send(of_ports[0], str(pkt))
         egress_port = of_ports[1]
         yes_ports=[egress_port]
         no_ports = set(of_ports).difference(yes_ports)
         receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
-       
+        logging.info("recieved the packet")
 
         #Shutdown the controller 
         self.controller.shutdown()
         
-        #TBD remove sleeps with continous packet sending 
-        
-
+        #checking control plane connection
+        logging.info("Checking for control plane connection")
+        self.dataplane.send(of_ports[1], str(pkt))
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=15)
+        self.assertTrue(response is None,
+                            'PacketIn is generated--Control plane is not down')
+	logging.info("Control plane connection Disconnected")
+	
         #Send matching packet 
+        logging.info("sending matching packet to verify standard flows are working correctly")
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet implements the action specified in the flow
         egress_port = of_ports[1]
         yes_ports=[egress_port]
-        no_ports = set(of_ports).difference([egress_port])
+        no_ports = set(of_ports).difference(yes_ports)
         receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
 
         #Sleeping for flow to timeout 
-        sleep(10)
+        logging.info("Waiting for flows to time out")
+        sleep(15)
 
         #Send matching packet 
+        logging.info("Sending simple tcp packet ...")
+        logging.info("Verifying if the standard flows have been deleted after timeout")
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet does not implement the action specified in the flow
