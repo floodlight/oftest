@@ -498,7 +498,7 @@ class Grp10No150(base_tests.SimpleDataPlane):
         yes_ports=[egress_port]
         no_ports = set(of_ports).difference(yes_ports)
         receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
-        logging.info("recieved the packet")
+        logging.info("The inserted standard flow is working fine")
 
         #Shutdown the controller 
         self.controller.shutdown()
@@ -520,14 +520,15 @@ class Grp10No150(base_tests.SimpleDataPlane):
         yes_ports=[egress_port]
         no_ports = set(of_ports).difference(yes_ports)
         receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
+        logging.info("All standard flows working fine even after control channel shutdown")
 
         #Sleeping for flow to timeout 
         logging.info("Waiting for flows to time out")
         sleep(15)
 
         #Send matching packet 
-        logging.info("Sending simple tcp packet ...")
         logging.info("Verifying if the standard flows have been deleted after timeout")
+        logging.info("Sending simple tcp packet ...")
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet does not implement the action specified in the flow
@@ -536,3 +537,4 @@ class Grp10No150(base_tests.SimpleDataPlane):
         yes_ports=[]
         no_ports = set(of_ports)
         receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
+        logging.info("All the standard flows are deleted after time out")
