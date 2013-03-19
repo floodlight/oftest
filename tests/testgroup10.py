@@ -62,6 +62,7 @@ class Grp10No10(base_tests.SimpleDataPlane):
         assertionerr = False
 	logging.info("Checking for Control channel connection status")
   	try :
+            for x in range(15):
         	self.dataplane.send(ingress_port, str(pkt))
                 (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=15)
                 self.assertTrue(response is not None,
@@ -363,9 +364,10 @@ class Grp10No120(base_tests.SimpleDataPlane):
         assertionerr=False
         
         try :
-            self.dataplane.send(of_ports[1], str(pkt))
-            (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=15)
-            self.assertTrue(response is not None,
+            for x in range(15):
+                self.dataplane.send(of_ports[1], str(pkt))
+                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=15)
+                self.assertTrue(response is not None,
                                 'PacketIn is not generated--Control plane is down')	
         except AssertionError :
         
@@ -379,6 +381,7 @@ class Grp10No120(base_tests.SimpleDataPlane):
           yes_ports=[]
           receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
           assertionerr = True	
+        
         else :
 	  self.assertTrue(assertionerr is True, "Failed to shutdown the control plane")	          
         # Keep sending continous packets to verify standard flow entry being removed 
@@ -425,22 +428,25 @@ class Grp10No140(base_tests.SimpleDataPlane):
         assertionerr=False
         
         pkt=simple_tcp_packet()
-        
+        logging.info("checking for control channel status")
         try :
-            self.dataplane.send(of_ports[1], str(pkt))
-            (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=15)
-            self.assertTrue(response is not None,
+            for x in range(15):
+                self.dataplane.send(of_ports[1], str(pkt))
+                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=15)
+                self.assertTrue(response is not None,
                                 'PacketIn is not generated--Control plane is down')	
         except AssertionError :
         
           #Send a simple tcp packet on ingress_port
+          logging.info("Control channel is down")
           logging.info("Sending simple tcp packet ...")
+          logging.info("Checking for Emergency flows status after controller shutdown")
           self.dataplane.send(of_ports[0], str(test_packet))
 
           #Verify dataplane packet should not be forwarded
           
-          yes_ports=of_ports[1]
-          no_ports=set(of_ports).difference(yes_ports)
+          yes_ports=[of_ports[1]]
+          no_ports = set(of_ports).difference(yes_ports)
           receive_pkt_check(self.dataplane,test_packet,yes_ports,no_ports,self)
           logging.info("Emergency flows are active after control channel is disconnected")
           assertionerr = True	
@@ -494,7 +500,7 @@ class Grp10No150(base_tests.SimpleDataPlane):
         logging.info("Sending simple tcp packet ...")
         logging.info("Checking whether the flow we inserted is working")
         self.dataplane.send(of_ports[0], str(pkt))
-        egress_port = of_ports[1]
+        egress_port = of_ports [1]
         yes_ports=[egress_port]
         no_ports = set(of_ports).difference(yes_ports)
         receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
@@ -503,25 +509,35 @@ class Grp10No150(base_tests.SimpleDataPlane):
         #Shutdown the controller 
         self.controller.shutdown()
         
+        assertionerr= False
         #checking control plane connection
         logging.info("Checking for control plane connection")
-        self.dataplane.send(of_ports[1], str(pkt))
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=5)
-        self.assertTrue(response is None,
-                            'PacketIn is generated--Control plane is not down')
-	logging.info("Control plane connection Disconnected")
+        try:
+            for x in range(15):
+                self.dataplane.send(of_ports[1], str(pkt))
+                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=5)
+                self.assertTrue(response is not None,
+                            'PacketIn not generated--Control plane is down')
+        
+        except AssertionError :
+
+            logging.info("Control plane connection Disconnected")
 	
-        #Send matching packet 
-        logging.info("sending matching packet to verify standard flows are working correctly")
-        self.dataplane.send(of_ports[0], str(pkt))
+            #Send matching packet 
+            logging.info("sending matching packet to verify standard flows are working correctly")
+            self.dataplane.send(of_ports[0], str(pkt))
 
-        #Verify packet implements the action specified in the flow
-        egress_port = of_ports[1]
-        yes_ports=[egress_port]
-        no_ports = set(of_ports).difference(yes_ports)
-        receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
-        logging.info("All standard flows working fine even after control channel shutdown")
+            #Verify packet implements the action specified in the flow
+            egress_port = of_ports[1]
+            yes_ports=[egress_port]
+            no_ports = set(of_ports).difference(yes_ports)
+            receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
+            logging.info("All standard flows working fine even after control channel shutdown")
+            assertionerr=True
 
+        else :
+            self.assertTrue(assertionerr is True, "Error Control Channel is Not Down")
+        
         #Sleeping for flow to timeout 
         logging.info("Waiting for flows to time out")
         sleep(15)
