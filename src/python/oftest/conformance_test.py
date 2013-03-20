@@ -1,5 +1,5 @@
 from unittest import TextTestRunner
-from unittest import TextTestResult
+from unittest import _TextTestResult
 
 
 import sys
@@ -21,14 +21,14 @@ class ConformanceTextTestRunner(TextTestRunner):
         return ConformanceTextTestResult(self.stream, self.descriptions, self.verbosity)
 
 
-class ConformanceTextTestResult(TextTestResult):
+class ConformanceTextTestResult(_TextTestResult):
     """
     An extention of TestResult to consider mandatory and optional
     testcases. Also included is the skipped attribute, which is
     not included in python 2.6.
     """
     def __init__(self, stream, descriptions, verbosity):
-        TextTestResult.__init__(self, stream, descriptions, verbosity)
+        _TextTestResult.__init__(self, stream, descriptions, verbosity)
         self.mandatory_successes = []
         self.mandatory_failures = []
         self.optional_successes = []
@@ -39,7 +39,7 @@ class ConformanceTextTestResult(TextTestResult):
         Adds the pair (test, err) to either mandatory_successes
         or mandatory_failures depending on requirement specified.
         """
-        TextTestResult.addFailure(self, test, err)
+        _TextTestResult.addFailure(self, test, err)
         try:
             if test.mandatory:
                 self.mandatory_failures.append( (test, err) )
@@ -53,7 +53,7 @@ class ConformanceTextTestResult(TextTestResult):
         Adds the pair (test, err) to either optional_successes
         or optional_failures depending on requirement specified.
         """
-        TextTestResult.addSuccess(self, test)
+        _TextTestResult.addSuccess(self, test)
         try:
             if test.mandatory:
                 self.mandatory_successes.append(test)

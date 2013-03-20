@@ -19,6 +19,7 @@ import oftest.action as action
 import oftest.parse as parse
 import oftest.base_tests as base_tests
 
+from oftest.oflog import *
 from oftest.testutils import *
 from time import sleep
 from FuncUtils import *
@@ -28,8 +29,9 @@ class Grp30No40(base_tests.SimpleDataPlane):
     """Modify the behavior of physical port using Port Modification Messages
     Change OFPPC_PORT_DOWN flag  and verify change takes place by Port_Status Message"""
 
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp30No40 PortMod PortDown Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -87,8 +89,10 @@ class Grp30No90(base_tests.SimpleDataPlane):
     Modify the behavior of physical port using Port Modification Messages
     Change OFPPC_NO_FWD flag and verify change took place with Features Request"""
 
+    @wireshark_capture
     def runTest(self):
 
+        logging = get_logger()
         logging.info("Running Grp30No90 PortModFwd Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -168,8 +172,10 @@ class Grp30No100(base_tests.SimpleDataPlane):
     Modify the behavior of physical port using Port Modification Messages
     Change OFPPC_NO_PACKET_IN flag and verify change took place with Features Request"""
 
+    @wireshark_capture
     def runTest(self):
 
+        logging = get_logger()
         logging.info("Running Grp90No30b PortModPacketIn Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()

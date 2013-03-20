@@ -19,6 +19,7 @@ import oftest.action as action
 import oftest.parse as parse
 import oftest.base_tests as base_tests
 
+from oftest.oflog import *
 from oftest.testutils import *
 from time import sleep
 from FuncUtils import *
@@ -28,8 +29,10 @@ class Grp20No10(base_tests.SimpleProtocol):
     """Verify Features_Request-Reply is implemented 
     a) Send OFPT_FEATURES_REQUEST
 	b) Verify OFPT_FEATURES_REPLY is received without errors"""
-
+    
+    @wireshark_capture
     def runTest(self):
+        logging = get_logger()
         logging.info("Running Grp20No10 Features_Request test")
         
         of_ports = config["port_map"].keys()
@@ -57,9 +60,10 @@ class Grp20No20(base_tests.SimpleProtocol):
     """Check basic Get Config request is implemented
     a) Send OFPT_GET_CONFIG_REQUEST
     b) Verify OFPT_GET_CONFIG_REPLY is received without errors"""
-
+    
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp20No20 Configuration_Request test ")
         
         of_ports = config["port_map"].keys()
@@ -86,9 +90,10 @@ class Grp20No30(base_tests.SimpleProtocol):
     """Check basic Flow Add request is implemented
     a) Send  OFPT_FLOW_MOD , command = OFPFC_ADD 
     c) Send ofp_table_stats request , verify active_count=1 in reply"""
-
+    
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp20No30 Modify_State_Add test")
 
         of_ports = config["port_map"].keys()
@@ -100,6 +105,8 @@ class Grp20No30(base_tests.SimpleProtocol):
 
         logging.info("Inserting a flow entry")
         logging.info("Expecting active_count=1 in table_stats_reply")
+
+        sleep(1)
 
         #Insert a flow entry matching on ingress_port
         (pkt,match) = wildcard_all_except_ingress(self,of_ports)
@@ -117,9 +124,10 @@ class Grp20No40(base_tests.SimpleProtocol):
     b) Send ofp_table_stats request , verify active_count=1 in reply
     c) Send OFPT_FLOW_MOD, command = OFPFC_DELETE
     c) Send ofp_table_stats request , verify active_count=0 in reply"""
-
+    
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp20No40 Modify_State_Delete test")
 
         of_ports = config["port_map"].keys()
@@ -152,9 +160,10 @@ class Grp20No50(base_tests.SimpleDataPlane):
     a) Send OFPT_FLOW_MOD, command = OFPFC_ADD, Action A 
     b) Send OFPT_FLOW_MOD, command = OFPFC_MODIFY , with output action A'
     c) Send a packet matching the flow, verify packet implements action A' """
-
+    
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp20No50 Modify_State_Modify test")
 
         of_ports = config["port_map"].keys()
@@ -183,9 +192,10 @@ class Grp20No60(base_tests.SimpleProtocol):
     a) Send OFPT_FLOW_MOD, command = OFPFC_ADD
     b) Send ofp_flow_stats request
     b) Verify switch replies without errors"""
-
+    
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp20No60 Read_State test")
 
         of_ports = config["port_map"].keys()
@@ -210,8 +220,9 @@ class Grp20No70(base_tests.SimpleDataPlane):
     a) Send packet out message for each dataplane port.
     b) Verify the packet appears on the appropriate dataplane port"""
     
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp20No70 Packet_Out test")
 
         of_ports = config["port_map"].keys()
@@ -225,6 +236,7 @@ class Grp20No70(base_tests.SimpleDataPlane):
         logging.info("Expecting the packet on appropriate dataplane port")
 
         for dp_port in of_ports:
+            
             for outpkt, opt in [
                 (simple_tcp_packet(), "simple TCP packet"),
                 (simple_eth_packet(), "simple Ethernet packet"),
@@ -267,8 +279,9 @@ class Grp20No80(base_tests.SimpleProtocol):
     a) Send OFPT_BARRIER_REQUEST
     c) Verify OFPT_BARRIER_REPLY is recieved"""
     
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp20No80 Barrier_Request_Reply test")
 
         logging.info("Sending Barrier Request")
@@ -289,8 +302,9 @@ class Grp20No90(base_tests.SimpleDataPlane):
     a) Send a simple tcp packet to a dataplane port, without any flow-entry 
     b) Verify that a packet_in event is sent to the controller"""
     
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp20No90 Packet_In test")
 
         of_ports = config["port_map"].keys()
@@ -323,9 +337,10 @@ class Grp20No100(base_tests.SimpleDataPlane):
     a) Create Hello messages from controller
     b) Verify switch also exchanges hello message -- (Poll the control plane)
     d) Verify the version field in the hello messages is openflow 1.0.0 """
-
+    
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp20No100 Hello test")
 
         logging.info("Sending Hello")
@@ -347,8 +362,9 @@ class Grp20No110(base_tests.SimpleProtocol):
     a)  Send echo-request from the controller side, note echo body is empty here.
     b)  Verify switch responds back with echo-reply with same xid """
     
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp20No110 Echo_Without_Body test")
 
         logging.info("Sending Echo Request")

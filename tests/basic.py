@@ -107,9 +107,8 @@ class PacketIn(base_tests.SimpleDataPlane):
                    if count > 10:   # Too many tries
                        break
 
-               self.assertTrue(response is not None, 
-                               'Packet in message not received on port ' + 
-                               str(of_port))
+               self.assertTrue(response is not None, \
+                               "Packet_in message not received. Expecting packet from port %s." % of_port)
                if not dataplane.match_exp_pkt(pkt, response.data):
                    logging.debug("Sent %s" % format_packet(pkt))
                    logging.debug("Resp %s" % format_packet(response.data))

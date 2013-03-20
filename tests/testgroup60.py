@@ -19,6 +19,7 @@ import oftest.parse as parse
 import oftest.base_tests as base_tests
 import time
 
+from oftest.oflog import *
 from oftest.testutils import *
 from time import sleep
 from FuncUtils import*
@@ -37,9 +38,9 @@ class Grp60No10(base_tests.SimpleDataPlane):
 
     """Verify Packet counters per flow are
     incremented by no. of packets received for that flow"""
-
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp60No10 PktPerFlow test")
 
         of_ports = config["port_map"].keys()
@@ -70,9 +71,9 @@ class Grp60No20(base_tests.SimpleDataPlane):
 
     """Verify Byte counters per flow are
     incremented by no. of  bytes received for that flow"""
-
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp60No20 BytPerFlow test")
 
         of_ports = config["port_map"].keys()
@@ -108,9 +109,9 @@ class Grp60No30(base_tests.SimpleDataPlane):
     
     """Verify Duration_sec and Duration_nsec counters per flow varies in accordance with the amount of 
     time the flow was alive"""
-
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp60No30 DurationPerFlow test")
 
         of_ports = config["port_map"].keys()
@@ -155,9 +156,9 @@ class Grp60No50(base_tests.SimpleDataPlane):
 
     """Verify that rx_packets counter in the Port_Stats reply
         increments when packets are received on a port"""
-    
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp60No50 RxPktPerPort test")
 
         of_ports = config["port_map"].keys()
@@ -192,9 +193,9 @@ class Grp60No50(base_tests.SimpleDataPlane):
 class Grp60No60(base_tests.SimpleDataPlane):
 
     """Verify that tx_packets counter in the Port_Stats reply , increments when packets are transmitted by a port"""
-      
+    @wireshark_capture  
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp60No60 TxPktPerPort test")
 
         of_ports = config["port_map"].keys()
@@ -230,9 +231,9 @@ class Grp60No60(base_tests.SimpleDataPlane):
 class Grp60No70(base_tests.SimpleDataPlane):
 
     """Verify that recieved bytes counter in the Port_Stats reply , increments in accordance with the bytes recieved on a port"""
-
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp60No70 RxBytPerPort test")
 
         of_ports = config["port_map"].keys()
@@ -271,9 +272,9 @@ class Grp60No70(base_tests.SimpleDataPlane):
 class Grp60No80(base_tests.SimpleDataPlane):
 
     """Verify that trasnsmitted bytes counter in the Port_Stats reply , increments in accordance with the bytes trasmitted by a port"""
-
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp60No80 TxBytPerPort test")
 
         of_ports = config["port_map"].keys()
@@ -311,9 +312,9 @@ class Grp60No80(base_tests.SimpleDataPlane):
 class Grp60No90(base_tests.SimpleDataPlane):
 
     """Verify that rx_dropped counters in the Port_Stats reply increments in accordance with the packets dropped by RX"""
-
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp60No90 Rx_Drops test")
 
         of_ports = config["port_map"].keys()
@@ -337,9 +338,9 @@ class Grp60No90(base_tests.SimpleDataPlane):
 class Grp60No100(base_tests.SimpleDataPlane):
 
     """Verify that tx_dropped counters in the Port_Stats reply increments in accordance with the packets dropped by TX"""
-
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp60No100 Tx_Drops test")
 
         of_ports = config["port_map"].keys()
@@ -365,9 +366,9 @@ class Grp60No110(base_tests.SimpleDataPlane):
     """Verify that rx_errors counters in the Port_Stats reply increments in accordance with number of recieved error  
           This is a super-set of more specific receive errors and should be greater than or equal to the sum of all
                   rx_*_err values"""
-
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp60No110 Rx_Errors test")
 
         of_ports = config["port_map"].keys()
@@ -391,9 +392,9 @@ class Grp60No110(base_tests.SimpleDataPlane):
 class Grp60No120(base_tests.SimpleDataPlane):
 
     """Verify that Tx_errors counters in the Port_Stats reply increments in accordance with number of trasmit error"""
-
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp60No120 Tx_Errors test")
 
         of_ports = config["port_map"].keys()
@@ -417,9 +418,9 @@ class Grp60No120(base_tests.SimpleDataPlane):
 class Grp60No130(base_tests.SimpleDataPlane):
 
     """Verify that rx_frm_err counters in the Port_Stats reply increments in accordance with the number of frame alignment errors"""
-
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp60No130 Rx_Frame_Err test")
 
         of_ports = config["port_map"].keys()
@@ -444,9 +445,9 @@ class Grp60No130(base_tests.SimpleDataPlane):
 class Grp60No140(base_tests.SimpleDataPlane):
 
     """Verify that rx_over_err counters in the Port_Stats reply increments in accordance with the number of with RX overrun"""
-
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp60No140 Rx_O_Err test")
 
         of_ports = config["port_map"].keys()
@@ -470,9 +471,9 @@ class Grp60No140(base_tests.SimpleDataPlane):
 class Grp60No150(base_tests.SimpleDataPlane):
 
     """Verify that rx_crc_err counters in the Port_Stats reply increments in accordance with the number of crc errors"""
-
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp60No150 crc_error test")
 
         of_ports = config["port_map"].keys()
@@ -496,9 +497,9 @@ class Grp60No150(base_tests.SimpleDataPlane):
 class Grp60No160(base_tests.SimpleDataPlane):
 
     """Verify that collisons counters in the Port_Stats reply increments in accordance with the collisions encountered by the switch """
-
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp60No160 Collisions test")
 
         of_ports = config["port_map"].keys()
@@ -522,8 +523,9 @@ class Grp60No160(base_tests.SimpleDataPlane):
 class Grp60No170(base_tests.SimpleDataPlane):
 
     """Verify that tx_packets in the queue_stats reply increments in accordance with the number of transmitted packets"""
-    
+    @wireshark_capture
     def runTest(self):
+        logging = get_logger()
         logging.info("Running Grp60No170 TxPktPerQueue test")
 
         of_ports = config["port_map"].keys()
@@ -562,8 +564,9 @@ class Grp60No170(base_tests.SimpleDataPlane):
 class Grp60No180(base_tests.SimpleDataPlane):
 
     """Verify that tx_bytes in the queue_stats reply increments in accordance with the number of transmitted bytes"""
-    
+    @wireshark_capture
     def runTest(self):
+        logging = get_logger()
         logging.info("Running Grp60No180 TxBytPerQueue test")
 
         of_ports = config["port_map"].keys()
@@ -603,9 +606,9 @@ class Grp60No180(base_tests.SimpleDataPlane):
 class Grp60No190(base_tests.SimpleDataPlane):
 
     """Verify that tx_errors in the queue_stats reply increments in accordance with the number of packets dropped due to overrun """
-
+    @wireshark_capture
     def runTest(self):
-        
+        logging = get_logger()
         logging.info("Running Grp60No190 TxErrorPerQueue test")
 
         of_ports = config["port_map"].keys()
@@ -631,9 +634,9 @@ class Grp60No190(base_tests.SimpleDataPlane):
 class Grp60No200(base_tests.SimpleDataPlane):
 
     """Verify that active_count counter in the Table_Stats reply , increments in accordance with the flows inserted in a table"""
-
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp60No200 Active Counter test")
 
         of_ports = config["port_map"].keys()
@@ -658,9 +661,9 @@ class Grp60No210(base_tests.SimpleDataPlane):
     
     """Verify that lookup_count and matched_count counter in the Table_Stats reply 
         increments in accordance with the packets looked up and matched with the flows in the table"""
-
+    @wireshark_capture
     def runTest(self):
-
+        logging = get_logger()
         logging.info("Running Grp60No210 LookupMatchedCount test")
 
         of_ports = config["port_map"].keys()
