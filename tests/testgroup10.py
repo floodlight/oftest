@@ -60,16 +60,14 @@ class Grp10No10(base_tests.SimpleDataPlane):
         pkt = simple_tcp_packet()
         
         assertionerr = False
-	logging.info("Checking for Control channel connection status")
-  	try :
+        logging.info("Checking for Control channel connection status")
+        try :
             for x in range(15):
         	self.dataplane.send(ingress_port, str(pkt))
                 (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=15)
                 self.assertTrue(response is not None,
                                 'PacketIn is not generated--Control plane is down')
         
-
-
         except AssertionError :
         
             #Send a simple tcp packet on ingress_port
@@ -115,7 +113,7 @@ class Grp10No20(base_tests.SimpleProtocol):
         self.assertEqual(request.header.xid, response.header.xid,
                          'response xid != request xid')
         self.assertTrue(response.header.version == 0x01, 'switch openflow-version field is not 1.0')
-	logging.info("Configured host : " + str(config["controller_host"]) + "Configured port : " + str(config["controller_port"]))
+        logging.info("Configured host : " + str(config["controller_host"]) + "Configured port : " + str(config["controller_port"]))
 
 
 class Grp10No60(base_tests.SimpleDataPlane):
