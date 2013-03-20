@@ -1,10 +1,10 @@
 # @author Jonathan Stout
-from subprocess import Popen, check_output
+from subprocess import Popen, PIPE
 import json
 import logging
 import os
 import time
-from oftest import config
+#from oftest import config
  
 """
 oflog.py
@@ -72,7 +72,7 @@ def create_log_directory(dirName):
 
 def get_logger():
     LOG = logging.getLogger(pubName)
-    LOG.setLevel(config["dbg_level"])
+    #LOG.setLevel(config["dbg_level"])
     
     h = logging.FileHandler("oft.log")
     if should_publish():
@@ -120,15 +120,18 @@ def find_iface(ip="127.0.0.1"):
     """
     Parses ifconfig to return the interface associated with ip.
     """
-    data = check_output(["ifconfig | grep 'mtu\|inet'"], shell=True)
+    p = Popen(["ifconfig | grep 'Link\|inet'"], shell=True, stdout=PIPE)
+    data = p.communicate()[0]
     data = data.split("\n")[:-1]
     interface = None
 
     for line in data:
         a = line.strip(" \t").split(" ")
-        if a[0][-1] == ":":
-            interface = a[0][:-1]
-        if a[0] == "inet" and a[1] == ip:
+        # Note the interface
+        if "Link" in a:
+            interface = a[0]
+        # Find the right IP
+        if a[0] == "inet" and a[1] == "addr:" + ip:
             return interface
 
 def publish_asserts_and_results(res):
