@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import time
+from oftest import config
  
 """
 oflog.py
@@ -71,7 +72,7 @@ def create_log_directory(dirName):
 
 def get_logger():
     LOG = logging.getLogger(pubName)
-    LOG.setLevel(logging.DEBUG)
+    LOG.setLevel(config["dbg_level"])
     
     h = logging.FileHandler("oft.log")
     if should_publish():
