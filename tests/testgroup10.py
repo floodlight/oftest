@@ -64,7 +64,7 @@ class Grp10No10(base_tests.SimpleDataPlane):
         try :
             for x in range(15):
         	self.dataplane.send(ingress_port, str(pkt))
-                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=15)
+                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=5)
                 self.assertTrue(response is not None,
                                 'PacketIn is not generated--Control plane is down')
         
@@ -301,8 +301,6 @@ class Grp10No90(unittest.TestCase):
         # Hence , Polling for Echo request and then Hello Messages to verify control channel disconnection
 	(response0, pkt0) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
                                                timeout=1)
-        print response0
-        
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ECHO_REQUEST,
                                                timeout=20)
         self.assertTrue(response is not None, 
@@ -310,7 +308,6 @@ class Grp10No90(unittest.TestCase):
  	logging.info("Received an Echo request, waiting for echo timeout")
         (response1, pkt1) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
                                                timeout=25)
-        print response1
         self.assertTrue(response1 is not None, 
                                'Switch did not drop connection due to Echo Timeout') 
 	logging.info("Received an OFPT_HELLO message after echo timeout")
@@ -364,7 +361,7 @@ class Grp10No120(base_tests.SimpleDataPlane):
         try :
             for x in range(15):
                 self.dataplane.send(of_ports[1], str(pkt))
-                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=15)
+                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=5)
                 self.assertTrue(response is not None,
                                 'PacketIn is not generated--Control plane is down')	
         except AssertionError :
@@ -484,17 +481,15 @@ class Grp10No150(base_tests.SimpleDataPlane):
         msg.command = ofp.OFPFC_ADD
         msg.match = match
         msg.hard_timeout = 15       
+        msg.buffer_id = 0xffffffff
         act = action.action_output()
         act.port = of_ports[1]
         self.assertTrue(msg.actions.add(act), "could not add action")
-	sleep(2)
         rv = self.controller.message_send(msg)
         self.assertTrue(rv != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         #Ensure switch reports back with only one flow entry , ensure the flow entry is not some stray flow entry
-        rv = all_stats_get(self)
-        self.assertTrue(rv["flows"] == 1 , "Inserted one flow from our side , but there are more than one flow in the switch")
         logging.info("Sending simple tcp packet ...")
         logging.info("Checking whether the flow we inserted is working")
         self.dataplane.send(of_ports[0], str(pkt))
