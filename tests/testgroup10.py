@@ -64,7 +64,7 @@ class Grp10No10(base_tests.SimpleDataPlane):
   	try :
             for x in range(15):
         	self.dataplane.send(ingress_port, str(pkt))
-                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=15)
+                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=5)
                 self.assertTrue(response is not None,
                                 'PacketIn is not generated--Control plane is down')
         
@@ -366,7 +366,7 @@ class Grp10No120(base_tests.SimpleDataPlane):
         try :
             for x in range(15):
                 self.dataplane.send(of_ports[1], str(pkt))
-                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=15)
+                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=5)
                 self.assertTrue(response is not None,
                                 'PacketIn is not generated--Control plane is down')	
         except AssertionError :
@@ -489,7 +489,6 @@ class Grp10No150(base_tests.SimpleDataPlane):
         act = action.action_output()
         act.port = of_ports[1]
         self.assertTrue(msg.actions.add(act), "could not add action")
-	sleep(2)
         rv = self.controller.message_send(msg)
         self.assertTrue(rv != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")

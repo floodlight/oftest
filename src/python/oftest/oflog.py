@@ -136,7 +136,7 @@ def find_iface(ip="127.0.0.1"):
 
 def publish_asserts_and_results(res):
     global DEVNULL
-    DEVNULL.close()
+    #DEVNULL.close()
 
     if not should_publish():
         return
