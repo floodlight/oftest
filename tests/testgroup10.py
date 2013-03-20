@@ -310,7 +310,7 @@ class Grp10No90(unittest.TestCase):
                                                timeout=25)
         self.assertTrue(response1 is not None, 
                                'Switch did not drop connection due to Echo Timeout') 
-	   logging.info("Received an OFPT_HELLO message after echo timeout")
+        logging.info("Received an OFPT_HELLO message after echo timeout")
 
 class Grp10No120(base_tests.SimpleDataPlane):
     """
