@@ -269,7 +269,7 @@ def wildcard_all_except_ingress(self,of_ports,priority=None):
     self.assertTrue(rv != -1, "Error installing flow mod")
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-    return (pkt_matchingress,match3,cookie)
+    return (pkt_matchingress,match3)
 
 def wildcard_all_except_ingress1(self,of_ports,priority=None):
 # Generate Wildcard_All_Except_Ingress_port flow with action output to port egress_port 2 
