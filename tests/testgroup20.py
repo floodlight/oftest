@@ -28,7 +28,7 @@ class Grp20No10(base_tests.SimpleProtocol):
 
     """Verify Features_Request-Reply is implemented 
     a) Send OFPT_FEATURES_REQUEST
-	b) Verify OFPT_FEATURES_REPLY is received without errors"""
+	b) Verify OFPT_FEATURES_REPLY is received"""
     
     @wireshark_capture
     def runTest(self):
@@ -42,24 +42,26 @@ class Grp20No10(base_tests.SimpleProtocol):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
         
-        logging.info("Sending Features_Request")
-        logging.info("Expecting Features_Reply")
+        logging.info("Sending OFPT_FEATURES_REQUEST")
 
         request = message.features_request()
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Not able to send features request.")
         
+        logging.info("Expecting  OFPT_FEATURES_REPLY")
+        
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_FEATURES_REPLY,
                                                timeout=2)
         self.assertTrue(response is not None, 
-                        'Did not receive Features Reply')
+                        'Did not receive OFPT_FEATURES_REPLY')
+        logging.info("Received OFPT_FEATURES_REPLY")
 
 
 class Grp20No20(base_tests.SimpleProtocol):
     
     """Check basic Get Config request is implemented
     a) Send OFPT_GET_CONFIG_REQUEST
-    b) Verify OFPT_GET_CONFIG_REPLY is received without errors"""
+    b) Verify OFPT_GET_CONFIG_REPLY is received"""
     
     @wireshark_capture
     def runTest(self):
@@ -74,22 +76,23 @@ class Grp20No20(base_tests.SimpleProtocol):
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         logging.info("Sending OFPT_GET_CONFIG_REQUEST ")
-        logging.info("Expecting OFPT_GET_CONFIG_REPLY ")
-
+        
         request = message.get_config_request()
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, " Not able to send get_config request.")
-        
+
+        logging.info("Expecting OFPT_GET_CONFIG_REPLY ")
+ 
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_GET_CONFIG_REPLY,
                                                timeout=2)
         self.assertTrue(response is not None, 
                         'Did not receive OFPT_GET_CONFIG_REPLY')
-
+	logging.info("Received OFPT_GET_CONFIG_REPLY ")
 class Grp20No30(base_tests.SimpleProtocol):
     
     """Check basic Flow Add request is implemented
     a) Send  OFPT_FLOW_MOD , command = OFPFC_ADD 
-    c) Send ofp_table_stats request , verify active_count=1 in reply"""
+    c) Send ofp_aggregate_stats_request , verify flows=1 in reply"""
     
     @wireshark_capture
     def runTest(self):
@@ -104,18 +107,18 @@ class Grp20No30(base_tests.SimpleProtocol):
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         logging.info("Inserting a flow entry")
-        logging.info("Expecting active_count=1 in table_stats_reply")
-
-        sleep(1)
 
         #Insert a flow entry matching on ingress_port
         (pkt,match) = wildcard_all_except_ingress(self,of_ports)
 
         sleep(1)
+        
+        logging.info("Expecting aggregate_stats[flows]==1")
 
         # Send Table_Stats_Request and verify flow gets inserted.
-        verify_tablestats(self,expect_active=1)
-
+        rv = all_stats_get(self)
+        self.assertTrue(rv["flows"] == 1 , "Flow count not equal to number of flows inserted")
+	logging.info("aggregate_stats[flows]==1")
 
 class Grp20No40(base_tests.SimpleProtocol):
     
@@ -137,20 +140,25 @@ class Grp20No40(base_tests.SimpleProtocol):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        logging.info("Inserting a flow entry and then deleting it")
-        logging.info("Expecting the active_count=0 in table_stats_reply")
+        logging.info("Inserting a flow entry")
+        logging.info("Expecting the Flow count=1 in aggregate_stats_reply")
 
         #Insert a flow matching on ingress_port 
         (pkt,match) = wildcard_all_except_ingress(self,of_ports)
 
         #Verify Flow inserted.
-        verify_tablestats(self,expect_active=1)
+        rv = all_stats_get(self)
+        self.assertTrue(rv["flows"] == 1 , "Flow count not equal to number of flows inserted")
+	logging.info("aggregate_stats[flows]==1")
 
         #Delete the flow 
+        logging.info("Deleting the flows inserted")
         nonstrict_delete(self,match)
-
+	logging.info("Expecting the Flow count=0 in aggregate_stats_reply")
         # Send Table_Stats_Request and verify flow deleted.
-        verify_tablestats(self,expect_active=0)
+	rv = all_stats_get(self)
+        self.assertTrue(rv["flows"] == 0 , "Flow count not equal to the expecd number of flows")
+	logging.info("aggregate_stats[flows]==0")
 
       
 
@@ -173,25 +181,27 @@ class Grp20No50(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        logging.info("Inserting a flow entry and then modifying it")
-        logging.info("Expecting the Test Packet to implement the modified action")
+        logging.info("Inserting a flow entry")
+        
 
         # Insert a flow matching on ingress_port with action A (output to of_port[1])    
         (pkt,match) = wildcard_all_except_ingress(self,of_ports)
   
         # Modify the flow action (output to of_port[2])
+        logging.info("Modifying the output action of the flow entry")
         modify_flow_action(self,of_ports,match)
         
+        logging.info("Expecting the Test Packet to implement the modified action")
         # Send the Test Packet and verify action implemented is A' (output to of_port[2])
         send_packet(self,pkt,of_ports[0],of_ports[2])
-                       
+        logging.info("Modified Action implemented")               
 
 class Grp20No60(base_tests.SimpleProtocol):
     
     """Test that a basic Read state request (like flow_stats_get request) does not generate an error
     a) Send OFPT_FLOW_MOD, command = OFPFC_ADD
     b) Send ofp_flow_stats request
-    b) Verify switch replies without errors"""
+    b) Verify switch replies with a ofp_flow_stats"""
     
     @wireshark_capture
     def runTest(self):
@@ -206,13 +216,14 @@ class Grp20No60(base_tests.SimpleProtocol):
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         logging.info("Inserting a flow entry and then sending flow_stats request")
-        logging.info("Expecting the a flow_stats_reply without errors")
-
         # Insert a flow with match on ingress_port
         (pkt,match ) = wildcard_all_except_ingress(self,of_ports)
         
+        logging.info("Expecting the a flow_stats reply")
         #Verify Flow_Stats request does not generate errors
         get_flowstats(self,match)
+        logging.info("Received ofp_flow_stats reply")
+        
         
 class Grp20No70(base_tests.SimpleDataPlane):
     
@@ -248,7 +259,7 @@ class Grp20No70(base_tests.SimpleDataPlane):
                 act.port = dp_port
                 self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
 
-                logging.info("PacketOut to: " + str(dp_port))
+                logging.info("PacketOut to: port " + str(dp_port))
                 rv = self.controller.message_send(msg)
                 self.assertTrue(rv == 0, "Error sending out message")
 
@@ -261,8 +272,9 @@ class Grp20No70(base_tests.SimpleDataPlane):
                                                                 port_number=exp_port,
                                                                 exp_pkt=exp_pkt_arg)
                 
-                self.assertTrue(pkt is not None, 'Packet not received')
-                logging.info("PacketOut: got pkt from " + str(of_port))
+                self.assertTrue(pkt is not None, 'Packet not received on the dataplane port')
+                
+                logging.info("PacketOut: got %s pkt on port " % opt + str(of_port))
                 if of_port is not None:
                     self.assertEqual(of_port, dp_port, "Unexpected receive port")
                 if not dataplane.match_exp_pkt(outpkt, pkt):
@@ -284,16 +296,17 @@ class Grp20No80(base_tests.SimpleProtocol):
         logging = get_logger()
         logging.info("Running Grp20No80 Barrier_Request_Reply test")
 
-        logging.info("Sending Barrier Request")
-        logging.info("Expecting a Barrier Reply with same xid")
-
+        logging.info("Sending OFPT_BARRIER_REQUEST")
+        
         #Send Barrier Request
         request = message.barrier_request()
         (response,pkt) = self.controller.transact(request)
+      
+        logging.info("Expecting a OFPT_BARRIER_REPLY with same header and xid")
         self.assertEqual(response.header.type, ofp.OFPT_BARRIER_REPLY,'response is not barrier_reply')
         self.assertEqual(request.header.xid, response.header.xid,
                          'response xid != request xid')
-
+	logging.info("received OFPT_BARRIER_REPLY with same header and xid")
 
         
 class Grp20No90(base_tests.SimpleDataPlane):
@@ -329,6 +342,7 @@ class Grp20No90(base_tests.SimpleDataPlane):
                                                timeout=2)
         self.assertTrue(response is not None, 
                                'Packet in event is not sent to the controller') 
+        logging.info("Received packet_in from the switch")
 
 
 class Grp20No100(base_tests.SimpleDataPlane):
@@ -343,17 +357,14 @@ class Grp20No100(base_tests.SimpleDataPlane):
         logging = get_logger()
         logging.info("Running Grp20No100 Hello test")
 
-        logging.info("Sending Hello")
         logging.info("Expecting a Hello on the control plane with version--1.0.0")
         
-        #Send Hello message
-        request = message.hello()
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
                                                timeout=1)
         self.assertTrue(response is not None, 
                                'Switch did not exchange hello message in return') 
         self.assertTrue(response.header.version == 0x01, 'switch openflow-version field is not 1.0.0')
-
+	logging.info("Received a Hello on the control plane with version--1.0.0")
 
 
 class Grp20No110(base_tests.SimpleProtocol):
@@ -368,16 +379,18 @@ class Grp20No110(base_tests.SimpleProtocol):
         logging.info("Running Grp20No110 Echo_Without_Body test")
 
         logging.info("Sending Echo Request")
-        logging.info("Expecting a Echo Reply with version--1.0.0 and same xid")
+        
 
         # Send echo_request
         request = message.echo_request()
         (response, pkt) = self.controller.transact(request)
+        logging.info("Expecting a OFPT_ECHO_REPLY with version--1.0.0 and same xid")
         self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,'response is not echo_reply')
         self.assertEqual(request.header.xid, response.header.xid,
                          'response xid != request xid')
         self.assertTrue(response.header.version == 0x01, 'switch openflow-version field is not 1.0.1')
         self.assertEqual(len(response.data), 0, 'response data non-empty')
+	logging.info("Received a OFPT_ECHO_REPLY with version set to 0x01 and same xid")        
 
 
 
