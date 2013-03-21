@@ -20,8 +20,223 @@ from time import sleep
 from FuncUtils import *
 
 
-
 class Grp90No10(base_tests.SimpleDataPlane):
+
+    """Verify the packet_in message body, 
+    when packet_in is triggered due to a flow table miss"""
+
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp90No10 PacketInBodyMiss Test")
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+
+        #Clear switch state      
+        rv = delete_all_flows(self.controller)
+        self.assertEqual(rv, 0, "Failed to delete all flows")
+
+        #Set miss_send_len field 
+        logging.info("Sending  set_config_request to set miss_send_len... ")
+        req = message.set_config()
+        req.miss_send_len = 65535
+        rv=self.controller.message_send(req)
+        self.assertTrue(rv is not None,"Unable to send the message")
+        sleep(1)
+
+        # Send packet to trigger packet_in event
+        pkt = simple_tcp_packet()
+        match = parse.packet_to_flow_match(pkt)
+        self.assertTrue(match is not None, "Could not generate flow match from pkt")
+        match.wildcards=ofp.OFPFW_ALL
+        match.in_port = of_ports[0]
+        self.dataplane.send(of_ports[0],str(pkt))
+
+        #Verify packet_in generated
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=3)
+        self.assertTrue(response is not None,
+                        'Packet In not received on control plane')
+
+        #Verify Frame Total Length Field in Packet_in 
+        self.assertEqual(response.total_len,len(str(pkt)), "PacketIn total_len field is incorrect")
+
+        #Verify in_port field in Packet_in
+        self.assertEqual(response.in_port,of_ports[0],"PacketIn in_port or recieved port field is incorrect")
+
+        #Verify the reason field in Packet_in is OFPR_NO_MATCH
+        self.assertEqual(response.reason,ofp.OFPR_NO_MATCH,"PacketIn reason field is incorrect")
+
+        #Verify data field 
+        self.assertTrue(len(response.data) == len(str(pkt)), "Complete Data packet was not sent")
+
+class Grp90No20(base_tests.SimpleDataPlane):
+
+    """ When packet_in is triggered due to a flow table miss,
+        verify the data sent in packet_in varies in accordance with the
+        miss_send_len field set in OFPT_SET_CONFIG"""
+    
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp90No20 PacketInSizeMiss Test")
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+
+        #Clear switch state      
+        rv = delete_all_flows(self.controller)
+        self.assertEqual(rv, 0, "Failed to delete all flows")
+
+        #Send a set_config_request message 
+        miss_send_len = [0 ,32 ,64,100]
+        
+        for bytes in miss_send_len :
+            req = message.set_config()
+            req.miss_send_len = bytes
+            rv=self.controller.message_send(req)
+            self.assertTrue(rv is not None,"Unable to send the message")
+            sleep(1)
+
+            # Send packet to trigger packet_in event
+            pkt = simple_tcp_packet()
+            match = parse.packet_to_flow_match(pkt)
+            self.assertTrue(match is not None, "Could not generate flow match from pkt")
+            match.wildcards=ofp.OFPFW_ALL
+            match.in_port = of_ports[0]
+            self.dataplane.send(of_ports[0],str(pkt))
+
+            #Verify packet_in generated
+            (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=3)
+            self.assertTrue(response is not None,
+                        'Packet In not received on control plane')
+
+            #Verify buffer_id field and data field
+            if response.buffer_id == 0xFFFFFFFF:
+                self.assertTrue(len(response.data)==len(str(pkt)),"Buffer None here but packet_in is not a complete packet")
+            elif (bytes==0):
+                self.assertEqual(len(response.data),bytes,"PacketIn Size is not equal to miss_send_len") 
+            else:
+                self.assertTrue(len(response.data)>=bytes,"PacketIn Size is not atleast miss_send_len bytes") 
+
+
+class Grp90No60(base_tests.SimpleDataPlane):
+
+    """Verify the packet_in message body, when packet_in is generated due to action output to controller"""
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp90No60 PacketInBodyAction Test")
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+
+        #Clear switch state      
+        rv = delete_all_flows(self.controller)
+        self.assertEqual(rv, 0, "Failed to delete all flows")
+
+        # Create a simple tcp packet
+        pkt = simple_tcp_packet()
+        match = parse.packet_to_flow_match(pkt)
+        self.assertTrue(match is not None, "Could not generate flow match from pkt")
+        match.wildcards=ofp.OFPFW_ALL
+        match.in_port = of_ports[0]
+
+        #Insert a flow entry with action output to controller 
+        request = message.flow_mod()
+        request.match = match
+        act = action.action_output()
+        act.port = ofp.OFPP_CONTROLLER
+        act.max_len = 65535 # Send the complete packet and do not buffer
+        request.actions.add(act)
+
+        logging.info("Inserting flow....")
+        rv = self.controller.message_send(request)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+            
+        #Send packet matching the flow
+        logging.debug("Sending packet to dp port " + str(of_ports[0]))
+        self.dataplane.send(of_ports[0], str(pkt))
+
+        #Verifying packet_in recieved on the control plane 
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=10)
+        self.assertTrue(response is not None,
+                    'Packet in message not received by controller')
+
+        #Verify the reason field is OFPR_ACTION
+        self.assertEqual(response.reason,ofp.OFPR_ACTION,"PacketIn reason field is incorrect")
+
+        #Verify Frame Total Length Field in Packet_in 
+        self.assertEqual(response.total_len,len(str(pkt)), "PacketIn total_len field is incorrect")
+
+        #verify the data field
+        self.assertEqual(len(response.data),len(str(pkt)),"Complete Data Packet was not sent")
+
+        #Verify in_port field in Packet_in
+        self.assertEqual(response.in_port,of_ports[0],"PacketIn in_port or recieved port field is incorrect")               
+
+class Grp90No70(base_tests.SimpleDataPlane):
+
+    """When the packet is sent because of a "send to controller" action, 
+        verify the data sent in packet_in varies in accordance with the
+        max_len field set in action_output"""
+
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp90No70 PacketInSizeAction Test")
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+
+        #Clear switch state      
+        rv = delete_all_flows(self.controller)
+        self.assertEqual(rv, 0, "Failed to delete all flows")
+
+        sleep(2)
+
+        #Create a simple tcp packet
+        pkt = simple_tcp_packet()
+        match = parse.packet_to_flow_match(pkt)
+        self.assertTrue(match is not None, "Could not generate flow match from pkt")
+        match.wildcards=ofp.OFPFW_ALL
+        match.in_port = of_ports[0]
+        
+        max_len = [0 ,32 ,64,100]
+        
+        for bytes in max_len :
+
+            #Insert a flow entry with action --output to controller
+            request = message.flow_mod()
+            request.match = match
+            request.buffer_id = 0xffffffff
+            act = action.action_output()
+            act.port = ofp.OFPP_CONTROLLER
+            act.max_len = bytes 
+            request.actions.add(act)
+            
+            logging.info("Inserting flow....")
+            rv = self.controller.message_send(request)
+            self.assertTrue(rv != -1, "Error installing flow mod")
+            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+            
+            #Send packet matching the flow
+            logging.debug("Sending packet to dp port " + str(of_ports[0]))
+            self.dataplane.send(of_ports[0], str(pkt))
+
+            #Verifying packet_in recieved on the control plane 
+            (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=10)
+            self.assertTrue(response is not None,
+                        'Packet in message not received by controller')
+
+            #Verify the reason field is OFPR_ACTION
+            self.assertEqual(response.reason,ofp.OFPR_ACTION,"PacketIn reason field is incorrect")
+
+            #Verify buffer_id field and data field
+            if response.buffer_id != 0xFFFFFFFF :
+                self.assertTrue(len(response.data)<=bytes,"Packet_in size is greater than max_len field")
+            else:
+                self.assertTrue(len(response.data)==len(str(pkt)),"Buffer None here but packet_in is not a complete packet")
+
+           
+class Grp90No110(base_tests.SimpleDataPlane):
 
     """Verify Port Status Messages are sent to the controller 
     whenever physical ports are added, modified or deleted"""
@@ -31,7 +246,7 @@ class Grp90No10(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp90No10 PortStatusMessage Test")
+        logging.info("Running Grp90No110 PortStatusMessage Test")
         of_ports = config["port_map"].keys()
         
         #Clear switch state      
@@ -66,14 +281,14 @@ class Grp90No10(base_tests.SimpleDataPlane):
         self.assertEqual(response.reason,ofp.OFPPR_ADD,"The reason field of Port Status Message is incorrect")
 
 
-class Grp90No30a(base_tests.SimpleDataPlane):
+class Grp90No120(base_tests.SimpleDataPlane):
     
     """ Modify the behavior of physical port using Port Modification Messages
     Change OFPPC_NO_FLOOD flag  and verify change takes place with features request """
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp90No20 PortModFlood Test")
+        logging.info("Running Grp90No120 PortModFlood Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
 
@@ -110,7 +325,7 @@ class Grp90No30a(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
 
-class Grp90No30b(base_tests.SimpleDataPlane):
+class Grp90No130(base_tests.SimpleDataPlane):
     
     """ 
     Modify the behavior of physical port using Port Modification Messages
@@ -118,7 +333,7 @@ class Grp90No30b(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running PortModFwd Test")
+        logging.info("Running Grp90No130 PortModFwd Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
 
@@ -155,7 +370,7 @@ class Grp90No30b(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
 
-class Grp90No30c(base_tests.SimpleDataPlane):
+class Grp90No140(base_tests.SimpleDataPlane):
     """ 
     Modify the behavior of physical port using Port Modification Messages
     Change OFPPC_NO_PACKET_IN flag and verify change took place with Features Request"""
@@ -200,13 +415,13 @@ class Grp90No30c(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
 
-class Grp90No40(base_tests.SimpleDataPlane):
+class Grp90No160(base_tests.SimpleDataPlane):
     
     """Verify Description Stats message body """
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running DescStatsGet test")
+        logging.info("Running Grp90No160 DescStatsGet test")
         
         logging.info("Sending stats request")
         request = message.desc_stats_request()
@@ -236,14 +451,14 @@ class Grp90No40(base_tests.SimpleDataPlane):
 
 
 
-class Grp90No110(base_tests.SimpleProtocol):
+class Grp90No220(base_tests.SimpleProtocol):
 
     """Verify Queue Configuration Reply message body """
 
     @wireshark_capture  
     def runTest(self):
         logging = get_logger()
-        logging.info("Running QueueConfigRequest")
+        logging.info("Running Grp90No220 QueueConfigRequest")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
