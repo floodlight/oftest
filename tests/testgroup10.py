@@ -534,7 +534,7 @@ class Grp10No150(base_tests.SimpleDataPlane):
         
         #Sleeping for flow to timeout 
         logging.info("Waiting for flows to time out")
-        sleep(15)
+        sleep(16)
 
         #Send matching packet 
         logging.info("Verifying if the standard flows have been deleted after timeout")
