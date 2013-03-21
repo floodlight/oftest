@@ -120,7 +120,7 @@ def find_iface(ip="127.0.0.1"):
     """
     Parses ifconfig to return the interface associated with ip.
     """
-    p = Popen(["ifconfig | grep 'Link\|inet'"], shell=True, stdout=PIPE)
+    p = Popen(["ifconfig | grep 'Link\|inet\|mtu'"], shell=True, stdout=PIPE)
     data = p.communicate()[0]
     data = data.split("\n")[:-1]
     interface = None
@@ -128,10 +128,10 @@ def find_iface(ip="127.0.0.1"):
     for line in data:
         a = line.strip(" \t").split(" ")
         # Note the interface
-        if "Link" in a:
-            interface = a[0]
+        if "Link" in a or "mtu" in a:
+            interface = a[0].strip(":")
         # Find the right IP
-        if a[0] == "inet" and a[1] == "addr:" + ip:
+        if a[0] == "inet" and a[1].strip("addr:") == ip:
             return interface
 
 def publish_asserts_and_results(res):
