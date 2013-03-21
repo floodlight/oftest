@@ -146,7 +146,7 @@ DEBUG_LEVELS = {
     'critical'           : logging.CRITICAL
 }
 
-_debug_default = "warning"
+_debug_default = "info"
 _debug_level_default = DEBUG_LEVELS[_debug_default]
 
 ##@var config_default
