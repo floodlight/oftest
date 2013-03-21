@@ -61,6 +61,7 @@ class Grp10No10(base_tests.SimpleDataPlane):
         
         assertionerr = False
         logging.info("Checking for Control channel connection status")
+
         try :
             for x in range(15):
         	self.dataplane.send(ingress_port, str(pkt))
