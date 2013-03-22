@@ -481,7 +481,7 @@ logging.info("OF port map: " + str(config["port_map"]))
 
 # Load config for publishing logs
 if not config["publish"] is None:
-    oflog.set_config(config["publish"], config["controller_host"], config["port_map"])
+    oflog.set_config(config["controller_host"], config["port_map"])
 
 # Build tests
 test_modules = prune_tests(config["test_spec"], load_test_modules(config))

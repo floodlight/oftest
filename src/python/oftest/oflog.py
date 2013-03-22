@@ -32,7 +32,6 @@ results...
 {"failed": 3, "skipped": 0, "errors": 0, "run": 9, "passed": 6}
 """
  
-pubDir = ""
 pubName = ""
 wiresharkMap = {}
 pubResults = False
@@ -58,10 +57,9 @@ def wireshark_capture(f):
         return f
 
 def create_log_directory(dirName):
-    global pubDir
     global pubName
     pubName = dirName
-    logDir = "%sresult/logs/%s" % (pubDir, pubName)
+    logDir = "%sresult/logs/%s" % (config["publish"], pubName)
     try:
         Popen(["rm", "-rf", logDir],stdout=None)
         time.sleep(1)
@@ -76,7 +74,7 @@ def get_logger():
     
     h = logging.FileHandler("oft.log")
     if should_publish():
-        logDir = "%sresult/logs/%s" % (pubDir, pubName)
+        logDir = "%sresult/logs/%s" % (config["publish"], pubName)
         h = logging.FileHandler(logDir+"/trace.log")
     h.setLevel(logging.DEBUG)
     
@@ -87,7 +85,7 @@ def get_logger():
  
 def start_wireshark():
     for iface in wiresharkMap:
-        fd = "%sresult/logs/%s/%s.pcap" % (pubDir, pubName, wiresharkMap[iface][1])
+        fd = "%sresult/logs/%s/%s.pcap" % (config["publish"], pubName, wiresharkMap[iface][1])
         wiresharkMap[iface][0] = Popen(["tshark", "-i", str(iface), "-w", fd, "-q"], stdout=DEVNULL, stderr=DEVNULL)
 
 def stop_wireshark():
@@ -97,12 +95,10 @@ def stop_wireshark():
 def should_publish():
     return pubResults
  
-def set_config(directory, ctrlAddr, portMap):
+def set_config(ctrlAddr, portMap):
     global wiresharkMap
-    global pubDir
     global pubResults
 
-    pubDir = directory
     pubResults = True
 
     global DEVNULL
@@ -159,6 +155,6 @@ def publish_asserts_and_results(res):
     write_json_tofile(results, "results.json")
 
 def write_json_tofile(data, fd):
-    f = open(pubDir+"result/"+fd, "w")
+    f = open(config["publish"]+"result/"+fd, "w")
     json.dump(data, f)
     f.close()
