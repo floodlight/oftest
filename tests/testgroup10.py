@@ -8,7 +8,6 @@ Refer Documentation -- Detailed testing methodology
 
 import time
 import sys
-import logging
 
 import unittest
 import random
