@@ -8,7 +8,6 @@ Refer Documentation -- Detailed testing methodology
 
 import time
 import sys
-import logging
 
 import unittest
 import random
@@ -341,7 +340,7 @@ class Grp10No120(base_tests.SimpleDataPlane):
         self.assertEqual(rv, 0, "Failed to delete all emergency flows")
         
         #Insert any standard flow entry 
-        (pkt,match,cookie) = wildcard_all_except_ingress(self,of_ports)
+        (pkt,match) = wildcard_all_except_ingress(self,of_ports)
 
         #Ensure switch reports back with only one flow entry , ensure the flow entry is not some stray flow entry
         rv = all_stats_get(self)
