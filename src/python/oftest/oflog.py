@@ -50,13 +50,17 @@ def wireshark_capture(f):
         f(*args, **kargs)
         stop_wireshark()
         time.sleep(3)
-    global pubResults
-    if pubResults:
-        return pub
-    else:
+
+    if config["publish"] is None:
         return f
+    else:
+        return pub
 
 def create_log_directory(dirName):
+    """
+    Creates a directory named dirName. Also save dirName as a
+    global variable to inform get_logger() where to log to.
+    """
     global pubName
     pubName = dirName
     logDir = "%sresult/logs/%s" % (config["publish"], pubName)
@@ -69,6 +73,8 @@ def create_log_directory(dirName):
         os.makedirs(logDir)
 
 def get_logger():
+    if config["publish"] is None:
+        return logging
     LOG = logging.getLogger(pubName)
     LOG.setLevel(config["dbg_level"])
     
@@ -95,21 +101,21 @@ def stop_wireshark():
 def should_publish():
     return pubResults
  
-def set_config(ctrlAddr, portMap):
+def set_config():
+    if config["publish"] is None:
+        return
     global wiresharkMap
     global pubResults
-
     pubResults = True
-
     global DEVNULL
     DEVNULL = open(os.devnull, 'w')
 
-    for k in portMap:
-        iface = portMap[k]
+    for k in config["port_map"]:
+        iface = config["port_map"][k]
         # [pid, "dataX"]
         wiresharkMap[iface] = [None, "data"+str(k)]
     # Controller's iface is not included in a config. Look it up.
-    iface = find_iface(ctrlAddr)
+    iface = find_iface(config["controller_host"])
     wiresharkMap[iface] = [None, "ctrl"]
 
 def find_iface(ip="127.0.0.1"):
