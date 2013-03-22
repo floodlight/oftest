@@ -61,3 +61,12 @@ class ConformanceTextTestResult(_TextTestResult):
         except AttributeError:
             pass
         self.optional_successes.append(test)
+
+    def saveResult(self):
+        """
+        Saves the results of the test in json form. These results
+        can then be used to generate a generic report. Results
+        are only published if command line option --publish is
+        specified.
+        """
+        pass
