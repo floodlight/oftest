@@ -34,7 +34,6 @@ results...
  
 pubName = ""
 wiresharkMap = {}
-pubResults = False
 DEVNULL = None
 
 def wireshark_capture(f):
@@ -77,11 +76,8 @@ def get_logger():
         return logging
     LOG = logging.getLogger(pubName)
     LOG.setLevel(config["dbg_level"])
-    
-    h = logging.FileHandler("oft.log")
-    if should_publish():
-        logDir = "%sresult/logs/%s" % (config["publish"], pubName)
-        h = logging.FileHandler(logDir+"/trace.log")
+    logDir = "%sresult/logs/%s" % (config["publish"], pubName)
+    h = logging.FileHandler(logDir+"/testcase.log")
     h.setLevel(logging.DEBUG)
     
     f = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -98,15 +94,10 @@ def stop_wireshark():
     for iface in wiresharkMap:
         wiresharkMap[iface][0].terminate()
 
-def should_publish():
-    return pubResults
- 
 def set_config():
     if config["publish"] is None:
         return
     global wiresharkMap
-    global pubResults
-    pubResults = True
     global DEVNULL
     DEVNULL = open(os.devnull, 'w')
 
@@ -140,7 +131,7 @@ def publish_asserts_and_results(res):
     global DEVNULL
     #DEVNULL.close()
 
-    if not should_publish():
+    if config["publish"] is None:
         return
 
     asserts = {"errors" : {}, "failures" : {}, "skipped" : {}}
