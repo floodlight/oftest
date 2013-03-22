@@ -30,11 +30,15 @@ class ConformanceTextTestResult(_TextTestResult):
     """
     def __init__(self, stream, descriptions, verbosity):
         _TextTestResult.__init__(self, stream, descriptions, verbosity)
+        # TODO::Attempy to open and load existing results.json file.
         self.result = {}
-        self.mandatory_successes = []
-        self.mandatory_failures = []
-        self.optional_successes = []
-        self.optional_failures = []
+
+    def addError(self, test, err):
+        """ """
+        _TextTestResult.addError(self, test, err)
+        testname = test.__class__.__name__
+        group_no = testname[3:].split("No")[0]
+        self.saveResult(testname, group_no, "error", str(err[2]))
 
     def addFailure(self, test, err):
         """
@@ -42,13 +46,9 @@ class ConformanceTextTestResult(_TextTestResult):
         or mandatory_failures depending on requirement specified.
         """
         _TextTestResult.addFailure(self, test, err)
-        try:
-            if test.mandatory:
-                self.mandatory_failures.append( (test, err) )
-                return
-        except AttributeError:
-            pass
-        self.optional_failures.append( (test, err) )
+        testname = test.__class__.__name__
+        group_no = testname[3:].split("No")[0]
+        self.saveResult(testname, group_no, "failed", str(err[2]))
 
     def addSuccess(self, test):
         """
