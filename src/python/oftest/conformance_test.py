@@ -56,46 +56,44 @@ class ConformanceTextTestResult(_TextTestResult):
         or optional_failures depending on requirement specified.
         """
         _TextTestResult.addSuccess(self, test)
-
         testname = test.__class__.__name__
         group_no = testname[3:].split("No")[0]
+        self.saveResult(testname, group_no, "passed")
 
-        if not group_no in self.result["groups"]:
-            self.result["groups"][group_no] = {"total": deepcopy(total), "tests": {}}
-        if testname in self.result["groups"][group_no]["tests"]:
-            #re-wind counters
-            old_testcase = self.result["groups"][group_no]["tests"][testname]
-            old_profile = "mandatory" if old_testcase ["mandatory"] else "optional"
-            old_result = old_testcase["result"]
-            self.result["total"][old_profile][old_result] -= 1
-            self.result["groups"][group_no]["total"][old_profile][old_result] -= 1
-        else:
-            profile = ""
-            tmp_result = {}
-            try:
-                if test.mandatory:
-                    self.mandatory_successes.append(test)
-                    profile = "mandatory"
-                    tmp_result["mandatory"] = True
-            except AttributeError:
-                profile = "optional"
-                tmp_result["mandatory"] = False
-                self.optional_successes.append(test)
-            
-            self.result["total"][profile]["passed"] += 1
-            self.result["total"][profile]["total"] += 1
-            self.result["groups"][group_no]["total"][profile]["passed"] += 1
-            self.result["groups"][group_no]["total"][profile]["total"] += 1
-
-            tmp_result["value"] = ""
-            tmp_result["traceback"] = ""
-            tmp_result["result"] = "passed"
-
-    def saveResult(self):
+    def saveResult(self, testname, group_no, testcase_result, testcase_trace=""):
         """
         Saves the results of the test in json form. These results
         can then be used to generate a generic report. Results
         are only published if command line option --publish is
         specified.
         """
-        pass
+        profile = ""
+        tmp_result = {"result": testcase_result "traceback": testcase_trace}
+        profile_total = {"total": 0, "passed": 0, "failed": 0, "error": 0}
+        total = {"mandatory": deepcopy(profile_total), "optional": deepcopy(profile_total)}
+
+        # Initialize group data structure if doesn't exist
+        if not group_no in self.result["groups"]:
+            self.result["groups"][group_no] = {"total": deepcopy(total), "tests": {}}
+        # If test already exists rollback counters
+        if testname in self.result["groups"][group_no]["tests"]:
+            old_testcase = self.result["groups"][group_no]["tests"][testname]
+            old_profile = "mandatory" if old_testcase["mandatory"] else "optional"
+            old_result = old_testcase["result"]
+            self.result["total"][old_profile]["total"] -= 1
+            self.result["total"][old_profile][old_result] -= 1
+            self.result["groups"][group_no]["total"][old_profile]["total"] -= 1
+            self.result["groups"][group_no]["total"][old_profile][old_result] -= 1
+        # Update counters and save asserstions
+        try:
+            if test.mandatory:
+                profile = "mandatory"
+                tmp_result["mandatory"] = True
+        except AttributeError:
+            profile = "optional"
+            tmp_result["mandatory"] = False
+        self.result["total"][profile]["total"] += 1
+        self.result["total"][profile][testcase_result] += 1
+        self.result["groups"][group_no]["total"][profile]["total"] += 1
+        self.result["groups"][group_no]["total"][profile][testcase_result] += 1
+        # TODO::Save to file
