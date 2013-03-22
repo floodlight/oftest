@@ -146,7 +146,7 @@ DEBUG_LEVELS = {
     'critical'           : logging.CRITICAL
 }
 
-_debug_default = "warning"
+_debug_default = "info"
 _debug_level_default = DEBUG_LEVELS[_debug_default]
 
 ##@var config_default
@@ -176,7 +176,7 @@ config_default = {
     "platform_dir"       : os.path.join(root_dir, "platforms"),
     "profile_dir"        : os.path.join(root_dir, "profiles"),
     "priority"           : 0,
-    "publish"            : False
+    "publish"            : None
 }
 
 # Default test priority
@@ -284,7 +284,7 @@ def config_setup(cfg_dflt):
     parser.add_option("--priority", type="int",
                       help="Minimum test priority",
                       default=0)
-    parser.add_option("--publish", type="string", dest="publish", default=None,
+    parser.add_option("--publish", type="string", dest="publish",
                       help="Publish test logs to specified directory")
 
     # Might need this if other parsers want command line
@@ -480,8 +480,7 @@ logging.debug("Configuration: " + str(config))
 logging.info("OF port map: " + str(config["port_map"]))
 
 # Load config for publishing logs
-if config["publish"]:
-    oflog.set_config(config["publish"], config["controller_host"], config["port_map"])
+oflog.set_config()
 
 # Build tests
 test_modules = prune_tests(config["test_spec"], load_test_modules(config))

@@ -32,10 +32,8 @@ results...
 {"failed": 3, "skipped": 0, "errors": 0, "run": 9, "passed": 6}
 """
  
-pubDir = ""
 pubName = ""
 wiresharkMap = {}
-pubResults = False
 DEVNULL = None
 
 def wireshark_capture(f):
@@ -51,17 +49,20 @@ def wireshark_capture(f):
         f(*args, **kargs)
         stop_wireshark()
         time.sleep(3)
-    global pubResults
-    if pubResults:
-        return pub
-    else:
+
+    if config["publish"] is None:
         return f
+    else:
+        return pub
 
 def create_log_directory(dirName):
-    global pubDir
+    """
+    Creates a directory named dirName. Also save dirName as a
+    global variable to inform get_logger() where to log to.
+    """
     global pubName
     pubName = dirName
-    logDir = "%sresult/logs/%s" % (pubDir, pubName)
+    logDir = "%sresult/logs/%s" % (config["publish"], pubName)
     try:
         Popen(["rm", "-rf", logDir],stdout=None)
         time.sleep(1)
@@ -71,13 +72,12 @@ def create_log_directory(dirName):
         os.makedirs(logDir)
 
 def get_logger():
+    if config["publish"] is None:
+        return logging
     LOG = logging.getLogger(pubName)
     LOG.setLevel(config["dbg_level"])
-    
-    h = logging.FileHandler("oft.log")
-    if should_publish():
-        logDir = "%sresult/logs/%s" % (pubDir, pubName)
-        h = logging.FileHandler(logDir+"/trace.log")
+    logDir = "%sresult/logs/%s" % (config["publish"], pubName)
+    h = logging.FileHandler(logDir+"/testcase.log")
     h.setLevel(logging.DEBUG)
     
     f = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -87,33 +87,26 @@ def get_logger():
  
 def start_wireshark():
     for iface in wiresharkMap:
-        fd = "%sresult/logs/%s/%s.pcap" % (pubDir, pubName, wiresharkMap[iface][1])
+        fd = "%sresult/logs/%s/%s.pcap" % (config["publish"], pubName, wiresharkMap[iface][1])
         wiresharkMap[iface][0] = Popen(["tshark", "-i", str(iface), "-w", fd, "-q"], stdout=DEVNULL, stderr=DEVNULL)
 
 def stop_wireshark():
     for iface in wiresharkMap:
         wiresharkMap[iface][0].terminate()
 
-def should_publish():
-    return pubResults
- 
-def set_config(directory, ctrlAddr, portMap):
+def set_config():
+    if config["publish"] is None:
+        return
     global wiresharkMap
-    global pubDir
-    global pubResults
-
-    pubDir = directory
-    pubResults = True
-
     global DEVNULL
     DEVNULL = open(os.devnull, 'w')
 
-    for k in portMap:
-        iface = portMap[k]
+    for k in config["port_map"]:
+        iface = config["port_map"][k]
         # [pid, "dataX"]
         wiresharkMap[iface] = [None, "data"+str(k)]
     # Controller's iface is not included in a config. Look it up.
-    iface = find_iface(ctrlAddr)
+    iface = find_iface(config["controller_host"])
     wiresharkMap[iface] = [None, "ctrl"]
 
 def find_iface(ip="127.0.0.1"):
@@ -138,7 +131,7 @@ def publish_asserts_and_results(res):
     global DEVNULL
     #DEVNULL.close()
 
-    if not should_publish():
+    if config["publish"] is None:
         return
 
     asserts = {"errors" : {}, "failures" : {}, "skipped" : {}}
@@ -159,6 +152,6 @@ def publish_asserts_and_results(res):
     write_json_tofile(results, "results.json")
 
 def write_json_tofile(data, fd):
-    f = open(pubDir+"result/"+fd, "w")
+    f = open(config["publish"]+"result/"+fd, "w")
     json.dump(data, f)
     f.close()
