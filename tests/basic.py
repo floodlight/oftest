@@ -63,6 +63,14 @@ class EchoWithData(base_tests.SimpleProtocol):
         self.assertEqual(request.data, response.data,
                          'response data does not match request')
 
+class PacketInDump(base_tests.SimpleDataPlane):
+    def runTest(self):
+        while True:
+            (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN); 
+            if response:
+                print response.data
+
+
 @group('smoke')
 class PacketIn(base_tests.SimpleDataPlane):
     """
