@@ -1,6 +1,7 @@
+from copy import deepcopy
+from oftest import config
 from unittest import TextTestRunner
 from unittest import _TextTestResult
-
 
 import sys
 
@@ -29,6 +30,7 @@ class ConformanceTextTestResult(_TextTestResult):
     """
     def __init__(self, stream, descriptions, verbosity):
         _TextTestResult.__init__(self, stream, descriptions, verbosity)
+        self.result = {}
         self.mandatory_successes = []
         self.mandatory_failures = []
         self.optional_successes = []
@@ -54,13 +56,40 @@ class ConformanceTextTestResult(_TextTestResult):
         or optional_failures depending on requirement specified.
         """
         _TextTestResult.addSuccess(self, test)
-        try:
-            if test.mandatory:
-                self.mandatory_successes.append(test)
-                return
-        except AttributeError:
-            pass
-        self.optional_successes.append(test)
+
+        testname = test.__class__.__name__
+        group_no = testname[3:].split("No")[0]
+
+        if not group_no in self.result["groups"]:
+            self.result["groups"][group_no] = {"total": deepcopy(total), "tests": {}}
+        if testname in self.result["groups"][group_no]["tests"]:
+            #re-wind counters
+            old_testcase = self.result["groups"][group_no]["tests"][testname]
+            old_profile = "mandatory" if old_testcase ["mandatory"] else "optional"
+            old_result = old_testcase["result"]
+            self.result["total"][old_profile][old_result] -= 1
+            self.result["groups"][group_no]["total"][old_profile][old_result] -= 1
+        else:
+            profile = ""
+            tmp_result = {}
+            try:
+                if test.mandatory:
+                    self.mandatory_successes.append(test)
+                    profile = "mandatory"
+                    tmp_result["mandatory"] = True
+            except AttributeError:
+                profile = "optional"
+                tmp_result["mandatory"] = False
+                self.optional_successes.append(test)
+            
+            self.result["total"][profile]["passed"] += 1
+            self.result["total"][profile]["total"] += 1
+            self.result["groups"][group_no]["total"][profile]["passed"] += 1
+            self.result["groups"][group_no]["total"][profile]["total"] += 1
+
+            tmp_result["value"] = ""
+            tmp_result["traceback"] = ""
+            tmp_result["result"] = "passed"
 
     def saveResult(self):
         """
