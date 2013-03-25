@@ -3,7 +3,9 @@ from oftest import config
 from unittest import TextTestRunner
 from unittest import _TextTestResult
 
+import json
 import sys
+import os
 
 class ConformanceTextTestRunner(TextTestRunner):
     """
@@ -31,8 +33,18 @@ class ConformanceTextTestResult(_TextTestResult):
     def __init__(self, stream, descriptions, verbosity):
         _TextTestResult.__init__(self, stream, descriptions, verbosity)
         # TODO::Attempy to open and load existing results.json file.
-        self.result = {}
-
+        if "logs" in os.listdir(config["publish"]):
+            self.result_file = config["publish"] + "logs/results.json"
+            try:
+                f = open(self.result_file)
+                self.result = f.read()
+            except IOError:
+                f = open(self.result_file, "w")
+                f.write("{}")
+                self.result = {}
+            finally:
+                f.close()
+            
     def addError(self, test, err):
         """ """
         _TextTestResult.addError(self, test, err)
@@ -62,10 +74,11 @@ class ConformanceTextTestResult(_TextTestResult):
 
     def saveResult(self, testname, group_no, testcase_result, testcase_trace=""):
         """
-        Saves the results of the test in json form. These results
-        can then be used to generate a generic report. Results
-        are only published if command line option --publish is
-        specified.
+        Updates selfresult and saves to test in json form. These
+        results can then be used to generate a generic report.
+        Results are only published if command line option
+        --publish is specified. self.result is consistent over
+        the program's life.
         """
         profile = ""
         tmp_result = {"result": testcase_result "traceback": testcase_trace}
@@ -96,4 +109,7 @@ class ConformanceTextTestResult(_TextTestResult):
         self.result["total"][profile][testcase_result] += 1
         self.result["groups"][group_no]["total"][profile]["total"] += 1
         self.result["groups"][group_no]["total"][profile][testcase_result] += 1
-        # TODO::Save to file
+        # Save to file
+        f = open(self.result_file, "w")
+        f.write( str(self.result) )
+        f.close()
