@@ -2,6 +2,7 @@ from copy import deepcopy
 from oftest import config
 from unittest import TextTestRunner
 from unittest import _TextTestResult
+from traceback import *
 
 import json
 import sys
@@ -57,6 +58,9 @@ class ConformanceTextTestResult(_TextTestResult):
         """ """
         _TextTestResult.addError(self, test, err)
         if not config["publish"] is None:
+            s = ""
+            for l in format_exception(err[0], err[1], err[2]):
+                s += l
             self.saveResult(test, "error", str(err[2]))
 
     def addFailure(self, test, err):
@@ -66,7 +70,10 @@ class ConformanceTextTestResult(_TextTestResult):
         """
         _TextTestResult.addFailure(self, test, err)
         if not config["publish"] is None:
-            self.saveResult(test, "failed", str(err[2]))
+            s = ""
+            for l in format_exception(err[0], err[1], err[2]):
+                s += l
+            self.saveResult(test, "failed", s)
 
     def addSuccess(self, test):
         """
@@ -74,7 +81,6 @@ class ConformanceTextTestResult(_TextTestResult):
         or optional_failures depending on requirement specified.
         """
         _TextTestResult.addSuccess(self, test)
-        print self.result
         if not config["publish"] is None:
             self.saveResult(test, "passed")
 
@@ -112,7 +118,7 @@ class ConformanceTextTestResult(_TextTestResult):
                 profile = "mandatory"
                 tmp_result["mandatory"] = True
         except AttributeError:
-            print "Hit exception"
+            pass
         self.result["total"][profile]["total"] += 1
         self.result["total"][profile][testcase_result] += 1
         self.result["groups"][group_no]["total"][profile]["total"] += 1
