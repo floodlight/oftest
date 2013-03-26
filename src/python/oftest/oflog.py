@@ -62,7 +62,7 @@ def create_log_directory(dirName):
     """
     global pubName
     pubName = dirName
-    logDir = "%sresult/logs/%s" % (config["publish"], pubName)
+    logDir = "%slogs/%s" % (config["publish"], pubName)
     try:
         Popen(["rm", "-rf", logDir],stdout=None)
         time.sleep(1)
@@ -76,7 +76,7 @@ def get_logger():
         return logging
     LOG = logging.getLogger(pubName)
     LOG.setLevel(config["dbg_level"])
-    logDir = "%sresult/logs/%s" % (config["publish"], pubName)
+    logDir = "%slogs/%s" % (config["publish"], pubName)
     h = logging.FileHandler(logDir+"/testcase.log")
     h.setLevel(logging.DEBUG)
     
@@ -87,7 +87,7 @@ def get_logger():
  
 def start_wireshark():
     for iface in wiresharkMap:
-        fd = "%sresult/logs/%s/%s.pcap" % (config["publish"], pubName, wiresharkMap[iface][1])
+        fd = "%slogs/%s/%s.pcap" % (config["publish"], pubName, wiresharkMap[iface][1])
         wiresharkMap[iface][0] = Popen(["tshark", "-i", str(iface), "-w", fd, "-q"], stdout=DEVNULL, stderr=DEVNULL)
 
 def stop_wireshark():
@@ -141,7 +141,7 @@ def publish_asserts_and_results(res):
         asserts["errors"][e[0].__class__.__name__] = e[1]
     for f in res.failures:
         asserts["failures"][f[0].__class__.__name__] = f[1]
-    write_json_tofile(asserts, "asserts.json")
+    #write_json_tofile(asserts, "asserts.json")
  
     results["run"] = res.testsRun
     results["errors"] = len(res.errors)
@@ -149,7 +149,7 @@ def publish_asserts_and_results(res):
     results["passed"] = results["run"] - (results["errors"]+results["failed"])
     results["skipped"] = results["run"] - (results["errors"]+results["failed"]+results["passed"])
     # Publish results
-    write_json_tofile(results, "results.json")
+    #write_json_tofile(results, "results.json")
 
 def write_json_tofile(data, fd):
     f = open(config["publish"]+"result/"+fd, "w")

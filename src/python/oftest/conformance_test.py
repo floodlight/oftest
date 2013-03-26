@@ -41,7 +41,7 @@ class ConformanceTextTestResult(_TextTestResult):
         try:
             f = open(self.result_file)
             data = f.read()
-            self.result = json.load(data)
+            self.result = json.loads(data)
         except IOError:
             self.result = {}
             profile_total = {"total": 0, "passed": 0, "failed": 0, "error": 0}
@@ -57,9 +57,7 @@ class ConformanceTextTestResult(_TextTestResult):
         """ """
         _TextTestResult.addError(self, test, err)
         if not config["publish"] is None:
-            testname = test.__class__.__name__
-            group_no = testname[3:].split("No")[0]
-            self.saveResult(testname, group_no, "error", str(err[2]))
+            self.saveResult(test, "error", str(err[2]))
 
     def addFailure(self, test, err):
         """
@@ -68,9 +66,7 @@ class ConformanceTextTestResult(_TextTestResult):
         """
         _TextTestResult.addFailure(self, test, err)
         if not config["publish"] is None:
-            testname = test.__class__.__name__
-            group_no = testname[3:].split("No")[0]
-            self.saveResult(testname, group_no, "failed", str(err[2]))
+            self.saveResult(test, "failed", str(err[2]))
 
     def addSuccess(self, test):
         """
@@ -78,12 +74,11 @@ class ConformanceTextTestResult(_TextTestResult):
         or optional_failures depending on requirement specified.
         """
         _TextTestResult.addSuccess(self, test)
+        print self.result
         if not config["publish"] is None:
-            testname = test.__class__.__name__
-            group_no = testname[3:].split("No")[0]
-            self.saveResult(testname, group_no, "passed")
+            self.saveResult(test, "passed")
 
-    def saveResult(self, testname, group_no, testcase_result, testcase_trace=""):
+    def saveResult(self, test, testcase_result, testcase_trace=""):
         """
         Updates selfresult and saves to test in json form. These
         results can then be used to generate a generic report.
@@ -91,8 +86,11 @@ class ConformanceTextTestResult(_TextTestResult):
         --publish is specified. self.result is consistent over
         the program's life.
         """
-        profile = ""
-        tmp_result = {"result": testcase_result "traceback": testcase_trace}
+        testname = test.__class__.__name__
+        group_no = testname[3:].split("No")[0]
+
+        profile = "optional"
+        tmp_result = {"result": testcase_result, "traceback": testcase_trace, "mandatory": False}
         profile_total = {"total": 0, "passed": 0, "failed": 0, "error": 0}
         total = {"mandatory": deepcopy(profile_total), "optional": deepcopy(profile_total)}
 
@@ -114,13 +112,13 @@ class ConformanceTextTestResult(_TextTestResult):
                 profile = "mandatory"
                 tmp_result["mandatory"] = True
         except AttributeError:
-            profile = "optional"
-            tmp_result["mandatory"] = False
+            print "Hit exception"
         self.result["total"][profile]["total"] += 1
         self.result["total"][profile][testcase_result] += 1
         self.result["groups"][group_no]["total"][profile]["total"] += 1
         self.result["groups"][group_no]["total"][profile][testcase_result] += 1
+        self.result["groups"][group_no]["tests"][testname] = tmp_result
         # Save to file
         f = open(self.result_file, "w")
-        f.write( str(self.result) )
+        f.write( json.dumps(self.result) )
         f.close()
