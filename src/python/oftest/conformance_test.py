@@ -37,11 +37,16 @@ class ConformanceTextTestResult(_TextTestResult):
             self.result_file = config["publish"] + "logs/results.json"
             try:
                 f = open(self.result_file)
-                self.result = f.read()
+                data = f.read()
+                self.result = json.load(data)
             except IOError:
-                f = open(self.result_file, "w")
-                f.write("{}")
                 self.result = {}
+                profile_total = {"total": 0, "passed": 0, "failed": 0, "error": 0}
+                total = {"mandatory": deepcopy(profile_total), "optional": deepcopy(profile_total)}
+                self.result["total"] = total
+                self.result["groups"] = {}
+                f = open(self.result_file, "w")
+                f.write(json.dumps(self.result))                
             finally:
                 f.close()
             
