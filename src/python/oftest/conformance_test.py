@@ -32,30 +32,34 @@ class ConformanceTextTestResult(_TextTestResult):
     """
     def __init__(self, stream, descriptions, verbosity):
         _TextTestResult.__init__(self, stream, descriptions, verbosity)
-        # TODO::Attempy to open and load existing results.json file.
-        if "logs" in os.listdir(config["publish"]):
-            self.result_file = config["publish"] + "logs/results.json"
-            try:
-                f = open(self.result_file)
-                data = f.read()
-                self.result = json.load(data)
-            except IOError:
-                self.result = {}
-                profile_total = {"total": 0, "passed": 0, "failed": 0, "error": 0}
-                total = {"mandatory": deepcopy(profile_total), "optional": deepcopy(profile_total)}
-                self.result["total"] = total
-                self.result["groups"] = {}
-                f = open(self.result_file, "w")
-                f.write(json.dumps(self.result))                
-            finally:
-                f.close()
+        if config["publish"] is None:
+            return
+        if not "logs" in os.listdir(config["publish"]):
+            os.mkdir(config["publish"] + "logs")
+        # Attempt to open and load existing results.json file.
+        self.result_file = config["publish"] + "logs/results.json"
+        try:
+            f = open(self.result_file)
+            data = f.read()
+            self.result = json.load(data)
+        except IOError:
+            self.result = {}
+            profile_total = {"total": 0, "passed": 0, "failed": 0, "error": 0}
+            total = {"mandatory": deepcopy(profile_total), "optional": deepcopy(profile_total)}
+            self.result["total"] = total
+            self.result["groups"] = {}
+            f = open(self.result_file, "w")
+            f.write(json.dumps(self.result))
+        finally:
+            f.close()
             
     def addError(self, test, err):
         """ """
         _TextTestResult.addError(self, test, err)
-        testname = test.__class__.__name__
-        group_no = testname[3:].split("No")[0]
-        self.saveResult(testname, group_no, "error", str(err[2]))
+        if not config["publish"] is None:
+            testname = test.__class__.__name__
+            group_no = testname[3:].split("No")[0]
+            self.saveResult(testname, group_no, "error", str(err[2]))
 
     def addFailure(self, test, err):
         """
@@ -63,9 +67,10 @@ class ConformanceTextTestResult(_TextTestResult):
         or mandatory_failures depending on requirement specified.
         """
         _TextTestResult.addFailure(self, test, err)
-        testname = test.__class__.__name__
-        group_no = testname[3:].split("No")[0]
-        self.saveResult(testname, group_no, "failed", str(err[2]))
+        if not config["publish"] is None:
+            testname = test.__class__.__name__
+            group_no = testname[3:].split("No")[0]
+            self.saveResult(testname, group_no, "failed", str(err[2]))
 
     def addSuccess(self, test):
         """
@@ -73,9 +78,10 @@ class ConformanceTextTestResult(_TextTestResult):
         or optional_failures depending on requirement specified.
         """
         _TextTestResult.addSuccess(self, test)
-        testname = test.__class__.__name__
-        group_no = testname[3:].split("No")[0]
-        self.saveResult(testname, group_no, "passed")
+        if not config["publish"] is None:
+            testname = test.__class__.__name__
+            group_no = testname[3:].split("No")[0]
+            self.saveResult(testname, group_no, "passed")
 
     def saveResult(self, testname, group_no, testcase_result, testcase_trace=""):
         """
