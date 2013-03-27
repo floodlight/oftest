@@ -15,6 +15,12 @@ NX_ROLE_OTHER = 0
 NX_ROLE_MASTER = 1
 NX_ROLE_SLAVE = 2
 
+def set_role(test, role):
+    request = ofp.message.nicira_controller_role_request(role=role)
+    response, _ = test.controller.transact(request)
+    test.assertTrue(isinstance(response, ofp.message.nicira_controller_role_reply), "Expected a role reply")
+    test.assertEquals(response.role, role)
+
 class AnyReply(base_tests.SimpleDataPlane):
     """
     Verify that a role request gets either a role reply or an error.
@@ -37,3 +43,44 @@ class AnyReply(base_tests.SimpleDataPlane):
             self.assertEquals(response.code, ofp.OFPBRC_BAD_VENDOR)
         else:
             raise AssertionError("Unexpected reply type")
+
+@nonstandard
+class RolePermissions(base_tests.SimpleDataPlane):
+    """
+    Verify that a slave connection cannot modify switch state, but
+    a master or equal can.
+    """
+    def runTest(self):
+        self.features_reply, _ = self.controller.transact(ofp.message.features_request())
+        delete_all_flows(self.controller)
+        self.verify_permission(True)
+
+        set_role(self, NX_ROLE_MASTER)
+        self.verify_permission(True)
+
+        set_role(self, NX_ROLE_SLAVE)
+        self.verify_permission(False)
+
+        set_role(self, NX_ROLE_OTHER)
+        self.verify_permission(True)
+
+    def verify_permission(self, perm):
+        port = self.features_reply.ports[0]
+
+        self.controller.message_send(ofp.message.port_mod(port_no=port.port_no, hw_addr=port.hw_addr))
+        self.controller.message_send(ofp.message.packet_out(buffer_id=0xffffffff))
+        self.controller.message_send(ofp.message.flow_add(buffer_id=0xffffffff))
+        do_barrier(self.controller)
+
+        err_count = 0
+        while self.controller.packets:
+            msg = self.controller.packets.pop(0)[0]
+            if isinstance(msg, ofp.message.error_msg):
+                self.assertEquals(msg.err_type, ofp.OFPET_BAD_REQUEST)
+                self.assertEquals(msg.code, ofp.OFPBRC_EPERM)
+                err_count += 1
+
+        if perm:
+            self.assertEquals(err_count, 0, "Expected no errors")
+        else:
+            self.assertEquals(err_count, 3, "Expected errors for each message")
