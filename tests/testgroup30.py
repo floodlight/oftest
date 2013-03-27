@@ -107,7 +107,23 @@ class Grp30No90(base_tests.SimpleDataPlane):
         self.assertTrue(port_config is not None, "Did not get port config")
         logging.debug("No flood bit port " + str(of_ports[1]) + " is now " + 
                            str(port_config & ofp.OFPPC_NO_FWD))
-
+	print port_config                           
+        #making sure that the switch in expected default state
+        if port_config & ofp.OFPPC_NO_FWD != 0:
+        	logging.info("making sure the switch has the expected default state i.e no_fwd_flag==0")
+		rv = port_config_set(self.controller, of_ports[1],
+                             port_config ^ ofp.OFPPC_NO_FWD, ofp.OFPPC_NO_FWD)
+                self.assertTrue(rv != -1, "Error sending port mod")
+        	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        	logging.info("Sending Features Request")
+        	(hw_addr, port_config, advert) = \
+            	port_config_get(self.controller, of_ports[1])
+        	logging.info("Extracting Port configuration for the reply")
+        	self.assertTrue(port_config is not None, "Did not get port config")
+        	logging.debug("No flood bit port " + str(of_ports[1]) + " is now " + 
+                           str(port_config & ofp.OFPPC_NO_FWD))        		
+		print port_config
+		
 		#Modify Port Configuration 
         logging.info("Changing the behavior of port %s using Port Modification Message:OFPPC_NO_FWD" %str(of_ports[1]))
         rv = port_config_set(self.controller, of_ports[1],
@@ -133,15 +149,18 @@ class Grp30No90(base_tests.SimpleDataPlane):
         (pkt,match) = wildcard_all(self,of_ports)
         #Send matching packet 
         self.dataplane.send(of_ports[0], str(pkt))
+	fail=0
 		
 		#Verify packet does not implement the action specified in the flow
 	try:
+		
         	logging.info("verifying that packets on port %s are dropped" %str(of_ports[1]))
         	yes_ports=[]
         	no_ports = set(of_ports)
-        	fail=0
         	receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
-		logging.info("The switch successfully drops packets on port " +str(of_ports[1]))
+		logging.info("The switch successfully drops packets on port " +str(of_port[1]))
+		
+
 	except:
 		fail=1
     
@@ -158,24 +177,27 @@ class Grp30No90(base_tests.SimpleDataPlane):
 	
         	# Verify change took place with features request
         	logging.info("Verifying whether port %s is back to its default settings" %str(of_ports[1]))
-        	(hw_addr, port_config, advert) = port_config_get(self.controller, of_ports[1])
+        	(hw_addr, port_config3, advert) = port_config_get(self.controller, of_ports[1])
         
-        	logging.debug("No flood bit port " + str(of_ports[1]) + " is now " + 
-                           str(port_config & ofp.OFPPC_NO_FWD))
+        	logging.debug("No forward bit port " + str(of_ports[1]) + " is now " + 
+                           str(port_config3 & ofp.OFPPC_NO_FWD))
 
-        	self.assertTrue(port_config2 is not None, "Did not get port config2")
+        	self.assertTrue(port_config3 is not None, "Did not get port config2")
         	self.assertTrue(port_config2 & ofp.OFPPC_NO_FWD !=
-                        port_config & ofp.OFPPC_NO_FWD,
+                        port_config3 & ofp.OFPPC_NO_FWD,
                         "Could not change the port behavior to default")
 
         	#Send matching packet 
         	self.dataplane.send(of_ports[0], str(pkt))
 	
 		#Verify packet implements the action specified in the flow
+		logging.info("verifying that packets on port %s are forwarded" %str(of_ports[1]))
         	yes_ports= [of_ports[1]]
         	no_ports = set(of_ports).difference(yes_ports)
         	receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
-		self.assertTrue(fail==0,"The packets on port %s are forwarded" %str(of_ports[1]))
+        	logging.info("Successfully recieved packet on port" +str(of_ports[1]))
+		self.assertTrue(fail==0,"The packets on port %s are forwarded even when the no_fwd_flag is set(before reverting)" %str(of_ports[1]))
+	
 
 
 class Grp30No100(base_tests.SimpleDataPlane):
@@ -202,6 +224,22 @@ class Grp30No100(base_tests.SimpleDataPlane):
         self.assertTrue(port_config is not None, "Did not get port config")
         logging.debug("No flood bit port " + str(of_ports[0]) + " is now " + 
                            str(port_config & ofp.OFPPC_NO_PACKET_IN))
+        
+        
+        if port_config & ofp.OFPPC_NO_PACKET_IN != 0:
+        	logging.info("making sure the switch has the expected default state i.e no_packet_in_flag==0")
+		rv = port_config_set(self.controller, of_ports[0],
+                             port_config ^ ofp.OFPPC_NO_PACKET_IN, ofp.OFPPC_NO_PACKET_IN)
+                self.assertTrue(rv != -1, "Error sending port mod")
+        	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        	logging.info("Sending Features Request")
+        	(hw_addr, port_config, advert) = \
+            	port_config_get(self.controller, of_ports[0])
+        	logging.info("Extracting Port configuration for the reply")
+        	self.assertTrue(port_config is not None, "Did not get port config")
+        	logging.debug("No flood bit port " + str(of_ports[0]) + " is now " + 
+                           str(port_config & ofp.OFPPC_NO_PACKET_IN))        		
+		print port_config
 
         #Modify Port Configuration 
         logging.info("Changing the behavior of port %s using Port Modification Message:OFPPC_NO_PACKET_IN" %str(of_ports[0])) 
@@ -223,6 +261,7 @@ class Grp30No100(base_tests.SimpleDataPlane):
                         port_config & ofp.OFPPC_NO_PACKET_IN,
                         "Bit change did not take")
 
+	fail=0
         #Send Test_packet
         try:
         	logging.info("Verifying that any packet on port %s does not generate a PACKET_IN" %str(of_ports[0]))
@@ -230,7 +269,6 @@ class Grp30No100(base_tests.SimpleDataPlane):
         	self.dataplane.send(of_ports[0], str(pkt))
         	#Verify PacketIn event gets triggered
         	(response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        	fail=0
         	self.assertTrue(response is None, "PacketIn received,even though NO_PACKET_IN flag is set")
 	except:
 		fail=1        
@@ -244,10 +282,11 @@ class Grp30No100(base_tests.SimpleDataPlane):
         	sleep(5)
 
 	        #Send Test_packet
-		logging.info("Verfying whether packet on port %s are generates PACKET_IN" %str(of_ports[0]))
+		logging.info("Verfying whether packet on port %s generates PACKET_IN" %str(of_ports[0]))
 		pkt = simple_tcp_packet()
 		self.dataplane.send(of_ports[0], str(pkt))
 		#Verify PacketIn event gets triggered
 		(response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
 		self.assertTrue(response is not None, "PacketIn not received, please check port_config and NO_PACKET_IN flag ")	
-		self.assertTrue(fail==0,"PacketIn recieved,even Though NO_PACKRT_IN flag is set")
+		logging.info("packetIn generated")
+		self.assertTrue(fail==0,"PacketIn recieved,even Though NO_PACKRT_IN flag is set(before reverting)")
