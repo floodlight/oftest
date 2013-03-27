@@ -12,24 +12,15 @@ Provides Loggers for oftest cases, and easy to use wireshark
 logging.
  
 Test case writers use three main functions.
-1. get_logger() - Returns a Logger for each testcase.
+1. get_logger() - Returns a Logger for each testcase or the
+default logger if --publish is not passed.
 2. @wireshark_capture - Decorator Uses tshark to capture network
 traffic while function is being run.
  
 oflog is configured using one method.
-1. set_config(directory, ctrlAddr, portMap) - Records all logs
-under directory. directory *must* end in '/'. Also configures
-wireshark to log the interface associated with ctrlAddr and all
-other data plane interfaces.
- 
-oflog also creates two result files from a TestResult object
-with publish_asserts_and_results().
-1. assert.json - Contains a trace of each failed testcase
-and testcase error...
-{ "failures" : {"Grp100No160" : "trace..." }, "errors" : {...} }
-2. results.json - Contains a count of tests run and their
-results...
-{"failed": 3, "skipped": 0, "errors": 0, "run": 9, "passed": 6}
+1. set_config() - Records all logs under directory. directory
+*must* end in '/'. Also configures wireshark to log the interface
+associated with ctrlAddr and all other data plane interfaces.
 """
  
 pubName = ""
@@ -126,32 +117,3 @@ def find_iface(ip="127.0.0.1"):
         # Find the right IP
         if a[0] == "inet" and a[1].strip("addr:") == ip:
             return interface
-
-def publish_asserts_and_results(res):
-    global DEVNULL
-    #DEVNULL.close()
-
-    if config["publish"] is None:
-        return
-
-    asserts = {"errors" : {}, "failures" : {}, "skipped" : {}}
-    results = {}
- 
-    for e in res.errors:
-        asserts["errors"][e[0].__class__.__name__] = e[1]
-    for f in res.failures:
-        asserts["failures"][f[0].__class__.__name__] = f[1]
-    #write_json_tofile(asserts, "asserts.json")
- 
-    results["run"] = res.testsRun
-    results["errors"] = len(res.errors)
-    results["failed"] = len(res.failures)
-    results["passed"] = results["run"] - (results["errors"]+results["failed"])
-    results["skipped"] = results["run"] - (results["errors"]+results["failed"]+results["passed"])
-    # Publish results
-    #write_json_tofile(results, "results.json")
-
-def write_json_tofile(data, fd):
-    f = open(config["publish"]+"result/"+fd, "w")
-    json.dump(data, f)
-    f.close()
