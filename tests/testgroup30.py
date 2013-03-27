@@ -144,9 +144,10 @@ class Grp30No90(base_tests.SimpleDataPlane):
 		logging.info("The switch successfully drops packets on port " +str(of_ports[1]))
 	except:
 		fail=1
-		# Set it back
+    
         finally:
-        	logging.info("Reverting the changes we made")
+                #setting it back
+                logging.info("Reverting the changes we made")
         	rv = port_config_set(self.controller, of_ports[1],port_config,
                              ofp.OFPPC_NO_FWD)
         	self.assertTrue(rv != -1, "Error sending port mod")
@@ -174,8 +175,7 @@ class Grp30No90(base_tests.SimpleDataPlane):
         	yes_ports= [of_ports[1]]
         	no_ports = set(of_ports).difference(yes_ports)
         	receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
-		if fail==1:
-			self.assertTrue(0!=0,"The packets on port %s are forwarded" %str(of_ports[1]))
+		self.assertTrue(fail==0,"The packets on port %s are forwarded" %str(of_ports[1]))
 
 
 class Grp30No100(base_tests.SimpleDataPlane):
@@ -250,5 +250,4 @@ class Grp30No100(base_tests.SimpleDataPlane):
 		#Verify PacketIn event gets triggered
 		(response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
 		self.assertTrue(response is not None, "PacketIn not received, please check port_config and NO_PACKET_IN flag ")	
-		if fail==1:
-			self.assertTrue(0!=0,"PacketIn recieved,even Though NO_PACKRT_IN flag is set")
+		self.assertTrue(fail==0,"PacketIn recieved,even Though NO_PACKRT_IN flag is set")
