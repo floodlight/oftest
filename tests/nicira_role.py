@@ -1,7 +1,7 @@
 """
 """
 import struct
-
+import unittest
 import logging
 
 from oftest import config
@@ -15,9 +15,11 @@ NX_ROLE_OTHER = 0
 NX_ROLE_MASTER = 1
 NX_ROLE_SLAVE = 2
 
-def set_role(test, role):
+def set_role(test, role, con=None):
+    if con == None:
+        con = test.controller
     request = ofp.message.nicira_controller_role_request(role=role)
-    response, _ = test.controller.transact(request)
+    response, _ = con.transact(request)
     test.assertTrue(isinstance(response, ofp.message.nicira_controller_role_reply), "Expected a role reply")
     test.assertEquals(response.role, role)
 
@@ -116,3 +118,78 @@ class SlaveNoPacketIn(base_tests.SimpleDataPlane):
             self.assertTrue(msg != None, "Expected a packet-in message")
         else:
             self.assertTrue(msg == None, "Did not expect a packet-in message")
+
+@nonstandard
+@disabled
+class RoleSwitch(unittest.TestCase):
+    """
+    Verify that when a connection becomes a master the existing master is
+    downgraded to slave.
+
+    Requires the switch to attempt to connect in parallel to ports 6633
+    and 6634 on the configured IP.
+    """
+
+    def setUp(self):
+        host = config["controller_host"]
+        self.controllers = [
+            controller.Controller(host=host,port=6633),
+            controller.Controller(host=host,port=6634)
+        ]
+
+    def runTest(self):
+        # Connect and handshake with both controllers
+        for con in self.controllers:
+            con.start()
+            if not con.connect():
+                raise AssertionError("failed to connect controller %s" % str(con))
+            reply, _ = con.transact(ofp.message.features_request())
+            self.assertTrue(isinstance(reply, ofp.message.features_reply))
+
+        # Initial role assignment, controller 0 is master
+        set_role(self, NX_ROLE_MASTER, con=self.controllers[0])
+        set_role(self, NX_ROLE_SLAVE, con=self.controllers[1])
+        self.verify_role(self.controllers[0], True)
+        self.verify_role(self.controllers[1], False)
+
+        # Controller 1 becomes master
+        set_role(self, NX_ROLE_MASTER, con=self.controllers[1])
+        self.verify_role(self.controllers[0], False)
+        self.verify_role(self.controllers[1], True)
+
+        # Controller 0 becomes master
+        set_role(self, NX_ROLE_MASTER, con=self.controllers[0])
+        self.verify_role(self.controllers[0], True)
+        self.verify_role(self.controllers[1], False)
+
+        # Controller 1 becomes equal
+        set_role(self, NX_ROLE_OTHER, con=self.controllers[1])
+        self.verify_role(self.controllers[0], True)
+        self.verify_role(self.controllers[1], True)
+
+        # Both controllers become slaves
+        set_role(self, NX_ROLE_SLAVE, con=self.controllers[0])
+        set_role(self, NX_ROLE_SLAVE, con=self.controllers[1])
+        self.verify_role(self.controllers[0], False)
+        self.verify_role(self.controllers[1], False)
+
+    def verify_role(self, con, master):
+        con.message_send(ofp.message.flow_add(buffer_id=0xffffffff))
+        do_barrier(con)
+
+        err_count = 0
+        while con.packets:
+            msg = con.packets.pop(0)[0]
+            if isinstance(msg, ofp.message.error_msg):
+                self.assertEquals(msg.err_type, ofp.OFPET_BAD_REQUEST)
+                self.assertEquals(msg.code, ofp.OFPBRC_EPERM)
+                err_count += 1
+
+        if master:
+            self.assertEquals(err_count, 0, "Expected no errors")
+        else:
+            self.assertEquals(err_count, 1, "Expected errors for each message")
+
+    def tearDown(self):
+        for con in self.controllers:
+            con.shutdown()
