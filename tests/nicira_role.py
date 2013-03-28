@@ -84,3 +84,35 @@ class RolePermissions(base_tests.SimpleDataPlane):
             self.assertEquals(err_count, 0, "Expected no errors")
         else:
             self.assertEquals(err_count, 3, "Expected errors for each message")
+
+@nonstandard
+class SlaveNoPacketIn(base_tests.SimpleDataPlane):
+    """
+    Verify that slave connections do not receive OFPT_PACKET_IN messages but other roles do.
+    """
+    def runTest(self):
+        delete_all_flows(self.controller)
+
+        set_role(self, NX_ROLE_MASTER)
+        self.verify_packetin(True)
+
+        set_role(self, NX_ROLE_SLAVE)
+        self.verify_packetin(False)
+
+        set_role(self, NX_ROLE_OTHER)
+        self.verify_packetin(True)
+
+    def verify_packetin(self, enabled):
+        ingress_port = config["port_map"].keys()[0]
+        self.dataplane.send(ingress_port, str(simple_tcp_packet()))
+
+        if enabled:
+            timeout = -1
+        else:
+            timeout = 0.5
+        msg, _ = self.controller.poll(exp_msg=ofp.OFPT_PACKET_IN, timeout=timeout)
+
+        if enabled:
+            self.assertTrue(msg != None, "Expected a packet-in message")
+        else:
+            self.assertTrue(msg == None, "Did not expect a packet-in message")
