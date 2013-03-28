@@ -4,6 +4,7 @@ import struct
 import unittest
 import logging
 
+import oftest
 from oftest import config
 import oftest.controller as controller
 import ofp
@@ -193,3 +194,49 @@ class RoleSwitch(unittest.TestCase):
     def tearDown(self):
         for con in self.controllers:
             con.shutdown()
+
+@nonstandard
+@disabled
+class EqualAsyncMessages(unittest.TestCase):
+    """
+    Verify that 'equal' controllers all get async events.
+
+    Requires the switch to attempt to connect in parallel to ports 6633
+    and 6634 on the configured IP.
+    """
+
+    def setUp(self):
+        host = config["controller_host"]
+        self.controllers = [
+            controller.Controller(host=host,port=6633),
+            controller.Controller(host=host,port=6634)
+        ]
+        self.dataplane = oftest.dataplane_instance
+        self.dataplane.flush()
+
+    def runTest(self):
+        # Connect and handshake with both controllers
+        for con in self.controllers:
+            con.start()
+            if not con.connect():
+                raise AssertionError("failed to connect controller %s" % str(con))
+            reply, _ = con.transact(ofp.message.features_request())
+            self.assertTrue(isinstance(reply, ofp.message.features_reply))
+
+        delete_all_flows(self.controllers[0])
+        do_barrier(self.controllers[0])
+
+        pkt = str(simple_tcp_packet())
+        ingress_port = config["port_map"].keys()[0]
+        self.dataplane.send(ingress_port, pkt)
+
+        for con in self.controllers:
+            msg, _ = con.poll(ofp.OFPT_PACKET_IN)
+            self.assertTrue(msg != None)
+            self.assertEquals(msg.data, pkt)
+
+    def tearDown(self):
+        for con in self.controllers:
+            con.shutdown()
+            con.join()
+        del self.controllers
