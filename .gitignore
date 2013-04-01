@@ -2,4 +2,4 @@
 profiles/*.pyc
 *~
 oft.log
-result/
+logs/

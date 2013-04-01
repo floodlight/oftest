@@ -1,8 +1,12 @@
+from copy import deepcopy
+from oftest import config
 from unittest import TextTestRunner
 from unittest import _TextTestResult
+from traceback import *
 
-
+import json
 import sys
+import os
 
 class ConformanceTextTestRunner(TextTestRunner):
     """
@@ -29,10 +33,35 @@ class ConformanceTextTestResult(_TextTestResult):
     """
     def __init__(self, stream, descriptions, verbosity):
         _TextTestResult.__init__(self, stream, descriptions, verbosity)
-        self.mandatory_successes = []
-        self.mandatory_failures = []
-        self.optional_successes = []
-        self.optional_failures = []
+        if config["publish"] is None:
+            return
+        if not "logs" in os.listdir(config["publish"]):
+            os.mkdir(config["publish"] + "logs")
+        # Attempt to open and load existing results.json file.
+        self.result_file = config["publish"] + "logs/results.json"
+        try:
+            f = open(self.result_file)
+            data = f.read()
+            self.result = json.loads(data)
+        except IOError:
+            self.result = {}
+            profile_total = {"total": 0, "passed": 0, "failed": 0, "error": 0}
+            total = {"mandatory": deepcopy(profile_total), "optional": deepcopy(profile_total)}
+            self.result["total"] = total
+            self.result["groups"] = {}
+            f = open(self.result_file, "w")
+            f.write(json.dumps(self.result))
+        finally:
+            f.close()
+            
+    def addError(self, test, err):
+        """ """
+        _TextTestResult.addError(self, test, err)
+        if not config["publish"] is None:
+            s = ""
+            for l in format_exception(err[0], err[1], err[2]):
+                s += l
+            self.saveResult(test, "error", str(err[2]))
 
     def addFailure(self, test, err):
         """
@@ -40,13 +69,11 @@ class ConformanceTextTestResult(_TextTestResult):
         or mandatory_failures depending on requirement specified.
         """
         _TextTestResult.addFailure(self, test, err)
-        try:
-            if test.mandatory:
-                self.mandatory_failures.append( (test, err) )
-                return
-        except AttributeError:
-            pass
-        self.optional_failures.append( (test, err) )
+        if not config["publish"] is None:
+            s = ""
+            for l in format_exception(err[0], err[1], err[2]):
+                s += l
+            self.saveResult(test, "failed", s)
 
     def addSuccess(self, test):
         """
@@ -54,10 +81,50 @@ class ConformanceTextTestResult(_TextTestResult):
         or optional_failures depending on requirement specified.
         """
         _TextTestResult.addSuccess(self, test)
+        if not config["publish"] is None:
+            self.saveResult(test, "passed")
+
+    def saveResult(self, test, testcase_result, testcase_trace=""):
+        """
+        Updates selfresult and saves to test in json form. These
+        results can then be used to generate a generic report.
+        Results are only published if command line option
+        --publish is specified. self.result is consistent over
+        the program's life.
+        """
+        testname = test.__class__.__name__
+        group_no = testname[3:].split("No")[0]
+
+        profile = "optional"
+        tmp_result = {"result": testcase_result, "traceback": testcase_trace, "mandatory": False}
+        profile_total = {"total": 0, "passed": 0, "failed": 0, "error": 0}
+        total = {"mandatory": deepcopy(profile_total), "optional": deepcopy(profile_total)}
+
+        # Initialize group data structure if doesn't exist
+        if not group_no in self.result["groups"]:
+            self.result["groups"][group_no] = {"total": deepcopy(total), "tests": {}}
+        # If test already exists rollback counters
+        if testname in self.result["groups"][group_no]["tests"]:
+            old_testcase = self.result["groups"][group_no]["tests"][testname]
+            old_profile = "mandatory" if old_testcase["mandatory"] else "optional"
+            old_result = old_testcase["result"]
+            self.result["total"][old_profile]["total"] -= 1
+            self.result["total"][old_profile][old_result] -= 1
+            self.result["groups"][group_no]["total"][old_profile]["total"] -= 1
+            self.result["groups"][group_no]["total"][old_profile][old_result] -= 1
+        # Update counters and save asserstions
         try:
             if test.mandatory:
-                self.mandatory_successes.append(test)
-                return
+                profile = "mandatory"
+                tmp_result["mandatory"] = True
         except AttributeError:
             pass
-        self.optional_successes.append(test)
+        self.result["total"][profile]["total"] += 1
+        self.result["total"][profile][testcase_result] += 1
+        self.result["groups"][group_no]["total"][profile]["total"] += 1
+        self.result["groups"][group_no]["total"][profile][testcase_result] += 1
+        self.result["groups"][group_no]["tests"][testname] = tmp_result
+        # Save to file
+        f = open(self.result_file, "w")
+        f.write( json.dumps(self.result) )
+        f.close()
