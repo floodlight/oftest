@@ -41,8 +41,8 @@ class Grp40No10(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        logging.info("Inserting two overlapping flows")
-        logging.info("Expecting switch to return an error")
+        logging.info("Installing an all wildcarded flow")
+        
 
         #Insert a flow F with wildcarded all fields
         (pkt,match) = wildcard_all(self,of_ports)
@@ -51,6 +51,7 @@ class Grp40No10(base_tests.SimpleDataPlane):
         #verify_tablestats(self,expect_active=1)
         
         # Build a overlapping flow F'-- Wildcard All except ingress with check overlap bit set
+        logging.info("Installing a overlapping flow with check_overlap bit set")
         pkt_matchingress = simple_tcp_packet()
         match3 = parse.packet_to_flow_match(pkt_matchingress)
         self.assertTrue(match3 is not None, "Could not generate flow match from pkt")
@@ -75,6 +76,7 @@ class Grp40No10(base_tests.SimpleDataPlane):
         #verify_tablestats(self,expect_active=1)
 
         #Verify OFPET_FLOW_MOD_FAILED/OFPFMFC_OVERLAP error is recieved on the control plane
+        logging.info("waiting for the switch to respond with an error")
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,         
                                                timeout=5)
         self.assertTrue(response is not None, 
@@ -83,7 +85,7 @@ class Grp40No10(base_tests.SimpleDataPlane):
                                'Error message type is not flow mod failed ') 
         self.assertTrue(response.code==ofp.OFPFMFC_OVERLAP, 
                                'Error Message code is not overlap')
-
+        logging.info("Flow_mod error received")
 
 class Grp40No20(base_tests.SimpleDataPlane):
 
@@ -102,8 +104,8 @@ class Grp40No20(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        logging.info("Inserting two overlapping flows")
-        logging.info("Expecting switch to insert the flows without generating errors")
+        logging.info("Installing an all wildcarded flow") 
+        
 
         #Build a flow F with wildcarded all fields.
         (pkt,match) = wildcard_all(self,of_ports)
@@ -112,10 +114,12 @@ class Grp40No20(base_tests.SimpleDataPlane):
         #verify_tablestats(self,expect_active=1)
         
         # Build a overlapping flow F' without check overlap bit set.
+        logging.info("Installing an overlapping flow with check_overlap bit unset")
         wildcard_all_except_ingress(self,of_ports)
 
-        # Verify Flow gets inserted 
-        #verify_tablestats(self,expect_active=2)
+        rv=all_stats_get(self)
+        self.assertTrue(rv["flows"]==2, "Could not Install overlapping flows")
+        logging.info("Successfully installed two overlapping flows")
 
 
 class Grp40No30(base_tests.SimpleDataPlane):
@@ -135,8 +139,8 @@ class Grp40No30(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        logging.info("Inserting two identical flows one by one")
-        logging.info("Expecting switch to overwrite the first flow and clear the counters associated with it ")
+        logging.info("Installing an all wildcarded flow")
+        
         
         # Create and add flow-1, check on dataplane it is active.
         (pkt,match) = wildcard_all(self,of_ports)
@@ -145,9 +149,11 @@ class Grp40No30(base_tests.SimpleDataPlane):
         #verify_tablestats(self,expect_active=1)
         
         # Send Packet (to increment counters like byte_count and packet_count)
+        logging.info("Sending a matching packet to increase the counters")
         send_packet(self,pkt,of_ports[0],of_ports[1])
 
         # Verify Flow counters have incremented 
+        logging.info("Verifying whether the flow counters have increased")
         stat_req = message.flow_stats_request()
         stat_req.match = match
         stat_req.table_id = 0xff
@@ -178,12 +184,14 @@ class Grp40No30(base_tests.SimpleDataPlane):
             self.assertEqual(byte_count,item.byte_count,"byte_count counter did not increment")
         
         #Send Identical flow 
+        logging.info("Installing an identical flow")
         (pkt1,match1) = wildcard_all(self,of_ports)
 
         # Verify active_entries in table_stats_request =1 
         #verify_tablestats(self,expect_active=1)
 
         # Verify Flow counters reset
+        logging.info("Verifying whether the flow counter have reset")
         verify_flowstats(self,match,byte_count=0,packet_count=0)
 
 
@@ -198,7 +206,7 @@ class Grp40No50(base_tests.SimpleProtocol):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp40No40 NeverValidPort test")
+        logging.info("Running Grp40No50 NeverValidPort test")
 
         # pick a random bad port number
         bad_port=ofp.OFPP_MAX
@@ -206,7 +214,7 @@ class Grp40No50(base_tests.SimpleProtocol):
         act=action.action_output()   
 
         #Send flow_mod message
-        logging.info("Sending flow_mod message..")   
+        logging.info("Sending flow_mod message with output action to an invalid port..")   
         request = flow_msg_create(self, pkt, ing_port=1, egr_ports=bad_port)
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1 ,"Unable to send the message")
@@ -229,14 +237,15 @@ class Grp40No50(base_tests.SimpleProtocol):
             count += 1
             if count > 10:   # Too many tries
                 break
-  
+        self.assertTrue(count<10,"Did not receive any error message")
+        logging.info("Received the expected OFPT_ERROR message")
 class Grp40No80(base_tests.SimpleProtocol): 
 
     """Timeout values are not allowed for emergency flows"""
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp40No50 Emergency_Flow_Timeout test")
+        logging.info("Running Grp40No80 Emergency_Flow_Timeout test")
         
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -246,10 +255,8 @@ class Grp40No80(base_tests.SimpleProtocol):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        logging.info("Inserting an emergency flow with timeout values")
-        logging.info("Expecting switch to generate error ")
-
-        sleep(2)
+        logging.info("Installing an emergency flow with timeout values")
+        
         
         #Insert an emergency flow 
         pkt = simple_tcp_packet()
@@ -265,13 +272,13 @@ class Grp40No80(base_tests.SimpleProtocol):
         act = action.action_output()
         act.port = of_ports[1]
         request.actions.add(act)
-        logging.info("Inserting flow")
+       
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Flow addition did not fail.")
-
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         #Verify OFPET_FLOW_MOD_FAILED/BAD_EMER_TIMEOUT error is recieved on the control plane
+        logging.info("waiting for an OFPR_ERROR message")
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,         
                                                timeout=5)
         self.assertTrue(response is not None, 
@@ -280,7 +287,7 @@ class Grp40No80(base_tests.SimpleProtocol):
                                'Error message type is not flow mod failed ') 
         self.assertTrue(response.code==ofp.OFPFMFC_BAD_EMERG_TIMEOUT, 
                                'Error Message code is not bad emergency timeout')
-
+        logging.info("Recieved the expected OFPT_ERROR message")
 
 class Grp40No90(base_tests.SimpleDataPlane):
 
@@ -295,15 +302,12 @@ class Grp40No90(base_tests.SimpleDataPlane):
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
-        logging.info("Inserting a flow-modify that does not match an existing flow")
-        logging.info("Expecting flow to get added i.e OFPFC_MODIFY command should be taken as OFPFC_ADD ")
-
         #Clear Switch State
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         #Generate a flow-mod,command OFPC_MODIFY 
-
+        logging.info("Sending a flow_mod message to the switch")
         request = message.flow_mod()
         request.command = ofp.OFPFC_MODIFY
         request.match.wildcards = ofp.OFPFW_ALL-ofp.OFPFW_IN_PORT
@@ -314,13 +318,15 @@ class Grp40No90(base_tests.SimpleDataPlane):
         act3.port = of_ports[1]
         self.assertTrue(request.actions.add(act3), "could not add action")
 
-        logging.info("Inserting flow")
         rv = self.controller.message_send(request)
+        logging.info("expecting the fow_mod to add a flow in the absence of a matchinf flow entry")
         self.assertTrue(rv != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed") 
 
-        #Verify the flow gets added i.e. active_count= 1
-        #verify_tablestats(self,expect_active=1)
+        logging.info("Verifying whether the flow_mod message has added a flow")
+        
+        rv=all_stats_get(self)
+        self.assertTrue(rv["flows"]==1,"Flow_mod message did not install the flow in the absence of a matching flow entry")
 
 
 class Grp40No100(base_tests.SimpleDataPlane):
@@ -339,27 +345,30 @@ class Grp40No100(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        logging.info("Inserting a Flow and incrementing flow counters. Modifying the flow action")
-        logging.info("Expecting the flow action to be modified , but the flow-counters should be preserved")
+        logging.info("Installing a flow")
            
         #Create and add flow-1 Match on all, except one wildcarded (src adddress).Action A , output to of_port[1]
         (pkt,match) = match_all_except_source_address(self,of_ports)
 
         #Send Packet matching the flow thus incrementing counters like packet_count,byte_count
+        logging.info("Sending a matching packet to increment the flow counters")
         send_packet(self,pkt,of_ports[0],of_ports[1])
         
 	    #Verify flow counters
+        logging.info("Verifying whether the flow counters have been modified")
         verify_flowstats(self,match,packet_count=1)
 
         #Modify flow- 1 
+        logging.info("Sending a flow_mod message")
         modify_flow_action(self,of_ports,match)
         
         # Send Packet matching the flow-1 i.e ingress_port=port[0] and verify it is recieved on corret dataplane port i.e port[2]
+        logging.info("Verifying whether the modified action is being implemented")
         send_packet(self,pkt,of_ports[0],of_ports[2])
         
         #Verify flow counters are preserved
+        logging.info("Checking if the flow counters have been preserved")
         verify_flowstats(self,match,packet_count=2)
-
 
 class Grp40No110(base_tests.SimpleDataPlane):
 
@@ -377,8 +386,7 @@ class Grp40No110(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        logging.info("Inserting Flows and incrementing flow counters. Strict Modify the flow action ")
-        logging.info("Expecting the flow action to be modified , but the flow-counters should be preserved")
+        logging.info("Installing a Flow")
         
         #Create and add flow-1 Match on all, except one wildcarded (src adddress).Action A
         (pkt,match) = match_all_except_source_address(self,of_ports,priority=100)
@@ -422,7 +430,7 @@ class Grp40No120(base_tests.SimpleDataPlane):
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         logging.info("Deleting a non-existing flow")
-        logging.info("Expecting switch to ignore the command , without generating errors")
+        logging.info("Expecting switch to ignore the command, without generating errors")
 
         # Issue a delete command 
         msg = message.flow_mod()
@@ -516,7 +524,7 @@ class Grp40No140(base_tests.SimpleProtocol):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        logging.info("Inserting a emergency flow with send_flow_removed flag set")
+        logging.info("Installing an emergency flow with send_flow_removed flag set")
         logging.info("Expecting no flow_removed_message on the deletion of the emergency flow")
         
         # Insert a flow with emergency bit set.
@@ -561,20 +569,19 @@ class Grp40No150(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
         
-        logging.info("Inserting a flow with exact match")
-        logging.info("Issue Strict Delete command , verify it gets deleted")     
+        logging.info("Installing an exact match flow")
+             
         
         #Insert F with an exact Match 
         (pkt,match) = exact_match(self,of_ports)  
         #verify_tablestats(self,expect_active=1)
 
         #Issue Strict Delete Command , verify F gets deleted.
+        logging.info("sending a strict delete message")
         strict_delete(self,match)
         #verify_tablestats(self,expect_active=0)
 
         logging.info("Inserting two overlapping flows")
-        logging.info("Issue Strict Delete command ")
-        logging.info("Expecting only one flow gets deleted , because Strict Delete matches on wildcards as well")     
         
         #Insert Flow T with match on all , except one wildcarded ( say src adddress ). 
         (pkt,match) = match_all_except_source_address(self,of_ports)
@@ -583,26 +590,40 @@ class Grp40No150(base_tests.SimpleDataPlane):
         (pkt1,match1) = wildcard_all_except_ingress(self,of_ports)
         #verify_tablestats(self,expect_active=2)
 
+        rv=all_stats_get(self)
+        self.assertTrue(rv["flows"]==2,"could not install two overlapping flows")
+
         #Issue Strict Delete matching on ingress_port. Verify only T' gets deleted
+        logging.info("Sending a Strict delete message")
         strict_delete(self,match1)
         #verify_tablestats(self,expect_active=1) 
+        rv=all_stats_get(self)
+        self.assertTrue(rv["flow"]==1,"The switch did not perform the required action")
+ 
+        rc = delete_all_flows(self.controller)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+        
 
-        logging.info("Inserting two overlapping flows")
-        logging.info("Issue Non-Strict Delete command ")
-        logging.info("Expecting both the flow gets deleted , because wildcards are active")    
-
+        logging.info("Installing two overlapping flows")
+        
         #Insert T and T' again . 
         (pkt,match) = match_all_except_source_address(self,of_ports)
         (pkt1,match1) = wildcard_all_except_ingress(self,of_ports)
         #verify_tablestats(self,expect_active=2)
 
+        rv=all_stats_get(self)
+        self.assertTrue(rv["flows"]==2,"Could not install 2 overlapping flows")
         #Issue Non-strict Delete with match on ingress_port.Verify T+T' gets deleted . 
+
+        logging.info("Sending a non_strict delete message")
         nonstrict_delete(self,match1)
+
         #verify_tablestats(self,expect_active=0)
+        rv=all_stats_get(self)
+        self(rv["flows"]==0, "The non_strict_delete message did not delete all the flows")
 
         logging.info("Inserting three overlapping flows with different priorities")
-        logging.info("Issue Non-Strict Delete command ")
-        logging.info("Expecting all the flows to get deleted")  
+          
   
         #Insert T , add Priority P (say 100 ) 
         (pkt,match) = match_all_except_source_address(self,of_ports,priority=100)
@@ -615,21 +636,28 @@ class Grp40No150(base_tests.SimpleDataPlane):
         #verify_tablestats(self,expect_active=3)
 
         #Issue Non-Strict Delete and verify all getting deleted
+        logging.info("Sending a non_strict_delete message")
         nonstrict_delete(self,match1,priority=200)
         #verify_tablestats(self,expect_active=0)
+        logging.info("Verifying all the flow entries have been deleted")
+        rv=all_stats_get(self)
+        self.assertTrue(rv["flow"]==0,"Non strict delete message did not delete all the flo entries")
 
+        rc = delete_all_flows(self.controller)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+        
         logging.info("Inserting three overlapping flows with different priorities")
-        logging.info("Issue Strict Delete command ")
-        logging.info("Expecting only one to get deleted because here priorities & wildcards are being matched")  
-
         #Issue Strict-Delete and verify only T'' gets deleted. 
         (pkt,match) = match_all_except_source_address(self,of_ports,priority=100)
         (pkt1,match1) = wildcard_all_except_ingress(self,of_ports,priority=200)
         (pkt2,match2) = wildcard_all_except_ingress(self,of_ports,priority=300)
+        
+        logging.info("Sending a strict delete message")
         strict_delete(self,match1,priority=200)
         #verify_tablestats(self,expect_active=2)
-
         
+        logging.info("Verifying if only the expected flows are deleted")
+        rv=all_stats_get(rv["flows"]==2, "The switch did not perform the required action")
    
 class Grp40No160(base_tests.SimpleDataPlane):
 
@@ -650,8 +678,7 @@ class Grp40No160(base_tests.SimpleDataPlane):
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         logging.info("Inserting a flow with output action --> of_port[1]")
-        logging.info("Deleting the flow but with out_port set to of_port[2]")
-        logging.info("Expecting switch to filter the delete command")
+        
         
         #Build and send Flow-1 with action output to of_port[1]
         (pkt,match) = wildcard_all_except_ingress(self,of_ports)
@@ -747,29 +774,27 @@ class Grp40No180(base_tests.SimpleDataPlane):
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         logging.info("Inserting flow entry with idle_timeout set. Also send_flow_removed_message flag set")
-        logging.info("Expecting the flow entry to delete with given idle_timeout")
 
-        sleep(2)
-
-        #Insert a flow entry with idle_timeout=1.Send_Flow_Rem flag set
+        #Insert a flow entry with idle_timeout=2.Send_Flow_Rem flag set
         msg9 = message.flow_mod()
         msg9.match.wildcards = ofp.OFPFW_ALL
         msg9.cookie = random.randint(0,9007199254740992)
         msg9.buffer_id = 0xffffffff
-        msg9.idle_timeout = 1
+        msg9.idle_timeout = 2
         msg9.flags |= ofp.OFPFF_SEND_FLOW_REM
         rv1 = self.controller.message_send(msg9)
         self.assertTrue(rv1 != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         # Verify flow removed message is recieved.
+        logging.info("Verifying whether OFPT_FLOW_REMOVED messageis received") 
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_FLOW_REMOVED,
                                                timeout=5)
         self.assertTrue(response is not None, 
                         'Did not receive flow removed message ')
         self.assertEqual(ofp.OFPRR_IDLE_TIMEOUT, response.reason,
                          'Flow table entry removal reason is not idle_timeout')
-        self.assertEqual(1, response.duration_sec,
+        self.assertEqual(2, response.duration_sec,
                          'Flow was not alive for 1 sec')
 
 
@@ -794,7 +819,7 @@ class Grp40No190(base_tests.SimpleDataPlane):
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         logging.info("Inserting flow entry with hard_timeout set. Also send_flow_removed_message flag set")
-        logging.info("Expecting the flow entry to delete with given hard_timeout")
+        
 
         sleep(2)
 
@@ -815,6 +840,7 @@ class Grp40No190(base_tests.SimpleDataPlane):
         # Verify flow removed message is recieved.
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_FLOW_REMOVED,
                                                timeout=5)
+        logging.info("Verifying whether OFPT_FLOW_REMOVED message is received")
         self.assertTrue(response is not None, 
                         'Did not receive flow removed message ')
         self.assertEqual(ofp.OFPRR_HARD_TIMEOUT, response.reason,
@@ -843,7 +869,6 @@ class Grp40No200(base_tests.SimpleDataPlane):
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         logging.info("Inserting flow entry with hard_timeout set and send_flow_removed_message flag not set")
-        logging.info("Expecting the flow entry to delete, but no flow removed message")
 	   
         # Insert a flow with hard_timeout = 1 but no Send_Flow_Rem flag set
         pkt = simple_tcp_packet()
@@ -868,6 +893,7 @@ class Grp40No200(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         #Verify no flow removed message is generated
+        logging.info("Verifying that there is no OFPT_FLOW_REMOVED message received")
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_FLOW_REMOVED,
                                                timeout=3)
         self.assertTrue(response is None, 
@@ -875,4 +901,6 @@ class Grp40No200(base_tests.SimpleDataPlane):
 
         # Verify no entries in the table
         #verify_tablestats(self,expect_active=0)
-
+        logging.info("Verifying if the flow was removed after the time out")
+        rv=all_stats_get(self)
+        self.assertTrue("rv["flows"]==0, "Flows were not deleted even after the flow timedout")
