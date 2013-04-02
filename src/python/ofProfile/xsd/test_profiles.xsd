@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:element name="test_profiles">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="test_profile" type="test_profile_type" minOccurs="0" maxOccurs="unbounded"></xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="test_profile_type">
+		<xs:sequence>
+			<xs:element name="test" type="test_type" minOccurs="0" maxOccurs="unbounded"></xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="test_type">
+			<xs:sequence>
+				<xs:element name="match_fields" type="match_fields_type" minOccurs="0" maxOccurs="unbounded"></xs:element>
+			</xs:sequence>
+                        <xs:attribute name="name" type="xs:string"/>
+	</xs:complexType>
+	<xs:complexType name="match_fields_type" >
+		<xs:sequence>
+			<xs:element name="match_field" type="match_field_type" minOccurs="0" maxOccurs="unbounded">
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="match_field_type">
+		<xs:sequence>
+				<xs:element name="property_name" type="xs:string"/>
+				<xs:element name="property_value" type="xs:string"/>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>
