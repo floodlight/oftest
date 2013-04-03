@@ -1,18 +1,19 @@
 <xs:schema attributeFormDefault="unqualified"
-        elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
-        <xs:element name="match_fields" type="match_fields_type"></xs:element>
-        <xs:complexType name="match_fields_type">
-                <xs:sequence>
-                        <xs:element name="match_field" maxOccurs="unbounded"
-                                minOccurs="0" type="match_field_type"></xs:element>
-                </xs:sequence>
-                
-        </xs:complexType>
-        <xs:complexType name="match_field_type">
-             <xs:sequence>
-                <xs:element type="xs:string" name="test"  maxOccurs="unbounded"
-                                minOccurs="0" > </xs:element>
-             </xs:sequence>
-             <xs:attribute name="name" type="xs:string"/>
-         </xs:complexType>
-   </xs:schema>
+	elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:element name="match_fields" type="match_fields_type"></xs:element>
+	<xs:complexType name="match_fields_type">
+		<xs:sequence>
+			<xs:element name="match_field" maxOccurs="unbounded"
+				minOccurs="0" type="match_field_type"></xs:element>
+		</xs:sequence>
+
+	</xs:complexType>
+	<xs:complexType name="match_field_type">
+		<xs:sequence>
+			<xs:element type="xs:string" name="test" maxOccurs="unbounded"
+				minOccurs="0">
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="name" type="xs:string" />
+	</xs:complexType>
+</xs:schema>

@@ -15,7 +15,7 @@ sys.path.append(generated_dir)
 
 import generated.match_field_test as match_field_test
 import generated.switch_profile as switch_profile
-import generated.test_profiles as test_profiles
+import generated.test_profile as test_profile
 
 #from cstruct import ofp_match as cstruct_ofp_match
 
@@ -31,7 +31,7 @@ values are name of xml files to be used with corresponding XSD.
 Keys :
 match_field_test : ofp match field to set of associated tests..
 switch_profile   : ofp match fields that are inactive for switch .
-test_profiles    : ofp match field data for the test.
+test_profile    : ofp match field data for the test.
 
 ** profile_match is used distinguish from ofp_match.
 """
@@ -39,7 +39,7 @@ test_profiles    : ofp match field data for the test.
 PROFILE_XSD_XML_CONFIG = {
     'match_field_test':  'match_field_test.xml',                 
     'switch_profile' : 'switch_profile.xml',            
-    'test_profiles' :'test_profiles.xml' ,                 
+    'test_profile' :'test_profile.xml' ,                 
 }
 
 
@@ -76,7 +76,8 @@ class profile_match_ofp10(profile_match):
     
 class profile:
     def __init__(self,profile_file=None):
-        self.profile_disabled_match_fields = []
+        self.profile_match_fields_disabled = []
+        self.profile_match_fields_enabled = []
         self.profile_match_field_test_map = {}
         self.profile_test_match_map = {}        
 
@@ -90,8 +91,8 @@ class profile:
             if PROFILE_XSD_XML_CONFIG.has_key('switch_profile'):
                 self.switch_profile = switch_profile.CreateFromDocument(file(os.path.join(xml_dir,PROFILE_XSD_XML_CONFIG['switch_profile'])).read())
             
-            if PROFILE_XSD_XML_CONFIG.has_key('test_profiles'):
-                self.test_profiles = test_profiles.CreateFromDocument(file(os.path.join(xml_dir,PROFILE_XSD_XML_CONFIG['test_profiles'])).read())
+            if PROFILE_XSD_XML_CONFIG.has_key('test_profile'):
+                self.test_profile = test_profile.CreateFromDocument(file(os.path.join(xml_dir,PROFILE_XSD_XML_CONFIG['test_profiles'])).read())
         except:
                 traceback.print_exc()
                 
@@ -122,22 +123,25 @@ class profile:
         
         for match_field in self.switch_profile.match_fields[0].match_field:
             if match_field.property_value  == 'Disable':
-                self.profile_disabled_match_fields.append(match_field.property_name)
-    
+                self.profile_match_fields_disabled.append(match_field.property_name)
+            else:
+                self.profile_match_fields_enabled.append(match_field.property_name)
+                
+                
     def process_test_profiles(self):
         
         #parsing the test_profiles.xml file storing in profile_test_match_map.
-        for test_idx in range(len(self.test_profiles.test_profile[0].test)):
-            test = self.test_profiles.test_profile[0].test[test_idx]
+        for test_idx in range(len(self.test_profile.test_profile.test)):
+            test = self.test_profile.test_profile.test[test_idx]
             
-            for match_fields_idx in range(len(self.test_profiles.test_profile[0].test[test_idx].match_fields)):
-                for match_field_idx in range(len(self.test_profiles.test_profile[0].test[test_idx].match_fields[match_fields_idx].match_field)):
+            for match_fields_idx in range(len(self.test_profile.test_profile.test[test_idx].match_fields)):
+                for match_field_idx in range(len(self.test_profile.test_profile.test[test_idx].match_fields[match_fields_idx].match_field)):
                     
                     
                     # handle OFP 1.0
                     if OFP_VERSION  == 1.0:
-                        match_field_key = self.test_profiles.test_profile[0].test[test_idx].match_fields[match_fields_idx].match_field[match_field_idx].property_name
-                        match_field_val = self.test_profiles.test_profile[0].test[test_idx].match_fields[match_fields_idx].match_field[match_field_idx].property_value
+                        match_field_key = self.test_profiles.test_profile.test[test_idx].match_fields[match_fields_idx].match_field[match_field_idx].property_name
+                        match_field_val = self.test_profiles.test_profile.test[test_idx].match_fields[match_fields_idx].match_field[match_field_idx].property_value
                        
                         if profile_match_ofp10.match_data_map.has_key(match_field_key):
                             profile_match_ofp10.match_data_map[match_field_key] = match_field_val
@@ -155,26 +159,23 @@ class profile:
                     else:
                         pass
 
+
     
-    def get_match_field(self,arg_test):
-        ret_val = None
+    def get_tests_for_match_field(self,arg_match_field):
+        ret_tests = []
         
-        for match_field in self.profile_match_field_test_map.keys():
-            for test in self.profile_match_field_test_map.get(match_field):
-                if arg_test == test:
-                    ret_val = match_field
-                    break
-        return ret_val
+        if self.profile_match_field_test_map.has_key(arg_match_field):
+            ret_tests = self.profile_match_field_test_map.get(arg_match_field)
             
-    def is_profile_match_field_enabled(self,arg_match_field):
-        ret_val = True
+        return ret_tests
         
-        for disabled_match_field in self.profile_disabled_match_fields:
-            if arg_match_field == disabled_match_field:
-                ret_val = False
-                break
-            
-        return ret_val
+        
+    def get_profile_enabled_match_fields(self):
+        return self.profile_enabled_match_fields
+    
+    def get_profile_disabled_match_fields(self):
+        return self.profile__match_fields
+        
     
     def get_profile_match(self,test):
         ret_val = None
@@ -183,6 +184,17 @@ class profile:
             ret_val = self.profile.profile_test_match_map.get(test)
         
         return ret_val
+            
+    def is_profile_match_field_enabled(self,arg_match_field):
+        ret_val = True
+        
+        for disabled_match_field in self.profile_match_fields_disabled:
+            if arg_match_field == disabled_match_field:
+                ret_val = False
+                break
+            
+        return ret_val
+    
     
     def is_profile_match_defined(self,test):
         ret_val = False
@@ -192,16 +204,6 @@ class profile:
             
         return ret_val
     
-    def is_test_enabled(self,test):
-        ret_val = False
-        
-        match_field = self.get_match_field(test)
-        
-        if match_field is not None:
-            if self.profile.is_profile_match_defined(match_field):
-                ret_val = True
-            
-        return ret_val
 
 
     
