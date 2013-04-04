@@ -164,7 +164,7 @@ class Grp50No30(base_tests.SimpleDataPlane):
 
         #Sending packet matching the flow, verify it implements the action
         
-        logging.info("Seding a Packet which matches the flow entry")
+        logging.info("Sending a Packet which matches the flow entry")
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet implements the action specified in the flow
@@ -176,7 +176,7 @@ class Grp50No30(base_tests.SimpleDataPlane):
         pkt2 = simple_eth_packet(dl_src='AC:81:12:99:47:0F', dl_dst='AC:81:12:99:47:0F',dl_type = 0x88cc);
         self.dataplane.send(of_ports[0], str(pkt2))
         
-        logging.info("Waiting for a packet in from the switch")
+        logging.info("Waiting for a packet_in message from the switch")
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packets")
         logging.info("Packet_in recevied")
@@ -223,7 +223,7 @@ class Grp50No40(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt2))
         
         #Verify PacketIn event gets triggered
-        logging.info("Waiting for packet_in")
+        logging.info("Waiting for packet_in message from the switch")
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=10)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
         logging.info("Packet_in Received")
@@ -270,7 +270,7 @@ class Grp50No50(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0],str(pkt3))
 
         #verify Packetin event gets triggered.
-        logging.info("Waiting for a packet in")
+        logging.info("Waiting for a packet_in message from the switch")
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non-matching packet")
         logging.info("Packet_in Received")
@@ -318,7 +318,7 @@ class Grp50No60(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt2))
         
         #Verify PacketIn event gets triggered
-        logging.info("waiting for a packet_in message")
+        logging.info("waiting for a packet_in message from the switch")
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
         logging.info("Packet_in Received")
@@ -365,7 +365,7 @@ class Grp50No70(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt2))
 
         #Verify Packet_In event gets triggered
-        logging.info("Waiting for a packet_in")
+        logging.info("Waiting for a packet_in message from the switch")
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
         logging.info("Packet_in Received")
@@ -397,7 +397,6 @@ class Grp50No80a(base_tests.SimpleDataPlane):
 
         #Create a simple tcp packet and generate match on ip src address , exact match 
         logging.info("Installing a flow entry with match on IP_SRC address")
-        logging.info("Creating Simple TCP packet")
         pkt = simple_tcp_packet(ip_src='192.168.100.100')
         match = parse.packet_to_flow_match(pkt)
         #Wildcards -- 
@@ -425,10 +424,10 @@ class Grp50No80a(base_tests.SimpleDataPlane):
         logging.info("Sending a non matching packet")
         pkt2 = simple_tcp_packet(ip_src='149.165.130.66')
         self.dataplane.send(of_ports[0], str(pkt2))
-        logging.info("Waiting for a packet_in")
+        logging.info("Waiting for a packet_in message from the switch")
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
-
+	logging.info("Packet_in received")
 
 class Grp50No80b(base_tests.SimpleDataPlane):
 
@@ -454,7 +453,7 @@ class Grp50No80b(base_tests.SimpleDataPlane):
         sleep(2)
 
         #Create a simple tcp packet and generate match on ip src address
-        logging.info("Installing a flow entry with match on widlcard IP_SRC")
+        logging.info("Installing a flow entry with match on wildcard IP_SRC")
         pkt = simple_tcp_packet(ip_src='192.168.100.100')
         match = parse.packet_to_flow_match(pkt)
         match.wildcards = 0xffffffcf
@@ -480,7 +479,7 @@ class Grp50No80b(base_tests.SimpleDataPlane):
         logging.info("sending a non matching packet")
         pkt2 = simple_tcp_packet(ip_src='149.165.130.66')
         self.dataplane.send(of_ports[0], str(pkt2))
-        logging.info("Verifying whether the packet matches the flow entry or not")
+        logging.info("Verifying whether the packet matches the flow entry")
         receive_pkt_check(self.dataplane,pkt2,[yes_ports],no_ports,self)
 
 
@@ -651,7 +650,7 @@ class Grp50No90b(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet implements the action specified in the flow
-        logging.info("Verifying whether the packet is matches the flow entry")
+        logging.info("Verifying whether the packet matches the flow entry")
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 	
         #Send a non-matching packet , verify it also matches the flow_entry
@@ -687,7 +686,7 @@ class Grp50No90c(base_tests.SimpleDataPlane):
         sleep(2)
 
         #Create a flow for match on ip_dst_address (MSB bits))
-        logging.info("Installing a Flow entry with mathcing on MSB in IP_DST")
+        logging.info("Installing a Flow entry with matching on MSB in IP_DST")
         pkt = simple_tcp_packet(ip_src='192.168.100.100')
         match = parse.packet_to_flow_match(pkt)
         match.wildcards = 0x3ff67fcf
@@ -707,11 +706,11 @@ class Grp50No90c(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet implements the action specified in the flow
-        logging.info("Verifying whether the packet matched the flow entry")
+        logging.info("Verifying whether the packet matches the flow entry")
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
         #Send a non-matching packet , with only LSB different than the ip-address matched against
-        logging.info("ending a matching packet with different IP_DST(same MSB)")
+        logging.info("Sending a matching packet with different IP_DST(same MSB)")
         pkt2 = simple_tcp_packet(ip_dst='192.156.100.101')
         self.dataplane.send(of_ports[0], str(pkt2))
 
@@ -723,7 +722,7 @@ class Grp50No90c(base_tests.SimpleDataPlane):
         logging.info("Sending a non matching packet")
         pkt3 = simple_tcp_packet(ip_dst='200.168.100.100')
         self.dataplane.send(of_ports[0], str(pkt3))
-        logging.info("Waiting for a Packet_in")
+        logging.info("Waiting for a Packet_in message from the switch")
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 	logging.info("Packet_in received")
@@ -768,7 +767,7 @@ class Grp50No100(base_tests.SimpleDataPlane):
         logging.info("Sending a non matching packet")
         pkt2 = simple_icmp_packet();
         self.dataplane.send(of_ports[0], str(pkt2))
-        logging.info("Wating for a packet_in message from the switch")
+        logging.info("Waiting for a packet_in message from the switch")
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 	logging.info("Packet_in received")
@@ -796,7 +795,7 @@ class Grp50No110(base_tests.SimpleDataPlane):
 
         sleep(2)
     
-        logging.info("INstalling a flow entry with match on Ip_Tos ")
+        logging.info("Installing a flow entry with match on Ip_Tos ")
         
         #Create a flow matching on VLAN Priority
         (pkt,match) = match_ip_tos(self,of_ports)
@@ -813,7 +812,7 @@ class Grp50No110(base_tests.SimpleDataPlane):
         logging.info("Sending a non matching packet")
         pkt2 = simple_tcp_packet(ip_tos=2);
         self.dataplane.send(of_ports[0], str(pkt2))
-        logging.info("Waiting for a packet_in")
+        logging.info("Waiting for a packet_in message from the switch")
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 	logging.info("Packet_in received")
@@ -899,7 +898,7 @@ class Grp50No120b(base_tests.SimpleDataPlane):
         pkt2 = simple_icmp_packet(icmp_type=11);
         self.dataplane.send(of_ports[0], str(pkt2))
         
-        logging.info("Waitin for apacket_in form the switch")
+        logging.info("Waiting for a packet_in message form the switch")
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 	logging.info("Pakcet_in received")
@@ -930,19 +929,19 @@ class Grp50No130a(base_tests.SimpleDataPlane):
         (pkt,match) = match_tcp_dst(self,of_ports)   
 
         #Sending packet matching the tcp_dport, verify it implements the action
-        Grp50No130 ("Sending a matching packet")
+        logging.info("Sending a matching packet")
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verify packet implements the action specified in the flow
-        Grp50No130 ("Verifying whether the packet matches the flo entry")
+        logging.info ("Verifying whether the packet matches the flow entry")
         receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
 
         #Sending non matching packet , verify Packetin event gets triggered.
-        Grp50No130 ("Sending a non matching packet")
+        logging.info("Sending a non matching packet")
         pkt2 = simple_tcp_packet(tcp_dport=541);
         self.dataplane.send(of_ports[0], str(pkt2))
         
-        logging.info("Waiting for a packet_in from the switch")
+        logging.info("Waiting for a packet_in message from the switch")
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=10)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 	logging.info("packet_in received")
@@ -967,7 +966,7 @@ class Grp50No130b(base_tests.SimpleDataPlane):
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
 	
-	logging.info("Installing a flow entry with mathcing on TCP destination port/ICMPCode")
+	logging.info("Installing a flow entry with matching on TCP destination port/ICMPCode")
         (pkt,match) = match_icmp_code(self,of_ports)   
 
         #Sending packet matching the tcp_sport, verify it implements the action
@@ -983,7 +982,7 @@ class Grp50No130b(base_tests.SimpleDataPlane):
         pkt2 = simple_icmp_packet(icmp_type=3,icmp_code=1);
         self.dataplane.send(of_ports[0], str(pkt2))
         
-        logging.info("Waiting for a packet_in message frokm a switch")
+        logging.info("Waiting for a packet_in message from the switch")
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 	logging.info("Packet_in received")
@@ -1058,7 +1057,7 @@ class Grp50No150(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp50No90b Ip_Dst test")
+        logging.info("Running Grp50No150 L3 matching test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -1104,7 +1103,7 @@ class Grp50No150(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt2))
         
         #Verify packet_in event gets triggered
-        logging.info("Waiting for a packet_in message frokm the switch")
+        logging.info("Waiting for a packet_in message from the switch")
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 	logging.info("Packet_in received")
@@ -1202,7 +1201,7 @@ class Grp50No170(base_tests.SimpleDataPlane):
         pkt2 = simple_tcp_packet(tcp_sport=540);
         self.dataplane.send(of_ports[0], str(pkt2))
         
-        logging.info("Waiting for a packet in message from the switch")
+        logging.info("Waiting for a packet_in message from the switch")
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 	logging.info("Packet_in received")
