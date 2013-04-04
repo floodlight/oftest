@@ -673,6 +673,7 @@ def flow_match_test_pktout(parent, ing_port, egr_ports,
 
     msg = ofp.message.packet_out()
     msg.in_port = ing_port
+    msg.buffer_id = 0xffffffff
     msg.data = str(pkt)
     if action_list is not None:
         for act in action_list:

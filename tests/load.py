@@ -79,6 +79,7 @@ class LoadBarrier(base_tests.SimpleProtocol):
         msg = ofp.message.packet_out()
         msg.in_port = lb_port
         msg.data = str(pkt)
+        msg.buffer_id = 0xffffffff
         act = ofp.action.output()
         act.port = lb_port + 1
         msg.actions.append(act)
@@ -171,6 +172,7 @@ class PacketOutLoad(base_tests.SimpleDataPlane):
                act = ofp.action.output()
                act.port = dp_port
                msg.actions.append(act)
+               msg.buffer_id = 0xffffffff
 
                logging.info("PacketOutLoad to: " + str(dp_port))
                for count in range(100):
