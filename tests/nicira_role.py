@@ -1,4 +1,5 @@
 """
+Test the Nicira controller role extension
 """
 import struct
 import unittest
