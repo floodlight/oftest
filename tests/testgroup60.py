@@ -51,21 +51,21 @@ class Grp60No10(base_tests.SimpleDataPlane):
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-        logging.info("Insert any flow")
-        logging.info("Sending N Packets matching the flow")
-        logging.info("Verify packet counters increment in accordance")
-        
+       
         #Create a Match on Ingress flow
+        logging.info("Installing a flow entry")
         (pkt,match) = wildcard_all_except_ingress(self,of_ports)
        
         #Send Packets matching the flow 
+        logging.info("Sending 5 packets matching the flow entry")
         num_pkts = 5 
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
          
         #Verify Recieved Packets/Bytes Per Flow  
+        logging.info("Expected packet count": +str(num_pkts))
         verify_flowstats(self,match,packet_count=num_pkts)
-
+        logging.info("Packet counter incremented correctly")
 
 class Grp60No20(base_tests.SimpleDataPlane):
 
@@ -84,9 +84,8 @@ class Grp60No20(base_tests.SimpleDataPlane):
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-        logging.info("Insert any flow")
-        logging.info("Sending N Packets matching the flow")
-        logging.info("Verify byte counters increment in accordance")
+        logging.info("Installing a flow entry")
+           
 
         sleep(2)
         
@@ -94,16 +93,16 @@ class Grp60No20(base_tests.SimpleDataPlane):
         (pkt,match) = wildcard_all_except_ingress(self,of_ports)
        
         #Send Packets matching the flow 
+        logging.info("Sending 5 packets matching the flow entry")
         num_pkts = 5 
         byte_count = num_pkts*len(str(pkt))
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
 
-        logging.info("expected byte counter:"+str(byte_count))
-         
+        logging.info("expected byte count:"+str(byte_count))
         #Verify Recieved Packets/Bytes Per Flow  
         verify_flowstats(self,match,byte_count=byte_count)
-
+        logging.info("Byte counter incremented correctly")
 
 class Grp60No30(base_tests.SimpleDataPlane):
     
@@ -122,10 +121,7 @@ class Grp60No30(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        logging.info("Insert any flow")
-        logging.info("Send Flow_stats request after n sec intervals")
-        logging.info("Verify duration_sec and nsec counters are incrementing in accordance with the life of flow")
-
+        logging.info("Installing a flow entry")
         #Create a flow with match on ingress_port
         (pkt,match) = wildcard_all_except_ingress(self,of_ports)
     
@@ -140,6 +136,7 @@ class Grp60No30(base_tests.SimpleDataPlane):
         
         for ts in range(0,test_timeout):
             if ts in flow_stats_gen_ts:
+                logging.info("Sending a flow stats request")
                 response, pkt = self.controller.transact(stat_req)
                 
                 self.assertTrue(response is not None,"No response to stats request")
@@ -169,25 +166,25 @@ class Grp60No50(base_tests.SimpleDataPlane):
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-        logging.info("Insert a flow with match on ingress_port")
-        logging.info("Send N Packets on an ingress_port P ")
-        logging.info("Send Port_Stats Request for Port P , verify recieved packets counters are incrementing in accordance")
-
         sleep(2)
         
         #Insert a flow with match on all ingress port
+        logging.info("Insert a flow with match on ingress_port")
         (pkt, match ) = wildcard_all_except_ingress(self,of_ports)
 
         # Send Port_Stats request for the ingress port (retrieve old counter state)
+        logging.info("Sending a port stats request to retrieve initial counter values")
         (counter) = get_portstats(self,of_ports[0])
 
         # Send packets matching the flow
+        logging.info("Sending 5 packets matching the flow entry")
         num_pkts = 5 
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
 
         pkts = num_pkts+counter[0]
         #Verify recieved packet counters 
+        logging.info("Verifying whether the rx_packet counter has been incremented correctly")
         verify_portstats(self,of_ports[0],rx_packets=pkts)
 
 class Grp60No60(base_tests.SimpleDataPlane):
@@ -207,16 +204,15 @@ class Grp60No60(base_tests.SimpleDataPlane):
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
         logging.info("Insert any flow matching on in_port=ingress_port, action output to egress_port T ")
-        logging.info("Send N Packets matching the flow on ingress_port P ")
-        logging.info("Send Port_Stats Request for Port T , verify transmitted packets counters are incrementing in accordance")
-        
         #Insert a flow with match on all ingress port
         (pkt,match) = wildcard_all_except_ingress(self,of_ports)
         
         # Send Port_Stats request for the ingress port (retrieve old counter state)
+        logging.info("Sending Port stats request to retreive initial counter values")
         (counter) = get_portstats(self,of_ports[1])
         
         #Send packets matching the flow
+        logging.info("Sending 5 packets matching the flow entry")
         num_pkts = 5
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
@@ -224,6 +220,7 @@ class Grp60No60(base_tests.SimpleDataPlane):
         pkts = num_pkts+counter[1]
         
         #Verify transmitted_packet counters 
+        logging.info("Verifying whether the tx_packet counter has been incremented correctly")
         verify_portstats(self,of_ports[1],tx_packets=pkts)
 
 
@@ -244,28 +241,28 @@ class Grp60No70(base_tests.SimpleDataPlane):
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-        logging.info("Insert any flow matching on in_port=ingress_port")
-        logging.info("Send N Packets matching the flow on ingress_port P ")
-        logging.info("Send Port_Stats Request for Port P , verify recieved bytes counters are incrementing in accordance")
-
         sleep(2)
-        
+
+        logging.info("Insert any flow matching on in_port=ingress_port")
         #Insert a flow with match on all ingress port
         (pkt, match ) = wildcard_all_except_ingress(self,of_ports)
 
         # Send Port_Stats request for the ingress port (retrieve current counter state)
+        logging.info("Sending port stats request to  retreive initial counter values")
         (counter) = get_portstats(self,of_ports[0])
            
         #Send packets matching the flow.
+        logging.info("Sending 5 packets matching the flow entry")
         num_pkts = 5
         byte_count = num_pkts*len(str(pkt))
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
 
         byt_count = byte_count+counter[2]
-        logging.info("expected rx_byte counter:"+str(byt_count))
+        
 
         #Verify recieved_bytes counters 
+        logging.info("Verifying whether the rx_bytes counter has been incremented correctly")
         verify_portstats(self,of_ports[0],rx_byte=byt_count)
 
 
@@ -285,20 +282,19 @@ class Grp60No80(base_tests.SimpleDataPlane):
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-        logging.info("Insert any flow matching on in_port=ingress_port,action = output to egress_port T")
-        logging.info("Send N Packets matching the flow on ingress_port P ")
-        logging.info("Send Port_Stats Request for Port T , verify trasmitted bytes counters are incrementing in accordance")
-
         sleep(2)
-        
+
+        logging.info("Insert any flow matching on in_port=ingress_port,action = output to egress_port T")
         #Insert a flow with match on all ingress port
         (pkt, match ) = wildcard_all_except_ingress(self,of_ports)
 
         # Send Port_Stats request for the ingress port (retrieve current counter state)
+        logging.info("Sending a port stats request to retreive initial counter values")
         (counter) = get_portstats(self,of_ports[1])
         
         #Send packets matching the flow.
-        num_pkts = 5
+        logging.info("Sending 5 packets matching the flow entry")
+       num_pkts = 5
         byte_count = num_pkts*len(str(pkt))
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
@@ -306,6 +302,7 @@ class Grp60No80(base_tests.SimpleDataPlane):
         byt_count = byte_count+counter[3]
         
         #Verify trasmitted_bytes counters 
+        logging.info("Verifying whether the tx_bytes counter has been incremented correctly")
         verify_portstats(self,of_ports[1],tx_byte=byt_count)
 
 
@@ -326,7 +323,7 @@ class Grp60No90(base_tests.SimpleDataPlane):
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
         logging.info("Send Port_Stats Request")
-        logging.info("Verify reply has rx_dropped count ")
+        logging.info("Verify reply has rx_dropped count")
 
         # Send Port_Stats request for the ingress port (retrieve current counter state)
         (counter) = get_portstats(self,of_ports[0])
@@ -548,16 +545,19 @@ class Grp60No170(base_tests.SimpleDataPlane):
                 self.assertEqual(rv, 0, "Failed to delete all flows")
 
                 # Get Queue stats for selected egress queue only
+                logging.info("Retreiving queue stats for selected egress queue only")
                 (qs_before,p) = get_queuestats(self,egress_port,egress_queue_id)
 
                 #Insert a flow with enqueue action to queues configured on egress_port
+                logging.info("Installing a flow entry with enqueue action configured on egress port")
                 (pkt,match) = enqueue(self,ingress_port,egress_port,egress_queue_id)
               
                 #Send packet on the ingress_port and verify its received on egress_port
+                logging.info("Sending a packet on the ingress port and verifying the packet is received on the egress port")
                 send_packet(self,pkt,ingress_port,egress_port)
                 
                 expected_packets = qs_before.stats[0].tx_packets+1
-
+                logging.info("Verifying whether the tx packets in queue stats has been incremented correctly")
                 verify_queuestats(self,egress_port,egress_queue_id,expect_packet=expected_packets)
        
 
@@ -589,16 +589,20 @@ class Grp60No180(base_tests.SimpleDataPlane):
                 self.assertEqual(rv, 0, "Failed to delete all flows")
 
                 # Get Queue stats for selected egress queue only
+                logging.info("Retreiving the queue stats for selected egress queue")
                 (qs_before,p) = get_queuestats(self,egress_port,egress_queue_id)
 
                 #Insert a flow with enqueue action to queues configured on egress_port
+                logging.info("Installing a flow entry with the enqueue action configured on the egress port")
                 (pkt,match) = enqueue(self,ingress_port,egress_port,egress_queue_id)
-              
+
                 #Send packet on the ingress_port and verify its received on egress_port
+                logging.info("Sending packet on ingress port and verifying its received on the egress port")
                 send_packet(self,pkt,ingress_port,egress_port)
                 
                 expected_bytes = qs_before.stats[0].tx_bytes+len(str(pkt))
 
+                logging.info("Verifying whether the tx bytes counter in the queue stats has been incremented correctly")
                 verify_queuestats(self,egress_port,egress_queue_id,expect_byte=expected_bytes)
        
        
@@ -647,13 +651,14 @@ class Grp60No200(base_tests.SimpleDataPlane):
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-        logging.info("Insert any flow matching on in_port=ingress_port,action = output to egress_port T ")
-        logging.info("Send Table_Stats, verify active_count counter is incremented in accordance")
+        logging.info("Installing a flow entry matching on in_port=ingress_port,action = output to egress_port T ")
+       
 
         #Insert a flow with match on all ingress port
         (pkt, match ) = wildcard_all_except_ingress(self,of_ports)
 
         #Generate  Table_Stats
+        logging.info("Verifying whether the active_counter in table stats has been incremented correctly") 
         verify_tablestats(self,expect_active=1)
 
 
@@ -674,24 +679,25 @@ class Grp60No210(base_tests.SimpleDataPlane):
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
 
-        logging.info("Insert any flow matching on in_port=ingress_port,action = output to egress_port")
-        logging.info("Send N packets matching the flow, N' packets not matching the flow")
-        logging.info("Send Table_Stats, verify lookup_count = N+N' & matched_count=N ")
 
         #Get Current Table Stats
+        logging.info("Retreiving initial table stats")
         (current_lookedup,current_matched,current_active) = get_tablestats(self)
 
         sleep(2)
 
         #Insert a flow with match on all ingress port
+        logging.info("Installing a flow entry matching on in_port=ingress_port,action = output to egress_port")
         (pkt, match ) = wildcard_all_except_ingress(self,of_ports)
 
         #send packet pkt N times (pkt matches the flow)
+        logging.info("Sending 5 packets matching the flow entry")
         num_sends = 5
         for pkt_cnt in range(num_sends):
             self.dataplane.send(of_ports[0],str(pkt))
 
         #send packet pkt N' (pkt does not match the flow)
+        logging.info("Sending 5 non matching packets")
         num_sends2 = 5
         for pkt_cnt in range(num_sends):
             self.dataplane.send(of_ports[1],str(pkt))
@@ -702,6 +708,7 @@ class Grp60No210(base_tests.SimpleDataPlane):
         logging.info("expected_matched:"+str(new_matched))
 
         #Verify lookup_count and matched_count counters.
+        logging.info("Verifying whether the lookup_counter and matched_counter have been incremented correctly")
         verify_tablestats(self,expect_lookup=new_lookup,expect_match=new_matched)
 
 
