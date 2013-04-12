@@ -121,7 +121,8 @@ class CompleteHandshake(BaseHandshake):
 
     def __init__(self, keep_alive=True, cxn_cycles=5,
                  controller_timeout=-1, hello_timeout=5, 
-                 features_req_timeout=5, disconnected_timeout=3):
+                 features_req_timeout=5, disconnected_timeout=3,
+                 report_pkts=False):
         BaseHandshake.__init__(self)
         self.buildControllerList()
         self.keep_alive = keep_alive
@@ -135,7 +136,52 @@ class CompleteHandshake(BaseHandshake):
             or features_req_timeout
         self.disconnected_timeout = test_param_get('disconnected_timeout') \
             or disconnected_timeout
+        self.report_pkts = report_pkts
 
+    # These functions provide per-tick processing
+    def periodic_init(self, tick_time):
+        """
+        Assumes tick_time is in seconds, usually 1/10 of a sec
+        """
+        if not self.report_pkts:
+            return
+        self.start_time = time.time()
+        self.last_report = self.start_time
+        self.pkt_in_count = 0 # Total packet in count
+        self.periodic_pkt_in_count = 0 # Packet-ins this cycle
+
+    def periodic_tick(self, con):
+        """
+        Process one tick.  Currently this just counts pkt-in msgs
+        """
+        if not self.report_pkts:
+            return
+        if con.cstate != 4:
+            return
+        if self.report_pkts:
+            # Gather packets from control cxn
+            current_time = time.time()
+            new_pkts = con.packet_in_count - self.pkt_in_count
+            self.pkt_in_count = con.packet_in_count
+            self.periodic_pkt_in_count += new_pkts
+            con.clear_queue()
+
+            # Report every second or so
+            if (current_time - self.last_report >= 1):
+                if self.periodic_pkt_in_count:
+                    print "%7.2f: pkt/sec last period:  %6d.  Total %10d." % (
+                        current_time - self.start_time,
+                        self.periodic_pkt_in_count/(current_time - self.last_report),
+                        self.pkt_in_count)
+                self.last_report = current_time
+                self.periodic_pkt_in_count = 0
+
+    def periodic_done(self):
+        if not self.report_pkts:
+            return
+        print "Received %d pkt-ins over %d seconds" % (
+            self.pkt_in_count, time.time() - self.start_time)
+        
     def runTest(self):
         for conspec in self.controller_list:
             self.controllerSetup(conspec[0], conspec[1])
@@ -144,6 +190,7 @@ class CompleteHandshake(BaseHandshake):
             self.controllers[i].keep_alive = self.keep_alive
             self.controllers[i].saved_switch_addr = None
         tick = 0.1  # time period in seconds at which controllers are handled
+        self.periodic_init(tick)
 
         disconnected_count = 0
         cycle = 0
@@ -191,7 +238,7 @@ class CompleteHandshake(BaseHandshake):
                                               timeout=0)
                         if reply is not None:
                             logging.info(condesc + 
-                                         "Features request received from " +
+                                         "Features reply received from " +
                                          str(con.switch_addr))
                             con.cstate = 4
                             con.count = 0
@@ -222,6 +269,7 @@ class CompleteHandshake(BaseHandshake):
                     con.cstate = 0
             
                 states.append(con.cstate)
+                self.periodic_tick(con)
 
             logging.debug("Cycle " + str(cycle) +
                           ", states " + str(states) +
@@ -241,6 +289,7 @@ class CompleteHandshake(BaseHandshake):
             if cycle > self.cxn_cycles:
                break
             time.sleep(tick)
+        self.periodic_done()
 
 @disabled
 class HandshakeAndKeepalive(CompleteHandshake):
@@ -251,6 +300,16 @@ class HandshakeAndKeepalive(CompleteHandshake):
 
     def __init__(self):
        CompleteHandshake.__init__(self, keep_alive=True)
+
+@disabled
+class MonitorPacketIn(CompleteHandshake):
+    """
+    Complete handshake and respond to echo request.  As packet-in messages
+    arrive, report the count and pkts/second
+    """
+
+    def __init__(self):
+       CompleteHandshake.__init__(self, keep_alive=True, report_pkts=True)
 
 @disabled
 class HandshakeNoEcho(CompleteHandshake):
