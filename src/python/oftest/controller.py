@@ -125,6 +125,7 @@ class Controller(Thread):
         # Protected by the packets_cv lock / condition variable
         self.packets = []
         self.packets_cv = Condition()
+        self.packet_in_count = 0
 
         # Settings
         self.max_pkts = max_pkts
@@ -257,6 +258,10 @@ class Controller(Thread):
                         # Ignoring additional data
                         self.message_send(rep.pack())
                         continue
+
+                # Generalize to counters for all packet types?
+                if msg.type == ofp.OFPT_PACKET_IN:
+                    self.packet_in_count += 1
 
                 # Log error messages
                 if hdr_type == ofp.OFPT_ERROR:
@@ -578,7 +583,10 @@ class Controller(Thread):
         If an error occurs, (None, None) is returned
         """
 
-        exp_msg_str = ofp.ofp_type_map.get(exp_msg, "unknown (%d)" % exp_msg)
+        exp_msg_str = "unspecified"
+        if exp_msg:
+            exp_msg_str = ofp.ofp_type_map.get(exp_msg, "unknown (%d)" % 
+                                               exp_msg)
 
         if exp_msg is not None:
             self.logger.debug("Poll for %s", exp_msg_str)
@@ -683,6 +691,16 @@ class Controller(Thread):
             raise AssertionError("failed to send message to switch")
 
         return 0 # for backwards compatibility
+
+    def clear_queue(self):
+        """
+        Clear the input queue and report the number of messages
+        that were in it
+        """
+        enqueued_pkts = len(self.packets)
+        with self.packets_cv:
+            self.packets = []
+        return enqueued_pkts
 
     def __str__(self):
         string = "Controller:\n"
