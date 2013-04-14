@@ -53,7 +53,8 @@ is stored in 'match_data_map' of profile_match.
 class profile_match:
     def get_profile_match(self):
         pass
-        
+
+all_match_fields = ['nw_src','nw_dst','tp_src','tp_dst','dl_dst','dl_src']        
 # OF 1.0   
 class profile_match_ofp10(profile_match):
     match_data_map = {
@@ -79,7 +80,7 @@ class profile:
         self.profile_match_fields_disabled = []
         self.profile_match_fields_enabled = []
         self.profile_match_field_test_map = {}
-        self.profile_test_match_map = {}        
+        self.profile_test_match_map = {}
 
     def parse(self):
         # reads the xml files.
@@ -171,11 +172,10 @@ class profile:
         
         
     def get_profile_enabled_match_fields(self):
-        return self.profile_enabled_match_fields
+        return set(self.profile_enabled_match_fields)
     
     def get_profile_disabled_match_fields(self):
-        return self.profile__match_fields
-        
+        return set(all_match_fields) - self.get_profile_enabled_match_fields()
     
     def get_profile_match(self,test):
         ret_val = None
@@ -204,6 +204,13 @@ class profile:
             
         return ret_val
     
-
-
+    def get_disabled_tests(self):
+        ret_val = []
     
+        for disabled_match_field in self.get_profile_disabled_match_fields():
+            tests_for_match_field = self.get_tests_for_match_field(disabled_match_field)
+            
+            if len(tests_for_match_field) >0:
+                ret_val +=tests_for_match_field
+                
+        return ret_val
