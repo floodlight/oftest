@@ -51,10 +51,13 @@ is stored in 'match_data_map' of profile_match.
 
 """
 class profile_match:
+    def __init__(self):
+        self.profile_match_data = {}
+    
     def get_profile_match(self):
         pass
+        
 
-all_match_fields = ['nw_src','nw_dst','tp_src','tp_dst','dl_dst','dl_src']        
 # OF 1.0   
 class profile_match_ofp10(profile_match):
     match_data_map = {
@@ -71,17 +74,29 @@ class profile_match_ofp10(profile_match):
         'tp_dst' :0,  
     }
     
-    def get_profile_match(self):
-        return self.match_data_map
-    
+    def get_map(self):
+        return self.profile_match_data
     
 class profile:
-    def __init__(self,profile_file=None):
+    _profile = None
+    
+    def __init__(self):
         self.profile_match_fields_disabled = []
         self.profile_match_fields_enabled = []
         self.profile_match_field_test_map = {}
         self.profile_test_match_map = {}
-
+        self.match_field_test = None
+        self.test_profile = None
+        self.switch_profile =  None
+        
+        
+    @classmethod  
+    def get_instance(self):
+        if profile._profile is None:
+            profile._profile = profile()
+            profile._profile.parse()
+        return profile._profile
+    
     def parse(self):
         # reads the xml files.
         
@@ -93,18 +108,17 @@ class profile:
                 self.switch_profile = switch_profile.CreateFromDocument(file(os.path.join(xml_dir,PROFILE_XSD_XML_CONFIG['switch_profile'])).read())
             
             if PROFILE_XSD_XML_CONFIG.has_key('test_profile'):
-                self.test_profile = test_profile.CreateFromDocument(file(os.path.join(xml_dir,PROFILE_XSD_XML_CONFIG['test_profiles'])).read())
+                self.test_profile = test_profile.CreateFromDocument(file(os.path.join(xml_dir,PROFILE_XSD_XML_CONFIG['test_profile'])).read())
         except:
                 traceback.print_exc()
                 
         self.process_match_field_test()
         self.process_switch_profile()
-        self.process_test_profiles()
+        self.process_test_profile()
        
 
     def process_match_field_test(self):
         #parses the match_field_test.xml file storing in 'profile_test_match_map'.
-        
         for match_field_idx in range(len(self.match_field_test.match_field)):
             match_field =  self.match_field_test.match_field[match_field_idx].name
             
@@ -121,7 +135,6 @@ class profile:
         
     def process_switch_profile(self):
         #parses the switch_profile.xml file storing in profile_disabled_match_fields.
-        
         for match_field in self.switch_profile.match_fields[0].match_field:
             if match_field.property_value  == 'Disable':
                 self.profile_match_fields_disabled.append(match_field.property_name)
@@ -129,34 +142,28 @@ class profile:
                 self.profile_match_fields_enabled.append(match_field.property_name)
                 
                 
-    def process_test_profiles(self):
-        
+    def process_test_profile(self):
         #parsing the test_profiles.xml file storing in profile_test_match_map.
-        for test_idx in range(len(self.test_profile.test_profile.test)):
-            test = self.test_profile.test_profile.test[test_idx]
+        for test_idx in range(len(self.test_profile.test)):
+            test = self.test_profile.test[test_idx].name
             
-            for match_fields_idx in range(len(self.test_profile.test_profile.test[test_idx].match_fields)):
-                for match_field_idx in range(len(self.test_profile.test_profile.test[test_idx].match_fields[match_fields_idx].match_field)):
-                    
+            for match_fields_idx in range(len(self.test_profile.test[test_idx].match_fields)):
+                for match_field_idx in range(len(self.test_profile.test[test_idx].match_fields[match_fields_idx].match_field)):
                     
                     # handle OFP 1.0
                     if OFP_VERSION  == 1.0:
-                        match_field_key = self.test_profiles.test_profile.test[test_idx].match_fields[match_fields_idx].match_field[match_field_idx].property_name
-                        match_field_val = self.test_profiles.test_profile.test[test_idx].match_fields[match_fields_idx].match_field[match_field_idx].property_value
+                        match_field_key = self.test_profile.test[test_idx].match_fields[match_fields_idx].match_field[match_field_idx].property_name
+                        match_field_val = self.test_profile.test[test_idx].match_fields[match_fields_idx].match_field[match_field_idx].property_value
                        
                         if profile_match_ofp10.match_data_map.has_key(match_field_key):
-                            profile_match_ofp10.match_data_map[match_field_key] = match_field_val
-                            profile_match = profile_match_ofp10.get_match(test)
-                            
-                            if self.profile_test_match_map.contains(test):
-                                profile_matches = self.profile_test_match_map.get(test)
-                                profile_matches.append(profile_match)
-                                self.profile_test_match_map[test] = profile_matches
+                            if self.profile_test_match_map.has_key(test):
+                                profile_match = self.profile_test_match_map.get(test)
+                                profile_match.get_map()[match_field_key] = match_field_val
+                                self.profile_test_match_map[test] = profile_match
                             else:
-                                profile_matches = []
-                                profile_matches.append(profile_match)
-                                
-                                self.profile_test_match_map[test] = profile_matches 
+                                profile_match = profile_match_ofp10()
+                                profile_match.get_map()[match_field_key] =  match_field_val   
+                                self.profile_test_match_map[test] = profile_match
                     else:
                         pass
 
@@ -172,16 +179,16 @@ class profile:
         
         
     def get_profile_enabled_match_fields(self):
-        return set(self.profile_enabled_match_fields)
+        return set(self.profile_match_fields_enabled)
     
     def get_profile_disabled_match_fields(self):
-        return set(all_match_fields) - self.get_profile_enabled_match_fields()
+        return set(self.profile_match_fields_disabled)
     
     def get_profile_match(self,test):
         ret_val = None
         
-        if self.profile.profile_test_match_map.has_key(test):
-            ret_val = self.profile.profile_test_match_map.get(test)
+        if self.profile_test_match_map.has_key(test):
+            ret_val = self.profile_test_match_map.get(test)
         
         return ret_val
             

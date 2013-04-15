@@ -14,7 +14,7 @@ import oftest.cstruct as ofp
 import oftest.message as message
 import oftest.dataplane as dataplane
 import oftest.action as action
-
+import oftest.testutils
 from oftest.testutils import *
 
 class SimpleProtocol(unittest.TestCase):

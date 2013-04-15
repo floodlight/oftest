@@ -17,7 +17,7 @@ import oftest.dataplane as dataplane
 import oftest.action as action
 import oftest.parse as parse
 import oftest.base_tests as base_tests
-
+import oftest.testutils
 from oftest.testutils import *
 from time import sleep
 
@@ -36,7 +36,6 @@ class FlowExpire(base_tests.SimpleDataPlane):
         of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
-
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 

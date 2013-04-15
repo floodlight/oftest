@@ -63,7 +63,7 @@ class Grp60No10(base_tests.SimpleDataPlane):
             self.dataplane.send(of_ports[0],str(pkt))
          
         #Verify Recieved Packets/Bytes Per Flow  
-        logging.info("Expected packet count": +str(num_pkts))
+        logging.info("Expected packet count :" +str(num_pkts))
         verify_flowstats(self,match,packet_count=num_pkts)
         logging.info("Packet counter incremented correctly")
 
@@ -294,7 +294,7 @@ class Grp60No80(base_tests.SimpleDataPlane):
         
         #Send packets matching the flow.
         logging.info("Sending 5 packets matching the flow entry")
-       num_pkts = 5
+        num_pkts = 5
         byte_count = num_pkts*len(str(pkt))
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))

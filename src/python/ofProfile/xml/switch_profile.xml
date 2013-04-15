@@ -1,8 +1,20 @@
 <switch>
 	<match_fields>
 		<match_field>
-			<property_name>ip_src</property_name>
+			<property_name>dl_src</property_name>
 			<property_value>Enable</property_value>
+		</match_field>
+		<match_field>
+			<property_name>dl_dst</property_name>
+			<property_value>Enable</property_value>
+		</match_field>
+		<match_field>
+			<property_name>nw_src</property_name>
+			<property_value>Disable</property_value>
+		</match_field>
+		<match_field>
+			<property_name>nw_dst</property_name>
+			<property_value>Disable</property_value>
 		</match_field>
 	</match_fields>
 </switch>

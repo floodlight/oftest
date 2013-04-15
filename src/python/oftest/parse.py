@@ -266,7 +266,6 @@ def packet_to_flow_match(packet, pkt_format="L2"):
     @todo Check if packet is other than L2 format
     @todo Implement ICMP and ARP fields
     """
-
     #@todo check min length of packet
     if pkt_format.upper() != "L2":
         parse_logger.error("Only L2 supported for packet_to_flow")
