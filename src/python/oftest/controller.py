@@ -344,6 +344,10 @@ class Controller(Thread):
                 if self.initial_hello:
                     self.message_send(ofp.message.hello())
                 self.connect_cv.notify() # Notify anyone waiting
+
+            # Prevent further connections
+            self.listen_socket.close()
+            self.listen_socket = None
         elif s and s == self.switch_socket:
             for idx in range(3): # debug: try a couple of times
                 try:
