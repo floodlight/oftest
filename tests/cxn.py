@@ -139,7 +139,7 @@ class CompleteHandshake(BaseHandshake):
         self.report_pkts = report_pkts
 
     # These functions provide per-tick processing
-    def periodic_init(self, tick_time):
+    def periodic_task_init(self, tick_time):
         """
         Assumes tick_time is in seconds, usually 1/10 of a sec
         """
@@ -150,7 +150,7 @@ class CompleteHandshake(BaseHandshake):
         self.pkt_in_count = 0 # Total packet in count
         self.periodic_pkt_in_count = 0 # Packet-ins this cycle
 
-    def periodic_tick(self, con):
+    def periodic_task_tick(self, con):
         """
         Process one tick.  Currently this just counts pkt-in msgs
         """
@@ -158,25 +158,25 @@ class CompleteHandshake(BaseHandshake):
             return
         if con.cstate != 4:
             return
-        if self.report_pkts:
-            # Gather packets from control cxn
-            current_time = time.time()
-            new_pkts = con.packet_in_count - self.pkt_in_count
-            self.pkt_in_count = con.packet_in_count
-            self.periodic_pkt_in_count += new_pkts
-            con.clear_queue()
 
-            # Report every second or so
-            if (current_time - self.last_report >= 1):
-                if self.periodic_pkt_in_count:
-                    print "%7.2f: pkt/sec last period:  %6d.  Total %10d." % (
-                        current_time - self.start_time,
-                        self.periodic_pkt_in_count/(current_time - self.last_report),
-                        self.pkt_in_count)
-                self.last_report = current_time
-                self.periodic_pkt_in_count = 0
+        # Gather packets from control cxn
+        current_time = time.time()
+        new_pkts = con.packet_in_count - self.pkt_in_count
+        self.pkt_in_count = con.packet_in_count
+        self.periodic_pkt_in_count += new_pkts
+        con.clear_queue()
 
-    def periodic_done(self):
+        # Report every second or so
+        if (current_time - self.last_report >= 1):
+            if self.periodic_pkt_in_count:
+                print "%7.2f: pkt/sec last period:  %6d.  Total %10d." % (
+                    current_time - self.start_time,
+                    self.periodic_pkt_in_count/(current_time - self.last_report),
+                    self.pkt_in_count)
+            self.last_report = current_time
+            self.periodic_pkt_in_count = 0
+
+    def periodic_task_done(self):
         if not self.report_pkts:
             return
         print "Received %d pkt-ins over %d seconds" % (
@@ -190,7 +190,7 @@ class CompleteHandshake(BaseHandshake):
             self.controllers[i].keep_alive = self.keep_alive
             self.controllers[i].saved_switch_addr = None
         tick = 0.1  # time period in seconds at which controllers are handled
-        self.periodic_init(tick)
+        self.periodic_task_init(tick)
 
         disconnected_count = 0
         cycle = 0
@@ -269,7 +269,7 @@ class CompleteHandshake(BaseHandshake):
                     con.cstate = 0
             
                 states.append(con.cstate)
-                self.periodic_tick(con)
+                self.periodic_task_tick(con)
 
             logging.debug("Cycle " + str(cycle) +
                           ", states " + str(states) +
@@ -289,7 +289,7 @@ class CompleteHandshake(BaseHandshake):
             if cycle > self.cxn_cycles:
                break
             time.sleep(tick)
-        self.periodic_done()
+        self.periodic_task_done()
 
 @disabled
 class HandshakeAndKeepalive(CompleteHandshake):

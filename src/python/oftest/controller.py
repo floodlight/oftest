@@ -697,10 +697,10 @@ class Controller(Thread):
         Clear the input queue and report the number of messages
         that were in it
         """
-        enqueued_pkts = len(self.packets)
+        enqueued_pkt_count = len(self.packets)
         with self.packets_cv:
             self.packets = []
-        return enqueued_pkts
+        return enqueued_pkt_count
 
     def __str__(self):
         string = "Controller:\n"
