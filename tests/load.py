@@ -235,3 +235,68 @@ class FlowModLoad(base_tests.SimpleProtocol):
                self.assertNotEqual(self.controller.message_send(request), -1,
                                "Error installing flow mod")
             self.checkBarrier()
+
+class FlowRemovedLoad(base_tests.SimpleDataPlane):
+    """
+    Generate lots of flow-removed messages
+
+    We keep track of the number of flow-removed messages we get but do not
+    assert on it. The goal of this test is just to make sure the controller
+    stays connected.
+    """
+
+    def checkBarrier(self):
+        msg, pkt = self.controller.transact(ofp.message.barrier_request(), timeout=60)
+        self.assertNotEqual(msg, None, "Barrier failed")
+        while self.controller.packets:
+           msg = self.controller.packets.pop(0)[0]
+           self.assertNotEqual(msg.type, ofp.OFPT_ERROR, "Error received")
+
+    def runTest(self):
+        delete_all_flows(self.controller)
+        self.checkBarrier()
+        msg, _ = self.controller.transact(ofp.message.table_stats_request())
+
+        # Some switches report an extremely high max_entries that would cause
+        # us to run out of memory attempting to create all the flow-mods.
+        num_flows = min(msg.entries[0].max_entries, 32678)
+
+        logging.info("Creating %d flow-mods messages", num_flows)
+
+        requests = []
+        for i in range(num_flows):
+            match = ofp.match()
+            match.wildcards = ofp.OFPFW_ALL & ~ofp.OFPFW_DL_VLAN & ~ofp.OFPFW_DL_DST
+            match.vlan_vid = ofp.OFP_VLAN_NONE
+            match.eth_dst = [0, 1, 2, 3, i / 256, i % 256]
+            act = ofp.action.output()
+            act.port = ofp.OFPP_CONTROLLER
+            request = ofp.message.flow_add()
+            request.buffer_id = 0xffffffff
+            request.priority = num_flows - i
+            request.out_port = ofp.OFPP_NONE
+            request.flags = ofp.OFPFF_SEND_FLOW_REM
+            request.match = match
+            request.actions.append(act)
+            requests.append(request)
+
+        logging.info("Adding %d flows", num_flows)
+        random.shuffle(requests)
+        for request in requests:
+            self.controller.message_send(request)
+        self.checkBarrier()
+
+        # Trigger a flood of flow-removed messages
+        delete_all_flows(self.controller)
+
+        count = 0
+        while True:
+            (response, raw) = self.controller.poll(ofp.OFPT_FLOW_REMOVED)
+            if not response:
+                break
+            count += 1
+
+        # Make sure the switch is still connected
+        self.checkBarrier()
+
+        logging.info("FlowRemovedLoad got %d/%d flow_removed messages." % (count, num_flows))
