@@ -309,7 +309,7 @@ def match_vlan_id(self,of_ports,priority=None):
     #Generate Match_Vlan_Id
 
     #Create a simple tcp packet and generate match on ethernet dst address flow
-    pkt_matchvlanid = simple_tcp_packet(dl_vlan_enable=True,dl_vlan=1)
+    pkt_matchvlanid = simple_tcp_packet(dl_vlan_enable=True,dl_vlan=3)
     match = parse.packet_to_flow_match(pkt_matchvlanid)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
