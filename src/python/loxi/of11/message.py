@@ -10,6 +10,7 @@ import loxi
 import const
 import common
 import action # for unpack_list
+import instruction # for unpack_list
 import util
 import loxi.generic_util
 
@@ -50,6 +51,7 @@ class aggregate_stats_reply(Message):
         packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!H", self.stats_type))
         packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
         packed.append(struct.pack("!Q", self.packet_count))
         packed.append(struct.pack("!Q", self.byte_count))
         packed.append(struct.pack("!L", self.flow_count))
@@ -75,6 +77,7 @@ class aggregate_stats_reply(Message):
         _stats_type = reader.read('!H')[0]
         assert(_stats_type == const.OFPST_AGGREGATE)
         obj.flags = reader.read('!H')[0]
+        reader.skip(4)
         obj.packet_count = reader.read('!Q')[0]
         obj.byte_count = reader.read('!Q')[0]
         obj.flow_count = reader.read('!L')[0]
@@ -132,16 +135,12 @@ class aggregate_stats_request(Message):
     type = const.OFPT_STATS_REQUEST
     stats_type = const.OFPST_AGGREGATE
 
-    def __init__(self, xid=None, flags=None, match=None, table_id=None, out_port=None):
+    def __init__(self, xid=None, flags=None, table_id=None, out_port=None, out_group=None, cookie=None, cookie_mask=None, match=None):
         self.xid = xid
         if flags != None:
             self.flags = flags
         else:
             self.flags = 0
-        if match != None:
-            self.match = match
-        else:
-            self.match = common.match()
         if table_id != None:
             self.table_id = table_id
         else:
@@ -150,6 +149,22 @@ class aggregate_stats_request(Message):
             self.out_port = out_port
         else:
             self.out_port = 0
+        if out_group != None:
+            self.out_group = out_group
+        else:
+            self.out_group = 0
+        if cookie != None:
+            self.cookie = cookie
+        else:
+            self.cookie = 0
+        if cookie_mask != None:
+            self.cookie_mask = cookie_mask
+        else:
+            self.cookie_mask = 0
+        if match != None:
+            self.match = match
+        else:
+            self.match = common.match()
 
     def pack(self):
         packed = []
@@ -159,10 +174,15 @@ class aggregate_stats_request(Message):
         packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!H", self.stats_type))
         packed.append(struct.pack("!H", self.flags))
-        packed.append(self.match.pack())
+        packed.append('\x00' * 4)
         packed.append(struct.pack("!B", self.table_id))
-        packed.append('\x00' * 1)
-        packed.append(struct.pack("!H", self.out_port))
+        packed.append('\x00' * 3)
+        packed.append(struct.pack("!L", self.out_port))
+        packed.append(struct.pack("!L", self.out_group))
+        packed.append('\x00' * 4)
+        packed.append(struct.pack("!Q", self.cookie))
+        packed.append(struct.pack("!Q", self.cookie_mask))
+        packed.append(self.match.pack())
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -184,10 +204,15 @@ class aggregate_stats_request(Message):
         _stats_type = reader.read('!H')[0]
         assert(_stats_type == const.OFPST_AGGREGATE)
         obj.flags = reader.read('!H')[0]
-        obj.match = common.match.unpack(reader)
+        reader.skip(4)
         obj.table_id = reader.read('!B')[0]
-        reader.skip(1)
-        obj.out_port = reader.read('!H')[0]
+        reader.skip(3)
+        obj.out_port = reader.read('!L')[0]
+        obj.out_group = reader.read('!L')[0]
+        reader.skip(4)
+        obj.cookie = reader.read('!Q')[0]
+        obj.cookie_mask = reader.read('!Q')[0]
+        obj.match = common.match.unpack(reader)
         return obj
 
     def __eq__(self, other):
@@ -196,9 +221,12 @@ class aggregate_stats_request(Message):
         if self.type != other.type: return False
         if self.xid != other.xid: return False
         if self.flags != other.flags: return False
-        if self.match != other.match: return False
         if self.table_id != other.table_id: return False
         if self.out_port != other.out_port: return False
+        if self.out_group != other.out_group: return False
+        if self.cookie != other.cookie: return False
+        if self.cookie_mask != other.cookie_mask: return False
+        if self.match != other.match: return False
         return True
 
     def __ne__(self, other):
@@ -225,14 +253,23 @@ class aggregate_stats_request(Message):
                 q.text("flags = ");
                 q.text("%#x" % self.flags)
                 q.text(","); q.breakable()
-                q.text("match = ");
-                q.pp(self.match)
-                q.text(","); q.breakable()
                 q.text("table_id = ");
                 q.text("%#x" % self.table_id)
                 q.text(","); q.breakable()
                 q.text("out_port = ");
                 q.text(util.pretty_port(self.out_port))
+                q.text(","); q.breakable()
+                q.text("out_group = ");
+                q.text("%#x" % self.out_group)
+                q.text(","); q.breakable()
+                q.text("cookie = ");
+                q.text("%#x" % self.cookie)
+                q.text(","); q.breakable()
+                q.text("cookie_mask = ");
+                q.text("%#x" % self.cookie_mask)
+                q.text(","); q.breakable()
+                q.text("match = ");
+                q.pp(self.match)
             q.breakable()
         q.text('}')
 
@@ -364,7 +401,7 @@ class barrier_request(Message):
 
 class bsn_get_interfaces_reply(Message):
     version = const.OFP_VERSION
-    type = const.OFPT_VENDOR
+    type = const.OFPT_EXPERIMENTER
     experimenter = 0x5c16c7
     subtype = 10
 
@@ -399,7 +436,7 @@ class bsn_get_interfaces_reply(Message):
         _version = reader.read('!B')[0]
         assert(_version == const.OFP_VERSION)
         _type = reader.read('!B')[0]
-        assert(_type == const.OFPT_VENDOR)
+        assert(_type == const.OFPT_EXPERIMENTER)
         _length = reader.read('!H')[0]
         obj.xid = reader.read('!L')[0]
         _experimenter = reader.read('!L')[0]
@@ -445,7 +482,7 @@ class bsn_get_interfaces_reply(Message):
 
 class bsn_get_interfaces_request(Message):
     version = const.OFP_VERSION
-    type = const.OFPT_VENDOR
+    type = const.OFPT_EXPERIMENTER
     experimenter = 0x5c16c7
     subtype = 9
 
@@ -475,7 +512,7 @@ class bsn_get_interfaces_request(Message):
         _version = reader.read('!B')[0]
         assert(_version == const.OFP_VERSION)
         _type = reader.read('!B')[0]
-        assert(_type == const.OFPT_VENDOR)
+        assert(_type == const.OFPT_EXPERIMENTER)
         _length = reader.read('!H')[0]
         obj.xid = reader.read('!L')[0]
         _experimenter = reader.read('!L')[0]
@@ -514,185 +551,9 @@ class bsn_get_interfaces_request(Message):
             q.breakable()
         q.text('}')
 
-class bsn_get_ip_mask_reply(Message):
-    version = const.OFP_VERSION
-    type = const.OFPT_VENDOR
-    experimenter = 0x5c16c7
-    subtype = 2
-
-    def __init__(self, xid=None, index=None, mask=None):
-        self.xid = xid
-        if index != None:
-            self.index = index
-        else:
-            self.index = 0
-        if mask != None:
-            self.mask = mask
-        else:
-            self.mask = 0
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!B", self.version))
-        packed.append(struct.pack("!B", self.type))
-        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
-        packed.append(struct.pack("!L", self.xid))
-        packed.append(struct.pack("!L", self.experimenter))
-        packed.append(struct.pack("!L", self.subtype))
-        packed.append(struct.pack("!B", self.index))
-        packed.append('\x00' * 3)
-        packed.append(struct.pack("!L", self.mask))
-        length = sum([len(x) for x in packed])
-        packed[2] = struct.pack("!H", length)
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(buf):
-        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
-        obj = bsn_get_ip_mask_reply()
-        if type(buf) == loxi.generic_util.OFReader:
-            reader = buf
-        else:
-            reader = loxi.generic_util.OFReader(buf)
-        _version = reader.read('!B')[0]
-        assert(_version == const.OFP_VERSION)
-        _type = reader.read('!B')[0]
-        assert(_type == const.OFPT_VENDOR)
-        _length = reader.read('!H')[0]
-        obj.xid = reader.read('!L')[0]
-        _experimenter = reader.read('!L')[0]
-        assert(_experimenter == 0x5c16c7)
-        _subtype = reader.read('!L')[0]
-        assert(_subtype == 2)
-        obj.index = reader.read('!B')[0]
-        reader.skip(3)
-        obj.mask = reader.read('!L')[0]
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.version != other.version: return False
-        if self.type != other.type: return False
-        if self.xid != other.xid: return False
-        if self.index != other.index: return False
-        if self.mask != other.mask: return False
-        return True
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __str__(self):
-        return self.show()
-
-    def show(self):
-        import loxi.pp
-        return loxi.pp.pp(self)
-
-    def pretty_print(self, q):
-        q.text("bsn_get_ip_mask_reply {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("xid = ");
-                if self.xid != None:
-                    q.text("%#x" % self.xid)
-                else:
-                    q.text('None')
-                q.text(","); q.breakable()
-                q.text("index = ");
-                q.text("%#x" % self.index)
-                q.text(","); q.breakable()
-                q.text("mask = ");
-                q.text("%#x" % self.mask)
-            q.breakable()
-        q.text('}')
-
-class bsn_get_ip_mask_request(Message):
-    version = const.OFP_VERSION
-    type = const.OFPT_VENDOR
-    experimenter = 0x5c16c7
-    subtype = 1
-
-    def __init__(self, xid=None, index=None):
-        self.xid = xid
-        if index != None:
-            self.index = index
-        else:
-            self.index = 0
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!B", self.version))
-        packed.append(struct.pack("!B", self.type))
-        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
-        packed.append(struct.pack("!L", self.xid))
-        packed.append(struct.pack("!L", self.experimenter))
-        packed.append(struct.pack("!L", self.subtype))
-        packed.append(struct.pack("!B", self.index))
-        packed.append('\x00' * 7)
-        length = sum([len(x) for x in packed])
-        packed[2] = struct.pack("!H", length)
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(buf):
-        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
-        obj = bsn_get_ip_mask_request()
-        if type(buf) == loxi.generic_util.OFReader:
-            reader = buf
-        else:
-            reader = loxi.generic_util.OFReader(buf)
-        _version = reader.read('!B')[0]
-        assert(_version == const.OFP_VERSION)
-        _type = reader.read('!B')[0]
-        assert(_type == const.OFPT_VENDOR)
-        _length = reader.read('!H')[0]
-        obj.xid = reader.read('!L')[0]
-        _experimenter = reader.read('!L')[0]
-        assert(_experimenter == 0x5c16c7)
-        _subtype = reader.read('!L')[0]
-        assert(_subtype == 1)
-        obj.index = reader.read('!B')[0]
-        reader.skip(7)
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.version != other.version: return False
-        if self.type != other.type: return False
-        if self.xid != other.xid: return False
-        if self.index != other.index: return False
-        return True
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __str__(self):
-        return self.show()
-
-    def show(self):
-        import loxi.pp
-        return loxi.pp.pp(self)
-
-    def pretty_print(self, q):
-        q.text("bsn_get_ip_mask_request {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("xid = ");
-                if self.xid != None:
-                    q.text("%#x" % self.xid)
-                else:
-                    q.text('None')
-                q.text(","); q.breakable()
-                q.text("index = ");
-                q.text("%#x" % self.index)
-            q.breakable()
-        q.text('}')
-
 class bsn_get_mirroring_reply(Message):
     version = const.OFP_VERSION
-    type = const.OFPT_VENDOR
+    type = const.OFPT_EXPERIMENTER
     experimenter = 0x5c16c7
     subtype = 5
 
@@ -728,7 +589,7 @@ class bsn_get_mirroring_reply(Message):
         _version = reader.read('!B')[0]
         assert(_version == const.OFP_VERSION)
         _type = reader.read('!B')[0]
-        assert(_type == const.OFPT_VENDOR)
+        assert(_type == const.OFPT_EXPERIMENTER)
         _length = reader.read('!H')[0]
         obj.xid = reader.read('!L')[0]
         _experimenter = reader.read('!L')[0]
@@ -775,7 +636,7 @@ class bsn_get_mirroring_reply(Message):
 
 class bsn_get_mirroring_request(Message):
     version = const.OFP_VERSION
-    type = const.OFPT_VENDOR
+    type = const.OFPT_EXPERIMENTER
     experimenter = 0x5c16c7
     subtype = 4
 
@@ -811,7 +672,7 @@ class bsn_get_mirroring_request(Message):
         _version = reader.read('!B')[0]
         assert(_version == const.OFP_VERSION)
         _type = reader.read('!B')[0]
-        assert(_type == const.OFPT_VENDOR)
+        assert(_type == const.OFPT_EXPERIMENTER)
         _length = reader.read('!H')[0]
         obj.xid = reader.read('!L')[0]
         _experimenter = reader.read('!L')[0]
@@ -856,102 +717,9 @@ class bsn_get_mirroring_request(Message):
             q.breakable()
         q.text('}')
 
-class bsn_set_ip_mask(Message):
-    version = const.OFP_VERSION
-    type = const.OFPT_VENDOR
-    experimenter = 0x5c16c7
-    subtype = 0
-
-    def __init__(self, xid=None, index=None, mask=None):
-        self.xid = xid
-        if index != None:
-            self.index = index
-        else:
-            self.index = 0
-        if mask != None:
-            self.mask = mask
-        else:
-            self.mask = 0
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!B", self.version))
-        packed.append(struct.pack("!B", self.type))
-        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
-        packed.append(struct.pack("!L", self.xid))
-        packed.append(struct.pack("!L", self.experimenter))
-        packed.append(struct.pack("!L", self.subtype))
-        packed.append(struct.pack("!B", self.index))
-        packed.append('\x00' * 3)
-        packed.append(struct.pack("!L", self.mask))
-        length = sum([len(x) for x in packed])
-        packed[2] = struct.pack("!H", length)
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(buf):
-        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
-        obj = bsn_set_ip_mask()
-        if type(buf) == loxi.generic_util.OFReader:
-            reader = buf
-        else:
-            reader = loxi.generic_util.OFReader(buf)
-        _version = reader.read('!B')[0]
-        assert(_version == const.OFP_VERSION)
-        _type = reader.read('!B')[0]
-        assert(_type == const.OFPT_VENDOR)
-        _length = reader.read('!H')[0]
-        obj.xid = reader.read('!L')[0]
-        _experimenter = reader.read('!L')[0]
-        assert(_experimenter == 0x5c16c7)
-        _subtype = reader.read('!L')[0]
-        assert(_subtype == 0)
-        obj.index = reader.read('!B')[0]
-        reader.skip(3)
-        obj.mask = reader.read('!L')[0]
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.version != other.version: return False
-        if self.type != other.type: return False
-        if self.xid != other.xid: return False
-        if self.index != other.index: return False
-        if self.mask != other.mask: return False
-        return True
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __str__(self):
-        return self.show()
-
-    def show(self):
-        import loxi.pp
-        return loxi.pp.pp(self)
-
-    def pretty_print(self, q):
-        q.text("bsn_set_ip_mask {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("xid = ");
-                if self.xid != None:
-                    q.text("%#x" % self.xid)
-                else:
-                    q.text('None')
-                q.text(","); q.breakable()
-                q.text("index = ");
-                q.text("%#x" % self.index)
-                q.text(","); q.breakable()
-                q.text("mask = ");
-                q.text("%#x" % self.mask)
-            q.breakable()
-        q.text('}')
-
 class bsn_set_mirroring(Message):
     version = const.OFP_VERSION
-    type = const.OFPT_VENDOR
+    type = const.OFPT_EXPERIMENTER
     experimenter = 0x5c16c7
     subtype = 3
 
@@ -987,7 +755,7 @@ class bsn_set_mirroring(Message):
         _version = reader.read('!B')[0]
         assert(_version == const.OFP_VERSION)
         _type = reader.read('!B')[0]
-        assert(_type == const.OFPT_VENDOR)
+        assert(_type == const.OFPT_EXPERIMENTER)
         _length = reader.read('!H')[0]
         obj.xid = reader.read('!L')[0]
         _experimenter = reader.read('!L')[0]
@@ -1034,7 +802,7 @@ class bsn_set_mirroring(Message):
 
 class bsn_set_pktin_suppression(Message):
     version = const.OFP_VERSION
-    type = const.OFPT_VENDOR
+    type = const.OFPT_EXPERIMENTER
     experimenter = 0x5c16c7
     subtype = 11
 
@@ -1090,7 +858,7 @@ class bsn_set_pktin_suppression(Message):
         _version = reader.read('!B')[0]
         assert(_version == const.OFP_VERSION)
         _type = reader.read('!B')[0]
-        assert(_type == const.OFPT_VENDOR)
+        assert(_type == const.OFPT_EXPERIMENTER)
         _length = reader.read('!H')[0]
         obj.xid = reader.read('!L')[0]
         _experimenter = reader.read('!L')[0]
@@ -1155,259 +923,6 @@ class bsn_set_pktin_suppression(Message):
             q.breakable()
         q.text('}')
 
-class bsn_shell_command(Message):
-    version = const.OFP_VERSION
-    type = const.OFPT_VENDOR
-    experimenter = 0x5c16c7
-    subtype = 6
-
-    def __init__(self, xid=None, service=None, data=None):
-        self.xid = xid
-        if service != None:
-            self.service = service
-        else:
-            self.service = 0
-        if data != None:
-            self.data = data
-        else:
-            self.data = ""
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!B", self.version))
-        packed.append(struct.pack("!B", self.type))
-        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
-        packed.append(struct.pack("!L", self.xid))
-        packed.append(struct.pack("!L", self.experimenter))
-        packed.append(struct.pack("!L", self.subtype))
-        packed.append(struct.pack("!L", self.service))
-        packed.append(self.data)
-        length = sum([len(x) for x in packed])
-        packed[2] = struct.pack("!H", length)
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(buf):
-        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
-        obj = bsn_shell_command()
-        if type(buf) == loxi.generic_util.OFReader:
-            reader = buf
-        else:
-            reader = loxi.generic_util.OFReader(buf)
-        _version = reader.read('!B')[0]
-        assert(_version == const.OFP_VERSION)
-        _type = reader.read('!B')[0]
-        assert(_type == const.OFPT_VENDOR)
-        _length = reader.read('!H')[0]
-        obj.xid = reader.read('!L')[0]
-        _experimenter = reader.read('!L')[0]
-        assert(_experimenter == 0x5c16c7)
-        _subtype = reader.read('!L')[0]
-        assert(_subtype == 6)
-        obj.service = reader.read('!L')[0]
-        obj.data = str(reader.read_all())
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.version != other.version: return False
-        if self.type != other.type: return False
-        if self.xid != other.xid: return False
-        if self.service != other.service: return False
-        if self.data != other.data: return False
-        return True
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __str__(self):
-        return self.show()
-
-    def show(self):
-        import loxi.pp
-        return loxi.pp.pp(self)
-
-    def pretty_print(self, q):
-        q.text("bsn_shell_command {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("xid = ");
-                if self.xid != None:
-                    q.text("%#x" % self.xid)
-                else:
-                    q.text('None')
-                q.text(","); q.breakable()
-                q.text("service = ");
-                q.text("%#x" % self.service)
-                q.text(","); q.breakable()
-                q.text("data = ");
-                q.pp(self.data)
-            q.breakable()
-        q.text('}')
-
-class bsn_shell_output(Message):
-    version = const.OFP_VERSION
-    type = const.OFPT_VENDOR
-    experimenter = 0x5c16c7
-    subtype = 7
-
-    def __init__(self, xid=None, data=None):
-        self.xid = xid
-        if data != None:
-            self.data = data
-        else:
-            self.data = ""
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!B", self.version))
-        packed.append(struct.pack("!B", self.type))
-        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
-        packed.append(struct.pack("!L", self.xid))
-        packed.append(struct.pack("!L", self.experimenter))
-        packed.append(struct.pack("!L", self.subtype))
-        packed.append(self.data)
-        length = sum([len(x) for x in packed])
-        packed[2] = struct.pack("!H", length)
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(buf):
-        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
-        obj = bsn_shell_output()
-        if type(buf) == loxi.generic_util.OFReader:
-            reader = buf
-        else:
-            reader = loxi.generic_util.OFReader(buf)
-        _version = reader.read('!B')[0]
-        assert(_version == const.OFP_VERSION)
-        _type = reader.read('!B')[0]
-        assert(_type == const.OFPT_VENDOR)
-        _length = reader.read('!H')[0]
-        obj.xid = reader.read('!L')[0]
-        _experimenter = reader.read('!L')[0]
-        assert(_experimenter == 0x5c16c7)
-        _subtype = reader.read('!L')[0]
-        assert(_subtype == 7)
-        obj.data = str(reader.read_all())
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.version != other.version: return False
-        if self.type != other.type: return False
-        if self.xid != other.xid: return False
-        if self.data != other.data: return False
-        return True
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __str__(self):
-        return self.show()
-
-    def show(self):
-        import loxi.pp
-        return loxi.pp.pp(self)
-
-    def pretty_print(self, q):
-        q.text("bsn_shell_output {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("xid = ");
-                if self.xid != None:
-                    q.text("%#x" % self.xid)
-                else:
-                    q.text('None')
-                q.text(","); q.breakable()
-                q.text("data = ");
-                q.pp(self.data)
-            q.breakable()
-        q.text('}')
-
-class bsn_shell_status(Message):
-    version = const.OFP_VERSION
-    type = const.OFPT_VENDOR
-    experimenter = 0x5c16c7
-    subtype = 8
-
-    def __init__(self, xid=None, status=None):
-        self.xid = xid
-        if status != None:
-            self.status = status
-        else:
-            self.status = 0
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!B", self.version))
-        packed.append(struct.pack("!B", self.type))
-        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
-        packed.append(struct.pack("!L", self.xid))
-        packed.append(struct.pack("!L", self.experimenter))
-        packed.append(struct.pack("!L", self.subtype))
-        packed.append(struct.pack("!L", self.status))
-        length = sum([len(x) for x in packed])
-        packed[2] = struct.pack("!H", length)
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(buf):
-        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
-        obj = bsn_shell_status()
-        if type(buf) == loxi.generic_util.OFReader:
-            reader = buf
-        else:
-            reader = loxi.generic_util.OFReader(buf)
-        _version = reader.read('!B')[0]
-        assert(_version == const.OFP_VERSION)
-        _type = reader.read('!B')[0]
-        assert(_type == const.OFPT_VENDOR)
-        _length = reader.read('!H')[0]
-        obj.xid = reader.read('!L')[0]
-        _experimenter = reader.read('!L')[0]
-        assert(_experimenter == 0x5c16c7)
-        _subtype = reader.read('!L')[0]
-        assert(_subtype == 8)
-        obj.status = reader.read('!L')[0]
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.version != other.version: return False
-        if self.type != other.type: return False
-        if self.xid != other.xid: return False
-        if self.status != other.status: return False
-        return True
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __str__(self):
-        return self.show()
-
-    def show(self):
-        import loxi.pp
-        return loxi.pp.pp(self)
-
-    def pretty_print(self, q):
-        q.text("bsn_shell_status {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("xid = ");
-                if self.xid != None:
-                    q.text("%#x" % self.xid)
-                else:
-                    q.text('None')
-                q.text(","); q.breakable()
-                q.text("status = ");
-                q.text("%#x" % self.status)
-            q.breakable()
-        q.text('}')
-
 class desc_stats_reply(Message):
     version = const.OFP_VERSION
     type = const.OFPT_STATS_REPLY
@@ -1448,6 +963,7 @@ class desc_stats_reply(Message):
         packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!H", self.stats_type))
         packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
         packed.append(struct.pack("!256s", self.mfr_desc))
         packed.append(struct.pack("!256s", self.hw_desc))
         packed.append(struct.pack("!256s", self.sw_desc))
@@ -1474,6 +990,7 @@ class desc_stats_reply(Message):
         _stats_type = reader.read('!H')[0]
         assert(_stats_type == const.OFPST_DESC)
         obj.flags = reader.read('!H')[0]
+        reader.skip(4)
         obj.mfr_desc = reader.read("!256s")[0].rstrip("\x00")
         obj.hw_desc = reader.read("!256s")[0].rstrip("\x00")
         obj.sw_desc = reader.read("!256s")[0].rstrip("\x00")
@@ -1555,6 +1072,7 @@ class desc_stats_request(Message):
         packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!H", self.stats_type))
         packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -1576,6 +1094,7 @@ class desc_stats_request(Message):
         _stats_type = reader.read('!H')[0]
         assert(_stats_type == const.OFPST_DESC)
         obj.flags = reader.read('!H')[0]
+        reader.skip(4)
         return obj
 
     def __eq__(self, other):
@@ -1854,7 +1373,7 @@ class error_msg(Message):
 class experimenter_stats_reply(Message):
     version = const.OFP_VERSION
     type = const.OFPT_STATS_REPLY
-    stats_type = const.OFPST_VENDOR
+    stats_type = const.OFPST_EXPERIMENTER
 
     def __init__(self, xid=None, flags=None, experimenter=None, data=None):
         self.xid = xid
@@ -1879,7 +1398,9 @@ class experimenter_stats_reply(Message):
         packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!H", self.stats_type))
         packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
         packed.append(struct.pack("!L", self.experimenter))
+        packed.append('\x00' * 4)
         packed.append(self.data)
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
@@ -1900,9 +1421,11 @@ class experimenter_stats_reply(Message):
         _length = reader.read('!H')[0]
         obj.xid = reader.read('!L')[0]
         _stats_type = reader.read('!H')[0]
-        assert(_stats_type == const.OFPST_VENDOR)
+        assert(_stats_type == const.OFPST_EXPERIMENTER)
         obj.flags = reader.read('!H')[0]
+        reader.skip(4)
         obj.experimenter = reader.read('!L')[0]
+        reader.skip(4)
         obj.data = str(reader.read_all())
         return obj
 
@@ -1951,7 +1474,7 @@ class experimenter_stats_reply(Message):
 class experimenter_stats_request(Message):
     version = const.OFP_VERSION
     type = const.OFPT_STATS_REQUEST
-    stats_type = const.OFPST_VENDOR
+    stats_type = const.OFPST_EXPERIMENTER
 
     def __init__(self, xid=None, flags=None, experimenter=None, data=None):
         self.xid = xid
@@ -1976,7 +1499,9 @@ class experimenter_stats_request(Message):
         packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!H", self.stats_type))
         packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
         packed.append(struct.pack("!L", self.experimenter))
+        packed.append('\x00' * 4)
         packed.append(self.data)
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
@@ -1997,9 +1522,11 @@ class experimenter_stats_request(Message):
         _length = reader.read('!H')[0]
         obj.xid = reader.read('!L')[0]
         _stats_type = reader.read('!H')[0]
-        assert(_stats_type == const.OFPST_VENDOR)
+        assert(_stats_type == const.OFPST_EXPERIMENTER)
         obj.flags = reader.read('!H')[0]
+        reader.skip(4)
         obj.experimenter = reader.read('!L')[0]
+        reader.skip(4)
         obj.data = str(reader.read_all())
         return obj
 
@@ -2049,7 +1576,7 @@ class features_reply(Message):
     version = const.OFP_VERSION
     type = const.OFPT_FEATURES_REPLY
 
-    def __init__(self, xid=None, datapath_id=None, n_buffers=None, n_tables=None, capabilities=None, actions=None, ports=None):
+    def __init__(self, xid=None, datapath_id=None, n_buffers=None, n_tables=None, capabilities=None, reserved=None, ports=None):
         self.xid = xid
         if datapath_id != None:
             self.datapath_id = datapath_id
@@ -2067,10 +1594,10 @@ class features_reply(Message):
             self.capabilities = capabilities
         else:
             self.capabilities = 0
-        if actions != None:
-            self.actions = actions
+        if reserved != None:
+            self.reserved = reserved
         else:
-            self.actions = 0
+            self.reserved = 0
         if ports != None:
             self.ports = ports
         else:
@@ -2087,7 +1614,7 @@ class features_reply(Message):
         packed.append(struct.pack("!B", self.n_tables))
         packed.append('\x00' * 3)
         packed.append(struct.pack("!L", self.capabilities))
-        packed.append(struct.pack("!L", self.actions))
+        packed.append(struct.pack("!L", self.reserved))
         packed.append("".join([x.pack() for x in self.ports]))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
@@ -2112,7 +1639,7 @@ class features_reply(Message):
         obj.n_tables = reader.read('!B')[0]
         reader.skip(3)
         obj.capabilities = reader.read('!L')[0]
-        obj.actions = reader.read('!L')[0]
+        obj.reserved = reader.read('!L')[0]
         obj.ports = loxi.generic_util.unpack_list(reader, common.port_desc.unpack)
         return obj
 
@@ -2125,7 +1652,7 @@ class features_reply(Message):
         if self.n_buffers != other.n_buffers: return False
         if self.n_tables != other.n_tables: return False
         if self.capabilities != other.capabilities: return False
-        if self.actions != other.actions: return False
+        if self.reserved != other.reserved: return False
         if self.ports != other.ports: return False
         return True
 
@@ -2162,8 +1689,8 @@ class features_reply(Message):
                 q.text("capabilities = ");
                 q.text("%#x" % self.capabilities)
                 q.text(","); q.breakable()
-                q.text("actions = ");
-                q.text("%#x" % self.actions)
+                q.text("reserved = ");
+                q.text("%#x" % self.reserved)
                 q.text(","); q.breakable()
                 q.text("ports = ");
                 q.pp(self.ports)
@@ -2238,16 +1765,20 @@ class flow_add(Message):
     type = const.OFPT_FLOW_MOD
     _command = const.OFPFC_ADD
 
-    def __init__(self, xid=None, match=None, cookie=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, flags=None, actions=None):
+    def __init__(self, xid=None, cookie=None, cookie_mask=None, table_id=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, out_group=None, flags=None, match=None, instructions=None):
         self.xid = xid
-        if match != None:
-            self.match = match
-        else:
-            self.match = common.match()
         if cookie != None:
             self.cookie = cookie
         else:
             self.cookie = 0
+        if cookie_mask != None:
+            self.cookie_mask = cookie_mask
+        else:
+            self.cookie_mask = 0
+        if table_id != None:
+            self.table_id = table_id
+        else:
+            self.table_id = 0
         if idle_timeout != None:
             self.idle_timeout = idle_timeout
         else:
@@ -2268,14 +1799,22 @@ class flow_add(Message):
             self.out_port = out_port
         else:
             self.out_port = 0
+        if out_group != None:
+            self.out_group = out_group
+        else:
+            self.out_group = 0
         if flags != None:
             self.flags = flags
         else:
             self.flags = 0
-        if actions != None:
-            self.actions = actions
+        if match != None:
+            self.match = match
         else:
-            self.actions = []
+            self.match = common.match()
+        if instructions != None:
+            self.instructions = instructions
+        else:
+            self.instructions = []
 
     def pack(self):
         packed = []
@@ -2283,16 +1822,20 @@ class flow_add(Message):
         packed.append(struct.pack("!B", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
-        packed.append(self.match.pack())
         packed.append(struct.pack("!Q", self.cookie))
-        packed.append(struct.pack("!H", self._command))
+        packed.append(struct.pack("!Q", self.cookie_mask))
+        packed.append(struct.pack("!B", self.table_id))
+        packed.append(struct.pack("!B", self._command))
         packed.append(struct.pack("!H", self.idle_timeout))
         packed.append(struct.pack("!H", self.hard_timeout))
         packed.append(struct.pack("!H", self.priority))
         packed.append(struct.pack("!L", self.buffer_id))
-        packed.append(struct.pack("!H", self.out_port))
+        packed.append(struct.pack("!L", self.out_port))
+        packed.append(struct.pack("!L", self.out_group))
         packed.append(struct.pack("!H", self.flags))
-        packed.append("".join([x.pack() for x in self.actions]))
+        packed.append('\x00' * 2)
+        packed.append(self.match.pack())
+        packed.append("".join([x.pack() for x in self.instructions]))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -2311,17 +1854,21 @@ class flow_add(Message):
         assert(_type == const.OFPT_FLOW_MOD)
         _length = reader.read('!H')[0]
         obj.xid = reader.read('!L')[0]
-        obj.match = common.match.unpack(reader)
         obj.cookie = reader.read('!Q')[0]
-        __command = reader.read('!H')[0]
+        obj.cookie_mask = reader.read('!Q')[0]
+        obj.table_id = reader.read('!B')[0]
+        __command = reader.read('!B')[0]
         assert(__command == const.OFPFC_ADD)
         obj.idle_timeout = reader.read('!H')[0]
         obj.hard_timeout = reader.read('!H')[0]
         obj.priority = reader.read('!H')[0]
         obj.buffer_id = reader.read('!L')[0]
-        obj.out_port = reader.read('!H')[0]
+        obj.out_port = reader.read('!L')[0]
+        obj.out_group = reader.read('!L')[0]
         obj.flags = reader.read('!H')[0]
-        obj.actions = action.unpack_list(reader)
+        reader.skip(2)
+        obj.match = common.match.unpack(reader)
+        obj.instructions = instruction.unpack_list(reader)
         return obj
 
     def __eq__(self, other):
@@ -2329,15 +1876,18 @@ class flow_add(Message):
         if self.version != other.version: return False
         if self.type != other.type: return False
         if self.xid != other.xid: return False
-        if self.match != other.match: return False
         if self.cookie != other.cookie: return False
+        if self.cookie_mask != other.cookie_mask: return False
+        if self.table_id != other.table_id: return False
         if self.idle_timeout != other.idle_timeout: return False
         if self.hard_timeout != other.hard_timeout: return False
         if self.priority != other.priority: return False
         if self.buffer_id != other.buffer_id: return False
         if self.out_port != other.out_port: return False
+        if self.out_group != other.out_group: return False
         if self.flags != other.flags: return False
-        if self.actions != other.actions: return False
+        if self.match != other.match: return False
+        if self.instructions != other.instructions: return False
         return True
 
     def __ne__(self, other):
@@ -2361,11 +1911,14 @@ class flow_add(Message):
                 else:
                     q.text('None')
                 q.text(","); q.breakable()
-                q.text("match = ");
-                q.pp(self.match)
-                q.text(","); q.breakable()
                 q.text("cookie = ");
                 q.text("%#x" % self.cookie)
+                q.text(","); q.breakable()
+                q.text("cookie_mask = ");
+                q.text("%#x" % self.cookie_mask)
+                q.text(","); q.breakable()
+                q.text("table_id = ");
+                q.text("%#x" % self.table_id)
                 q.text(","); q.breakable()
                 q.text("idle_timeout = ");
                 q.text("%#x" % self.idle_timeout)
@@ -2382,11 +1935,17 @@ class flow_add(Message):
                 q.text("out_port = ");
                 q.text(util.pretty_port(self.out_port))
                 q.text(","); q.breakable()
+                q.text("out_group = ");
+                q.text("%#x" % self.out_group)
+                q.text(","); q.breakable()
                 q.text("flags = ");
                 q.text("%#x" % self.flags)
                 q.text(","); q.breakable()
-                q.text("actions = ");
-                q.pp(self.actions)
+                q.text("match = ");
+                q.pp(self.match)
+                q.text(","); q.breakable()
+                q.text("instructions = ");
+                q.pp(self.instructions)
             q.breakable()
         q.text('}')
 
@@ -2395,16 +1954,20 @@ class flow_delete(Message):
     type = const.OFPT_FLOW_MOD
     _command = const.OFPFC_DELETE
 
-    def __init__(self, xid=None, match=None, cookie=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, flags=None, actions=None):
+    def __init__(self, xid=None, cookie=None, cookie_mask=None, table_id=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, out_group=None, flags=None, match=None, instructions=None):
         self.xid = xid
-        if match != None:
-            self.match = match
-        else:
-            self.match = common.match()
         if cookie != None:
             self.cookie = cookie
         else:
             self.cookie = 0
+        if cookie_mask != None:
+            self.cookie_mask = cookie_mask
+        else:
+            self.cookie_mask = 0
+        if table_id != None:
+            self.table_id = table_id
+        else:
+            self.table_id = 0
         if idle_timeout != None:
             self.idle_timeout = idle_timeout
         else:
@@ -2425,14 +1988,22 @@ class flow_delete(Message):
             self.out_port = out_port
         else:
             self.out_port = 0
+        if out_group != None:
+            self.out_group = out_group
+        else:
+            self.out_group = 0
         if flags != None:
             self.flags = flags
         else:
             self.flags = 0
-        if actions != None:
-            self.actions = actions
+        if match != None:
+            self.match = match
         else:
-            self.actions = []
+            self.match = common.match()
+        if instructions != None:
+            self.instructions = instructions
+        else:
+            self.instructions = []
 
     def pack(self):
         packed = []
@@ -2440,16 +2011,20 @@ class flow_delete(Message):
         packed.append(struct.pack("!B", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
-        packed.append(self.match.pack())
         packed.append(struct.pack("!Q", self.cookie))
-        packed.append(struct.pack("!H", self._command))
+        packed.append(struct.pack("!Q", self.cookie_mask))
+        packed.append(struct.pack("!B", self.table_id))
+        packed.append(struct.pack("!B", self._command))
         packed.append(struct.pack("!H", self.idle_timeout))
         packed.append(struct.pack("!H", self.hard_timeout))
         packed.append(struct.pack("!H", self.priority))
         packed.append(struct.pack("!L", self.buffer_id))
-        packed.append(struct.pack("!H", self.out_port))
+        packed.append(struct.pack("!L", self.out_port))
+        packed.append(struct.pack("!L", self.out_group))
         packed.append(struct.pack("!H", self.flags))
-        packed.append("".join([x.pack() for x in self.actions]))
+        packed.append('\x00' * 2)
+        packed.append(self.match.pack())
+        packed.append("".join([x.pack() for x in self.instructions]))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -2468,17 +2043,21 @@ class flow_delete(Message):
         assert(_type == const.OFPT_FLOW_MOD)
         _length = reader.read('!H')[0]
         obj.xid = reader.read('!L')[0]
-        obj.match = common.match.unpack(reader)
         obj.cookie = reader.read('!Q')[0]
-        __command = reader.read('!H')[0]
+        obj.cookie_mask = reader.read('!Q')[0]
+        obj.table_id = reader.read('!B')[0]
+        __command = reader.read('!B')[0]
         assert(__command == const.OFPFC_DELETE)
         obj.idle_timeout = reader.read('!H')[0]
         obj.hard_timeout = reader.read('!H')[0]
         obj.priority = reader.read('!H')[0]
         obj.buffer_id = reader.read('!L')[0]
-        obj.out_port = reader.read('!H')[0]
+        obj.out_port = reader.read('!L')[0]
+        obj.out_group = reader.read('!L')[0]
         obj.flags = reader.read('!H')[0]
-        obj.actions = action.unpack_list(reader)
+        reader.skip(2)
+        obj.match = common.match.unpack(reader)
+        obj.instructions = instruction.unpack_list(reader)
         return obj
 
     def __eq__(self, other):
@@ -2486,15 +2065,18 @@ class flow_delete(Message):
         if self.version != other.version: return False
         if self.type != other.type: return False
         if self.xid != other.xid: return False
-        if self.match != other.match: return False
         if self.cookie != other.cookie: return False
+        if self.cookie_mask != other.cookie_mask: return False
+        if self.table_id != other.table_id: return False
         if self.idle_timeout != other.idle_timeout: return False
         if self.hard_timeout != other.hard_timeout: return False
         if self.priority != other.priority: return False
         if self.buffer_id != other.buffer_id: return False
         if self.out_port != other.out_port: return False
+        if self.out_group != other.out_group: return False
         if self.flags != other.flags: return False
-        if self.actions != other.actions: return False
+        if self.match != other.match: return False
+        if self.instructions != other.instructions: return False
         return True
 
     def __ne__(self, other):
@@ -2518,11 +2100,14 @@ class flow_delete(Message):
                 else:
                     q.text('None')
                 q.text(","); q.breakable()
-                q.text("match = ");
-                q.pp(self.match)
-                q.text(","); q.breakable()
                 q.text("cookie = ");
                 q.text("%#x" % self.cookie)
+                q.text(","); q.breakable()
+                q.text("cookie_mask = ");
+                q.text("%#x" % self.cookie_mask)
+                q.text(","); q.breakable()
+                q.text("table_id = ");
+                q.text("%#x" % self.table_id)
                 q.text(","); q.breakable()
                 q.text("idle_timeout = ");
                 q.text("%#x" % self.idle_timeout)
@@ -2539,11 +2124,17 @@ class flow_delete(Message):
                 q.text("out_port = ");
                 q.text(util.pretty_port(self.out_port))
                 q.text(","); q.breakable()
+                q.text("out_group = ");
+                q.text("%#x" % self.out_group)
+                q.text(","); q.breakable()
                 q.text("flags = ");
                 q.text("%#x" % self.flags)
                 q.text(","); q.breakable()
-                q.text("actions = ");
-                q.pp(self.actions)
+                q.text("match = ");
+                q.pp(self.match)
+                q.text(","); q.breakable()
+                q.text("instructions = ");
+                q.pp(self.instructions)
             q.breakable()
         q.text('}')
 
@@ -2552,16 +2143,20 @@ class flow_delete_strict(Message):
     type = const.OFPT_FLOW_MOD
     _command = const.OFPFC_DELETE_STRICT
 
-    def __init__(self, xid=None, match=None, cookie=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, flags=None, actions=None):
+    def __init__(self, xid=None, cookie=None, cookie_mask=None, table_id=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, out_group=None, flags=None, match=None, instructions=None):
         self.xid = xid
-        if match != None:
-            self.match = match
-        else:
-            self.match = common.match()
         if cookie != None:
             self.cookie = cookie
         else:
             self.cookie = 0
+        if cookie_mask != None:
+            self.cookie_mask = cookie_mask
+        else:
+            self.cookie_mask = 0
+        if table_id != None:
+            self.table_id = table_id
+        else:
+            self.table_id = 0
         if idle_timeout != None:
             self.idle_timeout = idle_timeout
         else:
@@ -2582,14 +2177,22 @@ class flow_delete_strict(Message):
             self.out_port = out_port
         else:
             self.out_port = 0
+        if out_group != None:
+            self.out_group = out_group
+        else:
+            self.out_group = 0
         if flags != None:
             self.flags = flags
         else:
             self.flags = 0
-        if actions != None:
-            self.actions = actions
+        if match != None:
+            self.match = match
         else:
-            self.actions = []
+            self.match = common.match()
+        if instructions != None:
+            self.instructions = instructions
+        else:
+            self.instructions = []
 
     def pack(self):
         packed = []
@@ -2597,16 +2200,20 @@ class flow_delete_strict(Message):
         packed.append(struct.pack("!B", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
-        packed.append(self.match.pack())
         packed.append(struct.pack("!Q", self.cookie))
-        packed.append(struct.pack("!H", self._command))
+        packed.append(struct.pack("!Q", self.cookie_mask))
+        packed.append(struct.pack("!B", self.table_id))
+        packed.append(struct.pack("!B", self._command))
         packed.append(struct.pack("!H", self.idle_timeout))
         packed.append(struct.pack("!H", self.hard_timeout))
         packed.append(struct.pack("!H", self.priority))
         packed.append(struct.pack("!L", self.buffer_id))
-        packed.append(struct.pack("!H", self.out_port))
+        packed.append(struct.pack("!L", self.out_port))
+        packed.append(struct.pack("!L", self.out_group))
         packed.append(struct.pack("!H", self.flags))
-        packed.append("".join([x.pack() for x in self.actions]))
+        packed.append('\x00' * 2)
+        packed.append(self.match.pack())
+        packed.append("".join([x.pack() for x in self.instructions]))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -2625,17 +2232,21 @@ class flow_delete_strict(Message):
         assert(_type == const.OFPT_FLOW_MOD)
         _length = reader.read('!H')[0]
         obj.xid = reader.read('!L')[0]
-        obj.match = common.match.unpack(reader)
         obj.cookie = reader.read('!Q')[0]
-        __command = reader.read('!H')[0]
+        obj.cookie_mask = reader.read('!Q')[0]
+        obj.table_id = reader.read('!B')[0]
+        __command = reader.read('!B')[0]
         assert(__command == const.OFPFC_DELETE_STRICT)
         obj.idle_timeout = reader.read('!H')[0]
         obj.hard_timeout = reader.read('!H')[0]
         obj.priority = reader.read('!H')[0]
         obj.buffer_id = reader.read('!L')[0]
-        obj.out_port = reader.read('!H')[0]
+        obj.out_port = reader.read('!L')[0]
+        obj.out_group = reader.read('!L')[0]
         obj.flags = reader.read('!H')[0]
-        obj.actions = action.unpack_list(reader)
+        reader.skip(2)
+        obj.match = common.match.unpack(reader)
+        obj.instructions = instruction.unpack_list(reader)
         return obj
 
     def __eq__(self, other):
@@ -2643,15 +2254,18 @@ class flow_delete_strict(Message):
         if self.version != other.version: return False
         if self.type != other.type: return False
         if self.xid != other.xid: return False
-        if self.match != other.match: return False
         if self.cookie != other.cookie: return False
+        if self.cookie_mask != other.cookie_mask: return False
+        if self.table_id != other.table_id: return False
         if self.idle_timeout != other.idle_timeout: return False
         if self.hard_timeout != other.hard_timeout: return False
         if self.priority != other.priority: return False
         if self.buffer_id != other.buffer_id: return False
         if self.out_port != other.out_port: return False
+        if self.out_group != other.out_group: return False
         if self.flags != other.flags: return False
-        if self.actions != other.actions: return False
+        if self.match != other.match: return False
+        if self.instructions != other.instructions: return False
         return True
 
     def __ne__(self, other):
@@ -2675,11 +2289,14 @@ class flow_delete_strict(Message):
                 else:
                     q.text('None')
                 q.text(","); q.breakable()
-                q.text("match = ");
-                q.pp(self.match)
-                q.text(","); q.breakable()
                 q.text("cookie = ");
                 q.text("%#x" % self.cookie)
+                q.text(","); q.breakable()
+                q.text("cookie_mask = ");
+                q.text("%#x" % self.cookie_mask)
+                q.text(","); q.breakable()
+                q.text("table_id = ");
+                q.text("%#x" % self.table_id)
                 q.text(","); q.breakable()
                 q.text("idle_timeout = ");
                 q.text("%#x" % self.idle_timeout)
@@ -2696,11 +2313,17 @@ class flow_delete_strict(Message):
                 q.text("out_port = ");
                 q.text(util.pretty_port(self.out_port))
                 q.text(","); q.breakable()
+                q.text("out_group = ");
+                q.text("%#x" % self.out_group)
+                q.text(","); q.breakable()
                 q.text("flags = ");
                 q.text("%#x" % self.flags)
                 q.text(","); q.breakable()
-                q.text("actions = ");
-                q.pp(self.actions)
+                q.text("match = ");
+                q.pp(self.match)
+                q.text(","); q.breakable()
+                q.text("instructions = ");
+                q.pp(self.instructions)
             q.breakable()
         q.text('}')
 
@@ -2709,16 +2332,20 @@ class flow_modify(Message):
     type = const.OFPT_FLOW_MOD
     _command = const.OFPFC_MODIFY
 
-    def __init__(self, xid=None, match=None, cookie=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, flags=None, actions=None):
+    def __init__(self, xid=None, cookie=None, cookie_mask=None, table_id=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, out_group=None, flags=None, match=None, instructions=None):
         self.xid = xid
-        if match != None:
-            self.match = match
-        else:
-            self.match = common.match()
         if cookie != None:
             self.cookie = cookie
         else:
             self.cookie = 0
+        if cookie_mask != None:
+            self.cookie_mask = cookie_mask
+        else:
+            self.cookie_mask = 0
+        if table_id != None:
+            self.table_id = table_id
+        else:
+            self.table_id = 0
         if idle_timeout != None:
             self.idle_timeout = idle_timeout
         else:
@@ -2739,14 +2366,22 @@ class flow_modify(Message):
             self.out_port = out_port
         else:
             self.out_port = 0
+        if out_group != None:
+            self.out_group = out_group
+        else:
+            self.out_group = 0
         if flags != None:
             self.flags = flags
         else:
             self.flags = 0
-        if actions != None:
-            self.actions = actions
+        if match != None:
+            self.match = match
         else:
-            self.actions = []
+            self.match = common.match()
+        if instructions != None:
+            self.instructions = instructions
+        else:
+            self.instructions = []
 
     def pack(self):
         packed = []
@@ -2754,16 +2389,20 @@ class flow_modify(Message):
         packed.append(struct.pack("!B", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
-        packed.append(self.match.pack())
         packed.append(struct.pack("!Q", self.cookie))
-        packed.append(struct.pack("!H", self._command))
+        packed.append(struct.pack("!Q", self.cookie_mask))
+        packed.append(struct.pack("!B", self.table_id))
+        packed.append(struct.pack("!B", self._command))
         packed.append(struct.pack("!H", self.idle_timeout))
         packed.append(struct.pack("!H", self.hard_timeout))
         packed.append(struct.pack("!H", self.priority))
         packed.append(struct.pack("!L", self.buffer_id))
-        packed.append(struct.pack("!H", self.out_port))
+        packed.append(struct.pack("!L", self.out_port))
+        packed.append(struct.pack("!L", self.out_group))
         packed.append(struct.pack("!H", self.flags))
-        packed.append("".join([x.pack() for x in self.actions]))
+        packed.append('\x00' * 2)
+        packed.append(self.match.pack())
+        packed.append("".join([x.pack() for x in self.instructions]))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -2782,17 +2421,21 @@ class flow_modify(Message):
         assert(_type == const.OFPT_FLOW_MOD)
         _length = reader.read('!H')[0]
         obj.xid = reader.read('!L')[0]
-        obj.match = common.match.unpack(reader)
         obj.cookie = reader.read('!Q')[0]
-        __command = reader.read('!H')[0]
+        obj.cookie_mask = reader.read('!Q')[0]
+        obj.table_id = reader.read('!B')[0]
+        __command = reader.read('!B')[0]
         assert(__command == const.OFPFC_MODIFY)
         obj.idle_timeout = reader.read('!H')[0]
         obj.hard_timeout = reader.read('!H')[0]
         obj.priority = reader.read('!H')[0]
         obj.buffer_id = reader.read('!L')[0]
-        obj.out_port = reader.read('!H')[0]
+        obj.out_port = reader.read('!L')[0]
+        obj.out_group = reader.read('!L')[0]
         obj.flags = reader.read('!H')[0]
-        obj.actions = action.unpack_list(reader)
+        reader.skip(2)
+        obj.match = common.match.unpack(reader)
+        obj.instructions = instruction.unpack_list(reader)
         return obj
 
     def __eq__(self, other):
@@ -2800,15 +2443,18 @@ class flow_modify(Message):
         if self.version != other.version: return False
         if self.type != other.type: return False
         if self.xid != other.xid: return False
-        if self.match != other.match: return False
         if self.cookie != other.cookie: return False
+        if self.cookie_mask != other.cookie_mask: return False
+        if self.table_id != other.table_id: return False
         if self.idle_timeout != other.idle_timeout: return False
         if self.hard_timeout != other.hard_timeout: return False
         if self.priority != other.priority: return False
         if self.buffer_id != other.buffer_id: return False
         if self.out_port != other.out_port: return False
+        if self.out_group != other.out_group: return False
         if self.flags != other.flags: return False
-        if self.actions != other.actions: return False
+        if self.match != other.match: return False
+        if self.instructions != other.instructions: return False
         return True
 
     def __ne__(self, other):
@@ -2832,11 +2478,14 @@ class flow_modify(Message):
                 else:
                     q.text('None')
                 q.text(","); q.breakable()
-                q.text("match = ");
-                q.pp(self.match)
-                q.text(","); q.breakable()
                 q.text("cookie = ");
                 q.text("%#x" % self.cookie)
+                q.text(","); q.breakable()
+                q.text("cookie_mask = ");
+                q.text("%#x" % self.cookie_mask)
+                q.text(","); q.breakable()
+                q.text("table_id = ");
+                q.text("%#x" % self.table_id)
                 q.text(","); q.breakable()
                 q.text("idle_timeout = ");
                 q.text("%#x" % self.idle_timeout)
@@ -2853,11 +2502,17 @@ class flow_modify(Message):
                 q.text("out_port = ");
                 q.text(util.pretty_port(self.out_port))
                 q.text(","); q.breakable()
+                q.text("out_group = ");
+                q.text("%#x" % self.out_group)
+                q.text(","); q.breakable()
                 q.text("flags = ");
                 q.text("%#x" % self.flags)
                 q.text(","); q.breakable()
-                q.text("actions = ");
-                q.pp(self.actions)
+                q.text("match = ");
+                q.pp(self.match)
+                q.text(","); q.breakable()
+                q.text("instructions = ");
+                q.pp(self.instructions)
             q.breakable()
         q.text('}')
 
@@ -2866,16 +2521,20 @@ class flow_modify_strict(Message):
     type = const.OFPT_FLOW_MOD
     _command = const.OFPFC_MODIFY_STRICT
 
-    def __init__(self, xid=None, match=None, cookie=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, flags=None, actions=None):
+    def __init__(self, xid=None, cookie=None, cookie_mask=None, table_id=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, out_group=None, flags=None, match=None, instructions=None):
         self.xid = xid
-        if match != None:
-            self.match = match
-        else:
-            self.match = common.match()
         if cookie != None:
             self.cookie = cookie
         else:
             self.cookie = 0
+        if cookie_mask != None:
+            self.cookie_mask = cookie_mask
+        else:
+            self.cookie_mask = 0
+        if table_id != None:
+            self.table_id = table_id
+        else:
+            self.table_id = 0
         if idle_timeout != None:
             self.idle_timeout = idle_timeout
         else:
@@ -2896,14 +2555,22 @@ class flow_modify_strict(Message):
             self.out_port = out_port
         else:
             self.out_port = 0
+        if out_group != None:
+            self.out_group = out_group
+        else:
+            self.out_group = 0
         if flags != None:
             self.flags = flags
         else:
             self.flags = 0
-        if actions != None:
-            self.actions = actions
+        if match != None:
+            self.match = match
         else:
-            self.actions = []
+            self.match = common.match()
+        if instructions != None:
+            self.instructions = instructions
+        else:
+            self.instructions = []
 
     def pack(self):
         packed = []
@@ -2911,16 +2578,20 @@ class flow_modify_strict(Message):
         packed.append(struct.pack("!B", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
-        packed.append(self.match.pack())
         packed.append(struct.pack("!Q", self.cookie))
-        packed.append(struct.pack("!H", self._command))
+        packed.append(struct.pack("!Q", self.cookie_mask))
+        packed.append(struct.pack("!B", self.table_id))
+        packed.append(struct.pack("!B", self._command))
         packed.append(struct.pack("!H", self.idle_timeout))
         packed.append(struct.pack("!H", self.hard_timeout))
         packed.append(struct.pack("!H", self.priority))
         packed.append(struct.pack("!L", self.buffer_id))
-        packed.append(struct.pack("!H", self.out_port))
+        packed.append(struct.pack("!L", self.out_port))
+        packed.append(struct.pack("!L", self.out_group))
         packed.append(struct.pack("!H", self.flags))
-        packed.append("".join([x.pack() for x in self.actions]))
+        packed.append('\x00' * 2)
+        packed.append(self.match.pack())
+        packed.append("".join([x.pack() for x in self.instructions]))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -2939,17 +2610,21 @@ class flow_modify_strict(Message):
         assert(_type == const.OFPT_FLOW_MOD)
         _length = reader.read('!H')[0]
         obj.xid = reader.read('!L')[0]
-        obj.match = common.match.unpack(reader)
         obj.cookie = reader.read('!Q')[0]
-        __command = reader.read('!H')[0]
+        obj.cookie_mask = reader.read('!Q')[0]
+        obj.table_id = reader.read('!B')[0]
+        __command = reader.read('!B')[0]
         assert(__command == const.OFPFC_MODIFY_STRICT)
         obj.idle_timeout = reader.read('!H')[0]
         obj.hard_timeout = reader.read('!H')[0]
         obj.priority = reader.read('!H')[0]
         obj.buffer_id = reader.read('!L')[0]
-        obj.out_port = reader.read('!H')[0]
+        obj.out_port = reader.read('!L')[0]
+        obj.out_group = reader.read('!L')[0]
         obj.flags = reader.read('!H')[0]
-        obj.actions = action.unpack_list(reader)
+        reader.skip(2)
+        obj.match = common.match.unpack(reader)
+        obj.instructions = instruction.unpack_list(reader)
         return obj
 
     def __eq__(self, other):
@@ -2957,15 +2632,18 @@ class flow_modify_strict(Message):
         if self.version != other.version: return False
         if self.type != other.type: return False
         if self.xid != other.xid: return False
-        if self.match != other.match: return False
         if self.cookie != other.cookie: return False
+        if self.cookie_mask != other.cookie_mask: return False
+        if self.table_id != other.table_id: return False
         if self.idle_timeout != other.idle_timeout: return False
         if self.hard_timeout != other.hard_timeout: return False
         if self.priority != other.priority: return False
         if self.buffer_id != other.buffer_id: return False
         if self.out_port != other.out_port: return False
+        if self.out_group != other.out_group: return False
         if self.flags != other.flags: return False
-        if self.actions != other.actions: return False
+        if self.match != other.match: return False
+        if self.instructions != other.instructions: return False
         return True
 
     def __ne__(self, other):
@@ -2989,11 +2667,14 @@ class flow_modify_strict(Message):
                 else:
                     q.text('None')
                 q.text(","); q.breakable()
-                q.text("match = ");
-                q.pp(self.match)
-                q.text(","); q.breakable()
                 q.text("cookie = ");
                 q.text("%#x" % self.cookie)
+                q.text(","); q.breakable()
+                q.text("cookie_mask = ");
+                q.text("%#x" % self.cookie_mask)
+                q.text(","); q.breakable()
+                q.text("table_id = ");
+                q.text("%#x" % self.table_id)
                 q.text(","); q.breakable()
                 q.text("idle_timeout = ");
                 q.text("%#x" % self.idle_timeout)
@@ -3010,11 +2691,17 @@ class flow_modify_strict(Message):
                 q.text("out_port = ");
                 q.text(util.pretty_port(self.out_port))
                 q.text(","); q.breakable()
+                q.text("out_group = ");
+                q.text("%#x" % self.out_group)
+                q.text(","); q.breakable()
                 q.text("flags = ");
                 q.text("%#x" % self.flags)
                 q.text(","); q.breakable()
-                q.text("actions = ");
-                q.pp(self.actions)
+                q.text("match = ");
+                q.pp(self.match)
+                q.text(","); q.breakable()
+                q.text("instructions = ");
+                q.pp(self.instructions)
             q.breakable()
         q.text('}')
 
@@ -3022,12 +2709,8 @@ class flow_removed(Message):
     version = const.OFP_VERSION
     type = const.OFPT_FLOW_REMOVED
 
-    def __init__(self, xid=None, match=None, cookie=None, priority=None, reason=None, duration_sec=None, duration_nsec=None, idle_timeout=None, packet_count=None, byte_count=None):
+    def __init__(self, xid=None, cookie=None, priority=None, reason=None, table_id=None, duration_sec=None, duration_nsec=None, idle_timeout=None, packet_count=None, byte_count=None, match=None):
         self.xid = xid
-        if match != None:
-            self.match = match
-        else:
-            self.match = common.match()
         if cookie != None:
             self.cookie = cookie
         else:
@@ -3040,6 +2723,10 @@ class flow_removed(Message):
             self.reason = reason
         else:
             self.reason = 0
+        if table_id != None:
+            self.table_id = table_id
+        else:
+            self.table_id = 0
         if duration_sec != None:
             self.duration_sec = duration_sec
         else:
@@ -3060,6 +2747,10 @@ class flow_removed(Message):
             self.byte_count = byte_count
         else:
             self.byte_count = 0
+        if match != None:
+            self.match = match
+        else:
+            self.match = common.match()
 
     def pack(self):
         packed = []
@@ -3067,17 +2758,17 @@ class flow_removed(Message):
         packed.append(struct.pack("!B", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
-        packed.append(self.match.pack())
         packed.append(struct.pack("!Q", self.cookie))
         packed.append(struct.pack("!H", self.priority))
         packed.append(struct.pack("!B", self.reason))
-        packed.append('\x00' * 1)
+        packed.append(struct.pack("!B", self.table_id))
         packed.append(struct.pack("!L", self.duration_sec))
         packed.append(struct.pack("!L", self.duration_nsec))
         packed.append(struct.pack("!H", self.idle_timeout))
         packed.append('\x00' * 2)
         packed.append(struct.pack("!Q", self.packet_count))
         packed.append(struct.pack("!Q", self.byte_count))
+        packed.append(self.match.pack())
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -3096,17 +2787,17 @@ class flow_removed(Message):
         assert(_type == const.OFPT_FLOW_REMOVED)
         _length = reader.read('!H')[0]
         obj.xid = reader.read('!L')[0]
-        obj.match = common.match.unpack(reader)
         obj.cookie = reader.read('!Q')[0]
         obj.priority = reader.read('!H')[0]
         obj.reason = reader.read('!B')[0]
-        reader.skip(1)
+        obj.table_id = reader.read('!B')[0]
         obj.duration_sec = reader.read('!L')[0]
         obj.duration_nsec = reader.read('!L')[0]
         obj.idle_timeout = reader.read('!H')[0]
         reader.skip(2)
         obj.packet_count = reader.read('!Q')[0]
         obj.byte_count = reader.read('!Q')[0]
+        obj.match = common.match.unpack(reader)
         return obj
 
     def __eq__(self, other):
@@ -3114,15 +2805,16 @@ class flow_removed(Message):
         if self.version != other.version: return False
         if self.type != other.type: return False
         if self.xid != other.xid: return False
-        if self.match != other.match: return False
         if self.cookie != other.cookie: return False
         if self.priority != other.priority: return False
         if self.reason != other.reason: return False
+        if self.table_id != other.table_id: return False
         if self.duration_sec != other.duration_sec: return False
         if self.duration_nsec != other.duration_nsec: return False
         if self.idle_timeout != other.idle_timeout: return False
         if self.packet_count != other.packet_count: return False
         if self.byte_count != other.byte_count: return False
+        if self.match != other.match: return False
         return True
 
     def __ne__(self, other):
@@ -3146,9 +2838,6 @@ class flow_removed(Message):
                 else:
                     q.text('None')
                 q.text(","); q.breakable()
-                q.text("match = ");
-                q.pp(self.match)
-                q.text(","); q.breakable()
                 q.text("cookie = ");
                 q.text("%#x" % self.cookie)
                 q.text(","); q.breakable()
@@ -3157,6 +2846,9 @@ class flow_removed(Message):
                 q.text(","); q.breakable()
                 q.text("reason = ");
                 q.text("%#x" % self.reason)
+                q.text(","); q.breakable()
+                q.text("table_id = ");
+                q.text("%#x" % self.table_id)
                 q.text(","); q.breakable()
                 q.text("duration_sec = ");
                 q.text("%#x" % self.duration_sec)
@@ -3172,6 +2864,9 @@ class flow_removed(Message):
                 q.text(","); q.breakable()
                 q.text("byte_count = ");
                 q.text("%#x" % self.byte_count)
+                q.text(","); q.breakable()
+                q.text("match = ");
+                q.pp(self.match)
             q.breakable()
         q.text('}')
 
@@ -3199,6 +2894,7 @@ class flow_stats_reply(Message):
         packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!H", self.stats_type))
         packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
         packed.append("".join([x.pack() for x in self.entries]))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
@@ -3221,6 +2917,7 @@ class flow_stats_reply(Message):
         _stats_type = reader.read('!H')[0]
         assert(_stats_type == const.OFPST_FLOW)
         obj.flags = reader.read('!H')[0]
+        reader.skip(4)
         obj.entries = common.unpack_list_flow_stats_entry(reader)
         return obj
 
@@ -3267,16 +2964,12 @@ class flow_stats_request(Message):
     type = const.OFPT_STATS_REQUEST
     stats_type = const.OFPST_FLOW
 
-    def __init__(self, xid=None, flags=None, match=None, table_id=None, out_port=None):
+    def __init__(self, xid=None, flags=None, table_id=None, out_port=None, out_group=None, cookie=None, cookie_mask=None, match=None):
         self.xid = xid
         if flags != None:
             self.flags = flags
         else:
             self.flags = 0
-        if match != None:
-            self.match = match
-        else:
-            self.match = common.match()
         if table_id != None:
             self.table_id = table_id
         else:
@@ -3285,6 +2978,22 @@ class flow_stats_request(Message):
             self.out_port = out_port
         else:
             self.out_port = 0
+        if out_group != None:
+            self.out_group = out_group
+        else:
+            self.out_group = 0
+        if cookie != None:
+            self.cookie = cookie
+        else:
+            self.cookie = 0
+        if cookie_mask != None:
+            self.cookie_mask = cookie_mask
+        else:
+            self.cookie_mask = 0
+        if match != None:
+            self.match = match
+        else:
+            self.match = common.match()
 
     def pack(self):
         packed = []
@@ -3294,10 +3003,15 @@ class flow_stats_request(Message):
         packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!H", self.stats_type))
         packed.append(struct.pack("!H", self.flags))
-        packed.append(self.match.pack())
+        packed.append('\x00' * 4)
         packed.append(struct.pack("!B", self.table_id))
-        packed.append('\x00' * 1)
-        packed.append(struct.pack("!H", self.out_port))
+        packed.append('\x00' * 3)
+        packed.append(struct.pack("!L", self.out_port))
+        packed.append(struct.pack("!L", self.out_group))
+        packed.append('\x00' * 4)
+        packed.append(struct.pack("!Q", self.cookie))
+        packed.append(struct.pack("!Q", self.cookie_mask))
+        packed.append(self.match.pack())
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -3319,10 +3033,15 @@ class flow_stats_request(Message):
         _stats_type = reader.read('!H')[0]
         assert(_stats_type == const.OFPST_FLOW)
         obj.flags = reader.read('!H')[0]
-        obj.match = common.match.unpack(reader)
+        reader.skip(4)
         obj.table_id = reader.read('!B')[0]
-        reader.skip(1)
-        obj.out_port = reader.read('!H')[0]
+        reader.skip(3)
+        obj.out_port = reader.read('!L')[0]
+        obj.out_group = reader.read('!L')[0]
+        reader.skip(4)
+        obj.cookie = reader.read('!Q')[0]
+        obj.cookie_mask = reader.read('!Q')[0]
+        obj.match = common.match.unpack(reader)
         return obj
 
     def __eq__(self, other):
@@ -3331,9 +3050,12 @@ class flow_stats_request(Message):
         if self.type != other.type: return False
         if self.xid != other.xid: return False
         if self.flags != other.flags: return False
-        if self.match != other.match: return False
         if self.table_id != other.table_id: return False
         if self.out_port != other.out_port: return False
+        if self.out_group != other.out_group: return False
+        if self.cookie != other.cookie: return False
+        if self.cookie_mask != other.cookie_mask: return False
+        if self.match != other.match: return False
         return True
 
     def __ne__(self, other):
@@ -3360,14 +3082,23 @@ class flow_stats_request(Message):
                 q.text("flags = ");
                 q.text("%#x" % self.flags)
                 q.text(","); q.breakable()
-                q.text("match = ");
-                q.pp(self.match)
-                q.text(","); q.breakable()
                 q.text("table_id = ");
                 q.text("%#x" % self.table_id)
                 q.text(","); q.breakable()
                 q.text("out_port = ");
                 q.text(util.pretty_port(self.out_port))
+                q.text(","); q.breakable()
+                q.text("out_group = ");
+                q.text("%#x" % self.out_group)
+                q.text(","); q.breakable()
+                q.text("cookie = ");
+                q.text("%#x" % self.cookie)
+                q.text(","); q.breakable()
+                q.text("cookie_mask = ");
+                q.text("%#x" % self.cookie_mask)
+                q.text(","); q.breakable()
+                q.text("match = ");
+                q.pp(self.match)
             q.breakable()
         q.text('}')
 
@@ -3517,6 +3248,459 @@ class get_config_request(Message):
             q.breakable()
         q.text('}')
 
+class group_desc_stats_reply(Message):
+    version = const.OFP_VERSION
+    type = const.OFPT_STATS_REPLY
+    stats_type = const.OFPST_GROUP_DESC
+
+    def __init__(self, xid=None, flags=None, entries=None):
+        self.xid = xid
+        if flags != None:
+            self.flags = flags
+        else:
+            self.flags = 0
+        if entries != None:
+            self.entries = entries
+        else:
+            self.entries = []
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.stats_type))
+        packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
+        packed.append("".join([x.pack() for x in self.entries]))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = group_desc_stats_reply()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read('!B')[0]
+        assert(_version == const.OFP_VERSION)
+        _type = reader.read('!B')[0]
+        assert(_type == const.OFPT_STATS_REPLY)
+        _length = reader.read('!H')[0]
+        obj.xid = reader.read('!L')[0]
+        _stats_type = reader.read('!H')[0]
+        assert(_stats_type == const.OFPST_GROUP_DESC)
+        obj.flags = reader.read('!H')[0]
+        reader.skip(4)
+        obj.entries = common.unpack_list_group_desc_stats_entry(reader)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.flags != other.flags: return False
+        if self.entries != other.entries: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("group_desc_stats_reply {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
+                q.text(","); q.breakable()
+                q.text("entries = ");
+                q.pp(self.entries)
+            q.breakable()
+        q.text('}')
+
+class group_desc_stats_request(Message):
+    version = const.OFP_VERSION
+    type = const.OFPT_STATS_REQUEST
+    stats_type = const.OFPST_GROUP_DESC
+
+    def __init__(self, xid=None, flags=None):
+        self.xid = xid
+        if flags != None:
+            self.flags = flags
+        else:
+            self.flags = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.stats_type))
+        packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = group_desc_stats_request()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read('!B')[0]
+        assert(_version == const.OFP_VERSION)
+        _type = reader.read('!B')[0]
+        assert(_type == const.OFPT_STATS_REQUEST)
+        _length = reader.read('!H')[0]
+        obj.xid = reader.read('!L')[0]
+        _stats_type = reader.read('!H')[0]
+        assert(_stats_type == const.OFPST_GROUP_DESC)
+        obj.flags = reader.read('!H')[0]
+        reader.skip(4)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.flags != other.flags: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("group_desc_stats_request {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
+            q.breakable()
+        q.text('}')
+
+class group_mod(Message):
+    version = const.OFP_VERSION
+    type = const.OFPT_GROUP_MOD
+
+    def __init__(self, xid=None, command=None, group_type=None, group_id=None, buckets=None):
+        self.xid = xid
+        if command != None:
+            self.command = command
+        else:
+            self.command = 0
+        if group_type != None:
+            self.group_type = group_type
+        else:
+            self.group_type = 0
+        if group_id != None:
+            self.group_id = group_id
+        else:
+            self.group_id = 0
+        if buckets != None:
+            self.buckets = buckets
+        else:
+            self.buckets = []
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.command))
+        packed.append(struct.pack("!B", self.group_type))
+        packed.append('\x00' * 1)
+        packed.append(struct.pack("!L", self.group_id))
+        packed.append("".join([x.pack() for x in self.buckets]))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = group_mod()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read('!B')[0]
+        assert(_version == const.OFP_VERSION)
+        _type = reader.read('!B')[0]
+        assert(_type == const.OFPT_GROUP_MOD)
+        _length = reader.read('!H')[0]
+        obj.xid = reader.read('!L')[0]
+        obj.command = reader.read('!H')[0]
+        obj.group_type = reader.read('!B')[0]
+        reader.skip(1)
+        obj.group_id = reader.read('!L')[0]
+        obj.buckets = common.unpack_list_bucket(reader)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.command != other.command: return False
+        if self.group_type != other.group_type: return False
+        if self.group_id != other.group_id: return False
+        if self.buckets != other.buckets: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("group_mod {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("command = ");
+                q.text("%#x" % self.command)
+                q.text(","); q.breakable()
+                q.text("group_type = ");
+                q.text("%#x" % self.group_type)
+                q.text(","); q.breakable()
+                q.text("group_id = ");
+                q.text("%#x" % self.group_id)
+                q.text(","); q.breakable()
+                q.text("buckets = ");
+                q.pp(self.buckets)
+            q.breakable()
+        q.text('}')
+
+class group_stats_reply(Message):
+    version = const.OFP_VERSION
+    type = const.OFPT_STATS_REPLY
+    stats_type = const.OFPST_GROUP
+
+    def __init__(self, xid=None, flags=None, entries=None):
+        self.xid = xid
+        if flags != None:
+            self.flags = flags
+        else:
+            self.flags = 0
+        if entries != None:
+            self.entries = entries
+        else:
+            self.entries = []
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.stats_type))
+        packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
+        packed.append("".join([x.pack() for x in self.entries]))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = group_stats_reply()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read('!B')[0]
+        assert(_version == const.OFP_VERSION)
+        _type = reader.read('!B')[0]
+        assert(_type == const.OFPT_STATS_REPLY)
+        _length = reader.read('!H')[0]
+        obj.xid = reader.read('!L')[0]
+        _stats_type = reader.read('!H')[0]
+        assert(_stats_type == const.OFPST_GROUP)
+        obj.flags = reader.read('!H')[0]
+        reader.skip(4)
+        obj.entries = common.unpack_list_group_stats_entry(reader)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.flags != other.flags: return False
+        if self.entries != other.entries: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("group_stats_reply {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
+                q.text(","); q.breakable()
+                q.text("entries = ");
+                q.pp(self.entries)
+            q.breakable()
+        q.text('}')
+
+class group_stats_request(Message):
+    version = const.OFP_VERSION
+    type = const.OFPT_STATS_REQUEST
+    stats_type = const.OFPST_GROUP
+
+    def __init__(self, xid=None, flags=None, group_id=None):
+        self.xid = xid
+        if flags != None:
+            self.flags = flags
+        else:
+            self.flags = 0
+        if group_id != None:
+            self.group_id = group_id
+        else:
+            self.group_id = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.stats_type))
+        packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
+        packed.append(struct.pack("!L", self.group_id))
+        packed.append('\x00' * 4)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = group_stats_request()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read('!B')[0]
+        assert(_version == const.OFP_VERSION)
+        _type = reader.read('!B')[0]
+        assert(_type == const.OFPT_STATS_REQUEST)
+        _length = reader.read('!H')[0]
+        obj.xid = reader.read('!L')[0]
+        _stats_type = reader.read('!H')[0]
+        assert(_stats_type == const.OFPST_GROUP)
+        obj.flags = reader.read('!H')[0]
+        reader.skip(4)
+        obj.group_id = reader.read('!L')[0]
+        reader.skip(4)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.flags != other.flags: return False
+        if self.group_id != other.group_id: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("group_stats_request {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
+                q.text(","); q.breakable()
+                q.text("group_id = ");
+                q.text("%#x" % self.group_id)
+            q.breakable()
+        q.text('}')
+
 class hello(Message):
     version = const.OFP_VERSION
     type = const.OFPT_HELLO
@@ -3580,190 +3764,36 @@ class hello(Message):
             q.breakable()
         q.text('}')
 
-class nicira_controller_role_reply(Message):
-    version = const.OFP_VERSION
-    type = const.OFPT_VENDOR
-    experimenter = 0x2320
-    subtype = 11
-
-    def __init__(self, xid=None, role=None):
-        self.xid = xid
-        if role != None:
-            self.role = role
-        else:
-            self.role = 0
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!B", self.version))
-        packed.append(struct.pack("!B", self.type))
-        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
-        packed.append(struct.pack("!L", self.xid))
-        packed.append(struct.pack("!L", self.experimenter))
-        packed.append(struct.pack("!L", self.subtype))
-        packed.append(struct.pack("!L", self.role))
-        length = sum([len(x) for x in packed])
-        packed[2] = struct.pack("!H", length)
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(buf):
-        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
-        obj = nicira_controller_role_reply()
-        if type(buf) == loxi.generic_util.OFReader:
-            reader = buf
-        else:
-            reader = loxi.generic_util.OFReader(buf)
-        _version = reader.read('!B')[0]
-        assert(_version == const.OFP_VERSION)
-        _type = reader.read('!B')[0]
-        assert(_type == const.OFPT_VENDOR)
-        _length = reader.read('!H')[0]
-        obj.xid = reader.read('!L')[0]
-        _experimenter = reader.read('!L')[0]
-        assert(_experimenter == 0x2320)
-        _subtype = reader.read('!L')[0]
-        assert(_subtype == 11)
-        obj.role = reader.read('!L')[0]
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.version != other.version: return False
-        if self.type != other.type: return False
-        if self.xid != other.xid: return False
-        if self.role != other.role: return False
-        return True
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __str__(self):
-        return self.show()
-
-    def show(self):
-        import loxi.pp
-        return loxi.pp.pp(self)
-
-    def pretty_print(self, q):
-        q.text("nicira_controller_role_reply {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("xid = ");
-                if self.xid != None:
-                    q.text("%#x" % self.xid)
-                else:
-                    q.text('None')
-                q.text(","); q.breakable()
-                q.text("role = ");
-                q.text("%#x" % self.role)
-            q.breakable()
-        q.text('}')
-
-class nicira_controller_role_request(Message):
-    version = const.OFP_VERSION
-    type = const.OFPT_VENDOR
-    experimenter = 0x2320
-    subtype = 10
-
-    def __init__(self, xid=None, role=None):
-        self.xid = xid
-        if role != None:
-            self.role = role
-        else:
-            self.role = 0
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!B", self.version))
-        packed.append(struct.pack("!B", self.type))
-        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
-        packed.append(struct.pack("!L", self.xid))
-        packed.append(struct.pack("!L", self.experimenter))
-        packed.append(struct.pack("!L", self.subtype))
-        packed.append(struct.pack("!L", self.role))
-        length = sum([len(x) for x in packed])
-        packed[2] = struct.pack("!H", length)
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(buf):
-        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
-        obj = nicira_controller_role_request()
-        if type(buf) == loxi.generic_util.OFReader:
-            reader = buf
-        else:
-            reader = loxi.generic_util.OFReader(buf)
-        _version = reader.read('!B')[0]
-        assert(_version == const.OFP_VERSION)
-        _type = reader.read('!B')[0]
-        assert(_type == const.OFPT_VENDOR)
-        _length = reader.read('!H')[0]
-        obj.xid = reader.read('!L')[0]
-        _experimenter = reader.read('!L')[0]
-        assert(_experimenter == 0x2320)
-        _subtype = reader.read('!L')[0]
-        assert(_subtype == 10)
-        obj.role = reader.read('!L')[0]
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.version != other.version: return False
-        if self.type != other.type: return False
-        if self.xid != other.xid: return False
-        if self.role != other.role: return False
-        return True
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __str__(self):
-        return self.show()
-
-    def show(self):
-        import loxi.pp
-        return loxi.pp.pp(self)
-
-    def pretty_print(self, q):
-        q.text("nicira_controller_role_request {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("xid = ");
-                if self.xid != None:
-                    q.text("%#x" % self.xid)
-                else:
-                    q.text('None')
-                q.text(","); q.breakable()
-                q.text("role = ");
-                q.text("%#x" % self.role)
-            q.breakable()
-        q.text('}')
-
 class packet_in(Message):
     version = const.OFP_VERSION
     type = const.OFPT_PACKET_IN
 
-    def __init__(self, xid=None, buffer_id=None, total_len=None, in_port=None, reason=None, data=None):
+    def __init__(self, xid=None, buffer_id=None, in_port=None, in_phy_port=None, total_len=None, reason=None, table_id=None, data=None):
         self.xid = xid
         if buffer_id != None:
             self.buffer_id = buffer_id
         else:
             self.buffer_id = 0
-        if total_len != None:
-            self.total_len = total_len
-        else:
-            self.total_len = 0
         if in_port != None:
             self.in_port = in_port
         else:
             self.in_port = 0
+        if in_phy_port != None:
+            self.in_phy_port = in_phy_port
+        else:
+            self.in_phy_port = 0
+        if total_len != None:
+            self.total_len = total_len
+        else:
+            self.total_len = 0
         if reason != None:
             self.reason = reason
         else:
             self.reason = 0
+        if table_id != None:
+            self.table_id = table_id
+        else:
+            self.table_id = 0
         if data != None:
             self.data = data
         else:
@@ -3776,10 +3806,11 @@ class packet_in(Message):
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!L", self.buffer_id))
+        packed.append(struct.pack("!L", self.in_port))
+        packed.append(struct.pack("!L", self.in_phy_port))
         packed.append(struct.pack("!H", self.total_len))
-        packed.append(struct.pack("!H", self.in_port))
         packed.append(struct.pack("!B", self.reason))
-        packed.append('\x00' * 1)
+        packed.append(struct.pack("!B", self.table_id))
         packed.append(self.data)
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
@@ -3800,10 +3831,11 @@ class packet_in(Message):
         _length = reader.read('!H')[0]
         obj.xid = reader.read('!L')[0]
         obj.buffer_id = reader.read('!L')[0]
+        obj.in_port = reader.read('!L')[0]
+        obj.in_phy_port = reader.read('!L')[0]
         obj.total_len = reader.read('!H')[0]
-        obj.in_port = reader.read('!H')[0]
         obj.reason = reader.read('!B')[0]
-        reader.skip(1)
+        obj.table_id = reader.read('!B')[0]
         obj.data = str(reader.read_all())
         return obj
 
@@ -3813,9 +3845,11 @@ class packet_in(Message):
         if self.type != other.type: return False
         if self.xid != other.xid: return False
         if self.buffer_id != other.buffer_id: return False
-        if self.total_len != other.total_len: return False
         if self.in_port != other.in_port: return False
+        if self.in_phy_port != other.in_phy_port: return False
+        if self.total_len != other.total_len: return False
         if self.reason != other.reason: return False
+        if self.table_id != other.table_id: return False
         if self.data != other.data: return False
         return True
 
@@ -3843,14 +3877,20 @@ class packet_in(Message):
                 q.text("buffer_id = ");
                 q.text("%#x" % self.buffer_id)
                 q.text(","); q.breakable()
-                q.text("total_len = ");
-                q.text("%#x" % self.total_len)
-                q.text(","); q.breakable()
                 q.text("in_port = ");
                 q.text(util.pretty_port(self.in_port))
                 q.text(","); q.breakable()
+                q.text("in_phy_port = ");
+                q.text(util.pretty_port(self.in_phy_port))
+                q.text(","); q.breakable()
+                q.text("total_len = ");
+                q.text("%#x" % self.total_len)
+                q.text(","); q.breakable()
                 q.text("reason = ");
                 q.text("%#x" % self.reason)
+                q.text(","); q.breakable()
+                q.text("table_id = ");
+                q.text("%#x" % self.table_id)
                 q.text(","); q.breakable()
                 q.text("data = ");
                 q.pp(self.data)
@@ -3887,8 +3927,9 @@ class packet_out(Message):
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!L", self.buffer_id))
-        packed.append(struct.pack("!H", self.in_port))
+        packed.append(struct.pack("!L", self.in_port))
         packed.append(struct.pack("!H", 0)) # placeholder for actions_len at index 6
+        packed.append('\x00' * 6)
         packed.append("".join([x.pack() for x in self.actions]))
         packed[6] = struct.pack("!H", len(packed[-1]))
         packed.append(self.data)
@@ -3911,8 +3952,9 @@ class packet_out(Message):
         _length = reader.read('!H')[0]
         obj.xid = reader.read('!L')[0]
         obj.buffer_id = reader.read('!L')[0]
-        obj.in_port = reader.read('!H')[0]
+        obj.in_port = reader.read('!L')[0]
         _actions_len = reader.read('!H')[0]
+        reader.skip(6)
         obj.actions = action.unpack_list(reader.slice(_actions_len))
         obj.data = str(reader.read_all())
         return obj
@@ -3996,8 +4038,10 @@ class port_mod(Message):
         packed.append(struct.pack("!B", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
-        packed.append(struct.pack("!H", self.port_no))
+        packed.append(struct.pack("!L", self.port_no))
+        packed.append('\x00' * 4)
         packed.append(struct.pack("!6B", *self.hw_addr))
+        packed.append('\x00' * 2)
         packed.append(struct.pack("!L", self.config))
         packed.append(struct.pack("!L", self.mask))
         packed.append(struct.pack("!L", self.advertise))
@@ -4020,8 +4064,10 @@ class port_mod(Message):
         assert(_type == const.OFPT_PORT_MOD)
         _length = reader.read('!H')[0]
         obj.xid = reader.read('!L')[0]
-        obj.port_no = reader.read('!H')[0]
+        obj.port_no = reader.read('!L')[0]
+        reader.skip(4)
         obj.hw_addr = list(reader.read('!6B'))
+        reader.skip(2)
         obj.config = reader.read('!L')[0]
         obj.mask = reader.read('!L')[0]
         obj.advertise = reader.read('!L')[0]
@@ -4102,6 +4148,7 @@ class port_stats_reply(Message):
         packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!H", self.stats_type))
         packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
         packed.append("".join([x.pack() for x in self.entries]))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
@@ -4124,6 +4171,7 @@ class port_stats_reply(Message):
         _stats_type = reader.read('!H')[0]
         assert(_stats_type == const.OFPST_PORT)
         obj.flags = reader.read('!H')[0]
+        reader.skip(4)
         obj.entries = loxi.generic_util.unpack_list(reader, common.port_stats_entry.unpack)
         return obj
 
@@ -4189,8 +4237,9 @@ class port_stats_request(Message):
         packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!H", self.stats_type))
         packed.append(struct.pack("!H", self.flags))
-        packed.append(struct.pack("!H", self.port_no))
-        packed.append('\x00' * 6)
+        packed.append('\x00' * 4)
+        packed.append(struct.pack("!L", self.port_no))
+        packed.append('\x00' * 4)
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -4212,8 +4261,9 @@ class port_stats_request(Message):
         _stats_type = reader.read('!H')[0]
         assert(_stats_type == const.OFPST_PORT)
         obj.flags = reader.read('!H')[0]
-        obj.port_no = reader.read('!H')[0]
-        reader.skip(6)
+        reader.skip(4)
+        obj.port_no = reader.read('!L')[0]
+        reader.skip(4)
         return obj
 
     def __eq__(self, other):
@@ -4360,8 +4410,8 @@ class queue_get_config_reply(Message):
         packed.append(struct.pack("!B", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
-        packed.append(struct.pack("!H", self.port))
-        packed.append('\x00' * 6)
+        packed.append(struct.pack("!L", self.port))
+        packed.append('\x00' * 4)
         packed.append("".join([x.pack() for x in self.queues]))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
@@ -4381,8 +4431,8 @@ class queue_get_config_reply(Message):
         assert(_type == const.OFPT_QUEUE_GET_CONFIG_REPLY)
         _length = reader.read('!H')[0]
         obj.xid = reader.read('!L')[0]
-        obj.port = reader.read('!H')[0]
-        reader.skip(6)
+        obj.port = reader.read('!L')[0]
+        reader.skip(4)
         obj.queues = common.unpack_list_packet_queue(reader)
         return obj
 
@@ -4441,8 +4491,8 @@ class queue_get_config_request(Message):
         packed.append(struct.pack("!B", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
-        packed.append(struct.pack("!H", self.port))
-        packed.append('\x00' * 2)
+        packed.append(struct.pack("!L", self.port))
+        packed.append('\x00' * 4)
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -4461,8 +4511,8 @@ class queue_get_config_request(Message):
         assert(_type == const.OFPT_QUEUE_GET_CONFIG_REQUEST)
         _length = reader.read('!H')[0]
         obj.xid = reader.read('!L')[0]
-        obj.port = reader.read('!H')[0]
-        reader.skip(2)
+        obj.port = reader.read('!L')[0]
+        reader.skip(4)
         return obj
 
     def __eq__(self, other):
@@ -4523,6 +4573,7 @@ class queue_stats_reply(Message):
         packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!H", self.stats_type))
         packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
         packed.append("".join([x.pack() for x in self.entries]))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
@@ -4545,6 +4596,7 @@ class queue_stats_reply(Message):
         _stats_type = reader.read('!H')[0]
         assert(_stats_type == const.OFPST_QUEUE)
         obj.flags = reader.read('!H')[0]
+        reader.skip(4)
         obj.entries = loxi.generic_util.unpack_list(reader, common.queue_stats_entry.unpack)
         return obj
 
@@ -4614,8 +4666,8 @@ class queue_stats_request(Message):
         packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!H", self.stats_type))
         packed.append(struct.pack("!H", self.flags))
-        packed.append(struct.pack("!H", self.port_no))
-        packed.append('\x00' * 2)
+        packed.append('\x00' * 4)
+        packed.append(struct.pack("!L", self.port_no))
         packed.append(struct.pack("!L", self.queue_id))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
@@ -4638,8 +4690,8 @@ class queue_stats_request(Message):
         _stats_type = reader.read('!H')[0]
         assert(_stats_type == const.OFPST_QUEUE)
         obj.flags = reader.read('!H')[0]
-        obj.port_no = reader.read('!H')[0]
-        reader.skip(2)
+        reader.skip(4)
+        obj.port_no = reader.read('!L')[0]
         obj.queue_id = reader.read('!L')[0]
         return obj
 
@@ -4770,7 +4822,7 @@ class set_config(Message):
 
 class table_mod(Message):
     version = const.OFP_VERSION
-    type = 22
+    type = const.OFPT_TABLE_MOD
 
     def __init__(self, xid=None, table_id=None, config=None):
         self.xid = xid
@@ -4807,7 +4859,7 @@ class table_mod(Message):
         _version = reader.read('!B')[0]
         assert(_version == const.OFP_VERSION)
         _type = reader.read('!B')[0]
-        assert(_type == 22)
+        assert(_type == const.OFPT_TABLE_MOD)
         _length = reader.read('!H')[0]
         obj.xid = reader.read('!L')[0]
         obj.table_id = reader.read('!B')[0]
@@ -4877,6 +4929,7 @@ class table_stats_reply(Message):
         packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!H", self.stats_type))
         packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
         packed.append("".join([x.pack() for x in self.entries]))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
@@ -4899,6 +4952,7 @@ class table_stats_reply(Message):
         _stats_type = reader.read('!H')[0]
         assert(_stats_type == const.OFPST_TABLE)
         obj.flags = reader.read('!H')[0]
+        reader.skip(4)
         obj.entries = loxi.generic_util.unpack_list(reader, common.table_stats_entry.unpack)
         return obj
 
@@ -4960,6 +5014,7 @@ class table_stats_request(Message):
         packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!H", self.stats_type))
         packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -4981,6 +5036,7 @@ class table_stats_request(Message):
         _stats_type = reader.read('!H')[0]
         assert(_stats_type == const.OFPST_TABLE)
         obj.flags = reader.read('!H')[0]
+        reader.skip(4)
         return obj
 
     def __eq__(self, other):
@@ -5061,7 +5117,7 @@ def parse_stats_request(buf):
     else:
         raise loxi.ProtocolError("unexpected stats type %u" % stats_type)
 
-def parse_vendor(buf):
+def parse_experimenter(buf):
     if len(buf) < 16:
         raise loxi.ProtocolError("experimenter message too short")
 
@@ -5079,18 +5135,19 @@ def parse_vendor(buf):
         raise loxi.ProtocolError("unexpected experimenter %#x subtype %#x" % (experimenter, subtype))
 
 parsers = {
-    22 : table_mod.unpack,
     const.OFPT_BARRIER_REPLY : barrier_reply.unpack,
     const.OFPT_BARRIER_REQUEST : barrier_request.unpack,
     const.OFPT_ECHO_REPLY : echo_reply.unpack,
     const.OFPT_ECHO_REQUEST : echo_request.unpack,
     const.OFPT_ERROR : error_msg.unpack,
+    const.OFPT_EXPERIMENTER : parse_experimenter,
     const.OFPT_FEATURES_REPLY : features_reply.unpack,
     const.OFPT_FEATURES_REQUEST : features_request.unpack,
     const.OFPT_FLOW_MOD : parse_flow_mod,
     const.OFPT_FLOW_REMOVED : flow_removed.unpack,
     const.OFPT_GET_CONFIG_REPLY : get_config_reply.unpack,
     const.OFPT_GET_CONFIG_REQUEST : get_config_request.unpack,
+    const.OFPT_GROUP_MOD : group_mod.unpack,
     const.OFPT_HELLO : hello.unpack,
     const.OFPT_PACKET_IN : packet_in.unpack,
     const.OFPT_PACKET_OUT : packet_out.unpack,
@@ -5101,7 +5158,7 @@ parsers = {
     const.OFPT_SET_CONFIG : set_config.unpack,
     const.OFPT_STATS_REPLY : parse_stats_reply,
     const.OFPT_STATS_REQUEST : parse_stats_request,
-    const.OFPT_VENDOR : parse_vendor,
+    const.OFPT_TABLE_MOD : table_mod.unpack,
 }
 
 flow_mod_parsers = {
@@ -5119,7 +5176,7 @@ stats_reply_parsers = {
     const.OFPST_TABLE : table_stats_reply.unpack,
     const.OFPST_PORT : port_stats_reply.unpack,
     const.OFPST_QUEUE : queue_stats_reply.unpack,
-    const.OFPST_VENDOR : experimenter_stats_reply.unpack,
+    const.OFPST_EXPERIMENTER : experimenter_stats_reply.unpack,
 }
 
 stats_request_parsers = {
@@ -5129,26 +5186,8 @@ stats_request_parsers = {
     const.OFPST_TABLE : table_stats_request.unpack,
     const.OFPST_PORT : port_stats_request.unpack,
     const.OFPST_QUEUE : queue_stats_request.unpack,
-    const.OFPST_VENDOR : experimenter_stats_request.unpack,
+    const.OFPST_EXPERIMENTER : experimenter_stats_request.unpack,
 }
 
 experimenter_parsers = {
-    0x2320 : {
-        11: nicira_controller_role_reply.unpack,
-        10: nicira_controller_role_request.unpack,
-    },
-    0x5c16c7 : {
-        10: bsn_get_interfaces_reply.unpack,
-        9: bsn_get_interfaces_request.unpack,
-        2: bsn_get_ip_mask_reply.unpack,
-        1: bsn_get_ip_mask_request.unpack,
-        5: bsn_get_mirroring_reply.unpack,
-        4: bsn_get_mirroring_request.unpack,
-        0: bsn_set_ip_mask.unpack,
-        3: bsn_set_mirroring.unpack,
-        11: bsn_set_pktin_suppression.unpack,
-        6: bsn_shell_command.unpack,
-        7: bsn_shell_output.unpack,
-        8: bsn_shell_status.unpack,
-    },
 }
