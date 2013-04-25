@@ -41,7 +41,7 @@ class Grp50No10(base_tests.SimpleDataPlane):
 
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertTrue(rc != -1, "Error installing flow mod")
     	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         logging.info("Installing an all wildcarded flow")
@@ -99,7 +99,7 @@ class Grp50No20(base_tests.SimpleDataPlane):
 
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertTrue(rc != -1, "Error installing flow mod")
     	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
@@ -144,7 +144,7 @@ class Grp50No30(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertTrue(rc != -1, "Error installing flow mod")
     	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
@@ -235,7 +235,7 @@ class Grp50No50(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertTrue(rc != -1, "Error installing flow mod")
     	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
@@ -283,7 +283,7 @@ class Grp50No60(base_tests.SimpleDataPlane):
 
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertTrue(rc != -1, "Error installing flow mod")
     	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
@@ -814,7 +814,7 @@ class Grp50No120a(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertTrue(rc != -1, "Error installing flow mod")
     	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
@@ -857,7 +857,7 @@ class Grp50No120b(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertTrue(rc != -1, "Error installing flow mod")
     	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
@@ -900,7 +900,7 @@ class Grp50No130a(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertTrue(rc != -1, "Error installing flow mod")
     	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
@@ -943,7 +943,7 @@ class Grp50No130b(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertTrue(rc != -1, "Error installing flow mod")
     	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
@@ -1160,7 +1160,7 @@ class Grp50No170(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertTrue(rc != -1, "Error installing flow mod")
     	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
@@ -1202,7 +1202,7 @@ class Grp50No180(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertTrue(rc != -1, "Error installing flow mod")
     	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
         
 	egress_port=of_ports[2]
@@ -1241,7 +1241,7 @@ class Grp50No190(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertTrue(rc != -1, "Error installing flow mod")
    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
     	egress_port=of_ports[1]
