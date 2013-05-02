@@ -125,6 +125,7 @@ class Controller(Thread):
         # Protected by the packets_cv lock / condition variable
         self.packets = []
         self.packets_cv = Condition()
+        self.packet_in_count = 0
 
         # Settings
         self.max_pkts = max_pkts
@@ -258,6 +259,10 @@ class Controller(Thread):
                         self.message_send(rep.pack())
                         continue
 
+                # Generalize to counters for all packet types?
+                if msg.type == ofp.OFPT_PACKET_IN:
+                    self.packet_in_count += 1
+
                 # Log error messages
                 if hdr_type == ofp.OFPT_ERROR:
                     if msg.err_type in ofp.ofp_error_type_map:
@@ -344,6 +349,10 @@ class Controller(Thread):
                 if self.initial_hello:
                     self.message_send(ofp.message.hello())
                 self.connect_cv.notify() # Notify anyone waiting
+
+            # Prevent further connections
+            self.listen_socket.close()
+            self.listen_socket = None
         elif s and s == self.switch_socket:
             for idx in range(3): # debug: try a couple of times
                 try:
@@ -578,7 +587,10 @@ class Controller(Thread):
         If an error occurs, (None, None) is returned
         """
 
-        exp_msg_str = ofp.ofp_type_map.get(exp_msg, "unknown (%d)" % exp_msg)
+        exp_msg_str = "unspecified"
+        if exp_msg:
+            exp_msg_str = ofp.ofp_type_map.get(exp_msg, "unknown (%d)" % 
+                                               exp_msg)
 
         if exp_msg is not None:
             self.logger.debug("Poll for %s", exp_msg_str)
@@ -683,6 +695,16 @@ class Controller(Thread):
             raise AssertionError("failed to send message to switch")
 
         return 0 # for backwards compatibility
+
+    def clear_queue(self):
+        """
+        Clear the input queue and report the number of messages
+        that were in it
+        """
+        enqueued_pkt_count = len(self.packets)
+        with self.packets_cv:
+            self.packets = []
+        return enqueued_pkt_count
 
     def __str__(self):
         string = "Controller:\n"

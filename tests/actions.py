@@ -396,6 +396,7 @@ class ForwardTable(base_tests.SimpleDataPlane):
         pkt_out =ofp.message.packet_out();
         pkt_out.data = str(pkt)
         pkt_out.in_port = of_ports[0]
+        pkt_out.buffer_id = 0xffffffff
         act = ofp.action.output()
         act.port = ofp.OFPP_TABLE
         pkt_out.actions.append(act)

@@ -3781,7 +3781,7 @@ class packet_out(Message):
         if buffer_id != None:
             self.buffer_id = buffer_id
         else:
-            self.buffer_id = 0xffffffff
+            self.buffer_id = 0
         if in_port != None:
             self.in_port = in_port
         else:
