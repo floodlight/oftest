@@ -239,7 +239,9 @@ class Grp40No50(base_tests.SimpleProtocol):
                 break
         self.assertTrue(count<10,"Did not receive any error message")
         logging.info("Received the expected OFPT_ERROR message")
-class Grp40No80(base_tests.SimpleProtocol): 
+
+
+class Grp40No70(base_tests.SimpleProtocol): 
 
     """Timeout values are not allowed for emergency flows"""
     @wireshark_capture
@@ -289,7 +291,7 @@ class Grp40No80(base_tests.SimpleProtocol):
                                'Error Message code is not bad emergency timeout')
         logging.info("Recieved the expected OFPT_ERROR message")
 
-class Grp40No90(base_tests.SimpleDataPlane):
+class Grp40No80(base_tests.SimpleDataPlane):
 
     """If a modify does not match an existing flow, the flow gets added """
     
@@ -329,7 +331,7 @@ class Grp40No90(base_tests.SimpleDataPlane):
         self.assertTrue(rv["flows"]==1,"Flow_mod message did not install the flow in the absence of a matching flow entry")
 
 
-class Grp40No100(base_tests.SimpleDataPlane):
+class Grp40No90(base_tests.SimpleDataPlane):
 
     """A modified flow preserves counters"""
     @wireshark_capture
@@ -370,7 +372,7 @@ class Grp40No100(base_tests.SimpleDataPlane):
         logging.info("Verifying if the flow counters have been preserved")
         verify_flowstats(self,match,packet_count=2)
 
-class Grp40No110(base_tests.SimpleDataPlane):
+class Grp40No100(base_tests.SimpleDataPlane):
 
     """Strict Modify Flow also changes action preserves counters"""
     @wireshark_capture
@@ -418,7 +420,7 @@ class Grp40No110(base_tests.SimpleDataPlane):
         verify_flowstats(self,match,packet_count=1)
 
 
-class Grp40No120(base_tests.SimpleDataPlane):
+class Grp40No110(base_tests.SimpleDataPlane):
     
     """Request deletion of non-existing flow"""
     @wireshark_capture
@@ -454,7 +456,7 @@ class Grp40No120(base_tests.SimpleDataPlane):
 
 
         
-class Grp40No130(base_tests.SimpleDataPlane):
+class Grp40No120(base_tests.SimpleDataPlane):
     
     """Check deletion of flows happens and generates messages as configured.
     If Send Flow removed message Flag is set in the flow entry, the flow deletion of that respective flow should generate the flow removed message, 
@@ -515,7 +517,7 @@ class Grp40No130(base_tests.SimpleDataPlane):
                         'Did not receive flow removed message for this flow')
 
 
-class Grp40No140(base_tests.SimpleProtocol):
+class Grp40No130(base_tests.SimpleProtocol):
 
     """Delete emergency flow and verify no message is generated.An emergency flow deletion will not generate flow-removed messages even if 
     Send Flow removed message flag was set during the emergency flow entry"""
@@ -554,13 +556,13 @@ class Grp40No140(base_tests.SimpleProtocol):
         nonstrict_delete_emer(self,match)
         nonstrict_delete(self,match)
 	logging.info("verifying the switch does not send a flow removed message")
-        (response, pkt) = self.controller.poll(exp_msg=ofp.OFPFF_SEND_FLOW_REM ,
+        (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_FLOW_REMOVED ,
                                                timeout=2)
         self.assertTrue(response is None, 
                         'Recevied a Flow removed message')
 
 
-class Grp40No150(base_tests.SimpleDataPlane):
+class Grp40No140(base_tests.SimpleDataPlane):
 
     """Delete and verify strict and non-strict behaviors
     This test compares the behavior of delete strict and non-strict"""
@@ -669,7 +671,7 @@ class Grp40No150(base_tests.SimpleDataPlane):
    	self.assertTrue(rv["flows"]==2, "The switch did not perform the required action")
    	
    	
-class Grp40No160(base_tests.SimpleDataPlane):
+class Grp40No190(base_tests.SimpleDataPlane):
 
     """Delete flows filtered by action outport.If the out_port field in the delete command contains a value other than OFPP_NONE,
     it introduces a constraint when matching. This constraint is that the rule must contain an output action directed at that port."""
@@ -732,7 +734,7 @@ class Grp40No160(base_tests.SimpleDataPlane):
 
 
 
-class Grp40No170(base_tests.SimpleDataPlane):
+class Grp40No200(base_tests.SimpleDataPlane):
 
     """Add, modify flows with outport set. This field is ignored by ADD, MODIFY, and MODIFY STRICT messages."""
 
@@ -772,7 +774,7 @@ class Grp40No170(base_tests.SimpleDataPlane):
 
 
 
-class Grp40No180(base_tests.SimpleDataPlane):
+class Grp40No220(base_tests.SimpleDataPlane):
 
     """ Verify that idle timeout is implemented"""
     @wireshark_capture
@@ -816,7 +818,7 @@ class Grp40No180(base_tests.SimpleDataPlane):
 
 
 
-class Grp40No190(base_tests.SimpleDataPlane):
+class Grp40No230(base_tests.SimpleDataPlane):
 
     """ Verify that hard timeout is implemented """
 
@@ -864,7 +866,7 @@ class Grp40No190(base_tests.SimpleDataPlane):
                          'Flow was not alive for 1 sec')
 
 
-class Grp40No200(base_tests.SimpleDataPlane):
+class Grp40No210(base_tests.SimpleDataPlane):
   
     """Verify that Flow removed messages are generated as expected
     Flow removed messages being generated when flag is set, is already tested in the above tests 
