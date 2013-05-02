@@ -1,4 +1,3 @@
-
 """These tests fall under Conformance Test-Suite (OF-SWITCH-1.0.0 TestCases).
     Refer Documentation -- Detailed testing methodology 
     <Some of test-cases are directly taken from oftest> """
@@ -617,7 +616,7 @@ class Grp70No150(base_tests.SimpleDataPlane):
                         action_list=[vid_act])
 
 
-class Grp70No180(base_tests.SimpleDataPlane):
+class Grp70No170(base_tests.SimpleDataPlane):
     
     """ModifyL2Src :Modify the source MAC address"""
 
@@ -625,7 +624,7 @@ class Grp70No180(base_tests.SimpleDataPlane):
     def runTest(self):
 
         logging = get_logger()
-        logging.info("Running Grp70No180 Modify_L2_Src test")
+        logging.info("Running Grp70No170 Modify_L2_Src test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -654,7 +653,7 @@ class Grp70No180(base_tests.SimpleDataPlane):
                         action_list=acts, max_test=2)
 
 
-class Grp70No190(base_tests.SimpleDataPlane):
+class Grp70No180(base_tests.SimpleDataPlane):
     
     """ModifyL2SDSt :Modify the dest MAC address"""
 
@@ -662,7 +661,7 @@ class Grp70No190(base_tests.SimpleDataPlane):
     def runTest(self):
 
         logging = get_logger()
-        logging.info("Running Grp70No190 Modify_L2_Dst test")
+        logging.info("Running Grp70No180 Modify_L2_Dst test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -690,7 +689,7 @@ class Grp70No190(base_tests.SimpleDataPlane):
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
-class Grp70No200(base_tests.SimpleDataPlane):
+class Grp70No190(base_tests.SimpleDataPlane):
     
     """ModifyL3Src : Modify the source IP address of an IP packet """
 
@@ -726,7 +725,7 @@ class Grp70No200(base_tests.SimpleDataPlane):
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
-class Grp70No210(base_tests.SimpleDataPlane):
+class Grp70No200(base_tests.SimpleDataPlane):
     
     """ModifyL3Dst :Modify the dest IP address of an IP packet"""
     
@@ -762,7 +761,7 @@ class Grp70No210(base_tests.SimpleDataPlane):
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
-class Grp70No220(base_tests.SimpleDataPlane):
+class Grp70No210(base_tests.SimpleDataPlane):
     
     """ModifyTOS :Modify the IP type of service of an IP packet"""
     
@@ -799,7 +798,7 @@ class Grp70No220(base_tests.SimpleDataPlane):
                         action_list=acts, max_test=2, egr_count=-1)
 
 
-class Grp70No230(base_tests.SimpleDataPlane):
+class Grp70No220(base_tests.SimpleDataPlane):
     
     """ModifyL4Src : Modify the source TCP port of a TCP packet"""
     
@@ -835,7 +834,7 @@ class Grp70No230(base_tests.SimpleDataPlane):
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt, 
                         action_list=acts, max_test=2)
 
-class Grp70No240(base_tests.SimpleDataPlane):
+class Grp70No230(base_tests.SimpleDataPlane):
     
     """ ModifyL4Dst: Modify the dest TCP port of a TCP packet """
 
