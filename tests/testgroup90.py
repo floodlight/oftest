@@ -451,14 +451,14 @@ class Grp90No160(base_tests.SimpleDataPlane):
 
 
 
-class Grp90No220(base_tests.SimpleProtocol):
+class Grp90No170(base_tests.SimpleProtocol):
 
     """Verify Queue Configuration Reply message body """
 
     @wireshark_capture  
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp90No220 QueueConfigRequest")
+        logging.info("Running Grp90No170 QueueConfigRequest")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
