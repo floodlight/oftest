@@ -697,7 +697,7 @@ class Grp70No190(base_tests.SimpleDataPlane):
     def runTest(self):
 
         logging = get_logger()
-        logging.info("Running Grp70No200 Modify_L3_Src test")
+        logging.info("Running Grp70No190 Modify_L3_Src test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -769,7 +769,7 @@ class Grp70No210(base_tests.SimpleDataPlane):
     def runTest(self):
 
         logging = get_logger()
-        logging.info("Running Grp70No220 Modify_Tos test")
+        logging.info("Running Grp70No210 Modify_Tos test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -806,7 +806,7 @@ class Grp70No220(base_tests.SimpleDataPlane):
     def runTest(self):
 
         logging = get_logger()
-        logging.info("Running Grp70No230 Modify_L4_Src test")
+        logging.info("Running Grp70No220 Modify_L4_Src test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
