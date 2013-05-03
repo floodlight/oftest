@@ -107,7 +107,7 @@ class OFTestManager(object):
     suite = None
 
     @staticmethod
-    def config_setup():
+    def config_setup(argv):
         """
         Set up the configuration including parsing the arguments
 
@@ -217,7 +217,7 @@ class OFTestManager(object):
 
         # Might need this if other parsers want command line
         # parser.allow_interspersed_args = False
-        (options, args) = parser.parse_args()
+        (options, args) = parser.parse_args(argv)
 
         # Convert options from a Namespace to a plain dictionary
         config = OFTestManager.config_default.copy()
@@ -341,7 +341,7 @@ class OFTestManager(object):
                         matched = True
 
             if not matched:
-                die("test-spec element %s did not match any tests" % e)
+                OFTestManager.die("test-spec element %s did not match any tests" % e)
 
         return result
 
@@ -370,7 +370,7 @@ class OFTestManager(object):
         global oftest
 
         # Setup global configuration
-        (new_config, args) = OFTestManager.config_setup()
+        (new_config, args) = OFTestManager.config_setup(argv)
         oftest.config.update(new_config)
 
         OFTestManager.logging_setup(config)
