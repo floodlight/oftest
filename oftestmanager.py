@@ -242,6 +242,15 @@ class OFTestManager(object):
                             format=_format, datefmt=_datefmt)
 
     @staticmethod
+    def logging_change(filename):
+        logger = logging.getLogger();
+        for h in logger.handlers:
+            h.stream.close()
+            logger.removeHandler(h)
+        config['log_file'] = filename
+        OFTestManager.logging_setup(config)
+
+    @staticmethod
     def load_test_modules(config):
         """
         Load tests from the test_dir directory.
