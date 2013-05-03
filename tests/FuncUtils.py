@@ -1417,6 +1417,20 @@ all_wildcards_list = [ofp.OFPFW_IN_PORT,
                       ofp.OFPFW_TP_SRC,
                       ofp.OFPFW_TP_DST
                       ]
+                      
+all_wildcard_names = {
+    1                               : 'OFPFW_IN_PORT',
+    2                               : 'OFPFW_DL_VLAN',
+    4                               : 'OFPFW_DL_SRC',
+    8                               : 'OFPFW_DL_DST',
+    16                              : 'OFPFW_DL_TYPE',
+    32                              : 'OFPFW_NW_PROTO',
+    64                              : 'OFPFW_TP_SRC',
+    128                             : 'OFPFW_TP_DST',
+    1048576                         : 'OFPFW_DL_VLAN_PCP',
+    2097152                         : 'OFPFW_NW_TOS'
+}
+
 def wildcards_to_str(wildcards):
     result = "{"
     sep = ""
