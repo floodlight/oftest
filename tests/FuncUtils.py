@@ -1405,7 +1405,25 @@ all_actions_list = [ofp.OFPAT_OUTPUT,
                     ofp.OFPAT_ENQUEUE
                     ]
 
-
+def wildcards_to_str(wildcards):
+    result = "{"
+    sep = ""
+    for w in all_wildcards_list:
+        if (wildcards & w) == 0:
+            continue
+        if w == ofp.OFPFW_NW_SRC_MASK:
+            n = wildcard_get(wildcards, w)
+            if n > 0:
+                result = result + sep + ("OFPFW_NW_SRC(%d)" % (n))
+        elif w == ofp.OFPFW_NW_DST_MASK:
+            n = wildcard_get(wildcards, w)
+            if n > 0:
+                result = result + sep + ("OFPFW_NW_DST(%d)" % (n))
+        else:
+            result = result + sep + all_wildcard_names[w]
+        sep = ", "
+    result = result +"}"
+    return result
 
 
 
