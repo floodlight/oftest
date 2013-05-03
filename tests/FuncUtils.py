@@ -1431,6 +1431,15 @@ all_wildcard_names = {
     2097152                         : 'OFPFW_NW_TOS'
 }
 
+def wildcard_get(x, w):
+    if w == ofp.OFPFW_NW_SRC_MASK:
+        return (x & ofp.OFPFW_NW_SRC_MASK) >> ofp.OFPFW_NW_SRC_SHIFT
+    if w == ofp.OFPFW_NW_DST_MASK:
+        return (x & ofp.OFPFW_NW_DST_MASK) >> ofp.OFPFW_NW_DST_SHIFT
+    return 1 if (x & w) != 0 else 0
+
+
+
 def wildcards_to_str(wildcards):
     result = "{"
     sep = ""
