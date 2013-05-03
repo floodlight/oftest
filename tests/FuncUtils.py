@@ -1006,7 +1006,7 @@ class Switch:
         self.controller   = None
         self.sw_features  = None
         self.valid_ports  = []
-        self.valid_queues = []
+        #self.valid_queues = []
         self.tbl_stats    = None
         self.flow_stats   = None
         self.flow_tbl     = Flow_Tbl()
@@ -1104,33 +1104,13 @@ class Switch:
             i = i + 1
         return True
 
-    def queue_stats_get(self):
-        # Get queue stats
-        request = message.queue_stats_request()
-        request.port_no  = ofp.OFPP_ALL
-        request.queue_id = ofp.OFPQ_ALL
-        (self.queue_stats, pkt) = self.controller.transact(request)
-        if self.queue_stats is None:
-            logging.error("Get queue stats failed")
-            return False
-        self.valid_queues = map(lambda x: (x.port_no, x.queue_id), \
-                                self.queue_stats.stats \
-                                )
-        logging.info("(Port, queue) pairs reported by switch:")
-        logging.info(self.valid_queues)
-        queues_override = test_param_get("queues", [])
-        if queues_override != []:
-            logging.info("Overriding (port, queue) pairs to:")
-            logging.info(queues_override)
-            self.valid_queues = queues_override
-        return True
+   
 
     def connect(self, controller):
         # Connect to controller, and get all switch capabilities
         self.controller_set(controller)
         return (self.features_get() \
-                and self.tbl_stats_get() \
-                and self.queue_stats_get() \
+                and self.tbl_stats_get() 
                 )
 
     def flow_stats_get(self, limit = 10000):
@@ -1377,8 +1357,7 @@ class Flow_Tbl:
                     wildcards_force, \
                     sw.tbl_stats.stats[tbl].wildcards, \
                     sw.sw_features.actions, \
-                    sw.valid_ports, \
-                    sw.valid_queues \
+                    sw.valid_ports
                     )
             fc = fc.canonical()
             if self.find(fc):
@@ -1400,10 +1379,8 @@ all_actions_list = [ofp.OFPAT_OUTPUT,
                     ofp.OFPAT_SET_NW_SRC,
                     ofp.OFPAT_SET_NW_DST,
                     ofp.OFPAT_SET_NW_TOS,
-                    ofp.OFPAT_SET_TP_SRC,
-                    ofp.OFPAT_SET_TP_DST,
-                    ofp.OFPAT_ENQUEUE
-                    ]
+                    ofp.OFPAT_SET_   TP_DST]
+
 all_wildcards_list = [ofp.OFPFW_IN_PORT,
                       ofp.OFPFW_DL_DST,
                       ofp.OFPFW_DL_SRC,
