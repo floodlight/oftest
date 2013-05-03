@@ -1343,3 +1343,50 @@ class Switch:
 
     def settle(self):
         time.sleep(2)
+        
+ class Flow_Tbl:
+    def clear(self):
+        self.dict = {}
+
+    def __init__(self):
+        self.clear()
+
+    def find(self, f):
+        return self.dict.get(f.key_str(), None)
+
+    def insert(self, f):
+        self.dict[f.key_str()] = f
+
+    def delete(self, f):
+        del self.dict[f.key_str()]
+
+    def values(self):
+        return self.dict.values()
+
+    def count(self):
+        return len(self.dict)
+
+    def rand(self, wildcards_force, sw, fi, num_flows):
+        self.clear()
+        i = 0
+        tbl = 0
+        j = 0
+        while i < num_flows:
+            fc = Flow_Cfg()
+            fc.rand(fi, \
+                    wildcards_force, \
+                    sw.tbl_stats.stats[tbl].wildcards, \
+                    sw.sw_features.actions, \
+                    sw.valid_ports, \
+                    sw.valid_queues \
+                    )
+            fc = fc.canonical()
+            if self.find(fc):
+                continue
+            fc.send_rem = False
+            self.insert(fc)
+            i = i + 1
+            j = j + 1
+            if j >= sw.tbl_stats.stats[tbl].max_entries:
+                tbl = tbl + 1
+                j = 0       
