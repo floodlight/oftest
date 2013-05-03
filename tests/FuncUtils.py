@@ -1390,6 +1390,25 @@ class Flow_Tbl:
             if j >= sw.tbl_stats.stats[tbl].max_entries:
                 tbl = tbl + 1
                 j = 0       
+
+all_actions_list = [ofp.OFPAT_OUTPUT,
+                    ofp.OFPAT_SET_VLAN_VID,
+                    ofp.OFPAT_SET_VLAN_PCP,
+                    ofp.OFPAT_STRIP_VLAN,
+                    ofp.OFPAT_SET_DL_SRC,
+                    ofp.OFPAT_SET_DL_DST,
+                    ofp.OFPAT_SET_NW_SRC,
+                    ofp.OFPAT_SET_NW_DST,
+                    ofp.OFPAT_SET_NW_TOS,
+                    ofp.OFPAT_SET_TP_SRC,
+                    ofp.OFPAT_SET_TP_DST,
+                    ofp.OFPAT_ENQUEUE
+                    ]
+
+
+
+
+
 def actions_bmap_to_str(bm):
     result = "{"
     sep    = ""
