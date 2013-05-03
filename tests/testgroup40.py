@@ -200,7 +200,7 @@ class Grp40No40(base_tests.SimpleProtocol):
     Inserting lot of random flows to trigger "No Tables to add " error 
     """
 
-    priority = -1
+    #priority = -1
 
     def runTest(self):
         logging.info("Grp40No40 No Tables to Add")
