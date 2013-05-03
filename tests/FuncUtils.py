@@ -1379,7 +1379,7 @@ all_actions_list = [ofp.OFPAT_OUTPUT,
                     ofp.OFPAT_SET_NW_SRC,
                     ofp.OFPAT_SET_NW_DST,
                     ofp.OFPAT_SET_NW_TOS,
-                    ofp.OFPAT_SET_   TP_DST]
+                    ofp.OFPAT_SET_TP_DST]
 
 all_wildcards_list = [ofp.OFPFW_IN_PORT,
                       ofp.OFPFW_DL_DST,
