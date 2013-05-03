@@ -1344,7 +1344,7 @@ class Switch:
     def settle(self):
         time.sleep(2)
         
- class Flow_Tbl:
+class Flow_Tbl:
     def clear(self):
         self.dict = {}
 
