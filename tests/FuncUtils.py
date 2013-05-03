@@ -1390,3 +1390,12 @@ class Flow_Tbl:
             if j >= sw.tbl_stats.stats[tbl].max_entries:
                 tbl = tbl + 1
                 j = 0       
+def actions_bmap_to_str(bm):
+    result = "{"
+    sep    = ""
+    for a in all_actions_list:
+        if ((1 << a) & bm) != 0:
+            result = result + sep + ofp.ofp_action_type_map[a]
+            sep = ", "
+    result = result + "}"
+    return result
