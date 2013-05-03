@@ -1404,7 +1404,19 @@ all_actions_list = [ofp.OFPAT_OUTPUT,
                     ofp.OFPAT_SET_TP_DST,
                     ofp.OFPAT_ENQUEUE
                     ]
-
+all_wildcards_list = [ofp.OFPFW_IN_PORT,
+                      ofp.OFPFW_DL_DST,
+                      ofp.OFPFW_DL_SRC,
+                      ofp.OFPFW_DL_VLAN,
+                      ofp.OFPFW_DL_VLAN_PCP,
+                      ofp.OFPFW_DL_TYPE,
+                      ofp.OFPFW_NW_TOS,
+                      ofp.OFPFW_NW_PROTO,
+                      ofp.OFPFW_NW_SRC_MASK,
+                      ofp.OFPFW_NW_DST_MASK,
+                      ofp.OFPFW_TP_SRC,
+                      ofp.OFPFW_TP_DST
+                      ]
 def wildcards_to_str(wildcards):
     result = "{"
     sep = ""
