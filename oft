@@ -69,7 +69,7 @@ config_default = {
     # Test selection options
     "test_spec"          : "",
     "test_file"          : None,
-    "test_dir"           : os.path.join(root_dir, "tests"),
+    "test_dir"           : None,
 
     # Switch connection options
     "controller_host"    : "0.0.0.0",  # For passive bind
@@ -209,6 +209,13 @@ prefixing them with the '^' character.
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
     (options, args) = parser.parse_args()
+
+    # If --test-dir wasn't given, pick one based on the OpenFlow version
+    if options.test_dir == None:
+        if options.openflow_version == "1.0":
+            options.test_dir = os.path.join(root_dir, "tests")
+        else:
+            options.test_dir = os.path.join(root_dir, "tests-" + options.openflow_version)
 
     # Convert options from a Namespace to a plain dictionary
     config = config_default.copy()
