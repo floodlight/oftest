@@ -100,6 +100,7 @@ class OFTestManager(object):
 
         # Other configuration
         "port_map"           : {},
+        "dataplane"          : None
     }
 
     ##@var suite
@@ -482,19 +483,20 @@ class OFTestManager(object):
 
         # Load the platform module
         platform_name = config["platform"]
-        logging.info("Importing platform: " + platform_name)
-        platform_mod = None
-        try:
-            platform_mod = imp.load_module(platform_name, *imp.find_module(platform_name, [config["platform_dir"]]))
-        except:
-            logging.warn("Failed to import " + platform_name + " platform module")
-            raise
+        if platform_name:
+            logging.info("Importing platform: " + platform_name)
+            platform_mod = None
+            try:
+                platform_mod = imp.load_module(platform_name, *imp.find_module(platform_name, [config["platform_dir"]]))
+            except:
+                logging.warn("Failed to import " + platform_name + " platform module")
+                raise
 
-        try:
-            platform_mod.platform_config_update(config)
-        except:
-            logging.warn("Could not run platform host configuration")
-            raise
+            try:
+                platform_mod.platform_config_update(config)
+            except:
+                logging.warn("Could not run platform host configuration")
+                raise
 
         if not config["port_map"]:
             die("Interface port map was not defined by the platform. Exiting.")
@@ -527,6 +529,9 @@ class OFTestManager(object):
     @staticmethod
     def dataplane_setup():
         # Set up the dataplane
+        if 'dataplane' in config and not config['dataplane']:
+            del(config['dataplane'])
+
         oftest.dataplane_instance = oftest.dataplane.DataPlane(config)
         for of_port, ifname in config["port_map"].items():
             oftest.dataplane_instance.port_add(ifname, of_port)
