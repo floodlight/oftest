@@ -1,3 +1,5 @@
+# Copyright 2013, Big Switch Networks, Inc.
+
 """
 pp - port of Ruby's PP library
 Also based on Lindig, C., & GbR, G. D. (2000). Strictly Pretty.

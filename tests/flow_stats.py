@@ -87,10 +87,6 @@ class SingleFlowStats(base_tests.SimpleDataPlane):
             self.assertTrue(len(response.entries) == 1,
                             "Did not receive flow stats reply")
             for obj in response.entries:
-                # TODO: pad1 and pad2 fields may be nonzero, is this a bug?
-                # for now, just clear them so the assert is simpler
-                obj.match.pad1 = 0
-                obj.match.pad2 = [0, 0]
                 self.assertEqual(flow_mod_msg.match, obj.match,
                                  "Matches do not match")
                 self.assertEqual(obj.cookie, flow_mod_msg.cookie)
@@ -203,10 +199,6 @@ class TwoFlowStats(base_tests.SimpleDataPlane):
     def sumStatsReplyCounts(self, response):
         total_packets = 0
         for obj in response.entries:
-            # TODO: pad1 and pad2 fields may be nonzero, is this a bug?
-            # for now, just clear them so the assert is simpler
-            #obj.match.pad1 = 0
-            #obj.match.pad2 = [0, 0]
             #self.assertEqual(match, obj.match,
             #                 "Matches do not match")
            logging.info("Received " + str(obj.packet_count)
