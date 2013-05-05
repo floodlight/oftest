@@ -6,6 +6,8 @@
 # Do not modify
 
 import action, common, const, message
+import instruction
+import oxm
 from const import *
 from common import *
 from loxi import ProtocolError
