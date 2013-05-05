@@ -62,7 +62,7 @@ class EchoWithData(base_tests.SimpleProtocol):
                          'response xid != request xid')
         self.assertEqual(request.data, response.data,
                          'response data does not match request')
-
+@disabled
 class PacketInDump(base_tests.SimpleDataPlane):
     def runTest(self):
         while True:
