@@ -984,7 +984,7 @@ class Grp50No140(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
     
         #Clear Switch State
-        rc = delete_all_flows(self.controller)
+        rv = delete_all_flows(self.controller)
         self.assertTrue(rv != -1, "Error installing flow mod")
     	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
@@ -1108,7 +1108,7 @@ class Grp50No160(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
     
         #Clear Switch State
-        rc = delete_all_flows(self.controller)
+        rv = delete_all_flows(self.controller)
        	self.assertTrue(rv != -1, "Error installing flow mod")
     	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
     	
