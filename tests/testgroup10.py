@@ -147,7 +147,7 @@ class Grp10No30(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Test Grp10No60 Version Announcement test")
+        logging.info("Running Test Grp10No30 Version Announcement test")
         of_version = test_param_get('version',default = 0x01)
         
         # Waiting for switch to send Hello . Initial Hello from our side is set to False.
