@@ -128,7 +128,7 @@ class Grp100No40(base_tests.SimpleProtocol):
         self.assertTrue(reply.code == ofp.OFPBRC_BAD_TYPE,
                         "Error code is not bad type")
 
-class Grp100No60(base_tests.SimpleProtocol):
+class Grp100No50(base_tests.SimpleProtocol):
     """
     Unknown vendor id specified. 
     If a switch does not understand a vendor extension, it must send an OFPT_ERROR
@@ -138,7 +138,7 @@ class Grp100No60(base_tests.SimpleProtocol):
     @wireshark_capture
     def runTest(self):  
         logging = get_logger()
-        logging.info("Running Grp100No60 BadRequestBadVendor test")      
+        logging.info("Running Grp100No50 BadRequestBadVendor test")      
              
         request = message.vendor()  
         request.vendor = 400  
@@ -149,7 +149,7 @@ class Grp100No60(base_tests.SimpleProtocol):
         if not response.code == ofp.OFPBAC_BAD_VENDOR | ofp.OFPBRC_EPERM :
             logging.info("Error code is not as expected")
 
-class Grp100No90(base_tests.SimpleProtocol):  
+class Grp100No80(base_tests.SimpleProtocol):  
   
     """When the length field in the header of the stats request is wrong , 
     switch generates an OFPT_ERROR msg with type field OFPET BAD_REQUEST 
@@ -158,7 +158,7 @@ class Grp100No90(base_tests.SimpleProtocol):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp100No60 BadRequestBadLength test")
+        logging.info("Running Grp100No80 BadRequestBadLength test")
         #In Message module at pack time the length is computed
         #avoid this by using cstruct module
         logging.info("Sending stats_request message..")
@@ -183,7 +183,7 @@ class Grp100No90(base_tests.SimpleProtocol):
                                'Error code is not OFPBRC_BAD_LEN')   
 
 
-class Grp100No110(base_tests.SimpleProtocol):
+class Grp100No100(base_tests.SimpleProtocol):
     """
     Specified buffer does not exist. 
 
@@ -194,7 +194,7 @@ class Grp100No110(base_tests.SimpleProtocol):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp100No110 BadRequestBufferUnknown test")
+        logging.info("Running Grp100No100 BadRequestBufferUnknown test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -220,7 +220,7 @@ class Grp100No110(base_tests.SimpleProtocol):
                                'Message field code is not OFPBRC_BUFFER_UNKNOWN')       
 
 
-class Grp100No120(base_tests.SimpleDataPlane): 
+class Grp100No110(base_tests.SimpleDataPlane): 
 
     """When the type field in the action header specified by the controller is unknown , 
     the switch generates an OFPT_ERROR msg with type field OFPBET_BAD_ACTION and code field OFPBAC_BAD_TYPE
@@ -228,7 +228,7 @@ class Grp100No120(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):  
         logging = get_logger()
-        logging.info("Running Grp100No120 test")
+        logging.info("Running Grp100No110 test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
@@ -253,14 +253,14 @@ class Grp100No120(base_tests.SimpleDataPlane):
                                'Error code is not OFPBAC_BAD_TYPE')      
 
 
-class Grp100No130(base_tests.SimpleDataPlane):   
+class Grp100No120(base_tests.SimpleDataPlane):   
     """When the length field in the action header specified by the controller is wrong ,
     the switch replies back with an OFPT_ERROR msg with Type Field OFPBAC_BAD_LEN"""
     
     @wireshark_capture
     def runTest(self):  
         logging = get_logger()
-        logging.info("Running Grp100No130 BadActionBadLen test")
+        logging.info("Running Grp100No120 BadActionBadLen test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
@@ -288,7 +288,7 @@ class Grp100No130(base_tests.SimpleDataPlane):
 
 
 
-class Grp100No160(base_tests.SimpleProtocol):
+class Grp100No150(base_tests.SimpleProtocol):
     
     """When the output to switch port action refers to a port that does not exit ,
     the switch generates an OFPT_ERROR msg , with type field OFPT_BAD_ACTION and code field OFPBAC_BAD_OUT_PORT
@@ -299,7 +299,7 @@ class Grp100No160(base_tests.SimpleProtocol):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp100No160 BadActionBadPort test")
+        logging.info("Running Grp100No150 BadActionBadPort test")
 
         # pick a random bad port number
         bad_port=ofp.OFPP_MAX
@@ -331,7 +331,7 @@ class Grp100No160(base_tests.SimpleProtocol):
             if count > 10:   # Too many tries
                 break
 
-class Grp100No170(base_tests.SimpleProtocol):
+class Grp100No160(base_tests.SimpleProtocol):
     """
     Bad action argument.
 
@@ -344,7 +344,7 @@ class Grp100No170(base_tests.SimpleProtocol):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp100No170 BadActionBadArgument test")
+        logging.info("Running Grp100No160 BadActionBadArgument test")
 
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
@@ -391,7 +391,7 @@ class Grp100No170(base_tests.SimpleProtocol):
             if count > 10:   # Too many tries
                break
 
-class Grp100No190(base_tests.SimpleProtocol):
+class Grp100No180(base_tests.SimpleProtocol):
     """
     If the actions specified by the controller are more than that
     switch can support, the switch responds back with an OFPT_ERROR msg,
@@ -401,7 +401,7 @@ class Grp100No190(base_tests.SimpleProtocol):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running BadActionTooMany Grp100No190 test")
+        logging.info("Running BadActionTooMany Grp100No180 test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -436,7 +436,7 @@ class Grp100No190(base_tests.SimpleProtocol):
 
 
 
-class Grp100No200(base_tests.SimpleDataPlane):
+class Grp100No190(base_tests.SimpleDataPlane):
     """
     If the switch is not able to process the Enqueue action specified by the controller then 
     the switch should generate an OFPT_ERROR msg ,type field OFPT_BAD_ACTION and code field OFPBAC_BAD_QUEUE"""
@@ -444,7 +444,7 @@ class Grp100No200(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running BadActionQueue Grp100No200 test")
+        logging.info("Running BadActionQueue Grp100No190 test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -492,7 +492,7 @@ class Grp100No200(base_tests.SimpleDataPlane):
 
 
 
-class Grp100No220(base_tests.SimpleDataPlane):
+class Grp100No210(base_tests.SimpleDataPlane):
     
     """Verify that if overlap check flag is set in the flow entry and an
         overlapping flow is inserted then an error 
@@ -501,7 +501,7 @@ class Grp100No220(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running FlowModFailedOverlap Grp100No200 test")
+        logging.info("Running FlowModFailedOverlap Grp100No210 test")
        
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -553,7 +553,7 @@ class Grp100No220(base_tests.SimpleDataPlane):
                                'Error code is not overlap')
 
 
-class Grp100No240(base_tests.SimpleProtocol): 
+class Grp100No230(base_tests.SimpleProtocol): 
 
     """When the emergency flows are added by the controller they should have a zero idle/hard timeout.
         Otherwise , should switch should respond with an OFPT ERROR msg , 
@@ -562,7 +562,7 @@ class Grp100No240(base_tests.SimpleProtocol):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running FlowModFailedBadEmer Grp100No240 test")
+        logging.info("Running FlowModFailedBadEmer Grp100No230 test")
         
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -603,7 +603,7 @@ class Grp100No240(base_tests.SimpleProtocol):
                                'Error code is not bad emergency timeout')
 
 
-class Grp100No250(base_tests.SimpleProtocol):   
+class Grp100No240(base_tests.SimpleProtocol):   
     """
     Unknown command.
     When the flow_mod msg request is sent by the controller with 
@@ -613,7 +613,7 @@ class Grp100No250(base_tests.SimpleProtocol):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running FlowModFailedBadCommand Grp100No250 test")
+        logging.info("Running FlowModFailedBadCommand Grp100No240 test")
         msg = message.flow_mod()
         msg.command = 8
 
@@ -631,7 +631,7 @@ class Grp100No250(base_tests.SimpleProtocol):
                                'Error code is not OFPFMFC_BAD_COMMAND')
 
 
-class Grp100No260(base_tests.SimpleProtocol):   
+class Grp100No250(base_tests.SimpleProtocol):   
     """
     Unsupported action list - cannot process in order specified
     If a switch cannot process the action list for any  flow mod message in the order specied, 
@@ -675,7 +675,7 @@ class Grp100No260(base_tests.SimpleProtocol):
                 break                                    
        
 
-class Grp100No270(base_tests.SimpleProtocol):
+class Grp100No260(base_tests.SimpleProtocol):
     """
     Modify a bit in port config on an invalid port and verify
     error message is received.
@@ -684,7 +684,7 @@ class Grp100No270(base_tests.SimpleProtocol):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running PortModFailedBadPort Grp100No270 test")
+        logging.info("Running PortModFailedBadPort Grp100No260 test")
         
         # pick a random bad port number
         bad_port=ofp.OFPP_MAX
@@ -711,7 +711,7 @@ class Grp100No270(base_tests.SimpleProtocol):
                 break
 
 
-class Grp100No280(base_tests.SimpleProtocol):    
+class Grp100No270(base_tests.SimpleProtocol):    
     """If the controller sends a port_mod request for any port  with a hardware address that is different 
     from one returned in ofp_phy_port struct.,the switch will respond back with an OFPT_ERROR msg , 
     type field OFPET_PORT_MOD_FAILED and code field OFPPMFC_BAD_HW_ADDR
@@ -719,7 +719,7 @@ class Grp100No280(base_tests.SimpleProtocol):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running PortModFailedBadHwAdd Grp100No280 test")
+        logging.info("Running PortModFailedBadHwAdd Grp100No270 test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -763,7 +763,7 @@ class Grp100No280(base_tests.SimpleProtocol):
                 break  
 
 
-class Grp100No300(base_tests.SimpleDataPlane):
+class Grp100No280(base_tests.SimpleDataPlane):
 
     """If the port specifed for any queue operation (like enqeue --output to queue or retrieving queue stats )
      is an invalid port , then the switch responds back with an error msg OFPT_ERROR msg , 
@@ -772,7 +772,7 @@ class Grp100No300(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp100No300 QueueOpFailedBadPort test")
+        logging.info("Running Grp100No280 QueueOpFailedBadPort test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -806,7 +806,7 @@ class Grp100No300(base_tests.SimpleDataPlane):
 
 
 
-class Grp100No310(base_tests.SimpleDataPlane):
+class Grp100No290(base_tests.SimpleDataPlane):
 
     """If the queue_id specifed for any queue operation (like enqeue --output to queue or retrieving queue stats ) 
     is an invalid queue ,then the switch responds back with an error msg OFPT_ERROR msg , 
@@ -815,7 +815,7 @@ class Grp100No310(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running QueueOpFailedBadQueue Grp100No310 test")
+        logging.info("Running QueueOpFailedBadQueue Grp100No290 test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()

@@ -223,13 +223,13 @@ class Grp80No60(base_tests.SimpleProtocol):
         logging.info("No. of openflow ports: " + str(ports))
 
 
-class Grp80No210(base_tests.SimpleProtocol):
+class Grp80No200(base_tests.SimpleProtocol):
 
     """Verify the body of OFPT_GET_CONFIG_REPLY message """
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp80No220 GetConfigReply Test")
+        logging.info("Running Grp80No200 GetConfigReply Test")
        
         #Send get_config_request
         logging.info("Sending Get Config Request...")
@@ -257,13 +257,13 @@ class Grp80No210(base_tests.SimpleProtocol):
             logging.info("OFPC_FRAG_MASK")
 
 
-class Grp80No270(base_tests.SimpleProtocol):
+class Grp80No260(base_tests.SimpleProtocol):
 
     """Verify OFPT_SET_CONFIG is implemented"""
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp80No270 SetConfigRequest Test")
+        logging.info("Running Grp80No260 SetConfigRequest Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
 

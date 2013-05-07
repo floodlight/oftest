@@ -107,12 +107,8 @@ class Grp30No90(base_tests.SimpleDataPlane):
         self.assertTrue(port_config is not None, "Did not get port config")
         logging.debug("No flood bit port " + str(of_ports[1]) + " is now " + 
                            str(port_config & ofp.OFPPC_NO_FWD))
-        print port_config
-                             
-
-	                          
-
-        #making sure that the switch in expected default state
+       
+       	#making sure that the switch in expected default state
         if port_config & ofp.OFPPC_NO_FWD != 0:
         	logging.info("making sure the switch has the expected default state i.e no_fwd_flag==0")
 		rv = port_config_set(self.controller, of_ports[1],

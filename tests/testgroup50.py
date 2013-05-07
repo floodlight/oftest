@@ -41,16 +41,13 @@ class Grp50No10(base_tests.SimpleDataPlane):
 
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        self.assertTrue(rc != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         logging.info("Installing an all wildcarded flow")
-        
-
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
-        
-        sleep(2)
 
         #Insert an All Wildcarded flow.
         wildcard_all(self,of_ports)
@@ -102,16 +99,14 @@ class Grp50No20(base_tests.SimpleDataPlane):
 
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
-
-        sleep(2)
+        self.assertTrue(rc != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
     
         logging.info("Installing a flow with match on Ingress Port ")
-        
         
         #Insert a Match on Ingress Port FLow
         (pkt,match) = wildcard_all_except_ingress(self,of_ports,priority=0)
@@ -149,15 +144,14 @@ class Grp50No30(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        self.assertTrue(rc != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
     
         logging.info("Installing a flow entry with match on ETH_SRC ")
-
-        sleep(2)
 
         #Insert a Match On Ethernet Src Address flow
         (pkt,match) = match_ethernet_src_address(self,of_ports)   
@@ -196,16 +190,15 @@ class Grp50No40(base_tests.SimpleDataPlane):
         
         #Clear Switch State
         rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        self.assertTrue(rv != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
         
         logging.info("Installing a flow entry with match on ETH_DST ")
-               
-        sleep(2)
-
+        
         #Insert a Match on Destination Address flow   
         (pkt,match) = match_ethernet_dst_address(self,of_ports)
         
@@ -242,7 +235,8 @@ class Grp50No50(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        self.assertTrue(rc != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
@@ -250,8 +244,6 @@ class Grp50No50(base_tests.SimpleDataPlane):
         
         logging.info("Installing a flow entry with match on Ethernet Type ")
         
-        sleep(2)        
-
         #Insert a Match on Ethernet-Type flow
         (pkt,match) = match_ethernet_type(self,of_ports)   
 
@@ -291,16 +283,15 @@ class Grp50No60(base_tests.SimpleDataPlane):
 
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        self.assertTrue(rc != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
     
         logging.info("Installing a flow entry with match on VLAN ID ")
-       
-        sleep(2)
-    
+          
         #Create a flow with match on Vlan Id
         (pkt,match) = match_vlan_id(self,of_ports)
 
@@ -338,11 +329,10 @@ class Grp50No70(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
-
-        sleep(2)
-
-        egress_port=of_ports[1]
+        self.assertTrue(rv != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+	
+	egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
     
@@ -387,13 +377,12 @@ class Grp50No80a(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        self.assertTrue(rv != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
-        
-        sleep(2)
 
         #Create a simple tcp packet and generate match on ip src address , exact match 
         logging.info("Installing a flow entry with match on IP_SRC address")
@@ -444,13 +433,12 @@ class Grp50No80b(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
-
+        self.assertTrue(rv != -1, "Error installing flow mod")
+   	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
-
-        sleep(2)
 
         #Create a simple tcp packet and generate match on ip src address
         logging.info("Installing a flow entry with match on wildcard IP_SRC")
@@ -498,13 +486,12 @@ class Grp50No80c(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        self.assertTrue(rv != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
-
-        sleep(2)
 
         #Create a simple tcp packet and generate match on ip src address
         logging.info("Installing a flow entry with match on MSB in the IP_SRC")
@@ -563,14 +550,13 @@ class Grp50No90a(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        self.assertTrue(rv != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
-
-        sleep(2)
-
+        
         #Create a flow for match on ip_dst_address (exact match)
         logging.info("Installing a flow entry with exact match on IP_DST")
         pkt = simple_tcp_packet(ip_src='192.168.100.100')
@@ -621,13 +607,12 @@ class Grp50No90b(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        self.assertTrue(rv != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
-
-        sleep(2)
 
         #Create a flow for match on ip_dst_address (wildcard match))
         logging.info("Installing a flow entry with wildcard IP_DST matching")
@@ -677,15 +662,14 @@ class Grp50No90c(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        self.assertTrue(rv != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
-
-        sleep(2)
-
-        #Create a flow for match on ip_dst_address (MSB bits))
+	
+	#Create a flow for match on ip_dst_address (MSB bits))
         logging.info("Installing a Flow entry with matching on MSB in IP_DST")
         pkt = simple_tcp_packet(ip_src='192.168.100.100')
         match = parse.packet_to_flow_match(pkt)
@@ -741,9 +725,8 @@ class Grp50No100(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
-
-        sleep(2)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
@@ -787,13 +770,12 @@ class Grp50No110(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        self.assertTrue(rv != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
-
-        sleep(2)
     
         logging.info("Installing a flow entry with match on Ip_Tos ")
         
@@ -832,13 +814,13 @@ class Grp50No120a(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        self.assertTrue(rc != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
-        
-        sleep(2)
+     
         logging.info("Installing a flow entry with match on Tcp Source Port ")
         
         (pkt,match) = match_tcp_src(self,of_ports)   
@@ -875,13 +857,13 @@ class Grp50No120b(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        self.assertTrue(rc != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
-
-        sleep(2)
+        
         logging.info("Installing a flow entry with match on tcp source port/IcmpType")
         (pkt,match) = match_icmp_type(self,of_ports)   
 
@@ -918,7 +900,8 @@ class Grp50No130a(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        self.assertTrue(rc != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
@@ -960,7 +943,8 @@ class Grp50No130b(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        self.assertTrue(rc != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
@@ -1000,8 +984,9 @@ class Grp50No140(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
     
         #Clear Switch State
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        rv = delete_all_flows(self.controller)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
@@ -1065,13 +1050,12 @@ class Grp50No150(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rv = delete_all_flows(self.controller)
-        self.assertEqual(rv, 0, "Failed to delete all flows")
+        self.assertTrue(rv != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
-
-        sleep(2)
 
         #Create a flow for match on ip_dst_address & ip_src_address (exact match))
         logging.info("Installing a Flow entry with match on L3 header fields")
@@ -1124,12 +1108,11 @@ class Grp50No160(base_tests.SimpleDataPlane):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
     
         #Clear Switch State
-        rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
-
-        sleep(2)
-
-        egress_port=of_ports[1]
+        rv = delete_all_flows(self.controller)
+       	self.assertTrue(rv != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+    	
+    	egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
         
@@ -1177,13 +1160,12 @@ class Grp50No170(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        self.assertTrue(rc != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
-
-        sleep(2)
         
         logging.info("Installing a flow entry with match on all header fields")
         (pkt,match) = exact_match(self,of_ports)   
@@ -1220,18 +1202,16 @@ class Grp50No180(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
-
-        egress_port=of_ports[2]
+        self.assertTrue(rc != -1, "Error installing flow mod")
+    	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        
+	egress_port=of_ports[2]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[2]
            
-        sleep(2)
         #Insert two Overlapping Flows : Exact Match and Wildcard All.
   	logging.info("Installing a flow entry with Exact Match (low priority)")      
         (pkt,match) = exact_match_with_prio(self,of_ports,priority=10) 
-        
-        sleep(2)
         
 	logging.info("Installing an overlapping wildcarded flow (higher priority)")
         (pkt2,match2) = wildcard_all(self,of_ports,priority=20)
@@ -1261,11 +1241,10 @@ class Grp50No190(base_tests.SimpleDataPlane):
     
         #Clear Switch State
         rc = delete_all_flows(self.controller)
-        self.assertEqual(rc, 0, "Failed to delete all flows")
+        self.assertTrue(rc != -1, "Error installing flow mod")
+   	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-        sleep(2)
-
-        egress_port=of_ports[1]
+    	egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
     
