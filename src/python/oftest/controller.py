@@ -608,7 +608,8 @@ class Controller(Thread):
                     self.logger.debug("Looking for %s", exp_msg_str)
                     for i in range(len(self.packets)):
                         msg = self.packets[i][0]
-                        self.logger.debug("Checking packets[%d] (%s)", i, exp_msg_str)
+                        msg_str = ofp.ofp_type_map.get(msg.type, "unknown (%d)" % msg.type)
+                        self.logger.debug("Checking packets[%d] %s) against %s", i, msg_str, exp_msg_str)
                         if msg.type == exp_msg:
                             (msg, pkt) = self.packets.pop(i)
                             return (msg, pkt)
