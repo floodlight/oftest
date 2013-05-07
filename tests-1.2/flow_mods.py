@@ -39,11 +39,16 @@ class FlowMod_ModifyStrict(base_tests.SimpleProtocol):
         testutils.do_barrier(self.controller)
         self.assertEqual(rv, 0, "Failed to insert 2nd flow_mod")
         flow_stats = testutils.flow_stats_get(self)
-        self.assertEqual(len(flow_stats.stats),1, 
+        self.assertEqual(len(flow_stats.entries),1,
                          "Expected only one flow_mod")
-        stat = flow_stats.stats[0]
+        stat = flow_stats.entries[0]
+
+        def canonicalize_match(match):
+            match.oxm_list.sort(key=lambda x: x.type_len)
+
+        canonicalize_match(stat.match)
+        canonicalize_match(fm_new.match)
         self.assertEqual(stat.match, fm_new.match)
-        self.assertEqual(stat.match_fields, fm_new.match_fields)
         self.assertEqual(stat.instructions, fm_new.instructions)
         # @todo consider adding more tests here
         
