@@ -192,7 +192,7 @@ class Grp10No40(base_tests.SimpleProtocol):
     def runTest(self):
         logging = get_logger()
 
-        logging.info("Running TestNo70 VersionNegotiation Test") 
+        logging.info("Running TestNo40 VersionNegotiation Test") 
         of_version = test_param_get('version',default = 0x01)               
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,         
                                                timeout=5)
