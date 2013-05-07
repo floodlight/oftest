@@ -1024,16 +1024,14 @@ class GroupStats(GroupTest):
         self.send_ctrl_exp_reply(group_stats_req,
                                  ofp.OFPT_STATS_REPLY, 'group stat')
 
-        exp_len = ofp.OFP_HEADER_BYTES + \
-                  ofp.OFP_STATS_REPLY_BYTES + \
-                  ofp.OFP_GROUP_STATS_BYTES + \
-                  ofp.OFP_BUCKET_COUNTER_BYTES * 2
+        self.assertEqual(len(response.entries), 1, 'Incorrect number of groups')
+        self.assertEqual(len(response.entries[0].bucket_stats), 2, 'Incorrect number of groups')
+        self.assertEqual(response.entries[0].packet_count, 3, 'Incorrect group packet count')
+        self.assertEqual(response.entries[0].byte_count, 300, 'Incorrect group byte count')
+        for bucket_stat in response.entries[0].bucket_stats:
+            self.assertEqual(bucket_stat.packet_count, 3, 'Incorrect bucket packet count')
+            self.assertEqual(bucket_stat.byte_count, 300, 'Incorrect bucket byte count')
 
-        self.assertEqual(len(response), exp_len,
-                         'Received packet length does not equal expected length')
-        # XXX Zoltan: oftest group_stats_req handling needs to be fixed
-        #             right now only the expected message length is checked
-        #             responses should be checked in Wireshark
 
 
 
@@ -1103,18 +1101,28 @@ class GroupStatsAll(GroupTest):
         self.send_ctrl_exp_reply(group_stats_req,
                                  ofp.OFPT_STATS_REPLY, 'group stat')
 
-        exp_len = ofp.OFP_HEADER_BYTES + \
-                  ofp.OFP_STATS_REPLY_BYTES + \
-                  ofp.OFP_GROUP_STATS_BYTES + \
-                  ofp.OFP_BUCKET_COUNTER_BYTES * 2 + \
-                  ofp.OFP_GROUP_STATS_BYTES + \
-                  ofp.OFP_BUCKET_COUNTER_BYTES * 2
+        self.assertEqual(len(response.entries), 2)
+        group10, group20 = sorted(response.entries, key=lambda x: x.group_id)
 
-        self.assertEqual(len(response), exp_len,
-                         'Received packet length does not equal expected length')
-        # XXX Zoltan: oftest group_stats_req handling needs to be fixed
-        #             right now only the expected message length is checked
-        #             responses should be checked in Wireshark
+        # Check stats for group 10
+        self.assertEqual(group10.group_id, 10)
+        self.assertEqual(group10.ref_count, 1)
+        self.assertEqual(group10.packet_count, 2)
+        self.assertEqual(group10.byte_count, 200)
+        self.assertEqual(len(group10.bucket_stats), 2)
+        for bucket_stat in group10.bucket_stats:
+            self.assertEqual(bucket_stat.packet_count, 2)
+            self.assertEqual(bucket_stat.byte_count, 200)
+
+        # Check stats for group 20
+        self.assertEqual(group20.group_id, 20)
+        self.assertEqual(group20.ref_count, 1)
+        self.assertEqual(group20.packet_count, 3)
+        self.assertEqual(group20.byte_count, 300)
+        self.assertEqual(len(group20.bucket_stats), 2)
+        for bucket_stat in group20.bucket_stats:
+            self.assertEqual(bucket_stat.packet_count, 3)
+            self.assertEqual(bucket_stat.byte_count, 300)
 
 
 
@@ -1151,16 +1159,13 @@ class GroupDescStats(GroupTest):
         self.send_ctrl_exp_reply(group_desc_stats_req,
                                  ofp.OFPT_STATS_REPLY, 'group desc stat')
 
-        exp_len = ofp.OFP_HEADER_BYTES + \
-                  ofp.OFP_STATS_REPLY_BYTES + \
-                  ofp.OFP_GROUP_DESC_STATS_BYTES + \
-                  len(b1) + len(b2) + len(b3)
-
-        self.assertEqual(len(response), exp_len,
-                         'Received packet length does not equal expected length')
-        # XXX Zoltan: oftest group_stats_req handling needs to be fixed
-        #             right now only the expected message length is checked
-        #             responses should be checked in Wireshark
+        self.assertEquals(len(response.entries), 1)
+        group = response.entries[0]
+        self.assertEquals(group.group_id, 10)
+        self.assertEquals(len(group.buckets), 3)
+        self.assertEquals(group.buckets[0], b1)
+        self.assertEquals(group.buckets[1], b2)
+        self.assertEquals(group.buckets[2], b3)
 
 
 #@todo: A flow added with group action should increase the ref counter of the ref. group
