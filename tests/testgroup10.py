@@ -312,6 +312,89 @@ class Grp10No90(unittest.TestCase):
                                'Switch did not drop connection due to Echo Timeout') 
         logging.info("Received an OFPT_HELLO message after echo timeout")
 
+class Grp10No110(base_tests.SimpleDataPlane):
+    """
+    Verify if the emergency flows stay even after control channel reconencts
+    """
+    def runTest(self):
+        logging = get_logger()
+
+        logging.info("Running Grp10No110 test ") 
+
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 0, "Not enough ports for test")
+
+        #Clear switch state
+        rv = delete_all_flows(self.controller)
+        self.assertEqual(rv, 0, "Failed to delete all flows")
+        nonstrict_delete_emer(self.controller,ofp.OFPFW_ALL)
+        
+        #Insert an emergency flow entry 
+        test_packet = simple_tcp_packet()
+        match = parse.packet_to_flow_match(test_packet)
+        e_flow_mod = message.flow_mod()
+        match = parse.packet_to_flow_match(test_packet)
+        e_flow_mod.match = match
+        e_flow_mod.flags = e_flow_mod.flags | ofp.OFPFF_EMERG
+        e_flow_mod.in_port = of_ports[0]
+        act = action.action_output()
+        act.port = of_ports[1]
+        self.assertTrue(e_flow_mod.actions.add(act), "Failed to add action")
+        
+        rv = self.controller.message_send(e_flow_mod)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+            
+        #Shutdown the controller 
+        self.controller.disconnect()
+        
+        assertionerr=False
+        
+        pkt=simple_tcp_packet()
+        logging.info("checking for control channel status")
+        try :
+            for x in range(15):
+                self.dataplane.send(of_ports[1], str(pkt))
+                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=15)
+                self.assertTrue(response is not None,
+                                'PacketIn is not generated--Control plane is down')	
+        except AssertionError :
+        
+          #Send a simple tcp packet on ingress_port
+          logging.info("Control channel is down")
+          logging.info("Sending simple tcp packet ...")
+          logging.info("Checking for Emergency flows status after controller shutdown")
+          self.dataplane.send(of_ports[0], str(test_packet))
+
+          #Verify dataplane packet should not be forwarded
+          
+          yes_ports=[of_ports[1]]
+          no_ports = set(of_ports).difference(yes_ports)
+          receive_pkt_check(self.dataplane,test_packet,yes_ports,no_ports,self)
+          logging.info("Emergency flows are active after control channel is disconnected")
+          assertionerr = True	
+        
+        else :
+	       self.assertTrue(assertionerr is True, "Failed to shutdown the control plane")
+        
+        self.controller.connect()
+        
+        (response, raw) = self.controller.poll(ofp.OFPT_HELLO, timeout=7)
+        self.assertTrue(response is not None, "Control channel connection could not be established")
+        
+        logging.info("Control channel is up")
+        logging.info("Sending simple tcp packet ...")
+        logging.info("Checking for Emergency flows status after controller reconnection")
+        self.dataplane.send(of_ports[0], str(test_packet))
+
+        #Verify dataplane packet should not be forwarded
+          
+        yes_ports=[of_ports[1]]
+        no_ports = set(of_ports).difference(yes_ports)
+        receive_pkt_check(self.dataplane,test_packet,yes_ports,no_ports,self)
+        logging.info("Emergency flows are active after control channel is reconnected")
+        
 class Grp10No120(base_tests.SimpleDataPlane):
     """
     If the switch supports Emergency-Mode,
