@@ -36,12 +36,11 @@ packet modifications.
 import socket
 import struct
 import logging
-import oftest.cstruct as ofp
+import ofp
 import unittest
 import binascii
 import string
 import collections #@UnresolvedImport
-import oftest.action as action
 
 ETHERTYPE_IP = 0x0800
 ETHERTYPE_VLAN = 0x8100
