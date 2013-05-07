@@ -618,9 +618,9 @@ def flow_msg_create(parent, pkt, ing_port=0, match_fields=None, instruction_list
         match_fields = parse.packet_to_flow_match(pkt)
     parent.assertTrue(match_fields is not None, "Flow match from pkt failed")
     in_port = ofp.oxm.in_port(ing_port)
-    match_fields.add(in_port) 
+    match_fields.oxm_list.append(in_port) 
     request = ofp.message.flow_add()
-    request.match_fields = match_fields
+    request.match= match_fields
     request.buffer_id = 0xffffffff
     request.table_id = table_id
     
@@ -647,7 +647,7 @@ def flow_msg_create(parent, pkt, ing_port=0, match_fields=None, instruction_list
         
     inst = None
     if len(instruction_list) == 0: 
-        inst = ofp.instruction.instruction_apply_actions()
+        inst = ofp.instruction.apply_actions()
         instruction_list.append(inst)
     else:
         for inst in instruction_list:
@@ -655,19 +655,12 @@ def flow_msg_create(parent, pkt, ing_port=0, match_fields=None, instruction_list
                 inst.type == ofp.OFPIT_APPLY_ACTIONS):
                 break
 
+
     # add all the actions to the last inst
-    for act in action_list:
-        logging.debug("Adding ofp.action " + act.show())
-        rv = inst.actions.add(act)
-        parent.assertTrue(rv, "Could not add ofp.action" + act.show())
-    # NOTE that the inst has already been added to the flow_mod
+    inst.actions += action_list
 
     # add all the instrutions to the flow_mod
-    for i in instruction_list: 
-        logging.debug("Adding ofp.instruction " + inst.show())
-        rv = request.instructions.add(i)
-        parent.assertTrue(rv, "Could not add ofp.instruction " + i.show())
-
+    request.instructions += instruction_list
  
     logging.debug(request.show())
     return request

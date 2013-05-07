@@ -4,9 +4,10 @@ Group table test cases.
 import logging
 
 from oftest import config
-import of12 as ofp
+import ofp
 import oftest.oft12.testutils as testutils
 import oftest.base_tests as base_tests
+import oftest.parse
 
 def create_group_desc_stats_req():
     # XXX Zoltan: hack, remove if message module is fixed
@@ -28,10 +29,10 @@ def create_group_mod_msg(command = ofp.OFPGC_ADD, type = ofp.OFPGT_ALL,
                group_id = 0, buckets = []):
     m = ofp.message.group_mod()
     m.command = command
-    m.type = type
+    m.group_type = type
     m.group_id = group_id
     for b in buckets:
-        m.buckets.add(b)
+        m.buckets.append(b)
 
     return m
 
@@ -39,12 +40,12 @@ def create_group_mod_msg(command = ofp.OFPGC_ADD, type = ofp.OFPGT_ALL,
 
 # XXX Zoltan: watch_port/_group off ?
 def create_bucket(weight = 0, watch_port = 0, watch_group = 0, actions=[]):
-    b = ofp.bucket.bucket()
+    b = ofp.bucket()
     b.weight = weight
     b.watch_port = watch_port
     b.watch_group = watch_group
     for a in actions:
-        b.actions.add(a)
+        b.actions.append(a)
 
     return b
 
@@ -62,36 +63,35 @@ def create_action(**kwargs):
         return act
     if a == ofp.OFPAT_SET_FIELD:
         port = kwargs.get('tcp_sport', 0)
-        field_2b_set = ofp.match.tcp_src(port)
+        field_2b_set = ofp.oxm.tcp_src(port)
         act = ofp.action.set_field()
-        act.field = field_2b_set
+        act.field = field_2b_set.pack() + '\x00' * 6 # HACK
         return act;
 
 
 
 def create_flow_msg(packet = None, in_port = None, match = None, apply_action_list = []):
 
-    apply_inst = ofp.instruction.instruction_apply_actions()
+    apply_inst = ofp.instruction.apply_actions()
 
     if apply_action_list is not None:
         for act in apply_action_list:
-            apply_inst.actions.add(act)
+            apply_inst.actions.append(act)
 
-    request = ofp.message.flow_mod()
-    request.match.type = ofp.OFPMT_OXM
+    request = ofp.message.flow_add()
 
     if match is None:
-        match = ofp.parse.packet_to_flow_match(packet)
+        match = oftest.parse.packet_to_flow_match(packet)
     
-    request.match_fields = match
+    request.match = match
     
     if in_port != None:
-        match_port = testutils.oxm_field.in_port(in_port)
-        request.match_fields.tlvs.append(match_port)
+        match_port = ofp.oxm.in_port(in_port)
+        request.match.oxm_list.append(match_port)
     request.buffer_id = 0xffffffff
     request.priority = 1000
     
-    request.instructions.add(apply_inst)
+    request.instructions.append(apply_inst)
 
     return request
 
@@ -130,11 +130,11 @@ class GroupTest(base_tests.SimpleDataPlane):
         self.assertTrue(response is not None, 
                         'Did not receive an error message')
 
-        self.assertEqual(response.header.type, ofp.OFPT_ERROR,
+        self.assertEqual(response.type, ofp.OFPT_ERROR,
                          'Did not receive an error message')
 
         if type != 0:
-            self.assertEqual(response.type, type,
+            self.assertEqual(response.err_type, type,
                              'Did not receive a ' + str(type) + ' type error message')
 
         if code != 0:
@@ -1246,7 +1246,7 @@ class GroupFlowSelect(GroupTest):
         self.send_ctrl_exp_reply(aggr_stat_req,
                                  ofp.OFPT_STATS_REPLY, 'aggr stat')
 
-        self.assertEqual(response.stats[0].flow_count, 2,
+        self.assertEqual(response.flow_count, 2,
                          'Did not match expected flow count')
 
 class GroupFlowSelectAll(GroupTest):
@@ -1315,7 +1315,7 @@ class GroupFlowSelectAll(GroupTest):
         self.send_ctrl_exp_reply(aggr_stat_req,
                                  ofp.OFPT_STATS_REPLY, 'group desc stat')
 
-        self.assertEqual(response.stats[0].flow_count, 4,
+        self.assertEqual(response.flow_count, 4,
                          'Did not match expected flow count')
 
 
