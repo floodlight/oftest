@@ -48,12 +48,11 @@ class MatchIPv6Simple(base_tests.SimpleDataPlane):
 
         # Add entry match 
 
-        request = ofp.message.flow_mod()
-        request.match.type = ofp.OFPMT_OXM
-        port = ofp.match.in_port(of_ports[0])
-        eth_type = ofp.match.eth_type(IPV6_ETHERTYPE)
-        eth_dst = ofp.match.eth_dst(ofp.parse.parse_mac("00:01:02:03:04:05"))
-        ipv6_src = ofp.match.ipv6_src(ipaddr.IPv6Address('fe80::2420:52ff:fe8f:5189'))
+        request = ofp.message.flow_add()
+        port = ofp.oxm.in_port(of_ports[0])
+        eth_type = ofp.oxm.eth_type(IPV6_ETHERTYPE)
+        eth_dst = ofp.oxm.eth_dst(oftest.parse.parse_mac("00:01:02:03:04:05"))
+        ipv6_src = ofp.oxm.ipv6_src(oftest.parse.parse_ipv6('fe80::2420:52ff:fe8f:5189'))
         
         request.match_fields.tlvs.append(port)
         request.match_fields.tlvs.append(eth_type)
@@ -107,7 +106,7 @@ class MatchICMPv6Simple(base_tests.SimpleDataPlane):
         request.match.type = ofp.OFPMT_OXM
         port = ofp.match.in_port(of_ports[0])
         eth_type = ofp.match.eth_type(IPV6_ETHERTYPE)
-        ipv6_src = ofp.match.ipv6_src(ipaddr.IPv6Address('fe80::2420:52ff:fe8f:5189'))
+        ipv6_src = ofp.match.ipv6_src(oftest.parse.parse_ipv6('fe80::2420:52ff:fe8f:5189'))
         ip_proto = ofp.match.ip_proto(ICMPV6_PROTOCOL)
         icmpv6_type = ofp.match.icmpv6_type(128)
         
@@ -163,13 +162,13 @@ class IPv6SetField(base_tests.SimpleDataPlane):
         request.match.type = ofp.OFPMT_OXM
         port = ofp.match.in_port(of_ports[0])
         eth_type = ofp.match.eth_type(IPV6_ETHERTYPE)
-        ipv6_src = ofp.match.ipv6_src(ipaddr.IPv6Address('fe80::2420:52ff:fe8f:5189'))
+        ipv6_src = ofp.match.ipv6_src(oftest.parse.parse_ipv6('fe80::2420:52ff:fe8f:5189'))
         
         request.match_fields.tlvs.append(port)
         request.match_fields.tlvs.append(eth_type)
         request.match_fields.tlvs.append(ipv6_src)
         
-        field_2b_set = ofp.match.ipv6_dst(ipaddr.IPv6Address('fe80::2420:52ff:fe8f:DDDD'))
+        field_2b_set = ofp.match.ipv6_dst(oftest.parse.parse_ipv6('fe80::2420:52ff:fe8f:DDDD'))
         act_setfield = ofp.action.set_field()
         act_setfield.field = field_2b_set
         
@@ -228,7 +227,7 @@ class MatchIPv6TCP(base_tests.SimpleDataPlane):
         request.match.type = ofp.OFPMT_OXM
         port = ofp.match.in_port(of_ports[0])
         eth_type = ofp.match.eth_type(IPV6_ETHERTYPE)
-        ipv6_src = ofp.match.ipv6_src(ipaddr.IPv6Address('fe80::2420:52ff:fe8f:5189'))        
+        ipv6_src = ofp.match.ipv6_src(oftest.parse.parse_ipv6('fe80::2420:52ff:fe8f:5189'))        
         ip_proto = ofp.match.ip_proto(TCP_PROTOCOL)
         tcp_port = ofp.match.tcp_src(80)
         
