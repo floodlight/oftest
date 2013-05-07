@@ -116,7 +116,7 @@ class Grp10No20(base_tests.SimpleProtocol):
         logging.info("Configured host : " + str(config["controller_host"]) + "Configured port : " + str(config["controller_port"]))
 
 
-class Grp10No60(base_tests.SimpleDataPlane):
+class Grp10No30(base_tests.SimpleDataPlane):
     """
     Verify HELLO has proper openflow version reported.
     
@@ -160,7 +160,7 @@ class Grp10No60(base_tests.SimpleDataPlane):
         self.assertTrue(response.header.version == of_version, 'switch openflow-version field is not correct') 
         logging.info("The Switch reported the correct openflow version")
 
-class Grp10No70(base_tests.SimpleProtocol):
+class Grp10No40(base_tests.SimpleProtocol):
     """
     Verify switch negotiates on the correct version.
     Upon receipt of the Hello message, the recipient may calculate the OpenFlow protocol version
@@ -207,7 +207,7 @@ class Grp10No70(base_tests.SimpleProtocol):
                                'Switch did not negotiate on the version')  
 
 
-class Grp10No80(base_tests.SimpleProtocol):
+class Grp10No50(base_tests.SimpleProtocol):
     """
     No common version negotiated
     Verify the switch reports correct error message and terminates the connection, 
@@ -261,7 +261,7 @@ class Grp10No80(base_tests.SimpleProtocol):
                         'Message field code is not OFPHFC_INCOMPATIBLE')        
 
 
-class Grp10No90(unittest.TestCase):
+class Grp10No80(unittest.TestCase):
     """
     Verify Echo timeout causes connection to the controller to drop
     """
@@ -312,6 +312,7 @@ class Grp10No90(unittest.TestCase):
                                'Switch did not drop connection due to Echo Timeout') 
         logging.info("Received an OFPT_HELLO message after echo timeout")
 
+<<<<<<< HEAD
 class Grp10No110(base_tests.SimpleDataPlane):
     """
     Verify if the emergency flows stay even after control channel reconencts
@@ -401,6 +402,9 @@ class Grp10No110(base_tests.SimpleDataPlane):
         logging.info("Emergency flows are active after control channel is reconnected")
         
 class Grp10No120(base_tests.SimpleDataPlane):
+=======
+class Grp10No100(base_tests.SimpleDataPlane):
+>>>>>>> master
     """
     If the switch supports Emergency-Mode,
     then verify 
@@ -469,11 +473,11 @@ class Grp10No120(base_tests.SimpleDataPlane):
 	       self.assertTrue(assertionerr is True, "Failed to shutdown the control plane")	          
         # Keep sending continous packets to verify standard flow entry being removed 
 
-class Grp10No140(base_tests.SimpleDataPlane):
+class Grp10No90(base_tests.SimpleDataPlane):
     """
-    If the switch supports Emergency-Mode,
+    If the switch supports Emergency-Mode
     then verify 
-    1. Emergency flows can be added , they are active after control channel gets disconnected
+    1. Emergency flows can be added , they are active after control channel gets disconnected 
     """
     @wireshark_capture
     def runTest(self):
@@ -537,10 +541,8 @@ class Grp10No140(base_tests.SimpleDataPlane):
         else :
 	       self.assertTrue(assertionerr is True, "Failed to shutdown the control plane")
         
-       
-
-
-class Grp10No150(base_tests.SimpleDataPlane):
+        
+class Grp10No120(base_tests.SimpleDataPlane):
     """If switch does not support Emergency mode , it should support fail-secure mode
     (refer spec 1.0.1).
     Verify even after the control channel disconnection, the standard flows timeout normally"""
