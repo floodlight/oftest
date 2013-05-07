@@ -312,7 +312,6 @@ class Grp10No80(unittest.TestCase):
                                'Switch did not drop connection due to Echo Timeout') 
         logging.info("Received an OFPT_HELLO message after echo timeout")
 
-<<<<<<< HEAD
 class Grp10No110(base_tests.SimpleDataPlane):
     """
     Verify if the emergency flows stay even after control channel reconencts
@@ -401,10 +400,9 @@ class Grp10No110(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane,test_packet,yes_ports,no_ports,self)
         logging.info("Emergency flows are active after control channel is reconnected")
         
-class Grp10No120(base_tests.SimpleDataPlane):
-=======
+
 class Grp10No100(base_tests.SimpleDataPlane):
->>>>>>> master
+
     """
     If the switch supports Emergency-Mode,
     then verify 
