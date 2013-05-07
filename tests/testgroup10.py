@@ -329,7 +329,9 @@ class Grp10No110(base_tests.SimpleDataPlane):
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
         nonstrict_delete_emer(self.controller,ofp.OFPFW_ALL)
-        
+        response, pkt = self.controller.poll(ofp.OFPT_ERROR, timeout=5)
+        self.assertTrue(response is None, "Emergency flow mod cannot be deleted")
+
         #Insert an emergency flow entry 
         test_packet = simple_tcp_packet()
         match = parse.packet_to_flow_match(test_packet)
@@ -343,7 +345,10 @@ class Grp10No110(base_tests.SimpleDataPlane):
         self.assertTrue(e_flow_mod.actions.add(act), "Failed to add action")
         
         rv = self.controller.message_send(e_flow_mod)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        response=None
+        response, pkt = self.controller.poll(ofp.OFPT_ERROR, timeout=5)
+        self.assertTrue(response is None, "Unable to add emergency flows")
+        self.assertTrue(rv != -1, "Unable to send a flow_mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
             
         #Shutdown the controller 
