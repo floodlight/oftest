@@ -273,7 +273,7 @@ class Grp10No80(base_tests.SimpleProtocol):
             port=config["controller_port"])
         # clean_shutdown should be set to False to force quit app
         self.clean_shutdown = False
-        self.controller.initial_hello=True
+        self.controller.initial_hello=False
         self.controller.start()
         #@todo Add an option to wait for a pkt transaction to ensure version
         # compatibilty?
