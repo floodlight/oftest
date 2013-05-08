@@ -261,37 +261,10 @@ class Grp10No50(base_tests.SimpleProtocol):
                         'Message field code is not OFPHFC_INCOMPATIBLE')        
 
 
-class Grp10No80(unittest.TestCase):
+class Grp10No80(base_tests.SimpleProtocol):
     """
     Verify Echo timeout causes connection to the controller to drop
-    """
-    def setUp(self):
-
-        #This is almost same as setUp in SimpleProtcocol except that Echo response is set to false
-        self.controller = controller.Controller(
-            host=config["controller_host"],
-            port=config["controller_port"])
-        # clean_shutdown should be set to False to force quit app
-        self.clean_shutdown = False
-        self.controller.initial_hello=True
-        self.controller.start()
-        #@todo Add an option to wait for a pkt transaction to ensure version
-        # compatibilty?
-        self.controller.connect(timeout=20)
-        # Here, Echo response is set to False, this would trigger connection to drop and hence switch will 
-        # start sending Hello messages to start a new connection
-        self.controller.keep_alive = False
-        if not self.controller.active:
-            raise Exception("Controller startup failed")
-        if self.controller.switch_addr is None: 
-            raise Exception("Controller startup failed (no switch addr)")
-        logging.info("Connected " + str(self.controller.switch_addr))
-    
-    def tearDown(self):
-        logging.info("** END TEST CASE " + str(self))
-        self.controller.shutdown()
-        if self.clean_shutdown:
-            self.controller.join()    
+    """ 
     
     @wireshark_capture    
     def runTest(self):
@@ -299,13 +272,14 @@ class Grp10No80(unittest.TestCase):
         logging.info("Running TestNo90 EchoTimeout ")
         # When the switch loses control channel , it would start retries for control channel connection by sending Hello messages
         # Hence , Polling for Echo request and then Hello Messages to verify control channel disconnection
-        (response0, pkt0) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
+    	(response0, pkt0) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
                                                timeout=1)
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ECHO_REQUEST,
                                                timeout=20)
         self.assertTrue(response is not None, 
                                'Switch is not generating Echo-Requests') 
         logging.info("Received an Echo request, waiting for echo timeout")
+        self.controller.disconnect()
         (response1, pkt1) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
                                                timeout=25)
         self.assertTrue(response1 is not None, 
@@ -469,7 +443,7 @@ class Grp10No100(base_tests.SimpleDataPlane):
           try:
           	receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
           except AssertionError : 
-         	self.assertTrue(0!=0, "Controll channel disconnection did not delete Standard flow enrties:Check if the switch supports Emergency Mode")
+         	self.assertTrue(0!=0, "Control channel disconnection did not delete Standard flow entries:Check if the switch supports Emergency Mode")
           assertionerr = True	
         
         else :
