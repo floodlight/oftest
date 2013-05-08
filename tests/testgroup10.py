@@ -468,7 +468,7 @@ class Grp10No100(base_tests.SimpleDataPlane):
           yes_ports=[]
           try:
           	receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
-         except AssertionError : 
+          except AssertionError : 
          	self.assertTrue(0!=0, "Controll channel disconnection did not delete Standard flow enrties:Check if the switch supports Emergency Mode")
           assertionerr = True	
         
