@@ -466,7 +466,10 @@ class Grp10No100(base_tests.SimpleDataPlane):
           logging.info("Packet should not be forwarded to any dataplane port")
           no_ports=set(of_ports)
           yes_ports=[]
-          receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
+          try:
+          	receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
+         except AssertionError : 
+         	self.assertTrue(0!=0, "Controll channel disconnection did not delete Standard flow enrties:Check if the switch supports Emergency Mode")
           assertionerr = True	
         
         else :
