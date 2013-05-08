@@ -328,7 +328,9 @@ class Grp10No110(base_tests.SimpleDataPlane):
         #Clear switch state
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
-        nonstrict_delete_emer(self.controller,ofp.OFPFW_ALL)
+        rc = delete_all_flows_emer(self.controller) 
+        self.assertEqual(rc, 0, "Failed to send delete-emergency flow")
+        
         response, pkt = self.controller.poll(ofp.OFPT_ERROR, timeout=5)
         self.assertTrue(response is None, "Emergency flow mod cannot be deleted")
 
