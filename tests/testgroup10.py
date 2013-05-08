@@ -273,7 +273,7 @@ class Grp10No80(base_tests.SimpleProtocol):
             port=config["controller_port"])
         # clean_shutdown should be set to False to force quit app
         self.clean_shutdown = False
-        self.controller.initial_hello=False
+        self.controller.initial_hello=True
         self.controller.start()
         #@todo Add an option to wait for a pkt transaction to ensure version
         # compatibilty?
@@ -305,7 +305,7 @@ class Grp10No80(base_tests.SimpleProtocol):
         self.assertTrue(response is not None, 
                                'Switch is not generating Echo-Requests') 
         logging.info("Received an Echo request, waiting for echo timeout")
-        self.controller.disconnect()
+        self.controller.shutdown()
         (response1, pkt1) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
                                                timeout=25)
         self.assertTrue(response1 is not None, 
