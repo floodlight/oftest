@@ -265,7 +265,33 @@ class Grp10No80(base_tests.SimpleProtocol):
     """
     Verify Echo timeout causes connection to the controller to drop
     """ 
+    def setUp(self):
+
+        #This is almost same as setUp in SimpleProtcocol except that Echo response is set to false
+        self.controller = controller.Controller(
+            host=config["controller_host"],
+            port=config["controller_port"])
+        # clean_shutdown should be set to False to force quit app
+        self.clean_shutdown = False
+        self.controller.initial_hello=True
+        self.controller.start()
+        #@todo Add an option to wait for a pkt transaction to ensure version
+        # compatibilty?
+        self.controller.connect(timeout=20)
+        # Here, Echo response is set to False, this would trigger connection to drop and hence switch will 
+        # start sending Hello messages to start a new connection
+        self.controller.keep_alive = False
+        if not self.controller.active:
+            raise Exception("Controller startup failed")
+        if self.controller.switch_addr is None: 
+            raise Exception("Controller startup failed (no switch addr)")
+        logging.info("Connected " + str(self.controller.switch_addr))
     
+    def tearDown(self):
+        logging.info("** END TEST CASE " + str(self))
+        self.controller.shutdown()
+        if self.clean_shutdown:
+            self.controller.join()    
     @wireshark_capture    
     def runTest(self):
         logging = get_logger()
