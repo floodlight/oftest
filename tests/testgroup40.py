@@ -289,7 +289,7 @@ class Grp40No70(base_tests.SimpleProtocol):
         self.assertTrue(response.type==ofp.OFPET_FLOW_MOD_FAILED, 
                                'Error message type is not flow mod failed ') 
         self.assertTrue(response.code==ofp.OFPFMFC_BAD_EMERG_TIMEOUT, 
-                               'Error Message code is not bad emergency timeout')
+                               'Error Message code is not bad emergency timeout, please verify if the switch supports emergency mode')
         logging.info("Recieved the expected OFPT_ERROR message")
 
 class Grp40No80(base_tests.SimpleDataPlane):
