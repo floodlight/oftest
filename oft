@@ -175,7 +175,8 @@ config_default = {
     "platform_dir"       : os.path.join(root_dir, "platforms"),
     "profile_dir"        : os.path.join(root_dir, "profiles"),
     "priority"           : 0,
-    "publish"            : None
+    "publish"            : None,
+    "conformance"       : None
 }
 
 # Default test priority
@@ -285,6 +286,8 @@ def config_setup(cfg_dflt):
                       default=0)
     parser.add_option("--publish", type="string", dest="publish",
                       help="Publish test logs to specified directory")
+    parser.add_option("--conformance", type="string", dest="conformance",
+                      help="Marks tests as mandatory if defined in profile.")
 
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
@@ -362,6 +365,11 @@ def prune_tests(test_spec, test_modules):
     @param test_modules Same format as the output of load_test_modules.
     @returns Same format as the output of load_test_modules.
     """
+    from profiles import conformance
+    test_profile = []
+    if config['conformance'] in conformance.profiles:
+        test_profile = conformance.profiles[config['conformance']]['mandatory'].split(',')
+
     result = {}
     for (spec_modname, spec_testname) in parse_test_spec(test_spec):
         matched = False
@@ -370,6 +378,8 @@ def prune_tests(test_spec, test_modules):
                 for (testname, test) in tests.items():
                     if (spec_testname == None or spec_testname == testname):
                             result.setdefault(modname, (mod, {}))
+                            if testname in test_profile:
+                                test.mandatory = True
                             result[modname][1][testname] = test
                             matched = True
         if not matched:
