@@ -90,7 +90,6 @@ Current test case setup:
     Support a command line option --test-spec to choose the tests to run.
     Support test-spec "all" to specify all tests.
 """
-import aspects
 import sys
 from optparse import OptionParser
 from subprocess import Popen,PIPE
@@ -112,12 +111,8 @@ if os.path.exists(os.path.join(pydir, 'oftest')):
     
 
 import oftest
-import oftest.parse
-import ofProfile.profile
-import ofProfile.profile_decorator
 from oftest import config
 from oftest import oflog
-from oftest import testutils
 try:
     import oftest.message
 except:
@@ -570,15 +565,8 @@ for (modname, (mod, tests)) in test_modules.items():
 # exception waits for all threads to terminate which might not happen.
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-def setup_profile_decorator():
-    test_runner_decorator = ofProfile.profile_decorator.test_runner_decorator.get_instance()
-    aspects.with_wrap(test_runner_decorator.around_method,unittest.TextTestRunner.run)
-
 if __name__ == "__main__":
     logging.info("*** TEST RUN START: " + time.asctime())
-
-    #setup_profile_decorator()
-    
     result = ConformanceTextTestRunner(verbosity=_verb).run(suite)
     if oftest.testutils.skipped_test_count > 0:
         ts = " tests"
