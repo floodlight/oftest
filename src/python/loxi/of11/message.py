@@ -5177,6 +5177,8 @@ stats_reply_parsers = {
     const.OFPST_PORT : port_stats_reply.unpack,
     const.OFPST_QUEUE : queue_stats_reply.unpack,
     const.OFPST_EXPERIMENTER : experimenter_stats_reply.unpack,
+    const.OFPST_GROUP : group_stats_reply.unpack,
+    const.OFPST_GROUP_DESC : group_desc_stats_reply.unpack,
 }
 
 stats_request_parsers = {
@@ -5187,6 +5189,8 @@ stats_request_parsers = {
     const.OFPST_PORT : port_stats_request.unpack,
     const.OFPST_QUEUE : queue_stats_request.unpack,
     const.OFPST_EXPERIMENTER : experimenter_stats_request.unpack,
+    const.OFPST_GROUP : group_stats_request.unpack,
+    const.OFPST_GROUP_DESC : group_desc_stats_request.unpack,
 }
 
 experimenter_parsers = {

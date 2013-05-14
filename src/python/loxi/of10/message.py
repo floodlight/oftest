@@ -690,6 +690,172 @@ class bsn_get_ip_mask_request(Message):
             q.breakable()
         q.text('}')
 
+class bsn_get_l2_table_reply(Message):
+    version = const.OFP_VERSION
+    type = const.OFPT_VENDOR
+    experimenter = 0x5c16c7
+    subtype = 14
+
+    def __init__(self, xid=None, l2_table_enable=None, l2_table_priority=None):
+        self.xid = xid
+        if l2_table_enable != None:
+            self.l2_table_enable = l2_table_enable
+        else:
+            self.l2_table_enable = 0
+        if l2_table_priority != None:
+            self.l2_table_priority = l2_table_priority
+        else:
+            self.l2_table_priority = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        packed.append(struct.pack("!B", self.l2_table_enable))
+        packed.append('\x00' * 1)
+        packed.append(struct.pack("!H", self.l2_table_priority))
+        packed.append('\x00' * 4)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = bsn_get_l2_table_reply()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read('!B')[0]
+        assert(_version == const.OFP_VERSION)
+        _type = reader.read('!B')[0]
+        assert(_type == const.OFPT_VENDOR)
+        _length = reader.read('!H')[0]
+        obj.xid = reader.read('!L')[0]
+        _experimenter = reader.read('!L')[0]
+        assert(_experimenter == 0x5c16c7)
+        _subtype = reader.read('!L')[0]
+        assert(_subtype == 14)
+        obj.l2_table_enable = reader.read('!B')[0]
+        reader.skip(1)
+        obj.l2_table_priority = reader.read('!H')[0]
+        reader.skip(4)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.l2_table_enable != other.l2_table_enable: return False
+        if self.l2_table_priority != other.l2_table_priority: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_get_l2_table_reply {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("l2_table_enable = ");
+                q.text("%#x" % self.l2_table_enable)
+                q.text(","); q.breakable()
+                q.text("l2_table_priority = ");
+                q.text("%#x" % self.l2_table_priority)
+            q.breakable()
+        q.text('}')
+
+class bsn_get_l2_table_request(Message):
+    version = const.OFP_VERSION
+    type = const.OFPT_VENDOR
+    experimenter = 0x5c16c7
+    subtype = 13
+
+    def __init__(self, xid=None):
+        self.xid = xid
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = bsn_get_l2_table_request()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read('!B')[0]
+        assert(_version == const.OFP_VERSION)
+        _type = reader.read('!B')[0]
+        assert(_type == const.OFPT_VENDOR)
+        _length = reader.read('!H')[0]
+        obj.xid = reader.read('!L')[0]
+        _experimenter = reader.read('!L')[0]
+        assert(_experimenter == 0x5c16c7)
+        _subtype = reader.read('!L')[0]
+        assert(_subtype == 13)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_get_l2_table_request {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+            q.breakable()
+        q.text('}')
+
 class bsn_get_mirroring_reply(Message):
     version = const.OFP_VERSION
     type = const.OFPT_VENDOR
@@ -946,6 +1112,101 @@ class bsn_set_ip_mask(Message):
                 q.text(","); q.breakable()
                 q.text("mask = ");
                 q.text("%#x" % self.mask)
+            q.breakable()
+        q.text('}')
+
+class bsn_set_l2_table(Message):
+    version = const.OFP_VERSION
+    type = const.OFPT_VENDOR
+    experimenter = 0x5c16c7
+    subtype = 12
+
+    def __init__(self, xid=None, l2_table_enable=None, l2_table_priority=None):
+        self.xid = xid
+        if l2_table_enable != None:
+            self.l2_table_enable = l2_table_enable
+        else:
+            self.l2_table_enable = 0
+        if l2_table_priority != None:
+            self.l2_table_priority = l2_table_priority
+        else:
+            self.l2_table_priority = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        packed.append(struct.pack("!B", self.l2_table_enable))
+        packed.append('\x00' * 1)
+        packed.append(struct.pack("!H", self.l2_table_priority))
+        packed.append('\x00' * 4)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = bsn_set_l2_table()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read('!B')[0]
+        assert(_version == const.OFP_VERSION)
+        _type = reader.read('!B')[0]
+        assert(_type == const.OFPT_VENDOR)
+        _length = reader.read('!H')[0]
+        obj.xid = reader.read('!L')[0]
+        _experimenter = reader.read('!L')[0]
+        assert(_experimenter == 0x5c16c7)
+        _subtype = reader.read('!L')[0]
+        assert(_subtype == 12)
+        obj.l2_table_enable = reader.read('!B')[0]
+        reader.skip(1)
+        obj.l2_table_priority = reader.read('!H')[0]
+        reader.skip(4)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.l2_table_enable != other.l2_table_enable: return False
+        if self.l2_table_priority != other.l2_table_priority: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_set_l2_table {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("l2_table_enable = ");
+                q.text("%#x" % self.l2_table_enable)
+                q.text(","); q.breakable()
+                q.text("l2_table_priority = ");
+                q.text("%#x" % self.l2_table_priority)
             q.breakable()
         q.text('}')
 
@@ -5142,9 +5403,12 @@ experimenter_parsers = {
         9: bsn_get_interfaces_request.unpack,
         2: bsn_get_ip_mask_reply.unpack,
         1: bsn_get_ip_mask_request.unpack,
+        14: bsn_get_l2_table_reply.unpack,
+        13: bsn_get_l2_table_request.unpack,
         5: bsn_get_mirroring_reply.unpack,
         4: bsn_get_mirroring_request.unpack,
         0: bsn_set_ip_mask.unpack,
+        12: bsn_set_l2_table.unpack,
         3: bsn_set_mirroring.unpack,
         11: bsn_set_pktin_suppression.unpack,
         6: bsn_shell_command.unpack,

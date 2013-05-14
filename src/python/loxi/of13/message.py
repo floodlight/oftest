@@ -6756,7 +6756,7 @@ flow_mod_parsers = {
     const.OFPFC_DELETE_STRICT : flow_delete_strict.unpack,
 }
 
-
+# TODO OF 1.3 multipart messages
 
 experimenter_parsers = {
 }
