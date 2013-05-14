@@ -3,6 +3,7 @@ Utility parsing functions
 """
 
 import sys
+import socket
 try:
     import scapy.all as scapy
 except:
@@ -44,8 +45,7 @@ def parse_ipv6(ip_str):
 
     Parse a textual IPv6 address and return a 16 byte binary string.
     """
-    import ipaddr # TODO remove dependency on ipaddr?
-    return str(ipaddr.IPv6Address(ip_str).packed)
+    return socket.inet_pton(socket.AF_INET6, ip_str)
 
 def packet_type_classify(ether):
     try:
