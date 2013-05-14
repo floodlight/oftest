@@ -28,9 +28,9 @@ class EchoWithData(base_tests.SimpleProtocol):
         request = ofp.message.echo_request()
         request.data = 'OpenFlow Will Rule The World'
         response, _ = self.controller.transact(request)
-        self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,
+        self.assertEqual(response.type, ofp.OFPT_ECHO_REPLY,
                          'response is not echo_reply')
-        self.assertEqual(request.header.xid, response.header.xid,
+        self.assertEqual(request.xid, response.xid,
                          'response xid != request xid')
         self.assertEqual(request.data, response.data,
                          'response data does not match request')
@@ -45,9 +45,8 @@ class FeaturesRequest(base_tests.SimpleProtocol):
         request = ofp.message.features_request()
         response,_ = self.controller.transact(request)
         self.assertTrue(response,"Got no features_reply to features_request")
-        self.assertEqual(response.header.type, ofp.OFPT_FEATURES_REPLY,
-                         'response is not echo_reply')
-        self.assertTrue(len(response) >= 32, "features_reply too short: %d < 32 " % len(response))
+        self.assertEqual(response.type, ofp.OFPT_FEATURES_REPLY,
+                         'response is not features_reply')
        
 class PacketIn(base_tests.SimpleDataPlane):
     """
@@ -69,7 +68,7 @@ class PacketIn(base_tests.SimpleDataPlane):
             pkt = testutils.simple_tcp_packet()
             self.dataplane.send(of_port, str(pkt))
             #@todo Check for unexpected messages?
-            (response, _) = self.controller.poll(ofp.OFPT_PACKET_IN, 2)
+            (response, _) = self.controller.poll(ofp.OFPT_PACKET_IN)
 
             self.assertTrue(response is not None, 
                             'Packet in message not received on port ' + 
@@ -107,10 +106,11 @@ class PacketOut(base_tests.SimpleDataPlane):
         for dp_port in of_ports:
             msg = ofp.message.packet_out()
             msg.in_port = ofp.OFPP_CONTROLLER
+            msg.buffer_id = 0xffffffff
             msg.data = str(outpkt)
             act = ofp.action.output()
             act.port = dp_port
-            self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
+            msg.actions.append(act)
 
             logging.info("PacketOut to: " + str(dp_port))
             rv = self.controller.message_send(msg)
@@ -137,7 +137,7 @@ class FlowRemoveAll(base_tests.SimpleProtocol):
     def runTest(self):
         logging.info("Running StatsGet")
         logging.info("Inserting trial flow")
-        request = ofp.message.flow_mod()
+        request = ofp.message.flow_add()
         request.buffer_id = 0xffffffff
         for i in range(1,5):
             request.priority = i*1000
@@ -154,7 +154,7 @@ class FlowRemoveAll(base_tests.SimpleProtocol):
         response, _ = self.controller.transact(request, timeout=2)
         self.assertTrue(response is not None, "Did not get response")
         self.assertTrue(isinstance(response,ofp.message.flow_stats_reply),"Not a flow_stats_reply")
-        self.assertEqual(len(response.stats),0)
+        self.assertEqual(len(response.entries),0)
         logging.debug(response.show())
         
 
@@ -168,7 +168,7 @@ class FlowStatsGet(base_tests.SimpleProtocol):
     def runTest(self):
         logging.info("Running StatsGet")
         logging.info("Inserting trial flow")
-        request = ofp.message.flow_mod()
+        request = ofp.message.flow_add()
         request.buffer_id = 0xffffffff
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Failed to insert test flow")
@@ -201,7 +201,7 @@ class FlowMod(base_tests.SimpleProtocol):
 
     def runTest(self):
         logging.info("Running " + str(self))
-        request = ofp.message.flow_mod()
+        request = ofp.message.flow_add()
         request.buffer_id = 0xffffffff
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Error installing flow mod")

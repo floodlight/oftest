@@ -19,6 +19,7 @@ from oftest import config
 import ofp
 import oftest.oft12.testutils as testutils
 import oftest.base_tests as base_tests
+import oftest.parse
 
 TEST_VID_DEFAULT = 2
 
@@ -48,22 +49,21 @@ class MatchIPv6Simple(base_tests.SimpleDataPlane):
 
         # Add entry match 
 
-        request = ofp.message.flow_mod()
-        request.match.type = ofp.OFPMT_OXM
-        port = ofp.match.in_port(of_ports[0])
-        eth_type = ofp.match.eth_type(IPV6_ETHERTYPE)
-        eth_dst = ofp.match.eth_dst(ofp.parse.parse_mac("00:01:02:03:04:05"))
-        ipv6_src = ofp.match.ipv6_src(ipaddr.IPv6Address('fe80::2420:52ff:fe8f:5189'))
+        request = ofp.message.flow_add()
+        port = ofp.oxm.in_port(of_ports[0])
+        eth_type = ofp.oxm.eth_type(IPV6_ETHERTYPE)
+        eth_dst = ofp.oxm.eth_dst(oftest.parse.parse_mac("00:01:02:03:04:05"))
+        ipv6_src = ofp.oxm.ipv6_src(oftest.parse.parse_ipv6('fe80::2420:52ff:fe8f:5189'))
         
-        request.match_fields.tlvs.append(port)
-        request.match_fields.tlvs.append(eth_type)
-        request.match_fields.tlvs.append(eth_dst)
-        request.match_fields.tlvs.append(ipv6_src)
+        request.match.oxm_list.append(port)
+        request.match.oxm_list.append(eth_type)
+        request.match.oxm_list.append(eth_dst)
+        request.match.oxm_list.append(ipv6_src)
         act = ofp.action.output()
         act.port = of_ports[3]
-        inst = ofp.instruction.instruction_apply_actions()
-        inst.actions.add(act)
-        request.instructions.add(inst)
+        inst = ofp.instruction.apply_actions()
+        inst.actions.append(act)
+        request.instructions.append(inst)
         request.buffer_id = 0xffffffff
         
         request.priority = 1000
@@ -103,25 +103,24 @@ class MatchICMPv6Simple(base_tests.SimpleDataPlane):
 
         # Add entry match 
 
-        request = ofp.message.flow_mod()
-        request.match.type = ofp.OFPMT_OXM
-        port = ofp.match.in_port(of_ports[0])
-        eth_type = ofp.match.eth_type(IPV6_ETHERTYPE)
-        ipv6_src = ofp.match.ipv6_src(ipaddr.IPv6Address('fe80::2420:52ff:fe8f:5189'))
-        ip_proto = ofp.match.ip_proto(ICMPV6_PROTOCOL)
-        icmpv6_type = ofp.match.icmpv6_type(128)
+        request = ofp.message.flow_add()
+        port = ofp.oxm.in_port(of_ports[0])
+        eth_type = ofp.oxm.eth_type(IPV6_ETHERTYPE)
+        ipv6_src = ofp.oxm.ipv6_src(oftest.parse.parse_ipv6('fe80::2420:52ff:fe8f:5189'))
+        ip_proto = ofp.oxm.ip_proto(ICMPV6_PROTOCOL)
+        icmpv6_type = ofp.oxm.icmpv6_type(128)
         
-        request.match_fields.tlvs.append(port)
-        request.match_fields.tlvs.append(eth_type)
-        request.match_fields.tlvs.append(ipv6_src)
-        request.match_fields.tlvs.append(ip_proto)
-        request.match_fields.tlvs.append(icmpv6_type)
+        request.match.oxm_list.append(port)
+        request.match.oxm_list.append(eth_type)
+        request.match.oxm_list.append(ipv6_src)
+        request.match.oxm_list.append(ip_proto)
+        request.match.oxm_list.append(icmpv6_type)
         
         act = ofp.action.output()
         act.port = of_ports[3]
-        inst = ofp.instruction.instruction_apply_actions()
-        inst.actions.add(act)
-        request.instructions.add(inst)
+        inst = ofp.instruction.apply_actions()
+        inst.actions.append(act)
+        request.instructions.append(inst)
         request.buffer_id = 0xffffffff
         
         request.priority = 1000
@@ -159,29 +158,28 @@ class IPv6SetField(base_tests.SimpleDataPlane):
 
         # Add entry match 
 
-        request = ofp.message.flow_mod()
-        request.match.type = ofp.OFPMT_OXM
-        port = ofp.match.in_port(of_ports[0])
-        eth_type = ofp.match.eth_type(IPV6_ETHERTYPE)
-        ipv6_src = ofp.match.ipv6_src(ipaddr.IPv6Address('fe80::2420:52ff:fe8f:5189'))
+        request = ofp.message.flow_add()
+        port = ofp.oxm.in_port(of_ports[0])
+        eth_type = ofp.oxm.eth_type(IPV6_ETHERTYPE)
+        ipv6_src = ofp.oxm.ipv6_src(oftest.parse.parse_ipv6('fe80::2420:52ff:fe8f:5189'))
         
-        request.match_fields.tlvs.append(port)
-        request.match_fields.tlvs.append(eth_type)
-        request.match_fields.tlvs.append(ipv6_src)
+        request.match.oxm_list.append(port)
+        request.match.oxm_list.append(eth_type)
+        request.match.oxm_list.append(ipv6_src)
         
-        field_2b_set = ofp.match.ipv6_dst(ipaddr.IPv6Address('fe80::2420:52ff:fe8f:DDDD'))
+        field_2b_set = ofp.oxm.ipv6_dst(oftest.parse.parse_ipv6('fe80::2420:52ff:fe8f:DDDD'))
         act_setfield = ofp.action.set_field()
-        act_setfield.field = field_2b_set
+        act_setfield.field = field_2b_set.pack() # HACK
         
 #       TODO: insert action set field properly
         act_out = ofp.action.output()
         act_out.port = of_ports[3]
         
         
-        inst = ofp.instruction.instruction_apply_actions()
-        inst.actions.add(act_setfield)
-        inst.actions.add(act_out)
-        request.instructions.add(inst)
+        inst = ofp.instruction.apply_actions()
+        inst.actions.append(act_setfield)
+        inst.actions.append(act_out)
+        request.instructions.append(inst)
         request.buffer_id = 0xffffffff
         
         request.priority = 1000
@@ -224,26 +222,26 @@ class MatchIPv6TCP(base_tests.SimpleDataPlane):
 
         # Add entry match 
 
-        request = ofp.message.flow_mod()
+        request = ofp.message.flow_add()
         request.match.type = ofp.OFPMT_OXM
-        port = ofp.match.in_port(of_ports[0])
-        eth_type = ofp.match.eth_type(IPV6_ETHERTYPE)
-        ipv6_src = ofp.match.ipv6_src(ipaddr.IPv6Address('fe80::2420:52ff:fe8f:5189'))        
-        ip_proto = ofp.match.ip_proto(TCP_PROTOCOL)
-        tcp_port = ofp.match.tcp_src(80)
+        port = ofp.oxm.in_port(of_ports[0])
+        eth_type = ofp.oxm.eth_type(IPV6_ETHERTYPE)
+        ipv6_src = ofp.oxm.ipv6_src(oftest.parse.parse_ipv6('fe80::2420:52ff:fe8f:5189'))
+        ip_proto = ofp.oxm.ip_proto(TCP_PROTOCOL)
+        tcp_port = ofp.oxm.tcp_src(80)
         
         
-        request.match_fields.tlvs.append(port)
-        request.match_fields.tlvs.append(eth_type)
-        request.match_fields.tlvs.append(ipv6_src)
-        request.match_fields.tlvs.append(ip_proto)
-        request.match_fields.tlvs.append(tcp_port)
+        request.match.oxm_list.append(port)
+        request.match.oxm_list.append(eth_type)
+        request.match.oxm_list.append(ipv6_src)
+        request.match.oxm_list.append(ip_proto)
+        request.match.oxm_list.append(tcp_port)
         
         act = ofp.action.output()
         act.port = of_ports[3]
-        inst = ofp.instruction.instruction_apply_actions()
-        inst.actions.add(act)
-        request.instructions.add(inst)
+        inst = ofp.instruction.apply_actions()
+        inst.actions.append(act)
+        request.instructions.append(inst)
         request.buffer_id = 0xffffffff
         
         request.priority = 1000

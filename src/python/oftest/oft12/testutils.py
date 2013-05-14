@@ -4,12 +4,8 @@ import logging
 from cStringIO import StringIO
 #import types
 
-import of12.cstruct as ofp
-import of12.match as oxm_field
-import of12.message as message
-import of12.action as action
-import of12.parse as parse
-import of12.instruction as instruction
+import ofp
+import oftest.parse as parse
 from packet import Packet
 
 try:
@@ -55,7 +51,7 @@ def initialize_table_config(ctrl, logger):
     @param ctrl The controller object for the test
     """
     logger.info("Initializing all table configs")
-    request = message.table_mod()  
+    request = ofp.message.table_mod()  
     request.config = ofp.OFPTC_TABLE_MISS_CONTROLLER
     rv = 0
     for table_id in [0, 1, 2, 3, 4, 5, 6, 7]:
@@ -82,10 +78,9 @@ def delete_all_flows_one_table(ctrl, logger, table_id=0):
     @param table_id Table ID
     """
     logger.info("Deleting all flows on table ID: " + str(table_id))
-    msg = message.flow_mod()
+    msg = ofp.message.flow_delete()
     msg.out_port = ofp.OFPP_ANY
     msg.out_group = ofp.OFPG_ANY
-    msg.command = ofp.OFPFC_DELETE
     msg.buffer_id = 0xffffffff
     msg.table_id = table_id
     logger.debug(msg.show())
@@ -100,7 +95,7 @@ def delete_all_groups(ctrl, logger):
     """
     
     logger.info("Deleting all groups")
-    msg = message.group_mod()
+    msg = ofp.message.group_mod()
     msg.group_id = ofp.OFPG_ALL
     msg.command = ofp.OFPGC_DELETE
     logger.debug(msg.show())
@@ -357,7 +352,7 @@ def simple_icmpv6_packet(pktlen=100,
 
 
 def do_barrier(ctrl):
-    b = message.barrier_request()
+    b = ofp.message.barrier_request()
     ctrl.transact(b)
 
 
@@ -371,7 +366,7 @@ def port_config_get(controller, port_no, logger):
     @returns (hwaddr, config, advert) The hwaddress, configuration and
     advertised values
     """
-    request = message.features_request()
+    request = ofp.message.features_request()
     reply, _ = controller.transact(request, timeout=2)
     if reply is None:
         logger.warn("Get feature request failed")
@@ -393,7 +388,7 @@ def port_config_set(controller, port_no, config, mask, logger):
     configuration value according to config and mask
     """
     logger.info("Setting port " + str(port_no) + " to config " + str(config))
-    request = message.features_request()
+    request = ofp.message.features_request()
     reply, _ = controller.transact(request, timeout=2)
     if reply is None:
         return -1
@@ -403,7 +398,7 @@ def port_config_set(controller, port_no, config, mask, logger):
             break
     if idx >= len(reply.ports):
         return -1
-    mod = message.port_mod()
+    mod = ofp.message.port_mod()
     mod.port_no = port_no
     mod.hw_addr = reply.ports[idx].hw_addr
     mod.config = config
@@ -491,7 +486,7 @@ def packetin_verify(parent, exp_pkt):
     """
     (response, _) = parent.controller.poll(ofp.OFPT_PACKET_IN, 2)
 
-    parent.assertTrue(response is not None, 'Packet in message not received')
+    parent.assertTrue(response is not None, 'Packet in ofp.message not received')
     if str(exp_pkt) != response.data:
         logging.debug("pkt  len " + str(len(str(exp_pkt))) + ": "
                             + str(exp_pkt).encode('hex'))
@@ -567,7 +562,7 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
     @param byte_count If >= 0, verify byte count
     """
     (response, _) = parent.controller.poll(ofp.OFPT_FLOW_REMOVED, 2)
-    parent.assertTrue(response is not None, 'No flow removed message received')
+    parent.assertTrue(response is not None, 'No flow removed ofp.message received')
 
     if request is None:
         return
@@ -608,24 +603,24 @@ def flow_msg_create(parent, pkt, ing_port=0, match_fields=None, instruction_list
     See flow_match_test for other parameter descriptoins
    
     if egr_queue is set
-             append an out_queue action to egr_queue to the actions_list
+             append an out_queue ofp.action to egr_queue to the actions_list
     else if egr_port is set:  
-             append an output action to egr_port to the actions_list
+             append an output ofp.action to egr_port to the actions_list
     if the instruction_list is empty, 
-        append an APPLY instruction to it
-    Add the action_list to the first write or apply instruction
+        append an APPLY ofp.instruction to it
+    Add the action_list to the first write or apply ofp.instruction
     
-    @param egr_queue if not None, make the output an enqueue action
+    @param egr_queue if not None, make the output an enqueue ofp.action
     @param table_id Table ID for writing a flow_mod
     """
 
     if match_fields is None:
         match_fields = parse.packet_to_flow_match(pkt)
     parent.assertTrue(match_fields is not None, "Flow match from pkt failed")
-    in_port = oxm_field.in_port(ing_port)
-    match_fields.add(in_port) 
-    request = message.flow_mod()
-    request.match_fields = match_fields
+    in_port = ofp.oxm.in_port(ing_port)
+    match_fields.oxm_list.append(in_port) 
+    request = ofp.message.flow_add()
+    request.match= match_fields
     request.buffer_id = 0xffffffff
     request.table_id = table_id
     
@@ -638,21 +633,21 @@ def flow_msg_create(parent, pkt, ing_port=0, match_fields=None, instruction_list
     if instruction_list is None:
         instruction_list = []
     
-    # Set up output/enqueue action if directed
+    # Set up output/enqueue ofp.action if directed
     if egr_queue is not None:
         parent.assertTrue(egr_port is not None, "Egress port not set")
-        act = action.set_queue()
+        act = ofp.action.set_queue()
         act.port = egr_port
         act.queue_id = egr_queue
         action_list.append(act)
     elif egr_port is not None:
-        act = action.output()
+        act = ofp.action.output()
         act.port = egr_port
         action_list.append(act)
         
     inst = None
     if len(instruction_list) == 0: 
-        inst = instruction.instruction_apply_actions()
+        inst = ofp.instruction.apply_actions()
         instruction_list.append(inst)
     else:
         for inst in instruction_list:
@@ -660,26 +655,19 @@ def flow_msg_create(parent, pkt, ing_port=0, match_fields=None, instruction_list
                 inst.type == ofp.OFPIT_APPLY_ACTIONS):
                 break
 
+
     # add all the actions to the last inst
-    for act in action_list:
-        logging.debug("Adding action " + act.show())
-        rv = inst.actions.add(act)
-        parent.assertTrue(rv, "Could not add action" + act.show())
-    # NOTE that the inst has already been added to the flow_mod
+    inst.actions += action_list
 
     # add all the instrutions to the flow_mod
-    for i in instruction_list: 
-        logging.debug("Adding instruction " + inst.show())
-        rv = request.instructions.add(i)
-        parent.assertTrue(rv, "Could not add instruction " + i.show())
-
+    request.instructions += instruction_list
  
     logging.debug(request.show())
     return request
 
 def flow_msg_install(parent, request, clear_table=True):
     """
-    Install a flow mod message in the switch
+    Install a flow mod ofp.message in the switch
 
     @param parent Must implement controller, assertEqual, assertTrue
     @param request The request, all set to go
@@ -712,18 +700,18 @@ def error_verify(parent, exp_type, exp_code):
     @param exp_code Expected error code
     """
     (response, raw) = parent.controller.poll(ofp.OFPT_ERROR, 2)
-    parent.assertTrue(response is not None, 'No error message received')
+    parent.assertTrue(response is not None, 'No error ofp.message received')
 
     if (exp_type is None) or (exp_code is None):
         logging.debug("Parametrs are not sufficient")
         return
 
     parent.assertEqual(exp_type, response.type,
-                       'Error message type mismatch: ' +
+                       'Error ofp.message type mismatch: ' +
                        str(exp_type) + " != " +
                        str(response.type))
     parent.assertEqual(exp_code, response.code,
-                       'Error message code mismatch: ' +
+                       'Error ofp.message code mismatch: ' +
                        str(exp_code) + " != " +
                        str(response.code))
 
@@ -797,7 +785,7 @@ def flow_match_test(parent, port_map, match=None, wildcards=0,
     @param dl_vlan If not -1, and pkt is None, create a pkt w/ VLAN tag
     @param exp_pkt If not None, use this as the expected output pkt; els use pkt
     @param action_list Additional actions to add to flow mod
-    @param check_expire Check for flow expiration message
+    @param check_expire Check for flow expiration ofp.message
     """
     of_ports = port_map.keys()
     of_ports.sort()
@@ -881,7 +869,7 @@ def flow_match_test_port_pair_vlan(parent, ing_port, egr_port, wildcards=0,
                     exp_pkt = simple_tcp_packet(
                                 vlan_tags=[{'type': exp_vlan_type, 'vid': exp_vid, 'pcp': exp_pcp}])
         else:
-            #subtract action
+            #subtract ofp.action
             if dl_vlan_int >= 0:
                 exp_pkt = simple_tcp_packet(
                             vlan_tags=[{'vid': dl_vlan_int, 'pcp': dl_vlan_pcp_int}])
@@ -919,7 +907,7 @@ def flow_match_test_port_pair_vlan(parent, ing_port, egr_port, wildcards=0,
         elif exp_msg is ofp.OFPT_ERROR:
             error_verify(parent, exp_msg_type, exp_msg_code)
         else:
-            parent.assertTrue(0, "Rcv: Unexpected Message: " + str(exp_msg))
+            parent.assertTrue(0, "Rcv: Unexpected ofp.message: " + str(exp_msg))
 
         (_, rcv_pkt, _) = parent.dataplane.poll(timeout=1)
         parent.assertFalse(rcv_pkt is not None, "Packet on dataplane")
@@ -958,13 +946,13 @@ def flow_match_test_vlan(parent, port_map, wildcards=0,
     @param match_exp Set whether packet is expected to receive
     @param add_tag_exp If True, expected_packet has an additional vlan tag,
     If not, expected_packet's vlan tag is replaced as specified
-    @param exp_msg Expected message
-    @param exp_msg_type Expected message type associated with the message
-    @param exp_msg_code Expected message code associated with the msg_type
+    @param exp_msg Expected ofp.message
+    @param exp_msg_type Expected ofp.message type associated with the ofp.message
+    @param exp_msg_code Expected ofp.message code associated with the msg_type
     @param pkt If not None, use this packet for ingress
     @param exp_pkt If not None, use this as the expected output pkt
     @param action_list Additional actions to add to flow mod
-    @param check_expire Check for flow expiration message
+    @param check_expire Check for flow expiration ofp.message
     """
     of_ports = port_map.keys()
     of_ports.sort()
@@ -1029,7 +1017,7 @@ def test_param_get(config, key, default=None):
 
 def action_generate(parent, field_to_mod, mod_field_vals):
     """
-    Create an action to modify the field indicated in field_to_mod
+    Create an ofp.action to modify the field indicated in field_to_mod
 
     @param parent Must implement, assertTrue
     @param field_to_mod The field to modify as a string name
@@ -1042,41 +1030,41 @@ def action_generate(parent, field_to_mod, mod_field_vals):
         return None
 
     if field_to_mod == 'dl_dst':
-        act = action.set_dl_dst()
+        act = ofp.action.set_dl_dst()
         act.dl_addr = parse.parse_mac(mod_field_vals['dl_dst'])
     elif field_to_mod == 'dl_src':
-        act = action.set_dl_src()
+        act = ofp.action.set_dl_src()
         act.dl_addr = parse.parse_mac(mod_field_vals['dl_src'])
     elif field_to_mod == 'vlan_tags':
         if len(mod_field_vals['vlan_tags']):
-            act = action.pop_vlan()
+            act = ofp.action.pop_vlan()
         else:
             pass
 #    elif field_to_mod == 'dl_vlan_enable':
 #        if not mod_field_vals['dl_vlan_enable']: # Strip VLAN tag
-#            act = action.pop_vlan()
+#            act = ofp.action.pop_vlan()
 #        # Add VLAN tag is handled by dl_vlan field
 #        # Will return None in this case
 #    elif field_to_mod == 'dl_vlan':
-#        act = action.set_vlan_vid()
+#        act = ofp.action.set_vlan_vid()
 #        act.vlan_vid = mod_field_vals['dl_vlan']
 #    elif field_to_mod == 'dl_vlan_pcp':
-#        act = action.set_vlan_pcp()
+#        act = ofp.action.set_vlan_pcp()
 #        act.vlan_pcp = mod_field_vals['dl_vlan_pcp']
     elif field_to_mod == 'ip_src':
-        act = action.set_nw_src()
+        act = ofp.action.set_nw_src()
         act.nw_addr = parse.parse_ip(mod_field_vals['ip_src'])
     elif field_to_mod == 'ip_dst':
-        act = action.set_nw_dst()
+        act = ofp.action.set_nw_dst()
         act.nw_addr = parse.parse_ip(mod_field_vals['ip_dst'])
     elif field_to_mod == 'ip_tos':
-        act = action.set_nw_tos()
+        act = ofp.action.set_nw_tos()
         act.nw_tos = mod_field_vals['ip_tos']
     elif field_to_mod == 'tcp_sport':
-        act = action.set_tp_src()
+        act = ofp.action.set_tp_src()
         act.tp_port = mod_field_vals['tcp_sport']
     elif field_to_mod == 'tcp_dport':
-        act = action.set_tp_dst()
+        act = ofp.action.set_tp_dst()
         act.tp_port = mod_field_vals['tcp_dport']
     else:
         parent.assertTrue(0, "Unknown field to modify: " + str(field_to_mod))
@@ -1086,7 +1074,7 @@ def action_generate(parent, field_to_mod, mod_field_vals):
 def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={}, 
                      mod_fields={}, check_test_params=False):
     """
-    Set up the ingress and expected packet and action list for a test
+    Set up the ingress and expected packet and ofp.action list for a test
 
     @param parent Must implement, assertTrue, config hash and logger
     @param start_field_values Field values to use for ingress packet (optional)
@@ -1095,7 +1083,7 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
     @params check_test_params If True, will check the parameters vid, add_vlan
     and strip_vlan from the command line.
 
-    Returns a triple:  pkt-to-send, expected-pkt, action-list
+    Returns a triple:  pkt-to-send, expected-pkt, ofp.action-list
     """
 
     new_actions = []
@@ -1184,7 +1172,7 @@ def wildcard_all_set(match):
 
 def skip_message_emit(parent, s):
     """
-    Print out a 'skipped' message to stderr
+    Print out a 'skipped' ofp.message to stderr
 
     @param s The string to print out to the log file
     @param parent Must implement config and logger objects
@@ -1199,11 +1187,11 @@ def skip_message_emit(parent, s):
         sys.stderr.write("(S)")
 
 def do_echo_request_reply_test(test,controller):
-        request = message.echo_request()
+        request = ofp.message.echo_request()
         response, _ = controller.transact(request)
-        test.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,
+        test.assertEqual(response.type, ofp.OFPT_ECHO_REPLY,
                          'response is not echo_reply')
-        test.assertEqual(request.header.xid, response.header.xid,
+        test.assertEqual(request.xid, response.xid,
                          'response xid != request xid')
         test.assertEqual(len(response.data), 0, 'response data non-empty')
 
@@ -1399,7 +1387,7 @@ def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
         elif exp_msg == ofp.OFPT_ERROR:
             error_verify(parent, exp_msg_type, exp_msg_code)
         else:
-            parent.assertTrue(0, "Rcv: Unexpected Message: " + str(exp_msg))
+            parent.assertTrue(0, "Rcv: Unexpected ofp.message: " + str(exp_msg))
         (_, rcv_pkt, _) = parent.dataplane.poll(timeout=1)
         parent.assertFalse(rcv_pkt is not None, "Packet on dataplane")
 
@@ -1446,13 +1434,13 @@ def flow_match_test_mpls(parent, port_map, wildcards=0,
     @param match_exp Set whether packet is expected to receive
     @param add_tag_exp If True, expected_packet has an additional MPLS shim,
     If not expected_packet's MPLS shim is replaced as specified
-    @param exp_msg Expected message
-    @param exp_msg_type Expected message type associated with the message
-    @param exp_msg_code Expected message code associated with the msg_type
+    @param exp_msg Expected ofp.message
+    @param exp_msg_type Expected ofp.message type associated with the ofp.message
+    @param exp_msg_code Expected ofp.message code associated with the msg_type
     @param pkt If not None, use this packet for ingress
     @param exp_pkt If not None, use this as the expected output pkt; els use pkt
     @param action_list Additional actions to add to flow mod
-    @param check_expire Check for flow expiration message
+    @param check_expire Check for flow expiration ofp.message
     """
     of_ports = port_map.keys()
     of_ports.sort()
@@ -1501,7 +1489,7 @@ def flow_stats_get(parent, match_fields = None):
     """ Get the flow_stats from the switch
     Test the response to make sure it's really a flow_stats object
     """
-    request = message.flow_stats_request()
+    request = ofp.message.flow_stats_request()
     request.out_port = ofp.OFPP_ANY
     request.out_group = ofp.OFPG_ANY
     request.table_id = 0xff
@@ -1509,6 +1497,6 @@ def flow_stats_get(parent, match_fields = None):
         request.match_fields = match_fields
     response, _ = parent.controller.transact(request, timeout=2)
     parent.assertTrue(response is not None, "Did not get response")
-    parent.assertTrue(isinstance(response,message.flow_stats_reply),
+    parent.assertTrue(isinstance(response,ofp.message.flow_stats_reply),
                       "Expected a flow_stats_reply, but didn't get it")
     return response

@@ -4,9 +4,10 @@ Group table test cases.
 import logging
 
 from oftest import config
-import of12 as ofp
+import ofp
 import oftest.oft12.testutils as testutils
 import oftest.base_tests as base_tests
+import oftest.parse
 
 def create_group_desc_stats_req():
     # XXX Zoltan: hack, remove if message module is fixed
@@ -28,10 +29,10 @@ def create_group_mod_msg(command = ofp.OFPGC_ADD, type = ofp.OFPGT_ALL,
                group_id = 0, buckets = []):
     m = ofp.message.group_mod()
     m.command = command
-    m.type = type
+    m.group_type = type
     m.group_id = group_id
     for b in buckets:
-        m.buckets.add(b)
+        m.buckets.append(b)
 
     return m
 
@@ -39,12 +40,12 @@ def create_group_mod_msg(command = ofp.OFPGC_ADD, type = ofp.OFPGT_ALL,
 
 # XXX Zoltan: watch_port/_group off ?
 def create_bucket(weight = 0, watch_port = 0, watch_group = 0, actions=[]):
-    b = ofp.bucket.bucket()
+    b = ofp.bucket()
     b.weight = weight
     b.watch_port = watch_port
     b.watch_group = watch_group
     for a in actions:
-        b.actions.add(a)
+        b.actions.append(a)
 
     return b
 
@@ -62,36 +63,35 @@ def create_action(**kwargs):
         return act
     if a == ofp.OFPAT_SET_FIELD:
         port = kwargs.get('tcp_sport', 0)
-        field_2b_set = ofp.match.tcp_src(port)
+        field_2b_set = ofp.oxm.tcp_src(port)
         act = ofp.action.set_field()
-        act.field = field_2b_set
+        act.field = field_2b_set.pack() + '\x00' * 6 # HACK
         return act;
 
 
 
 def create_flow_msg(packet = None, in_port = None, match = None, apply_action_list = []):
 
-    apply_inst = ofp.instruction.instruction_apply_actions()
+    apply_inst = ofp.instruction.apply_actions()
 
     if apply_action_list is not None:
         for act in apply_action_list:
-            apply_inst.actions.add(act)
+            apply_inst.actions.append(act)
 
-    request = ofp.message.flow_mod()
-    request.match.type = ofp.OFPMT_OXM
+    request = ofp.message.flow_add()
 
     if match is None:
-        match = ofp.parse.packet_to_flow_match(packet)
+        match = oftest.parse.packet_to_flow_match(packet)
     
-    request.match_fields = match
+    request.match = match
     
     if in_port != None:
-        match_port = testutils.oxm_field.in_port(in_port)
-        request.match_fields.tlvs.append(match_port)
+        match_port = ofp.oxm.in_port(in_port)
+        request.match.oxm_list.append(match_port)
     request.buffer_id = 0xffffffff
     request.priority = 1000
     
-    request.instructions.add(apply_inst)
+    request.instructions.append(apply_inst)
 
     return request
 
@@ -130,11 +130,11 @@ class GroupTest(base_tests.SimpleDataPlane):
         self.assertTrue(response is not None, 
                         'Did not receive an error message')
 
-        self.assertEqual(response.header.type, ofp.OFPT_ERROR,
+        self.assertEqual(response.type, ofp.OFPT_ERROR,
                          'Did not receive an error message')
 
         if type != 0:
-            self.assertEqual(response.type, type,
+            self.assertEqual(response.err_type, type,
                              'Did not receive a ' + str(type) + ' type error message')
 
         if code != 0:
@@ -1024,16 +1024,14 @@ class GroupStats(GroupTest):
         self.send_ctrl_exp_reply(group_stats_req,
                                  ofp.OFPT_STATS_REPLY, 'group stat')
 
-        exp_len = ofp.OFP_HEADER_BYTES + \
-                  ofp.OFP_STATS_REPLY_BYTES + \
-                  ofp.OFP_GROUP_STATS_BYTES + \
-                  ofp.OFP_BUCKET_COUNTER_BYTES * 2
+        self.assertEqual(len(response.entries), 1, 'Incorrect number of groups')
+        self.assertEqual(len(response.entries[0].bucket_stats), 2, 'Incorrect number of groups')
+        self.assertEqual(response.entries[0].packet_count, 3, 'Incorrect group packet count')
+        self.assertEqual(response.entries[0].byte_count, 300, 'Incorrect group byte count')
+        for bucket_stat in response.entries[0].bucket_stats:
+            self.assertEqual(bucket_stat.packet_count, 3, 'Incorrect bucket packet count')
+            self.assertEqual(bucket_stat.byte_count, 300, 'Incorrect bucket byte count')
 
-        self.assertEqual(len(response), exp_len,
-                         'Received packet length does not equal expected length')
-        # XXX Zoltan: oftest group_stats_req handling needs to be fixed
-        #             right now only the expected message length is checked
-        #             responses should be checked in Wireshark
 
 
 
@@ -1103,18 +1101,28 @@ class GroupStatsAll(GroupTest):
         self.send_ctrl_exp_reply(group_stats_req,
                                  ofp.OFPT_STATS_REPLY, 'group stat')
 
-        exp_len = ofp.OFP_HEADER_BYTES + \
-                  ofp.OFP_STATS_REPLY_BYTES + \
-                  ofp.OFP_GROUP_STATS_BYTES + \
-                  ofp.OFP_BUCKET_COUNTER_BYTES * 2 + \
-                  ofp.OFP_GROUP_STATS_BYTES + \
-                  ofp.OFP_BUCKET_COUNTER_BYTES * 2
+        self.assertEqual(len(response.entries), 2)
+        group10, group20 = sorted(response.entries, key=lambda x: x.group_id)
 
-        self.assertEqual(len(response), exp_len,
-                         'Received packet length does not equal expected length')
-        # XXX Zoltan: oftest group_stats_req handling needs to be fixed
-        #             right now only the expected message length is checked
-        #             responses should be checked in Wireshark
+        # Check stats for group 10
+        self.assertEqual(group10.group_id, 10)
+        self.assertEqual(group10.ref_count, 1)
+        self.assertEqual(group10.packet_count, 2)
+        self.assertEqual(group10.byte_count, 200)
+        self.assertEqual(len(group10.bucket_stats), 2)
+        for bucket_stat in group10.bucket_stats:
+            self.assertEqual(bucket_stat.packet_count, 2)
+            self.assertEqual(bucket_stat.byte_count, 200)
+
+        # Check stats for group 20
+        self.assertEqual(group20.group_id, 20)
+        self.assertEqual(group20.ref_count, 1)
+        self.assertEqual(group20.packet_count, 3)
+        self.assertEqual(group20.byte_count, 300)
+        self.assertEqual(len(group20.bucket_stats), 2)
+        for bucket_stat in group20.bucket_stats:
+            self.assertEqual(bucket_stat.packet_count, 3)
+            self.assertEqual(bucket_stat.byte_count, 300)
 
 
 
@@ -1151,16 +1159,13 @@ class GroupDescStats(GroupTest):
         self.send_ctrl_exp_reply(group_desc_stats_req,
                                  ofp.OFPT_STATS_REPLY, 'group desc stat')
 
-        exp_len = ofp.OFP_HEADER_BYTES + \
-                  ofp.OFP_STATS_REPLY_BYTES + \
-                  ofp.OFP_GROUP_DESC_STATS_BYTES + \
-                  len(b1) + len(b2) + len(b3)
-
-        self.assertEqual(len(response), exp_len,
-                         'Received packet length does not equal expected length')
-        # XXX Zoltan: oftest group_stats_req handling needs to be fixed
-        #             right now only the expected message length is checked
-        #             responses should be checked in Wireshark
+        self.assertEquals(len(response.entries), 1)
+        group = response.entries[0]
+        self.assertEquals(group.group_id, 10)
+        self.assertEquals(len(group.buckets), 3)
+        self.assertEquals(group.buckets[0], b1)
+        self.assertEquals(group.buckets[1], b2)
+        self.assertEquals(group.buckets[2], b3)
 
 
 #@todo: A flow added with group action should increase the ref counter of the ref. group
@@ -1246,7 +1251,7 @@ class GroupFlowSelect(GroupTest):
         self.send_ctrl_exp_reply(aggr_stat_req,
                                  ofp.OFPT_STATS_REPLY, 'aggr stat')
 
-        self.assertEqual(response.stats[0].flow_count, 2,
+        self.assertEqual(response.flow_count, 2,
                          'Did not match expected flow count')
 
 class GroupFlowSelectAll(GroupTest):
@@ -1315,7 +1320,7 @@ class GroupFlowSelectAll(GroupTest):
         self.send_ctrl_exp_reply(aggr_stat_req,
                                  ofp.OFPT_STATS_REPLY, 'group desc stat')
 
-        self.assertEqual(response.stats[0].flow_count, 4,
+        self.assertEqual(response.flow_count, 4,
                          'Did not match expected flow count')
 
 
