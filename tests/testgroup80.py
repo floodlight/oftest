@@ -31,7 +31,6 @@ class Grp80No20(base_tests.SimpleDataPlane):
     """Verify switch should be able to receive OFPT_HELLO messages with body , 
         but it should ignore the contents of the body"""
 
-    @wireshark_capture 
     def setUp(self):
         logging = get_logger()
         #This is almost same as setUp in SimpleProtcocol except that intial hello is set to false
@@ -55,6 +54,7 @@ class Grp80No20(base_tests.SimpleDataPlane):
         logging.info("Connected " + str(self.controller.switch_addr))
         
         
+    @wireshark_capture 
     def runTest(self):
 
         logging.info("Running Grp80No20 HelloWithBody Test")            
