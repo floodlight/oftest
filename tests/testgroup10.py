@@ -316,6 +316,7 @@ class Grp10No110(base_tests.SimpleDataPlane):
     """
     Verify if the emergency flows stay even after control channel reconencts
     """
+    @wireshark_capture
     def runTest(self):
         logging = get_logger()
 
