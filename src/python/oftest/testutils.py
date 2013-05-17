@@ -11,8 +11,6 @@ except:
         sys.exit("Need to install scapy for packet parsing")
 
 from oftest import config
-import ofProfile.profile
-import ofProfile.profile_decorator
 import oftest.controller as controller
 import oftest.cstruct as ofp
 import oftest.message as message
@@ -380,7 +378,6 @@ def match_verify(parent, req_match, res_match):
                                " != " + str(res_match.tp_dst))
 
 def packet_to_flow_match(parent, packet):
-    #parse.packet_to_flow_match =  ofProfile.profile_decorator.packet_to_flow_match_decorator().create_decorator(parse.packet_to_flow_match)
     match = parse.packet_to_flow_match(packet)
     match.wildcards |= required_wildcards(parent)
     return match
