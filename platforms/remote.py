@@ -6,10 +6,10 @@ This platform uses physical ethernet interfaces.
 
 # Update this dictionary to suit your environment.
 remote_port_map = {
-    9 : "eth2",
-    10 : "eth3",
-    12 : "eth4",
-    11 : "eth5"
+    25 : "eth2",
+    26 : "eth3",
+    27 : "eth4",
+    28 : "eth5"
 }
 
 def platform_config_update(config):

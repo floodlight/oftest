@@ -322,7 +322,7 @@ class Grp20No90(base_tests.SimpleDataPlane):
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
-        ingress_port = of_ports[1]
+        ingress_port = of_ports[3]
 
         #Clear Switch state
         rc = delete_all_flows(self.controller)
@@ -341,7 +341,7 @@ class Grp20No90(base_tests.SimpleDataPlane):
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_PACKET_IN,
                                                timeout=2)
         self.assertTrue(response is not None, 
-                               'Packet in event is not sent to the controller') 
+                               'Packet in event is not sent to the controller')
         logging.info("Received packet_in from the switch")
 
 

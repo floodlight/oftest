@@ -1,5 +1,5 @@
 """These tests fall under Conformance Test-Suite (OF-SWITCH-1.0.0 TestCases).
-    Refer Documentation -- Detailed testing methodology 
+Refer Documentation -- Detailed testing methodology 
     <Some of test-cases are directly taken from oftest> """
 
 "Test Suite 6 --> Flow Matches"
@@ -286,9 +286,6 @@ class Grp50No60(base_tests.SimpleDataPlane):
         self.assertTrue(rc != -1, "Error installing flow mod")
     	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
     
         logging.info("Installing a flow entry with match on VLAN ID ")
           
@@ -298,6 +295,10 @@ class Grp50No60(base_tests.SimpleDataPlane):
         #Send tagged packet matching the flow i.e packet with same vlan id as in flow
         logging.info("Sending a tagged matching packet")
         self.dataplane.send(of_ports[0], str(pkt))
+
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
 
         #Verify packet implements the action specified in the flow
         logging.info("Verifying whether the packet matches the flow entry")
@@ -1209,16 +1210,18 @@ class Grp50No180(base_tests.SimpleDataPlane):
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[2]
            
+        sleep(5)
         #Insert two Overlapping Flows : Exact Match and Wildcard All.
   	logging.info("Installing a flow entry with Exact Match (low priority)")      
-        (pkt,match) = exact_match_with_prio(self,of_ports,priority=10) 
+        (pkt,match) = exact_match_with_prio(self,of_ports) 
         
 	logging.info("Installing an overlapping wildcarded flow (higher priority)")
-        (pkt2,match2) = wildcard_all(self,of_ports,priority=20)
+        #(pkt2,match2) = wildcard_all(self,of_ports,priority=20)
+        
         
         #Sending packet matching both the flows , 
         logging.info("Sending a packet matching both the flows")
-        self.dataplane.send(of_ports[0], str(pkt2))
+        self.dataplane.send(of_ports[0], str(pkt))
 
         #verify it implements the action specified in Exact Match Flow
         logging.info("Verifying whether the switch implements the actions specified in the highest priority flow entry")
