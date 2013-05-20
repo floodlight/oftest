@@ -239,7 +239,7 @@ class Grp10No50(base_tests.SimpleProtocol):
     def runTest(self):
         logging = get_logger()
 
-        logging.info("Running TestNo80 No Common Version Test")                
+        logging.info("Running TestNo50 No Common Version Test")                
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,         
                                                timeout=5)
         request = message.hello()                                               
@@ -295,7 +295,7 @@ class Grp10No80(base_tests.SimpleProtocol):
     @wireshark_capture    
     def runTest(self):
         logging = get_logger()
-        logging.info("Running TestNo90 EchoTimeout ")
+        logging.info("Running TestNo80 EchoTimeout ")
         # When the switch loses control channel , it would start retries for control channel connection by sending Hello messages
         # Hence , Polling for Echo request and then Hello Messages to verify control channel disconnection
     	(response0, pkt0) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
