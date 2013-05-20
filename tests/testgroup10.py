@@ -307,7 +307,7 @@ class Grp10No80(base_tests.SimpleProtocol):
         logging.info("Received an Echo request, waiting for echo timeout")
         self.controller.shutdown()
         (response1, pkt1) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
-                                               timeout=25)
+                                               timeout=20)
         self.assertTrue(response1 is not None, 
                                'Switch did not drop connection due to Echo Timeout') 
         logging.info("Received an OFPT_HELLO message after echo timeout")
@@ -316,6 +316,7 @@ class Grp10No110(base_tests.SimpleDataPlane):
     """
     Verify if the emergency flows stay even after control channel reconencts
     """
+    @wireshark_capture
     def runTest(self):
         logging = get_logger()
 
@@ -430,7 +431,8 @@ class Grp10No100(base_tests.SimpleDataPlane):
         logging.info("Deleting all emergency flows from the switch")
         rv = delete_all_flows_emer(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all emergency flows")
-        
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
         #Insert any standard flow entry 
         (pkt,match) = wildcard_all_except_ingress(self,of_ports)
 
@@ -509,7 +511,9 @@ class Grp10No90(base_tests.SimpleDataPlane):
         self.assertTrue(e_flow_mod.actions.add(act), "Failed to add action")
         
         rv = self.controller.message_send(e_flow_mod)
-        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertTrue(rv != -1, "Error Cannot Send flow_mod")
+        response, pkt = self.controller.poll(ofp.OFPT_ERROR, timeout=5)
+        self.assertTrue(response is None, "Unable to add emergency flows")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
             
         #Shutdown the controller 
