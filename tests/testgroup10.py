@@ -305,7 +305,6 @@ class Grp10No80(base_tests.SimpleProtocol):
         self.assertTrue(response is not None, 
                                'Switch is not generating Echo-Requests') 
         logging.info("Received an Echo request, waiting for echo timeout")
-        self.controller.shutdown()
         (response1, pkt1) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
                                                timeout=20)
         self.assertTrue(response1 is not None, 

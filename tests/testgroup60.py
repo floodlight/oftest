@@ -94,8 +94,8 @@ class Grp60No20(base_tests.SimpleDataPlane):
        
         #Send Packets matching the flow 
         logging.info("Sending 5 packets matching the flow entry")
-        num_pkts = 5 
-        byte_count = num_pkts*len(str(pkt))
+        num_pkts = 5
+        byte_count = num_pkts*(len(str(pkt))+4)
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
 
@@ -254,7 +254,7 @@ class Grp60No70(base_tests.SimpleDataPlane):
         #Send packets matching the flow.
         logging.info("Sending 5 packets matching the flow entry")
         num_pkts = 5
-        byte_count = num_pkts*len(str(pkt))
+        byte_count = num_pkts*(len(str(pkt))+4)
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
 
@@ -295,7 +295,7 @@ class Grp60No80(base_tests.SimpleDataPlane):
         #Send packets matching the flow.
         logging.info("Sending 5 packets matching the flow entry")
         num_pkts = 5
-        byte_count = num_pkts*len(str(pkt))
+        byte_count = num_pkts*(len(str(pkt))+4)
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
 
@@ -704,7 +704,7 @@ class Grp60No210(base_tests.SimpleDataPlane):
 
         new_lookup = num_sends+num_sends2+current_lookedup
         logging.info("expected_lookup:"+str(new_lookup))
-        new_matched = num_sends+current_matched
+        new_matched = num_sends2+ current_matched
         logging.info("expected_matched:"+str(new_matched))
 
         #Verify lookup_count and matched_count counters.

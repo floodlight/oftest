@@ -164,19 +164,20 @@ class Grp100No80(base_tests.SimpleProtocol):
         logging.info("Sending stats_request message..")
         stats_request = ofp.ofp_stats_request()
         header=ofp.ofp_header() 
-        header.type = ofp.OFPT_STATS_REQUEST
+        header.type = ofp.OFPT_BARRIER_REQUEST
         # normal the header length is 12bytes changed it to 18bytes
-        header.length=18;
+        header.length=5;
         packed=header.pack()+stats_request.pack()
         sleep(2)
         rv=self.controller.message_send(packed)
+        rc=self.controller.message_send(packed)
         sleep(2)
         self.assertTrue(rv != -1,"Unable to send the message")
         logging.info("Waiting for OFPT_ERROR message..")
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,         
                                                timeout=5)
         self.assertTrue(response is not None, 
-                               'Switch did not reply with expected error messge')
+                               'Switch did not reply with an error message')
         self.assertTrue(response.type==ofp.OFPET_BAD_REQUEST, 
                                'Error type is not OFPET_BAD_REQUEST') 
         self.assertTrue(response.type==ofp.OFPBRC_BAD_LEN, 

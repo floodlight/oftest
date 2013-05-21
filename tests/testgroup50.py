@@ -992,7 +992,8 @@ class Grp50No140(base_tests.SimpleDataPlane):
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
-    
+
+        sleep(5)
         logging.info("Installing a flow entry with match on L2 Header Fields")
         (pkt,match) = match_mul_l2(self,of_ports)   
 

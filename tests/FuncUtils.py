@@ -734,7 +734,6 @@ def verify_tablestats(self,expect_lookup=None,expect_match=None,expect_active=No
         sleep(1)
         
         for item in response.stats:
-
             lookedup += item.lookup_count
             matched += item.matched_count
             active += item.active_count
