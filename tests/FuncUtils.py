@@ -364,11 +364,11 @@ def match_mul_l2(self,of_ports,priority=None):
     #Generate Match_Mul_L2 flow
 
     #Create a simple eth packet and generate match on ethernet protocol flow
-    pkt_mulL2 = simple_eth_packet(dl_type= 0x0806,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:01:01:02')
+    pkt_mulL2 = simple_eth_packet(dl_src='00:01:01:01:01:01', dl_dst='00:01:01:01:01:02', dl_vlan=3)
     match = parse.packet_to_flow_match(pkt_mulL2)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
-    match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_TYPE ^ofp.OFPFW_DL_DST ^ofp.OFPFW_DL_SRC
+    match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_TYPE ^ofp.OFPFW_DL_DST ^ofp.OFPFW_DL_SRC ^ofp.OFPFW_DL_VLAN
     msg = message.flow_mod()
     msg.out_port = ofp.OFPP_NONE
     msg.command = ofp.OFPFC_ADD
