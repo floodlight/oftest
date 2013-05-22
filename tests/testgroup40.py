@@ -355,7 +355,7 @@ class Grp40No90(base_tests.SimpleDataPlane):
 
         #Send Packet matching the flow thus incrementing counters like packet_count,byte_count
         logging.info("Sending a matching packet to increment the flow counters")
-        send_packet(self,pkt,of_ports[0],of_ports[1])
+        self.dataplane.send(of_ports[0], str(pkt))
         
 	    #Verify flow counters
         logging.info("Verifying whether the flow counters have been modified")
@@ -367,7 +367,7 @@ class Grp40No90(base_tests.SimpleDataPlane):
         
         # Send Packet matching the flow-1 i.e ingress_port=port[0] and verify it is recieved on corret dataplane port i.e port[2]
         logging.info("Verifying whether the modified action is being implemented")
-        send_packet(self,pkt,of_ports[0],of_ports[2])
+        self.dataplane.send(of_ports[0],str(pkt))
         
         #Verify flow counters are preserved
         logging.info("Verifying if the flow counters have been preserved")
