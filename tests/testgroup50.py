@@ -1007,7 +1007,7 @@ class Grp50No140(base_tests.SimpleDataPlane):
 
         #Sending non matching packet (only dl_dst is different) , verify Packetin event gets triggered.
         logging.info("Sending a non matching(only DL_DST mismatch) packet")
-        pkt2 = simple_eth_packet(dl_type=0x0806,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:02:01:01');
+        pkt2 = simple_tcp_packet(dl_vlan_enable=True ,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:02:01:01' , dl_vlan=3);
         self.dataplane.send(of_ports[0], str(pkt2))
 	
         
@@ -1018,7 +1018,7 @@ class Grp50No140(base_tests.SimpleDataPlane):
 
         #Sending non matching packet (only dl_src is different) , verify Packetin event gets triggered.
         logging.info("Sending a non matching(only DL_SRC mismatch) packet")
-        pkt2 = simple_eth_packet(dl_type=0x0806,dl_src='00:01:01:01:01:02',dl_dst='00:01:01:01:01:02');
+        pkt2 = simple_tcp_packet(dl_vlan=3, dl_src='00:01:01:01:01:03',dl_dst='00:01:01:01:01:02', dl_vlan_enable=True);
         self.dataplane.send(of_ports[0], str(pkt2))
         
         logging.info("Waiting for a Packet_in message from the switch")
@@ -1028,7 +1028,7 @@ class Grp50No140(base_tests.SimpleDataPlane):
 	
         #Sending non matching packet (only ether_type is different) , verify Packetin event gets triggered.
         logging.info("Sending a non matching(only ether type mismatch) packet")
-        pkt2 = simple_eth_packet(dl_type=0x0805,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:01:01:02');
+        pkt2 = simple_tcp_packet(dl_src='00:01:01:01:01:01',dl_dst='00:01:01:01:01:02');
         self.dataplane.send(of_ports[0], str(pkt2))
         
         #Verify packet_in event gets triggered
@@ -1036,6 +1036,28 @@ class Grp50No140(base_tests.SimpleDataPlane):
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 	logging.info("Packet_in received")
+        
+        logging.info("Sending a non matching(only in_port mismatch) packet")
+        pkt2 = simple_tcp_packet(dl_vlan_enable=True, dl_src='00:01:01:01:01:01',dl_dst='00:01:01:01:01:02', dl_vlan=3);
+        self.dataplane.send(of_ports[1], str(pkt2))
+
+        #Verify packet_in event gets triggered                                                                                                                                                   
+        logging.info("Waiting for a Packet_in message from the switch")
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
+        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        logging.info("Packet_in received")
+        
+        logging.info("Sending a non matching(only vlan_id mismatch) packet")
+        pkt2 = simple_tcp_packet(dl_vlan_enable=True, dl_src='00:01:01:01:01:01',dl_dst='00:01:01:01:01:02', dl_vlan=4);
+        self.dataplane.send(of_ports[0], str(pkt2))
+
+        #Verify packet_in event gets triggered                                                                                                                                                   
+        logging.info("Waiting for a Packet_in message from the switch")
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
+        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        logging.info("Packet_in received")
+
+
 
 class Grp50No150(base_tests.SimpleDataPlane):
 
