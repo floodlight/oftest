@@ -161,8 +161,8 @@ class Grp100No80(base_tests.SimpleProtocol):
         logging.info("Running Grp100No80 BadRequestBadLength test")
         #In Message module at pack time the length is computed
         #avoid this by using cstruct module
-        logging.info("Sending stats_request message..")
-        stats_request = ofp.ofp_stats_request()
+        logging.info("Sending barrier_request message..")
+        stats_request = message.barrier_request()
         header=ofp.ofp_header() 
         header.type = ofp.OFPT_BARRIER_REQUEST
         # normal the header length is 12bytes changed it to 18bytes
