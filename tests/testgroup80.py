@@ -355,10 +355,10 @@ class Grp80No270(base_tests.SimpleProtocol):
                 rep1=None
                 (rep1, pkt) = self.controller.transact(request)
                 self.assertTrue(rep1 is not None, "Failed to get a reply")
-                self.assertTrue(rep1.header.type, ofp.OFPT_GET_CONFIG_REPLY, 'Response is not config Reply')
+                self.assertTrue(rep1.header.type==ofp.OFPT_GET_CONFIG_REPLY, 'Response is not config Reply')
                 self.assertTrue(rep1.flags==old_flags, "Changes could not be reverted")
         else :
-            Logging.info("The Flag already set to OFPC_FRAG_NORMAL")
+            logging.info("The Flag already set to OFPC_FRAG_NORMAL")
 
 class Grp80No280(base_tests.SimpleProtocol):
 
@@ -410,10 +410,10 @@ class Grp80No280(base_tests.SimpleProtocol):
                 rep1=None
                 (rep1, pkt) = self.controller.transact(request)
                 self.assertTrue(rep1 is not None, "Failed to get a reply")
-                self.assertTrue(rep1.header.type, ofp.OFPT_GET_CONFIG_REPLY, 'Response is not config Reply')
+                self.assertTrue(rep1.header.type==ofp.OFPT_GET_CONFIG_REPLY, 'Response is not config Reply')
                 self.assertTrue(rep1.flags==old_flags, "Changes could not be reverted")
         else :
-            Logging.info("The Flag already set to OFPC_FRAG_DROP")
+            logging.info("The Flag already set to OFPC_FRAG_DROP")
 
 
 class Grp80No290(base_tests.SimpleProtocol):
@@ -467,10 +467,10 @@ class Grp80No290(base_tests.SimpleProtocol):
                 rep1=None
                 (rep1, pkt) = self.controller.transact(request)
                 self.assertTrue(rep1 is not None, "Failed to get a reply")
-                self.assertTrue(rep1.header.type, ofp.OFPT_GET_CONFIG_REPLY, 'Response is not config Reply')
+                self.assertTrue(rep1.header.type==ofp.OFPT_GET_CONFIG_REPLY, 'Response is not config Reply')
                 self.assertTrue(rep1.flags==old_flags, "Changes could not be reverted")
         else :
-            Logging.info("The Flag already set to OFPC_FRAG_REASM")
+            logging.info("The Flag already set to OFPC_FRAG_REASM")
 
 
 class Grp80No300(base_tests.SimpleProtocol):
@@ -524,7 +524,7 @@ class Grp80No300(base_tests.SimpleProtocol):
                 rep1=None
                 (rep1, pkt) = self.controller.transact(request)
                 self.assertTrue(rep1 is not None, "Failed to get a reply")
-                self.assertTrue(rep1.header.type, ofp.OFPT_GET_CONFIG_REPLY, 'Response is not config Reply')
+                self.assertTrue(rep1.header.type==ofp.OFPT_GET_CONFIG_REPLY, 'Response is not config Reply')
                 self.assertTrue(rep1.flags==old_flags, "Changes could not be reverted")
         else :
-            Logging.info("The Flag already set to OFPC_FRAG_MASK")
+            logging.info("The Flag already set to OFPC_FRAG_MASK")
