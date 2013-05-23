@@ -170,12 +170,11 @@ class Grp100No80(base_tests.SimpleProtocol):
         packed=header.pack()+stats_request.pack()
         sleep(2)
         rv=self.controller.message_send(packed)
-        rc=self.controller.message_send(packed)
         sleep(2)
         self.assertTrue(rv != -1,"Unable to send the message")
         logging.info("Waiting for OFPT_ERROR message..")
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,         
-                                               timeout=5)
+                                               timeout=10)
         self.assertTrue(response is not None, 
                                'Switch did not reply with an error message')
         self.assertTrue(response.type==ofp.OFPET_BAD_REQUEST, 
@@ -315,22 +314,11 @@ class Grp100No150(base_tests.SimpleProtocol):
         count = 0
         # poll for error message
         logging.info("Waiting for OFPT_ERROR message...")
-        while True:
-            (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,         
-                                               timeout=5)
-            if not response:  # Timeout
-                break
-            if not response.type == ofp.OFPET_BAD_ACTION | ofp.OFPET_FLOW_MOD_FAILED:
-                logging.info("Error type is not as expected")
-                break
-            if not response.code == ofp.OFPPMFC_BAD_PORT | ofp.OFPFMFC_EPERM:
-                logging.info("Error field code is not as expected")
-                break
-            if not config["relax"]:  # Only one attempt to match
-                break
-            count += 1
-            if count > 10:   # Too many tries
-                break
+        (response, raw) = self.controller.poll(ofp.OFPT_ERROR, timeout=10)
+        self.assertTrue(response is not None,"Did not receive an error")
+        self.assertTrue(response.type==ofp.OFPET_BAD_ACTION | ofp.OFPET_FLOW_MOD_FAILED,"Unexpected Error type. Expected ofp.OFPET_BAD_ACTION | ofp.OFPET_FLOW_MOD_FAILED error type")
+        self.assertTrue(response.code==ofp.OFPFMFC_BAD_PORT | ofp.OFPFMFC_EPERM," Unexpected error code, Expected ofp.OFPFMFC_BAD_PORT | ofp.OFPFMFC_EPERM error code")
+        
 
 class Grp100No160(base_tests.SimpleProtocol):
     """
@@ -367,7 +355,7 @@ class Grp100No160(base_tests.SimpleProtocol):
         act.type = ofp.OFPAT_SET_VLAN_VID
         act.len = 8 
         act.port = ofp.OFPP_ALL
-        act.vlan_vid = -2 # incorrect vid 
+        act.vlan_vid = 5000 # incorrect vid 
         act.pad = [0, 0]
         self.assertTrue(flow_mod_msg.actions.add(act), "Could not add action")
 
@@ -375,22 +363,11 @@ class Grp100No160(base_tests.SimpleProtocol):
         self.assertTrue(rv != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-        count = 0
-        while True:
-            (response, raw) = self.controller.poll(ofp.OFPT_ERROR)
-            if not response:  # Timeout
-                break
-            if not response.type == ofp.OFPET_BAD_ACTION:
-                logging.info("Error type not as expected")
-                break
-            if not response.code == ofp.OFPBAC_BAD_ARGUMENT | ofp.OFPBAC_EPERM:
-                logging.info("Error code is not as expected")
-                break
-            if not config["relax"]:  # Only one attempt to match
-                break
-            count += 1
-            if count > 10:   # Too many tries
-               break
+        (response, raw) = self.controller.poll(ofp.OFPT_ERROR, timeout=10)
+        self.assertTrue(response is not None,"Did not receive an error")
+        self.assertTrue(response.type==ofp.OFPET_BAD_ACTION,"Unexpected Error type. Expected OFPET_BAD_ACTION error type")
+        self.assertTrue(response.code==ofp.OFPBAC_BAD_ARGUMENT | ofp.OFPBAC_EPERM," Unexpected error code, Expected ofp.OFPBAC_BAD_ARGUMENT | ofp.OFPBAC_EPERM error code")
+        
 
 class Grp100No180(base_tests.SimpleProtocol):
     """
@@ -415,7 +392,7 @@ class Grp100No180(base_tests.SimpleProtocol):
         #Create flow_mod message with lot of actions
         flow_mod_msg = message.flow_mod()
         # add a lot of actions
-        no = 10000
+        no = 50
         for i in range(no):
             act = action.action_output()
             act.port = of_ports[1]
@@ -468,28 +445,19 @@ class Grp100No190(base_tests.SimpleDataPlane):
         request.match = match
         act = action.action_enqueue()
         act.port     = of_ports[1]
-        act.queue_id = -1  #Invalid queue_id
+        act.queue_id = 4294967290  #Invalid queue_id
         self.assertTrue(request.actions.add(act), "Could not add action")
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1, "Error installing flow mod")
 
         count = 0
         logging.info("Waiting for OFPT_ERROR message...")
-        while True:
-            (response, raw) = self.controller.poll(ofp.OFPT_ERROR)
-            if not response:  # Timeout
-                break
-            if not response.type == ofp.OFPET_BAD_ACTION:
-                logging.info("Error type not as expected")
-                break
-            if not response.code == ofp.OFPQOFC_BAD_QUEUE:
-                logging.info("Error code is not as expected")
-                break
-            if not config["relax"]:  # Only one attempt to match
-                break
-            count += 1
-            if count > 10:   # Too many tries
-                break
+        
+        (response, raw) = self.controller.poll(ofp.OFPT_ERROR, timeout=10)
+        self.assertTrue(response is not None,"Did not receive an error")
+        self.assertTrue(response.type==ofp.OFPET_BAD_ACTION,"Unexpected Error type. Expected OFPET_BAD_ACTION error type")
+        self.assertTrue(response.code==ofp.OFPQOFC_BAD_QUEUE," Unexpected error code, Expected ofp.OFPQOFC_BAD_QUEUE error code")
+       
 
 
 
@@ -656,24 +624,13 @@ class Grp100No250(base_tests.SimpleProtocol):
 
         rv=self.controller.message_send(packed)
         self.assertTrue(rv==0,"Unable to send the message")      
-        (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR)        
-        
-        count = 0
-        while True:
-            (response, raw) = self.controller.poll(ofp.OFPT_ERROR)
-            if not response:  # Timeout
-                break
-            if not response.type == ofp.OFPET_FLOW_MOD_FAILED:
-                logging.info("Error Type is not as expected")
-                break
-            if response.code == ofp.OFPFMFC_UNSUPPORTED | ofp.OFPFMFC_EPERM:
-                logging.info("Error Code is not as expected")
-                break
-            if not config["relax"]:  # Only one attempt to match
-                break
-            count += 1
-            if count > 10:   # Too many tries
-                break                                    
+          
+       
+        (response, raw) = self.controller.poll(ofp.OFPT_ERROR, timeout=10)
+        self.assertTrue(response is not None,"Did not receive an error")
+        self.assertTrue(response.type==ofp.OFPET_FLOW_MOD_FAILED,"Unexpected Error type. Expected OFPET_FLOW_MOD_FAILED error type")
+        self.assertTrue(response.code==ofp.OFPFMFC_UNSUPPORTED | ofp.OFPFMFC_EPERM," Unexpected error code, Expected ofp.OFPFMFC_UNSUPPORTED | ofp.OFPFMFC_EPERM error code")
+       
        
 
 class Grp100No260(base_tests.SimpleProtocol):
@@ -694,22 +651,11 @@ class Grp100No260(base_tests.SimpleProtocol):
         self.assertTrue(rv != -1, "Error sending port mod")
 
         # poll for error message
-        count = 0
-        while True:
-            (response, raw) = self.controller.poll(ofp.OFPT_ERROR)
-            if not response:  # Timeout
-                break
-            if not response.type == ofp.OFPET_PORT_MOD_FAILED:
-                logging.info("Error Type is not as expected")
-                break
-            if response.code == ofp.OFPPMFC_BAD_PORT:
-                logging.info("Error Code is not as expected")
-                break
-            if not config["relax"]:  # Only one attempt to match
-                break
-            count += 1
-            if count > 10:   # Too many tries
-                break
+        (response, raw) = self.controller.poll(ofp.OFPT_ERROR, timeout=10)
+        self.assertTrue(response is not None,"Did not receive an error")
+        self.assertTrue(response.type==ofp.OFPET_PORT_MOD_FAILED,"Unexpected Error type. Expected OFPET_PORT_MOD_FAILED error type")
+        self.assertTrue(response.code==ofp.OFPPMFC_BAD_PORT," Unexpected error code, Expected OFPPMFC_BAD_PORT error code")
+       
 
 
 class Grp100No270(base_tests.SimpleProtocol):    
@@ -746,23 +692,12 @@ class Grp100No270(base_tests.SimpleProtocol):
         self.assertTrue(rv != -1,"Unable to send the message")
         
         logging.info("Waiting for OFPT_ERROR message...")
-        count = 0
-        while True:
-            (response, raw) = self.controller.poll(ofp.OFPT_ERROR)
-            if not response:  # Timeout
-                break
-            if not response.type == ofp.OFPET_PORT_MOD_FAILED:
-                logging.info("Error type is not as expected")
-                break
-            if not response.code == ofp.OFPPMFC_BAD_HW_ADDR:
-                logging.info("Error Code is not as expected")
-                break
-            if not config["relax"]:  # Only one attempt to match
-                break
-            count += 1
-            if count > 10:   # Too many tries
-                break  
+        (response, raw) = self.controller.poll(ofp.OFPT_ERROR, timeout=10)
+        self.assertTrue(response is not None,"Did not receive an error")
+        self.assertTrue(response.type==ofp.OFPET_PORT_MOD_FAILED,"Unexpected Error type. Expected OFPET_PORT_MOD_FAILED error type")
+        self.assertTrue(response.code==ofp.OFPPMFC_BAD_HW_ADDR," Unexpected error code, Expected OFPPMFC_BAD_HW_ADDR error code")
 
+       
 
 class Grp100No280(base_tests.SimpleDataPlane):
 
@@ -788,22 +723,11 @@ class Grp100No280(base_tests.SimpleDataPlane):
 
         logging.info("Waiting for OFPT_ERROR message...")
 
-        count = 0
-        while True:
-            (response, raw) = self.controller.poll(ofp.OFPT_ERROR)
-            if not response:  # Timeout
-                break
-            if not response.type == ofp.OFPET_QUEUE_OP_FAILED:
-                logging.info("Error Type is not as expected")
-                break
-            if not response.code == ofp.OFPQOFC_BAD_PORT:
-                logging.info("Error Code is not as expected")
-                break
-            if not config["relax"]:  # Only one attempt to match
-                break
-            count += 1
-            if count > 10:   # Too many tries
-                break  
+        (response, raw) = self.controller.poll(ofp.OFPT_ERROR, timeout=10)
+        self.assertTrue(response is not None,"Did not receive an error")
+        self.assertTrue(response.type==ofp.OFPET_QUEUE_OP_FAILED,"Unexpected Error type. Expected OFPET_QUEUE_OP_FAILED error type")
+        self.assertTrue(response.code==ofp.OFPQOFC_BAD_PORT, " Unexpected error code, Expected OFPQOFC_BAD_PORT error code")
+
 
 
 
@@ -825,31 +749,18 @@ class Grp100No290(base_tests.SimpleDataPlane):
         logging.info("Sending queue_stats request ..")
         request = message.queue_stats_request()
         request.port_no  = of_ports[0]
-        request.queue_id = -1 #Invalid queue_id
+        request.queue_id = 4294967290 #Invalid queue_id
         rv = self.controller.message_send(request)
         self.assertTrue(rv != -1,"Unable to send the message")
 
         logging.info("Waiting for OFPT_ERROR message...")
-        
-        count = 0
-        while True:
-
-            (response, raw) = self.controller.poll(ofp.OFPT_ERROR)
-            if not response:  # Timeout
-                break
-            if not response.type == ofp.OFPET_QUEUE_OP_FAILED:
-                logging.info("Error Type is not as expected")
-                break
-            if not response.code == ofp.OFPQOFC_BAD_QUEUE:
-                logging.info("Error Code is not as expected")
-                break
-            if not config["relax"]:  # Only one attempt to match
-                break
-            count += 1
-            if count > 10:   # Too many tries
-                break
-
-
+        (response, raw) = self.controller.poll(ofp.OFPT_ERROR, timeout=10)
+        self.assertTrue(response is not None,"Did not receive an error")
+        self.assertTrue(response.type==ofp.OFPET_QUEUE_OP_FAILED,"Unexpected Error type. Expected OFPET_QUEUE_OP_FAILED error type")
+        self.assertTrue(response.code==ofp.OFPQOFC_BAD_QUEUE," Unexpected error code, Expected OFPQOFC_BAD_QUEUE error code")
+                
+    
+                
 
 
 
