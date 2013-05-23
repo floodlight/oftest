@@ -290,12 +290,6 @@ class Grp80No260(base_tests.SimpleProtocol):
             req.miss_send_len = miss_send_len - 100
             new_miss_send_len = req.miss_send_len
         
-        if old_flags > 0 :
-            req.flags = old_flags-1
-            new_flags = req.flags
-        else :
-            req.flags = old_flags+1 
-            new_flags = req.flags
 
         rv=self.controller.message_send(req)
         self.assertTrue(rv is not None,"Unable to send the message")
@@ -310,18 +304,17 @@ class Grp80No260(base_tests.SimpleProtocol):
         self.assertEqual(rep.miss_send_len,new_miss_send_len, "miss_send_len configuration parameter could not be set")
         #self.assertEqual(rep.flags,new_flags, "frag flags could not be set expected {0} got {1}" .format(new_flags, rep.flags))
       
-
-class Grp80No280(base_tests.SimpleProtocol):
+class Grp80No270(base_tests.SimpleProtocol):
 
     """Verify OFPT_SET_CONFIG is implemented"""
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp80No260 SetConfigRequest Test")
+        logging.info("Running Grp80No270 Test")
         of_ports = config["port_map"].keys()
         of_ports.sort()
 
-        #Send get_config_request -- retrive miss_send_len field                                                                                                                                                                              
+
         logging.info("Sending Get Config Request ")
         request = message.get_config_request()
         (reply, pkt) = self.controller.transact(request)
@@ -331,25 +324,207 @@ class Grp80No280(base_tests.SimpleProtocol):
         old_flags = 0
         old_flags = reply.flags
 
-        #Send set_config_request --- set a different miss_sen_len field and flag                                                                                                                                                             
+
         logging.info("Sending Set Config Request...")
         req = message.set_config()
-        if old_flags == 0 :
-            req.flags = old_flags+3
+        if old_flags != 0 :
+            req.flags = 0
             new_flags = req.flags
+            rv=self.controller.message_send(req)
+            self.assertTrue(rv is not None,"Unable to send the message")
+
+             #Send get_config_request -- verify change came into effect                                                                                                                                                                      
+            logging.info("Sending Get Config Request...")
+            request = message.get_config_request()
+
+            (rep, pkt) = self.controller.transact(request)
+            self.assertTrue(rep is not None, "Failed to get any reply")
+            self.assertEqual(rep.header.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
+
+            try :
+                self.assertEqual(rep.flags,new_flags, "frag flags could not be set expected {0} got {1}" .format(new_flags, rep.flags))
+            finally :
+                logging.info("Reverting the changes")
+                req=message.set_config()
+                req.flags=old_flags
+                rv=None
+                rv=self.controller.message_send(req)
+                self.assertTrue(rv is not None, " Unable to send the set_config message")
+
+                request = message.get_config_request()
+                rep1=None
+                (rep1, pkt) = self.controller.transact(request)
+                self.assertTrue(rep1 is not None, "Failed to get a reply")
+                self.assertTrue(rep1.header.type, ofp.OFPT_GET_CONFIG_REPLY, 'Response is not config Reply')
+                self.assertTrue(rep1.flags==old_flags, "Changes could not be reverted")
         else :
-            req.flags = old_flags-1
-            new_flags = req.flags
+            Logging.info("The Flag already set to OFPC_FRAG_NORMAL")
 
-        rv=self.controller.message_send(req)
-        self.assertTrue(rv is not None,"Unable to send the message")
+class Grp80No280(base_tests.SimpleProtocol):
 
-        #Send get_config_request -- verify change came into effect                                                                                                                                                                           
-        logging.info("Sending Get Config Request...")
+    """Verify OFPT_SET_CONFIG is implemented"""
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp80No280 Test")
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+
+       
+        logging.info("Sending Get Config Request ")
         request = message.get_config_request()
+        (reply, pkt) = self.controller.transact(request)
+        self.assertTrue(reply is not None, "Failed to get any reply")
+        self.assertEqual(reply.header.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
 
-        (rep, pkt) = self.controller.transact(request)
-        self.assertTrue(rep is not None, "Failed to get any reply")
-        self.assertEqual(rep.header.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
-        self.assertEqual(rep.flags,new_flags, "frag flags could not be set expected {0} got {1}" .format(new_flags, rep.flags)) 
+        old_flags = 0
+        old_flags = reply.flags
 
+       
+        logging.info("Sending Set Config Request...")
+        req = message.set_config()
+        if old_flags != 1 :
+            req.flags = 1
+            new_flags = req.flags
+            rv=self.controller.message_send(req)
+            self.assertTrue(rv is not None,"Unable to send the message")
+
+       
+            logging.info("Sending Get Config Request...")
+            request = message.get_config_request()
+
+            (rep, pkt) = self.controller.transact(request)
+            self.assertTrue(rep is not None, "Failed to get any reply")
+            self.assertEqual(rep.header.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
+            try :
+                self.assertEqual(rep.flags,new_flags, "frag flags could not be set expected {0} got {1}" .format(new_flags, rep.flags)) 
+            finally :
+                logging.info("Reverting the changes")
+                req=message.set_config()
+                req.flags=old_flags
+                rv=None
+                rv=self.controller.message_send(req)
+                self.assertTrue(rv is not None, " Unable to send the set_config message")
+                
+                request = message.get_config_request()
+                rep1=None
+                (rep1, pkt) = self.controller.transact(request)
+                self.assertTrue(rep1 is not None, "Failed to get a reply")
+                self.assertTrue(rep1.header.type, ofp.OFPT_GET_CONFIG_REPLY, 'Response is not config Reply')
+                self.assertTrue(rep1.flags==old_flags, "Changes could not be reverted")
+        else :
+            Logging.info("The Flag already set to OFPC_FRAG_DROP")
+
+
+class Grp80No290(base_tests.SimpleProtocol):
+
+    """Verify OFPT_SET_CONFIG is implemented"""
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp80No290 Test")
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+
+                                                                                                                                                                    
+        logging.info("Sending Get Config Request ")
+        request = message.get_config_request()
+        (reply, pkt) = self.controller.transact(request)
+        self.assertTrue(reply is not None, "Failed to get any reply")
+        self.assertEqual(reply.header.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
+
+        old_flags = 0
+        old_flags = reply.flags
+
+                                                                                                                                                             
+        logging.info("Sending Set Config Request...")
+        req = message.set_config()
+        if old_flags != 2 :
+            req.flags = 2
+            new_flags = req.flags
+            rv=self.controller.message_send(req)
+            self.assertTrue(rv is not None,"Unable to send the message")
+
+             #Send get_config_request -- verify change came into effect
+            logging.info("Sending Get Config Request...")
+            request = message.get_config_request()
+
+            (rep, pkt) = self.controller.transact(request)
+            self.assertTrue(rep is not None, "Failed to get any reply")
+            self.assertEqual(rep.header.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
+
+            try :
+                self.assertEqual(rep.flags,new_flags, "frag flags could not be set expected {0} got {1}" .format(new_flags, rep.flags))
+            finally :
+                logging.info("Reverting the changes")
+                req=message.set_config()
+                req.flags=old_flags
+                rv=None
+                rv=self.controller.message_send(req)
+                self.assertTrue(rv is not None, " Unable to send the set_config message")
+
+                request = message.get_config_request()
+                rep1=None
+                (rep1, pkt) = self.controller.transact(request)
+                self.assertTrue(rep1 is not None, "Failed to get a reply")
+                self.assertTrue(rep1.header.type, ofp.OFPT_GET_CONFIG_REPLY, 'Response is not config Reply')
+                self.assertTrue(rep1.flags==old_flags, "Changes could not be reverted")
+        else :
+            Logging.info("The Flag already set to OFPC_FRAG_REASM")
+
+
+class Grp80No300(base_tests.SimpleProtocol):
+
+    """Verify OFPT_SET_CONFIG is implemented"""
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp80No300 Test")
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+
+
+        logging.info("Sending Get Config Request ")
+        request = message.get_config_request()
+        (reply, pkt) = self.controller.transact(request)
+        self.assertTrue(reply is not None, "Failed to get any reply")
+        self.assertEqual(reply.header.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
+
+        old_flags = 0
+        old_flags = reply.flags
+
+
+        logging.info("Sending Set Config Request...")
+        req = message.set_config()
+        if old_flags != 3 :
+            req.flags = 3
+            new_flags = req.flags
+            rv=self.controller.message_send(req)
+            self.assertTrue(rv is not None,"Unable to send the message")
+
+             #Send get_config_request -- verify change came into effect                                                                                                                                                                      
+            logging.info("Sending Get Config Request...")
+            request = message.get_config_request()
+
+            (rep, pkt) = self.controller.transact(request)
+            self.assertTrue(rep is not None, "Failed to get any reply")
+            self.assertEqual(rep.header.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
+
+            try :
+                self.assertEqual(rep.flags,new_flags, "frag flags could not be set expected {0} got {1}" .format(new_flags, rep.flags))
+            finally :
+                logging.info("Reverting the changes")
+                req=message.set_config()
+                req.flags=old_flags
+                rv=None
+                rv=self.controller.message_send(req)
+                self.assertTrue(rv is not None, " Unable to send the set_config message")
+
+                request = message.get_config_request()
+                rep1=None
+                (rep1, pkt) = self.controller.transact(request)
+                self.assertTrue(rep1 is not None, "Failed to get a reply")
+                self.assertTrue(rep1.header.type, ofp.OFPT_GET_CONFIG_REPLY, 'Response is not config Reply')
+                self.assertTrue(rep1.flags==old_flags, "Changes could not be reverted")
+        else :
+            Logging.info("The Flag already set to OFPC_FRAG_MASK")
