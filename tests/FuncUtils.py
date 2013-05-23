@@ -692,7 +692,7 @@ def get_queuestats(self,port_num,queue_id):
     request.queue_id = queue_id
     (queue_stats, p) = self.controller.transact(request)
     self.assertNotEqual(queue_stats, None, "Queue stats request failed")
-
+    self.assertNotEqual(queue_stats.header.type, ofp.OFPT_ERROR, ' Cannot retreive the queue_stats: Check if the switch supports queue_stats request')
     return (queue_stats,p)
 
 def get_tablestats(self):
