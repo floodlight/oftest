@@ -338,7 +338,7 @@ class Grp40No90(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp40No100 Modify_Action test ")
+        logging.info("Running Grp40No90 Modify_Action test ")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -355,7 +355,7 @@ class Grp40No90(base_tests.SimpleDataPlane):
 
         #Send Packet matching the flow thus incrementing counters like packet_count,byte_count
         logging.info("Sending a matching packet to increment the flow counters")
-        send_packet(self,pkt,of_ports[0],of_ports[1])
+        self.dataplane.send(of_ports[0], str(pkt))
         
 	    #Verify flow counters
         logging.info("Verifying whether the flow counters have been modified")
@@ -367,7 +367,7 @@ class Grp40No90(base_tests.SimpleDataPlane):
         
         # Send Packet matching the flow-1 i.e ingress_port=port[0] and verify it is recieved on corret dataplane port i.e port[2]
         logging.info("Verifying whether the modified action is being implemented")
-        send_packet(self,pkt,of_ports[0],of_ports[2])
+        self.dataplane.send(of_ports[0],str(pkt))
         
         #Verify flow counters are preserved
         logging.info("Verifying if the flow counters have been preserved")
@@ -379,7 +379,7 @@ class Grp40No100(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp40No110 Strict_Modify_Action test")
+        logging.info("Running Grp40No100 Strict_Modify_Action test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -389,6 +389,7 @@ class Grp40No100(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
+        sleep(2)
         logging.info("Installing a Flow")
         
         #Create and add flow-1 Match on all, except one wildcarded (src adddress).Action A
@@ -403,7 +404,7 @@ class Grp40No100(base_tests.SimpleDataPlane):
 
         #Send a packet matching the flows, thus incrementing flow-counters (packet matches the flow F-1 with higher priority)
         logging.info("Sending a packet  to increase the packet counter")
-        send_packet(self,pkt,of_ports[0],of_ports[1])
+        self.dataplane.send(of_ports[0],str(pkt))
 
         # Verify flow counters of the flow-1
         logging.info("Verfiying the flow counter value")
@@ -525,7 +526,7 @@ class Grp40No130(base_tests.SimpleProtocol):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp40No140 Delete_Emer_Flow")
+        logging.info("Running Grp40No130 Delete_Emer_Flow")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -570,7 +571,7 @@ class Grp40No140(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Strict_Vs_Nonstrict Grp40No150 test begins")
+        logging.info("Grp40No140 test begins")
         
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -846,7 +847,7 @@ class Grp40No230(base_tests.SimpleDataPlane):
         msg9.match.wildcards = ofp.OFPFW_ALL
         msg9.cookie = random.randint(0,9007199254740992)
         msg9.buffer_id = 0xffffffff
-        msg9.hard_timeout = 1
+        msg9.hard_timeout = 3
         msg9.flags |= ofp.OFPFF_SEND_FLOW_REM
         rv1 = self.controller.message_send(msg9)
         self.assertTrue(rv1 != -1, "Error installing flow mod")
@@ -857,14 +858,14 @@ class Grp40No230(base_tests.SimpleDataPlane):
 
         # Verify flow removed message is recieved.
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_FLOW_REMOVED,
-                                               timeout=5)
+                                               timeout=7)
         logging.info("Verifying whether OFPT_FLOW_REMOVED message is received")
         self.assertTrue(response is not None, 
                         'Did not receive flow removed message ')
         self.assertEqual(ofp.OFPRR_HARD_TIMEOUT, response.reason,
                          'Flow table entry removal reason is not hard_timeout')
-        self.assertEqual(1, response.duration_sec,
-                         'Flow was not alive for 1 sec')
+        self.assertTrue(2<=response.duration_sec and response.duration_sec<=4,
+                         'Flow was not alive for 3 sec')
 
 
 class Grp40No210(base_tests.SimpleDataPlane):

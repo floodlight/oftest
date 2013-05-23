@@ -364,11 +364,12 @@ def match_mul_l2(self,of_ports,priority=None):
     #Generate Match_Mul_L2 flow
 
     #Create a simple eth packet and generate match on ethernet protocol flow
-    pkt_mulL2 = simple_eth_packet(dl_type= 0x0806,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:01:01:02')
+    pkt_mulL2 = simple_tcp_packet(dl_vlan_enable=True, dl_src= '00:00:00:01:01:01', dl_dst= '00:00:00:01:01:02', dl_vlan=3)
     match = parse.packet_to_flow_match(pkt_mulL2)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
-    match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_TYPE ^ofp.OFPFW_DL_DST ^ofp.OFPFW_DL_SRC
+    match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_IN_PORT ^ofp.OFPFW_DL_TYPE ^ofp.OFPFW_DL_DST ^ofp.OFPFW_DL_SRC ^ofp.OFPFW_DL_VLAN
+    match.in_port=of_ports[0]
     msg = message.flow_mod()
     msg.out_port = ofp.OFPP_NONE
     msg.command = ofp.OFPFC_ADD
@@ -734,7 +735,6 @@ def verify_tablestats(self,expect_lookup=None,expect_match=None,expect_active=No
         sleep(1)
         
         for item in response.stats:
-
             lookedup += item.lookup_count
             matched += item.matched_count
             active += item.active_count

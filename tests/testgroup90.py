@@ -265,8 +265,8 @@ class Grp90No110(base_tests.SimpleDataPlane):
             (response, raw) = self.controller.poll(ofp.OFPT_PORT_STATUS, timeout=15)
             self.assertTrue(response is not None,
                         'Port Status Message not generated')
-            self.assertEqual(response.reason,ofp.OFPPR_DELETE,"The reason field of Port Status Message is incorrect")
-
+            self.assertEqual(response.reason,ofp.OFPPR_MODIFY,"The reason field of Port Status Message is incorrect  expected {0} got {1}" .format (ofp.OFPPR_MODIFY, response.reason))
+            
         #Bring up the port by starting the interface connected
         finally:
             logging.info("Bringing up the interface ...")
@@ -278,8 +278,8 @@ class Grp90No110(base_tests.SimpleDataPlane):
         
         self.assertTrue(response is not None,
                         'Port Status Message not generated')
-        self.assertEqual(response.reason,ofp.OFPPR_ADD,"The reason field of Port Status Message is incorrect")
-
+        self.assertEqual(response.reason,ofp.OFPPR_MODIFY,"The reason field of Port Status Message is incorrect expected {0} got {1}" .format (ofp.OFPPR_MODIFY, response.reason))
+        self.assertTrue(response.desc.state and 1 == 1, "Port state is not correct")
 
 class Grp90No120(base_tests.SimpleDataPlane):
     

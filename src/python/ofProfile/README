@@ -1,3 +1,0 @@
-a) install python aspects with
-	sudo apt-get install python-aspects
-b) run python generate.py to created python objects from XSD files.

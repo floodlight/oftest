@@ -1,5 +1,5 @@
 """These tests fall under Conformance Test-Suite (OF-SWITCH-1.0.0 TestCases).
-    Refer Documentation -- Detailed testing methodology 
+Refer Documentation -- Detailed testing methodology 
     <Some of test-cases are directly taken from oftest> """
 
 "Test Suite 6 --> Flow Matches"
@@ -286,9 +286,6 @@ class Grp50No60(base_tests.SimpleDataPlane):
         self.assertTrue(rc != -1, "Error installing flow mod")
     	self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-        egress_port=of_ports[1]
-        no_ports=set(of_ports).difference([egress_port])
-        yes_ports = of_ports[1]
     
         logging.info("Installing a flow entry with match on VLAN ID ")
           
@@ -298,6 +295,10 @@ class Grp50No60(base_tests.SimpleDataPlane):
         #Send tagged packet matching the flow i.e packet with same vlan id as in flow
         logging.info("Sending a tagged matching packet")
         self.dataplane.send(of_ports[0], str(pkt))
+
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
 
         #Verify packet implements the action specified in the flow
         logging.info("Verifying whether the packet matches the flow entry")
@@ -991,7 +992,8 @@ class Grp50No140(base_tests.SimpleDataPlane):
         egress_port=of_ports[1]
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[1]
-    
+
+        sleep(5)
         logging.info("Installing a flow entry with match on L2 Header Fields")
         (pkt,match) = match_mul_l2(self,of_ports)   
 
@@ -1005,7 +1007,7 @@ class Grp50No140(base_tests.SimpleDataPlane):
 
         #Sending non matching packet (only dl_dst is different) , verify Packetin event gets triggered.
         logging.info("Sending a non matching(only DL_DST mismatch) packet")
-        pkt2 = simple_eth_packet(dl_type=0x0806,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:02:01:01');
+        pkt2 = simple_tcp_packet(dl_vlan_enable=True ,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:02:01:01' , dl_vlan=3);
         self.dataplane.send(of_ports[0], str(pkt2))
 	
         
@@ -1016,7 +1018,7 @@ class Grp50No140(base_tests.SimpleDataPlane):
 
         #Sending non matching packet (only dl_src is different) , verify Packetin event gets triggered.
         logging.info("Sending a non matching(only DL_SRC mismatch) packet")
-        pkt2 = simple_eth_packet(dl_type=0x0806,dl_src='00:01:01:01:01:02',dl_dst='00:01:01:01:01:02');
+        pkt2 = simple_tcp_packet(dl_vlan=3, dl_src='00:01:01:01:01:03',dl_dst='00:01:01:01:01:02', dl_vlan_enable=True);
         self.dataplane.send(of_ports[0], str(pkt2))
         
         logging.info("Waiting for a Packet_in message from the switch")
@@ -1026,7 +1028,7 @@ class Grp50No140(base_tests.SimpleDataPlane):
 	
         #Sending non matching packet (only ether_type is different) , verify Packetin event gets triggered.
         logging.info("Sending a non matching(only ether type mismatch) packet")
-        pkt2 = simple_eth_packet(dl_type=0x0805,dl_src='00:01:01:01:01:01',dl_dst='00:01:01:01:01:02');
+        pkt2 = simple_tcp_packet(dl_src='00:01:01:01:01:01',dl_dst='00:01:01:01:01:02');
         self.dataplane.send(of_ports[0], str(pkt2))
         
         #Verify packet_in event gets triggered
@@ -1034,6 +1036,28 @@ class Grp50No140(base_tests.SimpleDataPlane):
         (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
         self.assertTrue(response is not None, "PacketIn not received for non matching packet")
 	logging.info("Packet_in received")
+        
+        logging.info("Sending a non matching(only in_port mismatch) packet")
+        pkt2 = simple_tcp_packet(dl_vlan_enable=True, dl_src='00:01:01:01:01:01',dl_dst='00:01:01:01:01:02', dl_vlan=3);
+        self.dataplane.send(of_ports[1], str(pkt2))
+
+        #Verify packet_in event gets triggered                                                                                                                                                   
+        logging.info("Waiting for a Packet_in message from the switch")
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
+        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        logging.info("Packet_in received")
+        
+        logging.info("Sending a non matching(only vlan_id mismatch) packet")
+        pkt2 = simple_tcp_packet(dl_vlan_enable=True, dl_src='00:01:01:01:01:01',dl_dst='00:01:01:01:01:02', dl_vlan=4);
+        self.dataplane.send(of_ports[0], str(pkt2))
+
+        #Verify packet_in event gets triggered                                                                                                                                                   
+        logging.info("Waiting for a Packet_in message from the switch")
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
+        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        logging.info("Packet_in received")
+
+
 
 class Grp50No150(base_tests.SimpleDataPlane):
 
@@ -1209,16 +1233,18 @@ class Grp50No180(base_tests.SimpleDataPlane):
         no_ports=set(of_ports).difference([egress_port])
         yes_ports = of_ports[2]
            
+        sleep(5)
         #Insert two Overlapping Flows : Exact Match and Wildcard All.
   	logging.info("Installing a flow entry with Exact Match (low priority)")      
-        (pkt,match) = exact_match_with_prio(self,of_ports,priority=10) 
+        (pkt,match) = exact_match_with_prio(self,of_ports) 
         
 	logging.info("Installing an overlapping wildcarded flow (higher priority)")
-        (pkt2,match2) = wildcard_all(self,of_ports,priority=20)
+        #(pkt2,match2) = wildcard_all(self,of_ports,priority=20)
+        
         
         #Sending packet matching both the flows , 
         logging.info("Sending a packet matching both the flows")
-        self.dataplane.send(of_ports[0], str(pkt2))
+        self.dataplane.send(of_ports[0], str(pkt))
 
         #verify it implements the action specified in Exact Match Flow
         logging.info("Verifying whether the switch implements the actions specified in the highest priority flow entry")
