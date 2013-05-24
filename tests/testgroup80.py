@@ -145,9 +145,36 @@ class Grp80No30(base_tests.SimpleProtocol):
         self.assertTrue(response.code==ofp.OFPBRC_BAD_VERSION, 
                                'Message field code is not OFPBRC_BAD_VERSION')
 
-
-
 class Grp80No40(base_tests.SimpleProtocol):
+    
+    """Verify if OFPT_ECHO_REQUEST without body. """
+
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp80No40 EchoWithoutData test")
+        
+        #Send Echo Request 
+        logging.info("Sending Echo...")
+        request = message.echo_request()
+        rv=self.controller.message_send(request)
+        self.assertTrue(rv is not None,"Unable to send the message")
+
+        #Verify Echo Reply is recieved 
+        logging.info("Waiting for Echo Reply with data field copied from Echo Request")
+        (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ECHO_REPLY,
+                                               timeout=1)
+        self.assertTrue(response is not None,
+                        "Did not get echo reply (with data)")
+        self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,
+                         'Response is not echo_reply')
+        self.assertEqual(request.header.xid, response.header.xid,
+                         'Response xid does not match the request Xid')
+        self.assertEqual(None, response.data,
+                         'Response data does not match request data')
+
+
+class Grp80No50(base_tests.SimpleProtocol):
     
     """Verify if OFPT_ECHO_REQUEST has data field,
     switch responds back with OFPT_ECHO_REPLY with data field copied into it. """
