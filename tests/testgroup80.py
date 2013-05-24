@@ -24,6 +24,48 @@ from oftest.testutils import *
 from time import sleep
 from FuncUtils import*
 
+class Grp80No10(base_tests.SimpleDataPlane):
+
+    """Verify switch should be able to receive OFPT_HELLO messages without body"""
+
+    def setUp(self):
+        logging = get_logger()
+        #This is almost same as setUp in SimpleProtcocol except that intial hello is set to false
+        self.controller = controller.Controller(
+            host=config["controller_host"],
+            port=config["controller_port"])
+        # clean_shutdown should be set to False to force quit app
+        self.clean_shutdown = True
+        #set initial hello to False
+        self.controller.initial_hello=False
+        self.controller.start()
+        #@todo Add an option to wait for a pkt transaction to ensure version
+        # compatibilty?
+        self.controller.connect(timeout=20)
+        # By default, respond to echo requests
+        self.controller.keep_alive = True
+        if not self.controller.active:
+            raise Exception("Controller startup failed")
+        if self.controller.switch_addr is None: 
+            raise Exception("Controller startup failed (no switch addr)")
+        logging.info("Connected " + str(self.controller.switch_addr))
+        
+        
+    @wireshark_capture 
+    def runTest(self):
+
+        logging.info("Running Grp80No10 HelloWithoutBody Test")            
+        (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,         
+                                              timeout=5)
+        request = message.hello()                                          
+        rv = self.controller.message_send(request)      
+        
+        logging.info("Verify switch does not generate an error")
+        (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,         
+                                               timeout=5)
+        self.assertTrue(response is None, 
+                               'Switch generated ERROR in response to our Hello message')  
+
 
 
 class Grp80No20(base_tests.SimpleDataPlane):
