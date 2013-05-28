@@ -581,6 +581,7 @@ class Grp40No140(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
         
+        #####Grp40No140#####
         logging.info("Installing an exact match flow")
              
         
@@ -591,8 +592,10 @@ class Grp40No140(base_tests.SimpleDataPlane):
         #Issue Strict Delete Command , verify F gets deleted.
         logging.info("sending a strict delete message")
         strict_delete(self,match)
+        rv=all_stats_get(self)
+        self.assertTrue(rv["flows"]==0,"could not delete the flow flows")
         #verify_tablestats(self,expect_active=0)
-
+	#####Grp40No160#####
         logging.info("Inserting two overlapping flows")
         
         #Insert Flow T with match on all , except one wildcarded ( say src adddress ). 
@@ -615,7 +618,7 @@ class Grp40No140(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
         
-
+	#####Grp40No150#####
         logging.info("Installing two overlapping flows")
         
         #Insert T and T' again . 
@@ -634,6 +637,8 @@ class Grp40No140(base_tests.SimpleDataPlane):
         rv=all_stats_get(self)
         self.assertTrue(rv["flows"]==0, "The non_strict_delete message did not delete all the flows")
 
+
+	#####Grp40No170#####
         logging.info("Inserting three overlapping flows with different priorities")
           
   
@@ -658,6 +663,7 @@ class Grp40No140(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
         
+        #####Grp40No180#####
         logging.info("Inserting three overlapping flows with different priorities")
         #Issue Strict-Delete and verify only T'' gets deleted. 
         (pkt,match) = match_all_except_source_address(self,of_ports,priority=100)
