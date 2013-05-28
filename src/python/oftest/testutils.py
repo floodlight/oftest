@@ -115,6 +115,18 @@ def simple_tcp_packet(pktlen=100,
 
     return pkt
 
+def simple_arp_packet(pktlen=100,
+                      dl_src='00:00:00:00:00:01',
+                      ip_src='192.168.0.1',
+                      ip_dst='192.168.0.2',
+                       ):
+    if pktlen < MINSIZE:
+        pktlen = MINSIZE
+    pkt=scapy.Ether(src=dl_src)/scapy.ARP(psrc=ip_src, pdst=ip_dst, op=1)
+
+    pkt = pkt/("D" * (pktlen - len(pkt)))
+    return pkt
+
 def simple_icmp_packet(pktlen=60, 
                       dl_dst='00:01:02:03:04:05',
                       dl_src='00:06:07:08:09:0a',
