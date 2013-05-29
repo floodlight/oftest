@@ -735,9 +735,9 @@ def get_tablestats(self):
     current_active = 0 
 
     for obj in response.stats:
-        current_lookedup += obj.lookup_count
-        current_matched  += obj.matched_count
-        current_active += obj.active_count
+        current_lookedup = obj.lookup_count
+        current_matched  = obj.matched_count
+        current_active = obj.active_count
 
     return (current_lookedup,current_matched,current_active)
 
