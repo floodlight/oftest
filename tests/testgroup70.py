@@ -582,7 +582,7 @@ class Grp70No150(base_tests.SimpleDataPlane):
     def runTest(self):
         
         logging = get_logger()
-        logging.info("Running Grp70No160 Vlan_Prio_2 test")
+        logging.info("Running Grp70No150 Vlan_Prio_2 test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -614,6 +614,51 @@ class Grp70No150(base_tests.SimpleDataPlane):
         #Insert flow with action -- set vLAN priority, Send tagged packet matching the flow, Verify recieved packet is expected packet
         flow_match_test(self, config["port_map"], pkt=pkt, exp_pkt=exp_pkt,
                         action_list=[vid_act])
+
+
+class Grp70No160(base_tests.SimpleDataPlane):
+    """Strip vlan header"""
+
+    @wireshark_capture
+    def runTest(self):
+        
+        logging = get_logger()
+        logging.info("Running Grp70No160 Strip vlan header test")
+        
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 1,"Not enogh ports for test")
+        
+        rv = delete_all_flows(self.controller)
+        self.assertEqual(rv, 0, "Failed to delete all flows")
+        self.assertEqual(do_barrier(self.controller),0,"Barrier failed")
+        logging.info("Creating a vlan tagged packet")
+        pkt = simple_tcp_packet(pktlen=104, dl_vlan_enable=True, dl_vlan=3)
+        exp_pkt = simple_tcp_packet()
+        match=parse.packet_to_flow_match(pkt)
+        self.assertTrue(match is not None, "Could not generate a match from the packet")
+        
+        match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_VLAN
+        msg = message.flow_mod()
+        msg.outport=ofp.OFPP_NONE
+        msg.command=ofp.OFPFC_ADD
+        msg.buffer_id=0xffffffff
+        msg.match=match
+        act=action.action_strip_vlan()
+        self.assertTrue(msg.actions.add(act), "could not add strip vlan action")
+        act=action.action_output()
+        act.port=of_ports[1]
+        self.assertTrue(msg.actions.add(act),"could not add output action")
+        
+        logging.info("Installing a flow entry")
+        rv=self.controller.message_send(msg)
+        self.assertTrue(rv!=-1,"Error Could not send a flow_mod")
+        self.assertEqual(do_barrier(self.controller),0,"Barrier failed")
+        
+        logging.info("sending a matching packet")
+        
+        self.dataplane.send(of_ports[0], str(pkt))
+        receive_pkt_check(self.dataplane, exp_pkt, [of_ports[1]], set(of_ports).difference([of_ports[1]]),self)
 
 
 class Grp70No170(base_tests.SimpleDataPlane):
