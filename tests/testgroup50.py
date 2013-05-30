@@ -1289,6 +1289,62 @@ class Grp50No190(base_tests.SimpleDataPlane):
 
 
 
+class Grp50No210(base_tests.SimpleDataPlane):
+    """ Verify that the switch matches on the ether type=0x0806 and also the IP source address"""
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp50No210 match on ether type and IP source address test")
 
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+        
+        rc = delete_all_flows(self.controller)
+        self.assertTrue(rc!=-1, "Cannot send flow_mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = egress_port
+        
+        logging.info("Installing a flow matching on ether type and IP source address")
+        
+        (pkt, match) = match_arp(self, of_ports, srcb=1)
+        
+        logging.info("Sending a packet matching the flow inserted")
+        self.dataplane.send(of_ports[0], str(pkt))
+
+        logging.info("Verifying whether the packet id forwarded to the egress port")
+        receive_pkt_check(self.dataplane,pkt, [yes_ports], no_ports, self)
        
+
+
+class Grp50No220(base_tests.SimpleDataPlane):
+    """ Verify that the switch matches on the ether type=0x0806 and also the IP destination address"""
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp50No220 match on ether type and IP destination address test")
+
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+
+        rc = delete_all_flows(self.controller)
+        self.assertTrue(rc!=-1, "Cannot send flow_mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = egress_port
+
+        logging.info("Installing a flow matching on ether type and IP source address")
+
+        (pkt, match) = match_arp(self, of_ports, dstb=1)
+
+        logging.info("Sending a packet matching the flow inserted")
+        self.dataplane.send(of_ports[0], str(pkt))
+
+        logging.info("Verifying whether the packet id forwarded to the egress port")
+        receive_pkt_check(self.dataplane,pkt, [yes_ports], no_ports, self)

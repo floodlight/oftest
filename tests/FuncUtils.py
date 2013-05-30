@@ -75,6 +75,33 @@ def exact_match_with_prio(self,of_ports,priority=None):
 
     return (pkt_exactflow,match)         
        
+def match_arp(self, of_ports, srcb=0, dstb=0, priority=None):
+    arp_pkt = simple_arp_packet()
+    match = parse.packet_to_flow_match(arp_pkt)
+    self.assertTrue(match is not None, "Could not create a match from the packet")
+    if srcb==1:
+        match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_TYPE ^(63<<ofp.OFPFW_NW_SRC_SHIFT)
+    elif dstb==1:
+        match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_TYPE ^(63<<ofp.OFPFW_NW_DST_SHIFT)
+    else :
+        match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_TYPE
+    msg = message.flow_mod()
+    msg.outport = ofp.OFPP_NONE
+    msg.command = ofp.OFPFC_ADD
+    msg.buffer_id = 0xffffffff
+    msg.match=match
+    if priority != None:
+        msg.priority = priority
+    act = action.action_output()
+    act.port = of_ports[1]
+    self.assertTrue(msg.actions.add(act), "could not add action")
+
+    rv = self.controller.message_send(msg)
+    self.assertTrue(rv != -1, "Error installing flow mod")
+    self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+    return (arp_pkt,match)
+
 def match_icmp_type(self,of_ports,priority=None):
     #Generate Match on icmp type
 
@@ -692,7 +719,7 @@ def get_queuestats(self,port_num,queue_id):
     request.queue_id = queue_id
     (queue_stats, p) = self.controller.transact(request)
     self.assertNotEqual(queue_stats, None, "Queue stats request failed")
-
+    self.assertNotEqual(queue_stats.header.type, ofp.OFPT_ERROR, ' Cannot retreive the queue_stats: Check if the switch supports queue_stats request')
     return (queue_stats,p)
 
 def get_tablestats(self):
