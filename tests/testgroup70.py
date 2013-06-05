@@ -448,6 +448,40 @@ class Grp70No90(base_tests.SimpleDataPlane):
                       self)
 
 
+class Grp70No100(base_tests.SimpleDataPlane):
+    """Verify Implemetation of forward:multiports"""
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp70No100 testcase")
+        of_ports=config["port_map"].keys()
+        self.assertTrue(len(of_ports)>3, "Not enough ports for test")
+
+        rv=delete_all_flows(self.controller)
+        self.assertTrue(rv==0,"Failed to delete flows")
+
+        logging.info("Installing a Flow with OFPAT_OUTPUT to multiple ports")
+        pkt=simple_tcp_packet()
+        match=parse.packet_to_flow_match(pkt)
+        match.wildcards=ofp.OFPFW_ALL
+        msg=message.flow_mod()
+        msg.command = ofp.OFPFC_ADD
+        msg.match=match
+        act=action.action_output()
+        act.port = of_ports[1]
+        self.assertTrue(msg.actions.add(act), "could not add action")
+        act1=action.action_output()
+        act1.port=of_ports[2]
+        self.assertTrue(msg.actions.add(act1), "Could not add second action")
+        rc=self.controller.message_send(msg)
+        self.assertTrue(rv!= -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0,"Barrier Failed")
+
+        egress_ports = [of_ports[1], of_ports[2]]
+        in_port = of_ports[0]
+        self.dataplane.send(in_port, str(pkt))
+        receive_pkt_check(self.dataplane,pkt, egress_ports, set(of_ports).difference(egress_ports),self)
+
 
 class Grp70No120(base_tests.SimpleDataPlane):
     
