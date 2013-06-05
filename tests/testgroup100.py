@@ -316,8 +316,8 @@ class Grp100No150(base_tests.SimpleProtocol):
         logging.info("Waiting for OFPT_ERROR message...")
         (response, raw) = self.controller.poll(ofp.OFPT_ERROR, timeout=10)
         self.assertTrue(response is not None,"Did not receive an error")
-        self.assertTrue(response.type==ofp.OFPET_BAD_ACTION | ofp.OFPET_FLOW_MOD_FAILED,"Unexpected Error type. Expected ofp.OFPET_BAD_ACTION | ofp.OFPET_FLOW_MOD_FAILED error type")
-        self.assertTrue(response.code==ofp.OFPFMFC_BAD_PORT | ofp.OFPFMFC_EPERM," Unexpected error code, Expected ofp.OFPFMFC_BAD_PORT | ofp.OFPFMFC_EPERM error code")
+        self.assertTrue(response.type==ofp.OFPET_BAD_ACTION,"Unexpected Error type. Expected ofp.OFPET_BAD_ACTION error type")
+        self.assertTrue(response.code==ofp.OFPFMFC_BAD_PORT," Unexpected error code, Expected ofp.OFPFMFC_BAD_PORT error code")
         
 
 class Grp100No160(base_tests.SimpleProtocol):
@@ -456,7 +456,7 @@ class Grp100No190(base_tests.SimpleDataPlane):
         (response, raw) = self.controller.poll(ofp.OFPT_ERROR, timeout=10)
         self.assertTrue(response is not None,"Did not receive an error")
         self.assertTrue(response.type==ofp.OFPET_BAD_ACTION,"Unexpected Error type. Expected OFPET_BAD_ACTION error type")
-        self.assertTrue(response.code==ofp.OFPQOFC_BAD_QUEUE," Unexpected error code, Expected ofp.OFPQOFC_BAD_QUEUE error code")
+        self.assertTrue(response.code==ofp.OFPBAC_BAD_QUEUE," Unexpected error code, Expected ofp.OFPBAC_BAD_QUEUE error code")
        
 
 
