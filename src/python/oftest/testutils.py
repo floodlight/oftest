@@ -17,6 +17,7 @@ import oftest
 import oftest.controller
 import oftest.dataplane
 import oftest.parse
+import oftest.ofutils
 import ofp
 
 global skipped_test_count
@@ -1306,5 +1307,103 @@ def verify_queue_stats(test, port_no, queue_id,
     if bytes != None:
         test.assertTrue(byte_diff >= bytes and byte_diff <= bytes*1.1,
                         "Queue byte counter not updated properly (expected increase of %d, got increase of %d)" % (bytes, byte_diff))
+
+def packet_in_match(msg, data, in_port=None, reason=None):
+    """
+    Check whether the packet_in message 'msg' has fields matching 'data',
+    'in_port', and 'reason'.
+
+    This function handles truncated packet_in data. The 'in_port' and 'reason'
+    parameters are optional.
+
+    @param msg packet_in message
+    @param data Expected packet_in data
+    @param in_port Expected packet_in in_port, or None
+    @param reason Expected packet_in reason, or None
+    """
+
+    if in_port and in_port != msg.in_port:
+        logging.debug("Incorrect packet_in in_port (expected %d, received %d)", in_port, msg.in_port)
+        return False
+
+    if reason and reason != msg.reason:
+        logging.debug("Incorrect packet_in reason (expected %d, received %d)", reason, msg.reason)
+        return False
+
+    # Check that one of the packets is a prefix of the other.
+    # The received packet may be either truncated or padded, but not both.
+    # (Some of the padding may be truncated but that's irrelevant). We
+    # need to check that the smaller packet is a prefix of the larger one.
+    # Note that this check succeeds if the switch sends a zero-length
+    # packet-in.
+    compare_len = min(len(msg.data), len(data))
+    if data[:compare_len] != msg.data[:compare_len]:
+        logging.debug("Incorrect packet_in data")
+        logging.debug("Expected %s" % format_packet(data[:compare_len]))
+        logging.debug("Received %s" % format_packet(msg.data[:compare_len]))
+        return False
+
+    return True
+
+def verify_packet_in(test, data, in_port, reason, controller=None):
+    """
+    Assert that the controller receives a packet_in message matching data 'data'
+    from port 'in_port' with reason 'reason'. Does not trigger the packet_in
+    itself, that's up to the test case.
+
+    @param test Instance of base_tests.SimpleProtocol
+    @param pkt String to expect as the packet_in data
+    @param in_port OpenFlow port number to expect as the packet_in in_port
+    @param reason One of OFPR_* to expect as the packet_in reason
+    @param controller Controller instance, defaults to test.controller
+    @returns The received packet-in message
+    """
+
+    if controller == None:
+        controller = test.controller
+
+    end_time = time.time() + oftest.ofutils.default_timeout
+
+    while True:
+        msg, _ = controller.poll(ofp.OFPT_PACKET_IN, end_time - time.time())
+        if not msg:
+            # Timeout
+            break
+        elif packet_in_match(msg, data, in_port, reason):
+            # Found a matching message
+            break
+
+    test.assertTrue(msg is not None, 'Packet in message not received on port %d' % in_port)
+    return msg
+
+def verify_no_packet_in(test, data, in_port, controller=None):
+    """
+    Assert that the controller does not receive a packet_in message matching
+    data 'data' from port 'in_port'.
+
+    @param test Instance of base_tests.SimpleProtocol
+    @param pkt String to expect as the packet_in data
+    @param in_port OpenFlow port number to expect as the packet_in in_port
+    @param controller Controller instance, defaults to test.controller
+    """
+
+    if controller == None:
+        controller = test.controller
+
+    # Negative test, need to wait a short amount of time before checking we
+    # didn't receive the message.
+    time.sleep(0.5)
+
+    # Check every packet_in queued in the controller
+    while True:
+        msg, _ = controller.poll(ofp.OFPT_PACKET_IN, timeout=0)
+        if msg == None:
+            # No more queued packet_in messages
+            break
+        elif packet_in_match(msg, data, in_port, None):
+            # Found a matching message
+            break
+
+    test.assertTrue(msg == None, "Did not expect a packet-in message on port %d" % in_port)
 
 __all__ = list(set(locals()) - _import_blacklist)

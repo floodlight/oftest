@@ -115,9 +115,7 @@ class EthernetSrcAddress(base_tests.SimpleDataPlane):
         #Sending non matching packet , verify Packetin event gets triggered.
         pkt2 = simple_eth_packet(eth_src='00:01:01:01:01:02');
         self.dataplane.send(of_ports[0], str(pkt2))
-        
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packets")
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
 class EthernetDstAddress(base_tests.SimpleDataPlane):
     
@@ -156,8 +154,7 @@ class EthernetDstAddress(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt2))
         
         #Verify PacketIn event gets triggered
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
 
 class EthernetType(base_tests.SimpleDataPlane):
@@ -197,8 +194,7 @@ class EthernetType(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt2))
         
         #verify Packetin event gets triggered.
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non-matching packet")
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
             
 class IngressPort(base_tests.SimpleDataPlane):
@@ -237,8 +233,7 @@ class IngressPort(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[1],str(pkt))
 
         #Verify PacketIn event gets triggered
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non-matching packet")
+        verify_packet_in(self, str(pkt), of_ports[1], ofp.OFPR_NO_MATCH)
 
 class VlanId(base_tests.SimpleDataPlane):
 
@@ -275,8 +270,7 @@ class VlanId(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt2))
         
         #Verify PacketIn event gets triggered
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
 class VlanPCP(base_tests.SimpleDataPlane):
 
@@ -315,8 +309,7 @@ class VlanPCP(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt2))
 
         #Verify Packet_In event gets triggered
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
        
 class MultipleHeaderFieldL2(base_tests.SimpleDataPlane):
     
@@ -352,24 +345,19 @@ class MultipleHeaderFieldL2(base_tests.SimpleDataPlane):
         #Sending non matching packet (only eth_dst is different) , verify Packetin event gets triggered.
         pkt2 = simple_eth_packet(eth_type=0x88cc,eth_src='00:01:01:01:01:01',eth_dst='00:01:01:02:01:01');
         self.dataplane.send(of_ports[0], str(pkt2))
-        
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
         #Sending non matching packet (only eth_src is different) , verify Packetin event gets triggered.
         pkt2 = simple_eth_packet(eth_type=0x88cc,eth_src='00:01:01:01:01:02',eth_dst='00:01:01:01:01:02');
         self.dataplane.send(of_ports[0], str(pkt2))
-        
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
         #Sending non matching packet (only ether_type is different) , verify Packetin event gets triggered.
         pkt2 = simple_eth_packet(eth_type=0x0806,eth_src='00:01:01:01:01:01',eth_dst='00:01:01:01:01:02');
         self.dataplane.send(of_ports[0], str(pkt2))
         
         #Verify packet_in event gets triggered
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
 class IpTos(base_tests.SimpleDataPlane):
 
@@ -406,8 +394,7 @@ class IpTos(base_tests.SimpleDataPlane):
         #Create a non-matching packet , verify packet_in get generated
         pkt2 = simple_tcp_packet(ip_tos=4);
         self.dataplane.send(of_ports[0], str(pkt2))
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
 class IpProtocol(base_tests.SimpleDataPlane):
 
@@ -444,8 +431,7 @@ class IpProtocol(base_tests.SimpleDataPlane):
         #Create a non-matching packet , verify packet_in get generated
         pkt2 = simple_icmp_packet();
         self.dataplane.send(of_ports[0], str(pkt2))
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
 
 class TcpSrcPort(base_tests.SimpleDataPlane):
@@ -482,9 +468,7 @@ class TcpSrcPort(base_tests.SimpleDataPlane):
         #Sending non matching packet , verify Packetin event gets triggered.
         pkt2 = simple_tcp_packet(tcp_sport=540);
         self.dataplane.send(of_ports[0], str(pkt2))
-        
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
 class TcpDstPort(base_tests.SimpleDataPlane):
     
@@ -520,9 +504,7 @@ class TcpDstPort(base_tests.SimpleDataPlane):
         #Sending non matching packet , verify Packetin event gets triggered.
         pkt2 = simple_tcp_packet(tcp_dport=541);
         self.dataplane.send(of_ports[0], str(pkt2))
-        
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=10)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
 class UdpSrcPort(base_tests.SimpleDataPlane):
     
@@ -558,9 +540,7 @@ class UdpSrcPort(base_tests.SimpleDataPlane):
         #Sending non matching packet , verify Packetin event gets triggered.
         pkt2 = simple_udp_packet(udp_sport=540);
         self.dataplane.send(of_ports[0], str(pkt2))
-        
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
 class UdpDstPort(base_tests.SimpleDataPlane):
     
@@ -596,9 +576,7 @@ class UdpDstPort(base_tests.SimpleDataPlane):
         #Sending non matching packet , verify Packetin event gets triggered.
         pkt2 = simple_udp_packet(udp_dport=541);
         self.dataplane.send(of_ports[0], str(pkt2))
-        
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=10)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
 class ICMPType(base_tests.SimpleDataPlane):
     
@@ -634,9 +612,7 @@ class ICMPType(base_tests.SimpleDataPlane):
         #Sending non matching packet , verify Packetin event gets triggered.
         pkt2 = simple_icmp_packet(icmp_type=10);
         self.dataplane.send(of_ports[0], str(pkt2))
-        
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
 class ICMPCode(base_tests.SimpleDataPlane):
     
@@ -672,9 +648,7 @@ class ICMPCode(base_tests.SimpleDataPlane):
         #Sending non matching packet , verify Packetin event gets triggered.
         pkt2 = simple_icmp_packet(icmp_code=10);
         self.dataplane.send(of_ports[0], str(pkt2))
-        
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
 
 class ArpSenderIP(base_tests.SimpleDataPlane):
@@ -712,8 +686,7 @@ class ArpSenderIP(base_tests.SimpleDataPlane):
         #Create a non-matching packet , verify packet_in get generated
         pkt2 = simple_arp_packet(ip_snd="10.10.0.10");
         self.dataplane.send(of_ports[0], str(pkt2))
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
 class ArpTargetIP(base_tests.SimpleDataPlane):
 
@@ -750,8 +723,7 @@ class ArpTargetIP(base_tests.SimpleDataPlane):
         #Create a non-matching packet , verify packet_in get generated
         pkt2 = simple_arp_packet(ip_tgt="10.10.0.10");
         self.dataplane.send(of_ports[0], str(pkt2))
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
 
 class ExactMatch(base_tests.SimpleDataPlane):
@@ -788,9 +760,7 @@ class ExactMatch(base_tests.SimpleDataPlane):
         #Sending non matching packet , verify Packetin event gets triggered.
         pkt2 = simple_tcp_packet(tcp_sport=540);
         self.dataplane.send(of_ports[0], str(pkt2))
-        
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
 
 class MultipleHeaderFieldL4(base_tests.SimpleDataPlane):
@@ -827,16 +797,12 @@ class MultipleHeaderFieldL4(base_tests.SimpleDataPlane):
         #Sending non matching packet (tcp_dport different), verify Packetin event gets triggered.
         pkt2 = simple_tcp_packet(tcp_sport=111,tcp_dport=541);
         self.dataplane.send(of_ports[0], str(pkt2))
-        
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
         #Sending non matching packet (tcp_sport different), verify Packetin event gets triggered.
         pkt2 = simple_tcp_packet(tcp_sport=100,tcp_dport=112);
         self.dataplane.send(of_ports[0], str(pkt2))
-        
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
-        self.assertTrue(response is not None, "PacketIn not received for non matching packet")
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
 
 class ExactMatchPrio(base_tests.SimpleDataPlane):
