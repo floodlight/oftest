@@ -316,9 +316,7 @@ class PacketInSizeMiss(base_tests.SimpleDataPlane):
             self.dataplane.send(of_ports[0],str(pkt))
 
             #Verify packet_in generated
-            (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=3)
-            self.assertTrue(response is not None,
-                        'Packet In not received on control plane')
+            response = verify_packet_in(self, str(pkt), of_ports[0], ofp.OFPR_NO_MATCH)
 
             #Verify buffer_id field and data field
             if response.buffer_id == 0xFFFFFFFF:
@@ -375,12 +373,7 @@ class PacketInSizeAction(base_tests.SimpleDataPlane):
             self.dataplane.send(of_ports[0], str(pkt))
 
             #Verifying packet_in recieved on the control plane 
-            (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=10)
-            self.assertTrue(response is not None,
-                        'Packet in message not received by controller')
-
-            #Verify the reason field is OFPR_ACTION
-            self.assertEqual(response.reason,ofp.OFPR_ACTION,"PacketIn reason field is incorrect")
+            response = verify_packet_in(self, str(pkt), of_ports[0], ofp.OFPR_ACTION)
 
             #Verify buffer_id field and data field
             if response.buffer_id != 0xFFFFFFFF :
@@ -419,18 +412,10 @@ class PacketInBodyMiss(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0],str(pkt))
 
         #Verify packet_in generated
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=3)
-        self.assertTrue(response is not None,
-                        'Packet In not received on control plane')
+        response = verify_packet_in(self, str(pkt), of_ports[0], ofp.OFPR_NO_MATCH)
 
         #Verify Frame Total Length Field in Packet_in 
         self.assertEqual(response.total_len,len(str(pkt)), "PacketIn total_len field is incorrect")
-
-        #Verify in_port field in Packet_in
-        self.assertEqual(response.in_port,of_ports[0],"PacketIn in_port or recieved port field is incorrect")
-
-        #Verify the reason field in Packet_in is OFPR_NO_MATCH
-        self.assertEqual(response.reason,ofp.OFPR_NO_MATCH,"PacketIn reason field is incorrect")
 
         #Verify data field 
         self.assertTrue(len(response.data) == len(str(pkt)), "Complete Data packet was not sent")
@@ -473,21 +458,13 @@ class PacketInBodyAction(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt))
 
         #Verifying packet_in recieved on the control plane 
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=10)
-        self.assertTrue(response is not None,
-                    'Packet in message not received by controller')
-
-        #Verify the reason field is OFPR_ACTION
-        self.assertEqual(response.reason,ofp.OFPR_ACTION,"PacketIn reason field is incorrect")
+        response = verify_packet_in(self, str(pkt), of_ports[0], ofp.OFPR_ACTION)
 
         #Verify Frame Total Length Field in Packet_in 
         self.assertEqual(response.total_len,len(str(pkt)), "PacketIn total_len field is incorrect")
 
         #verify the data field
         self.assertEqual(len(response.data),len(str(pkt)),"Complete Data Packet was not sent")
-
-        #Verify in_port field in Packet_in
-        self.assertEqual(response.in_port,of_ports[0],"PacketIn in_port or recieved port field is incorrect")
 
 
 @nonstandard

@@ -275,10 +275,7 @@ class PacketIn(base_tests.SimpleDataPlane):
         logging.info("Sending packet to dp port " + str(ingress_port) +
                    ", expecting packet_in on control plane" )
       
-        (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_PACKET_IN,
-                                               timeout=2)
-        self.assertTrue(response is not None, 
-                               'Packet in event is not sent to the controller') 
+        verify_packet_in(self, str(pkt), ingress_port, ofp.OFPR_NO_MATCH)
 
 
 class Hello(base_tests.SimpleDataPlane):

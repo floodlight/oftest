@@ -96,30 +96,20 @@ class SlaveNoPacketIn(base_tests.SimpleDataPlane):
     """
     def runTest(self):
         delete_all_flows(self.controller)
+        ingress_port = config["port_map"].keys()[0]
+        pkt = str(simple_tcp_packet())
 
         set_role(self, NX_ROLE_MASTER)
-        self.verify_packetin(True)
+        self.dataplane.send(ingress_port, pkt)
+        verify_packet_in(self, pkt, ingress_port, ofp.OFPR_NO_MATCH)
 
         set_role(self, NX_ROLE_SLAVE)
-        self.verify_packetin(False)
+        self.dataplane.send(ingress_port, pkt)
+        verify_no_packet_in(self, pkt, ingress_port)
 
         set_role(self, NX_ROLE_OTHER)
-        self.verify_packetin(True)
-
-    def verify_packetin(self, enabled):
-        ingress_port = config["port_map"].keys()[0]
-        self.dataplane.send(ingress_port, str(simple_tcp_packet()))
-
-        if enabled:
-            timeout = -1
-        else:
-            timeout = 0.5
-        msg, _ = self.controller.poll(exp_msg=ofp.OFPT_PACKET_IN, timeout=timeout)
-
-        if enabled:
-            self.assertTrue(msg != None, "Expected a packet-in message")
-        else:
-            self.assertTrue(msg == None, "Did not expect a packet-in message")
+        self.dataplane.send(ingress_port, pkt)
+        verify_packet_in(self, pkt, ingress_port, ofp.OFPR_NO_MATCH)
 
 @nonstandard
 @disabled
@@ -232,9 +222,7 @@ class EqualAsyncMessages(unittest.TestCase):
         self.dataplane.send(ingress_port, pkt)
 
         for con in self.controllers:
-            msg, _ = con.poll(ofp.OFPT_PACKET_IN)
-            self.assertTrue(msg != None)
-            self.assertEquals(msg.data, pkt)
+            verify_packet_in(self, pkt, ingress_port, ofp.OFPR_NO_MATCH, controller=con)
 
     def tearDown(self):
         for con in self.controllers:

@@ -66,9 +66,7 @@ class NoAction(base_tests.SimpleDataPlane):
                 "Packet received on port " + str(rcv_port))
 
         #Verify packets not sent on control plane either
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=1)
-        self.assertTrue(response is None,
-                        'Packets not received on control plane')
+        verify_no_packet_in(self, str(pkt), of_ports[0])
 
 
 class Announcement(base_tests.SimpleDataPlane):
@@ -215,9 +213,7 @@ class ForwardController(base_tests.SimpleDataPlane):
             self.dataplane.send(ingress_port, str(pkt))
 
             #Verifying packet recieved on the control plane port
-            (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=10)
-            self.assertTrue(response is not None,
-                        'Packet in message not received by controller')
+            verify_packet_in(self, str(pkt), ingress_port, ofp.OFPR_ACTION)
     
 
 

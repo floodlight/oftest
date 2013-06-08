@@ -196,17 +196,7 @@ class DirectPacketController(base_tests.SimpleDataPlane):
                         str(ingress_port))
         self.dataplane.send(ingress_port, str(pkt))
 
-        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN)
-
-        self.assertTrue(response is not None,
-                        'Packet in message not received by controller')
-        if not dataplane.match_exp_pkt(pkt, response.data):
-            logging.debug("Sent %s" % format_packet(pkt))
-            logging.debug("Resp %s" % format_packet(response.data))
-            self.assertTrue(False,
-                            'Response packet does not match send packet' +
-                             ' for controller port')
-
+        verify_packet_in(self, str(pkt), ingress_port, ofp.OFPR_ACTION)
 
 class DirectPacketQueue(base_tests.SimpleDataPlane):
     """
@@ -419,31 +409,8 @@ class DirectPacketControllerQueue(base_tests.SimpleDataPlane):
                 logging.info("Sending packet to dp port " + 
                                str(ingress_port))
                 self.dataplane.send(ingress_port, str(pkt))
-                
-                exp_pkt_arg = None
-                exp_port = None
 
-                count = 0
-                while True:
-                    (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN)
-                    if not response:  # Timeout
-                        break
-                    if dataplane.match_exp_pkt(pkt, response.data): # Got match
-                        break
-                    if not config["relax"]:  # Only one attempt to match
-                        break
-                    count += 1
-                    if count > 10:   # Too many tries
-                        break
-
-                self.assertTrue(response is not None, 
-                               'Packet in message not received by controller')
-                if not dataplane.match_exp_pkt(pkt, response.data):
-                    logging.debug("Sent %s" % format_packet(pkt))
-                    logging.debug("Resp %s" % format_packet(response.data))
-                    self.assertTrue(False,
-                                    'Response packet does not match send packet' +
-                                    ' for controller port')
+                verify_packet_in(self, str(pkt), ingress_port, ofp.OFPR_ACTION)
 
                 # FIXME: instead of sleeping, keep requesting queue stats until
                 # the expected queue counter increases or some large timeout is
