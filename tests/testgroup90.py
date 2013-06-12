@@ -57,9 +57,11 @@ class Grp90No10(base_tests.SimpleDataPlane):
         self.assertTrue(response is not None,
                         'Packet In not received on control plane')
 
+        #Grp90No50
         #Verify Frame Total Length Field in Packet_in 
         self.assertEqual(response.total_len,len(str(pkt)), "PacketIn total_len field is incorrect")
 
+        #Grp90No40
         #Verify in_port field in Packet_in
         self.assertEqual(response.in_port,of_ports[0],"PacketIn in_port or recieved port field is incorrect")
 
@@ -89,6 +91,7 @@ class Grp90No20(base_tests.SimpleDataPlane):
         #Send a set_config_request message 
         miss_send_len = [0 ,32 ,64,100]
         
+        #Grp90No20 and Grp90No30 are tested in a loop
         for bytes in miss_send_len :
             req = message.set_config()
             req.miss_send_len = bytes
@@ -163,13 +166,15 @@ class Grp90No60(base_tests.SimpleDataPlane):
 
         #Verify the reason field is OFPR_ACTION
         self.assertEqual(response.reason,ofp.OFPR_ACTION,"PacketIn reason field is incorrect")
-
+        
+        #Grp90No100
         #Verify Frame Total Length Field in Packet_in 
         self.assertEqual(response.total_len,len(str(pkt)), "PacketIn total_len field is incorrect")
 
         #verify the data field
         self.assertEqual(len(response.data),len(str(pkt)),"Complete Data Packet was not sent")
 
+        #Grp90No90
         #Verify in_port field in Packet_in
         self.assertEqual(response.in_port,of_ports[0],"PacketIn in_port or recieved port field is incorrect")               
 
@@ -201,6 +206,7 @@ class Grp90No70(base_tests.SimpleDataPlane):
         
         max_len = [0 ,32 ,64,100]
         
+        #Grp90No70 and Grp90No80 are tested in a loop
         for bytes in max_len :
 
             #Insert a flow entry with action --output to controller
