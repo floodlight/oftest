@@ -42,6 +42,7 @@ class SimpleProtocol(unittest.TestCase):
         if not self.controller.active:
             raise Exception("Controller startup failed")
         if self.controller.switch_addr is None: 
+            self.controller.shutdown()
             raise Exception("Controller startup failed (no switch addr)")
         logging.info("Connected " + str(self.controller.switch_addr))
         request = message.features_request()
