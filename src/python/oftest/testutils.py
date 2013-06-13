@@ -40,9 +40,15 @@ def delete_all_flows(ctrl):
 
     logging.info("Deleting all flows")
     msg = ofp.message.flow_delete()
-    msg.match.wildcards = ofp.OFPFW_ALL
-    msg.out_port = ofp.OFPP_NONE
-    msg.buffer_id = 0xffffffff
+    if ofp.OFP_VERSION in [1, 2]:
+        msg.match.wildcards = ofp.OFPFW_ALL
+        msg.out_port = ofp.OFPP_NONE
+        msg.buffer_id = 0xffffffff
+    elif ofp.OFP_VERSION >= 3:
+        msg.table_id = ofp.OFPTT_ALL
+        msg.buffer_id = ofp.OFP_NO_BUFFER
+        msg.out_port = ofp.OFPP_ANY
+        msg.out_group = ofp.OFPG_ANY
     ctrl.message_send(msg)
     do_barrier(ctrl)
     return 0 # for backwards compatibility
