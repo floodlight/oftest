@@ -551,7 +551,11 @@ def match_verify(parent, req_match, res_match):
 
 def packet_to_flow_match(parent, packet):
     match = oftest.parse.packet_to_flow_match(packet)
-    match.wildcards |= required_wildcards(parent)
+    if ofp.OFP_VERSION in [1, 2]:
+        match.wildcards |= required_wildcards(parent)
+    else:
+        # TODO remove incompatible OXM entries
+        pass
     return match
 
 def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None,
