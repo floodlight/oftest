@@ -201,6 +201,7 @@ class Grp100No100(base_tests.SimpleProtocol):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         msg = message.packet_out()
+        msg.in_port = ofp.OFPP_CONTROLLER
         msg.buffer_id = 173 #Random buffer_id 
         act = action.action_output()
         act.port = of_ports[1]
