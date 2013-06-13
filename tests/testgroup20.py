@@ -254,6 +254,7 @@ class Grp20No70(base_tests.SimpleDataPlane):
                 (simple_eth_packet(pktlen=40), "tiny Ethernet packet")]:
             
                 msg = message.packet_out()
+                msg.in_port = ofp.OFPP_CONTROLLER
                 msg.data = str(outpkt)
                 act = action.action_output()
                 act.port = dp_port
