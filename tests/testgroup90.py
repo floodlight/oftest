@@ -421,6 +421,27 @@ class Grp90No140(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
 
+class Grp90No150(base_tests.SimpleDataPlane):
+    """Verify that the Controller is able to use the Packet_out message"""
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Runnign Grp90No150 testcase")
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports)>=1,"Not enough ports for test")
+        
+        msg = message.packet_out()
+        msg.bufer_id = -1
+        msg.in_port = ofp.OFPP_NONE
+        act = action.action_output()
+        act.port = of_ports[0]
+        msg.actions.add(act)
+        pkt = simple_tcp_packet()
+        msg.data = str(pkt)
+        self.controller.message_send(msg)
+        receive_pkt_check(self.dataplane,pkt,[of_ports[0]], set(of_ports).difference([of_ports[0]]),self)
+
 class Grp90No160(base_tests.SimpleDataPlane):
     
     """Verify Description Stats message body """
