@@ -317,11 +317,11 @@ class Grp100No150(base_tests.SimpleProtocol):
         logging.info("Waiting for OFPT_ERROR message...")
         (res, raw) = self.controller.poll(ofp.OFPT_ERROR, timeout=10)
         self.assertTrue(res is not None,"Did not receive an error")
-        self.assertTrue(res.type==ofp.OFPET_BAD_ACTION or res.type==ofp.OFPET_FLOW_MOD_FAILED,"Unexpected Error type. Expected ofp.OFPET_BAD_ACTION | ofp.OFPET_FLOW_MOD_FAILED error type. Got {}".format(res.type))
+        self.assertTrue(res.type==ofp.OFPET_BAD_ACTION or res.type==ofp.OFPET_FLOW_MOD_FAILED,"Unexpected Error type. Expected ofp.OFPET_BAD_ACTION | ofp.OFPET_FLOW_MOD_FAILED error type. Got {0}".format(res.type))
         if res.type == ofp.OFPET_BAD_ACTION:
-            self.assertTrue(res.code == ofp.OFPBAC_BAD_OUT_PORT," Unexpected error code, Expected ofp.OFPBAC_BAD_OUT_PORT, got {}".format(res.type))
+            self.assertTrue(res.code == ofp.OFPBAC_BAD_OUT_PORT," Unexpected error code, Expected ofp.OFPBAC_BAD_OUT_PORT, got {0}".format(res.type))
         elif res.type == ofp.OFPET_FLOW_MOD_FAILED:
-            self.assertTrue(res.code == ofp.OFPFMFC_EPERM," Unexpected error code, Expected ofp.OFPFMFC_EPERM, got {}".format(res.type))
+            self.assertTrue(res.code == ofp.OFPFMFC_EPERM," Unexpected error code, Expected ofp.OFPFMFC_EPERM, got {0}".format(res.type))
         else:
             print "This shouldn't have happened."
 
