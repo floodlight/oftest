@@ -448,7 +448,9 @@ class Grp70No90(base_tests.SimpleDataPlane):
                       self)
 
 class Grp70No110 (base_tests.SimpleDataPlane):
-    
+    """
+    Cannot test the correctness of the testcase without vendor specs
+    """
     @wireshark_capture
     def runTest(self):
         logging=get_logger()
