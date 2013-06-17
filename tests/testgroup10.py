@@ -314,6 +314,7 @@ class Grp10No80(base_tests.SimpleProtocol):
 class Grp10No110(base_tests.SimpleDataPlane):
     """
     Verify if the emergency flows stay even after control channel reconencts
+    Testcase unstable framework issues.
     """
    
     @wireshark_capture
