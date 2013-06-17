@@ -447,42 +447,6 @@ class Grp70No90(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
                       self)
 
-
-class Grp70No100(base_tests.SimpleDataPlane):
-    """Verify Implemetation of forward:multiports"""
-    @wireshark_capture
-    def runTest(self):
-        logging = get_logger()
-        logging.info("Running Grp70No100 testcase")
-        of_ports=config["port_map"].keys()
-        self.assertTrue(len(of_ports)>3, "Not enough ports for test")
-
-        rv=delete_all_flows(self.controller)
-        self.assertTrue(rv==0,"Failed to delete flows")
-
-        logging.info("Installing a Flow with OFPAT_OUTPUT to multiple ports")
-        pkt=simple_tcp_packet()
-        match=parse.packet_to_flow_match(pkt)
-        match.wildcards=ofp.OFPFW_ALL
-        msg=message.flow_mod()
-        msg.command = ofp.OFPFC_ADD
-        msg.match=match
-        act=action.action_output()
-        act.port = of_ports[1]
-        self.assertTrue(msg.actions.add(act), "could not add action")
-        act1=action.action_output()
-        act1.port=of_ports[2]
-        self.assertTrue(msg.actions.add(act1), "Could not add second action")
-        rc=self.controller.message_send(msg)
-        self.assertTrue(rv!= -1, "Error installing flow mod")
-        self.assertEqual(do_barrier(self.controller), 0,"Barrier Failed")
-
-        egress_ports = [of_ports[1], of_ports[2]]
-        in_port = of_ports[0]
-        self.dataplane.send(in_port, str(pkt))
-        receive_pkt_check(self.dataplane,pkt, egress_ports, set(of_ports).difference(egress_ports),self)
-
-
 class Grp70No110 (base_tests.SimpleDataPlane):
     
     @wireshark_capture
@@ -513,6 +477,52 @@ class Grp70No110 (base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller),0,"Barrier failed")
         self.dataplane.send(of_ports[0], str(pkt))
         receive_pkt_check(self.dataplane, pkt, [of_ports[1]], set(of_ports).difference([of_ports[1]]), self)
+
+class Grp70No100(base_tests.SimpleDataPlane):
+    """
+    @name Forward: Multiple Ports
+    Verify correct implementation of forwarding to multiple
+    ports.
+    """
+    
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp70No100 Forward: Multiple Ports")
+        dataplane_ports = config["port_map"].keys()
+        dataplane_ports.sort()
+        self.assertTrue(len(dataplane_ports) > 2, "Not enough ports for test")
+        
+        logging.info("Clearing switch state...")
+        rv = delete_all_flows(self.controller)
+        self.assertEqual(rv, 0, "Failed to delete all flows")
+        
+        logging.info("Adding flow to forward packets from port {0} to ports {1} and {2}".format(
+                dataplane_ports[0],
+                dataplane_ports[1],
+                dataplane_ports[2]))
+        # Creating test packet                                                                                                                                        
+        pkt = simple_tcp_packet()
+        req = message.flow_mod()
+        req.match = parse.packet_to_flow_match(pkt)
+        req.match.in_port = dataplane_ports[0]
+        act = action.action_output()
+        act.port = dataplane_ports[1]
+        req.actions.add(act)
+        act.port = dataplane_ports[2]
+        req.actions.add(act)
+        
+        rv = self.controller.message_send(req)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        
+        #Send Packet matching the flow                                                                                                                                
+        logging.info("Sending packet to port {0}".format(dataplane_ports[0]))
+        self.dataplane.send(dataplane_ports[0], str(pkt))
+        #Verifying packets recieved on expected dataplane ports                                                                                                       
+        logging.info("Expecting to receive packets on ports {0} and {1}".format(dataplane_ports[1], dataplane_ports[2]))
+        yes_ports = dataplane_ports[1:3]
+        receive_pkt_check(self.dataplane, pkt, yes_ports, [dataplane_ports[0],dataplane_ports[3]], self)
 
 
 class Grp70No120(base_tests.SimpleDataPlane):

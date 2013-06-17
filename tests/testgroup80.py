@@ -24,6 +24,48 @@ from oftest.testutils import *
 from time import sleep
 from FuncUtils import*
 
+class Grp80No10(base_tests.SimpleDataPlane):
+
+    """Verify switch should be able to receive OFPT_HELLO messages without body"""
+
+    def setUp(self):
+        logging = get_logger()
+        #This is almost same as setUp in SimpleProtcocol except that intial hello is set to false
+        self.controller = controller.Controller(
+            host=config["controller_host"],
+            port=config["controller_port"])
+        # clean_shutdown should be set to False to force quit app
+        self.clean_shutdown = True
+        #set initial hello to False
+        self.controller.initial_hello=False
+        self.controller.start()
+        #@todo Add an option to wait for a pkt transaction to ensure version
+        # compatibilty?
+        self.controller.connect(timeout=20)
+        # By default, respond to echo requests
+        self.controller.keep_alive = True
+        if not self.controller.active:
+            raise Exception("Controller startup failed")
+        if self.controller.switch_addr is None: 
+            raise Exception("Controller startup failed (no switch addr)")
+        logging.info("Connected " + str(self.controller.switch_addr))
+        
+        
+    @wireshark_capture 
+    def runTest(self):
+
+        logging.info("Running Grp80No10 HelloWithoutBody Test")            
+        (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,         
+                                              timeout=5)
+        request = message.hello()                                          
+        rv = self.controller.message_send(request)      
+        
+        logging.info("Verify switch does not generate an error")
+        (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,         
+                                               timeout=5)
+        self.assertTrue(response is None, 
+                               'Switch generated ERROR in response to our Hello message')  
+
 
 
 class Grp80No20(base_tests.SimpleDataPlane):
@@ -103,9 +145,36 @@ class Grp80No30(base_tests.SimpleProtocol):
         self.assertTrue(response.code==ofp.OFPBRC_BAD_VERSION, 
                                'Message field code is not OFPBRC_BAD_VERSION')
 
-
-
 class Grp80No40(base_tests.SimpleProtocol):
+    
+    """Verify if OFPT_ECHO_REQUEST without body. """
+
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp80No40 EchoWithoutData test")
+        
+        #Send Echo Request 
+        logging.info("Sending Echo...")
+        request = message.echo_request()
+        rv=self.controller.message_send(request)
+        self.assertTrue(rv is not None,"Unable to send the message")
+
+        #Verify Echo Reply is recieved 
+        logging.info("Waiting for Echo Reply with data field copied from Echo Request")
+        (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ECHO_REPLY,
+                                               timeout=1)
+        self.assertTrue(response is not None,
+                        "Did not get echo reply (with data)")
+        self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,
+                         'Response is not echo_reply')
+        self.assertEqual(request.header.xid, response.header.xid,
+                         'Response xid does not match the request Xid')
+        self.assertEqual(None, response.data,
+                         'Response data does not match request data')
+
+
+class Grp80No50(base_tests.SimpleProtocol):
     
     """Verify if OFPT_ECHO_REQUEST has data field,
     switch responds back with OFPT_ECHO_REPLY with data field copied into it. """
