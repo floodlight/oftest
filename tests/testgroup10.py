@@ -315,6 +315,7 @@ class Grp10No110(base_tests.SimpleDataPlane):
     """
     Verify if the emergency flows stay even after control channel reconencts
     """
+   
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
@@ -332,7 +333,7 @@ class Grp10No110(base_tests.SimpleDataPlane):
         self.assertEqual(rc, 0, "Failed to send delete-emergency flow")
         
         response, pkt = self.controller.poll(ofp.OFPT_ERROR, timeout=5)
-        self.assertTrue(response is None, "Emergency flow mod cannot be deleted")
+        self.assertTrue(response is None, "Emergency flow cannot be deleted: Check if the Switch supports Emergency Mode")
 
         #Insert an emergency flow entry 
         test_packet = simple_tcp_packet()
@@ -354,8 +355,7 @@ class Grp10No110(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
             
         #Shutdown the controller 
-        self.controller.disconnect()
-        
+        self.controller.shutdown()
         assertionerr=False
         
         pkt=simple_tcp_packet()
@@ -363,7 +363,7 @@ class Grp10No110(base_tests.SimpleDataPlane):
         try :
             for x in range(15):
                 self.dataplane.send(of_ports[1], str(pkt))
-                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=15)
+                (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=10)
                 self.assertTrue(response is not None,
                                 'PacketIn is not generated--Control plane is down')	
         except AssertionError :
@@ -384,10 +384,10 @@ class Grp10No110(base_tests.SimpleDataPlane):
         
         else :
 	       self.assertTrue(assertionerr is True, "Failed to shutdown the control plane")
-        
-        self.controller.connect()
-        
-        (response, raw) = self.controller.poll(ofp.OFPT_HELLO, timeout=7)
+
+        self.controller.run()
+        (response, raw) = self.controller.poll(ofp.OFPT_HELLO, timeout=15)
+       
         self.assertTrue(response is not None, "Control channel connection could not be established")
         
         logging.info("Control channel is up")

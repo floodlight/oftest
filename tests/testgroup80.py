@@ -158,6 +158,7 @@ class Grp80No60(base_tests.SimpleProtocol):
         self.assertEqual(reply.header.xid,request.header.xid,'Transaction id does not match')
         
         supported_actions =[]
+        #Grp80No180
         if(reply.actions &1<<ofp.OFPAT_OUTPUT):
             supported_actions.append('OFPAT_OUTPUT')
         if(reply.actions &1<<ofp.OFPAT_SET_VLAN_VID):
@@ -189,33 +190,57 @@ class Grp80No60(base_tests.SimpleProtocol):
         logging.info("Supported Actions: " + str(supported_actions))
 
         supported_capabilities = []
+        mandatory=0
+        #Grp80No110
         if(reply.capabilities &1<<ofp.OFPC_FLOW_STATS):
             supported_capabilities.append('OFPC_FLOW_STATS')
+        else:
+            mandatory = 1
+        #Grp80No120
         if(reply.capabilities &1<<ofp.OFPC_TABLE_STATS):
             supported_capabilities.append('OFPC_TABLE_STATS')
+        else:
+            mandatory = 1
+        #Grp80No130
         if(reply.capabilities &1<<ofp.OFPC_PORT_STATS):
             supported_capabilities.append('OFPC_PORT_STATS')
+        else:
+            mandatory = 1
+        #Grp80No140
         if(reply.capabilities &1<<ofp.OFPC_STP):
             supported_capabilities.append('OFPC_STP')
+        else:
+            mandatory = 1
+        #Grp80N0150
         if(reply.capabilities &1<<ofp.OFPC_RESERVED):
             supported_capabilities.append('OFPC_RESERVED')
+        else:
+            mandatory = 1
+        #Grp80No160
         if(reply.capabilities &1<<ofp.OFPC_IP_REASM):
             supported_capabilities.append('OFPC_IP_REASM')
+        else:
+            mandatory = 1
         if(reply.capabilities &1<<ofp.OFPC_QUEUE_STATS):
             supported_capabilities.append('OFPC_QUEUE_STATS')
+        #Grp80No170
         if(reply.capabilities &1<<ofp.OFPC_ARP_MATCH_IP):
             supported_capabilities.append('OFPC_ARP_MATCH_IP')
+        else:
+            mandatory = 1
 
         logging.info("Supported Capabilities: " +  str(supported_capabilities))
-
+        self.assertTrue(mandatory == 0, "Switch does not support all mandatory capabilities") 
+        #Grp80No80
         self.assertTrue(reply.datapath_id != 0 , "Features Reply did not contain datapath of the sw")
         logging.info("Datapath Id: " + str(reply.datapath_id))
-        
+        #Grp80No90
         logging.info("Buffer Size: " + str(reply.n_buffers))
-
+        #Grp80No100
         self.assertTrue(reply.n_tables != 0 , "Features Reply does not contain no. of tables supported by datapath")
         logging.info("No of tables: " + str(reply.n_tables))
-        
+
+        #Grp80No190
         ports=0
         ports = len(reply.ports)
         self.assertTrue(ports != 0, "Features Reply does not contain no. of ports and their ports definitions")
@@ -241,18 +266,22 @@ class Grp80No200(base_tests.SimpleProtocol):
         self.assertTrue(reply is not None, "Failed to get any reply")
         self.assertEqual(reply.header.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
         self.assertEqual(reply.header.xid,request.header.xid,'Transaction id does not match')
-
+        
+        #Grp80No250
         if reply.miss_send_len == 0 :
            logging.info ("the switch must send zero-size packet_in message")
         else :
             logging.info("miss_send_len: " + str(reply.miss_send_len))
-        
+        #Grp80No210
         if reply.flags == 0 :
             logging.info("OFPC_FRAG_NORMAL:No special handling for fragments.")
+        #Grp80No220
         elif reply.flags == 1 :
             logging.info("OFPC_FRAG_DROP:Drop fragments.")
+        #Grp80No230
         elif reply.flags == 2 :
             logging.info("OFPC_FRAG_REASM:ReasSsemble")
+        #Grp80No240
         elif reply.flags == 3:
             logging.info("OFPC_FRAG_MASK")
 
