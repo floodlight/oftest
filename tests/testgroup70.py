@@ -466,7 +466,7 @@ class Grp70No100(base_tests.SimpleDataPlane):
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
         
-        logging.info("Adding flow to forward packets from port {} to ports {} and {}".format(
+        logging.info("Adding flow to forward packets from port {0} to ports {1} and {2}".format(
                 dataplane_ports[0],
                 dataplane_ports[1],
                 dataplane_ports[2]))
@@ -486,12 +486,12 @@ class Grp70No100(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
         
         #Send Packet matching the flow                                                                                                                                
-        logging.info("Sending packet to port {}".format(dataplane_ports[0]))
+        logging.info("Sending packet to port {0}".format(dataplane_ports[0]))
         self.dataplane.send(dataplane_ports[0], str(pkt))
         #Verifying packets recieved on expected dataplane ports                                                                                                       
-        logging.info("Expecting to receive packets on ports {} and {}".format(dataplane_ports[1], dataplane_ports[2]))
+        logging.info("Expecting to receive packets on ports {0} and {1}".format(dataplane_ports[1], dataplane_ports[2]))
         yes_ports = dataplane_ports[1:3]
-        receive_pkt_check(self.dataplane, pkt, yes_ports, [dataplane_ports[0]], self)
+        receive_pkt_check(self.dataplane, pkt, yes_ports, [dataplane_ports[0],dataplane_ports[3]], self)
 
 class Grp70No120(base_tests.SimpleDataPlane):
     
