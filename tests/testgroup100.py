@@ -201,6 +201,7 @@ class Grp100No100(base_tests.SimpleProtocol):
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
         msg = message.packet_out()
+        msg.in_port = ofp.OFPP_CONTROLLER
         msg.buffer_id = 173 #Random buffer_id 
         act = action.action_output()
         act.port = of_ports[1]
@@ -314,11 +315,16 @@ class Grp100No150(base_tests.SimpleProtocol):
         count = 0
         # poll for error message
         logging.info("Waiting for OFPT_ERROR message...")
-        (response, raw) = self.controller.poll(ofp.OFPT_ERROR, timeout=10)
-        self.assertTrue(response is not None,"Did not receive an error")
-        self.assertTrue(response.type==ofp.OFPET_BAD_ACTION | ofp.OFPET_FLOW_MOD_FAILED,"Unexpected Error type. Expected ofp.OFPET_BAD_ACTION | ofp.OFPET_FLOW_MOD_FAILED error type")
-        self.assertTrue(response.code==ofp.OFPFMFC_BAD_PORT | ofp.OFPFMFC_EPERM," Unexpected error code, Expected ofp.OFPFMFC_BAD_PORT | ofp.OFPFMFC_EPERM error code")
-        
+        (res, raw) = self.controller.poll(ofp.OFPT_ERROR, timeout=10)
+        self.assertTrue(res is not None,"Did not receive an error")
+        self.assertTrue(res.type==ofp.OFPET_BAD_ACTION or res.type==ofp.OFPET_FLOW_MOD_FAILED,"Unexpected Error type. Expected ofp.OFPET_BAD_ACTION | ofp.OFPET_FLOW_MOD_FAILED error type. Got {0}".format(res.type))
+        if res.type == ofp.OFPET_BAD_ACTION:
+            self.assertTrue(res.code == ofp.OFPBAC_BAD_OUT_PORT," Unexpected error code, Expected ofp.OFPBAC_BAD_OUT_PORT, got {0}".format(res.type))
+        elif res.type == ofp.OFPET_FLOW_MOD_FAILED:
+            self.assertTrue(res.code == ofp.OFPFMFC_EPERM," Unexpected error code, Expected ofp.OFPFMFC_EPERM, got {0}".format(res.type))
+        else:
+            print "This shouldn't have happened."
+
 
 class Grp100No160(base_tests.SimpleProtocol):
     """
