@@ -24,6 +24,54 @@ from oftest.testutils import *
 from time import sleep
 from FuncUtils import *
 
+class Grp30No10(base_tests.SimpleDataPlane):
+
+    def runTest(self):
+        logging =  get_logger()
+        logging.info("Running Grp30No10 Flood testcase")
+        of_ports=config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports)>2, "Not enough ports for test")
+
+        logging.info("Setting all ports to no_flood")
+        for i in range(len(of_ports)):
+            (hw_addr, port_config, advert) = \
+                port_config_get(self.controller, of_ports[i])
+            logging.info("Extracting the port configuration from the reply")
+            self.assertTrue(port_config is not None, "Did not get port config")
+            if((port_config & 16) == 0):
+               
+                rv = port_config_set(self.controller, of_ports[i], port_config^ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD)
+                self.assertTrue(rv != -1, "could not send the port config set message")
+        
+        (hw_addr, port_config, advert) = \
+            port_config_get(self.controller, of_ports[1])
+        logging.info("Extracting the port configuration from the reply")
+        self.assertTrue(port_config is not None, "Did not get port config")
+        rv = port_config_set(self.controller, of_ports[1], port_config^ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD)
+        self.assertTrue(rv != -1, "Could not send the port config message")
+        
+        pkt_exactflow = simple_tcp_packet()
+        match = parse.packet_to_flow_match(pkt_exactflow)
+        self.assertTrue(match is not None, "Could not generate flow match from pkt")
+        match.in_port = of_ports[0]
+    #match.nw_src = 1
+        match.wildcards=0
+        msg = message.flow_mod()
+        msg.out_port = ofp.OFPP_NONE
+        msg.command = ofp.OFPFC_ADD
+        msg.buffer_id = 0xffffffff
+        msg.match = match
+        act = action.action_output()
+        act.port = ofp.OFPP_FLOOD
+        self.assertTrue(msg.actions.add(act), "could not add action")
+
+        rv = self.controller.message_send(msg)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        self.dataplane.send(of_ports[0], str(pkt_exactflow))
+        receive_pkt_check(self.dataplane, pkt_exactflow, [of_ports[1]], set(of_ports).difference([of_ports[1]]), self)
+
 class Grp30No40(base_tests.SimpleDataPlane):
     
     """Modify the behavior of physical port using Port Modification Messages

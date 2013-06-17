@@ -315,6 +315,7 @@ class Grp100No150(base_tests.SimpleProtocol):
         count = 0
         # poll for error message
         logging.info("Waiting for OFPT_ERROR message...")
+
         (res, raw) = self.controller.poll(ofp.OFPT_ERROR, timeout=10)
         self.assertTrue(res is not None,"Did not receive an error")
         self.assertTrue(res.type==ofp.OFPET_BAD_ACTION or res.type==ofp.OFPET_FLOW_MOD_FAILED,"Unexpected Error type. Expected ofp.OFPET_BAD_ACTION | ofp.OFPET_FLOW_MOD_FAILED error type. Got {0}".format(res.type))
@@ -345,6 +346,7 @@ class Grp100No160(base_tests.SimpleProtocol):
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
         flow_mod_msg = message.flow_mod()
+        flow_mod_msg.match.in_port = ofp.OFPP_NONE
         act = action.action_enqueue()
         act.type = ofp.OFPAT_ENQUEUE
         act.port = ofp.OFPP_ALL
@@ -357,6 +359,7 @@ class Grp100No160(base_tests.SimpleProtocol):
 
         # flow with modifed arguments
         flow_mod_msg = message.flow_mod()
+        flow_mod_msg.match.in_port = ofp.OFPP_NONE
         act = action.action_set_vlan_vid()
         act.type = ofp.OFPAT_SET_VLAN_VID
         act.len = 8 
@@ -371,7 +374,7 @@ class Grp100No160(base_tests.SimpleProtocol):
 
         (response, raw) = self.controller.poll(ofp.OFPT_ERROR, timeout=10)
         self.assertTrue(response is not None,"Did not receive an error")
-        self.assertTrue(response.type==ofp.OFPET_BAD_ACTION,"Unexpected Error type. Expected OFPET_BAD_ACTION error type")
+        self.assertTrue(response.type==ofp.OFPET_BAD_ACTION,"Unexpected Error type {0}. Expected OFPET_BAD_ACTION error type" .format(response.type))
         self.assertTrue(response.code==ofp.OFPBAC_BAD_ARGUMENT | ofp.OFPBAC_EPERM," Unexpected error code, Expected ofp.OFPBAC_BAD_ARGUMENT | ofp.OFPBAC_EPERM error code")
         
 
@@ -397,6 +400,7 @@ class Grp100No180(base_tests.SimpleProtocol):
 
         #Create flow_mod message with lot of actions
         flow_mod_msg = message.flow_mod()
+        flow_mod_msg.match.in_port=ofp.OFPP_NONE
         # add a lot of actions
         no = 50
         for i in range(no):
@@ -414,7 +418,7 @@ class Grp100No180(base_tests.SimpleProtocol):
         self.assertTrue(response is not None,
                                'Switch did not replay with error messge')
         self.assertTrue(response.type==ofp.OFPET_BAD_ACTION,
-                               'Error type is not OFPET_BAD_ACTION')
+                               'Error type is not OFPET_BAD_ACTION got {0}' .format(response.type))
         self.assertTrue(response.code==ofp.OFPBAC_TOO_MANY,
                                'Error code is not OFPBAC_TOO_MANY')
 
@@ -462,7 +466,7 @@ class Grp100No190(base_tests.SimpleDataPlane):
         (response, raw) = self.controller.poll(ofp.OFPT_ERROR, timeout=10)
         self.assertTrue(response is not None,"Did not receive an error")
         self.assertTrue(response.type==ofp.OFPET_BAD_ACTION,"Unexpected Error type. Expected OFPET_BAD_ACTION error type")
-        self.assertTrue(response.code==ofp.OFPQOFC_BAD_QUEUE," Unexpected error code, Expected ofp.OFPQOFC_BAD_QUEUE error code")
+        self.assertTrue(response.code==ofp.OFPBAC_BAD_QUEUE," Unexpected error code, Expected ofp.OFPBAC_BAD_QUEUE error code")
        
 
 
@@ -590,6 +594,7 @@ class Grp100No240(base_tests.SimpleProtocol):
         logging = get_logger()
         logging.info("Running FlowModFailedBadCommand Grp100No240 test")
         msg = message.flow_mod()
+        msg.match.in_port = 1
         msg.command = 8
 
         packed=msg.pack()
@@ -603,7 +608,7 @@ class Grp100No240(base_tests.SimpleProtocol):
         self.assertTrue(response.type==ofp.OFPET_FLOW_MOD_FAILED, 
                                'Error type is not OFPET_FLOW_MOD_FAILED') 
         self.assertTrue(response.code==ofp.OFPFMFC_BAD_COMMAND, 
-                               'Error code is not OFPFMFC_BAD_COMMAND')
+                               'Error code is not OFPFMFC_BAD_COMMAND got {0}' .format(response.code))
 
 
 class Grp100No250(base_tests.SimpleProtocol):   
@@ -635,7 +640,7 @@ class Grp100No250(base_tests.SimpleProtocol):
         (response, raw) = self.controller.poll(ofp.OFPT_ERROR, timeout=10)
         self.assertTrue(response is not None,"Did not receive an error")
         self.assertTrue(response.type==ofp.OFPET_FLOW_MOD_FAILED,"Unexpected Error type. Expected OFPET_FLOW_MOD_FAILED error type")
-        self.assertTrue(response.code==ofp.OFPFMFC_UNSUPPORTED | ofp.OFPFMFC_EPERM," Unexpected error code, Expected ofp.OFPFMFC_UNSUPPORTED | ofp.OFPFMFC_EPERM error code")
+        self.assertTrue(response.code==ofp.OFPFMFC_UNSUPPORTED or response.code==ofp.OFPFMFC_EPERM," Unexpected error code, Expected ofp.OFPFMFC_UNSUPPORTED | ofp.OFPFMFC_EPERM error code")
        
        
 

@@ -57,9 +57,11 @@ class Grp90No10(base_tests.SimpleDataPlane):
         self.assertTrue(response is not None,
                         'Packet In not received on control plane')
 
+        #Grp90No50
         #Verify Frame Total Length Field in Packet_in 
         self.assertEqual(response.total_len,len(str(pkt)), "PacketIn total_len field is incorrect")
 
+        #Grp90No40
         #Verify in_port field in Packet_in
         self.assertEqual(response.in_port,of_ports[0],"PacketIn in_port or recieved port field is incorrect")
 
@@ -89,6 +91,7 @@ class Grp90No20(base_tests.SimpleDataPlane):
         #Send a set_config_request message 
         miss_send_len = [0 ,32 ,64,100]
         
+        #Grp90No20 and Grp90No30 are tested in a loop
         for bytes in miss_send_len :
             req = message.set_config()
             req.miss_send_len = bytes
@@ -163,13 +166,15 @@ class Grp90No60(base_tests.SimpleDataPlane):
 
         #Verify the reason field is OFPR_ACTION
         self.assertEqual(response.reason,ofp.OFPR_ACTION,"PacketIn reason field is incorrect")
-
+        
+        #Grp90No100
         #Verify Frame Total Length Field in Packet_in 
         self.assertEqual(response.total_len,len(str(pkt)), "PacketIn total_len field is incorrect")
 
         #verify the data field
         self.assertEqual(len(response.data),len(str(pkt)),"Complete Data Packet was not sent")
 
+        #Grp90No90
         #Verify in_port field in Packet_in
         self.assertEqual(response.in_port,of_ports[0],"PacketIn in_port or recieved port field is incorrect")               
 
@@ -201,6 +206,7 @@ class Grp90No70(base_tests.SimpleDataPlane):
         
         max_len = [0 ,32 ,64,100]
         
+        #Grp90No70 and Grp90No80 are tested in a loop
         for bytes in max_len :
 
             #Insert a flow entry with action --output to controller
@@ -414,6 +420,27 @@ class Grp90No140(base_tests.SimpleDataPlane):
         self.assertTrue(rv != -1, "Error sending port mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
+
+class Grp90No150(base_tests.SimpleDataPlane):
+    """Verify that the Controller is able to use the Packet_out message"""
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Runnign Grp90No150 testcase")
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports)>=1,"Not enough ports for test")
+        
+        msg = message.packet_out()
+        msg.bufer_id = -1
+        msg.in_port = ofp.OFPP_NONE
+        act = action.action_output()
+        act.port = of_ports[0]
+        msg.actions.add(act)
+        pkt = simple_tcp_packet()
+        msg.data = str(pkt)
+        self.controller.message_send(msg)
+        receive_pkt_check(self.dataplane,pkt,[of_ports[0]], set(of_ports).difference([of_ports[0]]),self)
 
 class Grp90No160(base_tests.SimpleDataPlane):
     
