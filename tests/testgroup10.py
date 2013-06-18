@@ -356,13 +356,18 @@ class Grp10No110(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
             
         #Shutdown the controller 
-        self.controller.shutdown()
+        self.controller.initial_hello = False
+        self.controller.disconnect()
+        #waiting for the switch to recognize the connection drop.
+        sleep(2)
+        
         assertionerr=False
         
         pkt=simple_tcp_packet()
         logging.info("checking for control channel status")
         try :
             for x in range(15):
+                logging.info("Sending an unmatched packet")
                 self.dataplane.send(of_ports[1], str(pkt))
                 (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=10)
                 self.assertTrue(response is not None,
@@ -386,8 +391,14 @@ class Grp10No110(base_tests.SimpleDataPlane):
         else :
 	       self.assertTrue(assertionerr is True, "Failed to shutdown the control plane")
 
-        self.controller.run()
-        (response, raw) = self.controller.poll(ofp.OFPT_HELLO, timeout=15)
+        self.controller.initial_hello=True
+        self.controller.connect()
+        sleep(3)
+        features = message.features_request()
+        rv = self.controller.message_send(features)
+       # for i in range(10):
+       # sleep(2)
+        (response, raw) = self.controller.poll(ofp.OFPT_FEATURES_REPLY, timeout=5)
        
         self.assertTrue(response is not None, "Control channel connection could not be established")
         
