@@ -179,8 +179,8 @@ class Grp100No80(base_tests.SimpleProtocol):
                                'Switch did not reply with an error message')
         self.assertTrue(response.type==ofp.OFPET_BAD_REQUEST, 
                                'Error type is not OFPET_BAD_REQUEST') 
-        self.assertTrue(response.type==ofp.OFPBRC_BAD_LEN, 
-                               'Error code is not OFPBRC_BAD_LEN')   
+        self.assertTrue(response.code==ofp.OFPBRC_BAD_LEN, 
+                               'Error code is not OFPBRC_BAD_LEN got {0}'.format(response.code))   
 
 
 class Grp100No100(base_tests.SimpleProtocol):
