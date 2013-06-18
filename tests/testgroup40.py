@@ -118,6 +118,7 @@ class Grp40No20(base_tests.SimpleDataPlane):
         wildcard_all_except_ingress(self,of_ports)
 
         rv=all_stats_get(self)
+        print rv["flows"]
         self.assertTrue(rv["flows"]==2, "Could not Install overlapping flows")
         logging.info("Successfully installed two overlapping flows")
 
@@ -194,8 +195,59 @@ class Grp40No30(base_tests.SimpleDataPlane):
         logging.info("Verifying whether the flow counter have reset")
         verify_flowstats(self,match,byte_count=0,packet_count=0)
 
+class Grp40No40(base_tests.SimpleProtocol):
+    """
+    verify whether the switch sends an error message when the flow table is full
+    """
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp40No490 testcase")
+        
+        #clearing switch
+        rv = delete_all_flows(self.controller)
+        self.assertTrue(rv!=-1,"failed to delete all flows")
+        rv = delete_all_flows_emer(self.controller)
+        self.assertTrue(rv!=-1,"failed to delete all flows")
+        self.assertEqual(do_barrier(self.controller),0, "barrier failed")
 
+        pkt = simple_tcp_packet()
+        match = parse.packet_to_flow_match(pkt)
+        self.assertTrue(match is not None, "Could not create a Match")
+        match.in_port = 3
+        flowmod = message.flow_mod()
+        flowmod.match=match
+        flowmod.match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_IN_PORT
+        flowmod.buffer_id = 0xffffffff
+        flowmod.command = ofp.OFPFC_ADD
+        act = action.action_output()
+        act.port = 2
+        self.assertTrue(flowmod.actions.add(act), "Could not add actions")
 
+        i=11
+        logging.info("installing flow entries with different priorities")
+        while 1:
+            flowmod.priority = i
+            logging.info("installing a flow number {0}" .format(i-10))
+            rv = self.controller.message_send(flowmod)
+            self.assertTrue(rv != -1, "Error sending the Flow mod")
+            self.assertEqual(do_barrier(self.controller),0, "barrier failed")
+                    
+            response, raw = self.controller.poll(ofp.OFPT_ERROR, timeout=3)
+            try :
+                self.assertTrue(response is None, "Got an error message")
+            except :
+                self.assertTrue(response.type == ofp.OFPET_FLOW_MOD_FAILED, "Expected response type is ofp.OFPET_FLOW_MOD_FAILED got {0}" .format(response.type))
+                self.assertTrue(response.code == ofp.OFPFMFC_ALL_TABLES_FULL, "Expected response code is ofp.OFPFMFC_ALL_TABLES_FULL got {0}" .format(response.code))
+                logging.info("Installed {0} flows before getting an error" .format(i-11))
+                logging.info("Got the expected Error message")
+                return 0
+            stats = all_stats_get(self)
+            self.assertTrue(stats["flows"]==(i-10), "Didnot add the flow entry:Verify the reason")
+            i+=1
+            
+    
+            
 class Grp40No50(base_tests.SimpleProtocol):
     
     """When the output to switch port action refers to a port that will never be valid ,
