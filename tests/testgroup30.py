@@ -38,7 +38,7 @@ class Grp30No10(base_tests.SimpleDataPlane):
             (hw_addr, port_config, advert) = \
                 port_config_get(self.controller, of_ports[i])
             logging.info("Extracting the port configuration from the reply")
-            self.assertTrue(port_config is not None, "Did not get port config")
+            self.assertTrue(port_config is not None, "Did not get port config of port {0}" .format(of_ports[i]))
             if((port_config & 16) == 0):
                
                 rv = port_config_set(self.controller, of_ports[i], port_config^ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD)
