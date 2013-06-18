@@ -91,29 +91,7 @@ class PacketIn(base_tests.SimpleDataPlane):
 
                logging.info("PKT IN test with %s, port %s" % (pt, of_port))
                self.dataplane.send(of_port, str(pkt))
-               #@todo Check for unexpected messages?
-               count = 0
-               while True:
-                   (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN)
-                   if not response:  # Timeout
-                       break
-                   if dataplane.match_exp_pkt(pkt, response.data): # Got match
-                       break
-                   if not config["relax"]:  # Only one attempt to match
-                       break
-                   count += 1
-                   if count > 10:   # Too many tries
-                       break
-
-               self.assertTrue(response is not None, 
-                               'Packet in message not received on port ' + 
-                               str(of_port))
-               if not dataplane.match_exp_pkt(pkt, response.data):
-                   logging.debug("Sent %s" % format_packet(pkt))
-                   logging.debug("Resp %s" % format_packet(response.data))
-                   self.assertTrue(False,
-                                   'Response packet does not match send packet' +
-                                   ' for port ' + str(of_port))
+               verify_packet_in(self, str(pkt), of_port, ofp.OFPR_NO_MATCH)
 
 class PacketInBroadcastCheck(base_tests.SimpleDataPlane):
     """
