@@ -72,6 +72,38 @@ class Grp30No10(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt_exactflow))
         receive_pkt_check(self.dataplane, pkt_exactflow, [of_ports[1]], set(of_ports).difference([of_ports[1]]), self)
 
+class Grp30No20(base_tests.SimpleDataPlane):
+
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp30No20 PortMod PortDown Test")
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+
+        #Retrieve Port Configuration --- 
+        logging.info("Sending Features Request")
+        (hw_addr, port_config, advert) = \
+            port_config_get(self.controller, of_ports[1])
+        logging.info("Extracting the port configuration from the reply")
+        self.assertTrue(port_config is not None, "Did not get port config")
+          
+        logging.debug("NO STP bit " + str(of_ports[1]) + " is now " + 
+                           str(port_config & ofp.OFPPC_NO_STP))
+        self.assertTrue(port_config & ofp.OFPPC_PORT_DOWN != 1, "Port down")
+          
+        logging.debug("NO STP bit " + str(of_ports[1]) + " is now " + 
+                           str(port_config & ofp.OFPPC_NO_STP))
+        self.assertTrue(port_config & ofp.OFPPC_NO_STP == 0, "OFPPC_NO_STP set")
+
+        logging.debug("NO STP bit " + str(of_ports[1]) + " is now " + 
+                           str(port_config & ofp.OFPPC_NO_RECV))
+        self.assertTrue(port_config & ofp.OFPPC_NO_STP == 0, "OFPPC_NO_RECV set")
+
+        logging.debug("NO STP bit " + str(of_ports[1]) + " is now " + 
+                           str(port_config & ofp.OFPPC_NO_RECV_STP))
+        self.assertTrue(port_config & ofp.OFPPC_NO_STP == 0, "OFPPC_NO_RECV_STP set")
+
 class Grp30No40(base_tests.SimpleDataPlane):
     
     """Modify the behavior of physical port using Port Modification Messages
@@ -132,7 +164,59 @@ class Grp30No40(base_tests.SimpleDataPlane):
         self.assertTrue(response is not None,
                         'Port Status Message not generated.\n PLEASE NOTE: Port config could not be set back to default ')
         
+class Grp30No80(base_tests.SimpleDataPlane):
 
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp30No80 Flood bits Test")
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+
+        print len(of_ports)
+        for i in range (len(of_ports)):
+ 
+            #Retrieve Port Configuration --- 
+            logging.info("Sending Features Request")
+            (hw_addr, port_config, advert) = \
+                port_config_get(self.controller, of_ports[i])
+
+            #Modify Port Configuration 
+            logging.info("Setting OFPPC_NO_FLOOD on %s" %str(of_ports[i]))
+            rv = port_config_set(self.controller, of_ports[i],
+                                 port_config & 0, ofp.OFPPC_NO_FLOOD)
+            self.assertTrue(rv != -1, "Error sending port mod")
+            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+ 
+            #Verify Port Status message is recieved 
+            logging.info("Waiting for the port status change message")
+            #(response, raw) = self.controller.poll(ofp.OFPT_PORT_STATUS, timeout=15)
+        
+            self.assertTrue(response is not None,
+                            'Port Status Message not generated. Please note ports could not be configured')
+        
+        #Sending a flow with output action on flood ports
+        logging.info("Sending flow_mod message..")
+        pkt=simple_tcp_packet()
+        match = parse.packet_to_flow_match(pkt)
+        self.assertTrue(match is not None, "Could not generate flow match from pkt")
+        match.wildcards = ofp.OFPFW_ALL ^ ofp.OFPFW_NW_DST_MASK
+        match.nw_dst = parse.parse_ip("244.0.0.1")
+        flow_mod_msg = message.flow_mod()
+        flow_mod_msg.match = match
+        flow_mod_msg.command = ofp.OFPFC_ADD
+        act=action.action_output()       
+        act.port = ofp.OFPP_FLOOD
+        self.assertTrue(flow_mod_msg.actions.add(act), "Could not add action")
+        rv = self.controller.message_send(flow_mod_msg.pack())
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+       
+        #Sending packet to check if flood ports respond
+        self.dataplane.send(of_ports[0], str(pkt))
+        yes_ports= set(of_ports).difference([of_ports[0]])
+        no_ports = set(of_ports).difference(yes_ports)
+        receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
 
 class Grp30No90(base_tests.SimpleDataPlane):
     """ 
