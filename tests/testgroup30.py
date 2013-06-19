@@ -188,13 +188,6 @@ class Grp30No80(base_tests.SimpleDataPlane):
             self.assertTrue(rv != -1, "Error sending port mod")
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
  
-            #Verify Port Status message is recieved 
-            logging.info("Waiting for the port status change message")
-            #(response, raw) = self.controller.poll(ofp.OFPT_PORT_STATUS, timeout=15)
-        
-            self.assertTrue(response is not None,
-                            'Port Status Message not generated. Please note ports could not be configured')
-        
         #Sending a flow with output action on flood ports
         logging.info("Sending flow_mod message..")
         pkt=simple_tcp_packet()
