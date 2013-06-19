@@ -148,6 +148,7 @@ class Grp80No30(base_tests.SimpleProtocol):
 class Grp80No40(base_tests.SimpleProtocol):
     
     """Verify if OFPT_ECHO_REQUEST without body. """
+
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
