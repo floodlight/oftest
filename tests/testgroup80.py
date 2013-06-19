@@ -151,17 +151,16 @@ class Grp80No40(base_tests.SimpleProtocol):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp80No40 EchoWithData test")
+        logging.info("Running Grp80No40 EchoWithoutData test")
         
         #Send Echo Request 
-        logging.info("Sending Echo With Data ...")
+        logging.info("Sending Echo Without Data ...")
         request = message.echo_request()
         (response, pkt) = self.controller.transact(request)
 
         #Verify Echo Reply is recieved 
-        logging.info("Waiting for Echo Reply with data field copied from Echo Request")
         self.assertTrue(response is not None,
-                        "Did not get echo reply (with data)")
+                        "Did not get echo reply (without data)")
         self.assertEqual(response.header.type, ofp.OFPT_ECHO_REPLY,
                          'Response is not echo_reply')
         self.assertEqual(request.header.xid, response.header.xid,
