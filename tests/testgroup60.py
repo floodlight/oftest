@@ -170,17 +170,11 @@ class Grp60No40(base_tests.SimpleDataPlane):
         logging.info("Installing flow entry that matches on in_port.")
         (pkt,match) = wildcard_all_except_ingress(self, dataplane_ports)
 
-        # Use a different sleep duration each time we pull for a
-        # ofp_flow_stats message. The switch will then be less
-        # likely to return a duplicate duration in nsecs. If
-        # stats.duration_nsec and previous_nsec_count are the
-        # same there is likely an issue.
         req = message.flow_stats_request()
         req.match= match
         req.table_id = 0xff
         req.out_port = ofp.OFPP_NONE
 
-        # Shouldn't be needed.
         duration_verifications = 5
         previous_duration = (-1, -1)
         for time in range(0, duration_verifications):
@@ -194,7 +188,8 @@ class Grp60No40(base_tests.SimpleDataPlane):
             duration = (res.stats[0].duration_sec, res.stats[0].duration_nsec)
             if duration[1] < previous_duration[1]:
                 self.assertGreater(duration[0], previous_duration[0], "Duration in nsecs was less than previous duration in nsecs, but the duration in secs was not greater than the previous duration in secs.")
-            self.assertNotEqual(duration[1], previous_duration[1], "ofp_flow_stats.duration_nsec was the same as the previous duration_nsec.")
+            else:
+                self.assertNotEqual(duration[1], previous_duration[1], "ofp_flow_stats.duration_nsec was the same as the previous duration_nsec.")
             previous_duration = duration
 
 
