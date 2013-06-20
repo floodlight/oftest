@@ -181,8 +181,8 @@ class Grp60No40(base_tests.SimpleDataPlane):
         
         #flow_stats_gen_ts =  range (10,test_timeout,10)
 
-        # Use a different sleep_duration each time we pull for a
-        # flows duration. This way the switch will be less
+        # Use a different sleep duration each time we pull for a
+        # ofp_flow_stats message. The switch will then be less
         # likely to return a duplicate duration in nsecs.
         max_sleep_duration = 5
         previous_nsec_count = -1
@@ -190,7 +190,14 @@ class Grp60No40(base_tests.SimpleDataPlane):
             logging.info("Sending ofp_flow_stats_request.")
             res, pkt = self.controller.transact(req)
             self.assertTrue(res is not None, "No ofp_flow_stats message received in response to ofp_flow_stats_request")
-            
+            self.assertTrue(res.type == ofp.OFPST_FLOW, "Expected ofp.OFPST_FLOW, got {0}".format(res.type))
+            self.assertTrue(len(res.stats) == 1, "Received {0} ofp_flow_stats messages, but expected exactly 1".format(len(res.stats)))
+            # Compare stats.duration_nsec to previous_nsec_count.
+            # If they're the same there is likely an issue.
+            logging.info("Comparing duration in nsecs from ofp_flow_stats to previous duration in nsecs.")
+            self.assertNotEqual(res.stats[0].duration_nsec, previous_nsec_count, "ofp_flow_stats.duration_nsec was the same as the previous duration_nsec.")
+            logging.info("Sleeping for {0} seconds...".format(time))
+            sleep(time)
         '''
         for ts in range(0,test_timeout):
             if ts in flow_stats_gen_ts:
