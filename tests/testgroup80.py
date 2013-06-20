@@ -278,8 +278,7 @@ class Grp80No60(base_tests.SimpleProtocol):
         #Grp80No140
         if(reply.capabilities &1<<ofp.OFPC_STP):
             supported_capabilities.append('OFPC_STP')
-        else:
-            mandatory = 1
+       
         #Grp80N0150
         if(reply.capabilities &1<<ofp.OFPC_RESERVED):
             supported_capabilities.append('OFPC_RESERVED')
