@@ -241,6 +241,52 @@ class Grp40No50(base_tests.SimpleProtocol):
         self.assertTrue(count<10,"Did not receive any error message")
         logging.info("Received the expected OFPT_ERROR message")
 
+class Grp40No60(base_tests.SimpleDataPlane):
+    
+    """Behaviour of switch when flows are added on non existant ports"""
+
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp40No60 flow on non existant port test")
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+  
+        #Clear switch state
+        rc = delete_all_flows(self.controller)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+
+        # pick a random bad port number
+        bad_port=ofp.OFPP_MAX
+        pkt=simple_tcp_packet()
+
+        #Send flow_mod message
+        logging.info("Sending flow_mod message..")   
+        request = flow_msg_create(self, pkt, ing_port=of_ports[0], egr_ports=bad_port)
+        rv = self.controller.message_send(request)
+        self.assertTrue(rv != -1 ,"Unable to send the message")
+        
+        try:
+            # poll for error message
+            logging.info("Waiting for OFPT_ERROR message...")
+            (response, raw) = self.controller.poll(ofp.OFPT_ERROR, timeout=10)
+            self.assertTrue(response is not None,"Did not receive an error")
+            self.assertTrue(response.type==ofp.OFPET_BAD_ACTION | ofp.OFPET_FLOW_MOD_FAILED,"Unexpected Error type. Expected ofp.OFPET_BAD_ACTION | ofp.OFPET_FLOW_MOD_FAILED error type")
+            self.assertTrue(response.code==ofp.OFPFMFC_BAD_PORT | ofp.OFPFMFC_EPERM," Unexpected error code, Expected ofp.OFPFMFC_BAD_PORT | ofp.OFPFMFC_EPERM error code")
+            #check that no flows are added 
+            rv=all_stats_get(self)
+            self.assertTrue(rv["flows"]==0, "Unexpected flow addition")
+            logging.info("Error msg sent and no flow added for bad port")
+        except:
+            #check that flow is added 
+            rv=all_stats_get(self)
+            self.assertTrue(rv["flows"]==1, "flow not added")
+            logging.info("Error msg not sent  and no flow added for bad port")
+            #Sending packet to check if flood ports respond
+            self.dataplane.send(of_ports[0], str(pkt))
+            yes_ports= []
+            no_ports = of_ports
+            receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
 
 class Grp40No70(base_tests.SimpleProtocol): 
 
