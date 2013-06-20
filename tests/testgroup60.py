@@ -198,20 +198,6 @@ class Grp60No40(base_tests.SimpleDataPlane):
             self.assertNotEqual(res.stats[0].duration_nsec, previous_nsec_count, "ofp_flow_stats.duration_nsec was the same as the previous duration_nsec.")
             logging.info("Sleeping for {0} seconds...".format(time))
             sleep(time)
-        '''
-        for ts in range(0,test_timeout):
-            if ts in flow_stats_gen_ts:
-                logging.info("Sending a flow stats request")
-                response, pkt = self.controller.transact(stat_req)
-                
-                self.assertTrue(response is not None,"No response to stats request")
-                self.assertTrue(len(response.stats) == 1,"Did not receive flow stats reply")
-                
-                stat = response.stats[0]
-                self.assertTrue(stat.duration_sec == ts,"Flow stats reply incorrect")
-                logging.info("Duration of flow is " + str(stat.duration_sec) + str(stat.duration_nsec)) 
-            
-            sleep(1)'''
 
 
 class Grp60No50(base_tests.SimpleDataPlane):
