@@ -172,14 +172,26 @@ class Grp60No40(base_tests.SimpleDataPlane):
         (pkt,match) = wildcard_all_except_ingress(self, dataplane_ports)
     
         #Create flow_stats request 
-        test_timeout = 30
-        stat_req = message.flow_stats_request()
-        stat_req.match= match
-        stat_req.table_id = 0xff
-        stat_req.out_port = ofp.OFPP_NONE
+        #test_timeout = 30
+
+        req = message.flow_stats_request()
+        req.match= match
+        req.table_id = 0xff
+        req.out_port = ofp.OFPP_NONE
         
-        flow_stats_gen_ts =  range (10,test_timeout,10)
-        
+        #flow_stats_gen_ts =  range (10,test_timeout,10)
+
+        # Use a different sleep_duration each time we pull for a
+        # flows duration. This way the switch will be less
+        # likely to return a duplicate duration in nsecs.
+        max_sleep_duration = 5
+        previous_nsec_count = -1
+        for time in range(0, max_sleep_duration):
+            logging.info("Sending ofp_flow_stats_request.")
+            res, pkt = self.controller.transact(req)
+            self.assertTrue(res is not None, "No ofp_flow_stats message received in response to ofp_flow_stats_request")
+            
+        '''
         for ts in range(0,test_timeout):
             if ts in flow_stats_gen_ts:
                 logging.info("Sending a flow stats request")
@@ -192,7 +204,7 @@ class Grp60No40(base_tests.SimpleDataPlane):
                 self.assertTrue(stat.duration_sec == ts,"Flow stats reply incorrect")
                 logging.info("Duration of flow is " + str(stat.duration_sec) + str(stat.duration_nsec)) 
             
-            sleep(1)
+            sleep(1)'''
 
 
 class Grp60No50(base_tests.SimpleDataPlane):
