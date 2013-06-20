@@ -159,7 +159,6 @@ class Grp60No40(base_tests.SimpleDataPlane):
     def runTest(self):
         logging = get_logger()
         logging.info("Running Grp60No40 Duration (nsecs).")
-
         dataplane_ports = config["port_map"].keys()
         dataplane_ports.sort()
         self.assertTrue(len(dataplane_ports) > 1, "Not enough ports for test.")
@@ -170,20 +169,17 @@ class Grp60No40(base_tests.SimpleDataPlane):
 
         logging.info("Installing flow entry that matches on in_port.")
         (pkt,match) = wildcard_all_except_ingress(self, dataplane_ports)
-    
-        #Create flow_stats request 
-        #test_timeout = 30
 
+        # Use a different sleep duration each time we pull for a
+        # ofp_flow_stats message. The switch will then be less
+        # likely to return a duplicate duration in nsecs. If
+        # stats.duration_nsec and previous_nsec_count are the
+        # same there is likely an issue.
         req = message.flow_stats_request()
         req.match= match
         req.table_id = 0xff
         req.out_port = ofp.OFPP_NONE
-        
-        #flow_stats_gen_ts =  range (10,test_timeout,10)
 
-        # Use a different sleep duration each time we pull for a
-        # ofp_flow_stats message. The switch will then be less
-        # likely to return a duplicate duration in nsecs.
         max_sleep_duration = 5
         previous_nsec_count = -1
         for time in range(0, max_sleep_duration):
@@ -192,8 +188,7 @@ class Grp60No40(base_tests.SimpleDataPlane):
             self.assertTrue(res is not None, "No ofp_flow_stats message received in response to ofp_flow_stats_request")
             self.assertTrue(res.type == ofp.OFPST_FLOW, "Expected ofp.OFPST_FLOW, got {0}".format(res.type))
             self.assertTrue(len(res.stats) == 1, "Received {0} ofp_flow_stats messages, but expected exactly 1".format(len(res.stats)))
-            # Compare stats.duration_nsec to previous_nsec_count.
-            # If they're the same there is likely an issue.
+
             logging.info("Comparing duration in nsecs from ofp_flow_stats to previous duration in nsecs.")
             self.assertNotEqual(res.stats[0].duration_nsec, previous_nsec_count, "ofp_flow_stats.duration_nsec was the same as the previous duration_nsec.")
             logging.info("Sleeping for {0} seconds...".format(time))
