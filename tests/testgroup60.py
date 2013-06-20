@@ -149,6 +149,52 @@ class Grp60No30(base_tests.SimpleDataPlane):
             sleep(1)
 
 
+class Grp60No40(base_tests.SimpleDataPlane):    
+    '''
+    Verify Duration_nsec counters per flow varies in accordance with
+    the amount of time the flow was alive.
+    '''
+
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp60No40 Duration (nsecs).")
+
+        dataplane_ports = config["port_map"].keys()
+        dataplane_ports.sort()
+        self.assertTrue(len(dataplane_ports) > 1, "Not enough ports for test.")
+        
+        logging.info("Clearing switch state...")
+        rc = delete_all_flows(self.controller)
+        self.assertEqual(rc, 0, "Failed to delete all flows.")
+
+        logging.info("Installing flow entry that matches on in_port.")
+        (pkt,match) = wildcard_all_except_ingress(self, dataplane_ports)
+    
+        #Create flow_stats request 
+        test_timeout = 30
+        stat_req = message.flow_stats_request()
+        stat_req.match= match
+        stat_req.table_id = 0xff
+        stat_req.out_port = ofp.OFPP_NONE
+        
+        flow_stats_gen_ts =  range (10,test_timeout,10)
+        
+        for ts in range(0,test_timeout):
+            if ts in flow_stats_gen_ts:
+                logging.info("Sending a flow stats request")
+                response, pkt = self.controller.transact(stat_req)
+                
+                self.assertTrue(response is not None,"No response to stats request")
+                self.assertTrue(len(response.stats) == 1,"Did not receive flow stats reply")
+                
+                stat = response.stats[0]
+                self.assertTrue(stat.duration_sec == ts,"Flow stats reply incorrect")
+                logging.info("Duration of flow is " + str(stat.duration_sec) + str(stat.duration_nsec)) 
+            
+            sleep(1)
+
+
 class Grp60No50(base_tests.SimpleDataPlane):
 
     """Verify that rx_packets counter in the Port_Stats reply
