@@ -180,23 +180,22 @@ class Grp60No40(base_tests.SimpleDataPlane):
         req.table_id = 0xff
         req.out_port = ofp.OFPP_NONE
 
-        max_sleep_duration = 5
+        # Shouldn't be needed.
+        duration_verifications = 5
         previous_duration = (-1, -1)
-        for time in range(0, max_sleep_duration):
-            logging.info("Sending ofp_flow_stats_request.")
+        for time in range(0, duration_verifications):
+            logging.info("Sending ofp_stats_request of type ofp.OFPST_FLOW")
             res, pkt = self.controller.transact(req)
-            self.assertTrue(res is not None, "No ofp_flow_stats message received in response to ofp_flow_stats_request")
-            self.assertTrue(res.type == ofp.OFPST_FLOW, "Expected ofp.OFPST_FLOW, got {0}".format(res.type))
+            self.assertTrue(res is not None, "No ofp_stats_reply message received in response to ofp_stats_request")
+            self.assertTrue(res.type == ofp.OFPST_FLOW, "Expected ofp_stats_reply of type ofp.OFPST_FLOW, got {0}".format(res.type))
             self.assertTrue(len(res.stats) == 1, "Received {0} ofp_flow_stats in the ofp_stats_reply message, but expected exactly 1".format(len(res.stats)))
 
             logging.info("Comparing duration in nsecs from ofp_flow_stats to previous duration in nsecs.")
             duration = (res.stats[0].duration_sec, res.stats[0].duration_nsec)
-            if duration[1] < previous_nsec_count:
+            if duration[1] < previous_duration[1]:
                 self.assertGreater(duration[0], previous_duration[0], "Duration in nsecs was less than previous duration in nsecs, but the duration in secs was not greater than the previous duration in secs.")
-                pass
-            self.assertNotEqual(res.stats[0].duration_nsec, previous_nsec_count, "ofp_flow_stats.duration_nsec was the same as the previous duration_nsec.")
-            logging.info("Sleeping for {0} seconds...".format(time))
-            sleep(time)
+            self.assertNotEqual(duration[1], previous_duration[1], "ofp_flow_stats.duration_nsec was the same as the previous duration_nsec.")
+            previous_duration = duration
 
 
 class Grp60No50(base_tests.SimpleDataPlane):
