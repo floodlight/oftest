@@ -149,6 +149,51 @@ class Grp60No30(base_tests.SimpleDataPlane):
             sleep(1)
 
 
+class Grp60No40(base_tests.SimpleDataPlane):    
+    '''
+    Verify Duration_nsec counters per flow varies in accordance with
+    the amount of time the flow was alive.
+    '''
+
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp60No40 Duration (nsecs).")
+        dataplane_ports = config["port_map"].keys()
+        dataplane_ports.sort()
+        self.assertTrue(len(dataplane_ports) > 1, "Not enough ports for test.")
+        
+        logging.info("Clearing switch state...")
+        rc = delete_all_flows(self.controller)
+        self.assertEqual(rc, 0, "Failed to delete all flows.")
+
+        logging.info("Installing flow entry that matches on in_port.")
+        (pkt,match) = wildcard_all_except_ingress(self, dataplane_ports)
+
+        req = message.flow_stats_request()
+        req.match= match
+        req.table_id = 0xff
+        req.out_port = ofp.OFPP_NONE
+
+        duration_verifications = 5
+        previous_duration = (-1, -1)
+        for v in range(0, duration_verifications):
+            logging.info("Sending ofp_stats_request of type ofp.OFPST_FLOW")
+            res, pkt = self.controller.transact(req)
+            self.assertTrue(res is not None, "No ofp_stats_reply message received in response to ofp_stats_request")
+            self.assertTrue(res.type == ofp.OFPST_FLOW, "Expected ofp_stats_reply of type ofp.OFPST_FLOW, got {0}".format(res.type))
+            self.assertTrue(len(res.stats) == 1, "Received {0} ofp_flow_stats in the ofp_stats_reply message, but expected exactly 1".format(len(res.stats)))
+
+            logging.info("Comparing duration in nsecs from ofp_flow_stats to previous duration in nsecs.")
+            duration = (res.stats[0].duration_sec, res.stats[0].duration_nsec)
+            if duration[1] < previous_duration[1]:
+                self.assertGreater(duration[0], previous_duration[0], "Duration in nsecs was less than previous duration in nsecs, but the duration in secs was not greater than the previous duration in secs.")
+            else:
+                self.assertNotEqual(duration[1], previous_duration[1], "ofp_flow_stats.duration_nsec {0} was the same as the previous duration_nsec {1}.".format(duration, previous_duration))
+            previous_duration = duration
+            time.sleep(1.5)
+
+
 class Grp60No50(base_tests.SimpleDataPlane):
 
     """Verify that rx_packets counter in the Port_Stats reply
