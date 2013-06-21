@@ -72,6 +72,58 @@ class Grp30No10(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt_exactflow))
         receive_pkt_check(self.dataplane, pkt_exactflow, [of_ports[1]], set(of_ports).difference([of_ports[1]]), self)
 
+class Grp30No20(base_tests.SimpleDataPlane):
+    '''
+    Send a ofp_stats_request of type OFPST_PORT and observe port
+    configuration. Only testing that OFPPC_PORT_DOWN is set and
+    unset correctly.
+    '''
+
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp30No20 PortMod PortDown Test")
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+
+        #Retrieve Port Configuration --- 
+        logging.info("Sending ofp_stats_request of type OFPST_PORT.")
+        (hw_addr, port_config, advert) = \
+            port_config_get(self.controller, of_ports[1])
+        self.assertTrue(port_config is not None, "Did not receive ofp_port_config.")
+        logging.info("Received ofp_stats_reply of type OFPST_PORT with ofp_port_config: {0}".format(bin(port_config)))
+        logging.info("OFPPC_PORT_DOWN on port {0} is set to: {1}".format(of_ports[1], port_config & ofp.OFPPC_PORT_DOWN))
+        logging.info("OFPPC_NO_STP on port {0} is set to: {1}".format(of_ports[1], port_config & ofp.OFPPC_NO_STP))
+        logging.info("OFPPC_NO_RECV on port {0} is set to: {1}".format(of_ports[1], port_config & ofp.OFPPC_NO_RECV))
+        logging.info("OFPPC_NO_RECV_STP on port {0} is set to: {1}".format(of_ports[1], port_config & ofp.OFPPC_NO_RECV_STP))
+        logging.info("OFPPC_NO_FLOOD on port {0} is set to: {1}".format(of_ports[1], port_config & ofp.OFPPC_NO_FLOOD))
+        logging.info("OFPPC_NO_FWD on port {0} is set to: {1}".format(of_ports[1], port_config & ofp.OFPPC_NO_FWD))
+        logging.info("OFPPC_NO_PACKET_IN on port {0} is set to: {1}".format(of_ports[1], port_config & ofp.OFPPC_NO_PACKET_IN))
+        self.assertTrue(port_config & ofp.OFPPC_PORT_DOWN != 1, "Port marked as down, but expected to be up.")
+
+        req = port_config_set(self.controller, of_ports[1],
+                             port_config ^ ofp.OFPPC_PORT_DOWN, ofp.OFPPC_PORT_DOWN)
+        logging.info("Sending ofp_port_mod to set port {0} down.".format(of_ports[1]))
+        self.assertNotEqual(req, -1, "Port configuration failed")
+        
+        (hw_addr, port_config, advert) = \
+            port_config_get(self.controller, of_ports[1])
+        self.assertTrue(port_config is not None, "Did not receive ofp_port_config.")
+        logging.info("Received ofp_stats_reply of type OFPST_PORT with ofp_port_config: {0}".format(bin(port_config)))
+        self.assertTrue(port_config & ofp.OFPPC_PORT_DOWN == 1, "Port marked as up, but expected to be down.")
+
+        req = port_config_set(self.controller, of_ports[1],
+                             port_config ^ ofp.OFPPC_PORT_DOWN, ofp.OFPPC_PORT_DOWN)
+        logging.info("Sending ofp_port_mod to set port {0} back up.".format(of_ports[1]))
+        self.assertNotEqual(req, -1, "Port configuration failed")
+        
+        (hw_addr, port_config, advert) = \
+            port_config_get(self.controller, of_ports[1])
+        self.assertTrue(port_config is not None, "Did not receive ofp_port_config.")
+        logging.info("Received ofp_stats_reply of type OFPST_PORT with ofp_port_config: {0}".format(bin(port_config)))
+        self.assertTrue(port_config & ofp.OFPPC_PORT_DOWN != 1, "Port marked as down, but expected to be up.")
+
+
 class Grp30No40(base_tests.SimpleDataPlane):
     
     """Modify the behavior of physical port using Port Modification Messages
@@ -132,7 +184,53 @@ class Grp30No40(base_tests.SimpleDataPlane):
         self.assertTrue(response is not None,
                         'Port Status Message not generated.\n PLEASE NOTE: Port config could not be set back to default ')
         
+class Grp30No80(base_tests.SimpleDataPlane):
 
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp30No80 Flood bits Test")
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+
+        print len(of_ports)
+        for i in range (len(of_ports)):
+ 
+            #Retrieve Port Configuration --- 
+            logging.info("Sending Features Request")
+            (hw_addr, port_config, advert) = \
+                port_config_get(self.controller, of_ports[i])
+
+            #Modify Port Configuration 
+            logging.info("Setting OFPPC_NO_FLOOD bit to 0 on %s" %str(of_ports[i]))
+            logging.info("Port config is set to: {0}".format(bin(port_config & ~ofp.OFPPC_NO_FLOOD)))
+            rv = port_config_set(self.controller, of_ports[i],
+                                 port_config & ~ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD)
+            self.assertTrue(rv != -1, "Error sending port mod")
+            self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+ 
+        #Sending a flow with output action on flood ports
+        logging.info("Sending flow_mod message..")
+        pkt=simple_tcp_packet()
+        match = parse.packet_to_flow_match(pkt)
+        self.assertTrue(match is not None, "Could not generate flow match from pkt")
+        match.wildcards = ofp.OFPFW_ALL ^ ofp.OFPFW_NW_DST_MASK
+        match.nw_dst = parse.parse_ip("244.0.0.1")
+        flow_mod_msg = message.flow_mod()
+        flow_mod_msg.match = match
+        flow_mod_msg.command = ofp.OFPFC_ADD
+        act=action.action_output()       
+        act.port = ofp.OFPP_FLOOD
+        self.assertTrue(flow_mod_msg.actions.add(act), "Could not add action")
+        rv = self.controller.message_send(flow_mod_msg.pack())
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+       
+        #Sending packet to check if flood ports respond
+        self.dataplane.send(of_ports[0], str(pkt))
+        yes_ports= set(of_ports).difference([of_ports[0]])
+        no_ports = set(of_ports).difference(yes_ports)
+        receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
 
 class Grp30No90(base_tests.SimpleDataPlane):
     """ 
