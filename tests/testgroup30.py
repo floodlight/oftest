@@ -202,9 +202,10 @@ class Grp30No80(base_tests.SimpleDataPlane):
                 port_config_get(self.controller, of_ports[i])
 
             #Modify Port Configuration 
-            logging.info("Setting OFPPC_NO_FLOOD on %s" %str(of_ports[i]))
+            logging.info("Setting OFPPC_NO_FLOOD bit to 0 on %s" %str(of_ports[i]))
+            logging.info("Port config is set to: {0}".format(bin(port_config & ~ofp.OFPPC_NO_FLOOD)))
             rv = port_config_set(self.controller, of_ports[i],
-                                 port_config & 0, ofp.OFPPC_NO_FLOOD)
+                                 port_config & ~ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD)
             self.assertTrue(rv != -1, "Error sending port mod")
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
  
