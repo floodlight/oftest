@@ -75,7 +75,8 @@ class Grp30No10(base_tests.SimpleDataPlane):
 class Grp30No20(base_tests.SimpleDataPlane):
     '''
     Send a ofp_stats_request of type OFPST_PORT and observe port
-    configuration.
+    configuration. Only testing that OFPPC_PORT_DOWN is set and
+    unset correctly.
     '''
 
     @wireshark_capture
@@ -86,16 +87,21 @@ class Grp30No20(base_tests.SimpleDataPlane):
         of_ports.sort()
 
         #Retrieve Port Configuration --- 
-        logging.info("Sending Features Request")
+        logging.info("Sending ofp_stats_request of type OFPST_PORT.")
         (hw_addr, port_config, advert) = \
             port_config_get(self.controller, of_ports[1])
-        logging.info("Extracting the port configuration from the reply")
-        self.assertTrue(port_config is not None, "Did not get port config")
-          
-        logging.debug("NO STP bit " + str(of_ports[1]) + " is now " + 
-                           str(port_config & ofp.OFPPC_NO_STP))
-        self.assertTrue(port_config & ofp.OFPPC_PORT_DOWN != 1, "Port down")
-          
+        self.assertTrue(port_config is not None, "Did not receive ofp_port_config.")
+        logging.info("Received ofp_stats_reply of type OFPST_PORT with ofp_port_config: {0}".format(bin(port_config)))
+        logging.info("OFPPC_PORT_DOWN on port {0} is set to: {1}".format(of_ports[1], port_config & ofp.OFPPC_PORT_DOWN))
+        logging.info("OFPPC_NO_STP on port {0} is set to: {1}".format(of_ports[1], port_config & ofp.OFPPC_NO_STP))
+        logging.info("OFPPC_NO_RECV on port {0} is set to: {1}".format(of_ports[1], port_config & ofp.OFPPC_NO_RECV))
+        logging.info("OFPPC_NO_RECV_STP on port {0} is set to: {1}".format(of_ports[1], port_config & ofp.OFPPC_NO_RECV_STP))
+        logging.info("OFPPC_NO_FLOOD on port {0} is set to: {1}".format(of_ports[1], port_config & ofp.OFPPC_NO_FLOOD))
+        logging.info("OFPPC_NO_FWD on port {0} is set to: {1}".format(of_ports[1], port_config & ofp.OFPPC_NO_FWD))
+        logging.info("OFPPC_NO_PACKET_IN on port {0} is set to: {1}".format(of_ports[1], port_config & ofp.OFPPC_NO_PACKET_IN))
+
+        self.assertTrue(port_config & ofp.OFPPC_PORT_DOWN != 1, "Port marked as down, but expected to be up.")
+
         logging.debug("NO STP bit " + str(of_ports[1]) + " is now " + 
                            str(port_config & ofp.OFPPC_NO_STP))
         self.assertTrue(port_config & ofp.OFPPC_NO_STP == 0, "OFPPC_NO_STP set")
