@@ -241,6 +241,60 @@ class Grp40No50(base_tests.SimpleProtocol):
         self.assertTrue(count<10,"Did not receive any error message")
         logging.info("Received the expected OFPT_ERROR message")
 
+class Grp40No60(base_tests.SimpleDataPlane): 
+    '''
+    Non-Existant Output Port
+    Attempting to install an ofp_flow_mod with an out_port equal to a
+    port number that does not yet (or will ever) exist should trigger one of
+    two behaviors.
+    a.) Install the ofp_flow_mod and drop all matching packets.
+    b.) Respond with message OFPT_ERROR, type OFPET_BAD_ACTION, and code
+    OFPBAC_BAD_OUT_PORT.
+    '''
+
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp40No60 flow on non existant port test")
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+  
+        #Clear switch state
+        rc = delete_all_flows(self.controller)
+        self.assertEqual(rc, 0, "Failed to delete all flows")
+
+        #Send flow_mod message
+        logging.info("Sending flow_mod message..")   
+        pkt=simple_tcp_packet()
+        request = flow_msg_create(self, pkt, ing_port=of_ports[0], egr_ports=ofp.OFPP_MAX)
+        rv = self.controller.message_send(request)
+        self.assertTrue(rv != -1 ,"Unable to send the message")
+        
+        try:
+            # poll for error message
+            logging.info("Waiting for OFPT_ERROR message...")
+            (res, raw) = self.controller.poll(ofp.OFPT_ERROR, timeout=10)
+            self.assertTrue(res is not None,"Did not receive an error")
+            self.assertTrue(res.type == ofp.OFPET_BAD_ACTION or res.type == ofp.OFPET_FLOW_MOD_FAILED,"Expected ofp_error_msg with type OFPET_BAD_ACTION or OFPET_FLOW_MOD_FAILED, but received {0} instead.".format(res.type))
+            if res.type == ofp.OFPET_BAD_ACTION:
+                self.assertTrue(res.code == ofp.OFPBAC_BAD_OUT_PORT, "Expected ofp_error_msg of type OFPET_BAD_ACTION with error code OFPBAC_BAD_OUT_PORT, but received {0} instead.".format(res.code))
+            else:
+                self.assertTrue(res.code == ofp.OFPFMFC_EPERM, "Expected ofp_error_msg of type OFPET_FLOW_MOD_FAILED with error code OFPFMFC_EPERM, but received {0} instead.".format(res.code))
+            #check that no flows are added 
+            rv=all_stats_get(self)
+            self.assertTrue(rv["flows"] == 0, "{0} flows installed in switch, but expected exactly 0.".format(rv["flows"]))
+            logging.info("ofp_error_msg received and no ofp_flow_mod was installed on switch for bad out port.")
+        except AssertionError as e:
+            logging.info("Did not implement behavior 40.60b: " + str(e))
+            #check that flow is added 
+            rv=all_stats_get(self)
+            self.assertTrue(rv["flows"]==1, "{0} flows installed in switch, but expected excactly 1.".format(rv["flows"]))
+            logging.info("Error msg not sent  and no flow added for bad port")
+            #Sending packet to check if flood ports respond
+            self.dataplane.send(of_ports[0], str(pkt))
+            yes_ports= []
+            no_ports = of_ports
+            receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
 
 class Grp40No70(base_tests.SimpleProtocol): 
 
