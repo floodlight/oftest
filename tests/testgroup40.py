@@ -241,9 +241,16 @@ class Grp40No50(base_tests.SimpleProtocol):
         self.assertTrue(count<10,"Did not receive any error message")
         logging.info("Received the expected OFPT_ERROR message")
 
-class Grp40No60(base_tests.SimpleDataPlane):
-    
-    """Behaviour of switch when flows are added on non existant ports"""
+class Grp40No60(base_tests.SimpleDataPlane): 
+    '''
+    Non-Existant Output Port
+    Attempting to install an ofp_flow_mod with an out_port equal to a
+    port number that does not yet (or will ever) exist should trigger one of
+    two behaviors.
+    a.) Install the ofp_flow_mod and drop all matching packets.
+    b.) Respond with message OFPT_ERROR, type OFPET_BAD_ACTION, and code
+    OFPBAC_BAD_OUT_PORT.
+    '''
 
     @wireshark_capture
     def runTest(self):
@@ -280,7 +287,7 @@ class Grp40No60(base_tests.SimpleDataPlane):
         except:
             #check that flow is added 
             rv=all_stats_get(self)
-            self.assertTrue(rv["flows"]==1, "flow not added")
+            self.assertTrue(rv["flows"]==1, "{0} flows installed in switch, but only expected 1.".format(rv["flows"]))
             logging.info("Error msg not sent  and no flow added for bad port")
             #Sending packet to check if flood ports respond
             self.dataplane.send(of_ports[0], str(pkt))
