@@ -99,20 +99,30 @@ class Grp30No20(base_tests.SimpleDataPlane):
         logging.info("OFPPC_NO_FLOOD on port {0} is set to: {1}".format(of_ports[1], port_config & ofp.OFPPC_NO_FLOOD))
         logging.info("OFPPC_NO_FWD on port {0} is set to: {1}".format(of_ports[1], port_config & ofp.OFPPC_NO_FWD))
         logging.info("OFPPC_NO_PACKET_IN on port {0} is set to: {1}".format(of_ports[1], port_config & ofp.OFPPC_NO_PACKET_IN))
-
         self.assertTrue(port_config & ofp.OFPPC_PORT_DOWN != 1, "Port marked as down, but expected to be up.")
 
-        logging.debug("NO STP bit " + str(of_ports[1]) + " is now " + 
-                           str(port_config & ofp.OFPPC_NO_STP))
-        self.assertTrue(port_config & ofp.OFPPC_NO_STP == 0, "OFPPC_NO_STP set")
+        req = port_config_set(self.controller, of_ports[1],
+                             port_config ^ ofp.OFPPC_PORT_DOWN, ofp.OFPPC_PORT_DOWN)
+        logging.info("Sending ofp_port_mod to set port {0} down.".format(of_ports[1]))
+        self.assertNotEqual(req, -1, "Port configuration failed")
+        
+        (hw_addr, port_config, advert) = \
+            port_config_get(self.controller, of_ports[1])
+        self.assertTrue(port_config is not None, "Did not receive ofp_port_config.")
+        logging.info("Received ofp_stats_reply of type OFPST_PORT with ofp_port_config: {0}".format(bin(port_config)))
+        self.assertTrue(port_config & ofp.OFPPC_PORT_DOWN == 1, "Port marked as up, but expected to be down.")
 
-        logging.debug("NO STP bit " + str(of_ports[1]) + " is now " + 
-                           str(port_config & ofp.OFPPC_NO_RECV))
-        self.assertTrue(port_config & ofp.OFPPC_NO_STP == 0, "OFPPC_NO_RECV set")
+        req = port_config_set(self.controller, of_ports[1],
+                             port_config ^ ofp.OFPPC_PORT_DOWN, ofp.OFPPC_PORT_DOWN)
+        logging.info("Sending ofp_port_mod to set port {0} back up.".format(of_ports[1]))
+        self.assertNotEqual(req, -1, "Port configuration failed")
+        
+        (hw_addr, port_config, advert) = \
+            port_config_get(self.controller, of_ports[1])
+        self.assertTrue(port_config is not None, "Did not receive ofp_port_config.")
+        logging.info("Received ofp_stats_reply of type OFPST_PORT with ofp_port_config: {0}".format(bin(port_config)))
+        self.assertTrue(port_config & ofp.OFPPC_PORT_DOWN != 1, "Port marked as down, but expected to be up.")
 
-        logging.debug("NO STP bit " + str(of_ports[1]) + " is now " + 
-                           str(port_config & ofp.OFPPC_NO_RECV_STP))
-        self.assertTrue(port_config & ofp.OFPPC_NO_STP == 0, "OFPPC_NO_RECV_STP set")
 
 class Grp30No40(base_tests.SimpleDataPlane):
     
