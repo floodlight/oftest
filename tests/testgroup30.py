@@ -73,6 +73,10 @@ class Grp30No10(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane, pkt_exactflow, [of_ports[1]], set(of_ports).difference([of_ports[1]]), self)
 
 class Grp30No20(base_tests.SimpleDataPlane):
+    '''
+    Send a ofp_stats_request of type OFPST_PORT and observe port
+    configuration.
+    '''
 
     @wireshark_capture
     def runTest(self):
