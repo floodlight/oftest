@@ -225,21 +225,9 @@ class Grp40No40(base_tests.SimpleProtocol):
         self.assertTrue(flowmod.actions.add(act), "Could not add actions")
 
         i=1
-        flow_step = 100
-        flow_count = 100
+        flows = 100
         logging.info("installing flow entries with different priorities")
 
-        flowmod.priority = 0
-        while True:
-            for i in range(flow_step):
-                flowmod.priority += 1
-                self.controller.message_send(flowmod)
-                (res, pkt) = self.controller.transact(message.barrier_request())
-            stats = all_stats_get(self)
-            self.assertTrue(stats['flows'] == flow_count, 'Expected {0} flows, received {1}'.format(flow_count, stats['flows']))
-            flow_count += flow_step
-
-        '''
         while 1:
             while i<=flows:
                 flowmod.priority = i
@@ -264,7 +252,7 @@ class Grp40No40(base_tests.SimpleProtocol):
                 self.assertTrue(response.code == ofp.OFPFMFC_ALL_TABLES_FULL, "Expected response code is ofp.OFPFMFC_ALL_TABLES_FULL got {0}" .format(response.code))
                 logging.info("Got the expected Error message")
                 return 0
-                ''' 
+ 
             
     
             
