@@ -233,11 +233,12 @@ class Grp40No40(base_tests.SimpleProtocol):
                 logging.debug("installing a flow number {0}" .format(i))
                 rv = self.controller.message_send(flowmod)
                 self.assertTrue(rv != -1, "Error sending the Flow mod")
+                self.assertEqual(do_barrier(self.controller),0,"barrier failed")
                 i+=1
             flows+=100
             stats = all_stats_get(self)
             try :
-                self.assertTrue(stats["flows"]==i, "Didnot add the flow entry:Verify the reason")
+                self.assertTrue(stats["flows"]==(i-1), "Didnot add the flow entry:Verify the reason")
             except :
                 logging.info("Installed {0} flows succesfully" .format(stats["flows"]))
                 flowmod.priority = i
