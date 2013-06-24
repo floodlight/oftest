@@ -287,8 +287,7 @@ class Grp80No60(base_tests.SimpleProtocol):
         #Grp80No160
         if(reply.capabilities &1<<ofp.OFPC_IP_REASM):
             supported_capabilities.append('OFPC_IP_REASM')
-        else:
-            mandatory = 1
+       
         if(reply.capabilities &1<<ofp.OFPC_QUEUE_STATS):
             supported_capabilities.append('OFPC_QUEUE_STATS')
         #Grp80No170
