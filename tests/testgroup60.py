@@ -180,7 +180,7 @@ class Grp60No40(base_tests.SimpleDataPlane):
         for v in range(0, duration_verifications):
             logging.info("Sending ofp_stats_request of type ofp.OFPST_FLOW")
             res, pkt = self.controller.transact(req)
-            self.assertTrue(res is not None, "No ofp_stats_reply message received in response to ofp_stats_request")
+            self.assertTrue(res is not None, "No ofp_stats_reply message received in response to ofp_stats_request.")
             self.assertTrue(res.type == ofp.OFPST_FLOW, "Expected ofp_stats_reply of type ofp.OFPST_FLOW, got {0}".format(res.type))
             self.assertTrue(len(res.stats) == 1, "Received {0} ofp_flow_stats in the ofp_stats_reply message, but expected exactly 1".format(len(res.stats)))
 
@@ -189,6 +189,12 @@ class Grp60No40(base_tests.SimpleDataPlane):
             if duration[1] < previous_duration[1]:
                 self.assertGreater(duration[0], previous_duration[0], "Duration in nsecs was less than previous duration in nsecs, but the duration in secs was not greater than the previous duration in secs.")
             else:
+                # In the case that a switch can't report in
+                # millisecond granularity, we expect
+                # duration_nsec to be reported as 0xffffffff.
+                if duration[1] == previous_duration[1] and duration[1] == 4294967295:
+                    logging.info("Duration in nsec is not supported. Reported as -1 or 0xffffffff")
+                    return
                 self.assertNotEqual(duration[1], previous_duration[1], "ofp_flow_stats.duration_nsec {0} was the same as the previous duration_nsec {1}.".format(duration, previous_duration))
             previous_duration = duration
             time.sleep(1.5)
