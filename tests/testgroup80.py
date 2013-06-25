@@ -258,43 +258,39 @@ class Grp80No60(base_tests.SimpleProtocol):
         self.assertTrue('OFPAT_OUTPUT' in supported_actions,"Required Action--Forward is not supported ")
         logging.info("Supported Actions: " + str(supported_actions))
 
+        logging.info("Capabilities bitmap: {0}".format(bin(reply.capabilities)))
         supported_capabilities = []
         mandatory=0
         #Grp80No110
-        if(reply.capabilities &1<<ofp.OFPC_FLOW_STATS):
+        if(reply.capabilities & ofp.OFPC_FLOW_STATS):
             supported_capabilities.append('OFPC_FLOW_STATS')
         else:
             mandatory = 1
         #Grp80No120
-        if(reply.capabilities &1<<ofp.OFPC_TABLE_STATS):
+        if(reply.capabilities & ofp.OFPC_TABLE_STATS):
             supported_capabilities.append('OFPC_TABLE_STATS')
         else:
             mandatory = 1
         #Grp80No130
-        if(reply.capabilities &1<<ofp.OFPC_PORT_STATS):
+        if(reply.capabilities & ofp.OFPC_PORT_STATS):
             supported_capabilities.append('OFPC_PORT_STATS')
         else:
             mandatory = 1
         #Grp80No140
-        if(reply.capabilities &1<<ofp.OFPC_STP):
+        if(reply.capabilities & ofp.OFPC_STP):
             supported_capabilities.append('OFPC_STP')
-       
-        #Grp80N0150
-        if(reply.capabilities &1<<ofp.OFPC_RESERVED):
-            supported_capabilities.append('OFPC_RESERVED')
-        else:
+        #Grp80N0150 - Reserved, must be Zero
+        if(reply.capabilities & ofp.OFPC_RESERVED):
             mandatory = 1
         #Grp80No160
-        if(reply.capabilities &1<<ofp.OFPC_IP_REASM):
+        if(reply.capabilities & ofp.OFPC_IP_REASM):
             supported_capabilities.append('OFPC_IP_REASM')
-       
-        if(reply.capabilities &1<<ofp.OFPC_QUEUE_STATS):
+
+        if(reply.capabilities & ofp.OFPC_QUEUE_STATS):
             supported_capabilities.append('OFPC_QUEUE_STATS')
-        #Grp80No170
-        if(reply.capabilities &1<<ofp.OFPC_ARP_MATCH_IP):
+        #Grp80No170 - Match on IP src and IP dst are Optional
+        if(reply.capabilities & ofp.OFPC_ARP_MATCH_IP):
             supported_capabilities.append('OFPC_ARP_MATCH_IP')
-        else:
-            mandatory = 1
 
         logging.info("Supported Capabilities: " +  str(supported_capabilities))
         self.assertTrue(mandatory == 0, "Switch does not support all mandatory capabilities") 
