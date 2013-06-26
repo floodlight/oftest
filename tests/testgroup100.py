@@ -146,8 +146,7 @@ class Grp100No50(base_tests.SimpleProtocol):
         (response, pkt) = self.controller.transact(request)
         self.assertEqual(response.header.type,ofp.OFPT_ERROR,'response is not error message') 
         self.assertEqual(response.type, ofp.OFPET_BAD_REQUEST,'Error type not as expected')
-        if not response.code == ofp.OFPBAC_BAD_VENDOR | ofp.OFPBRC_EPERM :
-            logging.info("Error code is not as expected")
+        self.assertTrue(response.code == ofp.OFPBRC_BAD_VENDOR or response.code == ofp.OFPBRC_EPERM, "Error code is not as expected")
 
 class Grp100No80(base_tests.SimpleProtocol):  
   
@@ -294,7 +293,7 @@ class Grp100No150(base_tests.SimpleProtocol):
     """When the output to switch port action refers to a port that does not exit ,
     the switch generates an OFPT_ERROR msg , with type field OFPT_BAD_ACTION and code field OFPBAC_BAD_OUT_PORT
     
-    Some switches may generate an OFPT_ERROR , with type field FLOW_MOD_FAILED and code permission errors 
+    Some switches may generate an OFPT_ERROR , with eror type  FLOW_MOD_FAILED and error code OFPFMFC_EPERM
     (this is also acceptable)
     """
     @wireshark_capture
@@ -335,7 +334,7 @@ class Grp100No160(base_tests.SimpleProtocol):
     then the switch reponds back with an OFPT_ERROR msg
     with type field OFPT_BAD_ACTION and code field OFPBAC_BAD_ARGUMENT
 
-    Error code permission error is also acceptable
+    Error code OFPBAC_EPERM error is also acceptable
     """
     @wireshark_capture
     def runTest(self):
@@ -375,7 +374,7 @@ class Grp100No160(base_tests.SimpleProtocol):
         (response, raw) = self.controller.poll(ofp.OFPT_ERROR, timeout=10)
         self.assertTrue(response is not None,"Did not receive an error")
         self.assertTrue(response.type==ofp.OFPET_BAD_ACTION,"Unexpected Error type {0}. Expected OFPET_BAD_ACTION error type" .format(response.type))
-        self.assertTrue(response.code==ofp.OFPBAC_BAD_ARGUMENT | ofp.OFPBAC_EPERM," Unexpected error code, Expected ofp.OFPBAC_BAD_ARGUMENT | ofp.OFPBAC_EPERM error code")
+        self.assertTrue(response.code==ofp.OFPBAC_BAD_ARGUMENT or response.code == ofp.OFPBAC_EPERM," Unexpected error code, Expected ofp.OFPBAC_BAD_ARGUMENT or ofp.OFPBAC_EPERM error code got {0}" .format(response.code))
         
 
 class Grp100No180(base_tests.SimpleProtocol):
@@ -615,7 +614,7 @@ class Grp100No250(base_tests.SimpleProtocol):
     """
     Unsupported action list - cannot process in order specified
     If a switch cannot process the action list for any  flow mod message in the order specied, 
-    it must immediately return an OFPET_FLOW_MOD_FAILED :OFPFMFC_UNSUPPORTED error and reject the flow """
+    it must return an Error with error.type OFPET_FLOW_MOD_FAILED and error.code OFPFMFC_UNSUPPORTED or OFPFMFC_EPERM error and reject the flow """
     
     @wireshark_capture
     def runTest(self):
@@ -640,7 +639,7 @@ class Grp100No250(base_tests.SimpleProtocol):
         (response, raw) = self.controller.poll(ofp.OFPT_ERROR, timeout=10)
         self.assertTrue(response is not None,"Did not receive an error")
         self.assertTrue(response.type==ofp.OFPET_FLOW_MOD_FAILED,"Unexpected Error type. Expected OFPET_FLOW_MOD_FAILED error type")
-        self.assertTrue(response.code==ofp.OFPFMFC_UNSUPPORTED or response.code==ofp.OFPFMFC_EPERM," Unexpected error code, Expected ofp.OFPFMFC_UNSUPPORTED | ofp.OFPFMFC_EPERM error code")
+        self.assertTrue(response.code==ofp.OFPFMFC_UNSUPPORTED or response.code==ofp.OFPFMFC_EPERM," Unexpected error code, Expected ofp.OFPFMFC_UNSUPPORTED or ofp.OFPFMFC_EPERM error code got{0}" .format(response.code))
        
        
 
