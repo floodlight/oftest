@@ -288,7 +288,10 @@ class Grp40No50(base_tests.SimpleProtocol):
             if not response:  # Timeout
                 break
             self.assertTrue(response.type == ofp.OFPET_BAD_ACTION or response.type == ofp.OFPET_FLOW_MOD_FAILED, "Error type is not as expected")
-            self.assertTrue(response.code == ofp.OFPBAC_BAD_OUT_PORT or response.code == ofp.OFPFMFC_EPERM, "Error field code is not as expected")
+            if response.type == ofp.OFPET_BAD_ACTION:
+                self.assertTrue(response.code == ofp.OFPBAC_BAD_OUT_PORT, "Expected response code OFPBAC_BAD_OUT_PORT, but received {0}".format(response.code))
+            else:
+                self.assertTrue(response.code == ofp.OFPFMFC_EPERM, "Expected response code OFPFMFC_EPERM, but received {0}".format(response.code))
             if not config["relax"]:  # Only one attempt to match
                 break
             count += 1
