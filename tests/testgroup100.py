@@ -293,7 +293,7 @@ class Grp100No150(base_tests.SimpleProtocol):
     """When the output to switch port action refers to a port that does not exit ,
     the switch generates an OFPT_ERROR msg , with type field OFPT_BAD_ACTION and code field OFPBAC_BAD_OUT_PORT
     
-    Some switches may generate an OFPT_ERROR , with eror type  FLOW_MOD_FAILED and error code OFPFMFC_EPERM
+    Some switches may generate an OFPT_ERROR , with error type  FLOW_MOD_FAILED and error code OFPFMFC_EPERM
     (this is also acceptable)
     """
     @wireshark_capture
