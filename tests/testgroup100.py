@@ -351,7 +351,7 @@ class Grp100No160(base_tests.SimpleProtocol):
 
         # flow with modifed arguments
         flow_mod_msg = message.flow_mod()
-        flow_mod_msg.match.in_port = ofp.OFPP_NONE
+        flow_mod_msg.match.in_port = of_ports[0]
         flow_mod_msg.match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_SRC
         act = action.action_set_vlan_vid()
         act.type = ofp.OFPAT_SET_VLAN_VID
