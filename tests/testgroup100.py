@@ -348,17 +348,6 @@ class Grp100No160(base_tests.SimpleProtocol):
         of_ports.sort()
         self.assertTrue(len(of_ports)>1, "not enough ports for test")
 
-        flow_mod_msg = message.flow_mod()
-        flow_mod_msg.match.in_port = ofp.OFPP_NONE
-        act = action.action_enqueue()
-        act.type = ofp.OFPAT_ENQUEUE
-        act.port = of_ports[1]
-        act.queue_id = 1
-        self.assertTrue(flow_mod_msg.actions.add(act), "Could not add action")
-
-        rv = self.controller.message_send(flow_mod_msg)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         # flow with modifed arguments
         flow_mod_msg = message.flow_mod()
