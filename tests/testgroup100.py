@@ -344,25 +344,19 @@ class Grp100No160(base_tests.SimpleProtocol):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        flow_mod_msg = message.flow_mod()
-        flow_mod_msg.match.in_port = ofp.OFPP_NONE
-        act = action.action_enqueue()
-        act.type = ofp.OFPAT_ENQUEUE
-        act.port = ofp.OFPP_ALL
-        act.queue_id = 1
-        self.assertTrue(flow_mod_msg.actions.add(act), "Could not add action")
+        of_ports=config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports)>1, "not enough ports for test")
 
-        rv = self.controller.message_send(flow_mod_msg)
-        self.assertTrue(rv != -1, "Error installing flow mod")
-        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         # flow with modifed arguments
         flow_mod_msg = message.flow_mod()
-        flow_mod_msg.match.in_port = ofp.OFPP_NONE
+        flow_mod_msg.match.in_port = of_ports[0]
+        flow_mod_msg.match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_SRC
         act = action.action_set_vlan_vid()
         act.type = ofp.OFPAT_SET_VLAN_VID
         act.len = 8 
-        act.port = ofp.OFPP_ALL
+        act.port = of_ports[1]
         act.vlan_vid = 5000 # incorrect vid 
         act.pad = [0, 0]
         self.assertTrue(flow_mod_msg.actions.add(act), "Could not add action")
