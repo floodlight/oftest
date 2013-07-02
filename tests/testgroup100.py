@@ -181,6 +181,47 @@ class Grp100No80(base_tests.SimpleProtocol):
         self.assertTrue(response.code==ofp.OFPBRC_BAD_LEN, 
                                'Error code is not OFPBRC_BAD_LEN got {0}'.format(response.code))   
 
+class Grp100No90(base_tests.SimpleDataPlane):
+    """
+    Specified buffer does not exist. 
+
+    When the buffer specified by the controller does not exit , the switch
+    replies back with OFPT_ERROR msg with type fiels OFPET_BAD_REQUEST
+
+    """
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp100No100 BadRequestBufferUnknown test")
+
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+
+        pkt = simple_tcp_packet(pktlen=1024);
+        self.dataplane.send(of_ports[0], str(pkt))
+        (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_PACKET_IN,
+                                               timeout=5)
+
+        msg = message.packet_out()
+        msg.buffer_id = response.buffer_id  
+        act = action.action_output()
+        act.port = of_ports[1]
+        self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
+
+        logging.info("PacketOut to: " + str(of_ports[1]))
+        rv = self.controller.message_send(msg)
+        self.assertTrue(rv == 0, "Error sending out message")
+
+        msg1 = message.packet_out()
+        msg1.buffer_id = response.buffer_id  
+        act1 = action.action_output()
+        act1.port = of_ports[1]
+        self.assertTrue(msg.actions.add(act1), 'Could not add action to msg')
+
+        logging.info("PacketOut to: " + str(of_ports[1]))
+        rv = self.controller.message_send(msg1)
+        self.assertTrue(rv == 0, "Error sending out message")
 
 class Grp100No100(base_tests.SimpleProtocol):
     """
