@@ -286,7 +286,7 @@ def match_arp_opcode(self,of_ports,priority=None):
     match = parse.packet_to_flow_match(pkt_match)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
 
-    match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_NW_PROTO
+    match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_DL_TYPE^ofp.OFPFW_NW_PROTO
     match_send_flowadd(self, match, priority, of_ports[1])
     return (pkt_match, match)  
 
