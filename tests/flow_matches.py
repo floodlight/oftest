@@ -650,6 +650,42 @@ class ICMPCode(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(pkt2))
         verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
+class ArpOpcode(base_tests.SimpleDataPlane):
+
+    """"Verify match on single Header Field -- Arp Protocol"""
+
+    def runTest(self):
+
+        logging.info("Running Arp Protocol test")
+
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+    
+        #Clear Switch State
+        delete_all_flows(self.controller)
+
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+    
+        logging.info("Inserting a flow with match on Arp Protocol Opcode")
+        logging.info("Sending matching and non-matching arp packets")
+        logging.info("Verifying only matching packets implements the action specified in the flow")
+
+        #Create a flow matching on ARP Opcode 
+        (pkt,match) = match_arp_opcode(self,of_ports)
+
+        #Send Packet matching the flow 
+        self.dataplane.send(of_ports[0], str(pkt))
+
+        #Verify packet implements the action specified in the flow
+        receive_pkt_check(self.dataplane,pkt,[yes_ports],no_ports,self)
+        
+        #Create a non-matching packet , verify packet_in get generated
+        pkt2 = simple_arp_packet(arp_op=2)
+        self.dataplane.send(of_ports[0], str(pkt2))
+        verify_packet_in(self, str(pkt2), of_ports[0], ofp.OFPR_NO_MATCH)
 
 class ArpSenderIP(base_tests.SimpleDataPlane):
 
