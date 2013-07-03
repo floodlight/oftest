@@ -198,6 +198,17 @@ class Grp100No90(base_tests.SimpleDataPlane):
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
+        ms = message.packet_out()
+        ac = action.action_output()
+        ac.port = of_ports[1]
+        ac.max_len = 128
+        self.assertTrue(ms.actions.add(ac), 'Could not add action to msg')
+
+        logging.info("PacketOut to: " + str(of_ports[1]))
+        rv = self.controller.message_send(ms)
+        self.assertTrue(rv == 0, "Error sending out message")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
         pkt = simple_tcp_packet(pktlen=1024);
         self.dataplane.send(of_ports[0], str(pkt))
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_PACKET_IN,
