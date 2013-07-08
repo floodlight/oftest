@@ -390,13 +390,17 @@ class Grp100No180(base_tests.SimpleProtocol):
         #Clear switch state
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
+        self.assertEqual(do_barrier(self.controller),0, "Barrier Failed")
 
         #Create flow_mod message with lot of actions
         flow_mod_msg = message.flow_mod()
-        flow_mod_msg.match.in_port=ofp.OFPP_NONE
+        flow_mod_msg.match.in_port=of_ports[0]
         # add a lot of actions
-        no = 50
-        for i in range(no):
+        no = 1500
+        for i in range(2, no):
+            act1 = action.action_set_vlan_vid()
+            act1.vlan_vid=i
+            self.assertTrue(flow_mod_msg.actions.add(act1), "Could not add action")
             act = action.action_output()
             act.port = of_ports[1]
             self.assertTrue(flow_mod_msg.actions.add(act), "Could not add action")
