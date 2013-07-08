@@ -44,6 +44,7 @@ def delete_all_flows(ctrl):
     msg.out_port = ofp.OFPP_NONE
     msg.buffer_id = 0xffffffff
     ctrl.message_send(msg)
+    do_barrier(ctrl)
     return 0 # for backwards compatibility
 
 def required_wildcards(parent):
