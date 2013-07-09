@@ -198,29 +198,52 @@ class Grp100No90(base_tests.SimpleDataPlane):
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
 
-        ms = message.packet_out()
-        ac = action.action_output()
-        ac.port = of_ports[1]
-        ac.max_len = 128
-        self.assertTrue(ms.actions.add(ac), 'Could not add action to msg')
+        #Retrieve Port Configuration --- 
+        #logging.info("Sending Features Request")
+        #(hw_addr, port_config, advert) = \
+        #    port_config_get(self.controller, of_ports[1])
+        pkt=simple_tcp_packet()
+        print "setting the max len"
+        #ms = message.packet_out()
+        match = parse.packet_to_flow_match(pkt)
+        self.assertTrue(match is not None, "Could not generate flow match from pkt")
+        match.wildcards = ofp.OFPFW_ALL ^ ofp.OFPFW_NW_DST_MASK
+        match.nw_dst = parse.parse_ip("192.168.10.100")
+        flow_mod_msg = message.flow_mod()
+        flow_mod_msg.match = match
+        flow_mod_msg.command = ofp.OFPFC_ADD
+        act=action.action_output()       
+        act.port = ofp.OFPP_CONTROLLER
+        act.max_len = 128
+        self.assertTrue(flow_mod_msg.actions.add(act), 'Could not add action to msg')
 
         logging.info("PacketOut to: " + str(of_ports[1]))
-        rv = self.controller.message_send(ms)
+        rv = self.controller.message_send(flow_mod_msg.pack())
         self.assertTrue(rv == 0, "Error sending out message")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-        pkt = simple_tcp_packet(pktlen=1024);
-        self.dataplane.send(of_ports[0], str(pkt))
+        #Retrieve Port Configuration --- 
+        #logging.info("Sending Features Request")
+        #(hw_addr, port_config, advert) = \
+        #    port_config_get(self.controller, of_ports[1])
+
+        pkt = simple_tcp_packet(pktlen=400,ip_dst="192.168.10.100");
+        self.dataplane.send(of_ports[1], str(pkt))
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_PACKET_IN,
                                                timeout=5)
 
         msg = message.packet_out()
         msg.buffer_id = response.buffer_id  
         act = action.action_output()
-        act.port = of_ports[1]
+        act.port = of_ports[2]
         self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
 
-        logging.info("PacketOut to: " + str(of_ports[1]))
+        #Verifying packet out message recieved on the expected dataplane port. 
+        (of_port, pkt, pkt_time) = self.dataplane.poll(port_number=of_ports[2],
+                                                             exp_pkt=pkt,timeout=5)
+        self.assertTrue(pkt is not None, 'Packet not received')
+        logging.info("PacketOut to: " + str(of_ports[2]))
+
         rv = self.controller.message_send(msg)
         self.assertTrue(rv == 0, "Error sending out message")
 
@@ -228,6 +251,7 @@ class Grp100No90(base_tests.SimpleDataPlane):
         msg1.buffer_id = response.buffer_id  
         act1 = action.action_output()
         act1.port = of_ports[1]
+        act1.max_len = 1280
         self.assertTrue(msg.actions.add(act1), 'Could not add action to msg')
 
         logging.info("PacketOut to: " + str(of_ports[1]))
