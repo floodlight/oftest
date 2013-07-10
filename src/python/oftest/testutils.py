@@ -1337,11 +1337,21 @@ def packet_in_match(msg, data, in_port=None, reason=None):
     @param reason Expected packet_in reason, or None
     """
 
-    if in_port and in_port != msg.in_port:
+    if ofp.OFP_VERSION <= 2:
+        pkt_in_port = msg.in_port
+    else:
+        oxms = { type(oxm): oxm for oxm in msg.match.oxm_list }
+        if ofp.oxm.in_port in oxms:
+            pkt_in_port = oxms[ofp.oxm.in_port].value
+        else:
+            logging.warn("Missing in_port in packet-in message")
+            pkt_in_port = None
+
+    if in_port != None and in_port != pkt_in_port:
         logging.debug("Incorrect packet_in in_port (expected %d, received %d)", in_port, msg.in_port)
         return False
 
-    if reason and reason != msg.reason:
+    if reason != None and reason != msg.reason:
         logging.debug("Incorrect packet_in reason (expected %d, received %d)", reason, msg.reason)
         return False
 
