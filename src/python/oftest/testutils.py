@@ -363,16 +363,28 @@ def port_config_get(controller, port_no):
     @returns (hwaddr, config, advert) The hwaddress, configuration and
     advertised values
     """
-    request = ofp.message.features_request()
-    reply, pkt = controller.transact(request)
-    logging.debug(reply.show())
-    if reply is None:
-        logging.warn("Get feature request failed")
-        return None, None, None
-    for idx in range(len(reply.ports)):
-        if reply.ports[idx].port_no == port_no:
-            return (reply.ports[idx].hw_addr, reply.ports[idx].config,
-                    reply.ports[idx].advertised)
+
+    if ofp.OFP_VERSION <= 3:
+        request = ofp.message.features_request()
+        reply, _ = controller.transact(request)
+        if reply is None:
+            logging.warn("Get feature request failed")
+            return None, None, None
+        logging.debug(reply.show())
+        ports = reply.ports
+    else:
+        request = ofp.message.port_desc_stats_request()
+        # TODO do multipart correctly
+        reply, _ = controller.transact(request)
+        if reply is None:
+            logging.warn("Port desc stats request failed")
+            return None, None, None
+        logging.debug(reply.show())
+        ports = reply.entries
+
+    for port in ports:
+        if port.port_no == port_no:
+            return (port.hw_addr, port.config, port.advertised)
     
     logging.warn("Did not find port number for port config")
     return None, None, None
@@ -385,24 +397,16 @@ def port_config_set(controller, port_no, config, mask):
     configuration value according to config and mask
     """
     logging.info("Setting port " + str(port_no) + " to config " + str(config))
-    request = ofp.message.features_request()
-    reply, pkt = controller.transact(request)
-    if reply is None:
-        return -1
-    logging.debug(reply.show())
-    p = None
-    for idx in range(len(reply.ports)):
-        if reply.ports[idx].port_no == port_no:
-            p = reply.ports[idx]
-            break
+
+    hw_addr, _, _ = port_config_get(controller, port_no)
+
     mod = ofp.message.port_mod()
     mod.port_no = port_no
-    if p:
-        mod.hw_addr = p.hw_addr
+    if hw_addr != None:
+        mod.hw_addr = hw_addr
     mod.config = config
     mod.mask = mask
-    if p:
-        mod.advertise = p.advertised
+    mod.advertise = 0 # No change
     controller.message_send(mod)
     return 0
 
