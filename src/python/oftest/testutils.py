@@ -1158,25 +1158,51 @@ def get_stats(test, req):
     """
     Retrieve a list of stats entries. Handles OFPSF_REPLY_MORE.
     """
+    if ofp.OFP_VERSION <= 3:
+        more_flag = ofp.OFPSF_REPLY_MORE
+    else:
+        more_flag = ofp.OFPMPF_REPLY_MORE
     stats = []
     reply, _ = test.controller.transact(req)
     test.assertTrue(reply is not None, "No response to stats request")
     stats.extend(reply.entries)
-    while reply.flags & ofp.OFPSF_REPLY_MORE != 0:
+    while reply.flags & more_flag != 0:
         reply, pkt = self.controller.poll(exp_msg=ofp.OFPT_STATS_REPLY)
         test.assertTrue(reply is not None, "No response to stats request")
         stats.extend(reply.entries)
     return stats
 
-def get_flow_stats(test, match, table_id=0xff, out_port=None):
+def get_flow_stats(test, match, table_id=None,
+                   out_port=None, out_group=None,
+                   cookie=0, cookie_mask=0):
     """
     Retrieve a list of flow stats entries.
     """
+
+    if table_id == None:
+        if ofp.OFP_VERSION <= 2:
+            table_id = 0xff
+        else:
+            table_id = ofp.OFPTT_ALL
+
     if out_port == None:
-        out_port = ofp.OFPP_NONE
+        if ofp.OFP_VERSION == 1:
+            out_port = ofp.OFPP_NONE
+        else:
+            out_port = ofp.OFPP_ANY
+
+    if out_group == None:
+        if ofp.OFP_VERSION > 1:
+            out_group = ofp.OFPP_ANY
+
     req = ofp.message.flow_stats_request(match=match,
-                                          table_id=table_id,
-                                          out_port=out_port)
+                                         table_id=table_id,
+                                         out_port=out_port)
+    if ofp.OFP_VERSION > 1:
+        req.out_group = out_group
+        req.cookie = cookie
+        req.cookie_mask = cookie_mask
+
     return get_stats(test, req)
 
 def get_port_stats(test, port_no):
