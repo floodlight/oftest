@@ -180,6 +180,7 @@ class Grp100No80(base_tests.SimpleProtocol):
                                'Error type is not OFPET_BAD_REQUEST') 
         self.assertTrue(response.code==ofp.OFPBRC_BAD_LEN, 
                                'Error code is not OFPBRC_BAD_LEN got {0}'.format(response.code))   
+
 class Grp100No90(base_tests.SimpleDataPlane):
     """
     Specified buffer is empty. 
@@ -196,7 +197,7 @@ class Grp100No90(base_tests.SimpleDataPlane):
         of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
-
+ 
         #Setting the max_len parameter
         pkt=simple_tcp_packet()
         match = parse.packet_to_flow_match(pkt)
@@ -206,7 +207,7 @@ class Grp100No90(base_tests.SimpleDataPlane):
         flow_mod_msg = message.flow_mod()
         flow_mod_msg.match = match
         flow_mod_msg.command = ofp.OFPFC_ADD
-        act=action.action_output()
+        act=action.action_output()       
         act.port = ofp.OFPP_CONTROLLER
         act.max_len = 128
         logging.info("Sending flow_mod message..")
@@ -216,18 +217,18 @@ class Grp100No90(base_tests.SimpleDataPlane):
         rv = self.controller.message_send(flow_mod_msg)
         self.assertTrue(rv == 0, "Error sending out message")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
-
+      
         #Sending a big packet to create a buffer
         pkt = simple_tcp_packet(pktlen=400,ip_dst="192.168.10.100");
         self.dataplane.send(of_ports[1], str(pkt))
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_PACKET_IN,
                                                timeout=5)
-
+       
         #Creating packet out to clear the buffer 
         msg = message.packet_out()
         msg.buffer_id = response.buffer_id
-        msg.in_port = ofp.OFPP_CONTROLLER
-               act = action.action_output()
+        msg.in_port = ofp.OFPP_CONTROLLER  
+        act = action.action_output()
         act.port = of_ports[2]
         self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
         logging.info("PacketOut to: " + str(of_ports[2]))
@@ -239,11 +240,11 @@ class Grp100No90(base_tests.SimpleDataPlane):
         (of_port, pkt, pkt_time) = self.dataplane.poll(port_number=of_ports[2],
                                                              timeout=5)
         self.assertTrue(pkt is not None, 'Packet not received')
-
+        
         #Creating packet out to generate the buffer 
         msg1 = message.packet_out()
         msg1.buffer_id = response.buffer_id
-        msg1.in_port = ofp.OFPP_CONTROLLER
+        msg1.in_port = ofp.OFPP_CONTROLLER  
         act1 = action.action_output()
         act1.port = of_ports[2]
         self.assertTrue(msg1.actions.add(act1), 'Could not add action to msg')
@@ -260,7 +261,7 @@ class Grp100No90(base_tests.SimpleDataPlane):
                                 'Switch did not reply with error messge')
         self.assertTrue(response.type==ofp.OFPET_BAD_REQUEST,
                                'Message field type is not OFPET_BAD_REQUEST')
-        self.assertTrue(response.code==ofp.OFPBRC_BUFFER_EMPTY,
+        self.assertTrue(response.code==ofp.OFPBRC_BUFFER_EMPTY or response.code==ofp.OFPBRC_BUFFER_UNKNOWN,
                                'Message field code is not OFPBRC_BUFFER_EMPTY')
 
 class Grp100No100(base_tests.SimpleProtocol):
