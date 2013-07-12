@@ -569,7 +569,7 @@ class Controller(Thread):
             return
         self.handlers[msg_type] = handler
 
-    def poll(self, exp_msg=-1, timeout=-1):
+    def poll(self, exp_msg=None, timeout=-1):
         """
         Wait for the next OF message received from the switch.
 
@@ -588,11 +588,11 @@ class Controller(Thread):
         """
 
         exp_msg_str = "unspecified"
-        if exp_msg!=-1:
+        if exp_msg is not None:
             exp_msg_str = ofp.ofp_type_map.get(exp_msg, "unknown (%d)" % 
                                                exp_msg)
 
-        if exp_msg!=-1:
+        if exp_msg is not None:
             self.logger.debug("Poll for %s", exp_msg_str)
         else:
             self.logger.debug("Poll for any OF message")
@@ -600,7 +600,7 @@ class Controller(Thread):
         # Take the packet from the queue
         def grab():
             if len(self.packets) > 0:
-                if exp_msg==-1:
+                if exp_msg is None:
                     self.logger.debug("Looking for any packet")
                     (msg, pkt) = self.packets.pop(0)
                     return (msg, pkt)
