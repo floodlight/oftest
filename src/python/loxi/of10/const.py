@@ -235,8 +235,6 @@ OFPFW_NW_DST_ALL = 524288
 OFPFW_NW_DST_MASK = 1032192
 OFPFW_DL_VLAN_PCP = 1048576
 OFPFW_NW_TOS = 2097152
-OFPFW_SRC_META_ID = 4194304
-OFPFW_DST_META_ID = 8388608
 OFPFW_ALL = 4194303
 
 ofp_flow_wildcards_map = {
@@ -250,8 +248,6 @@ ofp_flow_wildcards_map = {
     128: 'OFPFW_TP_DST',
     1048576: 'OFPFW_DL_VLAN_PCP',
     2097152: 'OFPFW_NW_TOS',
-    4194304: 'OFPFW_SRC_META_ID',
-    8388608: 'OFPFW_DST_META_ID',
 }
 
 # Identifiers from group ofp_hello_failed_code
