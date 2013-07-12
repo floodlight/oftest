@@ -5973,8 +5973,8 @@ def parse_header(buf):
 
 def parse_message(buf):
     msg_ver, msg_type, msg_len, msg_xid = parse_header(buf)
-    if msg_ver != const.OFP_VERSION and msg_type != ofp.OFPT_HELLO:
-        raise loxi.ProtocolError("wrong OpenFlow version")
+    if msg_ver != const.OFP_VERSION and msg_type != const.OFPT_HELLO:
+        raise loxi.ProtocolError("wrong OpenFlow version (expected %d, got %d)" % (const.OFP_VERSION, msg_ver))
     if len(buf) != msg_len:
         raise loxi.ProtocolError("incorrect message size")
     if msg_type in parsers:
@@ -5983,9 +5983,10 @@ def parse_message(buf):
         raise loxi.ProtocolError("unexpected message type")
 
 def parse_flow_mod(buf):
-    if len(buf) < 56 + 2:
+    if len(buf) < 25 + 1:
         raise loxi.ProtocolError("message too short")
-    cmd, = struct.unpack_from("!H", buf, 56)
+    # Technically uint16_t for OF 1.0
+    cmd, = struct.unpack_from("!B", buf, 25)
     if cmd in flow_mod_parsers:
         return flow_mod_parsers[cmd](buf)
     else:

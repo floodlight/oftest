@@ -7554,8 +7554,8 @@ def parse_header(buf):
 
 def parse_message(buf):
     msg_ver, msg_type, msg_len, msg_xid = parse_header(buf)
-    if msg_ver != const.OFP_VERSION and msg_type != ofp.OFPT_HELLO:
-        raise loxi.ProtocolError("wrong OpenFlow version")
+    if msg_ver != const.OFP_VERSION and msg_type != const.OFPT_HELLO:
+        raise loxi.ProtocolError("wrong OpenFlow version (expected %d, got %d)" % (const.OFP_VERSION, msg_ver))
     if len(buf) != msg_len:
         raise loxi.ProtocolError("incorrect message size")
     if msg_type in parsers:
@@ -7564,9 +7564,10 @@ def parse_message(buf):
         raise loxi.ProtocolError("unexpected message type")
 
 def parse_flow_mod(buf):
-    if len(buf) < 56 + 2:
+    if len(buf) < 25 + 1:
         raise loxi.ProtocolError("message too short")
-    cmd, = struct.unpack_from("!H", buf, 56)
+    # Technically uint16_t for OF 1.0
+    cmd, = struct.unpack_from("!B", buf, 25)
     if cmd in flow_mod_parsers:
         return flow_mod_parsers[cmd](buf)
     else:
@@ -7648,7 +7649,39 @@ flow_mod_parsers = {
     const.OFPFC_DELETE_STRICT : flow_delete_strict.unpack,
 }
 
-# TODO OF 1.3 multipart messages
+multipart_reply_parsers = {
+    const.OFPMP_DESC : desc_stats_reply.unpack,
+    const.OFPMP_FLOW : flow_stats_reply.unpack,
+    const.OFPMP_AGGREGATE : aggregate_stats_reply.unpack,
+    const.OFPMP_TABLE : table_stats_reply.unpack,
+    const.OFPMP_PORT_STATS : port_stats_reply.unpack,
+    const.OFPMP_QUEUE : queue_stats_reply.unpack,
+    const.OFPMP_GROUP : group_stats_reply.unpack,
+    const.OFPMP_GROUP_DESC : group_desc_stats_reply.unpack,
+    const.OFPMP_GROUP_FEATURES : group_features_stats_reply.unpack,
+    const.OFPMP_METER : meter_stats_reply.unpack,
+    const.OFPMP_METER_CONFIG : meter_config_stats_reply.unpack,
+    const.OFPMP_METER_FEATURES : meter_features_stats_reply.unpack,
+    const.OFPMP_TABLE_FEATURES : table_features_stats_reply.unpack,
+    const.OFPMP_PORT_DESC : port_desc_stats_reply.unpack,
+}
+
+multipart_request_parsers = {
+    const.OFPMP_DESC : desc_stats_request.unpack,
+    const.OFPMP_FLOW : flow_stats_request.unpack,
+    const.OFPMP_AGGREGATE : aggregate_stats_request.unpack,
+    const.OFPMP_TABLE : table_stats_request.unpack,
+    const.OFPMP_PORT_STATS : port_stats_request.unpack,
+    const.OFPMP_QUEUE : queue_stats_request.unpack,
+    const.OFPMP_GROUP : group_stats_request.unpack,
+    const.OFPMP_GROUP_DESC : group_desc_stats_request.unpack,
+    const.OFPMP_GROUP_FEATURES : group_features_stats_request.unpack,
+    const.OFPMP_METER : meter_stats_request.unpack,
+    const.OFPMP_METER_CONFIG : meter_config_stats_request.unpack,
+    const.OFPMP_METER_FEATURES : meter_features_stats_request.unpack,
+    const.OFPMP_TABLE_FEATURES : table_features_stats_request.unpack,
+    const.OFPMP_PORT_DESC : port_desc_stats_request.unpack,
+}
 
 experimenter_parsers = {
     6035143 : {

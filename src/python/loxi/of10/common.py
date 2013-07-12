@@ -385,7 +385,7 @@ class flow_stats_entry(object):
 
 class match_v1(object):
 
-    def __init__(self, wildcards=None, in_port=None, eth_src=None, eth_dst=None, vlan_vid=None, vlan_pcp=None, eth_type=None, ip_dscp=None, ip_proto=None, src_meta_id=None, dst_meta_id=None, ipv4_src=None, ipv4_dst=None, tcp_src=None, tcp_dst=None):
+    def __init__(self, wildcards=None, in_port=None, eth_src=None, eth_dst=None, vlan_vid=None, vlan_pcp=None, eth_type=None, ip_dscp=None, ip_proto=None, ipv4_src=None, ipv4_dst=None, tcp_src=None, tcp_dst=None):
         if wildcards != None:
             self.wildcards = wildcards
         else:
@@ -422,14 +422,6 @@ class match_v1(object):
             self.ip_proto = ip_proto
         else:
             self.ip_proto = 0
-        if src_meta_id != None:
-            self.src_meta_id = src_meta_id
-        else:
-            self.src_meta_id = 0
-        if dst_meta_id != None:
-            self.dst_meta_id = dst_meta_id
-        else:
-            self.dst_meta_id = 0
         if ipv4_src != None:
             self.ipv4_src = ipv4_src
         else:
@@ -460,8 +452,7 @@ class match_v1(object):
         packed.append(struct.pack("!H", self.eth_type))
         packed.append(struct.pack("!B", self.ip_dscp))
         packed.append(struct.pack("!B", self.ip_proto))
-        packed.append(struct.pack("!B", self.src_meta_id))
-        packed.append(struct.pack("!B", self.dst_meta_id))
+        packed.append('\x00' * 2)
         packed.append(struct.pack("!L", self.ipv4_src))
         packed.append(struct.pack("!L", self.ipv4_dst))
         packed.append(struct.pack("!H", self.tcp_src))
@@ -485,8 +476,7 @@ class match_v1(object):
         obj.eth_type = reader.read("!H")[0]
         obj.ip_dscp = reader.read("!B")[0]
         obj.ip_proto = reader.read("!B")[0]
-        obj.src_meta_id = reader.read("!B")[0]
-        obj.dst_meta_id = reader.read("!B")[0]
+        reader.skip(2)
         obj.ipv4_src = reader.read("!L")[0]
         obj.ipv4_dst = reader.read("!L")[0]
         obj.tcp_src = reader.read("!H")[0]
@@ -504,8 +494,6 @@ class match_v1(object):
         if self.eth_type != other.eth_type: return False
         if self.ip_dscp != other.ip_dscp: return False
         if self.ip_proto != other.ip_proto: return False
-        if self.src_meta_id != other.src_meta_id: return False
-        if self.dst_meta_id != other.dst_meta_id: return False
         if self.ipv4_src != other.ipv4_src: return False
         if self.ipv4_dst != other.ipv4_dst: return False
         if self.tcp_src != other.tcp_src: return False
@@ -550,12 +538,6 @@ class match_v1(object):
                 q.text(","); q.breakable()
                 q.text("ip_proto = ");
                 q.text("%#x" % self.ip_proto)
-                q.text(","); q.breakable()
-                q.text("src_meta_id = ");
-                q.text("%#x" % self.src_meta_id)
-                q.text(","); q.breakable()
-                q.text("dst_meta_id = ");
-                q.text("%#x" % self.dst_meta_id)
                 q.text(","); q.breakable()
                 q.text("ipv4_src = ");
                 q.text(util.pretty_ipv4(self.ipv4_src))

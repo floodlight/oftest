@@ -40,9 +40,15 @@ def delete_all_flows(ctrl):
 
     logging.info("Deleting all flows")
     msg = ofp.message.flow_delete()
-    msg.match.wildcards = ofp.OFPFW_ALL
-    msg.out_port = ofp.OFPP_NONE
-    msg.buffer_id = 0xffffffff
+    if ofp.OFP_VERSION in [1, 2]:
+        msg.match.wildcards = ofp.OFPFW_ALL
+        msg.out_port = ofp.OFPP_NONE
+        msg.buffer_id = 0xffffffff
+    elif ofp.OFP_VERSION >= 3:
+        msg.table_id = ofp.OFPTT_ALL
+        msg.buffer_id = ofp.OFP_NO_BUFFER
+        msg.out_port = ofp.OFPP_ANY
+        msg.out_group = ofp.OFPG_ANY
     ctrl.message_send(msg)
     do_barrier(ctrl)
     return 0 # for backwards compatibility
@@ -357,16 +363,28 @@ def port_config_get(controller, port_no):
     @returns (hwaddr, config, advert) The hwaddress, configuration and
     advertised values
     """
-    request = ofp.message.features_request()
-    reply, pkt = controller.transact(request)
-    logging.debug(reply.show())
-    if reply is None:
-        logging.warn("Get feature request failed")
-        return None, None, None
-    for idx in range(len(reply.ports)):
-        if reply.ports[idx].port_no == port_no:
-            return (reply.ports[idx].hw_addr, reply.ports[idx].config,
-                    reply.ports[idx].advertised)
+
+    if ofp.OFP_VERSION <= 3:
+        request = ofp.message.features_request()
+        reply, _ = controller.transact(request)
+        if reply is None:
+            logging.warn("Get feature request failed")
+            return None, None, None
+        logging.debug(reply.show())
+        ports = reply.ports
+    else:
+        request = ofp.message.port_desc_stats_request()
+        # TODO do multipart correctly
+        reply, _ = controller.transact(request)
+        if reply is None:
+            logging.warn("Port desc stats request failed")
+            return None, None, None
+        logging.debug(reply.show())
+        ports = reply.entries
+
+    for port in ports:
+        if port.port_no == port_no:
+            return (port.hw_addr, port.config, port.advertised)
     
     logging.warn("Did not find port number for port config")
     return None, None, None
@@ -379,24 +397,16 @@ def port_config_set(controller, port_no, config, mask):
     configuration value according to config and mask
     """
     logging.info("Setting port " + str(port_no) + " to config " + str(config))
-    request = ofp.message.features_request()
-    reply, pkt = controller.transact(request)
-    if reply is None:
-        return -1
-    logging.debug(reply.show())
-    p = None
-    for idx in range(len(reply.ports)):
-        if reply.ports[idx].port_no == port_no:
-            p = reply.ports[idx]
-            break
+
+    hw_addr, _, _ = port_config_get(controller, port_no)
+
     mod = ofp.message.port_mod()
     mod.port_no = port_no
-    if p:
-        mod.hw_addr = p.hw_addr
+    if hw_addr != None:
+        mod.hw_addr = hw_addr
     mod.config = config
     mod.mask = mask
-    if p:
-        mod.advertise = p.advertised
+    mod.advertise = 0 # No change
     controller.message_send(mod)
     return 0
 
@@ -545,7 +555,11 @@ def match_verify(parent, req_match, res_match):
 
 def packet_to_flow_match(parent, packet):
     match = oftest.parse.packet_to_flow_match(packet)
-    match.wildcards |= required_wildcards(parent)
+    if ofp.OFP_VERSION in [1, 2]:
+        match.wildcards |= required_wildcards(parent)
+    else:
+        # TODO remove incompatible OXM entries
+        pass
     return match
 
 def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None,
@@ -1144,25 +1158,51 @@ def get_stats(test, req):
     """
     Retrieve a list of stats entries. Handles OFPSF_REPLY_MORE.
     """
+    if ofp.OFP_VERSION <= 3:
+        more_flag = ofp.OFPSF_REPLY_MORE
+    else:
+        more_flag = ofp.OFPMPF_REPLY_MORE
     stats = []
     reply, _ = test.controller.transact(req)
     test.assertTrue(reply is not None, "No response to stats request")
     stats.extend(reply.entries)
-    while reply.flags & ofp.OFPSF_REPLY_MORE != 0:
+    while reply.flags & more_flag != 0:
         reply, pkt = self.controller.poll(exp_msg=ofp.OFPT_STATS_REPLY)
         test.assertTrue(reply is not None, "No response to stats request")
         stats.extend(reply.entries)
     return stats
 
-def get_flow_stats(test, match, table_id=0xff, out_port=None):
+def get_flow_stats(test, match, table_id=None,
+                   out_port=None, out_group=None,
+                   cookie=0, cookie_mask=0):
     """
     Retrieve a list of flow stats entries.
     """
+
+    if table_id == None:
+        if ofp.OFP_VERSION <= 2:
+            table_id = 0xff
+        else:
+            table_id = ofp.OFPTT_ALL
+
     if out_port == None:
-        out_port = ofp.OFPP_NONE
+        if ofp.OFP_VERSION == 1:
+            out_port = ofp.OFPP_NONE
+        else:
+            out_port = ofp.OFPP_ANY
+
+    if out_group == None:
+        if ofp.OFP_VERSION > 1:
+            out_group = ofp.OFPP_ANY
+
     req = ofp.message.flow_stats_request(match=match,
-                                          table_id=table_id,
-                                          out_port=out_port)
+                                         table_id=table_id,
+                                         out_port=out_port)
+    if ofp.OFP_VERSION > 1:
+        req.out_group = out_group
+        req.cookie = cookie
+        req.cookie_mask = cookie_mask
+
     return get_stats(test, req)
 
 def get_port_stats(test, port_no):
@@ -1323,11 +1363,21 @@ def packet_in_match(msg, data, in_port=None, reason=None):
     @param reason Expected packet_in reason, or None
     """
 
-    if in_port and in_port != msg.in_port:
+    if ofp.OFP_VERSION <= 2:
+        pkt_in_port = msg.in_port
+    else:
+        oxms = { type(oxm): oxm for oxm in msg.match.oxm_list }
+        if ofp.oxm.in_port in oxms:
+            pkt_in_port = oxms[ofp.oxm.in_port].value
+        else:
+            logging.warn("Missing in_port in packet-in message")
+            pkt_in_port = None
+
+    if in_port != None and in_port != pkt_in_port:
         logging.debug("Incorrect packet_in in_port (expected %d, received %d)", in_port, msg.in_port)
         return False
 
-    if reason and reason != msg.reason:
+    if reason != None and reason != msg.reason:
         logging.debug("Incorrect packet_in reason (expected %d, received %d)", reason, msg.reason)
         return False
 
