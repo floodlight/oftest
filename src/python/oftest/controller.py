@@ -588,7 +588,7 @@ class Controller(Thread):
         """
 
         exp_msg_str = "unspecified"
-        if exp_msg:
+        if exp_msg is not None:
             exp_msg_str = ofp.ofp_type_map.get(exp_msg, "unknown (%d)" % 
                                                exp_msg)
 
