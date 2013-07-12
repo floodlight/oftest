@@ -67,7 +67,7 @@ class OutputExact(base_tests.SimpleDataPlane):
     Test output function for an exact-match flow
 
     For each port A, adds a flow directing matching packets to that port.
-    Then, for all other ports B, verifies that sending a matching packet
+    Then, for all other ports B != A, verifies that sending a matching packet
     to B results in an output to A.
     """
     def runTest(self):
@@ -90,7 +90,7 @@ class OutputExact(base_tests.SimpleDataPlane):
                                 ofp.action.output(
                                     port=out_port,
                                     max_len=ofp.OFPCML_NO_BUFFER)])],
-                    buffer_id=0xffffffff,
+                    buffer_id=ofp.OFP_NO_BUFFER,
                     priority=1000)
 
             logging.info("Inserting flow sending matching packets to port %d", out_port)
@@ -439,7 +439,7 @@ class PortConfigMod(base_tests.SimpleProtocol):
             port_config_get(self.controller, of_port)
         self.assertTrue(config is not None, "Did not get port config")
 
-        logging.debug("No flood bit port " + str(of_port) + " is now " +
+        logging.debug("OFPPC_NO_PACKET_IN bit port " + str(of_port) + " is now " +
                       str(config1 & ofp.OFPPC_NO_PACKET_IN))
 
         rv = port_config_set(self.controller, of_port,
@@ -450,7 +450,7 @@ class PortConfigMod(base_tests.SimpleProtocol):
         # Verify change took place with same feature request
         (_, config2, _) = port_config_get(self.controller, of_port)
         self.assertTrue(config2 is not None, "Did not get port config2")
-        logging.debug("No packet_in bit port " + str(of_port) + " is now " +
+        logging.debug("OFPPC_NO_PACKET_IN bit port " + str(of_port) + " is now " +
                       str(config2 & ofp.OFPPC_NO_PACKET_IN))
         self.assertTrue(config2 & ofp.OFPPC_NO_PACKET_IN !=
                         config1 & ofp.OFPPC_NO_PACKET_IN,
