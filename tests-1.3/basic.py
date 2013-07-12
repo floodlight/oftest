@@ -128,7 +128,7 @@ class PacketInExact(base_tests.SimpleDataPlane):
                         ofp.action.output(
                             port=ofp.OFPP_CONTROLLER,
                             max_len=ofp.OFPCML_NO_BUFFER)])],
-            buffer_id=0xffffffff,
+            buffer_id=ofp.OFP_NO_BUFFER,
             priority=1000)
 
         logging.info("Inserting flow sending matching packets to controller")
@@ -162,7 +162,7 @@ class PacketInMiss(base_tests.SimpleDataPlane):
                         ofp.action.output(
                             port=ofp.OFPP_CONTROLLER,
                             max_len=ofp.OFPCML_NO_BUFFER)])],
-            buffer_id=0xffffffff,
+            buffer_id=ofp.OFP_NO_BUFFER,
             priority=0)
 
         logging.info("Inserting table-miss flow sending all packets to controller")
