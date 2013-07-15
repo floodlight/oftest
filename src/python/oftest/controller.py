@@ -496,7 +496,7 @@ class Controller(Thread):
         If an error occurs, (None, None) is returned
         """
 
-        if exp_msg:
+        if exp_msg is not None:
             self.logger.debug("Poll for %s" % ofp_type_map[exp_msg])
         else:
             self.logger.debug("Poll for any OF message")
@@ -504,7 +504,7 @@ class Controller(Thread):
         # Take the packet from the queue
         def grab():
             if len(self.packets) > 0:
-                if not exp_msg:
+                if exp_msg is None:
                     self.logger.debug("Looking for any packet")
                     (msg, pkt) = self.packets.pop(0)
                     return (msg, pkt)
