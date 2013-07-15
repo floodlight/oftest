@@ -104,6 +104,45 @@ class OutputExact(base_tests.SimpleDataPlane):
                 self.dataplane.send(in_port, pkt)
                 receive_pkt_verify(self, [out_port], pkt, in_port)
 
+class OutputWildcard(base_tests.SimpleDataPlane):
+    """
+    Test output function for a match-all (but not table-miss) flow
+
+    For each port A, adds a flow directing all packets to that port.
+    Then, for all other ports B != A, verifies that sending a packet
+    to B results in an output to A.
+    """
+    def runTest(self):
+        ports = sorted(config["port_map"].keys())
+
+        delete_all_flows(self.controller)
+
+        pkt = str(simple_tcp_packet())
+
+        for out_port in ports:
+            request = ofp.message.flow_add(
+                    table_id=0,
+                    cookie=42,
+                    instructions=[
+                        ofp.instruction.apply_actions(
+                            actions=[
+                                ofp.action.output(
+                                    port=out_port,
+                                    max_len=ofp.OFPCML_NO_BUFFER)])],
+                    buffer_id=ofp.OFP_NO_BUFFER,
+                    priority=1000)
+
+            logging.info("Inserting flow sending all packets to port %d", out_port)
+            self.controller.message_send(request)
+            do_barrier(self.controller)
+
+            for in_port in ports:
+                if in_port == out_port:
+                    continue
+                logging.info("OutputWildcard test, ports %d to %d", in_port, out_port)
+                self.dataplane.send(in_port, pkt)
+                receive_pkt_verify(self, [out_port], pkt, in_port)
+
 class PacketInExact(base_tests.SimpleDataPlane):
     """
     Test packet in function for an exact-match flow
@@ -137,6 +176,39 @@ class PacketInExact(base_tests.SimpleDataPlane):
 
         for of_port in config["port_map"].keys():
             logging.info("PacketInExact test, port %d", of_port)
+            self.dataplane.send(of_port, pkt)
+            verify_packet_in(self, pkt, of_port, ofp.OFPR_ACTION)
+
+class PacketInWildcard(base_tests.SimpleDataPlane):
+    """
+    Test packet in function for a match-all flow
+
+    Send a packet to each dataplane port and verify that a packet
+    in message is received from the controller for each
+    """
+    def runTest(self):
+        delete_all_flows(self.controller)
+
+        pkt = str(simple_tcp_packet())
+
+        request = ofp.message.flow_add(
+            table_id=0,
+            cookie=42,
+            instructions=[
+                ofp.instruction.apply_actions(
+                    actions=[
+                        ofp.action.output(
+                            port=ofp.OFPP_CONTROLLER,
+                            max_len=ofp.OFPCML_NO_BUFFER)])],
+            buffer_id=ofp.OFP_NO_BUFFER,
+            priority=1000)
+
+        logging.info("Inserting flow sending all packets to controller")
+        self.controller.message_send(request)
+        do_barrier(self.controller)
+
+        for of_port in config["port_map"].keys():
+            logging.info("PacketInWildcard test, port %d", of_port)
             self.dataplane.send(of_port, pkt)
             verify_packet_in(self, pkt, of_port, ofp.OFPR_ACTION)
 
