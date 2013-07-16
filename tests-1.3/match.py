@@ -127,6 +127,31 @@ class VlanVID(MatchTest):
 
         self.verify_match(match, matching, nonmatching)
 
+class VlanVIDMasked(MatchTest):
+    """
+    Match on VLAN VID (masked)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.vlan_vid_masked(ofp.OFPVID_PRESENT|3, ofp.OFPVID_PRESENT|3),
+        ])
+
+        matching = {
+            "vid=3 pcp=2": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=3, vlan_pcp=2),
+            "vid=7 pcp=2": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=7, vlan_pcp=2),
+            "vid=11 pcp=2": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=11, vlan_pcp=2),
+        }
+
+        nonmatching = {
+            "vid=0 pcp=2": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=0, vlan_pcp=2),
+            "vid=1 pcp=2": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=1, vlan_pcp=2),
+            "vid=2 pcp=2": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=2, vlan_pcp=2),
+            "vid=4 pcp=2": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=4, vlan_pcp=2),
+            "no vlan tag": simple_tcp_packet(),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
 class VlanPCP(MatchTest):
     """
     Match on VLAN PCP (VID matched)
@@ -143,6 +168,33 @@ class VlanPCP(MatchTest):
 
         nonmatching = {
             "vid=2 pcp=4": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=2, vlan_pcp=4),
+            "no vlan tag": simple_tcp_packet(),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+@nonstandard
+class VlanPCPMasked(MatchTest):
+    """
+    Match on VLAN PCP (masked, VID matched)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.vlan_vid(ofp.OFPVID_PRESENT|2),
+            ofp.oxm.vlan_pcp_masked(3, 3),
+        ])
+
+        matching = {
+            "vid=2 pcp=3": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=2, vlan_pcp=3),
+            "vid=2 pcp=7": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=2, vlan_pcp=7),
+        }
+
+        nonmatching = {
+            "vid=2 pcp=1": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=2, vlan_pcp=1),
+            "vid=2 pcp=2": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=2, vlan_pcp=2),
+            "vid=2 pcp=4": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=2, vlan_pcp=4),
+            "vid=2 pcp=5": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=2, vlan_pcp=5),
+            "vid=2 pcp=6": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=2, vlan_pcp=6),
             "no vlan tag": simple_tcp_packet(),
         }
 
