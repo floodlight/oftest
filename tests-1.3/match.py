@@ -13,6 +13,7 @@ import logging
 from oftest import config
 import oftest.base_tests as base_tests
 import ofp
+import scapy.all as scapy
 
 from oftest.testutils import *
 
@@ -205,6 +206,93 @@ class EthSrcMasked(MatchTest):
         nonmatching = {
             "00:02:02:03:04:05": simple_tcp_packet(eth_src='00:02:02:03:04:05'),
             "00:01:02:07:04:05": simple_tcp_packet(eth_src='00:01:02:07:04:05'),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+class EthTypeIPv4(MatchTest):
+    """
+    Match on ethertype (IPv4)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x0800)
+        ])
+
+        snap_pkt = \
+            scapy.Ether(dst='00:01:02:03:04:05', src='00:06:07:08:09:0a', type=48)/ \
+            scapy.LLC(dsap=0xaa, ssap=0xaa, ctrl=0x03)/ \
+            scapy.SNAP(OUI=0x000000, code=0x0800)/ \
+            scapy.IP(src='192.168.0.1', dst='192.168.0.2', proto=6)/ \
+            scapy.TCP(sport=1234, dport=80)
+
+        llc_pkt = \
+            scapy.Ether(dst='00:01:02:03:04:05', src='00:06:07:08:09:0a', type=17)/ \
+            scapy.LLC(dsap=0xaa, ssap=0xab, ctrl=0x03)
+
+        matching = {
+            "ipv4/tcp": simple_tcp_packet(),
+            "ipv4/udp": simple_udp_packet(),
+            "ipv4/icmp": simple_icmp_packet(),
+            "vlan tagged": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=2, vlan_pcp=3),
+            "llc/snap": snap_pkt,
+        }
+
+        nonmatching = {
+            "arp": simple_arp_packet(),
+            "llc": llc_pkt,
+            # TODO ipv6
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+class EthTypeARP(MatchTest):
+    """
+    Match on ethertype (ARP)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x0806)
+        ])
+
+        matching = {
+            "arp": simple_arp_packet(),
+            # TODO vlan tagged
+        }
+
+        nonmatching = {
+            "ipv4/tcp": simple_tcp_packet(),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+class EthTypeNone(MatchTest):
+    """
+    Match on no ethertype (IEEE 802.3 without SNAP header)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x05ff)
+        ])
+
+        snap_pkt = \
+            scapy.Ether(dst='00:01:02:03:04:05', src='00:06:07:08:09:0a', type=48)/ \
+            scapy.LLC(dsap=0xaa, ssap=0xaa, ctrl=0x03)/ \
+            scapy.SNAP(OUI=0x000000, code=0x0800)/ \
+            scapy.IP(src='192.168.0.1', dst='192.168.0.2', proto=6)/ \
+            scapy.TCP(sport=1234, dport=80)
+
+        llc_pkt = \
+            scapy.Ether(dst='00:01:02:03:04:05', src='00:06:07:08:09:0a', type=17)/ \
+            scapy.LLC(dsap=0xaa, ssap=0xab, ctrl=0x03)
+
+        matching = {
+            "llc": llc_pkt,
+        }
+
+        nonmatching = {
+            "ipv4/tcp": simple_tcp_packet(),
+            "llc/snap": snap_pkt,
         }
 
         self.verify_match(match, matching, nonmatching)
