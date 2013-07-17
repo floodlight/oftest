@@ -81,6 +81,134 @@ class MatchTest(base_tests.SimpleDataPlane):
             self.dataplane.send(in_port, pktstr)
             verify_packet_in(self, pktstr, in_port, ofp.OFPR_ACTION)
 
+class EthDst(MatchTest):
+    """
+    Match on ethernet destination
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_dst([0x00, 0x01, 0x02, 0x03, 0x04, 0x05])
+        ])
+
+        matching = {
+            "correct": simple_tcp_packet(eth_dst='00:01:02:03:04:05'),
+        }
+
+        nonmatching = {
+            "incorrect": simple_tcp_packet(eth_dst='00:01:02:03:04:06'),
+            "multicast": simple_tcp_packet(eth_dst='01:01:02:03:04:05'),
+            "local": simple_tcp_packet(eth_dst='02:01:02:03:04:05'),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+class EthDstBroadcast(MatchTest):
+    """
+    Match on ethernet destination (broadcast)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_dst([0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
+        ])
+
+        matching = {
+            "ff:ff:ff:ff:ff:ff": simple_tcp_packet(eth_dst='ff:ff:ff:ff:ff:ff'),
+        }
+
+        nonmatching = {
+            "fd:ff:ff:ff:ff:ff": simple_tcp_packet(eth_dst='fd:ff:ff:ff:ff:ff'),
+            "fe:ff:ff:ff:ff:ff": simple_tcp_packet(eth_dst='fe:ff:ff:ff:ff:ff'),
+            "ff:fe:ff:ff:ff:ff": simple_tcp_packet(eth_dst='ff:fe:ff:ff:ff:ff'),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+class EthDstMulticast(MatchTest):
+    """
+    Match on ethernet destination (IPv4 multicast)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_dst([0x01, 0x00, 0x5e, 0xed, 0x99, 0x02])
+        ])
+
+        matching = {
+            "correct": simple_tcp_packet(eth_dst='01:00:5e:ed:99:02'),
+        }
+
+        nonmatching = {
+            "incorrect": simple_tcp_packet(eth_dst='01:00:5e:ed:99:03'),
+            "unicast": simple_tcp_packet(eth_dst='00:00:5e:ed:99:02'),
+            "local": simple_tcp_packet(eth_dst='03:00:5e:ed:99:02'),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+class EthDstMasked(MatchTest):
+    """
+    Match on ethernet destination (masked)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_dst_masked([0x00, 0x01, 0x02, 0x03, 0x04, 0x05],
+                                   [0x00, 0xff, 0xff, 0x0f, 0xff, 0xff])
+        ])
+
+        matching = {
+            "00:01:02:03:04:05": simple_tcp_packet(eth_dst='00:01:02:03:04:05'),
+            "ff:01:02:f3:04:05": simple_tcp_packet(eth_dst='ff:01:02:f3:04:05'),
+        }
+
+        nonmatching = {
+            "00:02:02:03:04:05": simple_tcp_packet(eth_dst='00:02:02:03:04:05'),
+            "00:01:02:07:04:05": simple_tcp_packet(eth_dst='00:01:02:07:04:05'),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+class EthSrc(MatchTest):
+    """
+    Match on ethernet source
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_src([0,1,2,3,4,5])
+        ])
+
+        matching = {
+            "correct": simple_tcp_packet(eth_src='00:01:02:03:04:05'),
+        }
+
+        nonmatching = {
+            "incorrect": simple_tcp_packet(eth_src='00:01:02:03:04:06'),
+            "multicast": simple_tcp_packet(eth_src='01:01:02:03:04:05'),
+            "local": simple_tcp_packet(eth_src='02:01:02:03:04:05'),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+class EthSrcMasked(MatchTest):
+    """
+    Match on ethernet source (masked)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_src_masked([0x00, 0x01, 0x02, 0x03, 0x04, 0x05],
+                                   [0x00, 0xff, 0xff, 0x0f, 0xff, 0xff])
+        ])
+
+        matching = {
+            "00:01:02:03:04:05": simple_tcp_packet(eth_src='00:01:02:03:04:05'),
+            "ff:01:02:f3:04:05": simple_tcp_packet(eth_src='ff:01:02:f3:04:05'),
+        }
+
+        nonmatching = {
+            "00:02:02:03:04:05": simple_tcp_packet(eth_src='00:02:02:03:04:05'),
+            "00:01:02:07:04:05": simple_tcp_packet(eth_src='00:01:02:07:04:05'),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
 class VlanExact(MatchTest):
     """
     Match on VLAN VID and PCP
