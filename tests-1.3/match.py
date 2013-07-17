@@ -479,3 +479,50 @@ class VlanAbsent(MatchTest):
         }
 
         self.verify_match(match, matching, nonmatching)
+
+class IPv4Dscp(MatchTest):
+    """
+    Match on ipv4 dscp
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x0800),
+            ofp.oxm.ip_dscp(4),
+        ])
+
+        matching = {
+            "dscp=4 ecn=0": simple_tcp_packet(ip_tos=0x10),
+            "dscp=4 ecn=3": simple_tcp_packet(ip_tos=0x13),
+        }
+
+        nonmatching = {
+            "dscp=5 ecn=0": simple_tcp_packet(ip_tos=0x14),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+# TODO IPv6 dscp
+
+class IPv4Ecn(MatchTest):
+    """
+    Match on ipv4 ecn
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x0800),
+            ofp.oxm.ip_ecn(2),
+        ])
+
+        matching = {
+            "dscp=4 ecn=2": simple_tcp_packet(ip_tos=0x12),
+            "dscp=6 ecn=2": simple_tcp_packet(ip_tos=0x1a),
+        }
+
+        nonmatching = {
+            "dscp=4 ecn=0": simple_tcp_packet(ip_tos=0x10),
+            "dscp=4 ecn=3": simple_tcp_packet(ip_tos=0x13),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+# TODO IPv6 ecn
