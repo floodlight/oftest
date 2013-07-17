@@ -836,3 +836,50 @@ class IPv4UDPDst(MatchTest):
         self.verify_match(match, matching, nonmatching)
 
 # TODO IPv6 udp destination port
+
+class IPv4ICMPType(MatchTest):
+    """
+    Match on ipv4 icmp type
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x0800),
+            ofp.oxm.ip_proto(1),
+            ofp.oxm.icmpv4_type(3),
+        ])
+
+        matching = {
+            "type=3 code=1": simple_icmp_packet(icmp_type=3, icmp_code=1),
+            "type=3 code=2": simple_icmp_packet(icmp_type=3, icmp_code=2),
+        }
+
+        nonmatching = {
+            "type=2 code=1": simple_icmp_packet(icmp_type=2, icmp_code=1),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+class IPv4ICMPCode(MatchTest):
+    """
+    Match on ipv4 icmp code
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x0800),
+            ofp.oxm.ip_proto(1),
+            ofp.oxm.icmpv4_code(2),
+        ])
+
+        matching = {
+            "type=3 code=2": simple_icmp_packet(icmp_type=3, icmp_code=2),
+            "type=5 code=2": simple_icmp_packet(icmp_type=5, icmp_code=2),
+        }
+
+        nonmatching = {
+            "type=3 code=1": simple_icmp_packet(icmp_type=2, icmp_code=1),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+# TODO ipv6 icmp type
+# TODO ipv6 icmp code
