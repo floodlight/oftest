@@ -903,3 +903,43 @@ class ArpOp(MatchTest):
         }
 
         self.verify_match(match, matching, nonmatching)
+
+class ArpSPA(MatchTest):
+    """
+    Match on ARP sender IP
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x0806),
+            ofp.oxm.arp_spa(0xc0a80001), # 192.168.0.1
+        ])
+
+        matching = {
+            "192.168.0.1": simple_arp_packet(ip_snd="192.168.0.1"),
+        }
+
+        nonmatching = {
+            "192.168.0.2": simple_arp_packet(ip_snd="192.168.0.2"),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+class ArpTPA(MatchTest):
+    """
+    Match on ARP target IP
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x0806),
+            ofp.oxm.arp_tpa(0xc0a80001), # 192.168.0.1
+        ])
+
+        matching = {
+            "192.168.0.1": simple_arp_packet(ip_tgt="192.168.0.1"),
+        }
+
+        nonmatching = {
+            "192.168.0.2": simple_arp_packet(ip_tgt="192.168.0.2"),
+        }
+
+        self.verify_match(match, matching, nonmatching)
