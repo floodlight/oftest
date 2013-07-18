@@ -122,6 +122,53 @@ def simple_tcp_packet(pktlen=100,
 
     return pkt
 
+def simple_tcpv6_packet(pktlen=100,
+                        eth_dst='00:01:02:03:04:05',
+                        eth_src='00:06:07:08:09:0a',
+                        dl_vlan_enable=False,
+                        vlan_vid=0,
+                        vlan_pcp=0,
+                        ipv6_src='2001:db8:85a3::8a2e:370:7334',
+                        ipv6_dst='2001:db8:85a3::8a2e:370:7335',
+                        ipv6_tc=0,
+                        ipv6_hlim=64,
+                        ipv6_fl=0,
+                        tcp_sport=1234,
+                        tcp_dport=80):
+    """
+    Return a simple IPv6/TCP packet
+
+    Supports a few parameters:
+    @param len Length of packet in bytes w/o CRC
+    @param eth_dst Destination MAC
+    @param eth_src Source MAC
+    @param dl_vlan_enable True if the packet is with vlan, False otherwise
+    @param vlan_vid VLAN ID
+    @param vlan_pcp VLAN priority
+    @param ipv6_src IPv6 source
+    @param ipv6_dst IPv6 destination
+    @param ipv6_tc IPv6 traffic class
+    @param ipv6_ttl IPv6 hop limit
+    @param ipv6_fl IPv6 flow label
+    @param tcp_dport TCP destination port
+    @param tcp_sport TCP source port
+
+    Generates a simple TCP request. Users shouldn't assume anything about this
+    packet other than that it is a valid ethernet/IPv6/TCP frame.
+    """
+
+    if MINSIZE > pktlen:
+        pktlen = MINSIZE
+
+    pkt = scapy.Ether(dst=eth_dst, src=eth_src)
+    if dl_vlan_enable or vlan_vid or vlan_pcp:
+        pkt /= scapy.Dot1Q(vlan=vlan_vid, prio=vlan_pcp)
+    pkt /= scapy.IPv6(src=ipv6_src, dst=ipv6_dst, fl=ipv6_fl, tc=ipv6_tc, hlim=ipv6_hlim)
+    pkt /= scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+    pkt /= ("D" * (pktlen - len(pkt)))
+
+    return pkt
+
 def simple_udp_packet(pktlen=100,
                       eth_dst='00:01:02:03:04:05',
                       eth_src='00:06:07:08:09:0a',
@@ -182,6 +229,53 @@ def simple_udp_packet(pktlen=100,
 
     return pkt
 
+def simple_udpv6_packet(pktlen=100,
+                        eth_dst='00:01:02:03:04:05',
+                        eth_src='00:06:07:08:09:0a',
+                        dl_vlan_enable=False,
+                        vlan_vid=0,
+                        vlan_pcp=0,
+                        ipv6_src='2001:db8:85a3::8a2e:370:7334',
+                        ipv6_dst='2001:db8:85a3::8a2e:370:7335',
+                        ipv6_tc=0,
+                        ipv6_hlim=64,
+                        ipv6_fl=0,
+                        udp_sport=1234,
+                        udp_dport=80):
+    """
+    Return a simple IPv6/UDP packet
+
+    Supports a few parameters:
+    @param len Length of packet in bytes w/o CRC
+    @param eth_dst Destination MAC
+    @param eth_src Source MAC
+    @param dl_vlan_enable True if the packet is with vlan, False otherwise
+    @param vlan_vid VLAN ID
+    @param vlan_pcp VLAN priority
+    @param ipv6_src IPv6 source
+    @param ipv6_dst IPv6 destination
+    @param ipv6_tc IPv6 traffic class
+    @param ipv6_ttl IPv6 hop limit
+    @param ipv6_fl IPv6 flow label
+    @param udp_dport UDP destination port
+    @param udp_sport UDP source port
+
+    Generates a simple UDP request. Users shouldn't assume anything about this
+    packet other than that it is a valid ethernet/IPv6/UDP frame.
+    """
+
+    if MINSIZE > pktlen:
+        pktlen = MINSIZE
+
+    pkt = scapy.Ether(dst=eth_dst, src=eth_src)
+    if dl_vlan_enable or vlan_vid or vlan_pcp:
+        pkt /= scapy.Dot1Q(vlan=vlan_vid, prio=vlan_pcp)
+    pkt /= scapy.IPv6(src=ipv6_src, dst=ipv6_dst, fl=ipv6_fl, tc=ipv6_tc, hlim=ipv6_hlim)
+    pkt /= scapy.UDP(sport=udp_sport, dport=udp_dport)
+    pkt /= ("D" * (pktlen - len(pkt)))
+
+    return pkt
+
 def simple_icmp_packet(pktlen=60, 
                       eth_dst='00:01:02:03:04:05',
                       eth_src='00:06:07:08:09:0a',
@@ -231,6 +325,53 @@ def simple_icmp_packet(pktlen=60,
             scapy.ICMP(type=icmp_type, code=icmp_code)
 
     pkt = pkt/("0" * (pktlen - len(pkt)))
+
+    return pkt
+
+def simple_icmpv6_packet(pktlen=100,
+                         eth_dst='00:01:02:03:04:05',
+                         eth_src='00:06:07:08:09:0a',
+                         dl_vlan_enable=False,
+                         vlan_vid=0,
+                         vlan_pcp=0,
+                         ipv6_src='2001:db8:85a3::8a2e:370:7334',
+                         ipv6_dst='2001:db8:85a3::8a2e:370:7335',
+                         ipv6_tc=0,
+                         ipv6_hlim=64,
+                         ipv6_fl=0,
+                         icmp_type=8,
+                         icmp_code=0):
+    """
+    Return a simple ICMPv6 packet
+
+    Supports a few parameters:
+    @param len Length of packet in bytes w/o CRC
+    @param eth_dst Destination MAC
+    @param eth_src Source MAC
+    @param dl_vlan_enable True if the packet is with vlan, False otherwise
+    @param vlan_vid VLAN ID
+    @param vlan_pcp VLAN priority
+    @param ipv6_src IPv6 source
+    @param ipv6_dst IPv6 destination
+    @param ipv6_tc IPv6 traffic class
+    @param ipv6_ttl IPv6 hop limit
+    @param ipv6_fl IPv6 flow label
+    @param icmp_type ICMP type
+    @param icmp_code ICMP code
+
+    Generates a simple ICMP ECHO REQUEST. Users shouldn't assume anything
+    about this packet other than that it is a valid ethernet/IPv6/ICMP frame.
+    """
+
+    if MINSIZE > pktlen:
+        pktlen = MINSIZE
+
+    pkt = scapy.Ether(dst=eth_dst, src=eth_src)
+    if dl_vlan_enable or vlan_vid or vlan_pcp:
+        pkt /= scapy.Dot1Q(vlan=vlan_vid, prio=vlan_pcp)
+    pkt /= scapy.IPv6(src=ipv6_src, dst=ipv6_dst, fl=ipv6_fl, tc=ipv6_tc, hlim=ipv6_hlim)
+    pkt /= scapy.ICMPv6Unknown(type=icmp_type, code=icmp_code)
+    pkt /= ("D" * (pktlen - len(pkt)))
 
     return pkt
 

@@ -301,7 +301,30 @@ class EthTypeIPv4(MatchTest):
         nonmatching = {
             "arp": simple_arp_packet(),
             "llc": llc_pkt,
-            # TODO ipv6
+            "ipv6/tcp": simple_tcpv6_packet(),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+class EthTypeIPv6(MatchTest):
+    """
+    Match on ethertype (IPv6)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x86dd)
+        ])
+
+        matching = {
+            "ipv6/tcp": simple_tcpv6_packet(),
+            "ipv6/udp": simple_udpv6_packet(),
+            "ipv6/icmp": simple_icmpv6_packet(),
+            "vlan tagged": simple_tcpv6_packet(vlan_vid=2, vlan_pcp=3),
+        }
+
+        nonmatching = {
+            "ipv4/tcp": simple_tcp_packet(),
+            "arp": simple_arp_packet(),
         }
 
         self.verify_match(match, matching, nonmatching)
@@ -322,6 +345,7 @@ class EthTypeARP(MatchTest):
 
         nonmatching = {
             "ipv4/tcp": simple_tcp_packet(),
+            "ipv6/tcp": simple_tcpv6_packet(),
         }
 
         self.verify_match(match, matching, nonmatching)
@@ -352,6 +376,7 @@ class EthTypeNone(MatchTest):
 
         nonmatching = {
             "ipv4/tcp": simple_tcp_packet(),
+            "ipv6/tcp": simple_tcpv6_packet(),
             "llc/snap": snap_pkt,
         }
 
