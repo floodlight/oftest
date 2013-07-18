@@ -672,7 +672,26 @@ class IPv4ProtoTCP(MatchTest):
 
         self.verify_match(match, matching, nonmatching)
 
-# TODO IPv6 protocol (TCP)
+class IPv6ProtoTCP(MatchTest):
+    """
+    Match on ipv6 protocol field (TCP)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x86dd),
+            ofp.oxm.ip_proto(6),
+        ])
+
+        matching = {
+            "tcp": simple_tcpv6_packet(),
+        }
+
+        nonmatching = {
+            "udp": simple_udpv6_packet(),
+            "icmp": simple_icmpv6_packet(),
+        }
+
+        self.verify_match(match, matching, nonmatching)
 
 class IPv4ProtoUDP(MatchTest):
     """
@@ -695,7 +714,26 @@ class IPv4ProtoUDP(MatchTest):
 
         self.verify_match(match, matching, nonmatching)
 
-# TODO IPv6 protocol (UDP)
+class IPv6ProtoUDP(MatchTest):
+    """
+    Match on ipv6 protocol field (UDP)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x86dd),
+            ofp.oxm.ip_proto(17),
+        ])
+
+        matching = {
+            "udp": simple_udpv6_packet(),
+        }
+
+        nonmatching = {
+            "tcp": simple_tcpv6_packet(),
+            "icmp": simple_icmpv6_packet(),
+        }
+
+        self.verify_match(match, matching, nonmatching)
 
 class IPv4ProtoICMP(MatchTest):
     """
@@ -718,7 +756,26 @@ class IPv4ProtoICMP(MatchTest):
 
         self.verify_match(match, matching, nonmatching)
 
-# TODO IPv6 protocol (ICMP)
+class IPv6ProtoICMP(MatchTest):
+    """
+    Match on ipv6 protocol field (ICMP)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x86dd),
+            ofp.oxm.ip_proto(58),
+        ])
+
+        matching = {
+            "icmp": simple_icmpv6_packet(),
+        }
+
+        nonmatching = {
+            "tcp": simple_tcpv6_packet(),
+            "udp": simple_udpv6_packet(),
+        }
+
+        self.verify_match(match, matching, nonmatching)
 
 class IPv4Src(MatchTest):
     """
