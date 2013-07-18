@@ -16,6 +16,7 @@ import ofp
 import scapy.all as scapy
 
 from oftest.testutils import *
+from oftest.parse import parse_ipv6
 
 class MatchTest(base_tests.SimpleDataPlane):
     """
@@ -919,8 +920,171 @@ class IPv4DstMasked(MatchTest):
 
         self.verify_match(match, matching, nonmatching)
 
-# TODO IPv6 source address
-# TODO IPv6 destination address
+class IPv6Src(MatchTest):
+    """
+    Match on ipv6 source address
+    """
+    def runTest(self):
+        correct = "2001:db8:85a3::8a2e:370:7334"
+        incorrect = "2001:db8:85a3::8a2e:370:7324"
+        unspecified = "::"
+
+        match = ofp.match([
+            ofp.oxm.eth_type(0x86dd),
+            ofp.oxm.ipv6_src(parse_ipv6(correct)),
+        ])
+
+        matching = {
+            "correct": simple_tcpv6_packet(ipv6_src=correct),
+        }
+
+        nonmatching = {
+            "incorrect": simple_tcpv6_packet(ipv6_src=incorrect),
+            "unspecified": simple_tcpv6_packet(ipv6_src=unspecified),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+class IPv6SrcSubnetMasked(MatchTest):
+    """
+    Match on ipv6 source address (subnet masked)
+    """
+    def runTest(self):
+        flow =       "2001:0db8:85a3::"
+        mask =       "ffff:ffff:ffff::"
+        correct1 =   "2001:0db8:85a3::8a2e:0370:7331"
+        correct2 =   "2001:0db8:85a3::ffff:ffff:ffff"
+        incorrect1 = "2001:0db8:85a2::"
+
+        match = ofp.match([
+            ofp.oxm.eth_type(0x86dd),
+            ofp.oxm.ipv6_src_masked(parse_ipv6(flow), parse_ipv6(mask)),
+        ])
+
+        matching = {
+            "flow": simple_tcpv6_packet(ipv6_src=flow),
+            "correct1": simple_tcpv6_packet(ipv6_src=correct1),
+            "correct2": simple_tcpv6_packet(ipv6_src=correct2),
+        }
+
+        nonmatching = {
+            "incorrect1": simple_tcpv6_packet(ipv6_src=incorrect1),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+class IPv6SrcMasked(MatchTest):
+    """
+    Match on ipv6 source address (arbitrarily masked)
+    """
+    def runTest(self):
+        flow =       "2001:0db8:85a3::0001"
+        mask =       "ffff:ffff:ffff::000f"
+        correct1 =   "2001:0db8:85a3::8a2e:0370:7331"
+        correct2 =   "2001:0db8:85a3::ffff:ffff:fff1"
+        incorrect1 = "2001:0db8:85a2::0001"
+        incorrect2 = "2001:0db8:85a3::0000"
+
+        match = ofp.match([
+            ofp.oxm.eth_type(0x86dd),
+            ofp.oxm.ipv6_src_masked(parse_ipv6(flow), parse_ipv6(mask)),
+        ])
+
+        matching = {
+            "flow": simple_tcpv6_packet(ipv6_src=flow),
+            "correct1": simple_tcpv6_packet(ipv6_src=correct1),
+            "correct2": simple_tcpv6_packet(ipv6_src=correct2),
+        }
+
+        nonmatching = {
+            "incorrect1": simple_tcpv6_packet(ipv6_src=incorrect1),
+            "incorrect2": simple_tcpv6_packet(ipv6_src=incorrect2),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+class IPv6Dst(MatchTest):
+    """
+    Match on ipv6 destination address
+    """
+    def runTest(self):
+        correct = "2001:db8:85a3::8a2e:370:7334"
+        incorrect = "2001:db8:85a3::8a2e:370:7324"
+        unspecified = "::"
+
+        match = ofp.match([
+            ofp.oxm.eth_type(0x86dd),
+            ofp.oxm.ipv6_dst(parse_ipv6(correct)),
+        ])
+
+        matching = {
+            "correct": simple_tcpv6_packet(ipv6_dst=correct),
+        }
+
+        nonmatching = {
+            "incorrect": simple_tcpv6_packet(ipv6_dst=incorrect),
+            "unspecified": simple_tcpv6_packet(ipv6_dst=unspecified),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+class IPv6DstSubnetMasked(MatchTest):
+    """
+    Match on ipv6 destination address (subnet masked)
+    """
+    def runTest(self):
+        flow =       "2001:0db8:85a3::"
+        mask =       "ffff:ffff:ffff::"
+        correct1 =   "2001:0db8:85a3::8a2e:0370:7331"
+        correct2 =   "2001:0db8:85a3::ffff:ffff:ffff"
+        incorrect1 = "2001:0db8:85a2::"
+
+        match = ofp.match([
+            ofp.oxm.eth_type(0x86dd),
+            ofp.oxm.ipv6_dst_masked(parse_ipv6(flow), parse_ipv6(mask)),
+        ])
+
+        matching = {
+            "flow": simple_tcpv6_packet(ipv6_dst=flow),
+            "correct1": simple_tcpv6_packet(ipv6_dst=correct1),
+            "correct2": simple_tcpv6_packet(ipv6_dst=correct2),
+        }
+
+        nonmatching = {
+            "incorrect1": simple_tcpv6_packet(ipv6_dst=incorrect1),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+class IPv6DstMasked(MatchTest):
+    """
+    Match on ipv6 destination address (arbitrarily masked)
+    """
+    def runTest(self):
+        flow =       "2001:0db8:85a3::0001"
+        mask =       "ffff:ffff:ffff::000f"
+        correct1 =   "2001:0db8:85a3::8a2e:0370:7331"
+        correct2 =   "2001:0db8:85a3::ffff:ffff:fff1"
+        incorrect1 = "2001:0db8:85a2::0001"
+        incorrect2 = "2001:0db8:85a3::0000"
+
+        match = ofp.match([
+            ofp.oxm.eth_type(0x86dd),
+            ofp.oxm.ipv6_dst_masked(parse_ipv6(flow), parse_ipv6(mask)),
+        ])
+
+        matching = {
+            "flow": simple_tcpv6_packet(ipv6_dst=flow),
+            "correct1": simple_tcpv6_packet(ipv6_dst=correct1),
+            "correct2": simple_tcpv6_packet(ipv6_dst=correct2),
+        }
+
+        nonmatching = {
+            "incorrect1": simple_tcpv6_packet(ipv6_dst=incorrect1),
+            "incorrect2": simple_tcpv6_packet(ipv6_dst=incorrect2),
+        }
+
+        self.verify_match(match, matching, nonmatching)
 
 class IPv4TCPSrc(MatchTest):
     """
