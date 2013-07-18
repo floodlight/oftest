@@ -586,7 +586,26 @@ class IPv4Dscp(MatchTest):
 
         self.verify_match(match, matching, nonmatching)
 
-# TODO IPv6 dscp
+class IPv6Dscp(MatchTest):
+    """
+    Match on ipv6 dscp
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x86dd),
+            ofp.oxm.ip_dscp(4),
+        ])
+
+        matching = {
+            "dscp=4 ecn=0": simple_tcpv6_packet(ipv6_tc=0x10),
+            "dscp=4 ecn=3": simple_tcpv6_packet(ipv6_tc=0x13),
+        }
+
+        nonmatching = {
+            "dscp=5 ecn=0": simple_tcpv6_packet(ipv6_tc=0x14),
+        }
+
+        self.verify_match(match, matching, nonmatching)
 
 class IPv4Ecn(MatchTest):
     """
@@ -610,7 +629,27 @@ class IPv4Ecn(MatchTest):
 
         self.verify_match(match, matching, nonmatching)
 
-# TODO IPv6 ecn
+class IPv6Ecn(MatchTest):
+    """
+    Match on ipv6 ecn
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x86dd),
+            ofp.oxm.ip_ecn(2),
+        ])
+
+        matching = {
+            "dscp=4 ecn=2": simple_tcpv6_packet(ipv6_tc=0x12),
+            "dscp=6 ecn=2": simple_tcpv6_packet(ipv6_tc=0x1a),
+        }
+
+        nonmatching = {
+            "dscp=4 ecn=0": simple_tcpv6_packet(ipv6_tc=0x10),
+            "dscp=4 ecn=3": simple_tcpv6_packet(ipv6_tc=0x13),
+        }
+
+        self.verify_match(match, matching, nonmatching)
 
 class IPv4ProtoTCP(MatchTest):
     """
