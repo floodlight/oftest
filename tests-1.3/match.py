@@ -883,3 +883,23 @@ class IPv4ICMPCode(MatchTest):
 
 # TODO ipv6 icmp type
 # TODO ipv6 icmp code
+
+class ArpOp(MatchTest):
+    """
+    Match on ARP operation
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x0806),
+            ofp.oxm.arp_op(3),
+        ])
+
+        matching = {
+            "op=3": simple_arp_packet(arp_op=3),
+        }
+
+        nonmatching = {
+            "op=4": simple_arp_packet(arp_op=4),
+        }
+
+        self.verify_match(match, matching, nonmatching)
