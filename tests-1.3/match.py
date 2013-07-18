@@ -82,6 +82,66 @@ class MatchTest(base_tests.SimpleDataPlane):
             self.dataplane.send(in_port, pktstr)
             verify_packet_in(self, pktstr, in_port, ofp.OFPR_ACTION)
 
+# Does not use MatchTest because the ingress port is not a packet field
+class InPort(base_tests.SimpleDataPlane):
+    """
+    Match on ingress port
+    """
+    def runTest(self):
+        ports = sorted(config["port_map"].keys())
+        in_port = ports[0]
+        out_port = ports[1]
+        bad_port = ports[2]
+
+        match = ofp.match([
+            ofp.oxm.in_port(in_port)
+        ])
+
+        pkt = simple_tcp_packet()
+
+        logging.info("Running match test for %s", match.show())
+
+        delete_all_flows(self.controller)
+
+        logging.info("Inserting flow sending matching packets to port %d", out_port)
+        request = ofp.message.flow_add(
+                table_id=0,
+                match=match,
+                instructions=[
+                    ofp.instruction.apply_actions(
+                        actions=[
+                            ofp.action.output(
+                                port=out_port,
+                                max_len=ofp.OFPCML_NO_BUFFER)])],
+                buffer_id=ofp.OFP_NO_BUFFER,
+                priority=1000)
+        self.controller.message_send(request)
+
+        logging.info("Inserting match-all flow sending packets to controller")
+        request = ofp.message.flow_add(
+            table_id=0,
+            instructions=[
+                ofp.instruction.apply_actions(
+                    actions=[
+                        ofp.action.output(
+                            port=ofp.OFPP_CONTROLLER,
+                            max_len=ofp.OFPCML_NO_BUFFER)])],
+            buffer_id=ofp.OFP_NO_BUFFER,
+            priority=1)
+        self.controller.message_send(request)
+
+        do_barrier(self.controller)
+
+        pktstr = str(pkt)
+
+        logging.info("Sending packet on matching ingress port, expecting output to port %d", out_port)
+        self.dataplane.send(in_port, pktstr)
+        receive_pkt_verify(self, [out_port], pktstr, in_port)
+
+        logging.info("Sending packet on non-matching ingress port, expecting packet-in")
+        self.dataplane.send(bad_port, pktstr)
+        verify_packet_in(self, pktstr, bad_port, ofp.OFPR_ACTION)
+
 class EthDst(MatchTest):
     """
     Match on ethernet destination
