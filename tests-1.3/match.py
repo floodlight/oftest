@@ -1390,6 +1390,56 @@ class ArpSPA(MatchTest):
 
         self.verify_match(match, matching, nonmatching)
 
+class ArpSPASubnetMasked(MatchTest):
+    """
+    Match on ARP sender IP (subnet mask)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x0806),
+            # 192.168.0.0/20 (255.255.240.0)
+            ofp.oxm.arp_spa_masked(0xc0a80000, 0xfffff000),
+        ])
+
+        matching = {
+            "192.168.0.1": simple_arp_packet(ip_snd='192.168.0.1'),
+            "192.168.0.2": simple_arp_packet(ip_snd='192.168.0.2'),
+            "192.168.4.2": simple_arp_packet(ip_snd='192.168.4.2'),
+            "192.168.0.0": simple_arp_packet(ip_snd='192.168.0.0'),
+            "192.168.15.255": simple_arp_packet(ip_snd='192.168.15.255'),
+        }
+
+        nonmatching = {
+            "192.168.16.0": simple_arp_packet(ip_snd='192.168.16.0'),
+            "192.167.255.255": simple_arp_packet(ip_snd='192.167.255.255'),
+            "192.168.31.1": simple_arp_packet(ip_snd='192.168.31.1'),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+class ArpSPAMasked(MatchTest):
+    """
+    Match on ARP sender IP (arbitrarily masked)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x0806),
+            # 192.168.0.1 255.254.255.255
+            ofp.oxm.arp_spa_masked(0xc0a80001, 0xfffeffff),
+        ])
+
+        matching = {
+            "192.168.0.1": simple_arp_packet(ip_snd='192.168.0.1'),
+            "192.169.0.1": simple_arp_packet(ip_snd='192.169.0.1'),
+        }
+
+        nonmatching = {
+            "192.168.0.2": simple_arp_packet(ip_snd='192.168.0.2'),
+            "192.167.0.1": simple_arp_packet(ip_snd='192.167.0.1'),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
 class ArpTPA(MatchTest):
     """
     Match on ARP target IP
@@ -1406,6 +1456,56 @@ class ArpTPA(MatchTest):
 
         nonmatching = {
             "192.168.0.2": simple_arp_packet(ip_tgt="192.168.0.2"),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+class ArpTPASubnetMasked(MatchTest):
+    """
+    Match on ARP target IP (subnet mask)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x0806),
+            # 192.168.0.0/20 (255.255.240.0)
+            ofp.oxm.arp_tpa_masked(0xc0a80000, 0xfffff000),
+        ])
+
+        matching = {
+            "192.168.0.1": simple_arp_packet(ip_tgt='192.168.0.1'),
+            "192.168.0.2": simple_arp_packet(ip_tgt='192.168.0.2'),
+            "192.168.4.2": simple_arp_packet(ip_tgt='192.168.4.2'),
+            "192.168.0.0": simple_arp_packet(ip_tgt='192.168.0.0'),
+            "192.168.15.255": simple_arp_packet(ip_tgt='192.168.15.255'),
+        }
+
+        nonmatching = {
+            "192.168.16.0": simple_arp_packet(ip_tgt='192.168.16.0'),
+            "192.167.255.255": simple_arp_packet(ip_tgt='192.167.255.255'),
+            "192.168.31.1": simple_arp_packet(ip_tgt='192.168.31.1'),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+class ArpTPAMasked(MatchTest):
+    """
+    Match on ARP target IP (arbitrarily masked)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x0806),
+            # 192.168.0.1 255.254.255.255
+            ofp.oxm.arp_tpa_masked(0xc0a80001, 0xfffeffff),
+        ])
+
+        matching = {
+            "192.168.0.1": simple_arp_packet(ip_tgt='192.168.0.1'),
+            "192.169.0.1": simple_arp_packet(ip_tgt='192.169.0.1'),
+        }
+
+        nonmatching = {
+            "192.168.0.2": simple_arp_packet(ip_tgt='192.168.0.2'),
+            "192.167.0.1": simple_arp_packet(ip_tgt='192.167.0.1'),
         }
 
         self.verify_match(match, matching, nonmatching)
