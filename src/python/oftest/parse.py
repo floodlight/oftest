@@ -196,7 +196,7 @@ def packet_to_flow_match_oxm(packet, ofp):
         if type(layer.payload) == scapy.Dot1Q:
             layer = layer.payload
             match.oxm_list.append(ofp.oxm.eth_type(layer.type))
-            match.oxm_list.append(ofp.oxm.vlan_vid(layer.vlan))
+            match.oxm_list.append(ofp.oxm.vlan_vid(ofp.OFPVID_PRESENT|layer.vlan))
             match.oxm_list.append(ofp.oxm.vlan_pcp(layer.prio))
         else:
             match.oxm_list.append(ofp.oxm.eth_type(layer.type))
