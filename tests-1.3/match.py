@@ -399,10 +399,10 @@ class VlanExact(MatchTest):
 
         nonmatching = {
             "vid=4 pcp=2": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=4, vlan_pcp=2),
-            "vid=4 pcp=3": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=4, vlan_pcp=2),
-            "vid=2 pcp=2": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=4, vlan_pcp=2),
-            "vid=0 pcp=3": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=4, vlan_pcp=2),
-            "vid=2 pcp=0": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=4, vlan_pcp=2),
+            "vid=4 pcp=3": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=4, vlan_pcp=3),
+            "vid=2 pcp=2": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=2, vlan_pcp=2),
+            "vid=0 pcp=3": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=0, vlan_pcp=3),
+            "vid=2 pcp=0": simple_tcp_packet(dl_vlan_enable=True, vlan_vid=2, vlan_pcp=0),
             "no vlan tag": simple_tcp_packet(),
         }
 
@@ -851,7 +851,7 @@ class IPv4SrcMasked(MatchTest):
 
 class IPv4Dst(MatchTest):
     """
-    Match on ipv4 source address
+    Match on ipv4 destination address
     """
     def runTest(self):
         match = ofp.match([
@@ -872,7 +872,7 @@ class IPv4Dst(MatchTest):
 
 class IPv4DstSubnetMasked(MatchTest):
     """
-    Match on ipv4 source address (subnet masked)
+    Match on ipv4 destination address (subnet masked)
     """
     def runTest(self):
         match = ofp.match([
@@ -899,7 +899,7 @@ class IPv4DstSubnetMasked(MatchTest):
 
 class IPv4DstMasked(MatchTest):
     """
-    Match on ipv4 source address (arbitrarily masked)
+    Match on ipv4 destination address (arbitrarily masked)
     """
     def runTest(self):
         match = ofp.match([
@@ -1301,7 +1301,7 @@ class IPv4ICMPCode(MatchTest):
         }
 
         nonmatching = {
-            "type=3 code=1": simple_icmp_packet(icmp_type=2, icmp_code=1),
+            "type=2 code=1": simple_icmp_packet(icmp_type=2, icmp_code=1),
         }
 
         self.verify_match(match, matching, nonmatching)
@@ -1345,7 +1345,7 @@ class IPv6ICMPCode(MatchTest):
         }
 
         nonmatching = {
-            "type=3 code=1": simple_icmpv6_packet(icmp_type=2, icmp_code=1),
+            "type=2 code=1": simple_icmpv6_packet(icmp_type=2, icmp_code=1),
         }
 
         self.verify_match(match, matching, nonmatching)
