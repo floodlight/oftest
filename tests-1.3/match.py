@@ -1152,6 +1152,30 @@ class IPv4TCPSrc(MatchTest):
 
         self.verify_match(match, matching, nonmatching)
 
+@nonstandard
+class IPv4TCPSrcMasked(MatchTest):
+    """
+    Match on ipv4 tcp source port (masked)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x0800),
+            ofp.oxm.ip_proto(6),
+            ofp.oxm.tcp_src_masked(52, 0xFE),
+        ])
+
+        matching = {
+            "tcp sport=53": simple_tcp_packet(tcp_sport=53),
+            "tcp sport=52": simple_tcp_packet(tcp_sport=52),
+        }
+
+        nonmatching = {
+            "tcp sport=54": simple_tcp_packet(tcp_sport=54),
+            "tcp sport=51": simple_tcp_packet(tcp_sport=51),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
 class IPv6TCPSrc(MatchTest):
     """
     Match on ipv4 tcp source port
@@ -1192,6 +1216,30 @@ class IPv4TCPDst(MatchTest):
         nonmatching = {
             "tcp dport=52": simple_tcp_packet(tcp_dport=52),
             "udp dport=53": simple_udp_packet(udp_dport=53),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+@nonstandard
+class IPv4TCPDstMasked(MatchTest):
+    """
+    Match on ipv4 tcp destination port (masked)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x0800),
+            ofp.oxm.ip_proto(6),
+            ofp.oxm.tcp_dst_masked(52, 0xFE),
+        ])
+
+        matching = {
+            "tcp dport=53": simple_tcp_packet(tcp_dport=53),
+            "tcp dport=52": simple_tcp_packet(tcp_dport=52),
+        }
+
+        nonmatching = {
+            "tcp dport=54": simple_tcp_packet(tcp_dport=54),
+            "tcp dport=51": simple_tcp_packet(tcp_dport=51),
         }
 
         self.verify_match(match, matching, nonmatching)
@@ -1240,6 +1288,30 @@ class IPv4UDPSrc(MatchTest):
 
         self.verify_match(match, matching, nonmatching)
 
+@nonstandard
+class IPv4UDPSrcMasked(MatchTest):
+    """
+    Match on ipv4 udp source port (masked)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x0800),
+            ofp.oxm.ip_proto(17),
+            ofp.oxm.udp_src_masked(52, 0xFE),
+        ])
+
+        matching = {
+            "udp sport=53": simple_udp_packet(udp_sport=53),
+            "udp sport=52": simple_udp_packet(udp_sport=52),
+        }
+
+        nonmatching = {
+            "udp sport=54": simple_udp_packet(udp_sport=54),
+            "udp sport=51": simple_udp_packet(udp_sport=51),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
 class IPv6UDPSrc(MatchTest):
     """
     Match on ipv4 udp source port
@@ -1280,6 +1352,30 @@ class IPv4UDPDst(MatchTest):
         nonmatching = {
             "udp dport=52": simple_udp_packet(udp_dport=52),
             "tcp dport=53": simple_tcp_packet(tcp_dport=53),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+@nonstandard
+class IPv4UDPDstMasked(MatchTest):
+    """
+    Match on ipv4 udp destination port (masked)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_type(0x0800),
+            ofp.oxm.ip_proto(17),
+            ofp.oxm.udp_dst_masked(52, 0xFE),
+        ])
+
+        matching = {
+            "udp dport=53": simple_udp_packet(udp_dport=53),
+            "udp dport=52": simple_udp_packet(udp_dport=52),
+        }
+
+        nonmatching = {
+            "udp dport=54": simple_udp_packet(udp_dport=54),
+            "udp dport=51": simple_udp_packet(udp_dport=51),
         }
 
         self.verify_match(match, matching, nonmatching)
