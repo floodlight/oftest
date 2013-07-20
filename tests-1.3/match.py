@@ -201,6 +201,7 @@ class EthDstMulticast(MatchTest):
         nonmatching = {
             "incorrect": simple_tcp_packet(eth_dst='01:00:5e:ed:99:03'),
             "unicast": simple_tcp_packet(eth_dst='00:00:5e:ed:99:02'),
+            "broadcast": simple_tcp_packet(eth_dst='ff:ff:ff:ff:ff:ff'),
             "local": simple_tcp_packet(eth_dst='03:00:5e:ed:99:02'),
         }
 
@@ -245,6 +246,49 @@ class EthSrc(MatchTest):
             "incorrect": simple_tcp_packet(eth_src='00:01:02:03:04:06'),
             "multicast": simple_tcp_packet(eth_src='01:01:02:03:04:05'),
             "local": simple_tcp_packet(eth_src='02:01:02:03:04:05'),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+class EthSrcBroadcast(MatchTest):
+    """
+    Match on ethernet source (broadcast)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_src([0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
+        ])
+
+        matching = {
+            "ff:ff:ff:ff:ff:ff": simple_tcp_packet(eth_src='ff:ff:ff:ff:ff:ff'),
+        }
+
+        nonmatching = {
+            "fd:ff:ff:ff:ff:ff": simple_tcp_packet(eth_src='fd:ff:ff:ff:ff:ff'),
+            "fe:ff:ff:ff:ff:ff": simple_tcp_packet(eth_src='fe:ff:ff:ff:ff:ff'),
+            "ff:fe:ff:ff:ff:ff": simple_tcp_packet(eth_src='ff:fe:ff:ff:ff:ff'),
+        }
+
+        self.verify_match(match, matching, nonmatching)
+
+class EthSrcMulticast(MatchTest):
+    """
+    Match on ethernet source (IPv4 multicast)
+    """
+    def runTest(self):
+        match = ofp.match([
+            ofp.oxm.eth_src([0x01, 0x00, 0x5e, 0xed, 0x99, 0x02])
+        ])
+
+        matching = {
+            "correct": simple_tcp_packet(eth_src='01:00:5e:ed:99:02'),
+        }
+
+        nonmatching = {
+            "incorrect": simple_tcp_packet(eth_src='01:00:5e:ed:99:03'),
+            "unicast": simple_tcp_packet(eth_src='00:00:5e:ed:99:02'),
+            "broadcast": simple_tcp_packet(eth_src='ff:ff:ff:ff:ff:ff'),
+            "local": simple_tcp_packet(eth_src='03:00:5e:ed:99:02'),
         }
 
         self.verify_match(match, matching, nonmatching)
