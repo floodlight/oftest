@@ -78,12 +78,6 @@ class SimpleProtocol(unittest.TestCase):
         self.controller.join()
         del self.controller
 
-    def runTest(self):
-        # Just a simple sanity check as illustration
-        logging.info("Running simple proto test")
-        self.assertTrue(self.controller.switch_socket is not None,
-                        str(self) + 'No connection to switch')
-
     def assertTrue(self, cond, msg):
         if not cond:
             logging.error("** FAILED ASSERTION: " + msg)
@@ -112,12 +106,6 @@ class SimpleDataPlane(SimpleProtocol):
         SimpleProtocol.tearDown(self)
         logging.info("Teardown done")
 
-    def runTest(self):
-        self.assertTrue(self.controller.switch_socket is not None,
-                        str(self) + 'No connection to switch')
-        # self.dataplane.show()
-        # Would like an assert that checks the data plane
-
 class DataPlaneOnly(unittest.TestCase):
     """
     Root class that sets up only the dataplane
@@ -131,8 +119,3 @@ class DataPlaneOnly(unittest.TestCase):
     def tearDown(self):
         logging.info("Teardown for simple dataplane test")
         logging.info("Teardown done")
-
-    def runTest(self):
-        logging.info("DataPlaneOnly")
-        # self.dataplane.show()
-        # Would like an assert that checks the data plane

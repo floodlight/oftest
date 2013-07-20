@@ -270,7 +270,8 @@ def load_test_modules(config):
 
             # Find all testcases defined in the module
             tests = dict((k, v) for (k, v) in mod.__dict__.items() if type(v) == type and
-                                                                      issubclass(v, unittest.TestCase))
+                                                                      issubclass(v, unittest.TestCase) and
+                                                                      hasattr(v, "runTest"))
             if tests:
                 for (testname, test) in tests.items():
                     # Set default annotation values
