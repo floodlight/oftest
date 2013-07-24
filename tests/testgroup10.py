@@ -408,12 +408,18 @@ class Grp10No110(base_tests.SimpleDataPlane):
         self.dataplane.send(of_ports[0], str(test_packet))
 
         #Verify dataplane packet should not be forwarded
-          
         yes_ports=[of_ports[1]]
         no_ports = set(of_ports).difference(yes_ports)
         receive_pkt_check(self.dataplane,test_packet,yes_ports,no_ports,self)
         logging.info("Emergency flows are active after control channel is reconnected")
         
+        logging.info("Cleaning up emergency flows")
+        rc = delete_all_flows_emer(self.controller) 
+        self.assertEqual(rc, 0, "Failed to send delete-emergency flow")
+        res, pkt = self.controller.poll(ofp.OFPT_ERROR, timeout=5)
+        self.assertTrue(res is None, "Emergency flows could not be deleted.")
+
+
 
 class Grp10No100(base_tests.SimpleDataPlane):
 
