@@ -343,7 +343,7 @@ class Grp10No110(base_tests.SimpleDataPlane):
         match = parse.packet_to_flow_match(test_packet)
         e_flow_mod.match = match
         e_flow_mod.flags = e_flow_mod.flags | ofp.OFPFF_EMERG
-        e_flow_mod.in_port = of_ports[0]
+        e_flow_mod.match.in_port = of_ports[0]
         act = action.action_output()
         act.port = of_ports[1]
         self.assertTrue(e_flow_mod.actions.add(act), "Failed to add action")
@@ -354,7 +354,9 @@ class Grp10No110(base_tests.SimpleDataPlane):
         self.assertTrue(response is None, "Unable to add emergency flows")
         self.assertTrue(rv != -1, "Unable to send a flow_mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
-            
+        
+        # Assert matching dataplane packet isn't forwarded.
+
         #Shutdown the controller 
         self.controller.initial_hello = False
         self.controller.disconnect()
@@ -380,8 +382,7 @@ class Grp10No110(base_tests.SimpleDataPlane):
           logging.info("Checking for Emergency flows status after controller shutdown")
           self.dataplane.send(of_ports[0], str(test_packet))
 
-          #Verify dataplane packet should not be forwarded
-          
+          #Verify dataplane packet should be forwarded
           yes_ports=[of_ports[1]]
           no_ports = set(of_ports).difference(yes_ports)
           receive_pkt_check(self.dataplane,test_packet,yes_ports,no_ports,self)
@@ -407,7 +408,7 @@ class Grp10No110(base_tests.SimpleDataPlane):
         logging.info("Checking for Emergency flows status after controller reconnection")
         self.dataplane.send(of_ports[0], str(test_packet))
 
-        #Verify dataplane packet should not be forwarded
+        #Verify dataplane packet should be forwarded
         yes_ports=[of_ports[1]]
         no_ports = set(of_ports).difference(yes_ports)
         receive_pkt_check(self.dataplane,test_packet,yes_ports,no_ports,self)
