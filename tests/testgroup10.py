@@ -356,7 +356,14 @@ class Grp10No110(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
         
         # Assert matching dataplane packet isn't forwarded.
+	self.dataplane.send(of_ports[0], str(test_packet))
 
+        #Verify dataplane packet should not be forwarded
+        yes_ports=[]
+        no_ports = set(of_ports)
+        receive_pkt_check(self.dataplane,test_packet,yes_ports,no_ports,self)
+        
+        
         #Shutdown the controller 
         self.controller.initial_hello = False
         self.controller.disconnect()
