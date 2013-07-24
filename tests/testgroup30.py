@@ -193,7 +193,6 @@ class Grp30No80(base_tests.SimpleDataPlane):
         of_ports = config["port_map"].keys()
         of_ports.sort()
 
-        print len(of_ports)
         for i in range (len(of_ports)):
  
             #Retrieve Port Configuration --- 
@@ -204,8 +203,13 @@ class Grp30No80(base_tests.SimpleDataPlane):
             #Modify Port Configuration 
             logging.info("Setting OFPPC_NO_FLOOD bit to 0 on %s" %str(of_ports[i]))
             logging.info("Port config is set to: {0}".format(bin(port_config & ~ofp.OFPPC_NO_FLOOD)))
-            rv = port_config_set(self.controller, of_ports[i],
-                                 port_config & ~ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD)
+            if (i%2):
+                rv = port_config_set(self.controller, of_ports[i],
+                                     port_config & ~ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD)
+            else:
+                rv = port_config_set(self.controller, of_ports[i],
+                                     port_config | ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD)
+                
             self.assertTrue(rv != -1, "Error sending port mod")
             self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
  
@@ -227,10 +231,15 @@ class Grp30No80(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
        
         #Sending packet to check if flood ports respond
-        self.dataplane.send(of_ports[0], str(pkt))
-        yes_ports= set(of_ports).difference([of_ports[0]])
-        no_ports = set(of_ports).difference(yes_ports)
-        receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
+        pkt_check=simple_tcp_packet(ip_dst="244.0.0.1")
+        self.dataplane.send(of_ports[0], str(pkt_check))
+        yes_ports = no_ports = set(of_ports)
+        for i in range(len(of_ports)):
+            if (i%2):
+                no_ports = no_ports.difference([of_ports[i]])
+            else:
+                yes_ports = yes_ports.difference([of_ports[i]])
+        receive_pkt_check(self.dataplane,pkt_check,yes_ports,no_ports,self)
 
 class Grp30No90(base_tests.SimpleDataPlane):
     """ 
