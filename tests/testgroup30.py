@@ -39,7 +39,7 @@ class Grp30No10(base_tests.SimpleDataPlane):
                 port_config_get(self.controller, of_ports[i])
             logging.info("Extracting the port configuration from the reply")
             self.assertTrue(port_config is not None, "Did not get port config of port {0}" .format(of_ports[i]))
-            if((port_config & 16) == 0):
+            if((port_config & ofp.OFPPC_NO_FLOOD) == 0):
                
                 rv = port_config_set(self.controller, of_ports[i], port_config^ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD)
                 self.assertTrue(rv != -1, "could not send the port config set message")
@@ -55,7 +55,6 @@ class Grp30No10(base_tests.SimpleDataPlane):
         match = parse.packet_to_flow_match(pkt_exactflow)
         self.assertTrue(match is not None, "Could not generate flow match from pkt")
         match.in_port = of_ports[0]
-    #match.nw_src = 1
         match.wildcards=0
         msg = message.flow_mod()
         msg.out_port = ofp.OFPP_NONE
@@ -71,6 +70,13 @@ class Grp30No10(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
         self.dataplane.send(of_ports[0], str(pkt_exactflow))
         receive_pkt_check(self.dataplane, pkt_exactflow, [of_ports[1]], set(of_ports).difference([of_ports[1]]), self)
+
+        # Set ports back to default flood behavior
+        for port in of_ports:
+            rv = port_config_set(self.controller, port, port_config & ~ofp.OFPPC_NO_FLOOD, ofp.OFPPC_NO_FLOOD)
+            self.assertTrue(rv != -1, "Could not send the port config message")
+
+
 
 class Grp30No20(base_tests.SimpleDataPlane):
     '''
