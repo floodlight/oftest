@@ -573,7 +573,14 @@ class Grp10No90(base_tests.SimpleDataPlane):
         else :
 	       self.assertTrue(assertionerr is True, "Failed to shutdown the control plane")
         
-        
+        logging.info("Cleaning up emergency flows")
+        rc = delete_all_flows_emer(self.controller) 
+        self.assertEqual(rc, 0, "Failed to send delete-emergency flow")
+        res, pkt = self.controller.poll(ofp.OFPT_ERROR, timeout=5)
+        self.assertTrue(res is None, "Emergency flows could not be deleted.")
+
+
+
 class Grp10No120(base_tests.SimpleDataPlane):
     """If switch does not support Emergency mode , it should support fail-secure mode
     (refer spec 1.0.1).
