@@ -367,8 +367,10 @@ def prune_tests(test_spec, test_modules):
     """
     from profiles import conformance
     test_profile = []
-    if config['conformance'] in conformance.profiles:
-        test_profile = conformance.profiles[config['conformance']]['mandatory'].split(',')
+    if config['conformance']:
+        for prof in config['conformance'].split('+'):
+            if prof in conformance.profiles:
+                test_profile += conformance.profiles[prof]['mandatory'].split(',')
 
     result = {}
     for (spec_modname, spec_testname) in parse_test_spec(test_spec):
