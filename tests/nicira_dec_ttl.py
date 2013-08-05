@@ -26,7 +26,7 @@ class TtlDecrement(base_tests.SimpleDataPlane):
         outpkt = simple_tcp_packet(pktlen=100, ip_ttl=3)
         msg = ofp.message.packet_out(in_port=ofp.OFPP_NONE,
                                      data=str(outpkt),
-                                     buffer_id=x0xffffffff,
+                                     buffer_id=0xffffffff,
                                      actions=[
                                          ofp.action.nicira_dec_ttl(),
                                          ofp.action.output(port=portA),
