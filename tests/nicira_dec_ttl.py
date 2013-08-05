@@ -39,3 +39,25 @@ class TtlDecrement(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane, simple_tcp_packet(ip_ttl=2), [portA], [], self)
         receive_pkt_check(self.dataplane, simple_tcp_packet(ip_ttl=1), [portB], [], self)
         receive_pkt_check(self.dataplane, simple_tcp_packet(ip_ttl=0), [], [portC], self)
+
+@nonstandard
+class TtlDecrementZeroTtl(base_tests.SimpleDataPlane):
+    def runTest(self):
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) >= 2, "Not enough ports for test")
+        portA = of_ports[0]
+        portB = of_ports[1]
+
+        outpkt = simple_tcp_packet(pktlen=100, ip_ttl=0)
+        msg = ofp.message.packet_out(in_port=ofp.OFPP_NONE,
+                                     data=str(outpkt),
+                                     buffer_id=0xffffffff,
+                                     actions=[
+                                         ofp.action.output(port=portA),
+                                         ofp.action.nicira_dec_ttl(),
+                                         ofp.action.output(port=portB)])
+        self.controller.message_send(msg)
+
+        receive_pkt_check(self.dataplane, simple_tcp_packet(ip_ttl=0), [portA], [], self)
+        receive_pkt_check(self.dataplane, simple_tcp_packet(ip_ttl=0), [], [portB], self)
