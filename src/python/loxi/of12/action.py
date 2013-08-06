@@ -11,6 +11,7 @@ import const
 import util
 import loxi.generic_util
 import loxi
+import oxm # for unpack
 
 def unpack_list(reader):
     def deserializer(reader, typ):
@@ -756,15 +757,17 @@ class set_field(Action):
         if field != None:
             self.field = field
         else:
-            self.field = ''
+            self.field = None
         return
 
     def pack(self):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append(self.field)
+        packed.append(self.field.pack())
         length = sum([len(x) for x in packed])
+        packed.append(loxi.generic_util.pad_to(8, length))
+        length += len(packed[-1])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
 
@@ -778,7 +781,8 @@ class set_field(Action):
         _type = reader.read("!H")[0]
         assert(_type == 25)
         _len = reader.read("!H")[0]
-        obj.field = str(reader.read_all())
+        obj.field = oxm.unpack(reader)
+        reader.skip_align()
         return obj
 
     def __eq__(self, other):
