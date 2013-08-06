@@ -111,6 +111,15 @@ ofp_bsn_vport_q_in_q_untagged_map = {
     65535: 'OF_BSN_VPORT_Q_IN_Q_UNTAGGED',
 }
 
+# Identifiers from group ofp_bsn_vport_status
+OF_BSN_VPORT_STATUS_OK = 0
+OF_BSN_VPORT_STATUS_FAILED = 1
+
+ofp_bsn_vport_status_map = {
+    0: 'OF_BSN_VPORT_STATUS_OK',
+    1: 'OF_BSN_VPORT_STATUS_FAILED',
+}
+
 # Identifiers from group ofp_capabilities
 OFPC_FLOW_STATS = 1
 OFPC_TABLE_STATS = 2

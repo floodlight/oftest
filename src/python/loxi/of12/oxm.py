@@ -12,15 +12,16 @@ import util
 import loxi.generic_util
 import loxi
 
+def unpack(reader):
+    type_len, = reader.peek('!L')
+    if type_len in parsers:
+        return parsers[type_len](reader)
+    else:
+        raise loxi.ProtocolError("unknown OXM cls=%#x type=%#x masked=%d len=%d (%#x)" % \
+            ((type_len >> 16) & 0xffff, (type_len >> 9) & 0x7f, (type_len >> 8) & 1, type_len & 0xff, type_len))
+
 def unpack_list(reader):
-    def deserializer(reader):
-        type_len, = reader.peek('!L')
-        if type_len in parsers:
-            return parsers[type_len](reader)
-        else:
-            raise loxi.ProtocolError("unknown OXM cls=%#x type=%#x masked=%d len=%d (%#x)" % \
-                ((type_len >> 16) & 0xffff, (type_len >> 9) & 0x7f, (type_len >> 8) & 1, type_len & 0xff, type_len))
-    return loxi.generic_util.unpack_list(reader, deserializer)
+    return loxi.generic_util.unpack_list(reader, unpack)
 
 class OXM(object):
     type_len = None # override in subclass
@@ -1907,7 +1908,7 @@ class ipv4_dst(OXM):
             with q.indent(2):
                 q.breakable()
                 q.text("value = ");
-                q.text("%#x" % self.value)
+                q.text(util.pretty_ipv4(self.value))
             q.breakable()
         q.text('}')
 
@@ -1963,10 +1964,10 @@ class ipv4_dst_masked(OXM):
             with q.indent(2):
                 q.breakable()
                 q.text("value = ");
-                q.text("%#x" % self.value)
+                q.text(util.pretty_ipv4(self.value))
                 q.text(","); q.breakable()
                 q.text("value_mask = ");
-                q.text("%#x" % self.value_mask)
+                q.text(util.pretty_ipv4(self.value_mask))
             q.breakable()
         q.text('}')
 
@@ -2015,7 +2016,7 @@ class ipv4_src(OXM):
             with q.indent(2):
                 q.breakable()
                 q.text("value = ");
-                q.text("%#x" % self.value)
+                q.text(util.pretty_ipv4(self.value))
             q.breakable()
         q.text('}')
 
@@ -2071,10 +2072,10 @@ class ipv4_src_masked(OXM):
             with q.indent(2):
                 q.breakable()
                 q.text("value = ");
-                q.text("%#x" % self.value)
+                q.text(util.pretty_ipv4(self.value))
                 q.text(","); q.breakable()
                 q.text("value_mask = ");
-                q.text("%#x" % self.value_mask)
+                q.text(util.pretty_ipv4(self.value_mask))
             q.breakable()
         q.text('}')
 
