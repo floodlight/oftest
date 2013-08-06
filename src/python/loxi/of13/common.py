@@ -781,7 +781,7 @@ class match_v3(object):
         packed.append(util.pack_list(self.oxm_list))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
-        packed.append('\x00' * ((length + 7)/8*8 - length))
+        packed.append(loxi.generic_util.pad_to(8, length))
         return ''.join(packed)
 
     @staticmethod
@@ -795,7 +795,7 @@ class match_v3(object):
         assert(_type == 1)
         _length = reader.read("!H")[0]
         obj.oxm_list = oxm.unpack_list(reader.slice(_length-4))
-        reader.skip((_length + 7)/8*8 - _length)
+        reader.skip_align()
         return obj
 
     def __eq__(self, other):
