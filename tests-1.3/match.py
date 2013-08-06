@@ -34,9 +34,7 @@ class MatchTest(base_tests.SimpleDataPlane):
         dicts mapping from string names (used in log messages) to string
         packet data.
         """
-        ports = sorted(config["port_map"].keys())
-        in_port = ports[0]
-        out_port = ports[1]
+        in_port, out_port = openflow_ports(2)
 
         logging.info("Running match test for %s", match.show())
 
@@ -89,10 +87,7 @@ class InPort(base_tests.SimpleDataPlane):
     Match on ingress port
     """
     def runTest(self):
-        ports = sorted(config["port_map"].keys())
-        in_port = ports[0]
-        out_port = ports[1]
-        bad_port = ports[2]
+        in_port, out_port, bad_port = openflow_ports(3)
 
         match = ofp.match([
             ofp.oxm.in_port(in_port)

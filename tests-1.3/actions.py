@@ -24,9 +24,7 @@ class Output(base_tests.SimpleDataPlane):
     Output to a single port
     """
     def runTest(self):
-        ports = sorted(config["port_map"].keys())
-        in_port = ports[0]
-        out_port = ports[1]
+        in_port, out_port = openflow_ports(2)
 
         actions = [ofp.action.output(out_port)]
 
@@ -52,14 +50,15 @@ class Output(base_tests.SimpleDataPlane):
 
         logging.info("Sending packet, expecting output to port %d", out_port)
         self.dataplane.send(in_port, pktstr)
-        receive_pkt_check(self.dataplane, pktstr, [out_port], set(ports) - set([out_port]), self)
+        receive_pkt_check(self.dataplane, pktstr, [out_port],
+                          set(openflow_ports()) - set([out_port]), self)
 
 class OutputMultiple(base_tests.SimpleDataPlane):
     """
     Output to three ports
     """
     def runTest(self):
-        ports = sorted(config["port_map"].keys())
+        ports = openflow_ports(4)
         in_port = ports[0]
         out_ports = ports[1:4]
 
@@ -87,7 +86,8 @@ class OutputMultiple(base_tests.SimpleDataPlane):
 
         logging.info("Sending packet, expecting output to ports %r", out_ports)
         self.dataplane.send(in_port, pktstr)
-        receive_pkt_check(self.dataplane, pktstr, out_ports, set(ports) - set(out_ports), self)
+        receive_pkt_check(self.dataplane, pktstr, out_ports,
+                          set(openflow_ports()) - set(out_ports), self)
 
 class BaseModifyPacketTest(base_tests.SimpleDataPlane):
     """
@@ -95,9 +95,7 @@ class BaseModifyPacketTest(base_tests.SimpleDataPlane):
     """
 
     def verify_modify(self, actions, pkt, exp_pkt):
-        ports = sorted(config["port_map"].keys())
-        in_port = ports[0]
-        out_port = ports[1]
+        in_port, out_port = openflow_ports(2)
 
         actions = actions + [ofp.action.output(out_port)]
 
@@ -119,7 +117,8 @@ class BaseModifyPacketTest(base_tests.SimpleDataPlane):
 
         logging.info("Sending packet, expecting output to port %d", out_port)
         self.dataplane.send(in_port, str(pkt))
-        receive_pkt_check(self.dataplane, str(exp_pkt), [out_port], set(ports) - set([out_port]), self)
+        receive_pkt_check(self.dataplane, str(exp_pkt), [out_port],
+                          set(openflow_ports()) - set([out_port]), self)
 
 class PushVlan(BaseModifyPacketTest):
     """

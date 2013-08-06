@@ -1598,4 +1598,17 @@ def verify_no_packet_in(test, data, in_port, controller=None):
 
     test.assertTrue(msg == None, "Did not expect a packet-in message on port %d" % in_port)
 
+def openflow_ports(num=None):
+    """
+    Return a list of 'num' OpenFlow port numbers
+
+    If 'num' is None, return all available ports. Otherwise, limit the length
+    of the result to 'num' and raise an exception if not enough ports are
+    available.
+    """
+    ports = sorted(oftest.config["port_map"].keys())
+    if num != None and len(ports) < num:
+        raise Exception("test requires %d ports but only %d are available" % (num, len(ports)))
+    return ports[:num]
+
 __all__ = list(set(locals()) - _import_blacklist)
