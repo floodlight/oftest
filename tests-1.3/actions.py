@@ -159,3 +159,153 @@ class SetVlanPcp(BaseModifyPacketTest):
         pkt = simple_tcp_packet(dl_vlan_enable=True, vlan_pcp=1)
         exp_pkt = simple_tcp_packet(dl_vlan_enable=True, vlan_pcp=2)
         self.verify_modify(actions, pkt, exp_pkt)
+
+class SetEthDst(BaseModifyPacketTest):
+    """
+    Set Eth Dst address 
+    """
+    def runTest(self):
+        actions = [ofp.action.set_field(ofp.oxm.eth_dst([0x00,0xA1,0xCD,0x53,0xC6,0x55]))]
+        pkt = simple_tcp_packet()
+        exp_pkt = simple_tcp_packet(eth_dst="00:A1:CD:53:C6:55")
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class SetEthSrc(BaseModifyPacketTest):
+    """
+    Set Eth Src address 
+    """
+    def runTest(self):
+        actions = [ofp.action.set_field(ofp.oxm.eth_src([0x00,0xA1,0xCD,0x53,0xC6,0x55]))]
+        pkt = simple_tcp_packet()
+        exp_pkt = simple_tcp_packet(eth_src="00:A1:CD:53:C6:55")
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class SetIpDscp(BaseModifyPacketTest):
+    """
+    Set IP DSCP 
+    """
+    def runTest(self):
+        actions = [ofp.action.set_field(ofp.oxm.ip_dscp(0x01))]
+        pkt = simple_tcp_packet()
+        exp_pkt = simple_tcp_packet(ip_tos=0x04)
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class SetIpECN(BaseModifyPacketTest):
+    """
+    Set IP ECN
+    """
+    def runTest(self):
+        actions = [ofp.action.set_field(ofp.oxm.ip_ecn(0x01))]
+        pkt = simple_tcp_packet()
+        exp_pkt = simple_tcp_packet(ip_tos=0x01)
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class SetIPv4Src(BaseModifyPacketTest):
+    """
+    Set IPv4 srouce address
+    """
+    def runTest(self):
+        actions = [ofp.action.set_field(ofp.oxm.ipv4_src(167772161))]
+        pkt = simple_tcp_packet()
+        exp_pkt = simple_tcp_packet(ip_src="10.0.0.1")
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class SetIPv4Dst(BaseModifyPacketTest):
+    """
+    Set IPv4 destination address
+    """
+    def runTest(self):
+        actions = [ofp.action.set_field(ofp.oxm.ipv4_dst(167772161))]
+        pkt = simple_tcp_packet()
+        exp_pkt = simple_tcp_packet(ip_dst="10.0.0.1")
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class SetTCPSrc(BaseModifyPacketTest):
+    """
+    Set TCP source port 
+    """
+    def runTest(self):
+        actions = [ofp.action.set_field(ofp.oxm.tcp_src(800))]
+        pkt = simple_tcp_packet()
+        exp_pkt = simple_tcp_packet(tcp_sport=800)
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class SetTCPDst(BaseModifyPacketTest):
+    """
+    Set TCP destination port 
+    """
+    def runTest(self):
+        actions = [ofp.action.set_field(ofp.oxm.tcp_dst(800))]
+        pkt = simple_tcp_packet()
+        exp_pkt = simple_tcp_packet(tcp_dport=800)
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class SetUDPSrc(BaseModifyPacketTest):
+    """
+    Set UDP source port 
+    """
+    def runTest(self):
+        actions = [ofp.action.set_field(ofp.oxm.udp_src(800))]
+        pkt = simple_udp_packet()
+        exp_pkt = simple_udp_packet(udp_sport=800)
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class SetUDPDst(BaseModifyPacketTest):
+    """
+    Set UDP destination port 
+    """
+    def runTest(self):
+        actions = [ofp.action.set_field(ofp.oxm.udp_dst(800))]
+        pkt = simple_udp_packet()
+        exp_pkt = simple_udp_packet(udp_dport=800)
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class SetIPv6Src(BaseModifyPacketTest):
+    """
+    Set IPv6 source address 
+    """
+    def runTest(self):
+        actions = [ofp.action.set_field(ofp.oxm.ipv6_src("\x20\x01\xab\xb1\x34\x56\xbc\xcb\x00\x00\x00\x00\x03\x70\x73\x36"))]
+        pkt = simple_tcpv6_packet()
+        exp_pkt = simple_tcpv6_packet(ipv6_src="2001:abb1:3456:bccb:0000:0000:0370:7336")
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class SetIPv6Dst(BaseModifyPacketTest):
+    """
+    Set IPv6 destination address 
+    """
+    def runTest(self):
+        actions = [ofp.action.set_field(ofp.oxm.ipv6_dst("\x20\x01\xab\xb1\x34\x56\xbc\xcb\x00\x00\x00\x00\x03\x70\x73\x36"))]
+        pkt = simple_tcpv6_packet()
+        exp_pkt = simple_tcpv6_packet(ipv6_dst="2001:abb1:3456:bccb:0000:0000:0370:7336")
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class SetIPv6Flabel(BaseModifyPacketTest):
+    """
+    Set IPv6 Flabel 
+    """
+    def runTest(self):
+        actions = [ofp.action.set_field(ofp.oxm.ipv6_flabel(0))]
+        pkt = simple_tcpv6_packet()
+        exp_pkt = simple_tcpv6_packet(ipv6_fl=0)
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class SetNwTTL(BaseModifyPacketTest):
+    """
+    Set Nw TTL 
+    """
+    def runTest(self):
+        actions = [ofp.action.set_nw_ttl(10)]
+        pkt = simple_tcp_packet()
+        exp_pkt = simple_tcp_packet(ip_ttl=10)
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class DecNwTTL(BaseModifyPacketTest):
+    """
+    Decrement Nw TTL 
+    """
+    def runTest(self):
+        actions = [ofp.action.dec_nw_ttl()]
+        pkt = simple_tcp_packet(ip_ttl=10)
+        exp_pkt = simple_tcp_packet(ip_ttl=9)
+        self.verify_modify(actions, pkt, exp_pkt)
