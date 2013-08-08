@@ -200,6 +200,26 @@ class SetIpECN(BaseModifyPacketTest):
         exp_pkt = simple_tcp_packet(ip_tos=0x01)
         self.verify_modify(actions, pkt, exp_pkt)
 
+class SetIpDSCP_NonZeroECN(BaseModifyPacketTest):
+    """
+    Set IP DSCP and make sure ECN is not modified 
+    """
+    def runTest(self):
+        actions = [ofp.action.set_field(ofp.oxm.ip_dscp(0x01))]
+        pkt = simple_tcp_packet(ip_tos=0x11)
+        exp_pkt = simple_tcp_packet(ip_tos=0x05)
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class SetIpECN_NonZeroDSCP(BaseModifyPacketTest):
+    """
+    Set IP ECN and make sure DSCP is not modified
+    """
+    def runTest(self):
+        actions = [ofp.action.set_field(ofp.oxm.ip_ecn(0x02))]
+        pkt = simple_tcp_packet(ip_tos=0x11)
+        exp_pkt = simple_tcp_packet(ip_tos=0x12)
+        self.verify_modify(actions, pkt, exp_pkt)
+
 class SetIPv4Src(BaseModifyPacketTest):
     """
     Set IPv4 srouce address
@@ -285,9 +305,9 @@ class SetIPv6Flabel(BaseModifyPacketTest):
     Set IPv6 Flabel 
     """
     def runTest(self):
-        actions = [ofp.action.set_field(ofp.oxm.ipv6_flabel(0))]
+        actions = [ofp.action.set_field(ofp.oxm.ipv6_flabel(10))]
         pkt = simple_tcpv6_packet()
-        exp_pkt = simple_tcpv6_packet(ipv6_fl=0)
+        exp_pkt = simple_tcpv6_packet(ipv6_fl=10)
         self.verify_modify(actions, pkt, exp_pkt)
 
 class SetNwTTL(BaseModifyPacketTest):
