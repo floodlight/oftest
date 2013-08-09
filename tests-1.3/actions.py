@@ -130,6 +130,40 @@ class PushVlan(BaseModifyPacketTest):
         exp_pkt = simple_tcp_packet(dl_vlan_enable=True, pktlen=104)
         self.verify_modify(actions, pkt, exp_pkt)
 
+class PushVlanVid(BaseModifyPacketTest):
+    """
+    Push a vlan tag (vid=2, pcp=0)
+    """
+    def runTest(self):
+        actions = [ofp.action.push_vlan(ethertype=0x8100),
+                   ofp.action.set_field(ofp.oxm.vlan_vid(2))]
+        pkt = simple_tcp_packet()
+        exp_pkt = simple_tcp_packet(dl_vlan_enable=True, vlan_vid=2, pktlen=104)
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class PushVlanVidPcp(BaseModifyPacketTest):
+    """
+    Push a vlan tag (vid=2, pcp=3)
+    """
+    def runTest(self):
+        actions = [ofp.action.push_vlan(ethertype=0x8100),
+                   ofp.action.set_field(ofp.oxm.vlan_vid(2)),
+                   ofp.action.set_field(ofp.oxm.vlan_pcp(3))]
+        pkt = simple_tcp_packet()
+        exp_pkt = simple_tcp_packet(dl_vlan_enable=True, vlan_vid=2, vlan_pcp=3, pktlen=104)
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class PushVlanPcp(BaseModifyPacketTest):
+    """
+    Push a vlan tag (vid=0, pcp=3)
+    """
+    def runTest(self):
+        actions = [ofp.action.push_vlan(ethertype=0x8100),
+                   ofp.action.set_field(ofp.oxm.vlan_pcp(3))]
+        pkt = simple_tcp_packet()
+        exp_pkt = simple_tcp_packet(dl_vlan_enable=True, vlan_vid=0, vlan_pcp=3, pktlen=104)
+        self.verify_modify(actions, pkt, exp_pkt)
+
 class PopVlan(BaseModifyPacketTest):
     """
     Pop a vlan tag
@@ -180,9 +214,9 @@ class SetEthSrc(BaseModifyPacketTest):
         exp_pkt = simple_tcp_packet(eth_src="00:A1:CD:53:C6:55")
         self.verify_modify(actions, pkt, exp_pkt)
 
-class SetIpDscp(BaseModifyPacketTest):
+class SetIpv4Dscp(BaseModifyPacketTest):
     """
-    Set IP DSCP 
+    Set IPv4 DSCP 
     """
     def runTest(self):
         actions = [ofp.action.set_field(ofp.oxm.ip_dscp(0x01))]
@@ -190,9 +224,9 @@ class SetIpDscp(BaseModifyPacketTest):
         exp_pkt = simple_tcp_packet(ip_tos=0x04)
         self.verify_modify(actions, pkt, exp_pkt)
 
-class SetIpECN(BaseModifyPacketTest):
+class SetIpv4ECN(BaseModifyPacketTest):
     """
-    Set IP ECN
+    Set IPv4 ECN
     """
     def runTest(self):
         actions = [ofp.action.set_field(ofp.oxm.ip_ecn(0x01))]
@@ -200,9 +234,9 @@ class SetIpECN(BaseModifyPacketTest):
         exp_pkt = simple_tcp_packet(ip_tos=0x01)
         self.verify_modify(actions, pkt, exp_pkt)
 
-class SetIpDSCP_NonZeroECN(BaseModifyPacketTest):
+class SetIpv4DSCP_NonZeroECN(BaseModifyPacketTest):
     """
-    Set IP DSCP and make sure ECN is not modified 
+    Set IPv4 DSCP and make sure ECN is not modified 
     """
     def runTest(self):
         actions = [ofp.action.set_field(ofp.oxm.ip_dscp(0x01))]
@@ -210,9 +244,9 @@ class SetIpDSCP_NonZeroECN(BaseModifyPacketTest):
         exp_pkt = simple_tcp_packet(ip_tos=0x05)
         self.verify_modify(actions, pkt, exp_pkt)
 
-class SetIpECN_NonZeroDSCP(BaseModifyPacketTest):
+class SetIpv4ECN_NonZeroDSCP(BaseModifyPacketTest):
     """
-    Set IP ECN and make sure DSCP is not modified
+    Set IPv4 ECN and make sure DSCP is not modified
     """
     def runTest(self):
         actions = [ofp.action.set_field(ofp.oxm.ip_ecn(0x02))]
@@ -300,6 +334,26 @@ class SetIPv6Dst(BaseModifyPacketTest):
         exp_pkt = simple_tcpv6_packet(ipv6_dst="2001:abb1:3456:bccb:0000:0000:0370:7336")
         self.verify_modify(actions, pkt, exp_pkt)
 
+class SetIpv6Dscp(BaseModifyPacketTest):
+    """
+    Set IPv6 DSCP 
+    """
+    def runTest(self):
+        actions = [ofp.action.set_field(ofp.oxm.ip_dscp(0x01))]
+        pkt = simple_tcpv6_packet()
+        exp_pkt = simple_tcpv6_packet(ipv6_tc=0x04)
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class SetIpv6ECN(BaseModifyPacketTest):
+    """
+    Set IPv6 ECN
+    """
+    def runTest(self):
+        actions = [ofp.action.set_field(ofp.oxm.ip_ecn(0x01))]
+        pkt = simple_tcpv6_packet()
+        exp_pkt = simple_tcpv6_packet(ipv6_tc=0x01)
+        self.verify_modify(actions, pkt, exp_pkt)
+
 class SetIPv6Flabel(BaseModifyPacketTest):
     """
     Set IPv6 Flabel 
@@ -310,9 +364,39 @@ class SetIPv6Flabel(BaseModifyPacketTest):
         exp_pkt = simple_tcpv6_packet(ipv6_fl=10)
         self.verify_modify(actions, pkt, exp_pkt)
 
-class SetNwTTL(BaseModifyPacketTest):
+class SetIpv6DSCP_NonZeroECNandFlabel(BaseModifyPacketTest):
     """
-    Set Nw TTL 
+    Set IPv6 DSCP and make sure ECN is not modified 
+    """
+    def runTest(self):
+        actions = [ofp.action.set_field(ofp.oxm.ip_dscp(0x01))]
+        pkt = simple_tcpv6_packet(ipv6_tc=0x11, ipv6_fl=10)
+        exp_pkt = simple_tcpv6_packet(ipv6_tc=0x05, ipv6_fl=10)
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class SetIpv6ECN_NonZeroDSCPandFlabel(BaseModifyPacketTest):
+    """
+    Set IPv6 ECN and make sure DSCP is not modified
+    """
+    def runTest(self):
+        actions = [ofp.action.set_field(ofp.oxm.ip_ecn(0x02))]
+        pkt = simple_tcpv6_packet(ipv6_tc=0x11, ipv6_fl=10)
+        exp_pkt = simple_tcpv6_packet(ipv6_tc=0x12, ipv6_fl=10)
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class SetIPv6Flabel_NonZeroDSCPandECN(BaseModifyPacketTest):
+    """
+    Set IPv6 Flabel 
+    """
+    def runTest(self):
+        actions = [ofp.action.set_field(ofp.oxm.ipv6_flabel(10))]
+        pkt = simple_tcpv6_packet(ipv6_tc=0x11, ipv6_fl=9)
+        exp_pkt = simple_tcpv6_packet(ipv6_tc=0x11, ipv6_fl=10)
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class SetIpv4TTL(BaseModifyPacketTest):
+    """
+    Set IPv4 TTL 
     """
     def runTest(self):
         actions = [ofp.action.set_nw_ttl(10)]
@@ -320,12 +404,32 @@ class SetNwTTL(BaseModifyPacketTest):
         exp_pkt = simple_tcp_packet(ip_ttl=10)
         self.verify_modify(actions, pkt, exp_pkt)
 
-class DecNwTTL(BaseModifyPacketTest):
+class SetIpv6HopLimit(BaseModifyPacketTest):
     """
-    Decrement Nw TTL 
+    Set Ipv6 Hop Limit 
+    """
+    def runTest(self):
+        actions = [ofp.action.set_nw_ttl(10)]
+        pkt = simple_tcpv6_packet()
+        exp_pkt = simple_tcpv6_packet(ipv6_hlim=10)
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class DecIpv4TTL(BaseModifyPacketTest):
+    """
+    Decrement Ipv4 TTL 
     """
     def runTest(self):
         actions = [ofp.action.dec_nw_ttl()]
         pkt = simple_tcp_packet(ip_ttl=10)
         exp_pkt = simple_tcp_packet(ip_ttl=9)
+        self.verify_modify(actions, pkt, exp_pkt)
+
+class DecIpv6HopLimit(BaseModifyPacketTest):
+    """
+    Decrement Ipv6 Hop Limit 
+    """
+    def runTest(self):
+        actions = [ofp.action.dec_nw_ttl()]
+        pkt = simple_tcpv6_packet(ipv6_hlim=10)
+        exp_pkt = simple_tcpv6_packet(ipv6_hlim=9)
         self.verify_modify(actions, pkt, exp_pkt)
