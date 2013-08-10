@@ -4,14 +4,7 @@ import logging
 import types
 import time
 import re
-
-try:
-    import scapy.all as scapy
-except:
-    try:
-        import scapy as scapy
-    except:
-        sys.exit("Need to install scapy for packet parsing")
+import packet as scapy
 
 import oftest
 import oftest.controller

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import unittest
 import parse
-import scapy.all as scapy
+import packet as scapy
 
 class TestPacketToFlowMatchV3(unittest.TestCase):
     def test_tcp(self):
