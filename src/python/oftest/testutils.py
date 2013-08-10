@@ -943,10 +943,8 @@ def test_param_get(key, default=None):
     except:
         return default
 
-    s = "val = " + str(key)
     try:
-        exec s
-        return val
+        return eval(str(key))
     except:
         return default
 
@@ -1211,10 +1209,11 @@ def inspect_packet(pkt):
     out = None
     backup = sys.stdout
     try:
-        sys.stdout = StringIO()
+        tmp = StringIO()
+        sys.stdout = tmp
         pkt.show2()
-        out = sys.stdout.getvalue()
-        sys.stdout.close()
+        out = tmp.getvalue()
+        tmp.close()
     finally:
         sys.stdout = backup
     return out
