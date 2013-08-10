@@ -1301,7 +1301,7 @@ def get_stats(test, req):
     test.assertTrue(reply is not None, "No response to stats request")
     stats.extend(reply.entries)
     while reply.flags & more_flag != 0:
-        reply, pkt = self.controller.poll(exp_msg=ofp.OFPT_STATS_REPLY)
+        reply, pkt = test.controller.poll(exp_msg=ofp.OFPT_STATS_REPLY)
         test.assertTrue(reply is not None, "No response to stats request")
         stats.extend(reply.entries)
     return stats

@@ -4,6 +4,7 @@
 """
 Wrap scapy to satisfy pylint
 """
+import sys
 
 try:
     import scapy.layers.l2
