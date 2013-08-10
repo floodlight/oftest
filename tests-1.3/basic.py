@@ -62,6 +62,19 @@ class FeaturesRequest(base_tests.SimpleProtocol):
         self.assertTrue(response is not None,
                         'Did not get features reply')
 
+class DefaultDrop(base_tests.SimpleDataPlane):
+    """
+    Check that an empty flowtable results in drops
+    """
+    def runTest(self):
+        in_port, = openflow_ports(1)
+        delete_all_flows(self.controller)
+
+        pkt = str(simple_tcp_packet())
+        self.dataplane.send(in_port, pkt)
+        verify_no_packet_in(self, pkt, None)
+        receive_pkt_check(self.dataplane, pkt, [], openflow_ports(), self)
+
 class OutputExact(base_tests.SimpleDataPlane):
     """
     Test output function for an exact-match flow
