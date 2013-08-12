@@ -1596,7 +1596,10 @@ def verify_no_packet_in(test, data, in_port, controller=None):
             # Found a matching message
             break
 
-    test.assertTrue(msg == None, "Did not expect a packet-in message on port %d" % in_port)
+    if in_port == None:
+        test.assertTrue(msg == None, "Did not expect a packet-in message on any port")
+    else:
+        test.assertTrue(msg == None, "Did not expect a packet-in message on port %d" % in_port)
 
 def openflow_ports(num=None):
     """
