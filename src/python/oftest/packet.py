@@ -7,6 +7,9 @@ Wrap scapy to satisfy pylint
 import sys
 
 try:
+    import scapy.config
+    import scapy.route
+    import scapy.route6
     import scapy.layers.l2
     import scapy.layers.inet
     import scapy.layers.inet6
