@@ -26,6 +26,7 @@ on an administrative socket and can shut down the socket might work.
 
 """
 
+import sys
 import os
 import socket
 import time
@@ -472,7 +473,7 @@ class Controller(Thread):
                 self.wakeup()
                 with self.connect_cv:
                     if self.initial_hello:
-                        self.message_send(hello())
+                        self.message_send(ofp.message.hello())
                     self.connect_cv.notify() # Notify anyone waiting
             else:
                 self.logger.error("Could not actively connect to switch %s",

@@ -13,7 +13,7 @@ import logging
 from oftest import config
 import oftest.base_tests as base_tests
 import ofp
-import scapy.all as scapy
+import oftest.packet as scapy
 
 from oftest.testutils import *
 from oftest.parse import parse_ipv6

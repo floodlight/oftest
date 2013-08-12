@@ -4,14 +4,7 @@ import logging
 import types
 import time
 import re
-
-try:
-    import scapy.all as scapy
-except:
-    try:
-        import scapy as scapy
-    except:
-        sys.exit("Need to install scapy for packet parsing")
+import packet as scapy
 
 import oftest
 import oftest.controller
@@ -950,10 +943,8 @@ def test_param_get(key, default=None):
     except:
         return default
 
-    s = "val = " + str(key)
     try:
-        exec s
-        return val
+        return eval(str(key))
     except:
         return default
 
@@ -1218,10 +1209,11 @@ def inspect_packet(pkt):
     out = None
     backup = sys.stdout
     try:
-        sys.stdout = StringIO()
+        tmp = StringIO()
+        sys.stdout = tmp
         pkt.show2()
-        out = sys.stdout.getvalue()
-        sys.stdout.close()
+        out = tmp.getvalue()
+        tmp.close()
     finally:
         sys.stdout = backup
     return out
@@ -1308,7 +1300,7 @@ def get_stats(test, req):
     test.assertTrue(reply is not None, "No response to stats request")
     stats.extend(reply.entries)
     while reply.flags & more_flag != 0:
-        reply, pkt = self.controller.poll(exp_msg=ofp.OFPT_STATS_REPLY)
+        reply, pkt = test.controller.poll(exp_msg=ofp.OFPT_STATS_REPLY)
         test.assertTrue(reply is not None, "No response to stats request")
         stats.extend(reply.entries)
     return stats
