@@ -1,0 +1,9 @@
+#!/bin/bash -eux
+cd $(dirname $(readlink -f $0))
+./pylint.sh
+
+# Exercise uncommonly used options
+./oft --version
+./oft --help
+./oft --list
+./oft --list-test-names

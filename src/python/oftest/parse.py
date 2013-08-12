@@ -4,13 +4,7 @@ Utility parsing functions
 
 import sys
 import socket
-try:
-    import scapy.all as scapy
-except:
-    try:
-        import scapy as scapy
-    except:
-        sys.exit("Need to install scapy for packet parsing")
+import packet as scapy
 
 def parse_mac(mac_str):
     """

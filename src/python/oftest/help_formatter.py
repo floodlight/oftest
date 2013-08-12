@@ -7,4 +7,4 @@ class HelpFormatter(optparse.IndentedHelpFormatter):
             indent = " "*self.current_indent
             return indent + description
         else:
-            return none
+            return None
