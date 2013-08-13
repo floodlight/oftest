@@ -950,9 +950,22 @@ class Flow_Cfg:
     #   sense to qualify ip_proto if eth_type is qualified to be 0x0800 (IP).
     #   The canonical form of flow match criteria will "wildcard out"
     #   all such cases.
+    # - The IP mask values from 32 to 63 are equivalent. Canonicalize to 32.
     def canonical(self):
         result = copy.deepcopy(self)
         
+        if wildcard_get(result.match.wildcards, ofp.OFPFW_NW_SRC_MASK) > 32:
+            result.match.wildcards = wildcard_set(result.match.wildcards, \
+                                                  ofp.OFPFW_NW_SRC_MASK, \
+                                                  32 \
+                                                  )
+
+        if wildcard_get(result.match.wildcards, ofp.OFPFW_NW_DST_MASK) > 32:
+            result.match.wildcards = wildcard_set(result.match.wildcards, \
+                                                  ofp.OFPFW_NW_DST_MASK, \
+                                                  32 \
+                                                  )
+
         if wildcard_get(result.match.wildcards, ofp.OFPFW_DL_VLAN) != 0:
             result.match.wildcards = wildcard_set(result.match.wildcards, \
                                                   ofp.OFPFW_DL_VLAN_PCP, \
@@ -1477,6 +1490,7 @@ class Switch:
         for fs in self.flow_stats.entries:
             flow_in = Flow_Cfg()
             flow_in.from_flow_stat(fs)
+            flow_in = flow_in.canonical()
             logging.info("Received flow:")
             logging.info(str(flow_in))
             fc = self.flow_tbl.find(flow_in)
