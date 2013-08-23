@@ -75,7 +75,7 @@ config_default = {
 
     # Logging options
     "log_file"           : "oft.log",
-    "log_append"         : False,
+    "log_dir"            : None,
     "debug"              : "verbose",
 
     # Test behavior options
@@ -169,10 +169,8 @@ prefixing them with the '^' character.
     parser.add_option_group(group)
 
     group = optparse.OptionGroup(parser, "Logging options")
-    group.add_option("--log-file",
-                      help="Name of log file, empty string to log to console (default %default)")
-    group.add_option("--log-append", action="store_true",
-                      help="Do not delete log file if specified")
+    group.add_option("--log-file", help="Name of log file (default %default)")
+    group.add_option("--log-dir", help="Name of log directory")
     dbg_lvl_names = sorted(DEBUG_LEVELS.keys(), key=lambda x: DEBUG_LEVELS[x])
     group.add_option("--debug", choices=dbg_lvl_names,
                       help="Debug lvl: debug, info, warning, error, critical (default %default)")
@@ -220,15 +218,19 @@ def logging_setup(config):
     """
     Set up logging based on config
     """
-    _format = "%(asctime)s.%(msecs)03d  %(name)-10s: %(levelname)-8s: %(message)s"
-    _datefmt = "%H:%M:%S"
-    _mode = config["log_append"] and "a" or "w"
-    if config['log_file'] in [ "-", "stderr" ]:
-        config['log_file'] = None
-    logging.basicConfig(filename=config['log_file'],
-                        filemode=_mode,
-                        level=DEBUG_LEVELS[config["debug"]],
-                        format=_format, datefmt=_datefmt)
+
+    logging.getLogger().setLevel(DEBUG_LEVELS[config["debug"]])
+
+    if config["log_dir"] != None:
+        if os.path.exists(config["log_dir"]):
+            import shutil
+            shutil.rmtree(config["log_dir"])
+        os.makedirs(config["log_dir"])
+    else:
+        if os.path.exists(config["log_file"]):
+            os.remove(config["log_file"])
+
+    oftest.open_logfile('main')
 
 def load_test_modules(config):
     """
@@ -501,6 +503,7 @@ if __name__ == "__main__":
 
     logging.info("*** TEST RUN START: " + time.asctime())
     result = unittest.TextTestRunner(verbosity=2).run(suite)
+    oftest.open_logfile('main')
     if oftest.testutils.skipped_test_count > 0:
         ts = " tests"
         if oftest.testutils.skipped_test_count == 1: ts = " test"
