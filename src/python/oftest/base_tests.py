@@ -7,6 +7,7 @@ and/or dataplane automatically set up.
 
 import logging
 import unittest
+import os
 
 import oftest
 from oftest import config
@@ -103,6 +104,9 @@ class SimpleDataPlane(SimpleProtocol):
         SimpleProtocol.setUp(self)
         self.dataplane = oftest.dataplane_instance
         self.dataplane.flush()
+        if config["log_dir"] != None:
+            filename = os.path.join(config["log_dir"], str(self)) + ".pcap"
+            self.dataplane.start_pcap(filename)
 
     def inheritSetup(self, parent):
         """
@@ -114,6 +118,8 @@ class SimpleDataPlane(SimpleProtocol):
         self.dataplane = parent.dataplane
 
     def tearDown(self):
+        if config["log_dir"] != None:
+            self.dataplane.stop_pcap()
         SimpleProtocol.tearDown(self)
 
 class DataPlaneOnly(BaseTest):
@@ -125,6 +131,11 @@ class DataPlaneOnly(BaseTest):
         BaseTest.setUp(self)
         self.dataplane = oftest.dataplane_instance
         self.dataplane.flush()
+        if config["log_dir"] != None:
+            filename = os.path.join(config["log_dir"], str(self)) + ".pcap"
+            self.dataplane.start_pcap(filename)
 
     def tearDown(self):
+        if config["log_dir"] != None:
+            self.dataplane.stop_pcap()
         BaseTest.tearDown(self)

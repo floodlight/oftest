@@ -25,6 +25,7 @@ from threading import Lock
 from threading import Condition
 import ofutils
 import netutils
+from pcap_writer import PcapWriter
 
 have_pypcap = False
 try:
@@ -165,6 +166,7 @@ class DataPlane(Thread):
         self.killed = False
 
         self.logger = logging.getLogger("dataplane")
+        self.pcap_writer = None
 
         if config is None:
             self.config = {}
@@ -215,6 +217,8 @@ class DataPlane(Thread):
                         port_number = port._port_number
                         self.logger.debug("Pkt len %d in on port %d",
                                           len(pkt), port_number)
+                        if self.pcap_writer:
+                            self.pcap_writer.write(pkt, timestamp, port_number)
                         queue = self.packet_queues[port_number]
                         if len(queue) >= self.MAX_QUEUE_LEN:
                             # Queue full, throw away oldest
@@ -246,6 +250,8 @@ class DataPlane(Thread):
         """
         self.logger.debug("Sending %d bytes to port %d" %
                           (len(packet), port_number))
+        if self.pcap_writer:
+            self.pcap_writer.write(packet, time.time(), port_number)
         bytes = self.ports[port_number].send(packet)
         if bytes != len(packet):
             self.logger.error("Unhandled send error, length mismatch %d != %d" %
@@ -353,3 +359,12 @@ class DataPlane(Thread):
         """
         for port_number in self.packet_queues.keys():
             self.packet_queues[port_number] = []
+
+    def start_pcap(self, filename):
+        assert(self.pcap_writer == None)
+        self.pcap_writer = PcapWriter(filename)
+
+    def stop_pcap(self):
+        if self.pcap_writer:
+            self.pcap_writer.close()
+            self.pcap_writer = None
