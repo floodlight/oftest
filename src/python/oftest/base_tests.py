@@ -14,13 +14,25 @@ import oftest.controller as controller
 import oftest.dataplane as dataplane
 import ofp
 
-class SimpleProtocol(unittest.TestCase):
+class BaseTest(unittest.TestCase):
+    def __str__(self):
+        return self.id().replace('.runTest', '')
+
+    def setUp(self):
+        oftest.open_logfile(str(self))
+        logging.info("** START TEST CASE " + str(self))
+
+    def tearDown(self):
+        logging.info("** END TEST CASE " + str(self))
+
+class SimpleProtocol(BaseTest):
     """
     Root class for setting up the controller
     """
 
     def setUp(self):
-        logging.info("** START TEST CASE " + str(self))
+        BaseTest.setUp(self)
+
         self.controller = controller.Controller(
             switch=config["switch_ip"],
             host=config["controller_host"],
@@ -73,10 +85,10 @@ class SimpleProtocol(unittest.TestCase):
         self.supported_actions = parent.supported_actions
         
     def tearDown(self):
-        logging.info("** END TEST CASE " + str(self))
         self.controller.shutdown()
         self.controller.join()
         del self.controller
+        BaseTest.tearDown(self)
 
     def assertTrue(self, cond, msg):
         if not cond:
@@ -102,20 +114,17 @@ class SimpleDataPlane(SimpleProtocol):
         self.dataplane = parent.dataplane
 
     def tearDown(self):
-        logging.info("Teardown for simple dataplane test")
         SimpleProtocol.tearDown(self)
-        logging.info("Teardown done")
 
-class DataPlaneOnly(unittest.TestCase):
+class DataPlaneOnly(BaseTest):
     """
     Root class that sets up only the dataplane
     """
 
     def setUp(self):
-        logging.info("** START DataPlaneOnly CASE " + str(self))
+        BaseTest.setUp(self)
         self.dataplane = oftest.dataplane_instance
         self.dataplane.flush()
 
     def tearDown(self):
-        logging.info("Teardown for simple dataplane test")
-        logging.info("Teardown done")
+        BaseTest.tearDown(self)
