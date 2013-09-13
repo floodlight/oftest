@@ -552,6 +552,8 @@ def receive_pkt_check(dp, pkt, yes_ports, no_ports, assert_if):
     @param yes_ports Set or list of ports that should recieve packet
     @param no_ports Set or list of ports that should not receive packet
     @param assert_if Object that implements assertXXX
+
+    DEPRECATED in favor in verify_packets
     """
 
     # Wait this long for packets that we don't expect to receive.
@@ -591,6 +593,8 @@ def receive_pkt_verify(parent, egr_ports, exp_pkt, ing_port):
     @param egr_port A single port or list of ports
 
     parent must implement dataplane, assertTrue and assertEqual
+
+    DEPRECATED in favor in verify_packets
     """
     exp_pkt_arg = None
     if oftest.config["relax"]:
@@ -802,9 +806,8 @@ def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=None,
                         str(egr_ports))
     parent.dataplane.send(ing_port, str(pkt))
 
-    if exp_pkt is None:
-        exp_pkt = pkt
-    receive_pkt_verify(parent, egr_ports, exp_pkt, ing_port)
+    exp_ports = [port == ofp.OFPP_IN_PORT and ing_port or port for port in egr_ports]
+    verify_packets(parent, exp_pkt, exp_ports)
 
 def flow_match_test_pktout(parent, ing_port, egr_ports,
                            vlan_vid=-1, pkt=None, exp_pkt=None,
@@ -839,9 +842,8 @@ def flow_match_test_pktout(parent, ing_port, egr_ports,
     logging.debug(msg.show())
     parent.controller.message_send(msg)
 
-    if exp_pkt is None:
-        exp_pkt = pkt
-    receive_pkt_verify(parent, egr_ports, exp_pkt, ing_port)
+    exp_ports = [port == ofp.OFPP_IN_PORT and ing_port or port for port in egr_ports]
+    verify_packets(parent, exp_pkt, exp_ports)
 
 def get_egr_list(parent, of_ports, how_many, exclude_list=[]):
     """
@@ -1605,5 +1607,56 @@ def openflow_ports(num=None):
     if num != None and len(ports) < num:
         raise Exception("test requires %d ports but only %d are available" % (num, len(ports)))
     return ports[:num]
+
+def verify_packet(test, pkt, ofport):
+    """
+    Check that an expected packet is received
+    """
+    logging.debug("Checking for pkt on port %r", ofport)
+    (rcv_port, rcv_pkt, pkt_time) = test.dataplane.poll(port_number=ofport, exp_pkt=str(pkt))
+    test.assertTrue(rcv_pkt != None, "Did not receive pkt on %r" % ofport)
+
+def verify_no_packet(test, pkt, ofport):
+    """
+    Check that a particular packet is not received
+    """
+    logging.debug("Negative check for pkt on port %r", ofport)
+    (rcv_port, rcv_pkt, pkt_time) = test.dataplane.poll(port_number=ofport, exp_pkt=str(pkt), timeout=0.01)
+    test.assertTrue(rcv_pkt == None, "Received packet on %r" % ofport)
+
+def verify_no_other_packets(test):
+    """
+    Check that no unexpected packets are received
+
+    This is a no-op if the --relax option is in effect.
+    """
+    if oftest.config["relax"]:
+        return
+    logging.debug("Checking for unexpected packets on all ports")
+    (rcv_port, rcv_pkt, pkt_time) = test.dataplane.poll(timeout=0.01)
+    if rcv_pkt != None:
+        logging.debug("Received unexpected packet on port %r: %s", rcv_port, format_packet(rcv_pkt))
+    test.assertTrue(rcv_pkt == None, "Unexpected packet on port %r" % rcv_port)
+
+def verify_packets(test, pkt, ofports):
+    """
+    Check that a packet is received on certain ports
+
+    Also verifies that the packet is not received on any other ports, and that no
+    other packets are received (unless --relax is in effect).
+
+    This covers the common and simplest cases for checking dataplane outputs.
+    For more complex usage, like multiple different packets being output, or
+    multiple packets on the same port, use the primitive verify_packet,
+    verify_no_packet, and verify_no_other_packets functions directly.
+    """
+    pkt = str(pkt)
+    for ofport in openflow_ports():
+        if ofport in ofports:
+            verify_packet(test, pkt, ofport)
+        else:
+            verify_no_packet(test, pkt, ofport)
+    verify_no_other_packets(test)
+
 
 __all__ = list(set(locals()) - _import_blacklist)

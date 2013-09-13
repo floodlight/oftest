@@ -36,9 +36,10 @@ class TtlDecrement(base_tests.SimpleDataPlane):
                                          ofp.action.output(port=portC)])
         self.controller.message_send(msg)
 
-        receive_pkt_check(self.dataplane, simple_tcp_packet(ip_ttl=2), [portA], [], self)
-        receive_pkt_check(self.dataplane, simple_tcp_packet(ip_ttl=1), [portB], [], self)
-        receive_pkt_check(self.dataplane, simple_tcp_packet(ip_ttl=0), [], [portC], self)
+        verify_packet(self, simple_tcp_packet(ip_ttl=2), portA)
+        verify_packet(self, simple_tcp_packet(ip_ttl=1), portB)
+        verify_no_packet(self, simple_tcp_packet(ip_ttl=0), portC)
+        verify_no_other_packets(self)
 
 @nonstandard
 class TtlDecrementZeroTtl(base_tests.SimpleDataPlane):
@@ -59,5 +60,6 @@ class TtlDecrementZeroTtl(base_tests.SimpleDataPlane):
                                          ofp.action.output(port=portB)])
         self.controller.message_send(msg)
 
-        receive_pkt_check(self.dataplane, simple_tcp_packet(ip_ttl=0), [portA], [], self)
-        receive_pkt_check(self.dataplane, simple_tcp_packet(ip_ttl=0), [], [portB], self)
+        verify_packet(self, simple_tcp_packet(ip_ttl=0), portA)
+        verify_no_packet(self, simple_tcp_packet(ip_ttl=0), portB)
+        verify_no_other_packets(self)

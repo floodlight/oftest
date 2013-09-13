@@ -153,24 +153,7 @@ class PacketOut(base_tests.SimpleDataPlane):
                logging.info("PacketOut to: " + str(dp_port))
                self.controller.message_send(msg)
 
-               exp_pkt_arg = None
-               exp_port = None
-               if config["relax"]:
-                   exp_pkt_arg = outpkt
-                   exp_port = dp_port
-               (of_port, pkt, pkt_time) = self.dataplane.poll(port_number=exp_port,
-                                                              exp_pkt=exp_pkt_arg)
-
-               self.assertTrue(pkt is not None, 'Packet not received')
-               logging.info("PacketOut: got pkt from " + str(of_port))
-               if of_port is not None:
-                   self.assertEqual(of_port, dp_port, "Unexpected receive port")
-               if not dataplane.match_exp_pkt(outpkt, pkt):
-                   logging.debug("Sent %s" % format_packet(outpkt))
-                   logging.debug("Resp %s" % format_packet(
-                           str(pkt)[:len(str(outpkt))]))
-               self.assertEqual(str(outpkt), str(pkt)[:len(str(outpkt))],
-                                'Response packet does not match send packet')
+               verify_packets(self, outpkt, [dp_port])
 
 class PacketOutMC(base_tests.SimpleDataPlane):
     """
@@ -207,9 +190,7 @@ class PacketOutMC(base_tests.SimpleDataPlane):
                logging.info("PacketOut to: " + str(dp_ports))
                self.controller.message_send(msg)
 
-               receive_pkt_check(self.dataplane, outpkt, dp_ports,
-                                 set(of_ports).difference(dp_ports),
-                                 self)
+               verify_packets(self, outpkt, dp_ports)
 
 class FlowStatsGet(base_tests.SimpleProtocol):
     """

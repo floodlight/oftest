@@ -163,8 +163,7 @@ class ForwardAll(base_tests.SimpleDataPlane):
 
         #Verifying packets recieved on expected dataplane ports
         yes_ports = set(of_ports).difference([ingress_port])
-        receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
-                      self)
+        verify_packets(self, pkt, yes_ports)
 
 
 class ForwardController(base_tests.SimpleDataPlane):
@@ -312,8 +311,7 @@ class ForwardFlood(base_tests.SimpleDataPlane):
 
         #Verifying packets recieved on expected dataplane ports
         yes_ports = set(of_ports).difference([ingress_port])
-        receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
-                      self)
+        verify_packets(self, pkt, yes_ports)
 
 class ForwardInport(base_tests.SimpleDataPlane):
     
@@ -358,11 +356,9 @@ class ForwardInport(base_tests.SimpleDataPlane):
         #Send packet matching the flow
         logging.info("Sending packet to dp port " + str(ingress_port))
         self.dataplane.send(ingress_port, str(pkt))
-        yes_ports = [ingress_port]
 
         #Verfying packet recieved on expected dataplane ports
-        receive_pkt_check(self.dataplane, pkt, yes_ports,set(of_ports).difference([ingress_port]),
-                          self)
+        verify_packets(self, pkt, [ingress_port])
 
 class ForwardTable(base_tests.SimpleDataPlane):
    
