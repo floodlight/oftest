@@ -1507,7 +1507,7 @@ def packet_in_match(msg, data, in_port=None, reason=None):
             pkt_in_port = None
 
     if in_port != None and in_port != pkt_in_port:
-        logging.debug("Incorrect packet_in in_port (expected %d, received %d)", in_port, msg.in_port)
+        logging.debug("Incorrect packet_in in_port (expected %d, received %d)", in_port, pkt_in_port)
         return False
 
     if reason != None and reason != msg.reason:
