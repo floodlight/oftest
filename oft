@@ -232,6 +232,19 @@ def logging_setup(config):
 
     oftest.open_logfile('main')
 
+def pcap_setup(config):
+    """
+    Set up dataplane packet capturing based on config
+    """
+
+    if config["log_dir"] == None:
+        filename = os.path.splitext(config["log_file"])[0] + '.pcap'
+        oftest.dataplane_instance.start_pcap(filename)
+    else:
+        # start_pcap is called per-test in base_tests
+        pass
+
+
 def load_test_modules(config):
     """
     Load tests from the test_dir directory.
@@ -498,6 +511,7 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 if __name__ == "__main__":
     # Set up the dataplane
     oftest.dataplane_instance = oftest.dataplane.DataPlane(config)
+    pcap_setup(config)
     for of_port, ifname in config["port_map"].items():
         oftest.dataplane_instance.port_add(ifname, of_port)
 
