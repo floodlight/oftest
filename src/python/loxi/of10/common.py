@@ -138,7 +138,11 @@ class bsn_interface(object):
 class bsn_vport_q_in_q(object):
     type = 0
 
-    def __init__(self, port_no=None, ingress_tpid=None, ingress_vlan_id=None, egress_tpid=None, egress_vlan_id=None):
+    def __init__(self, if_name=None, port_no=None, ingress_tpid=None, ingress_vlan_id=None, egress_tpid=None, egress_vlan_id=None):
+        if if_name != None:
+            self.if_name = if_name
+        else:
+            self.if_name = ""
         if port_no != None:
             self.port_no = port_no
         else:
@@ -164,14 +168,15 @@ class bsn_vport_q_in_q(object):
     def pack(self):
         packed = []
         packed.append(struct.pack("!H", self.type))
-        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!16s", self.if_name))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.port_no))
         packed.append(struct.pack("!H", self.ingress_tpid))
         packed.append(struct.pack("!H", self.ingress_vlan_id))
         packed.append(struct.pack("!H", self.egress_tpid))
         packed.append(struct.pack("!H", self.egress_vlan_id))
         length = sum([len(x) for x in packed])
-        packed[1] = struct.pack("!H", length)
+        packed[2] = struct.pack("!H", length)
         return ''.join(packed)
 
     @staticmethod
@@ -183,6 +188,7 @@ class bsn_vport_q_in_q(object):
             reader = loxi.generic_util.OFReader(buf)
         _type = reader.read("!H")[0]
         assert(_type == 0)
+        obj.if_name = reader.read("!16s")[0].rstrip("\x00")
         _length = reader.read("!H")[0]
         obj.port_no = reader.read("!L")[0]
         obj.ingress_tpid = reader.read("!H")[0]
@@ -193,6 +199,7 @@ class bsn_vport_q_in_q(object):
 
     def __eq__(self, other):
         if type(self) != type(other): return False
+        if self.if_name != other.if_name: return False
         if self.port_no != other.port_no: return False
         if self.ingress_tpid != other.ingress_tpid: return False
         if self.ingress_vlan_id != other.ingress_vlan_id: return False
@@ -212,6 +219,9 @@ class bsn_vport_q_in_q(object):
         with q.group():
             with q.indent(2):
                 q.breakable()
+                q.text("if_name = ");
+                q.pp(self.if_name)
+                q.text(","); q.breakable()
                 q.text("port_no = ");
                 q.text("%#x" % self.port_no)
                 q.text(","); q.breakable()
