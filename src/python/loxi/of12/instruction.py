@@ -127,70 +127,6 @@ class clear_actions(Instruction):
             q.breakable()
         q.text('}')
 
-class experimenter(Instruction):
-    type = 65535
-
-    def __init__(self, experimenter=None, data=None):
-        if experimenter != None:
-            self.experimenter = experimenter
-        else:
-            self.experimenter = 0
-        if data != None:
-            self.data = data
-        else:
-            self.data = ''
-        return
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!H", self.type))
-        packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append(struct.pack("!L", self.experimenter))
-        packed.append(self.data)
-        length = sum([len(x) for x in packed])
-        packed[1] = struct.pack("!H", length)
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(buf):
-        obj = experimenter()
-        if type(buf) == loxi.generic_util.OFReader:
-            reader = buf
-        else:
-            reader = loxi.generic_util.OFReader(buf)
-        _type = reader.read("!H")[0]
-        assert(_type == 65535)
-        _len = reader.read("!H")[0]
-        obj.experimenter = reader.read("!L")[0]
-        obj.data = str(reader.read_all())
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.experimenter != other.experimenter: return False
-        if self.data != other.data: return False
-        return True
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def show(self):
-        import loxi.pp
-        return loxi.pp.pp(self)
-
-    def pretty_print(self, q):
-        q.text("experimenter {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("experimenter = ");
-                q.text("%#x" % self.experimenter)
-                q.text(","); q.breakable()
-                q.text("data = ");
-                q.pp(self.data)
-            q.breakable()
-        q.text('}')
-
 class goto_table(Instruction):
     type = 1
 
@@ -376,5 +312,4 @@ parsers = {
     const.OFPIT_WRITE_ACTIONS : write_actions.unpack,
     const.OFPIT_APPLY_ACTIONS : apply_actions.unpack,
     const.OFPIT_CLEAR_ACTIONS : clear_actions.unpack,
-    const.OFPIT_EXPERIMENTER : experimenter.unpack,
 }

@@ -139,7 +139,7 @@ class bsn_interface(object):
 class bsn_vport_q_in_q(object):
     type = 0
 
-    def __init__(self, port_no=None, ingress_tpid=None, ingress_vlan_id=None, egress_tpid=None, egress_vlan_id=None):
+    def __init__(self, port_no=None, ingress_tpid=None, ingress_vlan_id=None, egress_tpid=None, egress_vlan_id=None, if_name=None):
         if port_no != None:
             self.port_no = port_no
         else:
@@ -160,6 +160,10 @@ class bsn_vport_q_in_q(object):
             self.egress_vlan_id = egress_vlan_id
         else:
             self.egress_vlan_id = 0
+        if if_name != None:
+            self.if_name = if_name
+        else:
+            self.if_name = ""
         return
 
     def pack(self):
@@ -171,6 +175,7 @@ class bsn_vport_q_in_q(object):
         packed.append(struct.pack("!H", self.ingress_vlan_id))
         packed.append(struct.pack("!H", self.egress_tpid))
         packed.append(struct.pack("!H", self.egress_vlan_id))
+        packed.append(struct.pack("!16s", self.if_name))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -190,6 +195,7 @@ class bsn_vport_q_in_q(object):
         obj.ingress_vlan_id = reader.read("!H")[0]
         obj.egress_tpid = reader.read("!H")[0]
         obj.egress_vlan_id = reader.read("!H")[0]
+        obj.if_name = reader.read("!16s")[0].rstrip("\x00")
         return obj
 
     def __eq__(self, other):
@@ -199,6 +205,7 @@ class bsn_vport_q_in_q(object):
         if self.ingress_vlan_id != other.ingress_vlan_id: return False
         if self.egress_tpid != other.egress_tpid: return False
         if self.egress_vlan_id != other.egress_vlan_id: return False
+        if self.if_name != other.if_name: return False
         return True
 
     def __ne__(self, other):
@@ -227,6 +234,9 @@ class bsn_vport_q_in_q(object):
                 q.text(","); q.breakable()
                 q.text("egress_vlan_id = ");
                 q.text("%#x" % self.egress_vlan_id)
+                q.text(","); q.breakable()
+                q.text("if_name = ");
+                q.pp(self.if_name)
             q.breakable()
         q.text('}')
 

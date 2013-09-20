@@ -60,6 +60,58 @@ def unpack_list_meter_stats(reader):
         return meter_stats.unpack(reader.slice(length))
     return loxi.generic_util.unpack_list(reader, wrapper)
 
+class action_id(object):
+
+    def __init__(self, type=None):
+        if type != None:
+            self.type = type
+        else:
+            self.type = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
+        packed.append('\x00' * 4)
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        obj = action_id()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        obj.type = reader.read("!H")[0]
+        _len = reader.read("!H")[0]
+        reader.skip(4)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.type != other.type: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("action_id {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("type = ");
+                q.text("%#x" % self.type)
+            q.breakable()
+        q.text('}')
+
 class bsn_interface(object):
 
     def __init__(self, hw_addr=None, name=None, ipv4_addr=None, ipv4_netmask=None):
@@ -141,7 +193,7 @@ class bsn_interface(object):
 class bsn_vport_q_in_q(object):
     type = 0
 
-    def __init__(self, port_no=None, ingress_tpid=None, ingress_vlan_id=None, egress_tpid=None, egress_vlan_id=None):
+    def __init__(self, port_no=None, ingress_tpid=None, ingress_vlan_id=None, egress_tpid=None, egress_vlan_id=None, if_name=None):
         if port_no != None:
             self.port_no = port_no
         else:
@@ -162,6 +214,10 @@ class bsn_vport_q_in_q(object):
             self.egress_vlan_id = egress_vlan_id
         else:
             self.egress_vlan_id = 0
+        if if_name != None:
+            self.if_name = if_name
+        else:
+            self.if_name = ""
         return
 
     def pack(self):
@@ -173,6 +229,7 @@ class bsn_vport_q_in_q(object):
         packed.append(struct.pack("!H", self.ingress_vlan_id))
         packed.append(struct.pack("!H", self.egress_tpid))
         packed.append(struct.pack("!H", self.egress_vlan_id))
+        packed.append(struct.pack("!16s", self.if_name))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -192,6 +249,7 @@ class bsn_vport_q_in_q(object):
         obj.ingress_vlan_id = reader.read("!H")[0]
         obj.egress_tpid = reader.read("!H")[0]
         obj.egress_vlan_id = reader.read("!H")[0]
+        obj.if_name = reader.read("!16s")[0].rstrip("\x00")
         return obj
 
     def __eq__(self, other):
@@ -201,6 +259,7 @@ class bsn_vport_q_in_q(object):
         if self.ingress_vlan_id != other.ingress_vlan_id: return False
         if self.egress_tpid != other.egress_tpid: return False
         if self.egress_vlan_id != other.egress_vlan_id: return False
+        if self.if_name != other.if_name: return False
         return True
 
     def __ne__(self, other):
@@ -229,6 +288,9 @@ class bsn_vport_q_in_q(object):
                 q.text(","); q.breakable()
                 q.text("egress_vlan_id = ");
                 q.text("%#x" % self.egress_vlan_id)
+                q.text(","); q.breakable()
+                q.text("if_name = ");
+                q.pp(self.if_name)
             q.breakable()
         q.text('}')
 
@@ -372,7 +434,7 @@ class bucket_counter(object):
 
 class flow_stats_entry(object):
 
-    def __init__(self, table_id=None, duration_sec=None, duration_nsec=None, priority=None, idle_timeout=None, hard_timeout=None, cookie=None, packet_count=None, byte_count=None, match=None, instructions=None):
+    def __init__(self, table_id=None, duration_sec=None, duration_nsec=None, priority=None, idle_timeout=None, hard_timeout=None, flags=None, cookie=None, packet_count=None, byte_count=None, match=None, instructions=None):
         if table_id != None:
             self.table_id = table_id
         else:
@@ -397,6 +459,10 @@ class flow_stats_entry(object):
             self.hard_timeout = hard_timeout
         else:
             self.hard_timeout = 0
+        if flags != None:
+            self.flags = flags
+        else:
+            self.flags = 0
         if cookie != None:
             self.cookie = cookie
         else:
@@ -429,7 +495,8 @@ class flow_stats_entry(object):
         packed.append(struct.pack("!H", self.priority))
         packed.append(struct.pack("!H", self.idle_timeout))
         packed.append(struct.pack("!H", self.hard_timeout))
-        packed.append('\x00' * 6)
+        packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
         packed.append(struct.pack("!Q", self.cookie))
         packed.append(struct.pack("!Q", self.packet_count))
         packed.append(struct.pack("!Q", self.byte_count))
@@ -454,7 +521,8 @@ class flow_stats_entry(object):
         obj.priority = reader.read("!H")[0]
         obj.idle_timeout = reader.read("!H")[0]
         obj.hard_timeout = reader.read("!H")[0]
-        reader.skip(6)
+        obj.flags = reader.read("!H")[0]
+        reader.skip(4)
         obj.cookie = reader.read("!Q")[0]
         obj.packet_count = reader.read("!Q")[0]
         obj.byte_count = reader.read("!Q")[0]
@@ -470,6 +538,7 @@ class flow_stats_entry(object):
         if self.priority != other.priority: return False
         if self.idle_timeout != other.idle_timeout: return False
         if self.hard_timeout != other.hard_timeout: return False
+        if self.flags != other.flags: return False
         if self.cookie != other.cookie: return False
         if self.packet_count != other.packet_count: return False
         if self.byte_count != other.byte_count: return False
@@ -506,6 +575,9 @@ class flow_stats_entry(object):
                 q.text(","); q.breakable()
                 q.text("hard_timeout = ");
                 q.text("%#x" % self.hard_timeout)
+                q.text(","); q.breakable()
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
                 q.text(","); q.breakable()
                 q.text("cookie = ");
                 q.text("%#x" % self.cookie)
@@ -1556,74 +1628,6 @@ class port_stats_entry(object):
             q.breakable()
         q.text('}')
 
-class queue_prop_experimenter(object):
-    type = 65535
-
-    def __init__(self, experimenter=None, data=None):
-        if experimenter != None:
-            self.experimenter = experimenter
-        else:
-            self.experimenter = 0
-        if data != None:
-            self.data = data
-        else:
-            self.data = ''
-        return
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!H", self.type))
-        packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append('\x00' * 4)
-        packed.append(struct.pack("!L", self.experimenter))
-        packed.append('\x00' * 4)
-        packed.append(self.data)
-        length = sum([len(x) for x in packed])
-        packed[1] = struct.pack("!H", length)
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(buf):
-        obj = queue_prop_experimenter()
-        if type(buf) == loxi.generic_util.OFReader:
-            reader = buf
-        else:
-            reader = loxi.generic_util.OFReader(buf)
-        _type = reader.read("!H")[0]
-        assert(_type == 65535)
-        _len = reader.read("!H")[0]
-        reader.skip(4)
-        obj.experimenter = reader.read("!L")[0]
-        reader.skip(4)
-        obj.data = str(reader.read_all())
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.experimenter != other.experimenter: return False
-        if self.data != other.data: return False
-        return True
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def show(self):
-        import loxi.pp
-        return loxi.pp.pp(self)
-
-    def pretty_print(self, q):
-        q.text("queue_prop_experimenter {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("experimenter = ");
-                q.text("%#x" % self.experimenter)
-                q.text(","); q.breakable()
-                q.text("data = ");
-                q.pp(self.data)
-            q.breakable()
-        q.text('}')
-
 class queue_prop_max_rate(object):
     type = 2
 
@@ -1843,6 +1847,56 @@ class queue_stats_entry(object):
                 q.text(","); q.breakable()
                 q.text("duration_nsec = ");
                 q.text("%#x" % self.duration_nsec)
+            q.breakable()
+        q.text('}')
+
+class table_feature_prop(object):
+
+    def __init__(self, type=None):
+        if type != None:
+            self.type = type
+        else:
+            self.type = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        obj = table_feature_prop()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        obj.type = reader.read("!H")[0]
+        _length = reader.read("!H")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.type != other.type: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("table_feature_prop {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("type = ");
+                q.text("%#x" % self.type)
             q.breakable()
         q.text('}')
 

@@ -140,7 +140,7 @@ class bsn_interface(object):
 class bsn_vport_q_in_q(object):
     type = 0
 
-    def __init__(self, port_no=None, ingress_tpid=None, ingress_vlan_id=None, egress_tpid=None, egress_vlan_id=None):
+    def __init__(self, port_no=None, ingress_tpid=None, ingress_vlan_id=None, egress_tpid=None, egress_vlan_id=None, if_name=None):
         if port_no != None:
             self.port_no = port_no
         else:
@@ -161,6 +161,10 @@ class bsn_vport_q_in_q(object):
             self.egress_vlan_id = egress_vlan_id
         else:
             self.egress_vlan_id = 0
+        if if_name != None:
+            self.if_name = if_name
+        else:
+            self.if_name = ""
         return
 
     def pack(self):
@@ -172,6 +176,7 @@ class bsn_vport_q_in_q(object):
         packed.append(struct.pack("!H", self.ingress_vlan_id))
         packed.append(struct.pack("!H", self.egress_tpid))
         packed.append(struct.pack("!H", self.egress_vlan_id))
+        packed.append(struct.pack("!16s", self.if_name))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -191,6 +196,7 @@ class bsn_vport_q_in_q(object):
         obj.ingress_vlan_id = reader.read("!H")[0]
         obj.egress_tpid = reader.read("!H")[0]
         obj.egress_vlan_id = reader.read("!H")[0]
+        obj.if_name = reader.read("!16s")[0].rstrip("\x00")
         return obj
 
     def __eq__(self, other):
@@ -200,6 +206,7 @@ class bsn_vport_q_in_q(object):
         if self.ingress_vlan_id != other.ingress_vlan_id: return False
         if self.egress_tpid != other.egress_tpid: return False
         if self.egress_vlan_id != other.egress_vlan_id: return False
+        if self.if_name != other.if_name: return False
         return True
 
     def __ne__(self, other):
@@ -228,6 +235,9 @@ class bsn_vport_q_in_q(object):
                 q.text(","); q.breakable()
                 q.text("egress_vlan_id = ");
                 q.text("%#x" % self.egress_vlan_id)
+                q.text(","); q.breakable()
+                q.text("if_name = ");
+                q.pp(self.if_name)
             q.breakable()
         q.text('}')
 
@@ -1132,74 +1142,6 @@ class port_stats_entry(object):
                 q.text(","); q.breakable()
                 q.text("collisions = ");
                 q.text("%#x" % self.collisions)
-            q.breakable()
-        q.text('}')
-
-class queue_prop_experimenter(object):
-    type = 65535
-
-    def __init__(self, experimenter=None, data=None):
-        if experimenter != None:
-            self.experimenter = experimenter
-        else:
-            self.experimenter = 0
-        if data != None:
-            self.data = data
-        else:
-            self.data = ''
-        return
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!H", self.type))
-        packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append('\x00' * 4)
-        packed.append(struct.pack("!L", self.experimenter))
-        packed.append('\x00' * 4)
-        packed.append(self.data)
-        length = sum([len(x) for x in packed])
-        packed[1] = struct.pack("!H", length)
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(buf):
-        obj = queue_prop_experimenter()
-        if type(buf) == loxi.generic_util.OFReader:
-            reader = buf
-        else:
-            reader = loxi.generic_util.OFReader(buf)
-        _type = reader.read("!H")[0]
-        assert(_type == 65535)
-        _len = reader.read("!H")[0]
-        reader.skip(4)
-        obj.experimenter = reader.read("!L")[0]
-        reader.skip(4)
-        obj.data = str(reader.read_all())
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.experimenter != other.experimenter: return False
-        if self.data != other.data: return False
-        return True
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def show(self):
-        import loxi.pp
-        return loxi.pp.pp(self)
-
-    def pretty_print(self, q):
-        q.text("queue_prop_experimenter {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("experimenter = ");
-                q.text("%#x" % self.experimenter)
-                q.text(","); q.breakable()
-                q.text("data = ");
-                q.pp(self.data)
             q.breakable()
         q.text('}')
 
