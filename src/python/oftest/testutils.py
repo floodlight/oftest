@@ -806,7 +806,7 @@ def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=None,
                         str(egr_ports))
     parent.dataplane.send(ing_port, str(pkt))
 
-    exp_ports = [port == ofp.OFPP_IN_PORT and ing_port or port for port in egr_ports]
+    exp_ports = [ing_port if port == ofp.OFPP_IN_PORT else port for port in egr_ports]
     verify_packets(parent, exp_pkt, exp_ports)
 
 def flow_match_test_pktout(parent, ing_port, egr_ports,
@@ -842,7 +842,7 @@ def flow_match_test_pktout(parent, ing_port, egr_ports,
     logging.debug(msg.show())
     parent.controller.message_send(msg)
 
-    exp_ports = [port == ofp.OFPP_IN_PORT and ing_port or port for port in egr_ports]
+    exp_ports = [ing_port if port == ofp.OFPP_IN_PORT else port for port in egr_ports]
     verify_packets(parent, exp_pkt, exp_ports)
 
 def get_egr_list(parent, of_ports, how_many, exclude_list=[]):
