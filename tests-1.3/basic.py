@@ -73,7 +73,7 @@ class DefaultDrop(base_tests.SimpleDataPlane):
         pkt = str(simple_tcp_packet())
         self.dataplane.send(in_port, pkt)
         verify_no_packet_in(self, pkt, None)
-        receive_pkt_check(self.dataplane, pkt, [], openflow_ports(), self)
+        verify_packets(self, pkt, [])
 
 class OutputExact(base_tests.SimpleDataPlane):
     """
@@ -115,7 +115,7 @@ class OutputExact(base_tests.SimpleDataPlane):
                     continue
                 logging.info("OutputExact test, ports %d to %d", in_port, out_port)
                 self.dataplane.send(in_port, pkt)
-                receive_pkt_verify(self, [out_port], pkt, in_port)
+                verify_packets(self, pkt, [out_port])
 
 class OutputWildcard(base_tests.SimpleDataPlane):
     """
@@ -154,7 +154,7 @@ class OutputWildcard(base_tests.SimpleDataPlane):
                     continue
                 logging.info("OutputWildcard test, ports %d to %d", in_port, out_port)
                 self.dataplane.send(in_port, pkt)
-                receive_pkt_verify(self, [out_port], pkt, in_port)
+                verify_packets(self, pkt, [out_port])
 
 class PacketInExact(base_tests.SimpleDataPlane):
     """
@@ -191,6 +191,7 @@ class PacketInExact(base_tests.SimpleDataPlane):
             logging.info("PacketInExact test, port %d", of_port)
             self.dataplane.send(of_port, pkt)
             verify_packet_in(self, pkt, of_port, ofp.OFPR_ACTION)
+            verify_packets(self, pkt, [])
 
 class PacketInWildcard(base_tests.SimpleDataPlane):
     """
@@ -224,6 +225,7 @@ class PacketInWildcard(base_tests.SimpleDataPlane):
             logging.info("PacketInWildcard test, port %d", of_port)
             self.dataplane.send(of_port, pkt)
             verify_packet_in(self, pkt, of_port, ofp.OFPR_ACTION)
+            verify_packets(self, pkt, [])
 
 class PacketInMiss(base_tests.SimpleDataPlane):
     """
@@ -258,6 +260,7 @@ class PacketInMiss(base_tests.SimpleDataPlane):
             logging.info("PacketInMiss test, port %d", of_port)
             self.dataplane.send(of_port, pkt)
             verify_packet_in(self, pkt, of_port, ofp.OFPR_NO_MATCH)
+            verify_packets(self, pkt, [])
 
 class PacketOut(base_tests.SimpleDataPlane):
     """
@@ -278,7 +281,7 @@ class PacketOut(base_tests.SimpleDataPlane):
 
             logging.info("PacketOut test, port %d", of_port)
             self.controller.message_send(msg)
-            receive_pkt_verify(self, [of_port], pkt, ofp.OFPP_CONTROLLER)
+            verify_packets(self, pkt, [of_port])
 
 class FlowRemoveAll(base_tests.SimpleProtocol):
     """
