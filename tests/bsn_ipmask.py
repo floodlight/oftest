@@ -148,16 +148,16 @@ class BSNConfigIPMask(base_tests.SimpleDataPlane):
             
         msg(ip0)
         self.dataplane.send(ports[0], str(pkt0))
-        receive_pkt_verify(self, [ports[1]], pkt0, ports[0])
+        verify_packets(self, str(pkt0), [ports[1]])
 
         msg(ip1)
         self.dataplane.send(ports[0], str(pkt1))
-        receive_pkt_verify(self, [ports[2]], pkt1, ports[0])
+        verify_packets(self, str(pkt1), [ports[2]])
 
         msg(ip2)
         self.dataplane.send(ports[0], str(pkt2))
-        receive_pkt_verify(self, [ports[1]], pkt2, ports[0])
+        verify_packets(self, str(pkt2), [ports[1]])
 
         msg(ip3)
         self.dataplane.send(ports[0], str(pkt3))
-        receive_pkt_verify(self, [ports[2]], pkt3, ports[0])
+        verify_packets(self, str(pkt3), [ports[2]])

@@ -73,7 +73,7 @@ class MatchTest(base_tests.SimpleDataPlane):
             logging.info("Sending matching packet %s, expecting output to port %d", repr(name), out_port)
             pktstr = str(pkt)
             self.dataplane.send(in_port, pktstr)
-            receive_pkt_verify(self, [out_port], pktstr, in_port)
+            verify_packets(self, pktstr, [out_port])
 
         for name, pkt in nonmatching.items():
             logging.info("Sending non-matching packet %s, expecting packet-in", repr(name))
@@ -132,7 +132,7 @@ class InPort(base_tests.SimpleDataPlane):
 
         logging.info("Sending packet on matching ingress port, expecting output to port %d", out_port)
         self.dataplane.send(in_port, pktstr)
-        receive_pkt_verify(self, [out_port], pktstr, in_port)
+        verify_packets(self, pktstr, [out_port])
 
         logging.info("Sending packet on non-matching ingress port, expecting packet-in")
         self.dataplane.send(bad_port, pktstr)

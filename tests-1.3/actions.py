@@ -50,8 +50,7 @@ class Output(base_tests.SimpleDataPlane):
 
         logging.info("Sending packet, expecting output to port %d", out_port)
         self.dataplane.send(in_port, pktstr)
-        receive_pkt_check(self.dataplane, pktstr, [out_port],
-                          set(openflow_ports()) - set([out_port]), self)
+        verify_packets(self, pktstr, [out_port])
 
 class OutputMultiple(base_tests.SimpleDataPlane):
     """
@@ -86,8 +85,7 @@ class OutputMultiple(base_tests.SimpleDataPlane):
 
         logging.info("Sending packet, expecting output to ports %r", out_ports)
         self.dataplane.send(in_port, pktstr)
-        receive_pkt_check(self.dataplane, pktstr, out_ports,
-                          set(openflow_ports()) - set(out_ports), self)
+        verify_packets(self, pktstr, out_ports)
 
 class BaseModifyPacketTest(base_tests.SimpleDataPlane):
     """
@@ -117,8 +115,8 @@ class BaseModifyPacketTest(base_tests.SimpleDataPlane):
 
         logging.info("Sending packet, expecting output to port %d", out_port)
         self.dataplane.send(in_port, str(pkt))
-        receive_pkt_check(self.dataplane, str(exp_pkt), [out_port],
-                          set(openflow_ports()) - set([out_port]), self)
+        verify_packets(self, str(exp_pkt), [out_port])
+
 
 class PushVlan(BaseModifyPacketTest):
     """

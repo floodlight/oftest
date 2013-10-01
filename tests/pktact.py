@@ -495,11 +495,7 @@ class DirectTwoPorts(base_tests.SimpleDataPlane):
             logging.info("Sending packet to dp port " + 
                            str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
-            yes_ports = set([egress_port1, egress_port2])
-            no_ports = set(of_ports).difference(yes_ports)
-
-            receive_pkt_check(self.dataplane, pkt, yes_ports, no_ports,
-                              self)
+            verify_packets(self, pkt, [egress_port1, egress_port2])
 
 class DirectMCNonIngress(base_tests.SimpleDataPlane):
     """
@@ -547,8 +543,7 @@ class DirectMCNonIngress(base_tests.SimpleDataPlane):
             logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
             yes_ports = set(of_ports).difference([ingress_port])
-            receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
-                              self)
+            verify_packets(self, pkt, yes_ports)
 
 
 class DirectMC(base_tests.SimpleDataPlane):
@@ -598,7 +593,7 @@ class DirectMC(base_tests.SimpleDataPlane):
 
             logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
-            receive_pkt_check(self.dataplane, pkt, of_ports, [], self)
+            verify_packets(self, pkt, of_ports)
 
 class Flood(base_tests.SimpleDataPlane):
     """
@@ -651,8 +646,7 @@ class Flood(base_tests.SimpleDataPlane):
             logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
             yes_ports = set(of_ports).difference([ingress_port])
-            receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
-                              self)
+            verify_packets(self, pkt, yes_ports)
 
 class FloodPlusIngress(base_tests.SimpleDataPlane):
     """
@@ -695,7 +689,7 @@ class FloodPlusIngress(base_tests.SimpleDataPlane):
 
             logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
-            receive_pkt_check(self.dataplane, pkt, of_ports, [], self)
+            verify_packets(self, pkt, of_ports)
 
 class All(base_tests.SimpleDataPlane):
     """
@@ -739,8 +733,7 @@ class All(base_tests.SimpleDataPlane):
             logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
             yes_ports = set(of_ports).difference([ingress_port])
-            receive_pkt_check(self.dataplane, pkt, yes_ports, [ingress_port],
-                              self)
+            verify_packets(self, pkt, yes_ports)
 
 class AllPlusIngress(base_tests.SimpleDataPlane):
     """
@@ -783,7 +776,7 @@ class AllPlusIngress(base_tests.SimpleDataPlane):
 
             logging.info("Sending packet to dp port " + str(ingress_port))
             self.dataplane.send(ingress_port, str(pkt))
-            receive_pkt_check(self.dataplane, pkt, of_ports, [], self)
+            verify_packets(self, pkt, of_ports)
             
 class FloodMinusPort(base_tests.SimpleDataPlane):
     """
@@ -843,7 +836,7 @@ class FloodMinusPort(base_tests.SimpleDataPlane):
             self.dataplane.send(ingress_port, str(pkt))
             no_ports = set([ingress_port, no_flood_port])
             yes_ports = set(of_ports).difference(no_ports)
-            receive_pkt_check(self.dataplane, pkt, yes_ports, no_ports, self)
+            verify_packets(self, pkt, yes_ports)
 
             # Turn no flood off again
             rv = port_config_set(self.controller, no_flood_port,
@@ -856,7 +849,7 @@ class FloodMinusPort(base_tests.SimpleDataPlane):
             self.dataplane.send(ingress_port, str(pkt))
             no_ports = set([ingress_port])
             yes_ports = set(of_ports).difference(no_ports)
-            receive_pkt_check(self.dataplane, pkt, yes_ports, no_ports, self)
+            verify_packets(self, pkt, yes_ports)
 
             #@todo Should check no other packets received
 
@@ -1007,7 +1000,7 @@ class SingleWildcardMatchPriority(BaseMatchCase):
         logging.info("Pkt match test: " + str(inp) + " to " + str(egp))
         logging.debug("Send packet: " + str(inp) + " to " + str(egp))
         self.dataplane.send(inp, str(pkt))
-        receive_pkt_verify(self, egp, pkt, inp)
+        verify_packets(self, pkt, [egp])
 
 
        
@@ -1305,7 +1298,7 @@ class ModifyVIDWithTagMatchWildcarded(BaseMatchCase):
         of_ports = config["port_map"].keys()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
         ing_port = of_ports[0]
-        egr_ports = of_ports[1]
+        egress_port = of_ports[1]
         
         delete_all_flows(self.controller)
 
@@ -1321,19 +1314,19 @@ class ModifyVIDWithTagMatchWildcarded(BaseMatchCase):
         vid_act = ofp.action.set_vlan_vid()
         vid_act.vlan_vid = new_vid
         request = flow_msg_create(self, untagged_pkt, ing_port=ing_port, 
-                                  wildcards=wildcards, egr_ports=egr_ports,
+                                  wildcards=wildcards, egr_ports=egress_port,
                                   action_list=[vid_act])
         flow_msg_install(self, request)
 
         logging.debug("Send untagged packet: " + str(ing_port) + " to " + 
-                        str(egr_ports))
+                        str(egress_port))
         self.dataplane.send(ing_port, str(untagged_pkt))
-        receive_pkt_verify(self, egr_ports, exp_pkt, ing_port)
+        verify_packets(self, exp_pkt, [egress_port])
 
         logging.debug("Send tagged packet: " + str(ing_port) + " to " + 
-                        str(egr_ports))
+                        str(egress_port))
         self.dataplane.send(ing_port, str(tagged_pkt))
-        receive_pkt_verify(self, egr_ports, exp_pkt, ing_port)
+        verify_packets(self, exp_pkt, [egress_port])
 
 class ModifyVlanPcp(BaseMatchCase):
     """

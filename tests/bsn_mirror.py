@@ -87,6 +87,4 @@ class BSNMirrorAction(base_tests.SimpleDataPlane):
         logging.info("Checking that packet was received from output port %s, "
                      "mirror ports %s and %s" % (
               ports[1], mirror_ports[0], mirror_ports[1]))
-        receive_pkt_check(self.dataplane, pkt,
-                          [ports[1], mirror_ports[0], mirror_ports[1]], [],
-                          self)
+        verify_packets(self, pkt, [ports[1], mirror_ports[0], mirror_ports[1]])
