@@ -795,6 +795,8 @@ def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=None,
     logging.debug("  WC: " + hex(wildcards) + " vlan: " + str(vlan_vid))
     if pkt is None:
         pkt = simple_tcp_packet(dl_vlan_enable=(vlan_vid >= 0), vlan_vid=vlan_vid)
+    if exp_pkt is None:
+        exp_pkt = pkt
 
     request = flow_msg_create(parent, pkt, ing_port=ing_port, 
                               wildcards=wildcards, egr_ports=egr_ports,
@@ -823,6 +825,8 @@ def flow_match_test_pktout(parent, ing_port, egr_ports,
 
     if pkt is None:
         pkt = simple_tcp_packet(dl_vlan_enable=(vlan_vid >= 0), vlan_vid=vlan_vid)
+    if exp_pkt is None:
+        exp_pkt = pkt
 
     msg = ofp.message.packet_out()
     msg.in_port = ing_port
