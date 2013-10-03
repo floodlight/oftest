@@ -11,7 +11,7 @@ from optparse import OptionParser
 parser = OptionParser(version="%prog 0.1")
 parser.set_defaults(port_count=4)
 parser.set_defaults(of_dir="../openflow")
-parser.set_defaults(port=6633)
+parser.set_defaults(port=6653)
 parser.add_option("-n", "--port_count", type="int",
                   help="Number of veth pairs to create")
 parser.add_option("-o", "--of_dir", help="OpenFlow root directory for host")

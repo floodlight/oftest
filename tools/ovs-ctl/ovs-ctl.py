@@ -169,7 +169,7 @@ gParser.add_argument("--cip", help="Controller Connection",
                      default="127.0.0.1")
 
 gParser.add_argument("--cport", type=int, help="Controller Port", 
-                     default=6633)
+                     default=6653)
 gParser.add_argument("--dpid", help="DPID")
 
 gParser.add_argument("--max_backoff", help="VSwitchD max backoff value", 
