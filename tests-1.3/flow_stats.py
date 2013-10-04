@@ -110,3 +110,61 @@ class AllFlowStats(base_tests.SimpleDataPlane):
             self.assertEqual(sorted(entry.instructions), sorted(flow.instructions))
 
         self.assertEqual(seen_cookies, set([1,2,3]))
+
+class CookieFlowStats(base_tests.SimpleDataPlane):
+    """
+    Retrieve flows using various masks on the cookie
+    """
+    def runTest(self):
+        delete_all_flows(self.controller)
+
+        # Also used as masks
+        cookies = [
+            0x0000000000000000,
+            0xDDDDDDDD00000000,
+            0x00000000DDDDDDDD,
+            0xDDDDDDDDDDDDDDDD,
+            0xDDDD0000DDDD0000,
+            0x0000DDDD0000DDDD,
+            0xDD00DD00DD00DD00,
+            0xD0D0D0D0D0D0D0D0,
+            0xF000000000000000,
+            0xFF00000000000000,
+            0xFFF0000000000000,
+            0xFFFF000000000000,
+        ]
+
+        # Generate the matching cookies for each combination of cookie and mask
+        matches = {}
+        for cookie in cookies:
+            for mask in cookies:
+                matching = []
+                for cookie2 in cookies:
+                    if cookie & mask == cookie2 & mask:
+                        matching.append(cookie2)
+                matches[(cookie, mask)] = sorted(matching)
+
+        # Generate a flow for each cookie
+        flows = {}
+        for idx, cookie in enumerate(cookies):
+            flows[cookie] = ofp.message.flow_add(
+                table_id=0,
+                cookie=cookie,
+                match=ofp.match([ofp.oxm.vlan_vid(ofp.OFPVID_PRESENT|idx)]),
+                buffer_id=ofp.OFP_NO_BUFFER)
+
+        # Install flows
+        for flow in flows.values():
+            self.controller.message_send(flow)
+        do_barrier(self.controller)
+
+        # For each combination of cookie and match, verify the correct flows
+        # are retrieved
+        for (cookie, mask), expected_cookies in matches.items():
+            stats = get_flow_stats(self, ofp.match(), cookie=cookie, cookie_mask=mask)
+            received_cookies = sorted([entry.cookie for entry in stats])
+            logging.debug("expected 0x%016x/0x%016x: %s", cookie, mask,
+                          ' '.join(["0x%016x" % x for x in expected_cookies]))
+            logging.debug("received 0x%016x/0x%016x: %s", cookie, mask,
+                          ' '.join(["0x%016x" % x for x in received_cookies]))
+            self.assertEqual(expected_cookies, received_cookies)
