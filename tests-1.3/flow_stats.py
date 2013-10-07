@@ -140,8 +140,8 @@ class CookieFlowStats(base_tests.SimpleDataPlane):
 
         # Generate the matching cookies for each combination of cookie and mask
         matches = {}
-        for cookie in cookies:
-            for mask in cookies:
+        for mask in cookies:
+            for cookie in cookies:
                 matching = []
                 for cookie2 in cookies:
                     if cookie & mask == cookie2 & mask:
