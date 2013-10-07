@@ -164,7 +164,7 @@ class CookieFlowStats(base_tests.SimpleDataPlane):
 
         # For each combination of cookie and match, verify the correct flows
         # are retrieved
-        for (cookie, mask), expected_cookies in matches.items():
+        for (cookie, mask), expected_cookies in matches.iteritems():
             stats = get_flow_stats(self, ofp.match(), cookie=cookie, cookie_mask=mask)
             received_cookies = sorted([entry.cookie for entry in stats])
             logging.debug("expected 0x%016x/0x%016x: %s", cookie, mask,
