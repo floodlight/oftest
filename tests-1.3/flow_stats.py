@@ -8,6 +8,7 @@ These tests check the behavior of the flow stats request.
 """
 
 import logging
+import random
 
 from oftest import config
 import oftest.base_tests as base_tests
@@ -133,6 +134,9 @@ class CookieFlowStats(base_tests.SimpleDataPlane):
             0xFFF0000000000000,
             0xFFFF000000000000,
         ]
+
+        for i in range(0, 10):
+            cookies.append(random.getrandbits(64))
 
         # Generate the matching cookies for each combination of cookie and mask
         matches = {}
