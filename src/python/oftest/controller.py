@@ -103,6 +103,7 @@ class Controller(Thread):
         self.switch_addr = None
         self.connect_cv = Condition()
         self.message_cv = Condition()
+        self.tx_lock = Lock()
 
         # Used to wake up the event loop from another thread
         self.waker = ofutils.EventDescriptor()
@@ -693,8 +694,10 @@ class Controller(Thread):
                           msg_len,
                           msg_version,
                           msg_xid)
-        if self.switch_socket.sendall(outpkt) is not None:
-            raise AssertionError("failed to send message to switch")
+
+        with self.tx_lock:
+            if self.switch_socket.sendall(outpkt) is not None:
+                raise AssertionError("failed to send message to switch")
 
         return 0 # for backwards compatibility
 
