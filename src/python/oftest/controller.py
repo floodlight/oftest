@@ -94,7 +94,7 @@ class Controller(Thread):
     @var dbg_state Debug indication of state
     """
 
-    def __init__(self, switch=None, host='127.0.0.1', port=6633, max_pkts=1024):
+    def __init__(self, switch=None, host='127.0.0.1', port=6653, max_pkts=1024):
         Thread.__init__(self)
         # Socket related
         self.rcv_size = RCV_SIZE_DEFAULT
