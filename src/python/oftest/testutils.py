@@ -744,10 +744,14 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None
         request.flags |= ofp.OFPFF_SEND_FLOW_REM
         request.hard_timeout = 1
 
+    if ofp.OFP_VERSION == 1:
+        actions = request.actions
+    else:
+        actions = []
+        request.instructions.append(ofp.instruction.apply_actions(actions))
+
     if action_list is not None:
-        for act in action_list:
-            logging.debug("Adding action " + act.show())
-            request.actions.append(act)
+        actions.extend(action_list)
 
     # Set up output/enqueue action if directed
     if egr_queue is not None:
@@ -756,12 +760,12 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None
         for egr_port in egr_port_list:
             act.port = egr_port
             act.queue_id = egr_queue
-            request.actions.append(act)
+            actions.append(act)
     elif egr_ports is not None:
         for egr_port in egr_port_list:
             act = ofp.action.output()
             act.port = egr_port
-            request.actions.append(act)
+            actions.append(act)
 
     logging.debug(request.show())
 
