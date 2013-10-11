@@ -1678,5 +1678,9 @@ def verify_packets(test, pkt, ofports):
             verify_no_packet(test, pkt, ofport)
     verify_no_other_packets(test)
 
+def verify_no_errors(ctrl):
+    error, _ = ctrl.poll(ofp.OFPT_ERROR, 0)
+    if error:
+        raise AssertionError("unexpected error type=%d code=%d" % (error.err_type, error.code))
 
 __all__ = list(set(locals()) - _import_blacklist)
