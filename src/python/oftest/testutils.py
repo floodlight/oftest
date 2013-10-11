@@ -46,6 +46,18 @@ def delete_all_flows(ctrl):
     do_barrier(ctrl)
     return 0 # for backwards compatibility
 
+def delete_all_groups(ctrl):
+    """
+    Delete all groups on the switch
+    @param ctrl The controller object for the test
+    """
+
+    logging.info("Deleting all groups")
+    msg = ofp.message.group_mod(
+        command=ofp.OFPGC_DELETE, group_id=ofp.OFPG_ALL)
+    ctrl.message_send(msg)
+    do_barrier(ctrl)
+
 def required_wildcards(parent):
     w = test_param_get('required_wildcards', default='default')
     if w == 'l3-l4':
