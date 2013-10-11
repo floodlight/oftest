@@ -44,7 +44,7 @@ Quick Start
 
     Make sure your switch is running and trying to connect to a
     controller on the machine where you're running oft (normally port
-    6633).  See below regarding run_switch.py for a script that starts 
+    6653).  See below regarding run_switch.py for a script that starts 
     up a software switch on the test host.
 
     Currently, switches must be running version 1.0 of OpenFlow. 
@@ -82,7 +82,7 @@ Longer Start
     2.  Start the switch to test
         The switch must be running and actively attempting to 
         connect to a controller on the test host at the port number
-        used by oft (6633 by default, or specified as --port=<n> as
+        used by oft (6653 by default, or specified as --port=<n> as
         an argument to oft).
 
         If you're new to the test environment and want to check its 

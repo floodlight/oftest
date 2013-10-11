@@ -65,7 +65,7 @@ config_default = {
 
     # Switch connection options
     "controller_host"    : "0.0.0.0",  # For passive bind
-    "controller_port"    : 6633,
+    "controller_port"    : 6653,
     "switch_ip"          : None,  # If not none, actively connect to switch
     "platform"           : "eth",
     "platform_args"      : None,
@@ -104,7 +104,7 @@ def config_setup():
 OFTest is a framework and set of tests for validating OpenFlow switches.
 
 The default configuration assumes that an OpenFlow 1.0 switch is attempting to
-connect to a controller on the machine running OFTest, port 6633. Additionally,
+connect to a controller on the machine running OFTest, port 6653. Additionally,
 the interfaces veth1, veth3, veth5, and veth7 should be connected to the switch's
 dataplane.
 
