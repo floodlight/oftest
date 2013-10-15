@@ -46,6 +46,18 @@ def delete_all_flows(ctrl):
     do_barrier(ctrl)
     return 0 # for backwards compatibility
 
+def delete_all_groups(ctrl):
+    """
+    Delete all groups on the switch
+    @param ctrl The controller object for the test
+    """
+
+    logging.info("Deleting all groups")
+    msg = ofp.message.group_mod(
+        command=ofp.OFPGC_DELETE, group_id=ofp.OFPG_ALL)
+    ctrl.message_send(msg)
+    do_barrier(ctrl)
+
 def required_wildcards(parent):
     w = test_param_get('required_wildcards', default='default')
     if w == 'l3-l4':
@@ -732,10 +744,14 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None
         request.flags |= ofp.OFPFF_SEND_FLOW_REM
         request.hard_timeout = 1
 
+    if ofp.OFP_VERSION == 1:
+        actions = request.actions
+    else:
+        actions = []
+        request.instructions.append(ofp.instruction.apply_actions(actions))
+
     if action_list is not None:
-        for act in action_list:
-            logging.debug("Adding action " + act.show())
-            request.actions.append(act)
+        actions.extend(action_list)
 
     # Set up output/enqueue action if directed
     if egr_queue is not None:
@@ -744,12 +760,12 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None
         for egr_port in egr_port_list:
             act.port = egr_port
             act.queue_id = egr_queue
-            request.actions.append(act)
+            actions.append(act)
     elif egr_ports is not None:
         for egr_port in egr_port_list:
             act = ofp.action.output()
             act.port = egr_port
-            request.actions.append(act)
+            actions.append(act)
 
     logging.debug(request.show())
 
@@ -1298,15 +1314,18 @@ def get_stats(test, req):
     Retrieve a list of stats entries. Handles OFPSF_REPLY_MORE.
     """
     if ofp.OFP_VERSION <= 3:
+        msgtype = ofp.OFPT_STATS_REPLY
         more_flag = ofp.OFPSF_REPLY_MORE
     else:
+        msgtype = ofp.OFPT_MULTIPART_REPLY
         more_flag = ofp.OFPMPF_REPLY_MORE
     stats = []
     reply, _ = test.controller.transact(req)
     test.assertTrue(reply is not None, "No response to stats request")
+    test.assertEquals(reply.type, msgtype, "Response had unexpected message type")
     stats.extend(reply.entries)
     while reply.flags & more_flag != 0:
-        reply, pkt = test.controller.poll(exp_msg=ofp.OFPT_STATS_REPLY)
+        reply, pkt = test.controller.poll(exp_msg=msgtype)
         test.assertTrue(reply is not None, "No response to stats request")
         stats.extend(reply.entries)
     return stats
@@ -1662,5 +1681,9 @@ def verify_packets(test, pkt, ofports):
             verify_no_packet(test, pkt, ofport)
     verify_no_other_packets(test)
 
+def verify_no_errors(ctrl):
+    error, _ = ctrl.poll(ofp.OFPT_ERROR, 0)
+    if error:
+        raise AssertionError("unexpected error type=%d code=%d" % (error.err_type, error.code))
 
 __all__ = list(set(locals()) - _import_blacklist)
