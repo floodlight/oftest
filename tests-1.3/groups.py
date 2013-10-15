@@ -49,6 +49,32 @@ class GroupAdd(GroupTest):
                 buckets=msg.buckets)])
 
 
+class GroupAddMaxID(GroupTest):
+    """
+    A group with ID OFPG_MAX should be added successfully
+    """
+
+    def runTest(self):
+        port1, = openflow_ports(1)
+
+        msg = ofp.message.group_mod(
+            command=ofp.OFPGC_ADD,
+            group_type=ofp.OFPGT_ALL,
+            group_id=ofp.OFPG_MAX,
+            buckets=[
+                ofp.bucket(actions=[ofp.action.output(port1)])])
+
+        self.controller.message_send(msg)
+        do_barrier(self.controller)
+
+        stats = get_stats(self, ofp.message.group_desc_stats_request())
+        self.assertEquals(stats, [
+            ofp.group_desc_stats_entry(
+                type=msg.group_type,
+                group_id=msg.group_id,
+                buckets=msg.buckets)])
+
+
 class GroupAddInvalidAction(GroupTest):
     """
     If any action in the buckets is invalid, OFPET_BAD_ACTION/<code> should be returned
@@ -111,6 +137,27 @@ class GroupAddInvalidID(GroupTest):
             command=ofp.OFPGC_ADD,
             group_type=ofp.OFPGT_ALL,
             group_id=ofp.OFPG_ALL,
+            buckets=[
+                ofp.bucket(actions=[ofp.action.output(port1)])])
+
+        response, _ = self.controller.transact(msg)
+        self.assertIsInstance(response, ofp.message.error_msg)
+        self.assertEquals(response.err_type, ofp.OFPET_GROUP_MOD_FAILED)
+        self.assertEquals(response.code, ofp.OFPGMFC_INVALID_GROUP)
+
+
+class GroupAddMinimumInvalidID(GroupTest):
+    """
+    An addition with invalid group id (reserved) should result in OFPET_GROUP_MOD_FAILED/OFPGMFC_INVALID_GROUP
+    """
+
+    def runTest(self):
+        port1, = openflow_ports(1)
+
+        msg = ofp.message.group_mod(
+            command=ofp.OFPGC_ADD,
+            group_type=ofp.OFPGT_ALL,
+            group_id=ofp.OFPG_MAX+1,
             buckets=[
                 ofp.bucket(actions=[ofp.action.output(port1)])])
 
