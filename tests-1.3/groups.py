@@ -8,6 +8,7 @@ Group table test cases.
 """
 
 import logging
+import random
 
 from oftest import config
 import oftest
@@ -780,3 +781,127 @@ class GroupFlowSelect(GroupTest):
 
         self.assertEqual(response.flow_count, 2,
                          'Did not match expected flow count')
+
+
+class SelectFwdEmpty(GroupTest):
+    """
+    A SELECT group with no buckets should not alter the action set of the packet
+    """
+
+    def runTest(self):
+        port1, port2 = openflow_ports(2)
+
+        msg = ofp.message.group_mod(
+            command=ofp.OFPGC_ADD,
+            group_type=ofp.OFPGT_SELECT,
+            group_id=1,
+            buckets=[])
+
+        self.controller.message_send(msg)
+        do_barrier(self.controller)
+
+        msg = ofp.message.flow_add(
+            buffer_id=ofp.OFP_NO_BUFFER,
+            instructions=[
+                ofp.instruction.apply_actions(
+                    [ofp.action.output(2), ofp.action.group(1)])])
+
+        self.controller.message_send(msg)
+        do_barrier(self.controller)
+
+        verify_no_errors(self.controller)
+
+        pkt = simple_tcp_packet()
+        self.dataplane.send(port1, str(pkt))
+        verify_packets(self, pkt, [port2])
+
+
+class SelectFwdSingle(GroupTest):
+    """
+    A SELECT group with a single bucket should use that bucket's actions
+    """
+
+    def runTest(self):
+        port1, port2 = openflow_ports(2)
+
+        msg = ofp.message.group_mod(
+            command=ofp.OFPGC_ADD,
+            group_type=ofp.OFPGT_SELECT,
+            group_id=1,
+            buckets=[
+                ofp.bucket(weight=1, actions=[ofp.action.output(port2)])])
+
+        self.controller.message_send(msg)
+        do_barrier(self.controller)
+
+        msg = ofp.message.flow_add(
+            buffer_id=ofp.OFP_NO_BUFFER,
+            instructions=[ofp.instruction.apply_actions([ofp.action.group(1)])])
+
+        self.controller.message_send(msg)
+        do_barrier(self.controller)
+
+        verify_no_errors(self.controller)
+
+        pkt = simple_tcp_packet()
+        self.dataplane.send(port1, str(pkt))
+        verify_packets(self, pkt, [port2])
+
+
+class SelectFwdSpread(GroupTest):
+    """
+    A SELECT group with several buckets should spead different flows between them
+    """
+
+    def runTest(self):
+        num_out_ports = 3
+        num_pkts = 1000
+
+        port1, port2, port3, port4 = openflow_ports(num_out_ports + 1)
+        out_ports = [port2, port3, port4]
+
+        msg = ofp.message.group_mod(
+            command=ofp.OFPGC_ADD,
+            group_type=ofp.OFPGT_SELECT,
+            group_id=1,
+            buckets=[
+                ofp.bucket(weight=1, actions=[ofp.action.output(port)])
+                    for port in out_ports])
+
+        self.controller.message_send(msg)
+        do_barrier(self.controller)
+
+        msg = ofp.message.flow_add(
+            buffer_id=ofp.OFP_NO_BUFFER,
+            instructions=[ofp.instruction.apply_actions([ofp.action.group(1)])])
+
+        self.controller.message_send(msg)
+        do_barrier(self.controller)
+
+        verify_no_errors(self.controller)
+
+        counters = { x: 0 for x in out_ports }
+
+        for i in xrange(0, num_pkts):
+            pkt = simple_tcp_packet(tcp_sport=i, tcp_dport=random.randint(0, 65535))
+            self.dataplane.send(port1, str(pkt))
+            (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(exp_pkt=str(pkt))
+            self.assertIsNotNone(rcv_pkt)
+            if rcv_port not in counters:
+                raise AssertionError("unexpected packet on port %d" % rcv_port)
+            counters[rcv_port] += 1
+
+            # Verify the same flow is mapped to the same output port
+            self.dataplane.send(port1, str(pkt))
+            (rcv_port2, rcv_pkt, pkt_time) = self.dataplane.poll(exp_pkt=str(pkt))
+            self.assertIsNotNone(rcv_pkt)
+            self.assertEquals(rcv_port, rcv_port2)
+
+        logging.debug("Distribution: %r" ,counters)
+
+        self.assertEquals(sum(counters.values()), num_pkts)
+        expected = num_pkts/num_out_ports
+        for port, count in counters.iteritems():
+            # Check that count is within 20% of expected
+            self.assertTrue(expected * 0.8 < count < expected * 1.2,
+                            "port %d count was %d, expected %d" % (port, count, expected))
