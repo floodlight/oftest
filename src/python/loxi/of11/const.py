@@ -11,8 +11,8 @@ OFP_VERSION = 2
 # Identifiers from group macro_definitions
 OFP_MAX_TABLE_NAME_LEN = 32
 OFP_MAX_PORT_NAME_LEN = 16
-OFP_TCP_PORT = 6633
-OFP_SSL_PORT = 6633
+OFP_TCP_PORT = 6653
+OFP_SSL_PORT = 6653
 OFP_ETH_ALEN = 6
 OFP_DEFAULT_MISS_SEND_LEN = 128
 OFPFW_ICMP_TYPE = 64
@@ -27,6 +27,13 @@ DESC_STR_LEN = 256
 SERIAL_NUM_LEN = 32
 OFPQ_ALL = 4294967295
 OFPQ_MIN_RATE_UNCFG = 65535
+
+# Identifiers from group of_bsn_pdu_slot_num_t
+BSN_PDU_SLOT_NUM_ANY = 255
+
+of_bsn_pdu_slot_num_t_map = {
+    255: 'BSN_PDU_SLOT_NUM_ANY',
+}
 
 # Identifiers from group ofp_action_type
 OFPAT_OUTPUT = 0
@@ -464,12 +471,14 @@ OFPPC_PORT_DOWN = 1
 OFPPC_NO_RECV = 4
 OFPPC_NO_FWD = 32
 OFPPC_NO_PACKET_IN = 64
+OFPPC_BSN_MIRROR_DEST = 2147483648
 
 ofp_port_config_map = {
     1: 'OFPPC_PORT_DOWN',
     4: 'OFPPC_NO_RECV',
     32: 'OFPPC_NO_FWD',
     64: 'OFPPC_NO_PACKET_IN',
+    2147483648: 'OFPPC_BSN_MIRROR_DEST',
 }
 
 # Identifiers from group ofp_port_features
@@ -578,7 +587,7 @@ ofp_stats_reply_flags_map = {
     1: 'OFPSF_REPLY_MORE',
 }
 
-# Identifiers from group ofp_stats_types
+# Identifiers from group ofp_stats_type
 OFPST_DESC = 0
 OFPST_FLOW = 1
 OFPST_AGGREGATE = 2
@@ -589,7 +598,7 @@ OFPST_GROUP = 6
 OFPST_GROUP_DESC = 7
 OFPST_EXPERIMENTER = 65535
 
-ofp_stats_types_map = {
+ofp_stats_type_map = {
     0: 'OFPST_DESC',
     1: 'OFPST_FLOW',
     2: 'OFPST_AGGREGATE',

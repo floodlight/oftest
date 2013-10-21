@@ -11,8 +11,8 @@ OFP_VERSION = 4
 # Identifiers from group macro_definitions
 OFP_MAX_TABLE_NAME_LEN = 32
 OFP_MAX_PORT_NAME_LEN = 16
-OFP_TCP_PORT = 6633
-OFP_SSL_PORT = 6633
+OFP_TCP_PORT = 6653
+OFP_SSL_PORT = 6653
 OFP_ETH_ALEN = 6
 OFP_DEFAULT_MISS_SEND_LEN = 128
 OFP_VLAN_NONE = 0
@@ -24,6 +24,13 @@ SERIAL_NUM_LEN = 32
 OFPQ_ALL = 4294967295
 OFPQ_MAX_RATE_UNCFG = 65535
 OFPQ_MIN_RATE_UNCFG = 65535
+
+# Identifiers from group of_bsn_pdu_slot_num_t
+BSN_PDU_SLOT_NUM_ANY = 255
+
+of_bsn_pdu_slot_num_t_map = {
+    255: 'BSN_PDU_SLOT_NUM_ANY',
+}
 
 # Identifiers from group ofp_action_type
 OFPAT_OUTPUT = 0
@@ -68,7 +75,7 @@ ofp_action_type_map = {
 OFPBAC_BAD_TYPE = 0
 OFPBAC_BAD_LEN = 1
 OFPBAC_BAD_EXPERIMENTER = 2
-OFPBAC_BAD_EXP_TYPE = 3
+OFPBAC_BAD_EXPERIMENTER_TYPE = 3
 OFPBAC_BAD_OUT_PORT = 4
 OFPBAC_BAD_ARGUMENT = 5
 OFPBAC_EPERM = 6
@@ -86,7 +93,7 @@ ofp_bad_action_code_map = {
     0: 'OFPBAC_BAD_TYPE',
     1: 'OFPBAC_BAD_LEN',
     2: 'OFPBAC_BAD_EXPERIMENTER',
-    3: 'OFPBAC_BAD_EXP_TYPE',
+    3: 'OFPBAC_BAD_EXPERIMENTER_TYPE',
     4: 'OFPBAC_BAD_OUT_PORT',
     5: 'OFPBAC_BAD_ARGUMENT',
     6: 'OFPBAC_EPERM',
@@ -108,7 +115,7 @@ OFPBIC_BAD_TABLE_ID = 2
 OFPBIC_UNSUP_METADATA = 3
 OFPBIC_UNSUP_METADATA_MASK = 4
 OFPBIC_BAD_EXPERIMENTER = 5
-OFPBIC_BAD_EXP_TYPE = 6
+OFPBIC_BAD_EXPERIMENTER_TYPE = 6
 OFPBIC_BAD_LEN = 7
 OFPBIC_EPERM = 8
 
@@ -119,7 +126,7 @@ ofp_bad_instruction_code_map = {
     3: 'OFPBIC_UNSUP_METADATA',
     4: 'OFPBIC_UNSUP_METADATA_MASK',
     5: 'OFPBIC_BAD_EXPERIMENTER',
-    6: 'OFPBIC_BAD_EXP_TYPE',
+    6: 'OFPBIC_BAD_EXPERIMENTER_TYPE',
     7: 'OFPBIC_BAD_LEN',
     8: 'OFPBIC_EPERM',
 }
@@ -156,9 +163,9 @@ ofp_bad_match_code_map = {
 # Identifiers from group ofp_bad_request_code
 OFPBRC_BAD_VERSION = 0
 OFPBRC_BAD_TYPE = 1
-OFPBRC_BAD_MULTIPART = 2
+OFPBRC_BAD_STAT = 2
 OFPBRC_BAD_EXPERIMENTER = 3
-OFPBRC_BAD_EXP_TYPE = 4
+OFPBRC_BAD_EXPERIMENTER_TYPE = 4
 OFPBRC_EPERM = 5
 OFPBRC_BAD_LEN = 6
 OFPBRC_BUFFER_EMPTY = 7
@@ -172,9 +179,9 @@ OFPBRC_MULTIPART_BUFFER_OVERFLOW = 13
 ofp_bad_request_code_map = {
     0: 'OFPBRC_BAD_VERSION',
     1: 'OFPBRC_BAD_TYPE',
-    2: 'OFPBRC_BAD_MULTIPART',
+    2: 'OFPBRC_BAD_STAT',
     3: 'OFPBRC_BAD_EXPERIMENTER',
-    4: 'OFPBRC_BAD_EXP_TYPE',
+    4: 'OFPBRC_BAD_EXPERIMENTER_TYPE',
     5: 'OFPBRC_EPERM',
     6: 'OFPBRC_BAD_LEN',
     7: 'OFPBRC_BUFFER_EMPTY',
@@ -333,6 +340,7 @@ OFPFF_CHECK_OVERLAP = 2
 OFPFF_RESET_COUNTS = 4
 OFPFF_NO_PKT_COUNTS = 8
 OFPFF_NO_BYT_COUNTS = 16
+OFPFF_BSN_SEND_IDLE = 128
 
 ofp_flow_mod_flags_map = {
     1: 'OFPFF_SEND_FLOW_REM',
@@ -340,6 +348,7 @@ ofp_flow_mod_flags_map = {
     4: 'OFPFF_RESET_COUNTS',
     8: 'OFPFF_NO_PKT_COUNTS',
     16: 'OFPFF_NO_BYT_COUNTS',
+    128: 'OFPFF_BSN_SEND_IDLE',
 }
 
 # Identifiers from group ofp_flow_removed_reason
@@ -582,55 +591,6 @@ ofp_meter_mod_failed_code_map = {
     11: 'OFPMMFC_OUT_OF_BANDS',
 }
 
-# Identifiers from group ofp_multipart_reply_flags
-OFPMPF_REPLY_MORE = 1
-
-ofp_multipart_reply_flags_map = {
-    1: 'OFPMPF_REPLY_MORE',
-}
-
-# Identifiers from group ofp_multipart_request_flags
-OFPMPF_REQ_MORE = 1
-
-ofp_multipart_request_flags_map = {
-    1: 'OFPMPF_REQ_MORE',
-}
-
-# Identifiers from group ofp_multipart_types
-OFPMP_DESC = 0
-OFPMP_FLOW = 1
-OFPMP_AGGREGATE = 2
-OFPMP_TABLE = 3
-OFPMP_PORT_STATS = 4
-OFPMP_QUEUE = 5
-OFPMP_GROUP = 6
-OFPMP_GROUP_DESC = 7
-OFPMP_GROUP_FEATURES = 8
-OFPMP_METER = 9
-OFPMP_METER_CONFIG = 10
-OFPMP_METER_FEATURES = 11
-OFPMP_TABLE_FEATURES = 12
-OFPMP_PORT_DESC = 13
-OFPMP_EXPERIMENTER = 65535
-
-ofp_multipart_types_map = {
-    0: 'OFPMP_DESC',
-    1: 'OFPMP_FLOW',
-    2: 'OFPMP_AGGREGATE',
-    3: 'OFPMP_TABLE',
-    4: 'OFPMP_PORT_STATS',
-    5: 'OFPMP_QUEUE',
-    6: 'OFPMP_GROUP',
-    7: 'OFPMP_GROUP_DESC',
-    8: 'OFPMP_GROUP_FEATURES',
-    9: 'OFPMP_METER',
-    10: 'OFPMP_METER_CONFIG',
-    11: 'OFPMP_METER_FEATURES',
-    12: 'OFPMP_TABLE_FEATURES',
-    13: 'OFPMP_PORT_DESC',
-    65535: 'OFPMP_EXPERIMENTER',
-}
-
 # Identifiers from group ofp_oxm_class
 OFPXMC_NXM_0 = 0
 OFPXMC_NXM_1 = 1
@@ -681,12 +641,14 @@ OFPPC_PORT_DOWN = 1
 OFPPC_NO_RECV = 4
 OFPPC_NO_FWD = 32
 OFPPC_NO_PACKET_IN = 64
+OFPPC_BSN_MIRROR_DEST = 2147483648
 
 ofp_port_config_map = {
     1: 'OFPPC_PORT_DOWN',
     4: 'OFPPC_NO_RECV',
     32: 'OFPPC_NO_FWD',
     64: 'OFPPC_NO_PACKET_IN',
+    2147483648: 'OFPPC_BSN_MIRROR_DEST',
 }
 
 # Identifiers from group ofp_port_features
@@ -803,6 +765,55 @@ ofp_role_request_failed_code_map = {
     2: 'OFPRRFC_BAD_ROLE',
 }
 
+# Identifiers from group ofp_stats_reply_flags
+OFPSF_REPLY_MORE = 1
+
+ofp_stats_reply_flags_map = {
+    1: 'OFPSF_REPLY_MORE',
+}
+
+# Identifiers from group ofp_stats_request_flags
+OFPSF_REQ_MORE = 1
+
+ofp_stats_request_flags_map = {
+    1: 'OFPSF_REQ_MORE',
+}
+
+# Identifiers from group ofp_stats_type
+OFPST_DESC = 0
+OFPST_FLOW = 1
+OFPST_AGGREGATE = 2
+OFPST_TABLE = 3
+OFPST_PORT = 4
+OFPST_QUEUE = 5
+OFPST_GROUP = 6
+OFPST_GROUP_DESC = 7
+OFPST_GROUP_FEATURES = 8
+OFPST_METER = 9
+OFPST_METER_CONFIG = 10
+OFPST_METER_FEATURES = 11
+OFPST_TABLE_FEATURES = 12
+OFPST_PORT_DESC = 13
+OFPST_EXPERIMENTER = 65535
+
+ofp_stats_type_map = {
+    0: 'OFPST_DESC',
+    1: 'OFPST_FLOW',
+    2: 'OFPST_AGGREGATE',
+    3: 'OFPST_TABLE',
+    4: 'OFPST_PORT',
+    5: 'OFPST_QUEUE',
+    6: 'OFPST_GROUP',
+    7: 'OFPST_GROUP_DESC',
+    8: 'OFPST_GROUP_FEATURES',
+    9: 'OFPST_METER',
+    10: 'OFPST_METER_CONFIG',
+    11: 'OFPST_METER_FEATURES',
+    12: 'OFPST_TABLE_FEATURES',
+    13: 'OFPST_PORT_DESC',
+    65535: 'OFPST_EXPERIMENTER',
+}
+
 # Identifiers from group ofp_switch_config_failed_code
 OFPSCFC_BAD_FLAGS = 0
 OFPSCFC_BAD_LEN = 1
@@ -914,8 +925,8 @@ OFPT_FLOW_MOD = 14
 OFPT_GROUP_MOD = 15
 OFPT_PORT_MOD = 16
 OFPT_TABLE_MOD = 17
-OFPT_MULTIPART_REQUEST = 18
-OFPT_MULTIPART_REPLY = 19
+OFPT_STATS_REQUEST = 18
+OFPT_STATS_REPLY = 19
 OFPT_BARRIER_REQUEST = 20
 OFPT_BARRIER_REPLY = 21
 OFPT_QUEUE_GET_CONFIG_REQUEST = 22
@@ -946,8 +957,8 @@ ofp_type_map = {
     15: 'OFPT_GROUP_MOD',
     16: 'OFPT_PORT_MOD',
     17: 'OFPT_TABLE_MOD',
-    18: 'OFPT_MULTIPART_REQUEST',
-    19: 'OFPT_MULTIPART_REPLY',
+    18: 'OFPT_STATS_REQUEST',
+    19: 'OFPT_STATS_REPLY',
     20: 'OFPT_BARRIER_REQUEST',
     21: 'OFPT_BARRIER_REPLY',
     22: 'OFPT_QUEUE_GET_CONFIG_REQUEST',
