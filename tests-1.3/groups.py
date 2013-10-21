@@ -44,7 +44,7 @@ class GroupAdd(GroupTest):
         stats = get_stats(self, ofp.message.group_desc_stats_request())
         self.assertEquals(stats, [
             ofp.group_desc_stats_entry(
-                type=msg.group_type,
+                group_type=msg.group_type,
                 group_id=msg.group_id,
                 buckets=msg.buckets)])
 
@@ -70,7 +70,7 @@ class GroupAddMaxID(GroupTest):
         stats = get_stats(self, ofp.message.group_desc_stats_request())
         self.assertEquals(stats, [
             ofp.group_desc_stats_entry(
-                type=msg.group_type,
+                group_type=msg.group_type,
                 group_id=msg.group_id,
                 buckets=msg.buckets)])
 
@@ -198,7 +198,7 @@ class GroupModify(GroupTest):
         stats = get_stats(self, ofp.message.group_desc_stats_request())
         self.assertEquals(stats, [
             ofp.group_desc_stats_entry(
-                type=msg.group_type,
+                group_type=msg.group_type,
                 group_id=msg.group_id,
                 buckets=msg.buckets)])
 
@@ -326,7 +326,7 @@ class GroupModifyEmpty(GroupTest):
         stats = get_stats(self, ofp.message.group_desc_stats_request())
         self.assertEquals(stats, [
             ofp.group_desc_stats_entry(
-                type=msg.group_type,
+                group_type=msg.group_type,
                 group_id=msg.group_id,
                 buckets=msg.buckets)])
 
