@@ -40,10 +40,9 @@ class AnyReply(base_tests.SimpleDataPlane):
             logging.info("Role reply received")
             logging.info(response.show())
             self.assertEquals(response.role, NX_ROLE_MASTER)
-        elif isinstance(response, ofp.message.error_msg):
+        elif isinstance(response, ofp.message.bad_request_error_msg):
             logging.info("Error message received")
             logging.info(response.show())
-            self.assertEquals(response.err_type, ofp.OFPET_BAD_REQUEST)
             self.assertEquals(response.code, ofp.OFPBRC_BAD_VENDOR)
         else:
             raise AssertionError("Unexpected reply type")
@@ -79,7 +78,7 @@ class RolePermissions(base_tests.SimpleDataPlane):
         err_count = 0
         while self.controller.packets:
             msg = self.controller.packets.pop(0)[0]
-            if isinstance(msg, ofp.message.error_msg):
+            if msg.type == ofp.OFPT_ERROR:
                 self.assertEquals(msg.err_type, ofp.OFPET_BAD_REQUEST)
                 self.assertEquals(msg.code, ofp.OFPBRC_EPERM)
                 err_count += 1
@@ -172,7 +171,7 @@ class RoleSwitch(unittest.TestCase):
         err_count = 0
         while con.packets:
             msg = con.packets.pop(0)[0]
-            if isinstance(msg, ofp.message.error_msg):
+            if msg.type == ofp.OFPT_ERROR:
                 self.assertEquals(msg.err_type, ofp.OFPET_BAD_REQUEST)
                 self.assertEquals(msg.code, ofp.OFPBRC_EPERM)
                 err_count += 1
