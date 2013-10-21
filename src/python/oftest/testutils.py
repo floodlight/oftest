@@ -1313,12 +1313,8 @@ def get_stats(test, req):
     """
     Retrieve a list of stats entries. Handles OFPSF_REPLY_MORE.
     """
-    if ofp.OFP_VERSION <= 3:
-        msgtype = ofp.OFPT_STATS_REPLY
-        more_flag = ofp.OFPSF_REPLY_MORE
-    else:
-        msgtype = ofp.OFPT_MULTIPART_REPLY
-        more_flag = ofp.OFPMPF_REPLY_MORE
+    msgtype = ofp.OFPT_STATS_REPLY
+    more_flag = ofp.OFPSF_REPLY_MORE
     stats = []
     reply, _ = test.controller.transact(req)
     test.assertTrue(reply is not None, "No response to stats request")
