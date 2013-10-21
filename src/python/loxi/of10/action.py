@@ -904,8 +904,7 @@ class strip_vlan(Action):
         q.text('}')
 
 
-def parse_vendor(reader):
-
+def parse_experimenter(reader):
     experimenter, = reader.peek("!4xL")
     if experimenter == 0x005c16c7: # Big Switch Networks
         subtype, = reader.peek("!8xL")
@@ -932,7 +931,7 @@ parsers = {
     const.OFPAT_SET_TP_SRC : set_tp_src.unpack,
     const.OFPAT_SET_TP_DST : set_tp_dst.unpack,
     const.OFPAT_ENQUEUE : enqueue.unpack,
-    const.OFPAT_VENDOR : parse_vendor,
+    const.OFPAT_EXPERIMENTER : parse_experimenter,
 }
 
 experimenter_parsers = {

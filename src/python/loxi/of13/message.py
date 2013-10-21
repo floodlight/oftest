@@ -644,6 +644,354 @@ class async_set(Message):
             q.breakable()
         q.text('}')
 
+class bad_action_error_msg(Message):
+    version = 4
+    type = 1
+    err_type = 2
+
+    def __init__(self, xid=None, code=None, data=None):
+        self.xid = xid
+        if code != None:
+            self.code = code
+        else:
+            self.code = 0
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.err_type))
+        packed.append(struct.pack("!H", self.code))
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = bad_action_error_msg()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 1)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _err_type = reader.read("!H")[0]
+        assert(_err_type == 2)
+        obj.code = reader.read("!H")[0]
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.code != other.code: return False
+        if self.data != other.data: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bad_action_error_msg {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("code = ");
+                q.text("%#x" % self.code)
+                q.text(","); q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
+            q.breakable()
+        q.text('}')
+
+class bad_instruction_error_msg(Message):
+    version = 4
+    type = 1
+    err_type = 3
+
+    def __init__(self, xid=None, code=None, data=None):
+        self.xid = xid
+        if code != None:
+            self.code = code
+        else:
+            self.code = 0
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.err_type))
+        packed.append(struct.pack("!H", self.code))
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = bad_instruction_error_msg()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 1)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _err_type = reader.read("!H")[0]
+        assert(_err_type == 3)
+        obj.code = reader.read("!H")[0]
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.code != other.code: return False
+        if self.data != other.data: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bad_instruction_error_msg {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("code = ");
+                q.text("%#x" % self.code)
+                q.text(","); q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
+            q.breakable()
+        q.text('}')
+
+class bad_match_error_msg(Message):
+    version = 4
+    type = 1
+    err_type = 4
+
+    def __init__(self, xid=None, code=None, data=None):
+        self.xid = xid
+        if code != None:
+            self.code = code
+        else:
+            self.code = 0
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.err_type))
+        packed.append(struct.pack("!H", self.code))
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = bad_match_error_msg()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 1)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _err_type = reader.read("!H")[0]
+        assert(_err_type == 4)
+        obj.code = reader.read("!H")[0]
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.code != other.code: return False
+        if self.data != other.data: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bad_match_error_msg {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("code = ");
+                q.text("%#x" % self.code)
+                q.text(","); q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
+            q.breakable()
+        q.text('}')
+
+class bad_request_error_msg(Message):
+    version = 4
+    type = 1
+    err_type = 1
+
+    def __init__(self, xid=None, code=None, data=None):
+        self.xid = xid
+        if code != None:
+            self.code = code
+        else:
+            self.code = 0
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.err_type))
+        packed.append(struct.pack("!H", self.code))
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = bad_request_error_msg()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 1)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _err_type = reader.read("!H")[0]
+        assert(_err_type == 1)
+        obj.code = reader.read("!H")[0]
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.code != other.code: return False
+        if self.data != other.data: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bad_request_error_msg {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("code = ");
+                q.text("%#x" % self.code)
+                q.text(","); q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
+            q.breakable()
+        q.text('}')
+
 class barrier_reply(Message):
     version = 4
     type = 21
@@ -1246,6 +1594,443 @@ class bsn_bw_enable_set_request(Message):
             q.breakable()
         q.text('}')
 
+class bsn_flow_idle(Message):
+    version = 4
+    type = 4
+    experimenter = 6035143
+    subtype = 40
+
+    def __init__(self, xid=None, cookie=None, priority=None, table_id=None, match=None):
+        self.xid = xid
+        if cookie != None:
+            self.cookie = cookie
+        else:
+            self.cookie = 0
+        if priority != None:
+            self.priority = priority
+        else:
+            self.priority = 0
+        if table_id != None:
+            self.table_id = table_id
+        else:
+            self.table_id = 0
+        if match != None:
+            self.match = match
+        else:
+            self.match = common.match()
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        packed.append(struct.pack("!Q", self.cookie))
+        packed.append(struct.pack("!H", self.priority))
+        packed.append(struct.pack("!B", self.table_id))
+        packed.append('\x00' * 5)
+        packed.append(self.match.pack())
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = bsn_flow_idle()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 4)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _subtype = reader.read("!L")[0]
+        assert(_subtype == 40)
+        obj.cookie = reader.read("!Q")[0]
+        obj.priority = reader.read("!H")[0]
+        obj.table_id = reader.read("!B")[0]
+        reader.skip(5)
+        obj.match = common.match.unpack(reader)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.cookie != other.cookie: return False
+        if self.priority != other.priority: return False
+        if self.table_id != other.table_id: return False
+        if self.match != other.match: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_flow_idle {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("cookie = ");
+                q.text("%#x" % self.cookie)
+                q.text(","); q.breakable()
+                q.text("priority = ");
+                q.text("%#x" % self.priority)
+                q.text(","); q.breakable()
+                q.text("table_id = ");
+                q.text("%#x" % self.table_id)
+                q.text(","); q.breakable()
+                q.text("match = ");
+                q.pp(self.match)
+            q.breakable()
+        q.text('}')
+
+class bsn_flow_idle_enable_get_reply(Message):
+    version = 4
+    type = 4
+    experimenter = 6035143
+    subtype = 39
+
+    def __init__(self, xid=None, enabled=None):
+        self.xid = xid
+        if enabled != None:
+            self.enabled = enabled
+        else:
+            self.enabled = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        packed.append(struct.pack("!L", self.enabled))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = bsn_flow_idle_enable_get_reply()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 4)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _subtype = reader.read("!L")[0]
+        assert(_subtype == 39)
+        obj.enabled = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.enabled != other.enabled: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_flow_idle_enable_get_reply {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("enabled = ");
+                q.text("%#x" % self.enabled)
+            q.breakable()
+        q.text('}')
+
+class bsn_flow_idle_enable_get_request(Message):
+    version = 4
+    type = 4
+    experimenter = 6035143
+    subtype = 38
+
+    def __init__(self, xid=None):
+        self.xid = xid
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = bsn_flow_idle_enable_get_request()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 4)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _subtype = reader.read("!L")[0]
+        assert(_subtype == 38)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_flow_idle_enable_get_request {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+            q.breakable()
+        q.text('}')
+
+class bsn_flow_idle_enable_set_reply(Message):
+    version = 4
+    type = 4
+    experimenter = 6035143
+    subtype = 37
+
+    def __init__(self, xid=None, enable=None, status=None):
+        self.xid = xid
+        if enable != None:
+            self.enable = enable
+        else:
+            self.enable = 0
+        if status != None:
+            self.status = status
+        else:
+            self.status = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        packed.append(struct.pack("!L", self.enable))
+        packed.append(struct.pack("!L", self.status))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = bsn_flow_idle_enable_set_reply()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 4)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _subtype = reader.read("!L")[0]
+        assert(_subtype == 37)
+        obj.enable = reader.read("!L")[0]
+        obj.status = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.enable != other.enable: return False
+        if self.status != other.status: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_flow_idle_enable_set_reply {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("enable = ");
+                q.text("%#x" % self.enable)
+                q.text(","); q.breakable()
+                q.text("status = ");
+                q.text("%#x" % self.status)
+            q.breakable()
+        q.text('}')
+
+class bsn_flow_idle_enable_set_request(Message):
+    version = 4
+    type = 4
+    experimenter = 6035143
+    subtype = 36
+
+    def __init__(self, xid=None, enable=None):
+        self.xid = xid
+        if enable != None:
+            self.enable = enable
+        else:
+            self.enable = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        packed.append(struct.pack("!L", self.enable))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = bsn_flow_idle_enable_set_request()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 4)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _subtype = reader.read("!L")[0]
+        assert(_subtype == 36)
+        obj.enable = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.enable != other.enable: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_flow_idle_enable_set_request {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("enable = ");
+                q.text("%#x" % self.enable)
+            q.breakable()
+        q.text('}')
+
 class bsn_get_interfaces_reply(Message):
     version = 4
     type = 4
@@ -1561,6 +2346,485 @@ class bsn_get_mirroring_request(Message):
                 q.text(","); q.breakable()
                 q.text("report_mirror_ports = ");
                 q.text("%#x" % self.report_mirror_ports)
+            q.breakable()
+        q.text('}')
+
+class bsn_pdu_rx_reply(Message):
+    version = 4
+    type = 4
+    experimenter = 6035143
+    subtype = 34
+
+    def __init__(self, xid=None, status=None):
+        self.xid = xid
+        if status != None:
+            self.status = status
+        else:
+            self.status = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        packed.append(struct.pack("!L", self.status))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = bsn_pdu_rx_reply()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 4)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _subtype = reader.read("!L")[0]
+        assert(_subtype == 34)
+        obj.status = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.status != other.status: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_pdu_rx_reply {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("status = ");
+                q.text("%#x" % self.status)
+            q.breakable()
+        q.text('}')
+
+class bsn_pdu_rx_request(Message):
+    version = 4
+    type = 4
+    experimenter = 6035143
+    subtype = 33
+
+    def __init__(self, xid=None, timeout_ms=None, port_no=None, slot_num=None, data=None):
+        self.xid = xid
+        if timeout_ms != None:
+            self.timeout_ms = timeout_ms
+        else:
+            self.timeout_ms = 0
+        if port_no != None:
+            self.port_no = port_no
+        else:
+            self.port_no = 0
+        if slot_num != None:
+            self.slot_num = slot_num
+        else:
+            self.slot_num = 0
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        packed.append(struct.pack("!L", self.timeout_ms))
+        packed.append(util.pack_port_no(self.port_no))
+        packed.append(struct.pack("!B", self.slot_num))
+        packed.append('\x00' * 3)
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = bsn_pdu_rx_request()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 4)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _subtype = reader.read("!L")[0]
+        assert(_subtype == 33)
+        obj.timeout_ms = reader.read("!L")[0]
+        obj.port_no = util.unpack_port_no(reader)
+        obj.slot_num = reader.read("!B")[0]
+        reader.skip(3)
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.timeout_ms != other.timeout_ms: return False
+        if self.port_no != other.port_no: return False
+        if self.slot_num != other.slot_num: return False
+        if self.data != other.data: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_pdu_rx_request {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("timeout_ms = ");
+                q.text("%#x" % self.timeout_ms)
+                q.text(","); q.breakable()
+                q.text("port_no = ");
+                q.text(util.pretty_port(self.port_no))
+                q.text(","); q.breakable()
+                q.text("slot_num = ");
+                q.text("%#x" % self.slot_num)
+                q.text(","); q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
+            q.breakable()
+        q.text('}')
+
+class bsn_pdu_rx_timeout(Message):
+    version = 4
+    type = 4
+    experimenter = 6035143
+    subtype = 35
+
+    def __init__(self, xid=None, port_no=None, slot_num=None):
+        self.xid = xid
+        if port_no != None:
+            self.port_no = port_no
+        else:
+            self.port_no = 0
+        if slot_num != None:
+            self.slot_num = slot_num
+        else:
+            self.slot_num = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        packed.append(util.pack_port_no(self.port_no))
+        packed.append(struct.pack("!B", self.slot_num))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = bsn_pdu_rx_timeout()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 4)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _subtype = reader.read("!L")[0]
+        assert(_subtype == 35)
+        obj.port_no = util.unpack_port_no(reader)
+        obj.slot_num = reader.read("!B")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.port_no != other.port_no: return False
+        if self.slot_num != other.slot_num: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_pdu_rx_timeout {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("port_no = ");
+                q.text(util.pretty_port(self.port_no))
+                q.text(","); q.breakable()
+                q.text("slot_num = ");
+                q.text("%#x" % self.slot_num)
+            q.breakable()
+        q.text('}')
+
+class bsn_pdu_tx_reply(Message):
+    version = 4
+    type = 4
+    experimenter = 6035143
+    subtype = 32
+
+    def __init__(self, xid=None, status=None):
+        self.xid = xid
+        if status != None:
+            self.status = status
+        else:
+            self.status = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        packed.append(struct.pack("!L", self.status))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = bsn_pdu_tx_reply()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 4)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _subtype = reader.read("!L")[0]
+        assert(_subtype == 32)
+        obj.status = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.status != other.status: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_pdu_tx_reply {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("status = ");
+                q.text("%#x" % self.status)
+            q.breakable()
+        q.text('}')
+
+class bsn_pdu_tx_request(Message):
+    version = 4
+    type = 4
+    experimenter = 6035143
+    subtype = 31
+
+    def __init__(self, xid=None, tx_interval_ms=None, port_no=None, slot_num=None, data=None):
+        self.xid = xid
+        if tx_interval_ms != None:
+            self.tx_interval_ms = tx_interval_ms
+        else:
+            self.tx_interval_ms = 0
+        if port_no != None:
+            self.port_no = port_no
+        else:
+            self.port_no = 0
+        if slot_num != None:
+            self.slot_num = slot_num
+        else:
+            self.slot_num = 0
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        packed.append(struct.pack("!L", self.tx_interval_ms))
+        packed.append(util.pack_port_no(self.port_no))
+        packed.append(struct.pack("!B", self.slot_num))
+        packed.append('\x00' * 3)
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = bsn_pdu_tx_request()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 4)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _subtype = reader.read("!L")[0]
+        assert(_subtype == 31)
+        obj.tx_interval_ms = reader.read("!L")[0]
+        obj.port_no = util.unpack_port_no(reader)
+        obj.slot_num = reader.read("!B")[0]
+        reader.skip(3)
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.tx_interval_ms != other.tx_interval_ms: return False
+        if self.port_no != other.port_no: return False
+        if self.slot_num != other.slot_num: return False
+        if self.data != other.data: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_pdu_tx_request {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("tx_interval_ms = ");
+                q.text("%#x" % self.tx_interval_ms)
+                q.text(","); q.breakable()
+                q.text("port_no = ");
+                q.text(util.pretty_port(self.port_no))
+                q.text(","); q.breakable()
+                q.text("slot_num = ");
+                q.text("%#x" % self.slot_num)
+                q.text(","); q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
             q.breakable()
         q.text('}')
 
@@ -2539,20 +3803,21 @@ class echo_request(Message):
             q.breakable()
         q.text('}')
 
-class error_msg(Message):
+class experimenter_error_msg(Message):
     version = 4
     type = 1
+    err_type = 65535
 
-    def __init__(self, xid=None, err_type=None, code=None, data=None):
+    def __init__(self, xid=None, subtype=None, experimenter=None, data=None):
         self.xid = xid
-        if err_type != None:
-            self.err_type = err_type
+        if subtype != None:
+            self.subtype = subtype
         else:
-            self.err_type = 0
-        if code != None:
-            self.code = code
+            self.subtype = 0
+        if experimenter != None:
+            self.experimenter = experimenter
         else:
-            self.code = 0
+            self.experimenter = 0
         if data != None:
             self.data = data
         else:
@@ -2565,7 +3830,8 @@ class error_msg(Message):
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!H", self.err_type))
-        packed.append(struct.pack("!H", self.code))
+        packed.append(struct.pack("!H", self.subtype))
+        packed.append(struct.pack("!L", self.experimenter))
         packed.append(self.data)
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
@@ -2574,7 +3840,7 @@ class error_msg(Message):
     @staticmethod
     def unpack(buf):
         if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
-        obj = error_msg()
+        obj = experimenter_error_msg()
         if type(buf) == loxi.generic_util.OFReader:
             reader = buf
         else:
@@ -2585,8 +3851,10 @@ class error_msg(Message):
         assert(_type == 1)
         _length = reader.read("!H")[0]
         obj.xid = reader.read("!L")[0]
-        obj.err_type = reader.read("!H")[0]
-        obj.code = reader.read("!H")[0]
+        _err_type = reader.read("!H")[0]
+        assert(_err_type == 65535)
+        obj.subtype = reader.read("!H")[0]
+        obj.experimenter = reader.read("!L")[0]
         obj.data = str(reader.read_all())
         return obj
 
@@ -2595,8 +3863,8 @@ class error_msg(Message):
         if self.version != other.version: return False
         if self.type != other.type: return False
         if self.xid != other.xid: return False
-        if self.err_type != other.err_type: return False
-        if self.code != other.code: return False
+        if self.subtype != other.subtype: return False
+        if self.experimenter != other.experimenter: return False
         if self.data != other.data: return False
         return True
 
@@ -2611,7 +3879,7 @@ class error_msg(Message):
         return loxi.pp.pp(self)
 
     def pretty_print(self, q):
-        q.text("error_msg {")
+        q.text("experimenter_error_msg {")
         with q.group():
             with q.indent(2):
                 q.breakable()
@@ -2621,11 +3889,11 @@ class error_msg(Message):
                 else:
                     q.text('None')
                 q.text(","); q.breakable()
-                q.text("err_type = ");
-                q.text("%#x" % self.err_type)
+                q.text("subtype = ");
+                q.text("%#x" % self.subtype)
                 q.text(","); q.breakable()
-                q.text("code = ");
-                q.text("%#x" % self.code)
+                q.text("experimenter = ");
+                q.text("%#x" % self.experimenter)
                 q.text(","); q.breakable()
                 q.text("data = ");
                 q.pp(self.data)
@@ -3384,6 +4652,93 @@ class flow_delete_strict(Message):
                 q.text(","); q.breakable()
                 q.text("instructions = ");
                 q.pp(self.instructions)
+            q.breakable()
+        q.text('}')
+
+class flow_mod_failed_error_msg(Message):
+    version = 4
+    type = 1
+    err_type = 5
+
+    def __init__(self, xid=None, code=None, data=None):
+        self.xid = xid
+        if code != None:
+            self.code = code
+        else:
+            self.code = 0
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.err_type))
+        packed.append(struct.pack("!H", self.code))
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = flow_mod_failed_error_msg()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 1)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _err_type = reader.read("!H")[0]
+        assert(_err_type == 5)
+        obj.code = reader.read("!H")[0]
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.code != other.code: return False
+        if self.data != other.data: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("flow_mod_failed_error_msg {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("code = ");
+                q.text("%#x" % self.code)
+                q.text(","); q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
             q.breakable()
         q.text('}')
 
@@ -4847,6 +6202,93 @@ class group_mod(Message):
             q.breakable()
         q.text('}')
 
+class group_mod_failed_error_msg(Message):
+    version = 4
+    type = 1
+    err_type = 6
+
+    def __init__(self, xid=None, code=None, data=None):
+        self.xid = xid
+        if code != None:
+            self.code = code
+        else:
+            self.code = 0
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.err_type))
+        packed.append(struct.pack("!H", self.code))
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = group_mod_failed_error_msg()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 1)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _err_type = reader.read("!H")[0]
+        assert(_err_type == 6)
+        obj.code = reader.read("!H")[0]
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.code != other.code: return False
+        if self.data != other.data: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("group_mod_failed_error_msg {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("code = ");
+                q.text("%#x" % self.code)
+                q.text(","); q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
+            q.breakable()
+        q.text('}')
+
 class group_stats_reply(Message):
     version = 4
     type = 19
@@ -5097,6 +6539,93 @@ class hello(Message):
                 q.text(","); q.breakable()
                 q.text("elements = ");
                 q.pp(self.elements)
+            q.breakable()
+        q.text('}')
+
+class hello_failed_error_msg(Message):
+    version = 4
+    type = 1
+    err_type = 0
+
+    def __init__(self, xid=None, code=None, data=None):
+        self.xid = xid
+        if code != None:
+            self.code = code
+        else:
+            self.code = 0
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.err_type))
+        packed.append(struct.pack("!H", self.code))
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = hello_failed_error_msg()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 1)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _err_type = reader.read("!H")[0]
+        assert(_err_type == 0)
+        obj.code = reader.read("!H")[0]
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.code != other.code: return False
+        if self.data != other.data: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("hello_failed_error_msg {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("code = ");
+                q.text("%#x" % self.code)
+                q.text(","); q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
             q.breakable()
         q.text('}')
 
@@ -5548,6 +7077,93 @@ class meter_mod(Message):
                 q.text(","); q.breakable()
                 q.text("meters = ");
                 q.pp(self.meters)
+            q.breakable()
+        q.text('}')
+
+class meter_mod_failed_error_msg(Message):
+    version = 4
+    type = 1
+    err_type = 12
+
+    def __init__(self, xid=None, code=None, data=None):
+        self.xid = xid
+        if code != None:
+            self.code = code
+        else:
+            self.code = 0
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.err_type))
+        packed.append(struct.pack("!H", self.code))
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = meter_mod_failed_error_msg()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 1)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _err_type = reader.read("!H")[0]
+        assert(_err_type == 12)
+        obj.code = reader.read("!H")[0]
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.code != other.code: return False
+        if self.data != other.data: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("meter_mod_failed_error_msg {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("code = ");
+                q.text("%#x" % self.code)
+                q.text(","); q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
             q.breakable()
         q.text('}')
 
@@ -6261,6 +7877,93 @@ class port_mod(Message):
             q.breakable()
         q.text('}')
 
+class port_mod_failed_error_msg(Message):
+    version = 4
+    type = 1
+    err_type = 7
+
+    def __init__(self, xid=None, code=None, data=None):
+        self.xid = xid
+        if code != None:
+            self.code = code
+        else:
+            self.code = 0
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.err_type))
+        packed.append(struct.pack("!H", self.code))
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = port_mod_failed_error_msg()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 1)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _err_type = reader.read("!H")[0]
+        assert(_err_type == 7)
+        obj.code = reader.read("!H")[0]
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.code != other.code: return False
+        if self.data != other.data: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("port_mod_failed_error_msg {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("code = ");
+                q.text("%#x" % self.code)
+                q.text(","); q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
+            q.breakable()
+        q.text('}')
+
 class port_stats_reply(Message):
     version = 4
     type = 19
@@ -6686,6 +8389,93 @@ class queue_get_config_request(Message):
             q.breakable()
         q.text('}')
 
+class queue_op_failed_error_msg(Message):
+    version = 4
+    type = 1
+    err_type = 9
+
+    def __init__(self, xid=None, code=None, data=None):
+        self.xid = xid
+        if code != None:
+            self.code = code
+        else:
+            self.code = 0
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.err_type))
+        packed.append(struct.pack("!H", self.code))
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = queue_op_failed_error_msg()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 1)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _err_type = reader.read("!H")[0]
+        assert(_err_type == 9)
+        obj.code = reader.read("!H")[0]
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.code != other.code: return False
+        if self.data != other.data: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("queue_op_failed_error_msg {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("code = ");
+                q.text("%#x" % self.code)
+                q.text(","); q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
+            q.breakable()
+        q.text('}')
+
 class queue_stats_reply(Message):
     version = 4
     type = 19
@@ -7032,6 +8822,93 @@ class role_request(Message):
             q.breakable()
         q.text('}')
 
+class role_request_failed_error_msg(Message):
+    version = 4
+    type = 1
+    err_type = 11
+
+    def __init__(self, xid=None, code=None, data=None):
+        self.xid = xid
+        if code != None:
+            self.code = code
+        else:
+            self.code = 0
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.err_type))
+        packed.append(struct.pack("!H", self.code))
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = role_request_failed_error_msg()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 1)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _err_type = reader.read("!H")[0]
+        assert(_err_type == 11)
+        obj.code = reader.read("!H")[0]
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.code != other.code: return False
+        if self.data != other.data: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("role_request_failed_error_msg {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("code = ");
+                q.text("%#x" % self.code)
+                q.text(","); q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
+            q.breakable()
+        q.text('}')
+
 class set_config(Message):
     version = 4
     type = 9
@@ -7112,6 +8989,180 @@ class set_config(Message):
                 q.text(","); q.breakable()
                 q.text("miss_send_len = ");
                 q.text("%#x" % self.miss_send_len)
+            q.breakable()
+        q.text('}')
+
+class switch_config_failed_error_msg(Message):
+    version = 4
+    type = 1
+    err_type = 10
+
+    def __init__(self, xid=None, code=None, data=None):
+        self.xid = xid
+        if code != None:
+            self.code = code
+        else:
+            self.code = 0
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.err_type))
+        packed.append(struct.pack("!H", self.code))
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = switch_config_failed_error_msg()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 1)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _err_type = reader.read("!H")[0]
+        assert(_err_type == 10)
+        obj.code = reader.read("!H")[0]
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.code != other.code: return False
+        if self.data != other.data: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("switch_config_failed_error_msg {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("code = ");
+                q.text("%#x" % self.code)
+                q.text(","); q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
+            q.breakable()
+        q.text('}')
+
+class table_features_failed_error_msg(Message):
+    version = 4
+    type = 1
+    err_type = 13
+
+    def __init__(self, xid=None, code=None, data=None):
+        self.xid = xid
+        if code != None:
+            self.code = code
+        else:
+            self.code = 0
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.err_type))
+        packed.append(struct.pack("!H", self.code))
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = table_features_failed_error_msg()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 1)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _err_type = reader.read("!H")[0]
+        assert(_err_type == 13)
+        obj.code = reader.read("!H")[0]
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.code != other.code: return False
+        if self.data != other.data: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("table_features_failed_error_msg {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("code = ");
+                q.text("%#x" % self.code)
+                q.text(","); q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
             q.breakable()
         q.text('}')
 
@@ -7378,6 +9429,93 @@ class table_mod(Message):
             q.breakable()
         q.text('}')
 
+class table_mod_failed_error_msg(Message):
+    version = 4
+    type = 1
+    err_type = 8
+
+    def __init__(self, xid=None, code=None, data=None):
+        self.xid = xid
+        if code != None:
+            self.code = code
+        else:
+            self.code = 0
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.err_type))
+        packed.append(struct.pack("!H", self.code))
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = table_mod_failed_error_msg()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 1)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _err_type = reader.read("!H")[0]
+        assert(_err_type == 8)
+        obj.code = reader.read("!H")[0]
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.code != other.code: return False
+        if self.data != other.data: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("table_mod_failed_error_msg {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("code = ");
+                q.text("%#x" % self.code)
+                q.text(","); q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
+            q.breakable()
+        q.text('}')
+
 class table_stats_reply(Message):
     version = 4
     type = 19
@@ -7563,6 +9701,15 @@ def parse_message(buf):
     else:
         raise loxi.ProtocolError("unexpected message type")
 
+def parse_error(buf):
+    if len(buf) < 8 + 2:
+        raise loxi.ProtocolError("message too short")
+    err_type, = struct.unpack_from("!H", buf, 8)
+    if err_type in error_msg_parsers:
+        return error_msg_parsers[err_type](buf)
+    else:
+        raise loxi.ProtocolError("unexpected error type %u" % err_type)
+
 def parse_flow_mod(buf):
     if len(buf) < 25 + 1:
         raise loxi.ProtocolError("message too short")
@@ -7573,23 +9720,23 @@ def parse_flow_mod(buf):
     else:
         raise loxi.ProtocolError("unexpected flow mod cmd %u" % cmd)
 
-def parse_multipart_reply(buf):
+def parse_stats_reply(buf):
     if len(buf) < 8 + 2:
         raise loxi.ProtocolError("message too short")
-    multipart_type, = struct.unpack_from("!H", buf, 8)
-    if multipart_type in multipart_reply_parsers:
-        return multipart_reply_parsers[multipart_type](buf)
+    stats_type, = struct.unpack_from("!H", buf, 8)
+    if stats_type in stats_reply_parsers:
+        return stats_reply_parsers[stats_type](buf)
     else:
-        raise loxi.ProtocolError("unexpected multipart type %u" % multipart_type)
+        raise loxi.ProtocolError("unexpected stats type %u" % stats_type)
 
-def parse_multipart_request(buf):
+def parse_stats_request(buf):
     if len(buf) < 8 + 2:
         raise loxi.ProtocolError("message too short")
-    multipart_type, = struct.unpack_from("!H", buf, 8)
-    if multipart_type in multipart_request_parsers:
-        return multipart_request_parsers[multipart_type](buf)
+    stats_type, = struct.unpack_from("!H", buf, 8)
+    if stats_type in stats_request_parsers:
+        return stats_request_parsers[stats_type](buf)
     else:
-        raise loxi.ProtocolError("unexpected multipart type %u" % multipart_type)
+        raise loxi.ProtocolError("unexpected stats type %u" % stats_type)
 
 def parse_experimenter(buf):
     if len(buf) < 16:
@@ -7610,7 +9757,7 @@ def parse_experimenter(buf):
 
 parsers = {
     const.OFPT_HELLO : hello.unpack,
-    const.OFPT_ERROR : error_msg.unpack,
+    const.OFPT_ERROR : parse_error,
     const.OFPT_ECHO_REQUEST : echo_request.unpack,
     const.OFPT_ECHO_REPLY : echo_reply.unpack,
     const.OFPT_EXPERIMENTER : parse_experimenter,
@@ -7627,8 +9774,8 @@ parsers = {
     const.OFPT_GROUP_MOD : group_mod.unpack,
     const.OFPT_PORT_MOD : port_mod.unpack,
     const.OFPT_TABLE_MOD : table_mod.unpack,
-    const.OFPT_MULTIPART_REQUEST : parse_multipart_request,
-    const.OFPT_MULTIPART_REPLY : parse_multipart_reply,
+    const.OFPT_STATS_REQUEST : parse_stats_request,
+    const.OFPT_STATS_REPLY : parse_stats_reply,
     const.OFPT_BARRIER_REQUEST : barrier_request.unpack,
     const.OFPT_BARRIER_REPLY : barrier_reply.unpack,
     const.OFPT_QUEUE_GET_CONFIG_REQUEST : queue_get_config_request.unpack,
@@ -7641,6 +9788,24 @@ parsers = {
     const.OFPT_METER_MOD : meter_mod.unpack,
 }
 
+error_msg_parsers = {
+    const.OFPET_HELLO_FAILED : hello_failed_error_msg.unpack,
+    const.OFPET_BAD_REQUEST : bad_request_error_msg.unpack,
+    const.OFPET_BAD_ACTION : bad_action_error_msg.unpack,
+    const.OFPET_FLOW_MOD_FAILED : flow_mod_failed_error_msg.unpack,
+    const.OFPET_PORT_MOD_FAILED : port_mod_failed_error_msg.unpack,
+    const.OFPET_QUEUE_OP_FAILED : queue_op_failed_error_msg.unpack,
+    const.OFPET_BAD_INSTRUCTION : bad_instruction_error_msg.unpack,
+    const.OFPET_BAD_MATCH : bad_match_error_msg.unpack,
+    const.OFPET_GROUP_MOD_FAILED : group_mod_failed_error_msg.unpack,
+    const.OFPET_TABLE_MOD_FAILED : table_mod_failed_error_msg.unpack,
+    const.OFPET_SWITCH_CONFIG_FAILED : switch_config_failed_error_msg.unpack,
+    const.OFPET_ROLE_REQUEST_FAILED : role_request_failed_error_msg.unpack,
+    const.OFPET_EXPERIMENTER : experimenter_error_msg.unpack,
+    const.OFPET_METER_MOD_FAILED : meter_mod_failed_error_msg.unpack,
+    const.OFPET_TABLE_FEATURES_FAILED : table_features_failed_error_msg.unpack,
+}
+
 flow_mod_parsers = {
     const.OFPFC_ADD : flow_add.unpack,
     const.OFPFC_MODIFY : flow_modify.unpack,
@@ -7649,38 +9814,38 @@ flow_mod_parsers = {
     const.OFPFC_DELETE_STRICT : flow_delete_strict.unpack,
 }
 
-multipart_reply_parsers = {
-    const.OFPMP_DESC : desc_stats_reply.unpack,
-    const.OFPMP_FLOW : flow_stats_reply.unpack,
-    const.OFPMP_AGGREGATE : aggregate_stats_reply.unpack,
-    const.OFPMP_TABLE : table_stats_reply.unpack,
-    const.OFPMP_PORT_STATS : port_stats_reply.unpack,
-    const.OFPMP_QUEUE : queue_stats_reply.unpack,
-    const.OFPMP_GROUP : group_stats_reply.unpack,
-    const.OFPMP_GROUP_DESC : group_desc_stats_reply.unpack,
-    const.OFPMP_GROUP_FEATURES : group_features_stats_reply.unpack,
-    const.OFPMP_METER : meter_stats_reply.unpack,
-    const.OFPMP_METER_CONFIG : meter_config_stats_reply.unpack,
-    const.OFPMP_METER_FEATURES : meter_features_stats_reply.unpack,
-    const.OFPMP_TABLE_FEATURES : table_features_stats_reply.unpack,
-    const.OFPMP_PORT_DESC : port_desc_stats_reply.unpack,
+stats_reply_parsers = {
+    const.OFPST_DESC : desc_stats_reply.unpack,
+    const.OFPST_FLOW : flow_stats_reply.unpack,
+    const.OFPST_AGGREGATE : aggregate_stats_reply.unpack,
+    const.OFPST_TABLE : table_stats_reply.unpack,
+    const.OFPST_PORT : port_stats_reply.unpack,
+    const.OFPST_QUEUE : queue_stats_reply.unpack,
+    const.OFPST_GROUP : group_stats_reply.unpack,
+    const.OFPST_GROUP_DESC : group_desc_stats_reply.unpack,
+    const.OFPST_GROUP_FEATURES : group_features_stats_reply.unpack,
+    const.OFPST_METER : meter_stats_reply.unpack,
+    const.OFPST_METER_CONFIG : meter_config_stats_reply.unpack,
+    const.OFPST_METER_FEATURES : meter_features_stats_reply.unpack,
+    const.OFPST_TABLE_FEATURES : table_features_stats_reply.unpack,
+    const.OFPST_PORT_DESC : port_desc_stats_reply.unpack,
 }
 
-multipart_request_parsers = {
-    const.OFPMP_DESC : desc_stats_request.unpack,
-    const.OFPMP_FLOW : flow_stats_request.unpack,
-    const.OFPMP_AGGREGATE : aggregate_stats_request.unpack,
-    const.OFPMP_TABLE : table_stats_request.unpack,
-    const.OFPMP_PORT_STATS : port_stats_request.unpack,
-    const.OFPMP_QUEUE : queue_stats_request.unpack,
-    const.OFPMP_GROUP : group_stats_request.unpack,
-    const.OFPMP_GROUP_DESC : group_desc_stats_request.unpack,
-    const.OFPMP_GROUP_FEATURES : group_features_stats_request.unpack,
-    const.OFPMP_METER : meter_stats_request.unpack,
-    const.OFPMP_METER_CONFIG : meter_config_stats_request.unpack,
-    const.OFPMP_METER_FEATURES : meter_features_stats_request.unpack,
-    const.OFPMP_TABLE_FEATURES : table_features_stats_request.unpack,
-    const.OFPMP_PORT_DESC : port_desc_stats_request.unpack,
+stats_request_parsers = {
+    const.OFPST_DESC : desc_stats_request.unpack,
+    const.OFPST_FLOW : flow_stats_request.unpack,
+    const.OFPST_AGGREGATE : aggregate_stats_request.unpack,
+    const.OFPST_TABLE : table_stats_request.unpack,
+    const.OFPST_PORT : port_stats_request.unpack,
+    const.OFPST_QUEUE : queue_stats_request.unpack,
+    const.OFPST_GROUP : group_stats_request.unpack,
+    const.OFPST_GROUP_DESC : group_desc_stats_request.unpack,
+    const.OFPST_GROUP_FEATURES : group_features_stats_request.unpack,
+    const.OFPST_METER : meter_stats_request.unpack,
+    const.OFPST_METER_CONFIG : meter_config_stats_request.unpack,
+    const.OFPST_METER_FEATURES : meter_features_stats_request.unpack,
+    const.OFPST_TABLE_FEATURES : table_features_stats_request.unpack,
+    const.OFPST_PORT_DESC : port_desc_stats_request.unpack,
 }
 
 experimenter_parsers = {
@@ -7691,10 +9856,20 @@ experimenter_parsers = {
         19: bsn_bw_enable_get_request.unpack,
         23: bsn_bw_enable_set_reply.unpack,
         18: bsn_bw_enable_set_request.unpack,
+        40: bsn_flow_idle.unpack,
+        39: bsn_flow_idle_enable_get_reply.unpack,
+        38: bsn_flow_idle_enable_get_request.unpack,
+        37: bsn_flow_idle_enable_set_reply.unpack,
+        36: bsn_flow_idle_enable_set_request.unpack,
         10: bsn_get_interfaces_reply.unpack,
         9: bsn_get_interfaces_request.unpack,
         5: bsn_get_mirroring_reply.unpack,
         4: bsn_get_mirroring_request.unpack,
+        34: bsn_pdu_rx_reply.unpack,
+        33: bsn_pdu_rx_request.unpack,
+        35: bsn_pdu_rx_timeout.unpack,
+        32: bsn_pdu_tx_reply.unpack,
+        31: bsn_pdu_tx_request.unpack,
         3: bsn_set_mirroring.unpack,
         25: bsn_set_pktin_suppression_reply.unpack,
         11: bsn_set_pktin_suppression_request.unpack,

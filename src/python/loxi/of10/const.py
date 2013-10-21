@@ -11,8 +11,8 @@ OFP_VERSION = 1
 # Identifiers from group macro_definitions
 OFP_MAX_TABLE_NAME_LEN = 32
 OFP_MAX_PORT_NAME_LEN = 16
-OFP_TCP_PORT = 6633
-OFP_SSL_PORT = 6633
+OFP_TCP_PORT = 6653
+OFP_SSL_PORT = 6653
 OFP_ETH_ALEN = 6
 OFP_DEFAULT_MISS_SEND_LEN = 128
 OFP_VLAN_NONE = 65535
@@ -27,6 +27,13 @@ SERIAL_NUM_LEN = 32
 OFPQ_ALL = 4294967295
 OFPQ_MIN_RATE_UNCFG = 65535
 
+# Identifiers from group of_bsn_pdu_slot_num_t
+BSN_PDU_SLOT_NUM_ANY = 255
+
+of_bsn_pdu_slot_num_t_map = {
+    255: 'BSN_PDU_SLOT_NUM_ANY',
+}
+
 # Identifiers from group ofp_action_type
 OFPAT_OUTPUT = 0
 OFPAT_SET_VLAN_VID = 1
@@ -40,7 +47,7 @@ OFPAT_SET_NW_TOS = 8
 OFPAT_SET_TP_SRC = 9
 OFPAT_SET_TP_DST = 10
 OFPAT_ENQUEUE = 11
-OFPAT_VENDOR = 65535
+OFPAT_EXPERIMENTER = 65535
 
 ofp_action_type_map = {
     0: 'OFPAT_OUTPUT',
@@ -55,14 +62,14 @@ ofp_action_type_map = {
     9: 'OFPAT_SET_TP_SRC',
     10: 'OFPAT_SET_TP_DST',
     11: 'OFPAT_ENQUEUE',
-    65535: 'OFPAT_VENDOR',
+    65535: 'OFPAT_EXPERIMENTER',
 }
 
 # Identifiers from group ofp_bad_action_code
 OFPBAC_BAD_TYPE = 0
 OFPBAC_BAD_LEN = 1
-OFPBAC_BAD_VENDOR = 2
-OFPBAC_BAD_VENDOR_TYPE = 3
+OFPBAC_BAD_EXPERIMENTER = 2
+OFPBAC_BAD_EXPERIMENTER_TYPE = 3
 OFPBAC_BAD_OUT_PORT = 4
 OFPBAC_BAD_ARGUMENT = 5
 OFPBAC_EPERM = 6
@@ -72,8 +79,8 @@ OFPBAC_BAD_QUEUE = 8
 ofp_bad_action_code_map = {
     0: 'OFPBAC_BAD_TYPE',
     1: 'OFPBAC_BAD_LEN',
-    2: 'OFPBAC_BAD_VENDOR',
-    3: 'OFPBAC_BAD_VENDOR_TYPE',
+    2: 'OFPBAC_BAD_EXPERIMENTER',
+    3: 'OFPBAC_BAD_EXPERIMENTER_TYPE',
     4: 'OFPBAC_BAD_OUT_PORT',
     5: 'OFPBAC_BAD_ARGUMENT',
     6: 'OFPBAC_EPERM',
@@ -85,7 +92,7 @@ ofp_bad_action_code_map = {
 OFPBRC_BAD_VERSION = 0
 OFPBRC_BAD_TYPE = 1
 OFPBRC_BAD_STAT = 2
-OFPBRC_BAD_VENDOR = 3
+OFPBRC_BAD_EXPERIMENTER = 3
 OFPBRC_BAD_SUBTYPE = 4
 OFPBRC_EPERM = 5
 OFPBRC_BAD_LEN = 6
@@ -96,7 +103,7 @@ ofp_bad_request_code_map = {
     0: 'OFPBRC_BAD_VERSION',
     1: 'OFPBRC_BAD_TYPE',
     2: 'OFPBRC_BAD_STAT',
-    3: 'OFPBRC_BAD_VENDOR',
+    3: 'OFPBRC_BAD_EXPERIMENTER',
     4: 'OFPBRC_BAD_SUBTYPE',
     5: 'OFPBRC_EPERM',
     6: 'OFPBRC_BAD_LEN',
@@ -319,6 +326,7 @@ OFPPC_NO_RECV_STP = 8
 OFPPC_NO_FLOOD = 16
 OFPPC_NO_FWD = 32
 OFPPC_NO_PACKET_IN = 64
+OFPPC_BSN_MIRROR_DEST = 2147483648
 
 ofp_port_config_map = {
     1: 'OFPPC_PORT_DOWN',
@@ -328,6 +336,7 @@ ofp_port_config_map = {
     16: 'OFPPC_NO_FLOOD',
     32: 'OFPPC_NO_FWD',
     64: 'OFPPC_NO_PACKET_IN',
+    2147483648: 'OFPPC_BSN_MIRROR_DEST',
 }
 
 # Identifiers from group ofp_port_features
@@ -380,16 +389,16 @@ ofp_port_reason_map = {
 }
 
 # Identifiers from group ofp_port_state
-OFPPS_STP_LISTEN = 0
 OFPPS_LINK_DOWN = 1
+OFPPS_STP_LISTEN = 0
 OFPPS_STP_LEARN = 256
 OFPPS_STP_FORWARD = 512
 OFPPS_STP_BLOCK = 768
 OFPPS_STP_MASK = 768
 
 ofp_port_state_map = {
-    0: 'OFPPS_STP_LISTEN',
     1: 'OFPPS_LINK_DOWN',
+    0: 'OFPPS_STP_LISTEN',
     256: 'OFPPS_STP_LEARN',
     512: 'OFPPS_STP_FORWARD',
     768: 'OFPPS_STP_BLOCK',
@@ -423,23 +432,23 @@ ofp_stats_reply_flags_map = {
     1: 'OFPSF_REPLY_MORE',
 }
 
-# Identifiers from group ofp_stats_types
+# Identifiers from group ofp_stats_type
 OFPST_DESC = 0
 OFPST_FLOW = 1
 OFPST_AGGREGATE = 2
 OFPST_TABLE = 3
 OFPST_PORT = 4
 OFPST_QUEUE = 5
-OFPST_VENDOR = 65535
+OFPST_EXPERIMENTER = 65535
 
-ofp_stats_types_map = {
+ofp_stats_type_map = {
     0: 'OFPST_DESC',
     1: 'OFPST_FLOW',
     2: 'OFPST_AGGREGATE',
     3: 'OFPST_TABLE',
     4: 'OFPST_PORT',
     5: 'OFPST_QUEUE',
-    65535: 'OFPST_VENDOR',
+    65535: 'OFPST_EXPERIMENTER',
 }
 
 # Identifiers from group ofp_type
@@ -447,7 +456,7 @@ OFPT_HELLO = 0
 OFPT_ERROR = 1
 OFPT_ECHO_REQUEST = 2
 OFPT_ECHO_REPLY = 3
-OFPT_VENDOR = 4
+OFPT_EXPERIMENTER = 4
 OFPT_FEATURES_REQUEST = 5
 OFPT_FEATURES_REPLY = 6
 OFPT_GET_CONFIG_REQUEST = 7
@@ -471,7 +480,7 @@ ofp_type_map = {
     1: 'OFPT_ERROR',
     2: 'OFPT_ECHO_REQUEST',
     3: 'OFPT_ECHO_REPLY',
-    4: 'OFPT_VENDOR',
+    4: 'OFPT_EXPERIMENTER',
     5: 'OFPT_FEATURES_REQUEST',
     6: 'OFPT_FEATURES_REPLY',
     7: 'OFPT_GET_CONFIG_REQUEST',

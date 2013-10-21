@@ -567,6 +567,114 @@ class arp_tpa_masked(OXM):
             q.breakable()
         q.text('}')
 
+class bsn_in_ports_128(OXM):
+    type_len = 196640
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = set()
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(util.pack_bitmap_128(self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        obj = bsn_in_ports_128()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 196640)
+        obj.value = util.unpack_bitmap_128(reader)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_in_ports_128 {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.pp(self.value)
+            q.breakable()
+        q.text('}')
+
+class bsn_in_ports_128_masked(OXM):
+    type_len = 196896
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = set()
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = set()
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(util.pack_bitmap_128(self.value))
+        packed.append(util.pack_bitmap_128(self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        obj = bsn_in_ports_128_masked()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 196896)
+        obj.value = util.unpack_bitmap_128(reader)
+        obj.value_mask = util.unpack_bitmap_128(reader)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_in_ports_128_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.pp(self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.pp(self.value_mask)
+            q.breakable()
+        q.text('}')
+
 class eth_dst(OXM):
     type_len = 2147485190
 
@@ -3917,6 +4025,8 @@ class vlan_vid_masked(OXM):
 
 
 parsers = {
+    196640 : bsn_in_ports_128.unpack,
+    196896 : bsn_in_ports_128_masked.unpack,
     2147483652 : in_port.unpack,
     2147483912 : in_port_masked.unpack,
     2147484164 : in_phy_port.unpack,

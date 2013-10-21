@@ -598,11 +598,11 @@ class flow_stats_entry(object):
 
 class group_desc_stats_entry(object):
 
-    def __init__(self, type=None, group_id=None, buckets=None):
-        if type != None:
-            self.type = type
+    def __init__(self, group_type=None, group_id=None, buckets=None):
+        if group_type != None:
+            self.group_type = group_type
         else:
-            self.type = 0
+            self.group_type = 0
         if group_id != None:
             self.group_id = group_id
         else:
@@ -616,7 +616,7 @@ class group_desc_stats_entry(object):
     def pack(self):
         packed = []
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 0
-        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!B", self.group_type))
         packed.append('\x00' * 1)
         packed.append(struct.pack("!L", self.group_id))
         packed.append(util.pack_list(self.buckets))
@@ -632,7 +632,7 @@ class group_desc_stats_entry(object):
         else:
             reader = loxi.generic_util.OFReader(buf)
         _length = reader.read("!H")[0]
-        obj.type = reader.read("!B")[0]
+        obj.group_type = reader.read("!B")[0]
         reader.skip(1)
         obj.group_id = reader.read("!L")[0]
         obj.buckets = common.unpack_list_bucket(reader)
@@ -640,7 +640,7 @@ class group_desc_stats_entry(object):
 
     def __eq__(self, other):
         if type(self) != type(other): return False
-        if self.type != other.type: return False
+        if self.group_type != other.group_type: return False
         if self.group_id != other.group_id: return False
         if self.buckets != other.buckets: return False
         return True
@@ -657,8 +657,8 @@ class group_desc_stats_entry(object):
         with q.group():
             with q.indent(2):
                 q.breakable()
-                q.text("type = ");
-                q.text("%#x" % self.type)
+                q.text("group_type = ");
+                q.text("%#x" % self.group_type)
                 q.text(","); q.breakable()
                 q.text("group_id = ");
                 q.text("%#x" % self.group_id)
@@ -1847,56 +1847,6 @@ class queue_stats_entry(object):
                 q.text(","); q.breakable()
                 q.text("duration_nsec = ");
                 q.text("%#x" % self.duration_nsec)
-            q.breakable()
-        q.text('}')
-
-class table_feature_prop(object):
-
-    def __init__(self, type=None):
-        if type != None:
-            self.type = type
-        else:
-            self.type = 0
-        return
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!H", self.type))
-        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
-        length = sum([len(x) for x in packed])
-        packed[1] = struct.pack("!H", length)
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(buf):
-        obj = table_feature_prop()
-        if type(buf) == loxi.generic_util.OFReader:
-            reader = buf
-        else:
-            reader = loxi.generic_util.OFReader(buf)
-        obj.type = reader.read("!H")[0]
-        _length = reader.read("!H")[0]
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.type != other.type: return False
-        return True
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def show(self):
-        import loxi.pp
-        return loxi.pp.pp(self)
-
-    def pretty_print(self, q):
-        q.text("table_feature_prop {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("type = ");
-                q.text("%#x" % self.type)
             q.breakable()
         q.text('}')
 

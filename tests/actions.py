@@ -108,8 +108,8 @@ class Announcement(base_tests.SimpleDataPlane):
             supported_actions.append('OFPAT_SET_TP_SRC')
         if(reply.actions &1<<ofp.OFPAT_SET_TP_DST):
             supported_actions.append('OFPAT_SET_TP_DST')
-        if(reply.actions &1<<ofp.OFPAT_VENDOR):
-            supported_actions.append('OFPAT_VENDOR')
+        if(reply.actions &1<<ofp.OFPAT_EXPERIMENTER):
+            supported_actions.append('OFPAT_EXPERIMENTER')
         if(reply.actions &1<<ofp.OFPAT_ENQUEUE):
             supported_actions.append('OFPAT_ENQUEUE')
         

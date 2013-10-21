@@ -1583,7 +1583,6 @@ class set_vlan_vid(Action):
 
 
 def parse_experimenter(reader):
-
     experimenter, = reader.peek("!4xL")
     if experimenter == 0x005c16c7: # Big Switch Networks
         subtype, = reader.peek("!8xL")

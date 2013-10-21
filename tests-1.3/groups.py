@@ -44,7 +44,7 @@ class GroupAdd(GroupTest):
         stats = get_stats(self, ofp.message.group_desc_stats_request())
         self.assertEquals(stats, [
             ofp.group_desc_stats_entry(
-                type=msg.group_type,
+                group_type=msg.group_type,
                 group_id=msg.group_id,
                 buckets=msg.buckets)])
 
@@ -70,7 +70,7 @@ class GroupAddMaxID(GroupTest):
         stats = get_stats(self, ofp.message.group_desc_stats_request())
         self.assertEquals(stats, [
             ofp.group_desc_stats_entry(
-                type=msg.group_type,
+                group_type=msg.group_type,
                 group_id=msg.group_id,
                 buckets=msg.buckets)])
 
@@ -89,8 +89,7 @@ class GroupAddInvalidAction(GroupTest):
                 ofp.bucket(actions=[ofp.action.output(ofp.OFPP_ANY)])])
 
         response, _ = self.controller.transact(msg)
-        self.assertIsInstance(response, ofp.message.error_msg)
-        self.assertEquals(response.err_type, ofp.OFPET_BAD_ACTION)
+        self.assertIsInstance(response, ofp.message.bad_action_error_msg)
         self.assertEquals(response.code, ofp.OFPBAC_BAD_OUT_PORT)
 
 
@@ -120,8 +119,7 @@ class GroupAddExisting(GroupTest):
                 ofp.bucket(actions=[ofp.action.output(port2)])])
 
         response, _ = self.controller.transact(msg)
-        self.assertIsInstance(response, ofp.message.error_msg)
-        self.assertEquals(response.err_type, ofp.OFPET_GROUP_MOD_FAILED)
+        self.assertIsInstance(response, ofp.message.group_mod_failed_error_msg)
         self.assertEquals(response.code, ofp.OFPGMFC_GROUP_EXISTS)
 
 
@@ -141,8 +139,7 @@ class GroupAddInvalidID(GroupTest):
                 ofp.bucket(actions=[ofp.action.output(port1)])])
 
         response, _ = self.controller.transact(msg)
-        self.assertIsInstance(response, ofp.message.error_msg)
-        self.assertEquals(response.err_type, ofp.OFPET_GROUP_MOD_FAILED)
+        self.assertIsInstance(response, ofp.message.group_mod_failed_error_msg)
         self.assertEquals(response.code, ofp.OFPGMFC_INVALID_GROUP)
 
 
@@ -162,8 +159,7 @@ class GroupAddMinimumInvalidID(GroupTest):
                 ofp.bucket(actions=[ofp.action.output(port1)])])
 
         response, _ = self.controller.transact(msg)
-        self.assertIsInstance(response, ofp.message.error_msg)
-        self.assertEquals(response.err_type, ofp.OFPET_GROUP_MOD_FAILED)
+        self.assertIsInstance(response, ofp.message.group_mod_failed_error_msg)
         self.assertEquals(response.code, ofp.OFPGMFC_INVALID_GROUP)
 
 
@@ -198,7 +194,7 @@ class GroupModify(GroupTest):
         stats = get_stats(self, ofp.message.group_desc_stats_request())
         self.assertEquals(stats, [
             ofp.group_desc_stats_entry(
-                type=msg.group_type,
+                group_type=msg.group_type,
                 group_id=msg.group_id,
                 buckets=msg.buckets)])
 
@@ -219,8 +215,7 @@ class GroupModifyNonexisting(GroupTest):
                 ofp.bucket(actions=[ofp.action.output(port1)])])
 
         response, _ = self.controller.transact(msg)
-        self.assertIsInstance(response, ofp.message.error_msg)
-        self.assertEquals(response.err_type, ofp.OFPET_GROUP_MOD_FAILED)
+        self.assertIsInstance(response, ofp.message.group_mod_failed_error_msg)
         self.assertEquals(response.code, ofp.OFPGMFC_UNKNOWN_GROUP)
 
 
@@ -270,8 +265,7 @@ class GroupModifyLoop(GroupTest):
                 ofp.bucket(actions=[ofp.action.group(2)])])
 
         response, _ = self.controller.transact(msg)
-        self.assertIsInstance(response, ofp.message.error_msg)
-        self.assertEquals(response.err_type, ofp.OFPET_GROUP_MOD_FAILED)
+        self.assertIsInstance(response, ofp.message.group_mod_failed_error_msg)
         self.assertEquals(response.code, ofp.OFPGMFC_LOOP)
 
 
@@ -291,8 +285,7 @@ class GroupModifyInvalidID(GroupTest):
                 ofp.bucket(actions=[ofp.action.output(port1)])])
 
         response, _ = self.controller.transact(msg)
-        self.assertIsInstance(response, ofp.message.error_msg)
-        self.assertEquals(response.err_type, ofp.OFPET_GROUP_MOD_FAILED)
+        self.assertIsInstance(response, ofp.message.group_mod_failed_error_msg)
         self.assertEquals(response.code, ofp.OFPGMFC_INVALID_GROUP)
 
 
@@ -326,7 +319,7 @@ class GroupModifyEmpty(GroupTest):
         stats = get_stats(self, ofp.message.group_desc_stats_request())
         self.assertEquals(stats, [
             ofp.group_desc_stats_entry(
-                type=msg.group_type,
+                group_type=msg.group_type,
                 group_id=msg.group_id,
                 buckets=msg.buckets)])
 
@@ -431,8 +424,7 @@ class GroupAddAllWeight(GroupTest):
                 ofp.bucket(weight=2, actions=[ofp.action.output(port2)])])
 
         response, _ = self.controller.transact(msg)
-        self.assertIsInstance(response, ofp.message.error_msg)
-        self.assertEquals(response.err_type, ofp.OFPET_GROUP_MOD_FAILED)
+        self.assertIsInstance(response, ofp.message.group_mod_failed_error_msg)
         self.assertEquals(response.code, ofp.OFPGMFC_INVALID_GROUP)
 
 
@@ -452,8 +444,7 @@ class GroupAddIndirectWeight(GroupTest):
                 ofp.bucket(weight=1, actions=[ofp.action.output(port1)])])
 
         response, _ = self.controller.transact(msg)
-        self.assertIsInstance(response, ofp.message.error_msg)
-        self.assertEquals(response.err_type, ofp.OFPET_GROUP_MOD_FAILED)
+        self.assertIsInstance(response, ofp.message.group_mod_failed_error_msg)
         self.assertEquals(response.code, ofp.OFPGMFC_INVALID_GROUP)
 
 
@@ -474,8 +465,7 @@ class GroupAddIndirectBuckets(GroupTest):
                 ofp.bucket(actions=[ofp.action.output(port2)])])
 
         response, _ = self.controller.transact(msg)
-        self.assertIsInstance(response, ofp.message.error_msg)
-        self.assertEquals(response.err_type, ofp.OFPET_GROUP_MOD_FAILED)
+        self.assertIsInstance(response, ofp.message.group_mod_failed_error_msg)
         self.assertEquals(response.code, ofp.OFPGMFC_INVALID_GROUP)
 
 
@@ -496,8 +486,7 @@ class GroupAddSelectNoWeight(GroupTest):
                 ofp.bucket(actions=[ofp.action.output(port2)])])
 
         response, _ = self.controller.transact(msg)
-        self.assertIsInstance(response, ofp.message.error_msg)
-        self.assertEquals(response.err_type, ofp.OFPET_GROUP_MOD_FAILED)
+        self.assertIsInstance(response, ofp.message.group_mod_failed_error_msg)
         self.assertEquals(response.code, ofp.OFPGMFC_INVALID_GROUP)
 
 
