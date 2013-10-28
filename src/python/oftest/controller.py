@@ -36,9 +36,12 @@ import logging
 from threading import Thread
 from threading import Lock
 from threading import Condition
-import ofp
-import ofutils
 
+import ofutils
+import loxi
+
+# Configured openflow version
+import ofp as cfg_ofp
 
 FILTER=''.join([(len(repr(chr(x)))==3) and chr(x) or '.' 
                 for x in range(256)])
@@ -212,7 +215,10 @@ class Controller(Thread):
                 break
 
             # Parse the header to get type
-            hdr_version, hdr_type, hdr_length, hdr_xid = ofp.message.parse_header(pkt[offset:])
+            hdr_version, hdr_type, hdr_length, hdr_xid = cfg_ofp.message.parse_header(pkt[offset:])
+
+            # Use loxi to resolve to ofp of matching version
+            ofp = loxi.protocol(hdr_version)
 
             # Extract the raw message bytes
             if (offset + hdr_length) > len(pkt):
@@ -223,15 +229,17 @@ class Controller(Thread):
             #if self.filter_packet(rawmsg, hdr):
             #    continue
 
+            # Check that supported version on switch is as least as recent as
+            # the configured Openflow version in oftests
             self.logger.debug("Msg in: version %d type %s (%d) len %d xid %d",
                               hdr_version,
-                              ofp.ofp_type_map.get(hdr_type, "unknown"), hdr_type,
+                              cfg_ofp.ofp_type_map.get(hdr_type, "unknown"), hdr_type,
                               hdr_length, hdr_version)
-            if hdr_version < ofp.OFP_VERSION:
+            if hdr_version < cfg_ofp.OFP_VERSION:
                 self.logger.error("Switch only supports up to OpenFlow version %d (OFTest version is %d)",
-                                  hdr_version, ofp.OFP_VERSION)
+                                  hdr_version, cfg_ofp.OFP_VERSION)
                 print "Switch only supports up to OpenFlow version %d (OFTest version is %d)" % \
-                    (hdr_version, ofp.OFP_VERSION)
+                    (hdr_version, cfg_ofp.OFP_VERSION)
                 self.disconnect()
                 return
 
@@ -349,7 +357,7 @@ class Controller(Thread):
                 self.switch_socket.setsockopt(socket.IPPROTO_TCP,
                                               socket.TCP_NODELAY, True)
                 if self.initial_hello:
-                    self.message_send(ofp.message.hello())
+                    self.message_send(cfg_ofp.message.hello())
                 self.connect_cv.notify() # Notify anyone waiting
 
             # Prevent further connections
@@ -474,7 +482,7 @@ class Controller(Thread):
                 self.wakeup()
                 with self.connect_cv:
                     if self.initial_hello:
-                        self.message_send(ofp.message.hello())
+                        self.message_send(cfg_ofp.message.hello())
                     self.connect_cv.notify() # Notify anyone waiting
             else:
                 self.logger.error("Could not actively connect to switch %s",
@@ -591,7 +599,7 @@ class Controller(Thread):
 
         exp_msg_str = "unspecified"
         if exp_msg is not None:
-            exp_msg_str = ofp.ofp_type_map.get(exp_msg, "unknown (%d)" % 
+            exp_msg_str = cfg_ofp.ofp_type_map.get(exp_msg, "unknown (%d)" %
                                                exp_msg)
 
         if exp_msg is not None:
@@ -610,7 +618,7 @@ class Controller(Thread):
                     self.logger.debug("Looking for %s", exp_msg_str)
                     for i in range(len(self.packets)):
                         msg = self.packets[i][0]
-                        msg_str = ofp.ofp_type_map.get(msg.type, "unknown (%d)" % msg.type)
+                        msg_str = cfg_ofp.ofp_type_map.get(msg.type, "unknown (%d)" % msg.type)
                         self.logger.debug("Checking packets[%d] %s) against %s", i, msg_str, exp_msg_str)
                         if msg.type == exp_msg:
                             (msg, pkt) = self.packets.pop(i)
@@ -690,7 +698,7 @@ class Controller(Thread):
         msg_version, msg_type, msg_len, msg_xid = struct.unpack_from("!BBHL", outpkt)
         self.logger.debug("Msg out: buf len %d. hdr.type %s. hdr.len %d hdr.version %d hdr.xid %d",
                           len(outpkt),
-                          ofp.ofp_type_map.get(msg_type, "unknown (%d)" % msg_type),
+                          cfg_ofp.ofp_type_map.get(msg_type, "unknown (%d)" % msg_type),
                           msg_len,
                           msg_version,
                           msg_xid)
