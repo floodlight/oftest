@@ -24,7 +24,7 @@ class AllFlowStats(base_tests.SimpleDataPlane):
     """
     def runTest(self):
         port1, port2, port3 = openflow_ports(3)
-        table_id = test_param_get_table()
+        table_id = test_param_get("table", 0)
         delete_all_flows(self.controller)
 
         flow1 = ofp.message.flow_add(
@@ -151,9 +151,10 @@ class CookieFlowStats(base_tests.SimpleDataPlane):
 
         # Generate a flow for each cookie
         flows = {}
+        table_id = test_param_get("table", 0)
         for idx, cookie in enumerate(cookies):
             flows[cookie] = ofp.message.flow_add(
-                table_id=test_param_get_table(),
+                table_id=table_id,
                 cookie=cookie,
                 match=ofp.match([ofp.oxm.vlan_vid(ofp.OFPVID_PRESENT|idx)]),
                 buffer_id=ofp.OFP_NO_BUFFER)

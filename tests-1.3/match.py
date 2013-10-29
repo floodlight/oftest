@@ -35,7 +35,7 @@ class MatchTest(base_tests.SimpleDataPlane):
         packet data.
         """
         in_port, out_port = openflow_ports(2)
-        table_id = test_param_get_table()
+        table_id = test_param_get("table", 0)
 
         logging.info("Running match test for %s", match.show())
 
@@ -89,7 +89,7 @@ class InPort(base_tests.SimpleDataPlane):
     """
     def runTest(self):
         in_port, out_port, bad_port = openflow_ports(3)
-        table_id = test_param_get_table()
+        table_id = test_param_get("table", 0)
 
         match = ofp.match([
             ofp.oxm.in_port(in_port)

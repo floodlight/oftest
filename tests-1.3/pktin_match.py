@@ -34,7 +34,7 @@ class PktinMatchTest(base_tests.SimpleDataPlane):
 
         logging.debug("Inserting match-all flow sending packets to controller")
         request = ofp.message.flow_add(
-            table_id=test_param_get_table(),
+            table_id=test_param_get("table", 0),
             instructions=[
                 ofp.instruction.apply_actions(
                     actions=[

@@ -94,7 +94,7 @@ class OutputExact(base_tests.SimpleDataPlane):
 
         for out_port in ports:
             request = ofp.message.flow_add(
-                    table_id=test_param_get_table(),
+                    table_id=test_param_get("table", 0),
                     cookie=42,
                     match=match,
                     instructions=[
@@ -134,7 +134,7 @@ class OutputWildcard(base_tests.SimpleDataPlane):
 
         for out_port in ports:
             request = ofp.message.flow_add(
-                    table_id=test_param_get_table(),
+                    table_id=test_param_get("table", 0),
                     cookie=42,
                     instructions=[
                         ofp.instruction.apply_actions(
@@ -171,7 +171,7 @@ class PacketInExact(base_tests.SimpleDataPlane):
         match = packet_to_flow_match(self, parsed_pkt)
 
         request = ofp.message.flow_add(
-            table_id=test_param_get_table(),
+            table_id=test_param_get("table", 0),
             cookie=42,
             match=match,
             instructions=[
@@ -206,7 +206,7 @@ class PacketInWildcard(base_tests.SimpleDataPlane):
         pkt = str(simple_tcp_packet())
 
         request = ofp.message.flow_add(
-            table_id=test_param_get_table(),
+            table_id=test_param_get("table", 0),
             cookie=42,
             instructions=[
                 ofp.instruction.apply_actions(
@@ -241,7 +241,7 @@ class PacketInMiss(base_tests.SimpleDataPlane):
         pkt = str(parsed_pkt)
 
         request = ofp.message.flow_add(
-            table_id=test_param_get_table(),
+            table_id=test_param_get("table", 0),
             cookie=42,
             instructions=[
                 ofp.instruction.apply_actions(

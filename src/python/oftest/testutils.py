@@ -970,17 +970,6 @@ def test_param_get(key, default=None):
     except:
         return default
 
-def test_param_get_table():
-    """
-    Return table_id to use.
-
-    The default table_id is 0.
-    This can be overridden by specifying "table" in --test-params.
-
-    e.g: --test-params table=1
-    """
-    return test_param_get("table", 0)
-
 def action_generate(parent, field_to_mod, mod_field_vals):
     """
     Create an action to modify the field indicated in field_to_mod
