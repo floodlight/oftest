@@ -36,7 +36,7 @@ class Output(base_tests.SimpleDataPlane):
 
         logging.info("Inserting flow")
         request = ofp.message.flow_add(
-                table_id=0,
+                table_id=test_param_get("table", 0),
                 match=packet_to_flow_match(self, pkt),
                 instructions=[
                     ofp.instruction.apply_actions(actions)],
@@ -71,7 +71,7 @@ class OutputMultiple(base_tests.SimpleDataPlane):
 
         logging.info("Inserting flow")
         request = ofp.message.flow_add(
-                table_id=0,
+                table_id=test_param_get("table", 0),
                 match=packet_to_flow_match(self, pkt),
                 instructions=[
                     ofp.instruction.apply_actions(actions)],
@@ -103,7 +103,7 @@ class BaseModifyPacketTest(base_tests.SimpleDataPlane):
 
         logging.info("Inserting flow")
         request = ofp.message.flow_add(
-                table_id=0,
+                table_id=test_param_get("table", 0),
                 match=packet_to_flow_match(self, pkt),
                 instructions=[
                     ofp.instruction.apply_actions(actions)],
