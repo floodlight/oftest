@@ -34,7 +34,7 @@ class MatchInPorts128(base_tests.SimpleDataPlane):
 
         logging.info("Inserting flow sending matching packets to port %d", out_port)
         request = ofp.message.flow_add(
-                table_id=0,
+                table_id=test_param_get_table(),
                 match=match,
                 instructions=[
                     ofp.instruction.apply_actions(
@@ -48,7 +48,7 @@ class MatchInPorts128(base_tests.SimpleDataPlane):
 
         logging.info("Inserting match-all flow sending packets to controller")
         request = ofp.message.flow_add(
-            table_id=0,
+            table_id=test_param_get_table(),
             instructions=[
                 ofp.instruction.apply_actions(
                     actions=[

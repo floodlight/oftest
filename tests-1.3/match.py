@@ -35,6 +35,7 @@ class MatchTest(base_tests.SimpleDataPlane):
         packet data.
         """
         in_port, out_port = openflow_ports(2)
+        table_id = test_param_get_table()
 
         logging.info("Running match test for %s", match.show())
 
@@ -42,7 +43,7 @@ class MatchTest(base_tests.SimpleDataPlane):
 
         logging.info("Inserting flow sending matching packets to port %d", out_port)
         request = ofp.message.flow_add(
-                table_id=0,
+                table_id=table_id,
                 match=match,
                 instructions=[
                     ofp.instruction.apply_actions(
@@ -56,7 +57,7 @@ class MatchTest(base_tests.SimpleDataPlane):
 
         logging.info("Inserting match-all flow sending packets to controller")
         request = ofp.message.flow_add(
-            table_id=0,
+            table_id=table_id,
             instructions=[
                 ofp.instruction.apply_actions(
                     actions=[
@@ -88,6 +89,7 @@ class InPort(base_tests.SimpleDataPlane):
     """
     def runTest(self):
         in_port, out_port, bad_port = openflow_ports(3)
+        table_id = test_param_get_table()
 
         match = ofp.match([
             ofp.oxm.in_port(in_port)
@@ -101,7 +103,7 @@ class InPort(base_tests.SimpleDataPlane):
 
         logging.info("Inserting flow sending matching packets to port %d", out_port)
         request = ofp.message.flow_add(
-                table_id=0,
+                table_id=table_id,
                 match=match,
                 instructions=[
                     ofp.instruction.apply_actions(
@@ -115,7 +117,7 @@ class InPort(base_tests.SimpleDataPlane):
 
         logging.info("Inserting match-all flow sending packets to controller")
         request = ofp.message.flow_add(
-            table_id=0,
+            table_id=table_id,
             instructions=[
                 ofp.instruction.apply_actions(
                     actions=[
