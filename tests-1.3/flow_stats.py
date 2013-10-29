@@ -24,10 +24,11 @@ class AllFlowStats(base_tests.SimpleDataPlane):
     """
     def runTest(self):
         port1, port2, port3 = openflow_ports(3)
+        table_id = test_param_get("table", 0)
         delete_all_flows(self.controller)
 
         flow1 = ofp.message.flow_add(
-                table_id=0,
+                table_id=table_id,
                 priority=0x11,
                 idle_timeout=0x21,
                 hard_timeout=0x31,
@@ -45,7 +46,7 @@ class AllFlowStats(base_tests.SimpleDataPlane):
                 buffer_id=ofp.OFP_NO_BUFFER)
 
         flow2 = ofp.message.flow_add(
-                table_id=0,
+                table_id=table_id,
                 priority=0x12,
                 idle_timeout=0x22,
                 hard_timeout=0x32,
@@ -63,7 +64,7 @@ class AllFlowStats(base_tests.SimpleDataPlane):
                 buffer_id=ofp.OFP_NO_BUFFER)
 
         flow3 = ofp.message.flow_add(
-                table_id=0,
+                table_id=table_id,
                 priority=0x13,
                 idle_timeout=0x23,
                 hard_timeout=0x33,
@@ -150,9 +151,10 @@ class CookieFlowStats(base_tests.SimpleDataPlane):
 
         # Generate a flow for each cookie
         flows = {}
+        table_id = test_param_get("table", 0)
         for idx, cookie in enumerate(cookies):
             flows[cookie] = ofp.message.flow_add(
-                table_id=0,
+                table_id=table_id,
                 cookie=cookie,
                 match=ofp.match([ofp.oxm.vlan_vid(ofp.OFPVID_PRESENT|idx)]),
                 buffer_id=ofp.OFP_NO_BUFFER)

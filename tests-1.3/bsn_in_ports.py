@@ -20,6 +20,7 @@ class MatchInPorts128(base_tests.SimpleDataPlane):
     """
     def runTest(self):
         in_port1, in_port2, out_port, bad_port = openflow_ports(4)
+        table_id = test_param_get("table", 0)
 
         # See the loxigen bsn_in_ports input file for encoding details
         match = ofp.match([
@@ -34,7 +35,7 @@ class MatchInPorts128(base_tests.SimpleDataPlane):
 
         logging.info("Inserting flow sending matching packets to port %d", out_port)
         request = ofp.message.flow_add(
-                table_id=0,
+                table_id=table_id,
                 match=match,
                 instructions=[
                     ofp.instruction.apply_actions(
@@ -48,7 +49,7 @@ class MatchInPorts128(base_tests.SimpleDataPlane):
 
         logging.info("Inserting match-all flow sending packets to controller")
         request = ofp.message.flow_add(
-            table_id=0,
+            table_id=table_id,
             instructions=[
                 ofp.instruction.apply_actions(
                     actions=[
