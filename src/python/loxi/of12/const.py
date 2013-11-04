@@ -501,6 +501,7 @@ OFPP_FLOOD = 4294967291
 OFPP_ALL = 4294967292
 OFPP_CONTROLLER = 4294967293
 OFPP_LOCAL = 4294967294
+OFPP_ANY = 4294967295
 
 ofp_port_map = {
     4294967040: 'OFPP_MAX',
@@ -511,6 +512,7 @@ ofp_port_map = {
     4294967292: 'OFPP_ALL',
     4294967293: 'OFPP_CONTROLLER',
     4294967294: 'OFPP_LOCAL',
+    4294967295: 'OFPP_ANY',
 }
 
 # Identifiers from group ofp_port_config
@@ -580,13 +582,6 @@ ofp_port_mod_failed_code_map = {
     4: 'OFPPMFC_EPERM',
 }
 
-# Identifiers from group ofp_port_no
-OFPP_ANY = 4294967295
-
-ofp_port_no_map = {
-    4294967295: 'OFPP_ANY',
-}
-
 # Identifiers from group ofp_port_reason
 OFPPR_ADD = 0
 OFPPR_DELETE = 1
@@ -647,6 +642,11 @@ OFPSF_REPLY_MORE = 1
 
 ofp_stats_reply_flags_map = {
     1: 'OFPSF_REPLY_MORE',
+}
+
+# Identifiers from group ofp_stats_request_flags
+
+ofp_stats_request_flags_map = {
 }
 
 # Identifiers from group ofp_stats_type

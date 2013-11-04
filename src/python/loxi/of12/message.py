@@ -6955,12 +6955,16 @@ class role_reply(Message):
     version = 3
     type = 25
 
-    def __init__(self, xid=None, data=None):
+    def __init__(self, xid=None, role=None, generation_id=None):
         self.xid = xid
-        if data != None:
-            self.data = data
+        if role != None:
+            self.role = role
         else:
-            self.data = ''
+            self.role = 0
+        if generation_id != None:
+            self.generation_id = generation_id
+        else:
+            self.generation_id = 0
 
     def pack(self):
         packed = []
@@ -6968,7 +6972,9 @@ class role_reply(Message):
         packed.append(struct.pack("!B", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
-        packed.append(self.data)
+        packed.append(struct.pack("!L", self.role))
+        packed.append('\x00' * 4)
+        packed.append(struct.pack("!Q", self.generation_id))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -6987,7 +6993,9 @@ class role_reply(Message):
         assert(_type == 25)
         _length = reader.read("!H")[0]
         obj.xid = reader.read("!L")[0]
-        obj.data = str(reader.read_all())
+        obj.role = reader.read("!L")[0]
+        reader.skip(4)
+        obj.generation_id = reader.read("!Q")[0]
         return obj
 
     def __eq__(self, other):
@@ -6995,7 +7003,8 @@ class role_reply(Message):
         if self.version != other.version: return False
         if self.type != other.type: return False
         if self.xid != other.xid: return False
-        if self.data != other.data: return False
+        if self.role != other.role: return False
+        if self.generation_id != other.generation_id: return False
         return True
 
     def __ne__(self, other):
@@ -7019,8 +7028,11 @@ class role_reply(Message):
                 else:
                     q.text('None')
                 q.text(","); q.breakable()
-                q.text("data = ");
-                q.pp(self.data)
+                q.text("role = ");
+                q.text("%#x" % self.role)
+                q.text(","); q.breakable()
+                q.text("generation_id = ");
+                q.text("%#x" % self.generation_id)
             q.breakable()
         q.text('}')
 
