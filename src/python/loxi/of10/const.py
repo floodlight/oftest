@@ -432,6 +432,11 @@ ofp_stats_reply_flags_map = {
     1: 'OFPSF_REPLY_MORE',
 }
 
+# Identifiers from group ofp_stats_request_flags
+
+ofp_stats_request_flags_map = {
+}
+
 # Identifiers from group ofp_stats_type
 OFPST_DESC = 0
 OFPST_FLOW = 1

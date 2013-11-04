@@ -567,6 +567,114 @@ class arp_tpa_masked(OXM):
             q.breakable()
         q.text('}')
 
+class bsn_global_vrf_allowed(OXM):
+    type_len = 198145
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!B", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        obj = bsn_global_vrf_allowed()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 198145)
+        obj.value = reader.read("!B")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_global_vrf_allowed {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+class bsn_global_vrf_allowed_masked(OXM):
+    type_len = 198401
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!B", self.value))
+        packed.append(struct.pack("!B", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        obj = bsn_global_vrf_allowed_masked()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 198401)
+        obj.value = reader.read("!B")[0]
+        obj.value_mask = reader.read("!B")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_global_vrf_allowed_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
 class bsn_in_ports_128(OXM):
     type_len = 196640
 
@@ -672,6 +780,546 @@ class bsn_in_ports_128_masked(OXM):
                 q.text(","); q.breakable()
                 q.text("value_mask = ");
                 q.pp(self.value_mask)
+            q.breakable()
+        q.text('}')
+
+class bsn_l3_dst_class_id(OXM):
+    type_len = 199684
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        obj = bsn_l3_dst_class_id()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 199684)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_l3_dst_class_id {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+class bsn_l3_dst_class_id_masked(OXM):
+    type_len = 199940
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        obj = bsn_l3_dst_class_id_masked()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 199940)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_l3_dst_class_id_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+class bsn_l3_interface_class_id(OXM):
+    type_len = 198660
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        obj = bsn_l3_interface_class_id()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 198660)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_l3_interface_class_id {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+class bsn_l3_interface_class_id_masked(OXM):
+    type_len = 198916
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        obj = bsn_l3_interface_class_id_masked()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 198916)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_l3_interface_class_id_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+class bsn_l3_src_class_id(OXM):
+    type_len = 199172
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        obj = bsn_l3_src_class_id()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 199172)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_l3_src_class_id {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+class bsn_l3_src_class_id_masked(OXM):
+    type_len = 199428
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        obj = bsn_l3_src_class_id_masked()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 199428)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_l3_src_class_id_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+class bsn_lag_id(OXM):
+    type_len = 197124
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        obj = bsn_lag_id()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 197124)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_lag_id {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+class bsn_lag_id_masked(OXM):
+    type_len = 197380
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        obj = bsn_lag_id_masked()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 197380)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_lag_id_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+class bsn_vrf(OXM):
+    type_len = 197636
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        obj = bsn_vrf()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 197636)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_vrf {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+class bsn_vrf_masked(OXM):
+    type_len = 197892
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        obj = bsn_vrf_masked()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 197892)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_vrf_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
             q.breakable()
         q.text('}')
 
@@ -4027,6 +4675,18 @@ class vlan_vid_masked(OXM):
 parsers = {
     196640 : bsn_in_ports_128.unpack,
     196896 : bsn_in_ports_128_masked.unpack,
+    197124 : bsn_lag_id.unpack,
+    197380 : bsn_lag_id_masked.unpack,
+    197636 : bsn_vrf.unpack,
+    197892 : bsn_vrf_masked.unpack,
+    198145 : bsn_global_vrf_allowed.unpack,
+    198401 : bsn_global_vrf_allowed_masked.unpack,
+    198660 : bsn_l3_interface_class_id.unpack,
+    198916 : bsn_l3_interface_class_id_masked.unpack,
+    199172 : bsn_l3_src_class_id.unpack,
+    199428 : bsn_l3_src_class_id_masked.unpack,
+    199684 : bsn_l3_dst_class_id.unpack,
+    199940 : bsn_l3_dst_class_id_masked.unpack,
     2147483652 : in_port.unpack,
     2147483912 : in_port_masked.unpack,
     2147484164 : in_phy_port.unpack,
