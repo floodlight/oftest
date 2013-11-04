@@ -608,11 +608,19 @@ ofp_oxm_class_map = {
 OFPR_NO_MATCH = 0
 OFPR_ACTION = 1
 OFPR_INVALID_TTL = 2
+OFPR_BSN_NEW_HOST = 128
+OFPR_BSN_STATION_MOVE = 129
+OFPR_BSN_BAD_VLAN = 130
+OFPR_BSN_DESTINATION_LOOKUP_FAILURE = 131
 
 ofp_packet_in_reason_map = {
     0: 'OFPR_NO_MATCH',
     1: 'OFPR_ACTION',
     2: 'OFPR_INVALID_TTL',
+    128: 'OFPR_BSN_NEW_HOST',
+    129: 'OFPR_BSN_STATION_MOVE',
+    130: 'OFPR_BSN_BAD_VLAN',
+    131: 'OFPR_BSN_DESTINATION_LOOKUP_FAILURE',
 }
 
 # Identifiers from group ofp_port
@@ -624,6 +632,7 @@ OFPP_FLOOD = 4294967291
 OFPP_ALL = 4294967292
 OFPP_CONTROLLER = 4294967293
 OFPP_LOCAL = 4294967294
+OFPP_ANY = 4294967295
 
 ofp_port_map = {
     4294967040: 'OFPP_MAX',
@@ -634,6 +643,7 @@ ofp_port_map = {
     4294967292: 'OFPP_ALL',
     4294967293: 'OFPP_CONTROLLER',
     4294967294: 'OFPP_LOCAL',
+    4294967295: 'OFPP_ANY',
 }
 
 # Identifiers from group ofp_port_config
@@ -701,13 +711,6 @@ ofp_port_mod_failed_code_map = {
     2: 'OFPPMFC_BAD_CONFIG',
     3: 'OFPPMFC_BAD_ADVERTISE',
     4: 'OFPPMFC_EPERM',
-}
-
-# Identifiers from group ofp_port_no
-OFPP_ANY = 4294967295
-
-ofp_port_no_map = {
-    4294967295: 'OFPP_ANY',
 }
 
 # Identifiers from group ofp_port_reason
