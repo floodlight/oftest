@@ -260,7 +260,7 @@ def packet_to_flow_match(packet, pkt_format="L2"):
     respect each profile.
     l2 => in_port, dl_src, dl_dst, dl_type, vlan_id
     l3 => in_port, nw_src, nw_dst, dl_type
-    full => in_port, dl_src, dl_dst, dl_type, vlan_id, nw_src, nw_dst
+    full => in_port, dl_src, dl_dst, dl_type, vlan_id, nw_src, nw_dst, nw_tos, nw_proto, tp_src, tp_dst
 
     @param packet The packet to use as a flow template
     @param pkt_format Currently only L2 is supported.  Will indicate the 
@@ -321,16 +321,18 @@ def packet_to_flow_match(packet, pkt_format="L2"):
             match.wildcards &= ~OFPFW_NW_SRC_MASK
             match.nw_dst = parse_ip(ip.dst)
             match.wildcards &= ~OFPFW_NW_DST_MASK
-            match.nw_tos = ip.tos
-            match.wildcards &= ~OFPFW_NW_TOS
+            if 'full' in pconf or pconf == None:
+                match.nw_tos = ip.tos
+                match.wildcards &= ~OFPFW_NW_TOS
 
-        if tcp:
-            match.nw_proto = 6
-            match.wildcards &= ~OFPFW_NW_PROTO
-        elif not tcp and udp:
-            tcp = udp
-            match.nw_proto = 17
-            match.wildcards &= ~OFPFW_NW_PROTO
+        if 'full' in pconf or pconf == None:
+            if tcp:
+                match.nw_proto = 6
+                match.wildcards &= ~OFPFW_NW_PROTO
+            elif not tcp and udp:
+                tcp = udp
+                match.nw_proto = 17
+                match.wildcards &= ~OFPFW_NW_PROTO
 
     if 'full' in pconf or pconf == None:
         if tcp:
