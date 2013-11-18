@@ -255,6 +255,12 @@ def packet_to_flow_match(packet, pkt_format="L2"):
     """
     Create a flow match that matches packet with the given wildcards
 
+    Conformance profiles are l2, l3, or full. Generated matches should
+    respect each profile.
+    l2 => in_port, dl_src, dl_dst, dl_type, vlan_id
+    l3 => in_port, nw_src, nw_dst, dl_type
+    full => in_port, dl_src, dl_dst, dl_type, vlan_id, nw_src, nw_dst
+
     @param packet The packet to use as a flow template
     @param pkt_format Currently only L2 is supported.  Will indicate the 
     overall packet type for parsing
@@ -286,6 +292,7 @@ def packet_to_flow_match(packet, pkt_format="L2"):
     match = ofp_match()
     match.wildcards = OFPFW_ALL
     #@todo Check if packet is other than L2 format
+    # If profile is not l3
     match.dl_dst = parse_mac(ether.dst)
     match.wildcards &= ~OFPFW_DL_DST
     match.dl_src = parse_mac(ether.src)
@@ -302,6 +309,7 @@ def packet_to_flow_match(packet, pkt_format="L2"):
         match.dl_vlan_pcp = 0
     match.wildcards &= ~OFPFW_DL_VLAN
     match.wildcards &= ~OFPFW_DL_VLAN_PCP
+    # End If
 
     if ip:
         match.nw_src = parse_ip(ip.src)
@@ -319,6 +327,7 @@ def packet_to_flow_match(packet, pkt_format="L2"):
         match.nw_proto = 17
         match.wildcards &= ~OFPFW_NW_PROTO
 
+    # If profile is full
     if tcp:
         match.tp_src = tcp.sport
         match.wildcards &= ~OFPFW_TP_SRC
@@ -338,5 +347,6 @@ def packet_to_flow_match(packet, pkt_format="L2"):
         match.wildcards &= ~OFPFW_NW_SRC_MASK
         match.nw_dst = parse_ip(arp.pdst)
         match.wildcards &= ~OFPFW_NW_DST_MASK
+    # End If
 
     return match
