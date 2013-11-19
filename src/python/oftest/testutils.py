@@ -418,8 +418,8 @@ def simple_arp_packet(pktlen=60,
     return pkt
 
 def simple_eth_packet(pktlen=60,
-                      eth_dst='01:80:c2:00:00:00',
-                      eth_src='00:01:02:03:04:05',
+                      eth_dst='00:01:02:03:04:05',
+                      eth_src='00:06:07:08:09:0a',
                       eth_type=0x88cc):
 
     if MINSIZE > pktlen:
