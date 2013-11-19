@@ -25,10 +25,11 @@ UDP_PROTOCOL = 0x11
 
 MINSIZE = 0
 
-def delete_all_flows(ctrl):
+def delete_all_flows(ctrl, send_barrier=True):
     """
     Delete all flows on the switch
     @param ctrl The controller object for the test
+    @param send_barrier Whether or not to send a barrier message
     """
 
     logging.info("Deleting all flows")
@@ -43,7 +44,8 @@ def delete_all_flows(ctrl):
         msg.out_port = ofp.OFPP_ANY
         msg.out_group = ofp.OFPG_ANY
     ctrl.message_send(msg)
-    do_barrier(ctrl)
+    if send_barrier:
+        do_barrier(ctrl)
     return 0 # for backwards compatibility
 
 def delete_all_groups(ctrl):
