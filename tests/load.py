@@ -287,7 +287,7 @@ class FlowRemovedLoad(base_tests.SimpleDataPlane):
         self.checkBarrier()
 
         # Trigger a flood of flow-removed messages
-        delete_all_flows(self.controller)
+        delete_all_flows(self.controller, send_barrier=False)
 
         count = 0
         while True:
