@@ -297,7 +297,7 @@ def packet_to_flow_match(packet, pkt_format="L2"):
     match = ofp_match()
     match.wildcards = OFPFW_ALL
     #@todo Check if packet is other than L2 format
-    if 'l2' in pconf or 'full' in pconf or pconf == None:
+    if pconf == None or 'l2' in pconf or 'full' in pconf:
         match.dl_dst = parse_mac(ether.dst)
         match.wildcards &= ~OFPFW_DL_DST
         match.dl_src = parse_mac(ether.src)
@@ -315,7 +315,7 @@ def packet_to_flow_match(packet, pkt_format="L2"):
         match.wildcards &= ~OFPFW_DL_VLAN
         match.wildcards &= ~OFPFW_DL_VLAN_PCP
 
-    if 'l3' in pconf or 'full' in pconf or pconf == None:
+    if pconf == None or 'l3' in pconf or 'full' in pconf:
         if ip:
             match.nw_src = parse_ip(ip.src)
             match.wildcards &= ~OFPFW_NW_SRC_MASK
@@ -325,7 +325,7 @@ def packet_to_flow_match(packet, pkt_format="L2"):
                 match.nw_tos = ip.tos
                 match.wildcards &= ~OFPFW_NW_TOS
 
-        if 'full' in pconf or pconf == None:
+        if pconf == None or 'full' in pconf:
             if tcp:
                 match.nw_proto = 6
                 match.wildcards &= ~OFPFW_NW_PROTO
@@ -334,7 +334,7 @@ def packet_to_flow_match(packet, pkt_format="L2"):
                 match.nw_proto = 17
                 match.wildcards &= ~OFPFW_NW_PROTO
 
-    if 'full' in pconf or pconf == None:
+    if pconf == None or 'full' in pconf:
         if tcp:
             match.tp_src = tcp.sport
             match.wildcards &= ~OFPFW_TP_SRC
