@@ -246,14 +246,19 @@ class Grp10No50(base_tests.SimpleProtocol):
         logging.info("Changing hello message version to 0 and sending it to control plane")
         request.header.version=0
         rv = self.controller.message_send(request)      
-          
+        
         logging.info("Expecting OFPT_ERROR message")
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,         
                                                timeout=5)
-                
+        
         self.assertTrue(response is not None, 
                                'Switch did not reply with error message')
         logging.info("Error message received") 
+
+        if response.type == ofp.OFPET_BAD_TYPE:
+            (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,         
+                                               timeout=5)
+
         self.assertTrue(response.type==ofp.OFPET_HELLO_FAILED, 
                                'Message field type is not HELLO_FAILED')
         logging.info("Received message is of type HELLO_FAILED") 
