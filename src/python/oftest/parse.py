@@ -302,8 +302,6 @@ def packet_to_flow_match(packet, pkt_format="L2"):
         match.wildcards &= ~OFPFW_DL_DST
         match.dl_src = parse_mac(ether.src)
         match.wildcards &= ~OFPFW_DL_SRC
-        match.dl_type = ether.type
-        match.wildcards &= ~OFPFW_DL_TYPE
 
         if dot1q:
             match.dl_vlan = dot1q.vlan
@@ -315,13 +313,16 @@ def packet_to_flow_match(packet, pkt_format="L2"):
         match.wildcards &= ~OFPFW_DL_VLAN
         match.wildcards &= ~OFPFW_DL_VLAN_PCP
 
+    match.dl_type = ether.type
+    match.wildcards &= ~OFPFW_DL_TYPE
+
     if pconf == None or 'l3' in pconf or 'full' in pconf:
         if ip:
             match.nw_src = parse_ip(ip.src)
             match.wildcards &= ~OFPFW_NW_SRC_MASK
             match.nw_dst = parse_ip(ip.dst)
             match.wildcards &= ~OFPFW_NW_DST_MASK
-            if 'full' in pconf or pconf == None:
+            if pconf == None or 'full' in pconf:
                 match.nw_tos = ip.tos
                 match.wildcards &= ~OFPFW_NW_TOS
 
