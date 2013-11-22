@@ -306,10 +306,25 @@ class write_metadata(Instruction):
         q.text('}')
 
 
+def parse_experimenter(reader):
+    experimenter, = reader.peek("!4xL")
+    if experimenter == 0x005c16c7: # Big Switch Networks
+        subtype, = reader.peek("!8xL")
+    else:
+        raise loxi.ProtocolError("unexpected experimenter id %#x" % experimenter)
+
+    if subtype in experimenter_parsers[experimenter]:
+        return experimenter_parsers[experimenter][subtype](reader)
+    else:
+        raise loxi.ProtocolError("unexpected experimenter id %#x subtype %#x" % (experimenter, subtype))
+
 parsers = {
     const.OFPIT_GOTO_TABLE : goto_table.unpack,
     const.OFPIT_WRITE_METADATA : write_metadata.unpack,
     const.OFPIT_WRITE_ACTIONS : write_actions.unpack,
     const.OFPIT_APPLY_ACTIONS : apply_actions.unpack,
     const.OFPIT_CLEAR_ACTIONS : clear_actions.unpack,
+}
+
+experimenter_parsers = {
 }

@@ -80,6 +80,61 @@ class apply_actions(Instruction):
             q.breakable()
         q.text('}')
 
+class bsn_disable_src_mac_check(Instruction):
+    type = 65535
+    experimenter = 6035143
+    subtype = 0
+
+    def __init__(self):
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        packed.append('\x00' * 4)
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        obj = bsn_disable_src_mac_check()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _type = reader.read("!H")[0]
+        assert(_type == 65535)
+        _len = reader.read("!H")[0]
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _subtype = reader.read("!L")[0]
+        assert(_subtype == 0)
+        reader.skip(4)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("bsn_disable_src_mac_check {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+            q.breakable()
+        q.text('}')
+
 class clear_actions(Instruction):
     type = 5
 
@@ -360,6 +415,18 @@ class write_metadata(Instruction):
         q.text('}')
 
 
+def parse_experimenter(reader):
+    experimenter, = reader.peek("!4xL")
+    if experimenter == 0x005c16c7: # Big Switch Networks
+        subtype, = reader.peek("!8xL")
+    else:
+        raise loxi.ProtocolError("unexpected experimenter id %#x" % experimenter)
+
+    if subtype in experimenter_parsers[experimenter]:
+        return experimenter_parsers[experimenter][subtype](reader)
+    else:
+        raise loxi.ProtocolError("unexpected experimenter id %#x subtype %#x" % (experimenter, subtype))
+
 parsers = {
     const.OFPIT_GOTO_TABLE : goto_table.unpack,
     const.OFPIT_WRITE_METADATA : write_metadata.unpack,
@@ -367,4 +434,11 @@ parsers = {
     const.OFPIT_APPLY_ACTIONS : apply_actions.unpack,
     const.OFPIT_CLEAR_ACTIONS : clear_actions.unpack,
     const.OFPIT_METER : meter.unpack,
+    const.OFPIT_EXPERIMENTER : parse_experimenter,
+}
+
+experimenter_parsers = {
+    6035143 : {
+        0: bsn_disable_src_mac_check.unpack,
+    },
 }
