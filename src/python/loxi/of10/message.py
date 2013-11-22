@@ -1845,12 +1845,20 @@ class bsn_pdu_rx_reply(Message):
     experimenter = 6035143
     subtype = 34
 
-    def __init__(self, xid=None, status=None):
+    def __init__(self, xid=None, status=None, port_no=None, slot_num=None):
         self.xid = xid
         if status != None:
             self.status = status
         else:
             self.status = 0
+        if port_no != None:
+            self.port_no = port_no
+        else:
+            self.port_no = 0
+        if slot_num != None:
+            self.slot_num = slot_num
+        else:
+            self.slot_num = 0
 
     def pack(self):
         packed = []
@@ -1861,6 +1869,8 @@ class bsn_pdu_rx_reply(Message):
         packed.append(struct.pack("!L", self.experimenter))
         packed.append(struct.pack("!L", self.subtype))
         packed.append(struct.pack("!L", self.status))
+        packed.append(util.pack_port_no(self.port_no))
+        packed.append(struct.pack("!B", self.slot_num))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -1884,6 +1894,8 @@ class bsn_pdu_rx_reply(Message):
         _subtype = reader.read("!L")[0]
         assert(_subtype == 34)
         obj.status = reader.read("!L")[0]
+        obj.port_no = util.unpack_port_no(reader)
+        obj.slot_num = reader.read("!B")[0]
         return obj
 
     def __eq__(self, other):
@@ -1892,6 +1904,8 @@ class bsn_pdu_rx_reply(Message):
         if self.type != other.type: return False
         if self.xid != other.xid: return False
         if self.status != other.status: return False
+        if self.port_no != other.port_no: return False
+        if self.slot_num != other.slot_num: return False
         return True
 
     def __ne__(self, other):
@@ -1917,6 +1931,12 @@ class bsn_pdu_rx_reply(Message):
                 q.text(","); q.breakable()
                 q.text("status = ");
                 q.text("%#x" % self.status)
+                q.text(","); q.breakable()
+                q.text("port_no = ");
+                q.text(util.pretty_port(self.port_no))
+                q.text(","); q.breakable()
+                q.text("slot_num = ");
+                q.text("%#x" % self.slot_num)
             q.breakable()
         q.text('}')
 
@@ -2130,12 +2150,20 @@ class bsn_pdu_tx_reply(Message):
     experimenter = 6035143
     subtype = 32
 
-    def __init__(self, xid=None, status=None):
+    def __init__(self, xid=None, status=None, port_no=None, slot_num=None):
         self.xid = xid
         if status != None:
             self.status = status
         else:
             self.status = 0
+        if port_no != None:
+            self.port_no = port_no
+        else:
+            self.port_no = 0
+        if slot_num != None:
+            self.slot_num = slot_num
+        else:
+            self.slot_num = 0
 
     def pack(self):
         packed = []
@@ -2146,6 +2174,8 @@ class bsn_pdu_tx_reply(Message):
         packed.append(struct.pack("!L", self.experimenter))
         packed.append(struct.pack("!L", self.subtype))
         packed.append(struct.pack("!L", self.status))
+        packed.append(util.pack_port_no(self.port_no))
+        packed.append(struct.pack("!B", self.slot_num))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -2169,6 +2199,8 @@ class bsn_pdu_tx_reply(Message):
         _subtype = reader.read("!L")[0]
         assert(_subtype == 32)
         obj.status = reader.read("!L")[0]
+        obj.port_no = util.unpack_port_no(reader)
+        obj.slot_num = reader.read("!B")[0]
         return obj
 
     def __eq__(self, other):
@@ -2177,6 +2209,8 @@ class bsn_pdu_tx_reply(Message):
         if self.type != other.type: return False
         if self.xid != other.xid: return False
         if self.status != other.status: return False
+        if self.port_no != other.port_no: return False
+        if self.slot_num != other.slot_num: return False
         return True
 
     def __ne__(self, other):
@@ -2202,6 +2236,12 @@ class bsn_pdu_tx_reply(Message):
                 q.text(","); q.breakable()
                 q.text("status = ");
                 q.text("%#x" % self.status)
+                q.text(","); q.breakable()
+                q.text("port_no = ");
+                q.text(util.pretty_port(self.port_no))
+                q.text(","); q.breakable()
+                q.text("slot_num = ");
+                q.text("%#x" % self.slot_num)
             q.breakable()
         q.text('}')
 
@@ -7189,6 +7229,15 @@ def parse_flow_mod(buf):
     else:
         raise loxi.ProtocolError("unexpected flow mod cmd %u" % cmd)
 
+def parse_group_mod(buf):
+    if len(buf) < 8 + 2:
+        raise loxi.ProtocolError("message too short")
+    cmd, = struct.unpack_from("!H", buf, 8)
+    if cmd in flow_mod_parsers:
+        return group_mod_parsers[cmd](buf)
+    else:
+        raise loxi.ProtocolError("unexpected group mod cmd %u" % cmd)
+
 def parse_stats_reply(buf):
     if len(buf) < 8 + 2:
         raise loxi.ProtocolError("message too short")
@@ -7206,6 +7255,30 @@ def parse_stats_request(buf):
         return stats_request_parsers[stats_type](buf)
     else:
         raise loxi.ProtocolError("unexpected stats type %u" % stats_type)
+
+def parse_experimenter_stats_request(buf):
+    if len(buf) < 24:
+        raise loxi.ProtocolError("experimenter stats request message too short")
+
+    experimenter, exp_type = struct.unpack_from("!LL", buf, 16)
+
+    if experimenter in experimenter_stats_request_parsers and \
+            exp_type in experimenter_stats_request_parsers[experimenter]:
+        return experimenter_stats_request_parsers[experimenter][exp_type](buf)
+    else:
+        raise loxi.ProtocolError("unexpected stats request experimenter %#x exp_type %#x" % (experimenter, exp_type))
+
+def parse_experimenter_stats_reply(buf):
+    if len(buf) < 24:
+        raise loxi.ProtocolError("experimenter stats reply message too short")
+
+    experimenter, exp_type = struct.unpack_from("!LL", buf, 16)
+
+    if experimenter in experimenter_stats_reply_parsers and \
+            exp_type in experimenter_stats_reply_parsers[experimenter]:
+        return experimenter_stats_reply_parsers[experimenter][exp_type](buf)
+    else:
+        raise loxi.ProtocolError("unexpected stats reply experimenter %#x exp_type %#x" % (experimenter, exp_type))
 
 def parse_experimenter(buf):
     if len(buf) < 16:
@@ -7267,6 +7340,7 @@ flow_mod_parsers = {
     const.OFPFC_DELETE_STRICT : flow_delete_strict.unpack,
 }
 
+
 stats_reply_parsers = {
     const.OFPST_DESC : desc_stats_reply.unpack,
     const.OFPST_FLOW : flow_stats_reply.unpack,
@@ -7274,6 +7348,7 @@ stats_reply_parsers = {
     const.OFPST_TABLE : table_stats_reply.unpack,
     const.OFPST_PORT : port_stats_reply.unpack,
     const.OFPST_QUEUE : queue_stats_reply.unpack,
+    const.OFPST_EXPERIMENTER : parse_experimenter_stats_reply,
 }
 
 stats_request_parsers = {
@@ -7283,6 +7358,7 @@ stats_request_parsers = {
     const.OFPST_TABLE : table_stats_request.unpack,
     const.OFPST_PORT : port_stats_request.unpack,
     const.OFPST_QUEUE : queue_stats_request.unpack,
+    const.OFPST_EXPERIMENTER : parse_experimenter_stats_request,
 }
 
 experimenter_parsers = {
@@ -7325,5 +7401,15 @@ experimenter_parsers = {
         15: bsn_virtual_port_create_request.unpack,
         26: bsn_virtual_port_remove_reply.unpack,
         17: bsn_virtual_port_remove_request.unpack,
+    },
+}
+
+experimenter_stats_request_parsers = {
+    0x005c16c7: {
+    },
+}
+
+experimenter_stats_reply_parsers = {
+    0x005c16c7: {
     },
 }

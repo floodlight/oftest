@@ -25,6 +25,17 @@ OFPQ_ALL = 4294967295
 OFPQ_MAX_RATE_UNCFG = 65535
 OFPQ_MIN_RATE_UNCFG = 65535
 
+# Identifiers from group of_bsn_lacp_convergence_status_t
+LACP_SUCCESS = 0
+LACP_TIMEDOUT = 1
+LACP_OUT_OF_SYNC = 2
+
+of_bsn_lacp_convergence_status_t_map = {
+    0: 'LACP_SUCCESS',
+    1: 'LACP_TIMEDOUT',
+    2: 'LACP_OUT_OF_SYNC',
+}
+
 # Identifiers from group of_bsn_pdu_slot_num_t
 BSN_PDU_SLOT_NUM_ANY = 255
 
