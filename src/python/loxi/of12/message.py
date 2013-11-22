@@ -1548,12 +1548,20 @@ class bsn_pdu_rx_reply(Message):
     experimenter = 6035143
     subtype = 34
 
-    def __init__(self, xid=None, status=None):
+    def __init__(self, xid=None, status=None, port_no=None, slot_num=None):
         self.xid = xid
         if status != None:
             self.status = status
         else:
             self.status = 0
+        if port_no != None:
+            self.port_no = port_no
+        else:
+            self.port_no = 0
+        if slot_num != None:
+            self.slot_num = slot_num
+        else:
+            self.slot_num = 0
 
     def pack(self):
         packed = []
@@ -1564,6 +1572,8 @@ class bsn_pdu_rx_reply(Message):
         packed.append(struct.pack("!L", self.experimenter))
         packed.append(struct.pack("!L", self.subtype))
         packed.append(struct.pack("!L", self.status))
+        packed.append(util.pack_port_no(self.port_no))
+        packed.append(struct.pack("!B", self.slot_num))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -1587,6 +1597,8 @@ class bsn_pdu_rx_reply(Message):
         _subtype = reader.read("!L")[0]
         assert(_subtype == 34)
         obj.status = reader.read("!L")[0]
+        obj.port_no = util.unpack_port_no(reader)
+        obj.slot_num = reader.read("!B")[0]
         return obj
 
     def __eq__(self, other):
@@ -1595,6 +1607,8 @@ class bsn_pdu_rx_reply(Message):
         if self.type != other.type: return False
         if self.xid != other.xid: return False
         if self.status != other.status: return False
+        if self.port_no != other.port_no: return False
+        if self.slot_num != other.slot_num: return False
         return True
 
     def __ne__(self, other):
@@ -1620,6 +1634,12 @@ class bsn_pdu_rx_reply(Message):
                 q.text(","); q.breakable()
                 q.text("status = ");
                 q.text("%#x" % self.status)
+                q.text(","); q.breakable()
+                q.text("port_no = ");
+                q.text(util.pretty_port(self.port_no))
+                q.text(","); q.breakable()
+                q.text("slot_num = ");
+                q.text("%#x" % self.slot_num)
             q.breakable()
         q.text('}')
 
@@ -1833,12 +1853,20 @@ class bsn_pdu_tx_reply(Message):
     experimenter = 6035143
     subtype = 32
 
-    def __init__(self, xid=None, status=None):
+    def __init__(self, xid=None, status=None, port_no=None, slot_num=None):
         self.xid = xid
         if status != None:
             self.status = status
         else:
             self.status = 0
+        if port_no != None:
+            self.port_no = port_no
+        else:
+            self.port_no = 0
+        if slot_num != None:
+            self.slot_num = slot_num
+        else:
+            self.slot_num = 0
 
     def pack(self):
         packed = []
@@ -1849,6 +1877,8 @@ class bsn_pdu_tx_reply(Message):
         packed.append(struct.pack("!L", self.experimenter))
         packed.append(struct.pack("!L", self.subtype))
         packed.append(struct.pack("!L", self.status))
+        packed.append(util.pack_port_no(self.port_no))
+        packed.append(struct.pack("!B", self.slot_num))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -1872,6 +1902,8 @@ class bsn_pdu_tx_reply(Message):
         _subtype = reader.read("!L")[0]
         assert(_subtype == 32)
         obj.status = reader.read("!L")[0]
+        obj.port_no = util.unpack_port_no(reader)
+        obj.slot_num = reader.read("!B")[0]
         return obj
 
     def __eq__(self, other):
@@ -1880,6 +1912,8 @@ class bsn_pdu_tx_reply(Message):
         if self.type != other.type: return False
         if self.xid != other.xid: return False
         if self.status != other.status: return False
+        if self.port_no != other.port_no: return False
+        if self.slot_num != other.slot_num: return False
         return True
 
     def __ne__(self, other):
@@ -1905,6 +1939,12 @@ class bsn_pdu_tx_reply(Message):
                 q.text(","); q.breakable()
                 q.text("status = ");
                 q.text("%#x" % self.status)
+                q.text(","); q.breakable()
+                q.text("port_no = ");
+                q.text(util.pretty_port(self.port_no))
+                q.text(","); q.breakable()
+                q.text("slot_num = ");
+                q.text("%#x" % self.slot_num)
             q.breakable()
         q.text('}')
 
@@ -4864,6 +4904,204 @@ class get_config_request(Message):
             q.breakable()
         q.text('}')
 
+class group_add(Message):
+    version = 3
+    type = 15
+    command = 0
+
+    def __init__(self, xid=None, group_type=None, group_id=None, buckets=None):
+        self.xid = xid
+        if group_type != None:
+            self.group_type = group_type
+        else:
+            self.group_type = 0
+        if group_id != None:
+            self.group_id = group_id
+        else:
+            self.group_id = 0
+        if buckets != None:
+            self.buckets = buckets
+        else:
+            self.buckets = []
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.command))
+        packed.append(struct.pack("!B", self.group_type))
+        packed.append('\x00' * 1)
+        packed.append(struct.pack("!L", self.group_id))
+        packed.append(util.pack_list(self.buckets))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = group_add()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 3)
+        _type = reader.read("!B")[0]
+        assert(_type == 15)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _command = reader.read("!H")[0]
+        assert(_command == 0)
+        obj.group_type = reader.read("!B")[0]
+        reader.skip(1)
+        obj.group_id = reader.read("!L")[0]
+        obj.buckets = common.unpack_list_bucket(reader)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.group_type != other.group_type: return False
+        if self.group_id != other.group_id: return False
+        if self.buckets != other.buckets: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("group_add {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("group_type = ");
+                q.text("%#x" % self.group_type)
+                q.text(","); q.breakable()
+                q.text("group_id = ");
+                q.text("%#x" % self.group_id)
+                q.text(","); q.breakable()
+                q.text("buckets = ");
+                q.pp(self.buckets)
+            q.breakable()
+        q.text('}')
+
+class group_delete(Message):
+    version = 3
+    type = 15
+    command = 2
+
+    def __init__(self, xid=None, group_type=None, group_id=None, buckets=None):
+        self.xid = xid
+        if group_type != None:
+            self.group_type = group_type
+        else:
+            self.group_type = 0
+        if group_id != None:
+            self.group_id = group_id
+        else:
+            self.group_id = 0
+        if buckets != None:
+            self.buckets = buckets
+        else:
+            self.buckets = []
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.command))
+        packed.append(struct.pack("!B", self.group_type))
+        packed.append('\x00' * 1)
+        packed.append(struct.pack("!L", self.group_id))
+        packed.append(util.pack_list(self.buckets))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = group_delete()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 3)
+        _type = reader.read("!B")[0]
+        assert(_type == 15)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _command = reader.read("!H")[0]
+        assert(_command == 2)
+        obj.group_type = reader.read("!B")[0]
+        reader.skip(1)
+        obj.group_id = reader.read("!L")[0]
+        obj.buckets = common.unpack_list_bucket(reader)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.group_type != other.group_type: return False
+        if self.group_id != other.group_id: return False
+        if self.buckets != other.buckets: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("group_delete {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("group_type = ");
+                q.text("%#x" % self.group_type)
+                q.text(","); q.breakable()
+                q.text("group_id = ");
+                q.text("%#x" % self.group_id)
+                q.text(","); q.breakable()
+                q.text("buckets = ");
+                q.pp(self.buckets)
+            q.breakable()
+        q.text('}')
+
 class group_desc_stats_reply(Message):
     version = 3
     type = 19
@@ -5290,111 +5528,6 @@ class group_features_stats_request(Message):
             q.breakable()
         q.text('}')
 
-class group_mod(Message):
-    version = 3
-    type = 15
-
-    def __init__(self, xid=None, command=None, group_type=None, group_id=None, buckets=None):
-        self.xid = xid
-        if command != None:
-            self.command = command
-        else:
-            self.command = 0
-        if group_type != None:
-            self.group_type = group_type
-        else:
-            self.group_type = 0
-        if group_id != None:
-            self.group_id = group_id
-        else:
-            self.group_id = 0
-        if buckets != None:
-            self.buckets = buckets
-        else:
-            self.buckets = []
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!B", self.version))
-        packed.append(struct.pack("!B", self.type))
-        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
-        packed.append(struct.pack("!L", self.xid))
-        packed.append(struct.pack("!H", self.command))
-        packed.append(struct.pack("!B", self.group_type))
-        packed.append('\x00' * 1)
-        packed.append(struct.pack("!L", self.group_id))
-        packed.append(util.pack_list(self.buckets))
-        length = sum([len(x) for x in packed])
-        packed[2] = struct.pack("!H", length)
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(buf):
-        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
-        obj = group_mod()
-        if type(buf) == loxi.generic_util.OFReader:
-            reader = buf
-        else:
-            reader = loxi.generic_util.OFReader(buf)
-        _version = reader.read("!B")[0]
-        assert(_version == 3)
-        _type = reader.read("!B")[0]
-        assert(_type == 15)
-        _length = reader.read("!H")[0]
-        obj.xid = reader.read("!L")[0]
-        obj.command = reader.read("!H")[0]
-        obj.group_type = reader.read("!B")[0]
-        reader.skip(1)
-        obj.group_id = reader.read("!L")[0]
-        obj.buckets = common.unpack_list_bucket(reader)
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.version != other.version: return False
-        if self.type != other.type: return False
-        if self.xid != other.xid: return False
-        if self.command != other.command: return False
-        if self.group_type != other.group_type: return False
-        if self.group_id != other.group_id: return False
-        if self.buckets != other.buckets: return False
-        return True
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __str__(self):
-        return self.show()
-
-    def show(self):
-        import loxi.pp
-        return loxi.pp.pp(self)
-
-    def pretty_print(self, q):
-        q.text("group_mod {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("xid = ");
-                if self.xid != None:
-                    q.text("%#x" % self.xid)
-                else:
-                    q.text('None')
-                q.text(","); q.breakable()
-                q.text("command = ");
-                q.text("%#x" % self.command)
-                q.text(","); q.breakable()
-                q.text("group_type = ");
-                q.text("%#x" % self.group_type)
-                q.text(","); q.breakable()
-                q.text("group_id = ");
-                q.text("%#x" % self.group_id)
-                q.text(","); q.breakable()
-                q.text("buckets = ");
-                q.pp(self.buckets)
-            q.breakable()
-        q.text('}')
-
 class group_mod_failed_error_msg(Message):
     version = 3
     type = 1
@@ -5479,6 +5612,105 @@ class group_mod_failed_error_msg(Message):
                 q.text(","); q.breakable()
                 q.text("data = ");
                 q.pp(self.data)
+            q.breakable()
+        q.text('}')
+
+class group_modify(Message):
+    version = 3
+    type = 15
+    command = 1
+
+    def __init__(self, xid=None, group_type=None, group_id=None, buckets=None):
+        self.xid = xid
+        if group_type != None:
+            self.group_type = group_type
+        else:
+            self.group_type = 0
+        if group_id != None:
+            self.group_id = group_id
+        else:
+            self.group_id = 0
+        if buckets != None:
+            self.buckets = buckets
+        else:
+            self.buckets = []
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.command))
+        packed.append(struct.pack("!B", self.group_type))
+        packed.append('\x00' * 1)
+        packed.append(struct.pack("!L", self.group_id))
+        packed.append(util.pack_list(self.buckets))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(buf):
+        if len(buf) < 8: raise loxi.ProtocolError("buffer too short to contain an OpenFlow message")
+        obj = group_modify()
+        if type(buf) == loxi.generic_util.OFReader:
+            reader = buf
+        else:
+            reader = loxi.generic_util.OFReader(buf)
+        _version = reader.read("!B")[0]
+        assert(_version == 3)
+        _type = reader.read("!B")[0]
+        assert(_type == 15)
+        _length = reader.read("!H")[0]
+        obj.xid = reader.read("!L")[0]
+        _command = reader.read("!H")[0]
+        assert(_command == 1)
+        obj.group_type = reader.read("!B")[0]
+        reader.skip(1)
+        obj.group_id = reader.read("!L")[0]
+        obj.buckets = common.unpack_list_bucket(reader)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.version != other.version: return False
+        if self.type != other.type: return False
+        if self.xid != other.xid: return False
+        if self.group_type != other.group_type: return False
+        if self.group_id != other.group_id: return False
+        if self.buckets != other.buckets: return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.show()
+
+    def show(self):
+        import loxi.pp
+        return loxi.pp.pp(self)
+
+    def pretty_print(self, q):
+        q.text("group_modify {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("group_type = ");
+                q.text("%#x" % self.group_type)
+                q.text(","); q.breakable()
+                q.text("group_id = ");
+                q.text("%#x" % self.group_id)
+                q.text(","); q.breakable()
+                q.text("buckets = ");
+                q.pp(self.buckets)
             q.breakable()
         q.text('}')
 
@@ -7754,6 +7986,15 @@ def parse_flow_mod(buf):
     else:
         raise loxi.ProtocolError("unexpected flow mod cmd %u" % cmd)
 
+def parse_group_mod(buf):
+    if len(buf) < 8 + 2:
+        raise loxi.ProtocolError("message too short")
+    cmd, = struct.unpack_from("!H", buf, 8)
+    if cmd in flow_mod_parsers:
+        return group_mod_parsers[cmd](buf)
+    else:
+        raise loxi.ProtocolError("unexpected group mod cmd %u" % cmd)
+
 def parse_stats_reply(buf):
     if len(buf) < 8 + 2:
         raise loxi.ProtocolError("message too short")
@@ -7771,6 +8012,30 @@ def parse_stats_request(buf):
         return stats_request_parsers[stats_type](buf)
     else:
         raise loxi.ProtocolError("unexpected stats type %u" % stats_type)
+
+def parse_experimenter_stats_request(buf):
+    if len(buf) < 24:
+        raise loxi.ProtocolError("experimenter stats request message too short")
+
+    experimenter, exp_type = struct.unpack_from("!LL", buf, 16)
+
+    if experimenter in experimenter_stats_request_parsers and \
+            exp_type in experimenter_stats_request_parsers[experimenter]:
+        return experimenter_stats_request_parsers[experimenter][exp_type](buf)
+    else:
+        raise loxi.ProtocolError("unexpected stats request experimenter %#x exp_type %#x" % (experimenter, exp_type))
+
+def parse_experimenter_stats_reply(buf):
+    if len(buf) < 24:
+        raise loxi.ProtocolError("experimenter stats reply message too short")
+
+    experimenter, exp_type = struct.unpack_from("!LL", buf, 16)
+
+    if experimenter in experimenter_stats_reply_parsers and \
+            exp_type in experimenter_stats_reply_parsers[experimenter]:
+        return experimenter_stats_reply_parsers[experimenter][exp_type](buf)
+    else:
+        raise loxi.ProtocolError("unexpected stats reply experimenter %#x exp_type %#x" % (experimenter, exp_type))
 
 def parse_experimenter(buf):
     if len(buf) < 16:
@@ -7805,7 +8070,7 @@ parsers = {
     const.OFPT_PORT_STATUS : port_status.unpack,
     const.OFPT_PACKET_OUT : packet_out.unpack,
     const.OFPT_FLOW_MOD : parse_flow_mod,
-    const.OFPT_GROUP_MOD : group_mod.unpack,
+    const.OFPT_GROUP_MOD : parse_group_mod,
     const.OFPT_PORT_MOD : port_mod.unpack,
     const.OFPT_TABLE_MOD : table_mod.unpack,
     const.OFPT_STATS_REQUEST : parse_stats_request,
@@ -7842,6 +8107,12 @@ flow_mod_parsers = {
     const.OFPFC_DELETE_STRICT : flow_delete_strict.unpack,
 }
 
+group_mod_parsers = {
+    const.OFPGC_ADD : group_add.unpack,
+    const.OFPGC_MODIFY : group_modify.unpack,
+    const.OFPGC_DELETE : group_delete.unpack,
+}
+
 stats_reply_parsers = {
     const.OFPST_DESC : desc_stats_reply.unpack,
     const.OFPST_FLOW : flow_stats_reply.unpack,
@@ -7849,6 +8120,7 @@ stats_reply_parsers = {
     const.OFPST_TABLE : table_stats_reply.unpack,
     const.OFPST_PORT : port_stats_reply.unpack,
     const.OFPST_QUEUE : queue_stats_reply.unpack,
+    const.OFPST_EXPERIMENTER : parse_experimenter_stats_reply,
     const.OFPST_GROUP : group_stats_reply.unpack,
     const.OFPST_GROUP_DESC : group_desc_stats_reply.unpack,
     const.OFPST_GROUP_FEATURES : group_features_stats_reply.unpack,
@@ -7861,6 +8133,7 @@ stats_request_parsers = {
     const.OFPST_TABLE : table_stats_request.unpack,
     const.OFPST_PORT : port_stats_request.unpack,
     const.OFPST_QUEUE : queue_stats_request.unpack,
+    const.OFPST_EXPERIMENTER : parse_experimenter_stats_request,
     const.OFPST_GROUP : group_stats_request.unpack,
     const.OFPST_GROUP_DESC : group_desc_stats_request.unpack,
     const.OFPST_GROUP_FEATURES : group_features_stats_request.unpack,
@@ -7890,5 +8163,15 @@ experimenter_parsers = {
         15: bsn_virtual_port_create_request.unpack,
         26: bsn_virtual_port_remove_reply.unpack,
         17: bsn_virtual_port_remove_request.unpack,
+    },
+}
+
+experimenter_stats_request_parsers = {
+    0x005c16c7: {
+    },
+}
+
+experimenter_stats_reply_parsers = {
+    0x005c16c7: {
     },
 }
