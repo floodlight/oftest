@@ -55,8 +55,7 @@ def delete_all_groups(ctrl):
     """
 
     logging.info("Deleting all groups")
-    msg = ofp.message.group_mod(
-        command=ofp.OFPGC_DELETE, group_id=ofp.OFPG_ALL)
+    msg = ofp.message.group_delete(group_id=ofp.OFPG_ALL)
     ctrl.message_send(msg)
     do_barrier(ctrl)
 
