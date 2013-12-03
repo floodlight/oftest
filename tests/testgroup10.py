@@ -255,7 +255,7 @@ class Grp10No50(base_tests.SimpleProtocol):
                                'Switch did not reply with error message')
         logging.info("Error message received") 
 
-        if response.type == ofp.OFPET_BAD_TYPE:
+        if response.type == ofp.OFPET_BAD_REQUEST:
             (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,         
                                                timeout=5)
 
