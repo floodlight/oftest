@@ -786,8 +786,10 @@ def verify_tablestats(self,expect_lookup=None,expect_match=None,expect_active=No
 
 
 def verify_flowstats(self,match,byte_count=None,packet_count=None):
-    # Verify flow counters : byte_count and packet_count
-
+    '''
+    Ensures that packet_count packets and byte_count bytes have
+    been recorded and are advertised by dut.
+    '''
     stat_req = message.flow_stats_request()
     stat_req.match = match
     stat_req.table_id = 0xff
@@ -809,19 +811,18 @@ def verify_flowstats(self,match,byte_count=None,packet_count=None):
             packet_counter += item.packet_count
             byte_counter += item.byte_count
 
-            logging.info("packet_counter" + str(item.packet_count) + " packets")
-           
-            logging.info("byte_counter" + str(item.byte_count) + "bytes")
+            logging.info("packet_counter " + str(item.packet_count) + " packets")
+            logging.info("byte_counter " + str(item.byte_count) + " bytes")
            
         if packet_count != None  and  packet_count != packet_counter: continue
         if byte_count != None  and  byte_count != byte_counter: continue
         break
 
     if packet_count != None :
-        self.assertEqual(packet_count,item.packet_count,"packet_count counter is not incremented correctly")
+        self.assertEqual(packet_count, packet_counter, "Expected packet count of {0} recived {1} instead.".format(packet_count, packet_counter))
 
     if byte_count != None :   
-        self.assertEqual(byte_count,item.byte_count,"byte_count counter is not incremented correctly")
+        self.assertEqual(byte_count, byte_counter, "Expected byte count of {0} received {1} instead.".format(byte_count, byte_counter))
 
 
 def verify_portstats(self, port,tx_packets=None,rx_packets=None,rx_byte=None,tx_byte=None):
