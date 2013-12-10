@@ -9,6 +9,7 @@ from error import *
 from action import *
 from action_list import action_list
 from cstruct import *
+from oftest import config
 try:
     import scapy.all as scapy
 except:
@@ -251,9 +252,15 @@ def packet_type_classify(ether):
         arp = None
     return (dot1q, ip, tcp, udp, icmp, arp)
 
-def packet_to_flow_match(packet, pkt_format="L2"):
+def packet_to_flow_match(packet, pkt_format="L2", match_on_arp=False):
     """
     Create a flow match that matches packet with the given wildcards
+
+    Conformance profiles are l2, l3, or full. Generated matches should
+    respect each profile.
+    l2 => in_port, dl_src, dl_dst, dl_type, vlan_id
+    l3 => in_port, nw_src, nw_dst, dl_type
+    full => in_port, dl_src, dl_dst, dl_type, vlan_id, nw_src, nw_dst, nw_tos, nw_proto, tp_src, tp_dst
 
     @param packet The packet to use as a flow template
     @param pkt_format Currently only L2 is supported.  Will indicate the 
@@ -266,6 +273,10 @@ def packet_to_flow_match(packet, pkt_format="L2"):
     @todo Check if packet is other than L2 format
     @todo Implement ICMP and ARP fields
     """
+    if config['conformance'] == None:
+        pconf = None
+    else:
+        pconf = config['conformance'].split('+')
     #@todo check min length of packet
     if pkt_format.upper() != "L2":
         parse_logger.error("Only L2 supported for packet_to_flow")
@@ -286,57 +297,65 @@ def packet_to_flow_match(packet, pkt_format="L2"):
     match = ofp_match()
     match.wildcards = OFPFW_ALL
     #@todo Check if packet is other than L2 format
-    match.dl_dst = parse_mac(ether.dst)
-    match.wildcards &= ~OFPFW_DL_DST
-    match.dl_src = parse_mac(ether.src)
-    match.wildcards &= ~OFPFW_DL_SRC
+    if pconf == None or 'l2' in pconf or 'full' in pconf:
+        match.dl_dst = parse_mac(ether.dst)
+        match.wildcards &= ~OFPFW_DL_DST
+        match.dl_src = parse_mac(ether.src)
+        match.wildcards &= ~OFPFW_DL_SRC
+
+        if dot1q:
+            match.dl_vlan = dot1q.vlan
+            match.dl_vlan_pcp = dot1q.prio
+            match.dl_type = dot1q.type
+        else:
+            match.dl_vlan = OFP_VLAN_NONE
+            match.dl_vlan_pcp = 0
+        match.wildcards &= ~OFPFW_DL_VLAN
+        match.wildcards &= ~OFPFW_DL_VLAN_PCP
+
     match.dl_type = ether.type
     match.wildcards &= ~OFPFW_DL_TYPE
 
-    if dot1q:
-        match.dl_vlan = dot1q.vlan
-        match.dl_vlan_pcp = dot1q.prio
-        match.dl_type = dot1q.type
-    else:
-        match.dl_vlan = OFP_VLAN_NONE
-        match.dl_vlan_pcp = 0
-    match.wildcards &= ~OFPFW_DL_VLAN
-    match.wildcards &= ~OFPFW_DL_VLAN_PCP
+    if pconf == None or 'l3' in pconf or 'full' in pconf:
+        if ip:
+            match.nw_src = parse_ip(ip.src)
+            match.wildcards &= ~OFPFW_NW_SRC_MASK
+            match.nw_dst = parse_ip(ip.dst)
+            match.wildcards &= ~OFPFW_NW_DST_MASK
+            if pconf == None or 'full' in pconf:
+                match.nw_tos = ip.tos
+                match.wildcards &= ~OFPFW_NW_TOS
 
-    if ip:
-        match.nw_src = parse_ip(ip.src)
-        match.wildcards &= ~OFPFW_NW_SRC_MASK
-        match.nw_dst = parse_ip(ip.dst)
-        match.wildcards &= ~OFPFW_NW_DST_MASK
-        match.nw_tos = ip.tos
-        match.wildcards &= ~OFPFW_NW_TOS
+        if pconf == None or 'full' in pconf:
+            if tcp:
+                match.nw_proto = 6
+                match.wildcards &= ~OFPFW_NW_PROTO
+            elif not tcp and udp:
+                tcp = udp
+                match.nw_proto = 17
+                match.wildcards &= ~OFPFW_NW_PROTO
 
-    if tcp:
-        match.nw_proto = 6
-        match.wildcards &= ~OFPFW_NW_PROTO
-    elif not tcp and udp:
-        tcp = udp
-        match.nw_proto = 17
-        match.wildcards &= ~OFPFW_NW_PROTO
+    if pconf == None or 'full' in pconf:
+        if tcp:
+            match.tp_src = tcp.sport
+            match.wildcards &= ~OFPFW_TP_SRC
+            match.tp_dst = tcp.dport
+            match.wildcards &= ~OFPFW_TP_DST
 
-    if tcp:
-        match.tp_src = tcp.sport
-        match.wildcards &= ~OFPFW_TP_SRC
-        match.tp_dst = tcp.dport
-        match.wildcards &= ~OFPFW_TP_DST
+        if icmp:
+            match.nw_proto = 1
+            match.tp_src = icmp.type
+            match.tp_dst = icmp.code
+            match.wildcards &= ~OFPFW_NW_PROTO
 
-    if icmp:
-        match.nw_proto = 1
-        match.tp_src = icmp.type
-        match.tp_dst = icmp.code
-        match.wildcards &= ~OFPFW_NW_PROTO
-
-    if arp:
-        match.nw_proto = arp.op
-        match.wildcards &= ~OFPFW_NW_PROTO
-        match.nw_src = parse_ip(arp.psrc)
-        match.wildcards &= ~OFPFW_NW_SRC_MASK
-        match.nw_dst = parse_ip(arp.pdst)
-        match.wildcards &= ~OFPFW_NW_DST_MASK
+    if pconf == None or match_on_arp:
+        if arp:
+            match.nw_proto = arp.op
+            match.wildcards &= ~OFPFW_NW_PROTO
+            match.nw_src = parse_ip(arp.psrc)
+            match.wildcards &= ~OFPFW_NW_SRC_MASK
+            match.nw_dst = parse_ip(arp.pdst)
+            match.wildcards &= ~OFPFW_NW_DST_MASK
+    # End If
 
     return match
