@@ -252,7 +252,7 @@ def packet_type_classify(ether):
         arp = None
     return (dot1q, ip, tcp, udp, icmp, arp)
 
-def packet_to_flow_match(packet, pkt_format="L2"):
+def packet_to_flow_match(packet, pkt_format="L2", match_on_arp=False):
     """
     Create a flow match that matches packet with the given wildcards
 
@@ -348,7 +348,7 @@ def packet_to_flow_match(packet, pkt_format="L2"):
             match.tp_dst = icmp.code
             match.wildcards &= ~OFPFW_NW_PROTO
 
-    if pconf == None:
+    if pconf == None or match_on_arp:
         if arp:
             match.nw_proto = arp.op
             match.wildcards &= ~OFPFW_NW_PROTO

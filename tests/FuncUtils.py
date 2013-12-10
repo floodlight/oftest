@@ -77,7 +77,7 @@ def exact_match_with_prio(self,of_ports,priority=None):
        
 def match_arp(self, of_ports, srcb=0, dstb=0, priority=None):
     arp_pkt = simple_arp_packet()
-    match = parse.packet_to_flow_match(arp_pkt)
+    match = parse.packet_to_flow_match(arp_pkt, match_on_arp=True)
     self.assertTrue(match is not None, "Could not create a match from the packet")
     if srcb==1:
         match.wildcards = ofp.OFPFW_ALL ^ofp.OFPFW_DL_TYPE ^(63<<ofp.OFPFW_NW_SRC_SHIFT)
