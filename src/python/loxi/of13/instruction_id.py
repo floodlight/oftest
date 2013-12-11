@@ -19,27 +19,23 @@ import meter_band
 import util
 import loxi.generic_util
 
-class instruction(loxi.OFObject):
+class instruction_id(loxi.OFObject):
     subtypes = {}
 
     @staticmethod
     def unpack(reader):
         subtype, = reader.peek('!H', 0)
         try:
-            subclass = instruction.subtypes[subtype]
+            subclass = instruction_id.subtypes[subtype]
         except KeyError:
-            raise loxi.ProtocolError("unknown instruction subtype %#x" % subtype)
+            raise loxi.ProtocolError("unknown instruction_id subtype %#x" % subtype)
         return subclass.unpack(reader)
 
 
-class apply_actions(instruction):
+class apply_actions(instruction_id):
     type = 4
 
-    def __init__(self, actions=None):
-        if actions != None:
-            self.actions = actions
-        else:
-            self.actions = []
+    def __init__(self):
         return
 
     def pack(self):
@@ -47,7 +43,6 @@ class apply_actions(instruction):
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
         packed.append('\x00' * 4)
-        packed.append(loxi.generic_util.pack_list(self.actions))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -61,12 +56,10 @@ class apply_actions(instruction):
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
         reader.skip(4)
-        obj.actions = loxi.generic_util.unpack_list(reader, action.action.unpack)
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
-        if self.actions != other.actions: return False
         return True
 
     def pretty_print(self, q):
@@ -74,14 +67,12 @@ class apply_actions(instruction):
         with q.group():
             with q.indent(2):
                 q.breakable()
-                q.text("actions = ");
-                q.pp(self.actions)
             q.breakable()
         q.text('}')
 
-instruction.subtypes[4] = apply_actions
+instruction_id.subtypes[4] = apply_actions
 
-class experimenter(instruction):
+class experimenter(instruction_id):
     subtypes = {}
 
     @staticmethod
@@ -90,10 +81,10 @@ class experimenter(instruction):
         try:
             subclass = experimenter.subtypes[subtype]
         except KeyError:
-            raise loxi.ProtocolError("unknown experimenter instruction subtype %#x" % subtype)
+            raise loxi.ProtocolError("unknown experimenter instruction_id subtype %#x" % subtype)
         return subclass.unpack(reader)
 
-instruction.subtypes[65535] = experimenter
+instruction_id.subtypes[65535] = experimenter
 
 class bsn(experimenter):
     subtypes = {}
@@ -104,7 +95,7 @@ class bsn(experimenter):
         try:
             subclass = bsn.subtypes[subtype]
         except KeyError:
-            raise loxi.ProtocolError("unknown bsn experimenter instruction subtype %#x" % subtype)
+            raise loxi.ProtocolError("unknown bsn experimenter instruction_id subtype %#x" % subtype)
         return subclass.unpack(reader)
 
 experimenter.subtypes[6035143] = bsn
@@ -157,7 +148,7 @@ class bsn_disable_src_mac_check(bsn):
 
 bsn.subtypes[0] = bsn_disable_src_mac_check
 
-class clear_actions(instruction):
+class clear_actions(instruction_id):
     type = 5
 
     def __init__(self):
@@ -195,23 +186,18 @@ class clear_actions(instruction):
             q.breakable()
         q.text('}')
 
-instruction.subtypes[5] = clear_actions
+instruction_id.subtypes[5] = clear_actions
 
-class goto_table(instruction):
+class goto_table(instruction_id):
     type = 1
 
-    def __init__(self, table_id=None):
-        if table_id != None:
-            self.table_id = table_id
-        else:
-            self.table_id = 0
+    def __init__(self):
         return
 
     def pack(self):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append(struct.pack("!B", self.table_id))
         packed.append('\x00' * 3)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
@@ -225,13 +211,11 @@ class goto_table(instruction):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        obj.table_id = reader.read("!B")[0]
         reader.skip(3)
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
-        if self.table_id != other.table_id: return False
         return True
 
     def pretty_print(self, q):
@@ -239,28 +223,21 @@ class goto_table(instruction):
         with q.group():
             with q.indent(2):
                 q.breakable()
-                q.text("table_id = ");
-                q.text("%#x" % self.table_id)
             q.breakable()
         q.text('}')
 
-instruction.subtypes[1] = goto_table
+instruction_id.subtypes[1] = goto_table
 
-class meter(instruction):
+class meter(instruction_id):
     type = 6
 
-    def __init__(self, meter_id=None):
-        if meter_id != None:
-            self.meter_id = meter_id
-        else:
-            self.meter_id = 0
+    def __init__(self):
         return
 
     def pack(self):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append(struct.pack("!L", self.meter_id))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -273,12 +250,10 @@ class meter(instruction):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        obj.meter_id = reader.read("!L")[0]
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
-        if self.meter_id != other.meter_id: return False
         return True
 
     def pretty_print(self, q):
@@ -286,21 +261,15 @@ class meter(instruction):
         with q.group():
             with q.indent(2):
                 q.breakable()
-                q.text("meter_id = ");
-                q.text("%#x" % self.meter_id)
             q.breakable()
         q.text('}')
 
-instruction.subtypes[6] = meter
+instruction_id.subtypes[6] = meter
 
-class write_actions(instruction):
+class write_actions(instruction_id):
     type = 3
 
-    def __init__(self, actions=None):
-        if actions != None:
-            self.actions = actions
-        else:
-            self.actions = []
+    def __init__(self):
         return
 
     def pack(self):
@@ -308,7 +277,6 @@ class write_actions(instruction):
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
         packed.append('\x00' * 4)
-        packed.append(loxi.generic_util.pack_list(self.actions))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -322,12 +290,10 @@ class write_actions(instruction):
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
         reader.skip(4)
-        obj.actions = loxi.generic_util.unpack_list(reader, action.action.unpack)
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
-        if self.actions != other.actions: return False
         return True
 
     def pretty_print(self, q):
@@ -335,25 +301,15 @@ class write_actions(instruction):
         with q.group():
             with q.indent(2):
                 q.breakable()
-                q.text("actions = ");
-                q.pp(self.actions)
             q.breakable()
         q.text('}')
 
-instruction.subtypes[3] = write_actions
+instruction_id.subtypes[3] = write_actions
 
-class write_metadata(instruction):
+class write_metadata(instruction_id):
     type = 2
 
-    def __init__(self, metadata=None, metadata_mask=None):
-        if metadata != None:
-            self.metadata = metadata
-        else:
-            self.metadata = 0
-        if metadata_mask != None:
-            self.metadata_mask = metadata_mask
-        else:
-            self.metadata_mask = 0
+    def __init__(self):
         return
 
     def pack(self):
@@ -361,8 +317,6 @@ class write_metadata(instruction):
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
         packed.append('\x00' * 4)
-        packed.append(struct.pack("!Q", self.metadata))
-        packed.append(struct.pack("!Q", self.metadata_mask))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -376,14 +330,10 @@ class write_metadata(instruction):
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
         reader.skip(4)
-        obj.metadata = reader.read("!Q")[0]
-        obj.metadata_mask = reader.read("!Q")[0]
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
-        if self.metadata != other.metadata: return False
-        if self.metadata_mask != other.metadata_mask: return False
         return True
 
     def pretty_print(self, q):
@@ -391,14 +341,9 @@ class write_metadata(instruction):
         with q.group():
             with q.indent(2):
                 q.breakable()
-                q.text("metadata = ");
-                q.text("%#x" % self.metadata)
-                q.text(","); q.breakable()
-                q.text("metadata_mask = ");
-                q.text("%#x" % self.metadata_mask)
             q.breakable()
         q.text('}')
 
-instruction.subtypes[2] = write_metadata
+instruction_id.subtypes[2] = write_metadata
 
 
