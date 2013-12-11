@@ -19,20 +19,20 @@ import meter_band
 import util
 import loxi.generic_util
 
-class action(loxi.OFObject):
+class action_id(loxi.OFObject):
     subtypes = {}
 
     @staticmethod
     def unpack(reader):
         subtype, = reader.peek('!H', 0)
         try:
-            subclass = action.subtypes[subtype]
+            subclass = action_id.subtypes[subtype]
         except KeyError:
-            raise loxi.ProtocolError("unknown action subtype %#x" % subtype)
+            raise loxi.ProtocolError("unknown action_id subtype %#x" % subtype)
         return subclass.unpack(reader)
 
 
-class experimenter(action):
+class experimenter(action_id):
     subtypes = {}
 
     @staticmethod
@@ -41,10 +41,10 @@ class experimenter(action):
         try:
             subclass = experimenter.subtypes[subtype]
         except KeyError:
-            raise loxi.ProtocolError("unknown experimenter action subtype %#x" % subtype)
+            raise loxi.ProtocolError("unknown experimenter action_id subtype %#x" % subtype)
         return subclass.unpack(reader)
 
-action.subtypes[65535] = experimenter
+action_id.subtypes[65535] = experimenter
 
 class bsn(experimenter):
     subtypes = {}
@@ -55,7 +55,7 @@ class bsn(experimenter):
         try:
             subclass = bsn.subtypes[subtype]
         except KeyError:
-            raise loxi.ProtocolError("unknown bsn experimenter action subtype %#x" % subtype)
+            raise loxi.ProtocolError("unknown bsn experimenter action_id subtype %#x" % subtype)
         return subclass.unpack(reader)
 
 experimenter.subtypes[6035143] = bsn
@@ -65,19 +65,7 @@ class bsn_mirror(bsn):
     experimenter = 6035143
     subtype = 1
 
-    def __init__(self, dest_port=None, vlan_tag=None, copy_stage=None):
-        if dest_port != None:
-            self.dest_port = dest_port
-        else:
-            self.dest_port = 0
-        if vlan_tag != None:
-            self.vlan_tag = vlan_tag
-        else:
-            self.vlan_tag = 0
-        if copy_stage != None:
-            self.copy_stage = copy_stage
-        else:
-            self.copy_stage = 0
+    def __init__(self):
         return
 
     def pack(self):
@@ -86,9 +74,6 @@ class bsn_mirror(bsn):
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
         packed.append(struct.pack("!L", self.experimenter))
         packed.append(struct.pack("!L", self.subtype))
-        packed.append(struct.pack("!L", self.dest_port))
-        packed.append(struct.pack("!L", self.vlan_tag))
-        packed.append(struct.pack("!B", self.copy_stage))
         packed.append('\x00' * 3)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
@@ -106,17 +91,11 @@ class bsn_mirror(bsn):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 1)
-        obj.dest_port = reader.read("!L")[0]
-        obj.vlan_tag = reader.read("!L")[0]
-        obj.copy_stage = reader.read("!B")[0]
         reader.skip(3)
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
-        if self.dest_port != other.dest_port: return False
-        if self.vlan_tag != other.vlan_tag: return False
-        if self.copy_stage != other.copy_stage: return False
         return True
 
     def pretty_print(self, q):
@@ -124,14 +103,6 @@ class bsn_mirror(bsn):
         with q.group():
             with q.indent(2):
                 q.breakable()
-                q.text("dest_port = ");
-                q.text("%#x" % self.dest_port)
-                q.text(","); q.breakable()
-                q.text("vlan_tag = ");
-                q.text("%#x" % self.vlan_tag)
-                q.text(","); q.breakable()
-                q.text("copy_stage = ");
-                q.text("%#x" % self.copy_stage)
             q.breakable()
         q.text('}')
 
@@ -142,11 +113,7 @@ class bsn_set_tunnel_dst(bsn):
     experimenter = 6035143
     subtype = 2
 
-    def __init__(self, dst=None):
-        if dst != None:
-            self.dst = dst
-        else:
-            self.dst = 0
+    def __init__(self):
         return
 
     def pack(self):
@@ -155,7 +122,6 @@ class bsn_set_tunnel_dst(bsn):
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
         packed.append(struct.pack("!L", self.experimenter))
         packed.append(struct.pack("!L", self.subtype))
-        packed.append(struct.pack("!L", self.dst))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -172,12 +138,10 @@ class bsn_set_tunnel_dst(bsn):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 2)
-        obj.dst = reader.read("!L")[0]
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
-        if self.dst != other.dst: return False
         return True
 
     def pretty_print(self, q):
@@ -185,14 +149,12 @@ class bsn_set_tunnel_dst(bsn):
         with q.group():
             with q.indent(2):
                 q.breakable()
-                q.text("dst = ");
-                q.text("%#x" % self.dst)
             q.breakable()
         q.text('}')
 
 bsn.subtypes[2] = bsn_set_tunnel_dst
 
-class copy_ttl_in(action):
+class copy_ttl_in(action_id):
     type = 12
 
     def __init__(self):
@@ -230,9 +192,9 @@ class copy_ttl_in(action):
             q.breakable()
         q.text('}')
 
-action.subtypes[12] = copy_ttl_in
+action_id.subtypes[12] = copy_ttl_in
 
-class copy_ttl_out(action):
+class copy_ttl_out(action_id):
     type = 11
 
     def __init__(self):
@@ -270,9 +232,9 @@ class copy_ttl_out(action):
             q.breakable()
         q.text('}')
 
-action.subtypes[11] = copy_ttl_out
+action_id.subtypes[11] = copy_ttl_out
 
-class dec_mpls_ttl(action):
+class dec_mpls_ttl(action_id):
     type = 16
 
     def __init__(self):
@@ -310,9 +272,9 @@ class dec_mpls_ttl(action):
             q.breakable()
         q.text('}')
 
-action.subtypes[16] = dec_mpls_ttl
+action_id.subtypes[16] = dec_mpls_ttl
 
-class dec_nw_ttl(action):
+class dec_nw_ttl(action_id):
     type = 24
 
     def __init__(self):
@@ -350,23 +312,18 @@ class dec_nw_ttl(action):
             q.breakable()
         q.text('}')
 
-action.subtypes[24] = dec_nw_ttl
+action_id.subtypes[24] = dec_nw_ttl
 
-class group(action):
+class group(action_id):
     type = 22
 
-    def __init__(self, group_id=None):
-        if group_id != None:
-            self.group_id = group_id
-        else:
-            self.group_id = 0
+    def __init__(self):
         return
 
     def pack(self):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append(struct.pack("!L", self.group_id))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -379,12 +336,10 @@ class group(action):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        obj.group_id = reader.read("!L")[0]
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
-        if self.group_id != other.group_id: return False
         return True
 
     def pretty_print(self, q):
@@ -392,12 +347,10 @@ class group(action):
         with q.group():
             with q.indent(2):
                 q.breakable()
-                q.text("group_id = ");
-                q.text("%#x" % self.group_id)
             q.breakable()
         q.text('}')
 
-action.subtypes[22] = group
+action_id.subtypes[22] = group
 
 class nicira(experimenter):
     subtypes = {}
@@ -408,7 +361,7 @@ class nicira(experimenter):
         try:
             subclass = nicira.subtypes[subtype]
         except KeyError:
-            raise loxi.ProtocolError("unknown nicira experimenter action subtype %#x" % subtype)
+            raise loxi.ProtocolError("unknown nicira experimenter action_id subtype %#x" % subtype)
         return subclass.unpack(reader)
 
 experimenter.subtypes[8992] = nicira
@@ -463,26 +416,16 @@ class nicira_dec_ttl(nicira):
 
 nicira.subtypes[18] = nicira_dec_ttl
 
-class output(action):
+class output(action_id):
     type = 0
 
-    def __init__(self, port=None, max_len=None):
-        if port != None:
-            self.port = port
-        else:
-            self.port = 0
-        if max_len != None:
-            self.max_len = max_len
-        else:
-            self.max_len = 0
+    def __init__(self):
         return
 
     def pack(self):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append(util.pack_port_no(self.port))
-        packed.append(struct.pack("!H", self.max_len))
         packed.append('\x00' * 6)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
@@ -496,15 +439,11 @@ class output(action):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        obj.port = util.unpack_port_no(reader)
-        obj.max_len = reader.read("!H")[0]
         reader.skip(6)
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
-        if self.port != other.port: return False
-        if self.max_len != other.max_len: return False
         return True
 
     def pretty_print(self, q):
@@ -512,31 +451,21 @@ class output(action):
         with q.group():
             with q.indent(2):
                 q.breakable()
-                q.text("port = ");
-                q.text(util.pretty_port(self.port))
-                q.text(","); q.breakable()
-                q.text("max_len = ");
-                q.text("%#x" % self.max_len)
             q.breakable()
         q.text('}')
 
-action.subtypes[0] = output
+action_id.subtypes[0] = output
 
-class pop_mpls(action):
+class pop_mpls(action_id):
     type = 20
 
-    def __init__(self, ethertype=None):
-        if ethertype != None:
-            self.ethertype = ethertype
-        else:
-            self.ethertype = 0
+    def __init__(self):
         return
 
     def pack(self):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append(struct.pack("!H", self.ethertype))
         packed.append('\x00' * 2)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
@@ -550,13 +479,11 @@ class pop_mpls(action):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        obj.ethertype = reader.read("!H")[0]
         reader.skip(2)
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
-        if self.ethertype != other.ethertype: return False
         return True
 
     def pretty_print(self, q):
@@ -564,14 +491,12 @@ class pop_mpls(action):
         with q.group():
             with q.indent(2):
                 q.breakable()
-                q.text("ethertype = ");
-                q.text("%#x" % self.ethertype)
             q.breakable()
         q.text('}')
 
-action.subtypes[20] = pop_mpls
+action_id.subtypes[20] = pop_mpls
 
-class pop_pbb(action):
+class pop_pbb(action_id):
     type = 27
 
     def __init__(self):
@@ -609,9 +534,9 @@ class pop_pbb(action):
             q.breakable()
         q.text('}')
 
-action.subtypes[27] = pop_pbb
+action_id.subtypes[27] = pop_pbb
 
-class pop_vlan(action):
+class pop_vlan(action_id):
     type = 18
 
     def __init__(self):
@@ -649,23 +574,18 @@ class pop_vlan(action):
             q.breakable()
         q.text('}')
 
-action.subtypes[18] = pop_vlan
+action_id.subtypes[18] = pop_vlan
 
-class push_mpls(action):
+class push_mpls(action_id):
     type = 19
 
-    def __init__(self, ethertype=None):
-        if ethertype != None:
-            self.ethertype = ethertype
-        else:
-            self.ethertype = 0
+    def __init__(self):
         return
 
     def pack(self):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append(struct.pack("!H", self.ethertype))
         packed.append('\x00' * 2)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
@@ -679,13 +599,11 @@ class push_mpls(action):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        obj.ethertype = reader.read("!H")[0]
         reader.skip(2)
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
-        if self.ethertype != other.ethertype: return False
         return True
 
     def pretty_print(self, q):
@@ -693,28 +611,21 @@ class push_mpls(action):
         with q.group():
             with q.indent(2):
                 q.breakable()
-                q.text("ethertype = ");
-                q.text("%#x" % self.ethertype)
             q.breakable()
         q.text('}')
 
-action.subtypes[19] = push_mpls
+action_id.subtypes[19] = push_mpls
 
-class push_pbb(action):
+class push_pbb(action_id):
     type = 26
 
-    def __init__(self, ethertype=None):
-        if ethertype != None:
-            self.ethertype = ethertype
-        else:
-            self.ethertype = 0
+    def __init__(self):
         return
 
     def pack(self):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append(struct.pack("!H", self.ethertype))
         packed.append('\x00' * 2)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
@@ -728,13 +639,11 @@ class push_pbb(action):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        obj.ethertype = reader.read("!H")[0]
         reader.skip(2)
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
-        if self.ethertype != other.ethertype: return False
         return True
 
     def pretty_print(self, q):
@@ -742,28 +651,21 @@ class push_pbb(action):
         with q.group():
             with q.indent(2):
                 q.breakable()
-                q.text("ethertype = ");
-                q.text("%#x" % self.ethertype)
             q.breakable()
         q.text('}')
 
-action.subtypes[26] = push_pbb
+action_id.subtypes[26] = push_pbb
 
-class push_vlan(action):
+class push_vlan(action_id):
     type = 17
 
-    def __init__(self, ethertype=None):
-        if ethertype != None:
-            self.ethertype = ethertype
-        else:
-            self.ethertype = 0
+    def __init__(self):
         return
 
     def pack(self):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append(struct.pack("!H", self.ethertype))
         packed.append('\x00' * 2)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
@@ -777,13 +679,11 @@ class push_vlan(action):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        obj.ethertype = reader.read("!H")[0]
         reader.skip(2)
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
-        if self.ethertype != other.ethertype: return False
         return True
 
     def pretty_print(self, q):
@@ -791,31 +691,22 @@ class push_vlan(action):
         with q.group():
             with q.indent(2):
                 q.breakable()
-                q.text("ethertype = ");
-                q.text("%#x" % self.ethertype)
             q.breakable()
         q.text('}')
 
-action.subtypes[17] = push_vlan
+action_id.subtypes[17] = push_vlan
 
-class set_field(action):
+class set_field(action_id):
     type = 25
 
-    def __init__(self, field=None):
-        if field != None:
-            self.field = field
-        else:
-            self.field = None
+    def __init__(self):
         return
 
     def pack(self):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append(self.field.pack())
         length = sum([len(x) for x in packed])
-        packed.append(loxi.generic_util.pad_to(8, length))
-        length += len(packed[-1])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
 
@@ -827,12 +718,10 @@ class set_field(action):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        obj.field = oxm.oxm.unpack(reader)
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
-        if self.field != other.field: return False
         return True
 
     def pretty_print(self, q):
@@ -840,28 +729,21 @@ class set_field(action):
         with q.group():
             with q.indent(2):
                 q.breakable()
-                q.text("field = ");
-                q.pp(self.field)
             q.breakable()
         q.text('}')
 
-action.subtypes[25] = set_field
+action_id.subtypes[25] = set_field
 
-class set_mpls_ttl(action):
+class set_mpls_ttl(action_id):
     type = 15
 
-    def __init__(self, mpls_ttl=None):
-        if mpls_ttl != None:
-            self.mpls_ttl = mpls_ttl
-        else:
-            self.mpls_ttl = 0
+    def __init__(self):
         return
 
     def pack(self):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append(struct.pack("!B", self.mpls_ttl))
         packed.append('\x00' * 3)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
@@ -875,13 +757,11 @@ class set_mpls_ttl(action):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        obj.mpls_ttl = reader.read("!B")[0]
         reader.skip(3)
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
-        if self.mpls_ttl != other.mpls_ttl: return False
         return True
 
     def pretty_print(self, q):
@@ -889,28 +769,21 @@ class set_mpls_ttl(action):
         with q.group():
             with q.indent(2):
                 q.breakable()
-                q.text("mpls_ttl = ");
-                q.text("%#x" % self.mpls_ttl)
             q.breakable()
         q.text('}')
 
-action.subtypes[15] = set_mpls_ttl
+action_id.subtypes[15] = set_mpls_ttl
 
-class set_nw_ttl(action):
+class set_nw_ttl(action_id):
     type = 23
 
-    def __init__(self, nw_ttl=None):
-        if nw_ttl != None:
-            self.nw_ttl = nw_ttl
-        else:
-            self.nw_ttl = 0
+    def __init__(self):
         return
 
     def pack(self):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append(struct.pack("!B", self.nw_ttl))
         packed.append('\x00' * 3)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
@@ -924,13 +797,11 @@ class set_nw_ttl(action):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        obj.nw_ttl = reader.read("!B")[0]
         reader.skip(3)
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
-        if self.nw_ttl != other.nw_ttl: return False
         return True
 
     def pretty_print(self, q):
@@ -938,28 +809,21 @@ class set_nw_ttl(action):
         with q.group():
             with q.indent(2):
                 q.breakable()
-                q.text("nw_ttl = ");
-                q.text("%#x" % self.nw_ttl)
             q.breakable()
         q.text('}')
 
-action.subtypes[23] = set_nw_ttl
+action_id.subtypes[23] = set_nw_ttl
 
-class set_queue(action):
+class set_queue(action_id):
     type = 21
 
-    def __init__(self, queue_id=None):
-        if queue_id != None:
-            self.queue_id = queue_id
-        else:
-            self.queue_id = 0
+    def __init__(self):
         return
 
     def pack(self):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append(struct.pack("!L", self.queue_id))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -972,12 +836,10 @@ class set_queue(action):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        obj.queue_id = reader.read("!L")[0]
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
-        if self.queue_id != other.queue_id: return False
         return True
 
     def pretty_print(self, q):
@@ -985,11 +847,9 @@ class set_queue(action):
         with q.group():
             with q.indent(2):
                 q.breakable()
-                q.text("queue_id = ");
-                q.text("%#x" % self.queue_id)
             q.breakable()
         q.text('}')
 
-action.subtypes[21] = set_queue
+action_id.subtypes[21] = set_queue
 
 
