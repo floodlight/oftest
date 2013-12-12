@@ -20,15 +20,21 @@ from time import sleep
 #################### Functions for various types of flow_mod  ##########################################################################################
 
 def exact_match(self,of_ports,priority=None):
-# Generate ExactMatch flow .
+    '''
+    Generates and installs a flow message with all match fields
+    set that are defined for the current conformance profile.
+    The conformance profile is defined as oft optional argument
+    --conformance ["l2", "l3", "full"]
+    '''
 
-    #Create a simple tcp packet and generate exact flow match from it.
     pkt_exactflow = simple_tcp_packet()
     match = parse.packet_to_flow_match(pkt_exactflow)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
+    # in_port is not automatically set in parse.packet_to_flow_match
     match.in_port = of_ports[0]
+    match.wildcards &= ~ofp.OFPFW_IN_PORT
     #match.nw_src = 1
-    match.wildcards=0
+    #match.wildcards=0
     msg = message.flow_mod()
     msg.out_port = ofp.OFPP_NONE
     msg.command = ofp.OFPFC_ADD
