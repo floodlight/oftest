@@ -710,7 +710,7 @@ class Grp40No140(base_tests.SimpleDataPlane):
 	#####Grp40No160#####
         logging.info("Inserting two overlapping flows")
         
-        #Insert Flow T with match on all , except one wildcarded ( say src adddress ). 
+        #Insert Flow T with match on all, except one wildcarded (say src adddress). 
         (pkt,match) = match_all_except_source_address(self,of_ports)
 
         #Insert another flow T' with match on ingress_port , wildcarded rest.  
@@ -744,7 +744,7 @@ class Grp40No140(base_tests.SimpleDataPlane):
         nonstrict_delete(self,match1)
 
         rv=all_stats_get(self)
-        self.assertTrue(rv["flows"]==0, "The non_strict_delete message did not delete all the flows")
+        self.assertTrue(rv["flows"]==0, "The non_strict_delete message did not delete all the flows. {0} flow(s) left in DUT.".format(rv["flows"]))
 
 
 	#####Grp40No170#####

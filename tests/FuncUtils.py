@@ -161,32 +161,50 @@ def match_icmp_code(self,of_ports,priority=None):
     return (pkt,match)
 
 def match_all_except_source_address(self,of_ports,priority=None):
-# Generate Match_All_Except_Source_Address flow
-        
-    #Create a simple tcp packet and generate match all except src address flow.
-    pkt_wildcardsrc= simple_tcp_packet()
-    match1 = parse.packet_to_flow_match(pkt_wildcardsrc)
-    self.assertTrue(match1 is not None, "Could not generate flow match from pkt")
-    match1.in_port = of_ports[0]
-    #match1.nw_src = 1
-    match1.wildcards = ofp.OFPFW_DL_SRC
-    msg1 = message.flow_mod()
-    msg1.out_port = ofp.OFPP_NONE
-    msg1.command = ofp.OFPFC_ADD
-    msg1.buffer_id = 0xffffffff
-    msg1.match = match1
+    '''
+    Generates and installs a flow message with all match fields
+    set except for the source address defined for the current
+    conformance profile, and fields not defined for this profile.
+    For l2 and full profiles the source mac is wildcarded; For
+    the l3 profile source ip address is wildcarded. The
+    conformance profile is defined as oft optional argument
+    --conformance ["l2", "l3", "full"]
+    '''
+    if config['conformance'] == None:
+        profile = ['l2']
+    else:
+        profile = config['conformance'].split('+')
+
+    pkt_wildcardsrc = simple_tcp_packet()
+    match = parse.packet_to_flow_match(pkt_wildcardsrc)
+    self.assertTrue(match is not None, "Could not generate flow match from pkt")
+    # in_port is not automatically set in parse.packet_to_flow_match
+    match.in_port = of_ports[0]
+    match.wildcards &= ~ ofp.OFPFW_IN_PORT
+
+    if 'l3' in profile:
+        match.wildcards |= ofp.OFPFW_NW_SRC_MASK
+    else:
+        match.wildcards |= ofp.OFPFW_DL_SRC
+
+    msg = message.flow_mod()
+    msg.out_port = ofp.OFPP_NONE
+    msg.command = ofp.OFPFC_ADD
+    msg.buffer_id = 0xffffffff
+    msg.match = match
     if priority != None :
-        msg1.priority = priority
+        msg.priority = priority
 
-    act1 = action.action_output()
-    act1.port = of_ports[1]
-    self.assertTrue(msg1.actions.add(act1), "could not add action")
+    act = action.action_output()
+    act.port = of_ports[1]
+    self.assertTrue(msg.actions.add(act), "could not add action")
 
-    rv = self.controller.message_send(msg1)
+    rv = self.controller.message_send(msg)
     self.assertTrue(rv != -1, "Error installing flow mod")
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
-    return (pkt_wildcardsrc,match1)
+    return pkt_wildcardsrc, match
+
 
 def match_ethernet_src_address(self,of_ports,priority=None):
     #Generate Match_Ethernet_SrC_Address flow
@@ -923,15 +941,15 @@ def strict_delete(self,match,priority=None):
 # Issue Strict Delete 
         
     #Create flow_mod message, command DELETE_STRICT
-    msg4 = message.flow_mod()
-    msg4.out_port = ofp.OFPP_NONE
-    msg4.command = ofp.OFPFC_DELETE_STRICT
-    msg4.buffer_id = 0xffffffff
-    msg4.match = match
+    msg = message.flow_mod()
+    msg.out_port = ofp.OFPP_NONE
+    msg.command = ofp.OFPFC_DELETE_STRICT
+    msg.buffer_id = 0xffffffff
+    msg.match = match
 
     if priority != None :
-        msg4.priority = priority
-    rv = self.controller.message_send(msg4)
+        msg.priority = priority
+    rv = self.controller.message_send(msg)
     self.assertTrue(rv!= -1, "Error installing flow mod")
     self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
