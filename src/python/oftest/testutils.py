@@ -487,12 +487,10 @@ def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=None,
     Run test with packet through switch from ing_port to egr_port
     See flow_match_test for parameter descriptions
     """
-
-    if wildcards is None:
-        wildcards = required_wildcards(parent)
     logging.info("Pkt match test: " + str(ing_port) + " to " + 
                        str(egr_ports))
-    logging.debug("  WC: " + hex(wildcards) + " vlan: " + str(dl_vlan))
+    if wildcards is not None:
+        logging.debug("  WC: " + hex(wildcards) + " vlan: " + str(dl_vlan))
     if pkt is None:
         pkt = simple_tcp_packet(dl_vlan_enable=(dl_vlan >= 0), dl_vlan=dl_vlan)
 
@@ -550,8 +548,6 @@ def flow_match_test(parent, port_map, wildcards=None, dl_vlan=-1, pkt=None,
     @param action_list Additional actions to add to flow mod
     @param egr_count Number of egress ports; -1 means get from config w/ dflt 2
     """
-    if wildcards is None:
-        wildcards = required_wildcards(parent)
     of_ports = port_map.keys()
     of_ports.sort()
     parent.assertTrue(len(of_ports) > 1, "Not enough ports for test")
