@@ -231,10 +231,6 @@ class Controller(Thread):
 
             # Check that supported version on switch is as least as recent as
             # the configured Openflow version in oftests
-            self.logger.debug("Msg in: version %d type %s (%d) len %d xid %d",
-                              hdr_version,
-                              cfg_ofp.ofp_type_map.get(hdr_type, "unknown"), hdr_type,
-                              hdr_length, hdr_version)
             if hdr_version < cfg_ofp.OFP_VERSION:
                 self.logger.error("Switch only supports up to OpenFlow version %d (OFTest version is %d)",
                                   hdr_version, cfg_ofp.OFP_VERSION)
@@ -248,6 +244,9 @@ class Controller(Thread):
                 self.parse_errors += 1
                 self.logger.warn("Could not parse message")
                 continue
+
+            self.logger.debug("Msg in: version %d class %s len %d xid %d",
+                              hdr_version, type(msg).__name__, hdr_length, hdr_xid)
 
             with self.sync:
                 # Check if transaction is waiting
@@ -266,7 +265,7 @@ class Controller(Thread):
                         rep = ofp.message.echo_reply()
                         rep.xid = hdr_xid
                         # Ignoring additional data
-                        self.message_send(rep.pack())
+                        self.message_send(rep)
                         continue
 
                 # Generalize to counters for all packet types?
@@ -661,7 +660,7 @@ class Controller(Thread):
 
             self.xid = msg.xid
             self.xid_response = None
-            self.message_send(msg.pack())
+            self.message_send(msg)
 
             self.logger.debug("Waiting for transaction %d" % msg.xid)
             ofutils.timed_wait(self.xid_cv, lambda: self.xid_response, timeout=timeout)
@@ -687,21 +686,14 @@ class Controller(Thread):
         if not self.switch_socket:
             # Sending a string indicates the message is ready to go
             raise Exception("no socket")
-        #@todo If not string, try to pack
-        if type(msg) != type(""):
-            if msg.xid == None:
-                msg.xid = ofutils.gen_xid()
-            outpkt = msg.pack()
-        else:
-            outpkt = msg
 
-        msg_version, msg_type, msg_len, msg_xid = struct.unpack_from("!BBHL", outpkt)
-        self.logger.debug("Msg out: buf len %d. hdr.type %s. hdr.len %d hdr.version %d hdr.xid %d",
-                          len(outpkt),
-                          cfg_ofp.ofp_type_map.get(msg_type, "unknown (%d)" % msg_type),
-                          msg_len,
-                          msg_version,
-                          msg_xid)
+        if msg.xid == None:
+            msg.xid = ofutils.gen_xid()
+
+        outpkt = msg.pack()
+
+        self.logger.debug("Msg out: version %d class %s len %d xid %d",
+                          msg.version, type(msg).__name__, len(outpkt), msg.xid)
 
         with self.tx_lock:
             if self.switch_socket.sendall(outpkt) is not None:
