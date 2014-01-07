@@ -74,6 +74,10 @@ class BaseGenTableTest(base_tests.SimpleProtocol):
             checksum_mask=checksum_mask)
         return get_stats(self, request)
 
+    def do_table_desc_stats(self):
+        request = ofp.message.bsn_gentable_desc_stats_request()
+        return get_stats(self, request)
+
 class ClearAll(BaseGenTableTest):
     """
     Test clearing entire table
@@ -178,3 +182,23 @@ class EntryDescStats(BaseGenTableTest):
             self.assertEqual(entry.checksum, 0xfedcba9876543210fedcba9876543210 + vlan_vid)
 
         self.assertEquals(seen, set([0, 1, 2]))
+
+class TableDescStats(BaseGenTableTest):
+    """
+    Test retrieving table desc stats
+    """
+    def runTest(self):
+        entries = self.do_table_desc_stats()
+        seen = set()
+        for entry in entries:
+            logging.debug(entry.show())
+            self.assertNotIn(entry.table_id, seen)
+            self.assertNotIn(entry.name, seen)
+            seen.add(entry.table_id)
+            seen.add(entry.name)
+            if entry.table_id == TABLE_ID:
+                self.assertEqual(entry.name, "test")
+                self.assertEqual(entry.buckets_size, 64)
+                self.assertEqual(entry.max_entries, 1000)
+
+        self.assertIn(TABLE_ID, seen)
