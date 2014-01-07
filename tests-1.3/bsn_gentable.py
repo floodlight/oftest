@@ -21,6 +21,14 @@ def tlv_dict(tlvs):
         d[tlv.__class__] = tlv.value
     return d
 
+def make_checksum(hi, lo):
+    """
+    Place 'hi' in the upper 8 bits and 'lo' in the lower bits.
+    """
+    return ((hi & 0xff) << 120) | lo
+
+assert make_checksum(0xab, 0xcd) == 0xab0000000000000000000000000000cd
+
 class BaseGenTableTest(base_tests.SimpleProtocol):
     def setUp(self):
         base_tests.SimpleProtocol.setUp(self)
@@ -81,6 +89,13 @@ class BaseGenTableTest(base_tests.SimpleProtocol):
     def do_table_stats(self):
         request = ofp.message.bsn_gentable_stats_request()
         return get_stats(self, request)
+
+    def do_test_table_stats(self):
+        entries = self.do_table_stats()
+        for entry in entries:
+            if entry.table_id == TABLE_ID:
+                return entry
+        raise AssertionError("did not find test table")
 
 class ClearAll(BaseGenTableTest):
     """
@@ -212,6 +227,7 @@ class TableStats(BaseGenTableTest):
     Test retrieving table stats
     """
     def runTest(self):
+        # Verify we have the test table and no duplicates
         entries = self.do_table_stats()
         seen = set()
         for entry in entries:
@@ -221,7 +237,45 @@ class TableStats(BaseGenTableTest):
             if entry.table_id == TABLE_ID:
                 self.assertEqual(entry.entry_count, 0)
                 self.assertEqual(entry.checksum, 0)
-
-        # TODO add/modify/remove flows and verify entry_count/checksum
-
         self.assertIn(TABLE_ID, seen)
+
+        table_checksum = 0
+
+        # Add a bunch of entries, spread among the checksum buckets
+        for i in range(0, 256):
+            table_checksum ^= make_checksum(i, i*31)
+            self.do_add(vlan_vid=i, ipv4=0x12345678, mac=(0, 1, 2, 3, 4, i),
+                        checksum=make_checksum(i, i*31))
+
+        do_barrier(self.controller)
+        verify_no_errors(self.controller)
+
+        table_stats = self.do_test_table_stats()
+        self.assertEqual(table_stats.entry_count, 256)
+        self.assertEqual(table_stats.checksum, table_checksum)
+
+        # Modify an entry, changing its checksum
+        i = 30
+        table_checksum ^= make_checksum(i, i*31) # subtract old checksum
+        table_checksum ^= make_checksum(i, i*37) # add new checksum
+        self.do_add(vlan_vid=i, ipv4=0x12345678, mac=(0, 4, 3, 2, 1, i),
+                    checksum=make_checksum(i, i*37))
+
+        do_barrier(self.controller)
+        verify_no_errors(self.controller)
+
+        table_stats = self.do_test_table_stats()
+        self.assertEqual(table_stats.entry_count, 256)
+        self.assertEqual(table_stats.checksum, table_checksum)
+
+        # Delete an entry
+        i = 87
+        table_checksum ^= make_checksum(i, i*31)
+        self.do_delete(vlan_vid=i, ipv4=0x12345678)
+
+        do_barrier(self.controller)
+        verify_no_errors(self.controller)
+
+        table_stats = self.do_test_table_stats()
+        self.assertEqual(table_stats.entry_count, 255)
+        self.assertEqual(table_stats.checksum, table_checksum)
