@@ -15,22 +15,31 @@ from oftest.testutils import *
 # Hardcoded in the switch to ease testing
 TABLE_ID = 0
 
+def tlv_dict(tlvs):
+    d = {}
+    for tlv in tlvs:
+        d[tlv.__class__] = tlv.value
+    return d
+
 class BaseGenTableTest(base_tests.SimpleProtocol):
     def setUp(self):
         base_tests.SimpleProtocol.setUp(self)
-        self.clear()
+        self.do_clear()
 
     def tearDown(self):
-        self.clear()
+        self.do_clear()
         base_tests.SimpleProtocol.tearDown(self)
 
-    def clear(self):
-        request = ofp.message.bsn_gentable_clear_request(table_id=TABLE_ID)
+    def do_clear(self, checksum=0, checksum_mask=0):
+        request = ofp.message.bsn_gentable_clear_request(
+            table_id=TABLE_ID,
+            checksum=0,
+            checksum_mask=0)
         response, _ = self.controller.transact(request)
         self.assertIsInstance(response, ofp.message.bsn_gentable_clear_reply)
         self.assertEquals(response.error_count, 0)
 
-    def do_add(self, vlan_vid, ipv4, mac, idle_notification=False):
+    def do_add(self, vlan_vid, ipv4, mac, idle_notification=False, checksum=0):
         msg = ofp.message.bsn_gentable_entry_add(
             table_id=TABLE_ID,
             key=[
@@ -38,7 +47,7 @@ class BaseGenTableTest(base_tests.SimpleProtocol):
                 ofp.bsn_tlv.ipv4(ipv4)],
             value=[
                 ofp.bsn_tlv.mac(mac)],
-            checksum=0)
+            checksum=checksum)
         if idle_notification:
             msg.value.append(ofp.bsn_tlv.idle_notification())
         self.controller.message_send(msg)
@@ -50,6 +59,20 @@ class BaseGenTableTest(base_tests.SimpleProtocol):
                 ofp.bsn_tlv.vlan_vid(vlan_vid),
                 ofp.bsn_tlv.ipv4(ipv4)])
         self.controller.message_send(msg)
+
+    def do_entry_stats(self, checksum=0, checksum_mask=0):
+        request = ofp.message.bsn_gentable_entry_stats_request(
+            table_id=TABLE_ID,
+            checksum=checksum,
+            checksum_mask=checksum_mask)
+        return get_stats(self, request)
+
+    def do_entry_desc_stats(self, checksum=0, checksum_mask=0):
+        request = ofp.message.bsn_gentable_entry_desc_stats_request(
+            table_id=TABLE_ID,
+            checksum=checksum,
+            checksum_mask=checksum_mask)
+        return get_stats(self, request)
 
 class ClearAll(BaseGenTableTest):
     """
@@ -95,3 +118,63 @@ class AddDelete(BaseGenTableTest):
         self.assertIsInstance(response, ofp.message.bsn_gentable_clear_reply)
         self.assertEquals(response.error_count, 0)
         self.assertEquals(response.deleted_count, 0)
+
+class EntryStats(BaseGenTableTest):
+    """
+    Test retrieving entry stats
+    """
+    def runTest(self):
+        # Add a few entries
+        for i in range(0, 3):
+            self.do_add(vlan_vid=i, ipv4=0x12345678, mac=(0, 1, 2, 3, 4, i))
+
+        do_barrier(self.controller)
+        verify_no_errors(self.controller)
+
+        entries = self.do_entry_stats()
+        seen = set()
+        for entry in entries:
+            logging.debug(entry.show())
+            key = tlv_dict(entry.key)
+            stats = tlv_dict(entry.stats)
+            self.assertIn(ofp.bsn_tlv.vlan_vid, key)
+            self.assertIn(ofp.bsn_tlv.ipv4, key)
+            self.assertIn(ofp.bsn_tlv.rx_packets, stats)
+            self.assertIn(ofp.bsn_tlv.tx_packets, stats)
+            vlan_vid = key[ofp.bsn_tlv.vlan_vid]
+            seen.add(vlan_vid)
+            self.assertEqual(key[ofp.bsn_tlv.ipv4], 0x12345678)
+            self.assertEqual(stats[ofp.bsn_tlv.rx_packets], 100 * vlan_vid)
+            self.assertEqual(stats[ofp.bsn_tlv.tx_packets], 101 * vlan_vid)
+
+        self.assertEquals(seen, set([0, 1, 2]))
+
+class EntryDescStats(BaseGenTableTest):
+    """
+    Test retrieving entry desc stats
+    """
+    def runTest(self):
+        # Add a few entries
+        for i in range(0, 3):
+            self.do_add(vlan_vid=i, ipv4=0x12345678, mac=(0, 1, 2, 3, 4, i),
+                        checksum=0xfedcba9876543210fedcba9876543210 + i)
+
+        do_barrier(self.controller)
+        verify_no_errors(self.controller)
+
+        entries = self.do_entry_desc_stats()
+        seen = set()
+        for entry in entries:
+            logging.debug(entry.show())
+            key = tlv_dict(entry.key)
+            value = tlv_dict(entry.value)
+            self.assertIn(ofp.bsn_tlv.vlan_vid, key)
+            self.assertIn(ofp.bsn_tlv.ipv4, key)
+            self.assertIn(ofp.bsn_tlv.mac, value)
+            vlan_vid = key[ofp.bsn_tlv.vlan_vid]
+            seen.add(vlan_vid)
+            self.assertEqual(key[ofp.bsn_tlv.ipv4], 0x12345678)
+            self.assertEqual(value[ofp.bsn_tlv.mac], [0, 1, 2, 3, 4, vlan_vid])
+            self.assertEqual(entry.checksum, 0xfedcba9876543210fedcba9876543210 + vlan_vid)
+
+        self.assertEquals(seen, set([0, 1, 2]))
