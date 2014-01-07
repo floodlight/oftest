@@ -78,6 +78,10 @@ class BaseGenTableTest(base_tests.SimpleProtocol):
         request = ofp.message.bsn_gentable_desc_stats_request()
         return get_stats(self, request)
 
+    def do_table_stats(self):
+        request = ofp.message.bsn_gentable_stats_request()
+        return get_stats(self, request)
+
 class ClearAll(BaseGenTableTest):
     """
     Test clearing entire table
@@ -200,5 +204,24 @@ class TableDescStats(BaseGenTableTest):
                 self.assertEqual(entry.name, "test")
                 self.assertEqual(entry.buckets_size, 64)
                 self.assertEqual(entry.max_entries, 1000)
+
+        self.assertIn(TABLE_ID, seen)
+
+class TableStats(BaseGenTableTest):
+    """
+    Test retrieving table stats
+    """
+    def runTest(self):
+        entries = self.do_table_stats()
+        seen = set()
+        for entry in entries:
+            logging.debug(entry.show())
+            self.assertNotIn(entry.table_id, seen)
+            seen.add(entry.table_id)
+            if entry.table_id == TABLE_ID:
+                self.assertEqual(entry.entry_count, 0)
+                self.assertEqual(entry.checksum, 0)
+
+        # TODO add/modify/remove flows and verify entry_count/checksum
 
         self.assertIn(TABLE_ID, seen)
