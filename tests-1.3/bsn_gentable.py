@@ -102,6 +102,12 @@ class BaseGenTableTest(base_tests.SimpleProtocol):
         request = ofp.message.bsn_gentable_bucket_stats_request(table_id=TABLE_ID)
         return get_stats(self, request)
 
+    def do_set_buckets_size(self, buckets_size):
+        msg = ofp.message.bsn_gentable_set_buckets_size(
+            table_id=TABLE_ID,
+            buckets_size=buckets_size)
+        self.controller.message_send(msg)
+
 class ClearAll(BaseGenTableTest):
     """
     Test clearing entire table
@@ -341,3 +347,58 @@ class BucketStats(BaseGenTableTest):
         self.assertEquals(len(entries), 64)
         for i, entry in enumerate(entries):
             self.assertEquals(entry.checksum, buckets[i])
+
+class SetBucketsSize(BaseGenTableTest):
+    """
+    Test setting the checksum buckets size
+    """
+    def setUp(self):
+        BaseGenTableTest.setUp(self)
+        self.do_set_buckets_size(64)
+        do_barrier(self.controller)
+
+    def tearDown(self):
+        self.do_set_buckets_size(64)
+        do_barrier(self.controller)
+        BaseGenTableTest.tearDown(self)
+
+    def runTest(self):
+        # Verify initial state
+        entries = self.do_bucket_stats()
+        self.assertEquals(len(entries), 64)
+        for entry in entries:
+            self.assertEquals(entry.checksum, 0)
+
+        buckets32 = [0] * 32
+        buckets64 = [0] * 64
+
+        def update_bucket(checksum):
+            buckets32[checksum >> (128 - int(math.log(32, 2)))] ^= checksum
+            buckets64[checksum >> (128 - int(math.log(64, 2)))] ^= checksum
+
+        # Add a bunch of entries, spread among the checksum buckets
+        for i in range(0, 256):
+            update_bucket(make_checksum(i, i*31))
+            self.do_add(vlan_vid=i, ipv4=0x12345678, mac=(0, 1, 2, 3, 4, i),
+                        checksum=make_checksum(i, i*31))
+
+        entries = self.do_bucket_stats()
+        self.assertEquals(len(entries), 64)
+        for i, entry in enumerate(entries):
+            self.assertEquals(entry.checksum, buckets64[i])
+
+        self.do_set_buckets_size(32)
+        do_barrier(self.controller)
+
+        entries = self.do_bucket_stats()
+        self.assertEquals(len(entries), 32)
+        for i, entry in enumerate(entries):
+            self.assertEquals(entry.checksum, buckets32[i])
+
+        self.do_set_buckets_size(64)
+        do_barrier(self.controller)
+
+        entries = self.do_bucket_stats()
+        self.assertEquals(len(entries), 64)
+        for i, entry in enumerate(entries):
+            self.assertEquals(entry.checksum, buckets64[i])
