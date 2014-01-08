@@ -42,11 +42,11 @@ class BaseGenTableTest(base_tests.SimpleProtocol):
     def do_clear(self, checksum=0, checksum_mask=0):
         request = ofp.message.bsn_gentable_clear_request(
             table_id=TABLE_ID,
-            checksum=0,
-            checksum_mask=0)
+            checksum=checksum,
+            checksum_mask=checksum_mask)
         response, _ = self.controller.transact(request)
         self.assertIsInstance(response, ofp.message.bsn_gentable_clear_reply)
-        self.assertEquals(response.error_count, 0)
+        return response.deleted_count, response.error_count
 
     def do_add(self, vlan_vid, ipv4, mac, idle_notification=False, checksum=0):
         msg = ofp.message.bsn_gentable_entry_add(
@@ -121,11 +121,37 @@ class ClearAll(BaseGenTableTest):
         verify_no_errors(self.controller)
 
         # Delete all entries
-        request = ofp.message.bsn_gentable_clear_request(table_id=TABLE_ID)
-        response, _ = self.controller.transact(request)
-        self.assertIsInstance(response, ofp.message.bsn_gentable_clear_reply)
-        self.assertEquals(response.error_count, 0)
-        self.assertEquals(response.deleted_count, 3)
+        deleted, errors = self.do_clear(checksum=0, checksum_mask=0)
+        self.assertEquals(deleted, 3)
+        self.assertEquals(errors, 0)
+
+class ClearMasked(BaseGenTableTest):
+    """
+    Test clearing with a checksum mask
+    """
+    def runTest(self):
+        # Add 4 entries to each checksum bucket
+        for i in range(0, 256):
+            self.do_add(vlan_vid=i, ipv4=0x12345678, mac=(0, 1, 2, 3, 4, i),
+                        checksum=make_checksum(i, i*31))
+
+        do_barrier(self.controller)
+        verify_no_errors(self.controller)
+
+        # Delete bucket 0
+        deleted, errors = self.do_clear(make_checksum(0, 0), make_checksum(0xFC, 0))
+        self.assertEquals(deleted, 4)
+        self.assertEquals(errors, 0)
+
+        # Delete buckets 0 (already cleared), 1, 2, 3
+        deleted, errors = self.do_clear(make_checksum(0, 0), make_checksum(0xF0, 0))
+        self.assertEquals(deleted, 12)
+        self.assertEquals(errors, 0)
+
+        # Delete second half of bucket 4
+        deleted, errors = self.do_clear(make_checksum(0x10, 0), make_checksum(0xFE, 0))
+        self.assertEquals(deleted, 2)
+        self.assertEquals(errors, 0)
 
 class AddDelete(BaseGenTableTest):
     """
