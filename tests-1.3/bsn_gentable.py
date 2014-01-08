@@ -183,6 +183,65 @@ class EntryStats(BaseGenTableTest):
 
         self.assertEquals(seen, set([0, 1, 2]))
 
+class EntryStatsMasked(BaseGenTableTest):
+    """
+    Test retrieving entry stats with a checksum mask
+    """
+    def runTest(self):
+        def get_range(checksum, checksum_mask):
+            entries = self.do_entry_stats(checksum, checksum_mask)
+            vlan_vids = []
+            for entry in entries:
+                key = tlv_dict(entry.key)
+                vlan_vids.append(key[ofp.bsn_tlv.vlan_vid])
+            return sorted(vlan_vids)
+
+        # Add 4 entries to each checksum bucket
+        for i in range(0, 256):
+            self.do_add(vlan_vid=i, ipv4=0x12345678, mac=(0, 1, 2, 3, 4, i),
+                        checksum=make_checksum(i, i))
+
+        do_barrier(self.controller)
+        verify_no_errors(self.controller)
+
+        # Check first bucket
+        self.assertEquals(get_range(make_checksum(0, 0), make_checksum(0xFC, 0)),
+                          [0, 1, 2, 3])
+
+        # Check last bucket
+        self.assertEquals(get_range(make_checksum(0xFC, 0), make_checksum(0xFC, 0)),
+                          [252, 253, 254, 255])
+
+        # Check first half of first bucket
+        self.assertEquals(get_range(make_checksum(0x00, 0), make_checksum(0xFE, 0)),
+                          [0, 1])
+
+        # Check second half of first bucket
+        self.assertEquals(get_range(make_checksum(0x02, 0), make_checksum(0xFE, 0)),
+                          [2, 3])
+
+        # Check first half of last bucket
+        self.assertEquals(get_range(make_checksum(0xFC, 0), make_checksum(0xFE, 0)),
+                          [252, 253])
+
+        # Check second half of last bucket
+        self.assertEquals(get_range(make_checksum(0xFE, 0), make_checksum(0xFE, 0)),
+                          [254, 255])
+
+        # Check first two buckets
+        self.assertEquals(get_range(make_checksum(0, 0), make_checksum(0xF8, 0)),
+                          [0, 1, 2, 3, 4, 5, 6, 7])
+
+        # Check last two buckets
+        self.assertEquals(get_range(make_checksum(0xF8, 0), make_checksum(0xF8, 0)),
+                          [248, 249, 250, 251, 252, 253, 254, 255])
+
+        # Check matching on low bits
+        self.assertEquals(get_range(make_checksum(0x00, 0x00), ~1), [0])
+        self.assertEquals(get_range(make_checksum(0x01, 0x00), ~1), [1])
+        self.assertEquals(get_range(make_checksum(0x01, 0x02), ~1), [])
+
+
 class EntryDescStats(BaseGenTableTest):
     """
     Test retrieving entry desc stats
@@ -212,6 +271,64 @@ class EntryDescStats(BaseGenTableTest):
             self.assertEqual(entry.checksum, 0xfedcba9876543210fedcba9876543210 + vlan_vid)
 
         self.assertEquals(seen, set([0, 1, 2]))
+
+class EntryDescStatsMasked(BaseGenTableTest):
+    """
+    Test retrieving entry desc stats with a checksum mask
+    """
+    def runTest(self):
+        def get_range(checksum, checksum_mask):
+            entries = self.do_entry_desc_stats(checksum, checksum_mask)
+            vlan_vids = []
+            for entry in entries:
+                key = tlv_dict(entry.key)
+                vlan_vids.append(key[ofp.bsn_tlv.vlan_vid])
+            return sorted(vlan_vids)
+
+        # Add 4 entries to each checksum bucket
+        for i in range(0, 256):
+            self.do_add(vlan_vid=i, ipv4=0x12345678, mac=(0, 1, 2, 3, 4, i),
+                        checksum=make_checksum(i, i*31))
+
+        do_barrier(self.controller)
+        verify_no_errors(self.controller)
+
+        # Check first bucket
+        self.assertEquals(get_range(make_checksum(0, 0), make_checksum(0xFC, 0)),
+                          [0, 1, 2, 3])
+
+        # Check last bucket
+        self.assertEquals(get_range(make_checksum(0xFC, 0), make_checksum(0xFC, 0)),
+                          [252, 253, 254, 255])
+
+        # Check first half of first bucket
+        self.assertEquals(get_range(make_checksum(0x00, 0), make_checksum(0xFE, 0)),
+                          [0, 1])
+
+        # Check second half of first bucket
+        self.assertEquals(get_range(make_checksum(0x02, 0), make_checksum(0xFE, 0)),
+                          [2, 3])
+
+        # Check first half of last bucket
+        self.assertEquals(get_range(make_checksum(0xFC, 0), make_checksum(0xFE, 0)),
+                          [252, 253])
+
+        # Check second half of last bucket
+        self.assertEquals(get_range(make_checksum(0xFE, 0), make_checksum(0xFE, 0)),
+                          [254, 255])
+
+        # Check first two buckets
+        self.assertEquals(get_range(make_checksum(0, 0), make_checksum(0xF8, 0)),
+                          [0, 1, 2, 3, 4, 5, 6, 7])
+
+        # Check last two buckets
+        self.assertEquals(get_range(make_checksum(0xF8, 0), make_checksum(0xF8, 0)),
+                          [248, 249, 250, 251, 252, 253, 254, 255])
+
+        # Check matching on low bits
+        self.assertEquals(get_range(make_checksum(0x00, 0x00), ~1), [0])
+        self.assertEquals(get_range(make_checksum(0x01, 0x00), ~1), [1])
+        self.assertEquals(get_range(make_checksum(0x01, 0x02), ~1), [])
 
 class TableDescStats(BaseGenTableTest):
     """
