@@ -378,6 +378,29 @@ class EntryDescStatsMasked(BaseGenTableTest):
         self.assertEquals(get_range(make_checksum(0x01, 0x00), ~1), [1])
         self.assertEquals(get_range(make_checksum(0x01, 0x02), ~1), [])
 
+class EntryDescStatsFragmented(BaseGenTableTest):
+    """
+    Test retrieving entry stats in mutiple replies
+    """
+    def runTest(self):
+        # Add a bunch of entries
+        # Enough for 3 stats replies
+        for i in range(0, 4500):
+            self.do_add(vlan_vid=i, ipv4=0x12345678, mac=(0, 1, 2, 3, 4, 5))
+
+        do_barrier(self.controller)
+        verify_no_errors(self.controller)
+
+        entries = self.do_entry_desc_stats()
+        seen = set()
+        for entry in entries:
+            key = tlv_dict(entry.key)
+            vlan_vid = key[ofp.bsn_tlv.vlan_vid]
+            self.assertNotIn(vlan_vid, seen)
+            seen.add(vlan_vid)
+
+        self.assertEquals(seen, set(range(0, 4500)))
+
 class TableDescStats(BaseGenTableTest):
     """
     Test retrieving table desc stats
