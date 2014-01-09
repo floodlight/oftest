@@ -274,7 +274,7 @@ class EntryStatsFragmented(BaseGenTableTest):
     def runTest(self):
         # Add a bunch of entries
         # Enough for 3 stats replies
-        for i in range(0, 4500):
+        for i in range(0, 4095):
             self.do_add(vlan_vid=i, ipv4=0x12345678, mac=(0, 1, 2, 3, 4, 5))
 
         do_barrier(self.controller)
@@ -288,7 +288,7 @@ class EntryStatsFragmented(BaseGenTableTest):
             self.assertNotIn(vlan_vid, seen)
             seen.add(vlan_vid)
 
-        self.assertEquals(seen, set(range(0, 4500)))
+        self.assertEquals(seen, set(range(0, 4095)))
 
 class EntryDescStats(BaseGenTableTest):
     """
@@ -385,7 +385,7 @@ class EntryDescStatsFragmented(BaseGenTableTest):
     def runTest(self):
         # Add a bunch of entries
         # Enough for 3 stats replies
-        for i in range(0, 4500):
+        for i in range(0, 4095):
             self.do_add(vlan_vid=i, ipv4=0x12345678, mac=(0, 1, 2, 3, 4, 5))
 
         do_barrier(self.controller)
@@ -399,7 +399,7 @@ class EntryDescStatsFragmented(BaseGenTableTest):
             self.assertNotIn(vlan_vid, seen)
             seen.add(vlan_vid)
 
-        self.assertEquals(seen, set(range(0, 4500)))
+        self.assertEquals(seen, set(range(0, 4095)))
 
 class TableDescStats(BaseGenTableTest):
     """
