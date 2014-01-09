@@ -592,6 +592,37 @@ class SetBucketsSize(BaseGenTableTest):
         for i, entry in enumerate(entries):
             self.assertEquals(entry.checksum, buckets64[i])
 
+class SetBucketsSizeError(BaseGenTableTest):
+    """
+    Test error cases in setting the checksum buckets size
+    """
+    def setUp(self):
+        BaseGenTableTest.setUp(self)
+        self.do_set_buckets_size(64)
+        do_barrier(self.controller)
+
+    def tearDown(self):
+        self.do_set_buckets_size(64)
+        do_barrier(self.controller)
+        BaseGenTableTest.tearDown(self)
+
+    def runTest(self):
+        # Zero buckets size
+        self.do_set_buckets_size(0)
+        do_barrier(self.controller)
+
+        error, _ = self.controller.poll(ofp.OFPT_ERROR, 0)
+        self.assertIsInstance(error, ofp.message.bad_request_error_msg)
+        self.assertEquals(error.code, ofp.OFPBRC_EPERM)
+
+        # Non power of 2 buckets size
+        self.do_set_buckets_size(7)
+        do_barrier(self.controller)
+
+        error, _ = self.controller.poll(ofp.OFPT_ERROR, 0)
+        self.assertIsInstance(error, ofp.message.bad_request_error_msg)
+        self.assertEquals(error.code, ofp.OFPBRC_EPERM)
+
 class AddError(BaseGenTableTest):
     """
     Test failure adding entries
