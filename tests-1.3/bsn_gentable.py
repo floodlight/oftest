@@ -537,6 +537,25 @@ class BucketStats(BaseGenTableTest):
         for i, entry in enumerate(entries):
             self.assertEquals(entry.checksum, buckets[i])
 
+class BucketStatsFragmented(BaseGenTableTest):
+    """
+    Test retrieving checksum bucket stats in multiple replies
+    """
+
+    def tearDown(self):
+        self.do_set_buckets_size(64)
+        do_barrier(self.controller)
+        BaseGenTableTest.tearDown(self)
+
+    def runTest(self):
+        # Enough for 3 stats messages
+        self.do_set_buckets_size(8192)
+        do_barrier(self.controller)
+        verify_no_errors(self.controller)
+
+        entries = self.do_bucket_stats()
+        self.assertEquals(len(entries), 8192)
+
 class SetBucketsSize(BaseGenTableTest):
     """
     Test setting the checksum buckets size
