@@ -314,7 +314,7 @@ class EntryDescStatsMasked(BaseGenTableTest):
         # Add 4 entries to each checksum bucket
         for i in range(0, 256):
             self.do_add(vlan_vid=i, ipv4=0x12345678, mac=(0, 1, 2, 3, 4, i),
-                        checksum=make_checksum(i, i*31))
+                        checksum=make_checksum(i, i))
 
         do_barrier(self.controller)
         verify_no_errors(self.controller)
