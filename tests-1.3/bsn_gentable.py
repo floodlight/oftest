@@ -6,6 +6,7 @@ BSN gentable extension test cases
 
 import logging
 import math
+import random
 
 from oftest import config
 import oftest.base_tests as base_tests
@@ -641,3 +642,41 @@ class ModifyError(BaseGenTableTest):
         new_entries = self.do_entry_desc_stats()
         self.assertEquals(len(new_entries), 1)
         self.assertEquals(new_entries, orig_entries)
+
+class BadTableIdError(BaseGenTableTest):
+    """
+    Test failure of each message when specifying a nonexistent table id
+    """
+    def runTest(self):
+        def check_error(msg):
+            reply, _ = self.controller.transact(msg)
+            self.assertIsInstance(reply, ofp.message.bad_request_error_msg)
+            self.assertEquals(reply.code, ofp.OFPBRC_BAD_TABLE_ID)
+
+        valid_table_ids = set([x.table_id for x in self.do_table_desc_stats()])
+        invalid_table_id = TABLE_ID
+        while invalid_table_id in valid_table_ids:
+            invalid_table_id = random.randrange(65536)
+
+        logging.debug("Using invalid table id %d", invalid_table_id)
+
+        check_error(ofp.message.bsn_gentable_clear_request(
+            table_id=invalid_table_id))
+
+        check_error(ofp.message.bsn_gentable_entry_add(
+            table_id=invalid_table_id))
+
+        check_error(ofp.message.bsn_gentable_entry_delete(
+            table_id=invalid_table_id))
+
+        check_error(ofp.message.bsn_gentable_entry_stats_request(
+            table_id=invalid_table_id))
+
+        check_error(ofp.message.bsn_gentable_entry_desc_stats_request(
+            table_id=invalid_table_id))
+
+        check_error(ofp.message.bsn_gentable_bucket_stats_request(
+            table_id=invalid_table_id))
+
+        check_error(ofp.message.bsn_gentable_set_buckets_size(
+            table_id=invalid_table_id))
