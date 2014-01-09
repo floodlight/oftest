@@ -590,3 +590,54 @@ class SetBucketsSize(BaseGenTableTest):
         self.assertEquals(len(entries), 64)
         for i, entry in enumerate(entries):
             self.assertEquals(entry.checksum, buckets64[i])
+
+class AddError(BaseGenTableTest):
+    """
+    Test failure adding entries
+    """
+    def runTest(self):
+        # Invalid key
+        self.do_add(vlan_vid=10000, ipv4=0x12345678, mac=(0, 1, 2, 3, 4, 5))
+        do_barrier(self.controller)
+
+        error, _ = self.controller.poll(ofp.OFPT_ERROR, 0)
+        self.assertIsInstance(error, ofp.message.bad_request_error_msg)
+        self.assertEquals(error.code, ofp.OFPBRC_EPERM)
+
+        self.assertEquals(len(self.do_entry_desc_stats()), 0)
+
+        # Invalid value
+        self.do_add(vlan_vid=100, ipv4=0x12345678, mac=(1, 1, 2, 3, 4, 5))
+        do_barrier(self.controller)
+
+        error, _ = self.controller.poll(ofp.OFPT_ERROR, 0)
+        self.assertIsInstance(error, ofp.message.bad_request_error_msg)
+        self.assertEquals(error.code, ofp.OFPBRC_EPERM)
+
+        self.assertEquals(len(self.do_entry_desc_stats()), 0)
+
+class ModifyError(BaseGenTableTest):
+    """
+    Test failure modifying entries
+    """
+    def runTest(self):
+        # Add a valid entry we'll try to modify
+        self.do_add(vlan_vid=100, ipv4=0x12345678, mac=(0, 1, 2, 3, 4, 5))
+        do_barrier(self.controller)
+        verify_no_errors(self.controller)
+
+        orig_entries = self.do_entry_desc_stats()
+        self.assertEquals(len(orig_entries), 1)
+
+        # Invalid value
+        self.do_add(vlan_vid=100, ipv4=0x12345678, mac=(1, 1, 2, 3, 4, 5))
+        do_barrier(self.controller)
+
+        error, _ = self.controller.poll(ofp.OFPT_ERROR, 0)
+        self.assertIsInstance(error, ofp.message.bad_request_error_msg)
+        self.assertEquals(error.code, ofp.OFPBRC_EPERM)
+
+        # Check that the table wasn't modified
+        new_entries = self.do_entry_desc_stats()
+        self.assertEquals(len(new_entries), 1)
+        self.assertEquals(new_entries, orig_entries)
