@@ -655,6 +655,41 @@ class DeleteNonexistentError(BaseGenTableTest):
         self.assertIsInstance(error, ofp.message.bad_request_error_msg)
         self.assertEquals(error.code, ofp.OFPBRC_EPERM)
 
+class DeleteFailureError(BaseGenTableTest):
+    """
+    Test failure deleting a nonexistent entry
+
+    The very special idle_notification TLV will cause the entry to fail
+    being deleted the first time. This behavior is only there to help
+    test this error path.
+    """
+    def runTest(self):
+        self.do_add(vlan_vid=1000, ipv4=0x12345678,
+                    mac=(0, 1, 2, 3, 4, 5), idle_notification=True)
+        do_barrier(self.controller)
+        verify_no_errors(self.controller)
+
+        orig_entries = self.do_entry_desc_stats()
+        self.assertEquals(len(orig_entries), 1)
+
+        # This will fail
+        self.do_delete(vlan_vid=1000, ipv4=0x12345678)
+        do_barrier(self.controller)
+
+        error, _ = self.controller.poll(ofp.OFPT_ERROR, 0)
+        self.assertIsInstance(error, ofp.message.bad_request_error_msg)
+        self.assertEquals(error.code, ofp.OFPBRC_EPERM)
+
+        # Check that the table wasn't modified
+        new_entries = self.do_entry_desc_stats()
+        self.assertEquals(len(new_entries), 1)
+        self.assertEquals(new_entries, orig_entries)
+
+        # This will succeed
+        self.do_delete(vlan_vid=1000, ipv4=0x12345678)
+        do_barrier(self.controller)
+        verify_no_errors(self.controller)
+
 class BadTableIdError(BaseGenTableTest):
     """
     Test failure of each message when specifying a nonexistent table id
