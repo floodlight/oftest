@@ -643,6 +643,18 @@ class ModifyError(BaseGenTableTest):
         self.assertEquals(len(new_entries), 1)
         self.assertEquals(new_entries, orig_entries)
 
+class DeleteNonexistentError(BaseGenTableTest):
+    """
+    Test failure deleting a nonexistent entry
+    """
+    def runTest(self):
+        self.do_delete(vlan_vid=1000, ipv4=0x12345678)
+        do_barrier(self.controller)
+
+        error, _ = self.controller.poll(ofp.OFPT_ERROR, 0)
+        self.assertIsInstance(error, ofp.message.bad_request_error_msg)
+        self.assertEquals(error.code, ofp.OFPBRC_EPERM)
+
 class BadTableIdError(BaseGenTableTest):
     """
     Test failure of each message when specifying a nonexistent table id
