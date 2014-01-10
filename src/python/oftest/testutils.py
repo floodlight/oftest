@@ -406,11 +406,10 @@ def flow_msg_create(parent, pkt, ing_port=None, action_list=None, wildcards=None
     """
     match = parse.packet_to_flow_match(pkt)
     parent.assertTrue(match is not None, "Flow match from pkt failed")
-    if wildcards is None:
-        wildcards = required_wildcards(parent)
+    if wildcards is not None:
+        match.wildcards = wildcards
     if in_band:
         wildcards &= ~ofp.OFPFW_IN_PORT
-    match.wildcards = wildcards
     match.in_port = ing_port
 
     if type(egr_ports) == type([]):
