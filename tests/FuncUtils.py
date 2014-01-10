@@ -622,7 +622,7 @@ def enqueue(self,ingress_port,egress_port,egress_queue_id):
 #Generate a flow with enqueue action i.e output to a queue configured on a egress_port
 
     pkt = simple_tcp_packet()
-    match = packet_to_flow_match(self, pkt)
+    match = parse.packet_to_flow_match(pkt)
     match.wildcards &= ~ofp.OFPFW_IN_PORT
     self.assertTrue(match is not None, 
             "Could not generate flow match from pkt")
