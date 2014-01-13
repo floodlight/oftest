@@ -167,7 +167,7 @@ class Grp50No30(base_tests.SimpleDataPlane):
 
         #Sending non matching packet , verify Packetin event gets triggered.
         logging.info("Sending a non matching packet")
-        pkt2 = simple_eth_packet(dl_src='AC:81:12:99:47:0F', dl_dst='AC:81:12:99:47:0F',dl_type = 0x88cc);
+        pkt2 = simple_eth_packet(dl_src='AC:81:12:99:47:0F', dl_dst='AC:81:12:99:47:0E',dl_type = 0x88cc)
         self.dataplane.send(of_ports[0], str(pkt2))
         
         logging.info("Waiting for a packet_in message from the switch")

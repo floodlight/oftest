@@ -204,6 +204,10 @@ class Grp40No40(base_tests.SimpleProtocol):
         logging = get_logger()
         logging.info("Running Grp40No40 testcase")
         
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+
         #clearing switch
         rv = delete_all_flows(self.controller)
         self.assertTrue(rv!=-1,"failed to delete all flows")
@@ -214,14 +218,14 @@ class Grp40No40(base_tests.SimpleProtocol):
         pkt = simple_tcp_packet()
         match = parse.packet_to_flow_match(pkt)
         self.assertTrue(match is not None, "Could not create a Match")
-        match.in_port = 3
+        match.in_port = of_ports[0]
         flowmod = message.flow_mod()
         flowmod.match=match
         flowmod.match.wildcards = ofp.OFPFW_ALL^ofp.OFPFW_IN_PORT
         flowmod.buffer_id = 0xffffffff
         flowmod.command = ofp.OFPFC_ADD
         act = action.action_output()
-        act.port = 2
+        act.port = of_ports[1]
         self.assertTrue(flowmod.actions.add(act), "Could not add actions")
 
         i=1
