@@ -45,6 +45,7 @@ class Grp100No10(base_tests.SimpleProtocol):
         #set initial hello to False
         self.controller.initial_hello=False
         self.controller.start()
+
         self.controller.connect(timeout=20)
         # By default, respond to echo requests
         self.controller.keep_alive = True
@@ -53,18 +54,24 @@ class Grp100No10(base_tests.SimpleProtocol):
         if self.controller.switch_addr is None: 
             raise Exception("Controller startup failed (no switch addr)")
         logging.info("Connected " + str(self.controller.switch_addr))
+
+        logging.info("Sending Hello message with incorrect version..")
+        request = message.hello()                                               
+        logging.info("Change hello message version to 0 and send it to control plane")
+        request.header.version=0
+        rv = self.controller.message_send(request)
         
     def runTest(self):
 
         logging.info("Running Grp100No10 HelloFailed Test")  
-
+        '''
         #Send a hello message with incorrect version
         logging.info("Sending Hello message with incorrect version..")
         request = message.hello()                                               
         logging.info("Change hello message version to 0 and send it to control plane")
         request.header.version=0
         rv = self.controller.message_send(request)      
-        
+        '''
         logging.info("Waiting for OFPT_ERROR message..")
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,         
                                                timeout=5)
@@ -656,9 +663,9 @@ class Grp100No230(base_tests.SimpleProtocol):
         self.assertTrue(response is not None, 
                                'Switch did not reply with error message') 
         self.assertTrue(response.type==ofp.OFPET_FLOW_MOD_FAILED, 
-                               'Error type is not flow mod failed ') 
+                               'Error type is not flow mod failed, got {0}'.format(response.type)) 
         self.assertTrue(response.code==ofp.OFPFMFC_BAD_EMERG_TIMEOUT, 
-                               'Error code is not bad emergency timeout')
+                               'Error code is not bad emergency timeout, got {0}'.format(response.code))
 
 
 class Grp100No240(base_tests.SimpleProtocol):   
