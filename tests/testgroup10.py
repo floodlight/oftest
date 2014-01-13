@@ -525,7 +525,6 @@ class Grp10No90(base_tests.SimpleDataPlane):
         
         #Insert an emergency flow entry 
         test_packet = simple_tcp_packet()
-        match = parse.packet_to_flow_match(test_packet)
         e_flow_mod = message.flow_mod()
         match = parse.packet_to_flow_match(test_packet)
         e_flow_mod.match = match
