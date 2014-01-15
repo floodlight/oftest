@@ -468,7 +468,8 @@ class Grp40No90(base_tests.SimpleDataPlane):
         logging.info("Installing a flow")
            
         #Create and add flow-1 Match on all, except one wildcarded (src adddress).Action A , output to of_port[1]
-        (pkt,match) = match_all_except_source_address(self,of_ports)
+        #(pkt,match) = match_all_except_source_address(self,of_ports)
+        (pkt,match) = exact_match(self,of_ports)
 
         #Send Packet matching the flow thus incrementing counters like packet_count,byte_count
         logging.info("Sending a matching packet to increment the flow counters")
