@@ -384,6 +384,8 @@ def simple_icmpv6_packet(pktlen=100,
 def simple_arp_packet(pktlen=60, 
                       eth_dst='ff:ff:ff:ff:ff:ff',
                       eth_src='00:06:07:08:09:0a',
+                      vlan_vid=0,
+                      vlan_pcp=0,
                       arp_op=1,
                       ip_snd='192.168.0.1',
                       ip_tgt='192.168.0.2',
@@ -411,8 +413,10 @@ def simple_arp_packet(pktlen=60,
     if MINSIZE > pktlen:
         pktlen = MINSIZE
 
-    pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
-          scapy.ARP(hwsrc=hw_snd, hwdst=hw_tgt, pdst=ip_tgt, psrc=ip_snd, op=arp_op)
+    pkt = scapy.Ether(dst=eth_dst, src=eth_src)
+    if vlan_vid or vlan_pcp:
+        pkt /= scapy.Dot1Q(vlan=vlan_vid, prio=vlan_pcp)
+    pkt /= scapy.ARP(hwsrc=hw_snd, hwdst=hw_tgt, pdst=ip_tgt, psrc=ip_snd, op=arp_op)
 
     pkt = pkt/("0" * (pktlen - len(pkt)))
 
