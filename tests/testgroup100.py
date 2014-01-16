@@ -209,8 +209,6 @@ class Grp100No90(base_tests.SimpleDataPlane):
         pkt=simple_tcp_packet()
         match = parse.packet_to_flow_match(pkt)
         self.assertTrue(match is not None, "Could not generate flow match from pkt")
-        match.wildcards = ofp.OFPFW_ALL ^ ofp.OFPFW_NW_DST_MASK
-        match.nw_dst = parse.parse_ip("192.168.10.100")
         flow_mod_msg = message.flow_mod()
         flow_mod_msg.match = match
         flow_mod_msg.command = ofp.OFPFC_ADD
@@ -226,7 +224,7 @@ class Grp100No90(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
       
         #Sending a big packet to create a buffer
-        pkt = simple_tcp_packet(pktlen=400,ip_dst="192.168.10.100");
+        pkt = simple_tcp_packet(pktlen=400,ip_dst="192.168.0.2")
         self.dataplane.send(of_ports[1], str(pkt))
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_PACKET_IN,
                                                timeout=5)
