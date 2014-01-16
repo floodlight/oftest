@@ -64,14 +64,7 @@ class Grp100No10(base_tests.SimpleProtocol):
     def runTest(self):
 
         logging.info("Running Grp100No10 HelloFailed Test")  
-        '''
-        #Send a hello message with incorrect version
-        logging.info("Sending Hello message with incorrect version..")
-        request = message.hello()                                               
-        logging.info("Change hello message version to 0 and send it to control plane")
-        request.header.version=0
-        rv = self.controller.message_send(request)      
-        '''
+
         logging.info("Waiting for OFPT_ERROR message..")
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,         
                                                timeout=5)
