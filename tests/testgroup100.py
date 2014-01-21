@@ -45,6 +45,7 @@ class Grp100No10(base_tests.SimpleProtocol):
         #set initial hello to False
         self.controller.initial_hello=False
         self.controller.start()
+
         self.controller.connect(timeout=20)
         # By default, respond to echo requests
         self.controller.keep_alive = True
@@ -53,18 +54,17 @@ class Grp100No10(base_tests.SimpleProtocol):
         if self.controller.switch_addr is None: 
             raise Exception("Controller startup failed (no switch addr)")
         logging.info("Connected " + str(self.controller.switch_addr))
+
+        logging.info("Sending Hello message with incorrect version..")
+        request = message.hello()                                               
+        logging.info("Change hello message version to 0 and send it to control plane")
+        request.header.version=0
+        rv = self.controller.message_send(request)
         
     def runTest(self):
 
         logging.info("Running Grp100No10 HelloFailed Test")  
 
-        #Send a hello message with incorrect version
-        logging.info("Sending Hello message with incorrect version..")
-        request = message.hello()                                               
-        logging.info("Change hello message version to 0 and send it to control plane")
-        request.header.version=0
-        rv = self.controller.message_send(request)      
-        
         logging.info("Waiting for OFPT_ERROR message..")
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_ERROR,         
                                                timeout=5)
@@ -202,8 +202,6 @@ class Grp100No90(base_tests.SimpleDataPlane):
         pkt=simple_tcp_packet()
         match = parse.packet_to_flow_match(pkt)
         self.assertTrue(match is not None, "Could not generate flow match from pkt")
-        match.wildcards = ofp.OFPFW_ALL ^ ofp.OFPFW_NW_DST_MASK
-        match.nw_dst = parse.parse_ip("192.168.10.100")
         flow_mod_msg = message.flow_mod()
         flow_mod_msg.match = match
         flow_mod_msg.command = ofp.OFPFC_ADD
@@ -219,7 +217,7 @@ class Grp100No90(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
       
         #Sending a big packet to create a buffer
-        pkt = simple_tcp_packet(pktlen=400,ip_dst="192.168.10.100");
+        pkt = simple_tcp_packet(pktlen=400,ip_dst="192.168.0.2")
         self.dataplane.send(of_ports[1], str(pkt))
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_PACKET_IN,
                                                timeout=5)
@@ -656,9 +654,9 @@ class Grp100No230(base_tests.SimpleProtocol):
         self.assertTrue(response is not None, 
                                'Switch did not reply with error message') 
         self.assertTrue(response.type==ofp.OFPET_FLOW_MOD_FAILED, 
-                               'Error type is not flow mod failed ') 
+                               'Error type is not flow mod failed, got {0}'.format(response.type)) 
         self.assertTrue(response.code==ofp.OFPFMFC_BAD_EMERG_TIMEOUT, 
-                               'Error code is not bad emergency timeout')
+                               'Error code is not bad emergency timeout, got {0}'.format(response.code))
 
 
 class Grp100No240(base_tests.SimpleProtocol):   

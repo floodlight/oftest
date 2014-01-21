@@ -239,7 +239,7 @@ class Grp90No70(base_tests.SimpleDataPlane):
             if response.buffer_id != 0xFFFFFFFF :
                 self.assertTrue(len(response.data)<=bytes,"Packet_in size is greater than max_len field")
             else:
-                self.assertTrue(len(response.data)==len(str(pkt)),"Buffer None here but packet_in is not a complete packet")
+                self.assertTrue(len(response.data)==len(str(pkt)),"buffer_id is None, but packet_in is not complete. Expected {0} bytes, but received {1}".format(len(response.data), len(str(pkt))))
 
            
 class Grp90No110(base_tests.SimpleDataPlane):
