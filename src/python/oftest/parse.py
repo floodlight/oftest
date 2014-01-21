@@ -307,13 +307,15 @@ def packet_to_flow_match(packet, pkt_format="L2", match_on_arp=False):
             match.dl_vlan = dot1q.vlan
             match.dl_vlan_pcp = dot1q.prio
             match.dl_type = dot1q.type
+
+            match.wildcards &= ~OFPFW_DL_VLAN
+            match.wildcards &= ~OFPFW_DL_VLAN_PCP
         else:
             match.dl_vlan = OFP_VLAN_NONE
             match.dl_vlan_pcp = 0
-        match.wildcards &= ~OFPFW_DL_VLAN
-        match.wildcards &= ~OFPFW_DL_VLAN_PCP
 
-    match.dl_type = ether.type
+    if not dot1q:
+        match.dl_type = ether.type
     match.wildcards &= ~OFPFW_DL_TYPE
 
     if pconf == None or 'l3' in pconf or 'full' in pconf:

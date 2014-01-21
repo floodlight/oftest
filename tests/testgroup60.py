@@ -90,8 +90,9 @@ class Grp60No20(base_tests.SimpleDataPlane):
         sleep(2)
         
         #Create a Match on Ingress flow
-        (pkt,match) = wildcard_all_except_ingress(self,of_ports)
-       
+        #(pkt,match) = wildcard_all_except_ingress(self,of_ports)
+        (pkt,match) = exact_match(self,of_ports)
+
         #Send Packets matching the flow 
         logging.info("Sending 5 packets matching the flow entry")
         num_pkts = 5

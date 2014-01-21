@@ -131,7 +131,7 @@ class Grp80No30(base_tests.SimpleProtocol):
         #Send Echo Request
         logging.info("Sending a Echo request with a version which is not supported by the switch")
         request=message.echo_request()
-        request.header.version=0  
+        request.header.version=0
         rv=self.controller.message_send(request)
         self.assertTrue(rv is not None,"Unable to send the message")
 
