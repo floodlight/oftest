@@ -1236,10 +1236,10 @@ class Grp50No180(base_tests.SimpleDataPlane):
         sleep(5)
         #Insert two Overlapping Flows : Exact Match and Wildcard All.
   	logging.info("Installing a flow entry with Exact Match (low priority)")      
-        (pkt,match) = exact_match_with_prio(self,of_ports) 
+        (pkt,match) = exact_match_with_prio(self,of_ports,priority=1)
         
 	logging.info("Installing an overlapping wildcarded flow (higher priority)")
-        #(pkt2,match2) = wildcard_all(self,of_ports,priority=20)
+        (pkt2,match2) = wildcard_all(self,of_ports,priority=20)
         
         
         #Sending packet matching both the flows , 
