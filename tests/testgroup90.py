@@ -111,6 +111,7 @@ class Grp90No20(base_tests.SimpleDataPlane):
             (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN, timeout=3)
             self.assertTrue(response is not None,
                         'Packet In not received on control plane')
+            self.assertEqual(response.reason, ofp.OFPR_NO_MATCH, 'PacketIn received for reason other than OFPR_NO_MATCH. Reason was {0}.'.format(response.reason))
 
             #Verify buffer_id field and data field
             if response.buffer_id == 0xFFFFFFFF:
