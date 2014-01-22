@@ -218,9 +218,16 @@ class Grp100No90(base_tests.SimpleDataPlane):
       
         #Sending a big packet to create a buffer
         pkt = simple_tcp_packet(pktlen=400,ip_dst="192.168.0.2")
+        data_len = len(pkt)
+
         self.dataplane.send(of_ports[1], str(pkt))
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_PACKET_IN,
                                                timeout=5)
+
+        if response.buffer_id == 0xffffffff:
+            logging.info("Device was unable to buffer packet.")
+            self.assertEqual(data_len, len(response.data), "PacketIn data field was not equal to original packet. Expected {0}, received {1}".format(data_len, len(response.data)))
+            return
        
         #Creating packet out to clear the buffer 
         msg = message.packet_out()

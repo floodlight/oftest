@@ -114,7 +114,7 @@ class Grp90No20(base_tests.SimpleDataPlane):
 
             #Verify buffer_id field and data field
             if response.buffer_id == 0xFFFFFFFF:
-                self.assertTrue(len(response.data)==len(str(pkt)),"buffer_id of packet_in is -1, however data field of packet_in was the wrong size. Expected {0}, but received {1}".format(len(response.data), len(str(pkt))))
+                self.assertTrue(len(response.data)==len(str(pkt)),"buffer_id of packet_in is -1, however data field of packet_in was the wrong size. Expected {0}, but received {1}".format(len(str(pkt)), len(response.data)))
             elif (bytes==0):
                 self.assertEqual(len(response.data),bytes,"PacketIn Size is not equal to miss_send_len") 
             else:
@@ -239,7 +239,7 @@ class Grp90No70(base_tests.SimpleDataPlane):
             if response.buffer_id != 0xFFFFFFFF :
                 self.assertTrue(len(response.data)<=bytes,"Packet_in size is greater than max_len field")
             else:
-                self.assertTrue(len(response.data)==len(str(pkt)),"buffer_id of packet_in is -1, however data field in packet_in was the wrong size. Expected {0} bytes, but received {1}".format(len(response.data), len(str(pkt))))
+                self.assertTrue(len(response.data)==len(str(pkt)),"buffer_id of packet_in is -1, however data field in packet_in was the wrong size. Expected {0} bytes, but received {1}".format(len(str(pkt)), len(str(response.data))))
 
            
 class Grp90No110(base_tests.SimpleDataPlane):
