@@ -58,7 +58,7 @@ def exact_match_with_prio(self,of_ports,priority=None):
 
     #Create a simple tcp packet and generate exact flow match from it.
     pkt_exactflow = simple_tcp_packet()
-    match = parse.packet_to_flow_match(pkt_exactflow)
+    match = parse.packet_to_flow_match(pkt_exactflow, exact=True)
     self.assertTrue(match is not None, "Could not generate flow match from pkt")
     match.in_port = of_ports[0]
     #match.nw_src = 1
