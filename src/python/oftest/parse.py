@@ -252,7 +252,7 @@ def packet_type_classify(ether):
         arp = None
     return (dot1q, ip, tcp, udp, icmp, arp)
 
-def packet_to_flow_match(packet, pkt_format="L2", match_on_arp=False):
+def packet_to_flow_match(packet, pkt_format="L2", match_on_arp=False, exact=False):
     """
     Create a flow match that matches packet with the given wildcards
 
@@ -273,7 +273,7 @@ def packet_to_flow_match(packet, pkt_format="L2", match_on_arp=False):
     @todo Check if packet is other than L2 format
     @todo Implement ICMP and ARP fields
     """
-    if config['conformance'] == None:
+    if config['conformance'] == None or exact:
         pconf = None
     else:
         pconf = config['conformance'].split('+')
