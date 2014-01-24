@@ -418,7 +418,7 @@ def simple_arp_packet(pktlen=60,
         pkt /= scapy.Dot1Q(vlan=vlan_vid, prio=vlan_pcp)
     pkt /= scapy.ARP(hwsrc=hw_snd, hwdst=hw_tgt, pdst=ip_tgt, psrc=ip_snd, op=arp_op)
 
-    pkt = pkt/("0" * (pktlen - len(pkt)))
+    pkt = pkt/("\0" * (pktlen - len(pkt)))
 
     return pkt
 
