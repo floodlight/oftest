@@ -229,16 +229,6 @@ class Controller(Thread):
             #if self.filter_packet(rawmsg, hdr):
             #    continue
 
-            # Check that supported version on switch is as least as recent as
-            # the configured Openflow version in oftests
-            if hdr_version < cfg_ofp.OFP_VERSION:
-                self.logger.error("Switch only supports up to OpenFlow version %d (OFTest version is %d)",
-                                  hdr_version, cfg_ofp.OFP_VERSION)
-                print "Switch only supports up to OpenFlow version %d (OFTest version is %d)" % \
-                    (hdr_version, cfg_ofp.OFP_VERSION)
-                self.disconnect()
-                return
-
             msg = ofp.message.parse_message(rawmsg)
             if not msg:
                 self.parse_errors += 1
