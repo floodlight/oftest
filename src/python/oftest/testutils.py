@@ -1687,4 +1687,33 @@ def verify_no_errors(ctrl):
     if error:
         raise AssertionError("unexpected error type=%d code=%d" % (error.err_type, error.code))
 
+def verify_capability(test, capability):
+    """
+    Assert that the DUT supports the specified capability.
+
+    @param test Instance of base_tests.SimpleProtocol
+    @param capability One of ofp_capabilities.
+    """
+    logging.info("Verifing that capability code is valid.")
+    test.assertIn(capability, ofp.const.ofp_capabilities_map,
+                  "Capability code %d does not exist." % capability)
+    capability_str = ofp.const.ofp_capabilities_map[capability]
+    
+    logging.info(("Sending features_request to test if capability "
+                  "%s is supported.") % capability_str)
+    req = ofp.message.features_request()
+    res, raw = test.controller.transact(req)
+    test.assertIsNotNone(res, "Did not receive a response from the DUT.")
+    test.assertEqual(res.type, ofp.OFPT_FEATURES_REPLY,
+                     ("Unexpected packet type %d received in response to "
+                      "OFPT_FEATURES_REQUEST") % res.type)
+    logging.info("Received features_request.")
+    
+    logging.info("Verifying %s bit is set." % capability_str)
+    test.assertTrue((res.capabilities & capability) > 0,
+                    ("Capabilities bitmask does not support "
+                     "%s.") % capability_str)
+    logging.info(("Switch capabilities bitmask claims to support "
+                  "%s.") % capability_str)
+
 __all__ = list(set(locals()) - _import_blacklist)
