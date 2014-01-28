@@ -1700,7 +1700,7 @@ def verify_capability(test, capability):
     capability_str = ofp.const.ofp_capabilities_map[capability]
     
     logging.info(("Sending features_request to test if capability "
-                  "%s is supported.") % capability_str)
+                  "%s is supported."), capability_str)
     req = ofp.message.features_request()
     res, raw = test.controller.transact(req)
     test.assertIsNotNone(res, "Did not receive a response from the DUT.")
@@ -1709,11 +1709,11 @@ def verify_capability(test, capability):
                       "OFPT_FEATURES_REQUEST") % res.type)
     logging.info("Received features_request.")
     
-    logging.info("Verifying %s bit is set." % capability_str)
+    logging.info("Verifying %s bit is set.", capability_str)
     test.assertTrue((res.capabilities & capability) > 0,
                     ("Capabilities bitmask does not support "
                      "%s.") % capability_str)
     logging.info(("Switch capabilities bitmask claims to support "
-                  "%s.") % capability_str)
+                  "%s."), capability_str)
 
 __all__ = list(set(locals()) - _import_blacklist)
