@@ -19,14 +19,50 @@ import loxi.generic_util
 class instruction(loxi.OFObject):
     subtypes = {}
 
+
+    def __init__(self, type=None):
+        if type != None:
+            self.type = type
+        else:
+            self.type = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
+        packed.append('\x00' * 4)
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
     @staticmethod
     def unpack(reader):
         subtype, = reader.peek('!H', 0)
-        try:
-            subclass = instruction.subtypes[subtype]
-        except KeyError:
-            raise loxi.ProtocolError("unknown instruction subtype %#x" % subtype)
-        return subclass.unpack(reader)
+        subclass = instruction.subtypes.get(subtype)
+        if subclass:
+            return subclass.unpack(reader)
+
+        obj = instruction()
+        obj.type = reader.read("!H")[0]
+        _len = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_len - (2 + 2))
+        reader.skip(4)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.type != other.type: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("instruction {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+            q.breakable()
+        q.text('}')
 
 
 class apply_actions(instruction):
@@ -121,14 +157,61 @@ instruction.subtypes[5] = clear_actions
 class experimenter(instruction):
     subtypes = {}
 
+    type = 65535
+
+    def __init__(self, experimenter=None, data=None):
+        if experimenter != None:
+            self.experimenter = experimenter
+        else:
+            self.experimenter = 0
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
     @staticmethod
     def unpack(reader):
         subtype, = reader.peek('!L', 4)
-        try:
-            subclass = experimenter.subtypes[subtype]
-        except KeyError:
-            raise loxi.ProtocolError("unknown experimenter instruction subtype %#x" % subtype)
-        return subclass.unpack(reader)
+        subclass = experimenter.subtypes.get(subtype)
+        if subclass:
+            return subclass.unpack(reader)
+
+        obj = experimenter()
+        _type = reader.read("!H")[0]
+        assert(_type == 65535)
+        _len = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_len - (2 + 2))
+        obj.experimenter = reader.read("!L")[0]
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.experimenter != other.experimenter: return False
+        if self.data != other.data: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("experimenter {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
+            q.breakable()
+        q.text('}')
 
 instruction.subtypes[65535] = experimenter
 
