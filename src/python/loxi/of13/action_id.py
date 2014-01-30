@@ -23,41 +23,159 @@ import loxi.generic_util
 class action_id(loxi.OFObject):
     subtypes = {}
 
+
+    def __init__(self, type=None):
+        if type != None:
+            self.type = type
+        else:
+            self.type = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
+        packed.append('\x00' * 4)
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
     @staticmethod
     def unpack(reader):
         subtype, = reader.peek('!H', 0)
-        try:
-            subclass = action_id.subtypes[subtype]
-        except KeyError:
-            raise loxi.ProtocolError("unknown action_id subtype %#x" % subtype)
-        return subclass.unpack(reader)
+        subclass = action_id.subtypes.get(subtype)
+        if subclass:
+            return subclass.unpack(reader)
+
+        obj = action_id()
+        obj.type = reader.read("!H")[0]
+        _len = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_len - (2 + 2))
+        reader.skip(4)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.type != other.type: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("action_id {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+            q.breakable()
+        q.text('}')
 
 
 class experimenter(action_id):
     subtypes = {}
 
+    type = 65535
+
+    def __init__(self, experimenter=None):
+        if experimenter != None:
+            self.experimenter = experimenter
+        else:
+            self.experimenter = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
+        packed.append(struct.pack("!L", self.experimenter))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
     @staticmethod
     def unpack(reader):
         subtype, = reader.peek('!L', 4)
-        try:
-            subclass = experimenter.subtypes[subtype]
-        except KeyError:
-            raise loxi.ProtocolError("unknown experimenter action_id subtype %#x" % subtype)
-        return subclass.unpack(reader)
+        subclass = experimenter.subtypes.get(subtype)
+        if subclass:
+            return subclass.unpack(reader)
+
+        obj = experimenter()
+        _type = reader.read("!H")[0]
+        assert(_type == 65535)
+        _len = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_len - (2 + 2))
+        obj.experimenter = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.experimenter != other.experimenter: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("experimenter {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+            q.breakable()
+        q.text('}')
 
 action_id.subtypes[65535] = experimenter
 
 class bsn(experimenter):
     subtypes = {}
 
+    type = 65535
+    experimenter = 6035143
+
+    def __init__(self, subtype=None):
+        if subtype != None:
+            self.subtype = subtype
+        else:
+            self.subtype = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        packed.append('\x00' * 4)
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
     @staticmethod
     def unpack(reader):
         subtype, = reader.peek('!L', 8)
-        try:
-            subclass = bsn.subtypes[subtype]
-        except KeyError:
-            raise loxi.ProtocolError("unknown bsn experimenter action_id subtype %#x" % subtype)
-        return subclass.unpack(reader)
+        subclass = bsn.subtypes.get(subtype)
+        if subclass:
+            return subclass.unpack(reader)
+
+        obj = bsn()
+        _type = reader.read("!H")[0]
+        assert(_type == 65535)
+        _len = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_len - (2 + 2))
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        obj.subtype = reader.read("!L")[0]
+        reader.skip(4)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.subtype != other.subtype: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+            q.breakable()
+        q.text('}')
 
 experimenter.subtypes[6035143] = bsn
 
@@ -356,14 +474,60 @@ action_id.subtypes[22] = group
 class nicira(experimenter):
     subtypes = {}
 
+    type = 65535
+    experimenter = 8992
+
+    def __init__(self, subtype=None):
+        if subtype != None:
+            self.subtype = subtype
+        else:
+            self.subtype = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!H", self.subtype))
+        packed.append('\x00' * 2)
+        packed.append('\x00' * 4)
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
     @staticmethod
     def unpack(reader):
         subtype, = reader.peek('!H', 8)
-        try:
-            subclass = nicira.subtypes[subtype]
-        except KeyError:
-            raise loxi.ProtocolError("unknown nicira experimenter action_id subtype %#x" % subtype)
-        return subclass.unpack(reader)
+        subclass = nicira.subtypes.get(subtype)
+        if subclass:
+            return subclass.unpack(reader)
+
+        obj = nicira()
+        _type = reader.read("!H")[0]
+        assert(_type == 65535)
+        _len = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_len - (2 + 2))
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 8992)
+        obj.subtype = reader.read("!H")[0]
+        reader.skip(2)
+        reader.skip(4)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.subtype != other.subtype: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("nicira {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+            q.breakable()
+        q.text('}')
 
 experimenter.subtypes[8992] = nicira
 

@@ -23,14 +23,48 @@ import loxi.generic_util
 class meter_band(loxi.OFObject):
     subtypes = {}
 
+
+    def __init__(self, type=None):
+        if type != None:
+            self.type = type
+        else:
+            self.type = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
     @staticmethod
     def unpack(reader):
         subtype, = reader.peek('!H', 0)
-        try:
-            subclass = meter_band.subtypes[subtype]
-        except KeyError:
-            raise loxi.ProtocolError("unknown meter_band subtype %#x" % subtype)
-        return subclass.unpack(reader)
+        subclass = meter_band.subtypes.get(subtype)
+        if subclass:
+            return subclass.unpack(reader)
+
+        obj = meter_band()
+        obj.type = reader.read("!H")[0]
+        _len = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_len - (2 + 2))
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.type != other.type: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("meter_band {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+            q.breakable()
+        q.text('}')
 
 
 class drop(meter_band):
