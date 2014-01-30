@@ -687,14 +687,48 @@ class bsn_switch_pipeline_stats_entry(loxi.OFObject):
 class bsn_vport(loxi.OFObject):
     subtypes = {}
 
+
+    def __init__(self, type=None):
+        if type != None:
+            self.type = type
+        else:
+            self.type = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
     @staticmethod
     def unpack(reader):
         subtype, = reader.peek('!H', 0)
-        try:
-            subclass = bsn_vport.subtypes[subtype]
-        except KeyError:
-            raise loxi.ProtocolError("unknown bsn_vport subtype %#x" % subtype)
-        return subclass.unpack(reader)
+        subclass = bsn_vport.subtypes.get(subtype)
+        if subclass:
+            return subclass.unpack(reader)
+
+        obj = bsn_vport()
+        obj.type = reader.read("!H")[0]
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length - (2 + 2))
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.type != other.type: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_vport {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+            q.breakable()
+        q.text('}')
 
 
 class bsn_vport_q_in_q(bsn_vport):
@@ -971,14 +1005,51 @@ class bucket_counter(loxi.OFObject):
 class experimenter_stats_header(loxi.OFObject):
     subtypes = {}
 
+
+    def __init__(self, experimenter=None, subtype=None):
+        if experimenter != None:
+            self.experimenter = experimenter
+        else:
+            self.experimenter = 0
+        if subtype != None:
+            self.subtype = subtype
+        else:
+            self.subtype = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        return ''.join(packed)
+
     @staticmethod
     def unpack(reader):
         subtype, = reader.peek('!L', 0)
-        try:
-            subclass = experimenter_stats_header.subtypes[subtype]
-        except KeyError:
-            raise loxi.ProtocolError("unknown experimenter_stats_header subtype %#x" % subtype)
-        return subclass.unpack(reader)
+        subclass = experimenter_stats_header.subtypes.get(subtype)
+        if subclass:
+            return subclass.unpack(reader)
+
+        obj = experimenter_stats_header()
+        obj.experimenter = reader.read("!L")[0]
+        obj.subtype = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.experimenter != other.experimenter: return False
+        if self.subtype != other.subtype: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("experimenter_stats_header {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("subtype = ");
+                q.text("%#x" % self.subtype)
+            q.breakable()
+        q.text('}')
 
 
 class flow_stats_entry(loxi.OFObject):
@@ -1310,14 +1381,48 @@ class group_stats_entry(loxi.OFObject):
 class hello_elem(loxi.OFObject):
     subtypes = {}
 
+
+    def __init__(self, type=None):
+        if type != None:
+            self.type = type
+        else:
+            self.type = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
     @staticmethod
     def unpack(reader):
         subtype, = reader.peek('!H', 0)
-        try:
-            subclass = hello_elem.subtypes[subtype]
-        except KeyError:
-            raise loxi.ProtocolError("unknown hello_elem subtype %#x" % subtype)
-        return subclass.unpack(reader)
+        subclass = hello_elem.subtypes.get(subtype)
+        if subclass:
+            return subclass.unpack(reader)
+
+        obj = hello_elem()
+        obj.type = reader.read("!H")[0]
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length - (2 + 2))
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.type != other.type: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("hello_elem {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+            q.breakable()
+        q.text('}')
 
 
 class hello_elem_versionbitmap(hello_elem):
@@ -2090,27 +2195,114 @@ class port_stats_entry(loxi.OFObject):
 class queue_prop(loxi.OFObject):
     subtypes = {}
 
+
+    def __init__(self, type=None):
+        if type != None:
+            self.type = type
+        else:
+            self.type = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
+        packed.append('\x00' * 4)
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
     @staticmethod
     def unpack(reader):
         subtype, = reader.peek('!H', 0)
-        try:
-            subclass = queue_prop.subtypes[subtype]
-        except KeyError:
-            raise loxi.ProtocolError("unknown queue_prop subtype %#x" % subtype)
-        return subclass.unpack(reader)
+        subclass = queue_prop.subtypes.get(subtype)
+        if subclass:
+            return subclass.unpack(reader)
+
+        obj = queue_prop()
+        obj.type = reader.read("!H")[0]
+        _len = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_len - (2 + 2))
+        reader.skip(4)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.type != other.type: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("queue_prop {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+            q.breakable()
+        q.text('}')
 
 
 class queue_prop_experimenter(queue_prop):
     subtypes = {}
 
+    type = 65535
+
+    def __init__(self, experimenter=None, data=None):
+        if experimenter != None:
+            self.experimenter = experimenter
+        else:
+            self.experimenter = 0
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
+        packed.append('\x00' * 4)
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append('\x00' * 4)
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
     @staticmethod
     def unpack(reader):
         subtype, = reader.peek('!L', 8)
-        try:
-            subclass = queue_prop_experimenter.subtypes[subtype]
-        except KeyError:
-            raise loxi.ProtocolError("unknown queue_prop_experimenter queue_prop subtype %#x" % subtype)
-        return subclass.unpack(reader)
+        subclass = queue_prop_experimenter.subtypes.get(subtype)
+        if subclass:
+            return subclass.unpack(reader)
+
+        obj = queue_prop_experimenter()
+        _type = reader.read("!H")[0]
+        assert(_type == 65535)
+        _len = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_len - (2 + 2))
+        reader.skip(4)
+        obj.experimenter = reader.read("!L")[0]
+        reader.skip(4)
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.experimenter != other.experimenter: return False
+        if self.data != other.data: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("queue_prop_experimenter {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
+            q.breakable()
+        q.text('}')
 
 queue_prop.subtypes[65535] = queue_prop_experimenter
 
@@ -2315,14 +2507,48 @@ class queue_stats_entry(loxi.OFObject):
 class table_feature_prop(loxi.OFObject):
     subtypes = {}
 
+
+    def __init__(self, type=None):
+        if type != None:
+            self.type = type
+        else:
+            self.type = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
     @staticmethod
     def unpack(reader):
         subtype, = reader.peek('!H', 0)
-        try:
-            subclass = table_feature_prop.subtypes[subtype]
-        except KeyError:
-            raise loxi.ProtocolError("unknown table_feature_prop subtype %#x" % subtype)
-        return subclass.unpack(reader)
+        subclass = table_feature_prop.subtypes.get(subtype)
+        if subclass:
+            return subclass.unpack(reader)
+
+        obj = table_feature_prop()
+        obj.type = reader.read("!H")[0]
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length - (2 + 2))
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.type != other.type: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("table_feature_prop {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+            q.breakable()
+        q.text('}')
 
 
 class table_feature_prop_apply_actions(table_feature_prop):

@@ -273,7 +273,8 @@ class Controller(Thread):
                     self.packet_in_count += 1
 
                 # Log error messages
-                if hdr_type == ofp.OFPT_ERROR:
+                if isinstance(msg, ofp.message.error_msg):
+                    #pylint: disable=E1103
                     if msg.err_type in ofp.ofp_error_type_map:
                         type_str = ofp.ofp_error_type_map[msg.err_type]
                         if msg.err_type == ofp.OFPET_HELLO_FAILED:

@@ -85,14 +85,48 @@ class bsn_interface(loxi.OFObject):
 class bsn_vport(loxi.OFObject):
     subtypes = {}
 
+
+    def __init__(self, type=None):
+        if type != None:
+            self.type = type
+        else:
+            self.type = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
     @staticmethod
     def unpack(reader):
         subtype, = reader.peek('!H', 0)
-        try:
-            subclass = bsn_vport.subtypes[subtype]
-        except KeyError:
-            raise loxi.ProtocolError("unknown bsn_vport subtype %#x" % subtype)
-        return subclass.unpack(reader)
+        subclass = bsn_vport.subtypes.get(subtype)
+        if subclass:
+            return subclass.unpack(reader)
+
+        obj = bsn_vport()
+        obj.type = reader.read("!H")[0]
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length - (2 + 2))
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.type != other.type: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_vport {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+            q.breakable()
+        q.text('}')
 
 
 class bsn_vport_q_in_q(bsn_vport):
@@ -829,14 +863,50 @@ class port_stats_entry(loxi.OFObject):
 class queue_prop(loxi.OFObject):
     subtypes = {}
 
+
+    def __init__(self, type=None):
+        if type != None:
+            self.type = type
+        else:
+            self.type = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
+        packed.append('\x00' * 4)
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
     @staticmethod
     def unpack(reader):
         subtype, = reader.peek('!H', 0)
-        try:
-            subclass = queue_prop.subtypes[subtype]
-        except KeyError:
-            raise loxi.ProtocolError("unknown queue_prop subtype %#x" % subtype)
-        return subclass.unpack(reader)
+        subclass = queue_prop.subtypes.get(subtype)
+        if subclass:
+            return subclass.unpack(reader)
+
+        obj = queue_prop()
+        obj.type = reader.read("!H")[0]
+        _len = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_len - (2 + 2))
+        reader.skip(4)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.type != other.type: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("queue_prop {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+            q.breakable()
+        q.text('}')
 
 
 class queue_prop_min_rate(queue_prop):

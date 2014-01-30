@@ -23,14 +23,42 @@ import loxi.generic_util
 class oxm(loxi.OFObject):
     subtypes = {}
 
+
+    def __init__(self, type_len=None):
+        if type_len != None:
+            self.type_len = type_len
+        else:
+            self.type_len = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        return ''.join(packed)
+
     @staticmethod
     def unpack(reader):
         subtype, = reader.peek('!L', 0)
-        try:
-            subclass = oxm.subtypes[subtype]
-        except KeyError:
-            raise loxi.ProtocolError("unknown oxm subtype %#x" % subtype)
-        return subclass.unpack(reader)
+        subclass = oxm.subtypes.get(subtype)
+        if subclass:
+            return subclass.unpack(reader)
+
+        obj = oxm()
+        obj.type_len = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.type_len != other.type_len: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("oxm {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+            q.breakable()
+        q.text('}')
 
 
 class arp_op(oxm):
