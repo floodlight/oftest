@@ -1469,6 +1469,90 @@ class bsn_header(experimenter):
 
 experimenter.subtypes[6035143] = bsn_header
 
+class bsn_arp_idle(bsn_header):
+    version = 4
+    type = 4
+    experimenter = 6035143
+    subtype = 60
+
+    def __init__(self, xid=None, vlan_vid=None, ipv4_addr=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if vlan_vid != None:
+            self.vlan_vid = vlan_vid
+        else:
+            self.vlan_vid = 0
+        if ipv4_addr != None:
+            self.ipv4_addr = ipv4_addr
+        else:
+            self.ipv4_addr = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        packed.append(struct.pack("!H", self.vlan_vid))
+        packed.append('\x00' * 2)
+        packed.append(struct.pack("!L", self.ipv4_addr))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_arp_idle()
+        _version = reader.read("!B")[0]
+        assert(_version == 4)
+        _type = reader.read("!B")[0]
+        assert(_type == 4)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length - (2 + 2))
+        obj.xid = reader.read("!L")[0]
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _subtype = reader.read("!L")[0]
+        assert(_subtype == 60)
+        obj.vlan_vid = reader.read("!H")[0]
+        reader.skip(2)
+        obj.ipv4_addr = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.vlan_vid != other.vlan_vid: return False
+        if self.ipv4_addr != other.ipv4_addr: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_arp_idle {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("vlan_vid = ");
+                q.text("%#x" % self.vlan_vid)
+                q.text(","); q.breakable()
+                q.text("ipv4_addr = ");
+                q.text(util.pretty_ipv4(self.ipv4_addr))
+            q.breakable()
+        q.text('}')
+
+bsn_header.subtypes[60] = bsn_arp_idle
+
 class bsn_bw_clear_data_reply(bsn_header):
     version = 4
     type = 4
