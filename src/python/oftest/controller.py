@@ -602,7 +602,7 @@ class Controller(Thread):
         elif issubclass(exp_msg, cfg_ofp.message.message):
             klass = exp_msg
         else:
-            raise ValueError("Unexpected exp_msg argument")
+            raise ValueError("Unexpected exp_msg argument %r", exp_msg)
 
         self.logger.debug("Polling for %s", klass.__name__)
 
