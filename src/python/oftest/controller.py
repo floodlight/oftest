@@ -311,9 +311,6 @@ class Controller(Thread):
                     handled = self.handlers["all"](self, msg, rawmsg)
 
                 if not handled: # Not handled, enqueue
-                    self.logger.debug("Enqueuing pkt type %s (%d)",
-                                      ofp.ofp_type_map.get(hdr_type, "unknown"),
-                                      hdr_type)
                     with self.packets_cv:
                         if len(self.packets) >= self.max_pkts:
                             self.packets.pop(0)
