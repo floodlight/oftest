@@ -301,9 +301,6 @@ class Controller(Thread):
                     handled = self.handlers["all"](self, msg, rawmsg)
 
                 if not handled: # Not handled, enqueue
-                    self.logger.debug("Enqueuing pkt type %s (%d)",
-                                      ofp.ofp_type_map.get(hdr_type, "unknown"),
-                                      hdr_type)
                     with self.packets_cv:
                         if len(self.packets) >= self.max_pkts:
                             self.packets.pop(0)
@@ -587,34 +584,26 @@ class Controller(Thread):
         If an error occurs, (None, None) is returned
         """
 
-        exp_msg_str = "unspecified"
-        if exp_msg is not None:
-            exp_msg_str = cfg_ofp.ofp_type_map.get(exp_msg, "unknown (%d)" %
-                                               exp_msg)
-
-        if exp_msg is not None:
-            self.logger.debug("Poll for %s", exp_msg_str)
+        if exp_msg is None:
+            self.logger.warn("DEPRECATED polling for any message class")
+            klass = None
+        elif isinstance(exp_msg, int):
+            klass = cfg_ofp.message.message.subtypes[exp_msg]
+        elif issubclass(exp_msg, cfg_ofp.message.message):
+            klass = exp_msg
         else:
-            self.logger.debug("Poll for any OF message")
+            raise ValueError("Unexpected exp_msg argument %r", exp_msg)
+
+        self.logger.debug("Polling for %s", klass.__name__)
 
         # Take the packet from the queue
         def grab():
-            if len(self.packets) > 0:
-                if exp_msg is None:
-                    self.logger.debug("Looking for any packet")
-                    (msg, pkt) = self.packets.pop(0)
-                    return (msg, pkt)
-                else:
-                    self.logger.debug("Looking for %s", exp_msg_str)
-                    for i in range(len(self.packets)):
-                        msg = self.packets[i][0]
-                        msg_str = cfg_ofp.ofp_type_map.get(msg.type, "unknown (%d)" % msg.type)
-                        self.logger.debug("Checking packets[%d] %s) against %s", i, msg_str, exp_msg_str)
-                        if msg.type == exp_msg:
-                            (msg, pkt) = self.packets.pop(i)
-                            return (msg, pkt)
+            for i, (msg, pkt) in enumerate(self.packets):
+                if klass is None or isinstance(msg, klass):
+                    self.logger.debug("Got %s message", msg.__class__.__name__)
+                    return self.packets.pop(i)
             # Not found
-            self.logger.debug("Packet not in queue")
+            self.logger.debug("%s message not in queue", klass.__name__)
             return None
 
         with self.packets_cv:
@@ -622,7 +611,6 @@ class Controller(Thread):
 
         if ret != None:
             (msg, pkt) = ret
-            self.logger.debug("Got message %s" % str(msg))
             return (msg, pkt)
         else:
             return (None, None)
