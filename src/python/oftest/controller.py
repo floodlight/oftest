@@ -608,12 +608,10 @@ class Controller(Thread):
 
         # Take the packet from the queue
         def grab():
-            for i in range(len(self.packets)):
-                msg = self.packets[i][0]
+            for i, (msg, pkt) in enumerate(self.packets):
                 if klass is None or isinstance(msg, klass):
                     self.logger.debug("Got %s message", msg.__class__.__name__)
-                    (msg, pkt) = self.packets.pop(i)
-                    return (msg, pkt)
+                    return self.packets.pop(i)
             # Not found
             self.logger.debug("%s message not in queue", klass.__name__)
             return None
