@@ -1689,7 +1689,7 @@ def verify_no_errors(ctrl):
 
 def verify_capability(test, capability):
     """
-    Assert that the DUT supports the specified capability.
+    Return True if DUT supports the specified capability.
 
     @param test Instance of base_tests.SimpleProtocol
     @param capability One of ofp_capabilities.
@@ -1707,13 +1707,15 @@ def verify_capability(test, capability):
     test.assertEqual(res.type, ofp.OFPT_FEATURES_REPLY,
                      ("Unexpected packet type %d received in response to "
                       "OFPT_FEATURES_REQUEST") % res.type)
-    logging.info("Received features_request.")
+    logging.info("Received features_reply.")
     
-    logging.info("Verifying %s bit is set.", capability_str)
-    test.assertTrue((res.capabilities & capability) > 0,
-                    ("Capabilities bitmask does not support "
-                     "%s.") % capability_str)
-    logging.info(("Switch capabilities bitmask claims to support "
-                  "%s."), capability_str)
+    if (res.capabilities & capability) > 0:
+        logging.info("Switch capabilities bitmask claims to support %s",
+                     capability_str)
+        return True, res.capabilities
+    else:
+        logging.info("Capabilities bitmask does not support %s.",
+                     capability_str)
+        return False, res.capabilities
 
 __all__ = list(set(locals()) - _import_blacklist)
