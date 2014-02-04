@@ -1716,4 +1716,34 @@ def verify_capability(test, capability):
     logging.info(("Switch capabilities bitmask claims to support "
                   "%s."), capability_str)
 
+def verify_configuration_flag(test, flag):
+    """
+    Return True if DUT supports specified configuration flag.
+
+    @param test Instance of base_tests.SimpleProtocol
+    @param flag One of ofp_config_flags.
+    """
+    logging.info("Verifing that flag is valid.")
+    test.assertIn(flag, ofp.const.ofp_config_flags_map,
+                  "flag  %s does not exist." % flag)
+    flag_str = ofp.const.ofp_config_flags_map[flag]
+
+    logging.info("Sending OFPT_GET_CONFIG_REQUEST.")    
+    req = ofp.message.get_config_request()
+    rv = test.controller.message_send(req)
+    test.assertNotEqual(rv, -1, "Not able to send get_config_request.")
+
+    logging.info("Expecting OFPT_GET_CONFIG_REPLY ")
+    (res, pkt) = test.controller.poll(exp_msg=ofp.OFPT_GET_CONFIG_REPLY,
+                                      timeout=2)
+    test.assertIsNotNone(res, "Did not receive OFPT_GET_CONFIG_REPLY")
+    logging.info("Received OFPT_GET_CONFIG_REPLY ")
+
+    if res.flags == flag:
+        logging.info("%s flag is set.", flag_str)
+        return True, res.flags
+    else:
+        logging.info("%s flag is not set.", flag_str)
+        return False, res.flags
+
 __all__ = list(set(locals()) - _import_blacklist)
