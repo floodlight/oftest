@@ -1722,6 +1722,7 @@ def verify_configuration_flag(test, flag):
 
     @param test Instance of base_tests.SimpleProtocol
     @param flag One of ofp_config_flags.
+    @returns (supported, flags) Bool if flag is set and flag values.
     """
     logging.info("Verifing that flag is valid.")
     test.assertIn(flag, ofp.const.ofp_config_flags_map,
