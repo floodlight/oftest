@@ -1689,7 +1689,7 @@ def verify_no_errors(ctrl):
 
 def verify_capability(test, capability):
     """
-    Assert that the DUT supports the specified capability.
+    Return True if DUT supports the specified capability.
 
     @param test Instance of base_tests.SimpleProtocol
     @param capability One of ofp_capabilities.
