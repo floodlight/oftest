@@ -702,8 +702,7 @@ class DeleteNonexistentError(BaseGenTableTest):
         do_barrier(self.controller)
 
         error, _ = self.controller.poll(ofp.OFPT_ERROR, 0)
-        self.assertIsInstance(error, ofp.message.bad_request_error_msg)
-        self.assertEquals(error.code, ofp.OFPBRC_EPERM)
+        self.assertEquals(error, None)
 
 class DeleteFailureError(BaseGenTableTest):
     """
