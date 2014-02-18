@@ -292,9 +292,10 @@ def simple_icmp_packet(pktlen=60,
                       ip_dst='192.168.0.2',
                       ip_tos=0,
                       ip_ttl=64,
+                      ip_id=1,  
                       icmp_type=8,
-                      icmp_code=0
-                      ):
+                      icmp_code=0,
+                      icmp_data=''):
     """
     Return a simple ICMP packet
 
@@ -309,8 +310,10 @@ def simple_icmp_packet(pktlen=60,
     @param ip_dst IP destination
     @param ip_tos IP ToS
     @param ip_ttl IP TTL
+    @param ip_id IP Identification
     @param icmp_type ICMP type
     @param icmp_code ICMP code
+    @param icmp_data ICMP data
 
     Generates a simple ICMP ECHO REQUEST.  Users
     shouldn't assume anything about this packet other than that
@@ -323,12 +326,12 @@ def simple_icmp_packet(pktlen=60,
     if (dl_vlan_enable):
         pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
             scapy.Dot1Q(prio=vlan_pcp, id=0, vlan=vlan_vid)/ \
-            scapy.IP(src=ip_src, dst=ip_dst, ttl=ip_ttl, tos=ip_tos)/ \
-            scapy.ICMP(type=icmp_type, code=icmp_code)
+            scapy.IP(src=ip_src, dst=ip_dst, ttl=ip_ttl, tos=ip_tos, id=ip_id)/ \
+            scapy.ICMP(type=icmp_type, code=icmp_code)/ icmp_data
     else:
         pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
-            scapy.IP(src=ip_src, dst=ip_dst, ttl=ip_ttl, tos=ip_tos)/ \
-            scapy.ICMP(type=icmp_type, code=icmp_code)
+            scapy.IP(src=ip_src, dst=ip_dst, ttl=ip_ttl, tos=ip_tos, id=ip_id)/ \
+            scapy.ICMP(type=icmp_type, code=icmp_code)/ icmp_data
 
     pkt = pkt/("0" * (pktlen - len(pkt)))
 
