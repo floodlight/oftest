@@ -1,0 +1,133 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+  </head>
+  <body class="span12">
+    <h1>OFTest Conformance Report</h1>
+    <!-- Equipment Note -->
+    <h2>{{meta.BrandVendor}} {{meta.ModelNameNumber}} - Profile: {{profile}}</h2>
+    
+    <b>Product-Family:</b> {{meta.ProductFamily}}</br>
+    <b>Architecture:</b> {{meta.Architecturedescription}}</br>
+    <b>Chipset:</b> {{meta.Chipset}}</br>
+    <b>Firmware Revision:</b> {{meta.FirmwareRevision}}</br>
+    <b>Port Discription:</b> {{meta.PortNumbersTypeSpeed}}</br>
+    <!-- End Equipment Note -->
+
+    <h2>Conformance Suite Results</h2>
+    <!-- Test Suite Summary Table -->
+    <table border="1" width="600px">
+      <tr style="background-color: #5990DE;"><th colspan="6">Summary - Total</th></tr>
+      <tr>
+	<th style="background-color: #5990DE;">Testgroup</th>
+	<th style="background-color: #5990DE;">Total</th>
+	<th style="background-color: #52BF5A;">Pass</th>
+	<th style="background-color: #ED2828;">Fail</th>
+	<th style="background-color: #EFF53B;">Error</th>
+      </tr>
+      {% for k, v in groups %}
+      <tr>
+	<td>{{k}}</td>
+	<td>{{v.total.mandatory.total+v.total.optional.total}}</td>
+	<td>{{v.total.mandatory.passed+v.total.optional.passed}}</td>
+	<td>{{v.total.mandatory.failed+v.total.optional.failed}}</td>
+	<td>{{v.total.mandatory.error+v.total.optional.error}}</td>
+      </tr>
+      {% endfor %}
+      <tr>
+	<td>Total</td>
+	<td>{{total.mandatory.total+total.optional.total}}</td>
+	<td>{{total.mandatory.passed+total.optional.passed}}</td>
+	<td>{{total.mandatory.failed+total.optional.failed}}</td>
+	<td>{{total.mandatory.error+total.optional.error}}</td>
+      </tr>
+    </table></br>
+    <!-- Test Suite Mandatory Summary Table -->
+    <table border="1" width="600px">
+      <tr style="background-color: #5990DE;"><th colspan="6">Summary - Mandatory</th></tr>
+      <tr>
+	<th style="background-color: #5990DE;">Testgroup</th>
+	<th style="background-color: #5990DE;">Total</th>
+	<th style="background-color: #52BF5A;">Pass</th>
+	<th style="background-color: #ED2828;">Fail</th>
+	<th style="background-color: #EFF53B;">Error</th>
+      </tr>
+      {% for k, v in groups %}
+      <tr>
+	<td>{{k}}</td>
+	<td>{{v.total.mandatory.total}}</td>
+	<td>{{v.total.mandatory.passed}}</td>
+	<td>{{v.total.mandatory.failed}}</td>
+	<td>{{v.total.mandatory.error}}</td>
+      </tr>
+      {% endfor %}
+      <tr>
+	<td>Total</td>
+	<td>{{total.mandatory.total}}</td>
+	<td>{{total.mandatory.passed}}</td>
+	<td>{{total.mandatory.failed}}</td>
+	<td>{{total.mandatory.error}}</td>
+      </tr>
+    </table></br>
+    <!-- Test Suite Optional Summary Table -->
+    <table border="1" width="600px">
+      <tr style="background-color: #5990DE;"><th colspan="6">Summary - Optional</th></tr>
+      <tr>
+	<th style="background-color: #5990DE;">Testgroup</th>
+	<th style="background-color: #5990DE;">Total</th>
+	<th style="background-color: #52BF5A;">Pass</th>
+	<th style="background-color: #ED2828;">Fail</th>
+	<th style="background-color: #EFF53B;">Error</th>
+      </tr>
+      {% for k, v in groups %}
+      <tr>
+	<td>{{k}}</td>
+	<td>{{v.total.optional.total}}</td>
+	<td>{{v.total.optional.passed}}</td>
+	<td>{{v.total.optional.failed}}</td>
+	<td>{{v.total.optional.error}}</td>
+      </tr>
+      {% endfor %}
+      <tr>
+	<td>Total</td>
+	<td>{{total.optional.total}}</td>
+	<td>{{total.optional.passed}}</td>
+	<td>{{total.optional.failed}}</td>
+	<td>{{total.optional.error}}</td>
+      </tr>
+    </table></br>
+    <!-- Testgroup Summary Tables -->
+    <h2>Detailed List of Results</h2>
+    <!-- LOOP HERE -->
+    {% for k, v in groups %}
+    <h3>Testgroup {{k}} {{testgroup_desc}}: {{v.total.mandatory.total+v.total.optional.total}} testcases</h3>
+    <table border="1" width="600px">
+      <tr style="background-color: #5990DE;">
+	<th>Testcase</th>
+	<th>Test Name</th>
+	<th>Requirement</th>
+	<th>Description</th>
+	<th>Result</th>
+      </tr>
+    {% for l, w in v.tests %}
+      <tr>
+	<td>{{l}}</td>
+	<td>{% if l in spec %} {{spec[l]['name']}} {% endif %}</td>
+	<td>{% if w.mandatory == True %}<b>Mandatory</b>{% else %}Optional{% endif %}</td>
+	<td>n/a</td>
+	<td>
+	  {% if w.result == "passed" %}
+	  <a style="color: #52BF5A">Passed</a>
+	  {% elif w.result == "failed" %}
+	  <a style="color: #ED2828">Failed</a>
+	  {% else %}
+	  <a style="color: #EFF53B">Error</a>
+	  {% endif %}
+	</td>
+      </tr>
+    {% endfor %}
+    </table></br>
+    {% endfor %}
+  </body>
+</html>

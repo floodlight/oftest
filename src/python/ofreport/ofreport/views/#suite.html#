@@ -1,0 +1,78 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+  <!-- Test Suite Summary -->
+  <h2>Conformance Suite Results Summary</h2>
+  
+  <div class="span8" style="float: none; margin-left: 0px;">
+    <h4 style="margin-top: 0px;">Mandatory&nbsp;</h4>
+    <div class="progress" style="margin-bottom: 5px;">
+      {% if total.mandatory.total == 0 %}
+      <div class="bar bar-success" style="width:100%;"></div>
+      {% else %}
+      <div class="bar bar-success" style="width:{{ (total.mandatory.passed / total.mandatory.total) * 100 }}%;"></div>
+      <div class="bar bar-warning" style="width:{{ (total.mandatory.error / total.mandatory.total) * 100 }}%;"></div>
+      <div class="bar bar-danger" style="width:{{ (total.mandatory.failed / total.mandatory.total) * 100 }}%;"></div>
+      {% endif %}
+    </div>
+    <div class="badge badge-info">{{ total.mandatory.total }}</div> Total
+    <div class="badge badge-success">{{ total.mandatory.passed }}</div> Passed
+    <div class="badge badge-warning">{{ total.mandatory.error }}</div> Error
+    <div class="badge badge-important">{{ total.mandatory.failed }}</div> Failed
+    <br/><br/>
+    
+    <h4 style="margin-top: 0px;">Optional&nbsp;</h4>
+    <div class="progress" style="margin-bottom: 5px;">
+      {% if total.optional.total == 0 %}
+      <div class="bar bar-success" style="width:100%;"></div>
+      {% else %}
+      <div class="bar bar-success" style="width:{{ (total.optional.passed / total.optional.total) * 100 }}%;"></div>
+      <div class="bar bar-warning" style="width:{{ (total.optional.error/total.optional.total) * 100 }}%;"></div>
+      <div class="bar bar-danger" style="width:{{ (total.optional.failed / total.optional.total) * 100 }}%;"></div>
+      {% endif %}
+    </div>
+    <div class="badge badge-info">{{ total.optional.total }}</div> Total
+    <div class="badge badge-success">{{ total.optional.passed }}</div> Passed
+    <div class="badge badge-warning">{{ total.optional.error }}</div> Error
+    <div class="badge badge-important">{{ total.optional.failed }}</div> Failed
+    <br/>
+  </div>
+  <br/>
+  <!-- Testsuite Notes -->
+    
+  <h3>InCNTRE Conformance Recommendations</h3>
+  {% if(total.mandatory.passed/total.mandatory.total) == 1 %}
+  <span class="badge badge-success" style="padding-top:10px;"><i class="icon-ok icon-white" style="margin-top:-5px;"></i></span>
+  <b>Recommended for {{profile}} profile conformance certification</b><br>
+  {% else %}
+  <span class="badge badge-important" style="padding-top:10px;"><i class="icon-remove icon-white" style="margin-top:-4px;"></i></span>
+  <b>Not recommended for {{profile}} profile conformance certification</b><br>
+  {% endif %}
+
+  <h3>Comments</h3>
+  {% if overview != "" %}
+  {{ overview }}
+  {% else %}
+  {% endif %}
+  {% if analysis != "" %}
+  <h3>Conformance Suite Analysis</h3>
+  {{ analysis }}
+  {% else %}
+  {% endif %}
+  <hr>
+  <!-- End Test Suite Summary -->
+  
+  <!-- Test group summaries -->
+  <h2>Test group results</h2>
+  {% import "overview.html" as o %}
+  {% for k, v in groups %}
+    {% if for_web %}
+      {{ o.new_overview(v.group, v.total, v.overview, v.analysis, True, True) }}
+    {% else %}
+      <!-- For PDF. Remove detail. -->
+      {{ o.new_overview(v.group, v.total, v.overview, v.analysis, False, False) }}
+    {% endif %}
+  {% endfor %}
+
+{% endblock %}

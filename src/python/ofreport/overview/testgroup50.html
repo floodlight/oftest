@@ -1,0 +1,14 @@
+<p>Test suite 50 deals with all cases of matching the flow table. This is where the profiles defined for L2 and L3 are most relevant. In this group, each profile will have a different set of required versus OPTIONAL header fields to match on. Tests focusing on flow entry priority and fragmented IP packet matching are also part of this group.</p>
+<b>Special cases:</b>
+<p>Each profile defines a different set of MANDATORY and OPTIONAL test cases in this group. These are defined in the profiles section in this test suite. All matches MUST consider the constraints given in OpenFlow spec 1.0, Table2, pp. 3 and 4. So, for example, even the Single header field match for VLAN ID requires a non-wildcarded Ethertype. These constraints should be implemented in the test cases where needed, without being mentioned in the test list for every occurrence.</p>
+<b>Profiles:</b></br>
+<b>Full conformance:</b></br>
+<p>MUST pass all tests from 50.10 to 50.200</p>
+<b>L2 Profile:</b></br>
+<p>MUST pass test-cases 50.10, 50.20, 50.30, 50.40, 50.50, 50.60, 50.140, 50.190
+<p>To satisfy the L2 profile requirements, the device MUST be able to match all of the fields listed in Table 1 both individually and simultaneously under the constraints given in the specification and outlined in table 1. When testing a device against this profile, all other match fields not listed in Table 1 will be wildcarded.
+<p>Additionally the DUT MUST be able to match with all fields wildcarded under the constraints given in the specification as listed in OpenFlow Switch Specification 1.0.0</P>
+<b>L3 Profile:</b>
+<p>MUST pass 50.10,50.20, 50.50, 50.80, 50.90, 50.150, 50.180, 50.190
+<p>To satisfy the L3 profile requirements, the device MUST be able to match all of the fields listed in Table2 both individually and simultaneously under the constraints given in the specification and outlined in Table 2. When testing a device against this profile, all other match fields not listed in Table 2 will be wildcarded.
+<p>Additionally it MUST be able to match with all fields wildcarded under the constraints given in the specification as listed in OpenFlow Switch Specification 1.0.0 Table 3 on p.

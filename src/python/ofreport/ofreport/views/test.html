@@ -1,0 +1,56 @@
+{% macro new_test(index, k, v, spec) -%}
+
+<!-- Test case header. -->
+<div id="{{k}}" onclick="showHide(this)" onmouseover="highlight(this)" onmouseout="highdark(this)">
+  <h3>
+    {% if v.result == "passed" %}
+    <span class="badge badge-success" style="padding-top:10px;"><i class="icon-ok icon-white" style="margin-top:-5px;"></i></span>
+    {% elif v.result == "error" %}
+    <span class="badge badge-warning" style="padding-top:10px;"><i class="icon-minus-sign icon-white" style="margin-top:-5px;"></i></span>
+    Failed
+    {% else %}
+    <span class="badge badge-important" style="padding-top:10px;"><i class="icon-remove icon-white" style="margin-top:-4px;"></i></span>
+    {% endif -%}
+    
+    {% if k in spec %}
+    {{spec[k]['name']}} {% if not v.mandatory -%} (optional) {%- endif %} <small>{{k}}</small>
+    {% else %}
+    {{k}} - Specification miss
+    {% endif %}	
+  </h3>
+</div>
+
+<!-- Test case results. Always show base information. -->
+<div style="display: block;">
+  <!-- Base information -->
+  <h4>Overview</h4>
+  {% if v.overview != "" %}
+    {{ v.overview }}
+  {% else %}
+    <p>No overview for test case written.</p>
+  {% endif %}
+  <h4>Analysis</h4>
+  {% if v.analysis != "" %}
+    {{ v.analysis }}
+  {% else %}
+    <p>None</p>
+  {% endif %}
+  <!-- Analysis information -->
+  <div id="{{k}}v" style="display: none;">
+    <!-- Log -->
+    <h4>Testcase Logs</h4>
+    <pre>{{ v.logs }}</pre>
+    <!-- Assertion -->
+    {% if v.traceback != "" %}
+    <h4>Testcase Trace</h4>
+    <pre>{{ v.traceback }}</pre>
+    {% else %}
+    {% endif %}
+    <!-- PCAP Links -->
+    <h4>Wireshark Captures</h4>
+    {{ v.caplinks }}
+  </div>
+</div>
+<hr/>
+
+{%- endmacro %}

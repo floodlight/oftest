@@ -1,0 +1,6 @@
+*.*~
+*.pyc
+analysis/*
+logs/
+report/
+report.zip
