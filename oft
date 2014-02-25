@@ -284,8 +284,8 @@ def config_setup(cfg_dflt):
     parser.add_option("--priority", type="int",
                       help="Minimum test priority",
                       default=0)
-    parser.add_option("--publish", type="string", dest="publish",
-                      help="Publish test logs to specified directory")
+    parser.add_option("--publish",action="store_true", dest="publish",default=False,
+                      help="Use --publish with no value")
     parser.add_option("--conformance", type="string", dest="conformance",
                       help="+ separated list of profiles as defined in profiles/conformance.py.")
 

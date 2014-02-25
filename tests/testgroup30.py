@@ -26,6 +26,7 @@ from FuncUtils import *
 
 class Grp30No10(base_tests.SimpleDataPlane):
 
+    @wireshark_capture
     def runTest(self):
         logging =  get_logger()
         logging.info("Running Grp30No10 Flood testcase")

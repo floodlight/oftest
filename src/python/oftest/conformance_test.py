@@ -33,12 +33,12 @@ class ConformanceTextTestResult(_TextTestResult):
     """
     def __init__(self, stream, descriptions, verbosity):
         _TextTestResult.__init__(self, stream, descriptions, verbosity)
-        if config["publish"] is None:
+        if not config["publish"]:
             return
-        if not "logs" in os.listdir(config["publish"]):
-            os.mkdir(config["publish"] + "logs")
+        if not "logs" in os.listdir("./src/python/ofreport/"):
+            os.mkdir("./src/python/ofreport/" + "logs")
         # Attempt to open and load existing results.json file.
-        self.result_file = config["publish"] + "logs/results.json"
+        self.result_file = "./src/python/ofreport/" + "logs/results.json"
         try:
             f = open(self.result_file)
             data = f.read()
@@ -71,7 +71,7 @@ class ConformanceTextTestResult(_TextTestResult):
         or mandatory_failures depending on requirement specified.
         """
         _TextTestResult.addFailure(self, test, err)
-        if not config["publish"] is None:
+        if not config["publish"]:
             s = ""
             for l in format_exception(err[0], err[1], err[2]):
                 s += l
@@ -83,7 +83,7 @@ class ConformanceTextTestResult(_TextTestResult):
         or optional_failures depending on requirement specified.
         """
         _TextTestResult.addSuccess(self, test)
-        if not config["publish"] is None:
+        if not config["publish"]:
             self.saveResult(test, "passed")
 
     def saveResult(self, test, testcase_result, testcase_trace=""):

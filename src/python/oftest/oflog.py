@@ -43,7 +43,7 @@ def wireshark_capture(f):
             stop_wireshark()
             time.sleep(3)
 
-    if config["publish"] is None:
+    if not config["publish"]:
         return f
     else:
         return pub
@@ -55,7 +55,8 @@ def create_log_directory(dirName):
     """
     global pubName
     pubName = dirName
-    logDir = "%slogs/%s" % (config["publish"], pubName)
+    logDir = "%slogs/%s" % ("./src/python/ofreport/", pubName)
+    print logDir
     try:
         Popen(["rm", "-rf", logDir],stdout=None)
         time.sleep(1)
@@ -65,11 +66,11 @@ def create_log_directory(dirName):
         os.makedirs(logDir)
 
 def get_logger():
-    if config["publish"] is None:
+    if not config["publish"]:
         return logging
     LOG = logging.getLogger(pubName)
     LOG.setLevel(config["dbg_level"])
-    logDir = "%slogs/%s" % (config["publish"], pubName)
+    logDir = "%slogs/%s" % ("./src/python/ofreport/", pubName)
     h = logging.FileHandler(logDir+"/testcase.log")
     h.setLevel(logging.DEBUG)
     
@@ -80,7 +81,7 @@ def get_logger():
  
 def start_wireshark():
     for iface in wiresharkMap:
-        fd = "%slogs/%s/%s.pcap" % (config["publish"], pubName, wiresharkMap[iface][1])
+        fd = "%slogs/%s/%s.pcap" % ("./src/python/ofreport/", pubName, wiresharkMap[iface][1])
         wiresharkMap[iface][0] = Popen(["tshark", "-i", str(iface), "-w", fd, "-q"], stdout=DEVNULL, stderr=DEVNULL)
 
 def stop_wireshark():
@@ -88,7 +89,7 @@ def stop_wireshark():
         wiresharkMap[iface][0].terminate()
 
 def set_config():
-    if config["publish"] is None:
+    if not config["publish"]:
         return
     global wiresharkMap
     global DEVNULL
