@@ -126,7 +126,7 @@ class DataPlanePortPcap:
 
     def recv(self):
         (timestamp, pkt) = next(self.pcap)
-        return (pkt, timestamp)
+        return (pkt[:], timestamp)
 
     def send(self, packet):
         return self.pcap.inject(packet, len(packet))
