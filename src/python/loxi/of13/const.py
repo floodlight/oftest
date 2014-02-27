@@ -693,6 +693,7 @@ OFPR_BSN_DEST_PORT_UNREACHABLE = 136
 OFPR_BSN_FRAGMENTATION_REQUIRED = 137
 OFPR_BSN_ARP = 139
 OFPR_BSN_DHCP = 140
+OFPR_BSN_DEBUG = 141
 
 ofp_packet_in_reason_map = {
     0: 'OFPR_NO_MATCH',
@@ -710,6 +711,7 @@ ofp_packet_in_reason_map = {
     137: 'OFPR_BSN_FRAGMENTATION_REQUIRED',
     139: 'OFPR_BSN_ARP',
     140: 'OFPR_BSN_DHCP',
+    141: 'OFPR_BSN_DEBUG',
 }
 
 # Identifiers from group ofp_port
