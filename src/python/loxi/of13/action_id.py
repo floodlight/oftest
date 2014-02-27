@@ -35,7 +35,6 @@ class action_id(loxi.OFObject):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append('\x00' * 4)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -52,7 +51,6 @@ class action_id(loxi.OFObject):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        reader.skip(4)
         return obj
 
     def __eq__(self, other):
@@ -140,7 +138,6 @@ class bsn(experimenter):
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
         packed.append(struct.pack("!L", self.experimenter))
         packed.append(struct.pack("!L", self.subtype))
-        packed.append('\x00' * 4)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -161,7 +158,6 @@ class bsn(experimenter):
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         obj.subtype = reader.read("!L")[0]
-        reader.skip(4)
         return obj
 
     def __eq__(self, other):
@@ -193,7 +189,6 @@ class bsn_mirror(bsn):
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
         packed.append(struct.pack("!L", self.experimenter))
         packed.append(struct.pack("!L", self.subtype))
-        packed.append('\x00' * 3)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -210,7 +205,6 @@ class bsn_mirror(bsn):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 1)
-        reader.skip(3)
         return obj
 
     def __eq__(self, other):
@@ -283,7 +277,6 @@ class copy_ttl_in(action_id):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append('\x00' * 4)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -296,7 +289,6 @@ class copy_ttl_in(action_id):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        reader.skip(4)
         return obj
 
     def __eq__(self, other):
@@ -323,7 +315,6 @@ class copy_ttl_out(action_id):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append('\x00' * 4)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -336,7 +327,6 @@ class copy_ttl_out(action_id):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        reader.skip(4)
         return obj
 
     def __eq__(self, other):
@@ -363,7 +353,6 @@ class dec_mpls_ttl(action_id):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append('\x00' * 4)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -376,7 +365,6 @@ class dec_mpls_ttl(action_id):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        reader.skip(4)
         return obj
 
     def __eq__(self, other):
@@ -403,7 +391,6 @@ class dec_nw_ttl(action_id):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append('\x00' * 4)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -416,7 +403,6 @@ class dec_nw_ttl(action_id):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        reader.skip(4)
         return obj
 
     def __eq__(self, other):
@@ -490,8 +476,6 @@ class nicira(experimenter):
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
         packed.append(struct.pack("!L", self.experimenter))
         packed.append(struct.pack("!H", self.subtype))
-        packed.append('\x00' * 2)
-        packed.append('\x00' * 4)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -512,8 +496,6 @@ class nicira(experimenter):
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 8992)
         obj.subtype = reader.read("!H")[0]
-        reader.skip(2)
-        reader.skip(4)
         return obj
 
     def __eq__(self, other):
@@ -545,8 +527,6 @@ class nicira_dec_ttl(nicira):
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
         packed.append(struct.pack("!L", self.experimenter))
         packed.append(struct.pack("!H", self.subtype))
-        packed.append('\x00' * 2)
-        packed.append('\x00' * 4)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -563,8 +543,6 @@ class nicira_dec_ttl(nicira):
         assert(_experimenter == 8992)
         _subtype = reader.read("!H")[0]
         assert(_subtype == 18)
-        reader.skip(2)
-        reader.skip(4)
         return obj
 
     def __eq__(self, other):
@@ -591,7 +569,6 @@ class output(action_id):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append('\x00' * 6)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -604,7 +581,6 @@ class output(action_id):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        reader.skip(6)
         return obj
 
     def __eq__(self, other):
@@ -631,7 +607,6 @@ class pop_mpls(action_id):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append('\x00' * 2)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -644,7 +619,6 @@ class pop_mpls(action_id):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        reader.skip(2)
         return obj
 
     def __eq__(self, other):
@@ -671,7 +645,6 @@ class pop_pbb(action_id):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append('\x00' * 4)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -684,7 +657,6 @@ class pop_pbb(action_id):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        reader.skip(4)
         return obj
 
     def __eq__(self, other):
@@ -711,7 +683,6 @@ class pop_vlan(action_id):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append('\x00' * 4)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -724,7 +695,6 @@ class pop_vlan(action_id):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        reader.skip(4)
         return obj
 
     def __eq__(self, other):
@@ -751,7 +721,6 @@ class push_mpls(action_id):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append('\x00' * 2)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -764,7 +733,6 @@ class push_mpls(action_id):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        reader.skip(2)
         return obj
 
     def __eq__(self, other):
@@ -791,7 +759,6 @@ class push_pbb(action_id):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append('\x00' * 2)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -804,7 +771,6 @@ class push_pbb(action_id):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        reader.skip(2)
         return obj
 
     def __eq__(self, other):
@@ -831,7 +797,6 @@ class push_vlan(action_id):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append('\x00' * 2)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -844,7 +809,6 @@ class push_vlan(action_id):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        reader.skip(2)
         return obj
 
     def __eq__(self, other):
@@ -909,7 +873,6 @@ class set_mpls_ttl(action_id):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append('\x00' * 3)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -922,7 +885,6 @@ class set_mpls_ttl(action_id):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        reader.skip(3)
         return obj
 
     def __eq__(self, other):
@@ -949,7 +911,6 @@ class set_nw_ttl(action_id):
         packed = []
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
-        packed.append('\x00' * 3)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -962,7 +923,6 @@ class set_nw_ttl(action_id):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len - (2 + 2))
-        reader.skip(3)
         return obj
 
     def __eq__(self, other):
