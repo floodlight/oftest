@@ -278,30 +278,6 @@ class PacketIn(base_tests.SimpleDataPlane):
         verify_packet_in(self, str(pkt), ingress_port, ofp.OFPR_NO_MATCH)
 
 
-class Hello(base_tests.SimpleDataPlane):
-    
-    """Test Hello messages are implemented
-    a) Create Hello messages from controller
-    b) Verify switch also exchanges hello message -- (Poll the control plane)
-    d) Verify the version field in the hello messages is openflow 1.0.0 """
-
-    def runTest(self):
-        
-        logging.info("Running Hello test")
-
-        logging.info("Sending Hello")
-        logging.info("Expecting a Hello on the control plane with version--1.0.0")
-        
-        #Send Hello message
-        request = ofp.message.hello()
-        (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_HELLO,
-                                               timeout=1)
-        self.assertTrue(response is not None, 
-                               'Switch did not exchange hello message in return') 
-        self.assertTrue(response.version == 0x01, 'switch openflow-version field is not 1.0.0')
-
-
-
 class EchoWithoutBody(base_tests.SimpleProtocol):
     
     """Test basic echo-reply is implemented
