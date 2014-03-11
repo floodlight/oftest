@@ -24,6 +24,11 @@ def make_checksum(hi, lo):
 
 assert make_checksum(0xab, 0xcd) == 0xab000000000000cd
 
+def shuffled(seq):
+    l = list(seq)[:]
+    random.shuffle(l)
+    return l
+
 class FlowChecksumBase(base_tests.SimpleProtocol):
     """
     Base class that maintains the expected table and bucket checksums
@@ -100,8 +105,7 @@ class FlowChecksum(FlowChecksumBase):
             checksums.append(random.randint(0, 2**64-1))
 
         # Add flows in random order
-        random.shuffle(checksums)
-        for i, checksum in enumerate(checksums):
+        for i, checksum in shuffled(enumerate(checksums)):
             self.insert_checksum(checksum)
             request = ofp.message.flow_add(
                 table_id=TABLE_ID,
@@ -109,13 +113,12 @@ class FlowChecksum(FlowChecksumBase):
                 buffer_id=ofp.OFP_NO_BUFFER,
                 priority=i)
             self.controller.message_send(request)
-        do_barrier(self.controller)
-        verify_no_errors(self.controller)
-        self.verify_checksums()
+            do_barrier(self.controller)
+            verify_no_errors(self.controller)
+            self.verify_checksums()
 
         # Delete flows in random order
-        random.shuffle(checksums)
-        for i, checksum in enumerate(checksums):
+        for i, checksum in shuffled(enumerate(checksums)):
             self.remove_checksum(checksum)
             request = ofp.message.flow_delete_strict(
                 table_id=TABLE_ID,
@@ -123,9 +126,9 @@ class FlowChecksum(FlowChecksumBase):
                 out_port=ofp.OFPP_ANY,
                 out_group=ofp.OFPG_ANY)
             self.controller.message_send(request)
-        do_barrier(self.controller)
-        verify_no_errors(self.controller)
-        self.verify_checksums()
+            do_barrier(self.controller)
+            verify_no_errors(self.controller)
+            self.verify_checksums()
 
         # Deleted all flows, table checksum should be 0
         self.assertEquals(self.get_table_checksum(), 0)
@@ -153,6 +156,11 @@ class Resize(FlowChecksumBase):
                 buffer_id=ofp.OFP_NO_BUFFER,
                 priority=i)
             self.controller.message_send(request)
+            if i % 17 == 0:
+                do_barrier(self.controller)
+                verify_no_errors(self.controller)
+                self.verify_checksums()
+
         do_barrier(self.controller)
         verify_no_errors(self.controller)
         self.verify_checksums()
@@ -186,6 +194,11 @@ class Resize(FlowChecksumBase):
                 out_port=ofp.OFPP_ANY,
                 out_group=ofp.OFPG_ANY)
             self.controller.message_send(request)
+            if i % 17 == 0:
+                do_barrier(self.controller)
+                verify_no_errors(self.controller)
+                self.verify_checksums()
+
         do_barrier(self.controller)
         verify_no_errors(self.controller)
         self.verify_checksums()
