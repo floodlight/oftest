@@ -1084,56 +1084,6 @@ class bucket_counter(loxi.OFObject):
         q.text('}')
 
 
-class experimenter_stats_header(loxi.OFObject):
-    subtypes = {}
-
-
-    def __init__(self, experimenter=None, subtype=None):
-        if experimenter != None:
-            self.experimenter = experimenter
-        else:
-            self.experimenter = 0
-        if subtype != None:
-            self.subtype = subtype
-        else:
-            self.subtype = 0
-        return
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!L", self.experimenter))
-        packed.append(struct.pack("!L", self.subtype))
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(reader):
-        subtype, = reader.peek('!L', 0)
-        subclass = experimenter_stats_header.subtypes.get(subtype)
-        if subclass:
-            return subclass.unpack(reader)
-
-        obj = experimenter_stats_header()
-        obj.experimenter = reader.read("!L")[0]
-        obj.subtype = reader.read("!L")[0]
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.experimenter != other.experimenter: return False
-        if self.subtype != other.subtype: return False
-        return True
-
-    def pretty_print(self, q):
-        q.text("experimenter_stats_header {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("subtype = ");
-                q.text("%#x" % self.subtype)
-            q.breakable()
-        q.text('}')
-
-
 class flow_stats_entry(loxi.OFObject):
 
     def __init__(self, table_id=None, duration_sec=None, duration_nsec=None, priority=None, idle_timeout=None, hard_timeout=None, flags=None, cookie=None, packet_count=None, byte_count=None, match=None, instructions=None):
@@ -2982,7 +2932,7 @@ class table_feature_prop_instructions(table_feature_prop):
         _length = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_length - (2 + 2))
-        obj.instruction_ids = loxi.generic_util.unpack_list(reader, instruction.instruction.unpack)
+        obj.instruction_ids = loxi.generic_util.unpack_list(reader, instruction_id.instruction_id.unpack)
         return obj
 
     def __eq__(self, other):
@@ -3029,7 +2979,7 @@ class table_feature_prop_instructions_miss(table_feature_prop):
         _length = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_length - (2 + 2))
-        obj.instruction_ids = loxi.generic_util.unpack_list(reader, instruction.instruction.unpack)
+        obj.instruction_ids = loxi.generic_util.unpack_list(reader, instruction_id.instruction_id.unpack)
         return obj
 
     def __eq__(self, other):
