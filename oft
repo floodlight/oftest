@@ -85,6 +85,7 @@ config_default = {
     "default_timeout"    : 2,
     "minsize"            : 0,
     "random_seed"        : None,
+    "disable_ipv6"       : False,
 
     # Other configuration
     "port_map"           : {},
@@ -194,6 +195,8 @@ prefixing them with the '^' character.
                       help="Minimum allowable packet size on the dataplane.")
     group.add_option("--random-seed", type="int",
                       help="Random number generator seed")
+    group.add_option("--disable-ipv6", action="store_true",
+                      help="Disable IPv6 tests")
     parser.add_option_group(group)
 
     # Might need this if other parsers want command line
