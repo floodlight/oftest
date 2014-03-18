@@ -1,0 +1,66 @@
+{% macro new_overview(group, total, overview, analysis, group_link=True, detail=True) -%}
+
+<!-- Test group Title -->
+<div>
+  <h3>
+    {% if (total.mandatory.passed + total.mandatory.error) == total.mandatory.total %}
+      <span class="badge badge-success" style="padding-top:10px;"><i class="icon-ok icon-white" style="margin-top:-5px;"></i></span>
+    {% else %}
+      <span class="badge badge-important" style="padding-top:10px;"><i class="icon-remove icon-white" style="margin-top:-4px;"></i></span>
+    {% endif -%}
+    {% if group_link %}
+      <a href="groups/Grp{{group}}.html">Test group {{group}}</a>
+    {% else %}
+      Test group {{group}}
+    {% endif %}
+  </h3>
+</div>
+
+<!-- Test group progress bars -->
+<div class="span8" style="float: none; margin-left: 0px;">
+  <h4 style="margin-top: 0px;">Mandatory&nbsp;</h4>
+  <div class="progress" style="margin-bottom: 5px;">
+    {% if total.mandatory.total == 0 %}
+      <div class="bar bar-success" style="width:100%;"></div>
+    {% else %}
+      <div class="bar bar-success" style="width:{{ (total.mandatory.passed / total.mandatory.total) * 100 }}%;"></div>
+      <div class="bar bar-warning" style="width:{{ (total.mandatory.error/ total.mandatory.total) * 100 }}%;"></div>
+      <div class="bar bar-danger" style="width:{{ (total.mandatory.failed/ total.mandatory.total) * 100 }}%;"></div>
+    {% endif %}
+  </div>
+  <div class="badge badge-info">{{ total.mandatory.total }}</div> Total
+  <div class="badge badge-success">{{ total.mandatory.passed }}</div> Passed
+  <div class="badge badge-warning">{{ total.mandatory.error }}</div> Error
+  <div class="badge badge-important">{{ total.mandatory.failed }}</div> Failed
+  <br/><br/>
+  <h4 style="margin-top: 0px;">Optional&nbsp;</h4>
+  <div class="progress" style="margin-bottom: 5px;">
+    {% if total.optional.total == 0 %}
+      <div class="bar bar-success" style="width:100%;"></div>
+    {% else %}
+      <div class="bar bar-success" style="width:{{ (total.optional.passed / total.optional.total) * 100 }}%;"></div>
+      <div class="bar bar-warning" style="width:{{ (total.optional.error/ total.optional.total) * 100 }}%;"></div>
+      <div class="bar bar-danger" style="width:{{ (total.optional.failed / total.optional.total) * 100 }}%;"></div>
+    {% endif %}
+  </div>
+  <div class="badge badge-info">{{ total.optional.total }}</div> Ran
+  <div class="badge badge-success">{{ total.optional.passed }}</div> Passed
+  <div class="badge badge-warning">{{ total.optional.error }}</div> Error
+  <div class="badge badge-important">{{ total.optional.failed }}</div> Failed
+  <br/>
+</div>
+
+{% if detail %}
+  <!-- Testgroup Notes -->
+  <h3>Testgroup Overview</h3>
+  {{ overview }}
+  {% if analysis != "" %}
+    <h3>Testgroup Analysis</h3>
+    {{ analysis }}
+  {% else %}
+  {% endif %}
+{% else %}
+{% endif %}
+<hr>
+
+{%- endmacro %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block csspath %}../{% endblock %}
+
+{% block content %}
+
+  <!-- Include links if built for web. -->
+  {% if for_web %}
+    <h3><a href="../index.html">Back to summary</a></h3>
+  {% else %}
+  {% endif %}
+
+  <!-- Add graph here if required. -->
+  {% import "overview.html" as o %}
+  {{ o.new_overview(group, total, overview, analysis, False, True) }}
+
+  {% import "test.html" as test %}
+  {% for i, k, v in tests %}
+    {{ test.new_test(i, k, v, spec) }}
+  {% endfor %}
+
+{% endblock %}

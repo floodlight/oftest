@@ -1,0 +1,22 @@
+<p>Test suite 60, named Counters, checks for the correct implementation of counters in the Devices. Counters are checked per Flow, per Port, per Queue and per table. Table 4, p5 of the OpenFlow Switch Specification 1.0.0 lists required counters for use in statistics messages, but the existence of a capabilities reporting field for each of these types of counters in the features reply (p. 25 o the OpenFlow Switch Specification 1.0.0) would  seem to indicate these are optional. Since queues are configured locally on the DUT and outside of the OpenFlow protocol, we have left support of the enqueue action and it's respective counters as OPTIONAL, but all other counters are MANDATORY.
+<table class="table" style="width:400px;">
+  <tr>
+    <td>60.10 to 60.40</td><td>per flow counters</td>
+  </tr>
+  <tr>
+    <td>60.50 to 60.160</td><td>per port counters</td>
+  </tr>
+  <tr>
+    <td>60.170 to 60.190</td><td>per queue counters</td>
+  </tr>
+  <tr>
+    <td>60.200 to 60.210</td><td>per table counters</td>
+  </tr>
+</table>
+
+<b>Special cases:</b>
+<p>Some counters may not be reliably triggered on every device (e.g. transmit overrun error). In these cases only the existence of the counter will be verified, but not correct counting. 
+<p>Queue counters are OPTIONAL (60.170 to 60.190).</p>
+
+<b>Profiles:</b>
+<p>All profiles MUST pass all tests except 60.170, 60.180, and 60.190

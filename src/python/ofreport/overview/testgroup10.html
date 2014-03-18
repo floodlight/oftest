@@ -1,0 +1,16 @@
+<p>Basic Sanity Checks verifies establishment of a control channel, verifies behavior
+when the control channel is lost.</p>
+
+<b>Special cases:</b>
+<ol>
+  <li>Control channel port and encryption:
+    <p>4 methods of control channel establishment are tested (Tests 10.20, 10.30,
+    10.40, 10.50). At least one of the four MUST be supported for the device to be
+    considered conformant.</li>
+  <li>Control channel failure:
+    <p>Errata 1.0.1 adds support for Fail-Secure Mode in the case of a control
+    channel failure. After loss of the control channel, the switch MUST enter either
+    Emergency Mode (Tests 10.90, 10.100, 10.110) or Fail-Secure Mode (Test
+    10.120) to be considered conformant. The test cases are labeled as either
+    MANDATORY for Emergency Mode or MANDATORY for Fail-Secure Mode.</li>
+</ol>

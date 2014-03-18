@@ -1,0 +1,82 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta charset="UTF-8"/>
+    <script type="text/javascript">
+      showHide = function(src) {
+     
+      el = document.getElementById(src.id+"v")
+      
+      if (el.style.display == "block") {
+      el.style.display = "none"
+      } else {
+      el.style.display = "block"
+      }
+      }
+
+      highlight = function(src) {
+      console.log(src.id)
+      el = document.getElementById(src.id)
+      el.style.backgroundColor = "#D8D8D8"
+      }
+
+      highdark = function(src) {
+      console.log(src.id)
+      el = document.getElementById(src.id)
+      el.style.backgroundColor = "white"
+      }
+      </script>
+
+    
+    <link href="{% block csspath %}{% endblock %}css/bootstrap.min.css" rel="stylesheet">
+  </head>
+  <body class="span12">
+    <br/><br/>
+    {% block cont %}
+
+    {% if for_suite or for_web %}
+    <a href="http://incntre.iu.edu/">
+      <div style="text-align: center;">
+      <img align="middle"  border="0" src="http://ovpitnews.iu.edu/pub/libs/images/usr/11737_h.jpg" alt="InCNTRE" height="150" width="300" /></div></a>
+   
+    <h1 align="center">OFTest Conformance Report</h1>
+    
+    <!-- Equipment Note -->
+    <hr size="5" color="black">
+    <h2>{{meta.BrandVendor}} {{meta.ModelNameNumber}} - Profile: {{profile}}</h2>
+    <b>Product-Family:      </b> {{meta.ProductFamily}}<br/>
+    <b>Firmware Revision:   </b> {{meta.FirmwareRevision}}<br/>
+    <!-- Content shared only with vendor. -->
+    {% if for_web %}
+      <b>Architecture:        </b> {{meta.Architecturedescription}}<br/>
+      <b>Chipset:             </b> {{meta.Chipset}}<br/> 
+      <b>Port Description:    </b> {{meta.PortNumbersTypeSpeed}}<br/>
+    {% else %}
+    {% endif %}
+
+    <h2>Test Tools</h2>
+    <b>Test Framework:       </b> {{meta.tframework}}<br/>
+    <b>Software Version:     </b> {{meta.Software}}<br/>
+    <b>Server:               </b> {{meta.server}}<br/>
+    <b>Operating system:     </b> {{meta.serveros}}<br/>
+    <br>
+
+    {% if for_web %}
+      <!-- Forms -->
+      <b>Application Form:    </b><a href="{% block alpath %}{% endblock alpath  %}application.xls"> Application-form </a><br/>
+      <b>Test List:           </b><a href="{% block tlpath %}{% endblock tlpath %}test_form.xls"> testlist-form </a><br/>
+      <b>Device configuration:</b><a href="{% block clpath %}{% endblock clpath %}vendor.txt">Configuration</a><br/>
+    {% else %}
+    {% endif %}
+    {% endif %}
+
+    {% endblock cont %}
+
+    <!-- Page Content -->    
+    {% block content scoped %}
+    {% endblock content %}
+
+    <script src="http://code.jquery.com/jquery.js"></script>
+    <script src="{% block jspath %}{% endblock %}js/bootstrap.min.js"></script>
+  </body>
+</html>

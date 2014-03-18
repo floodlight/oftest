@@ -1,0 +1,47 @@
+<p>Test suite 70 tests all the data plane actions a switch can support. The test suite contains tests for nine forwarding actions (70.30 to 70.110) and eleven header field write actions (70.120 to 70.230).
+<p>The OpenFlow Switch 1.0 Specification does not clarify what is considered an illegal action order. Due to this ambiguity, what is considered an illegal action order may vary based on the implementation. While it seems reasonable to consider a header modify action with no subsequent output or forward action as an illegal ordering, we have left tests 70.240 and 70.250 as OPTIONAL.</p>
+
+<b>Special cases:</b>
+<p>The following Forwarding actions are required:
+<table class="table" style="width:400px;">
+  <tr>
+    <td>All:</td><td>70.30</td>
+  </tr>
+  <tr>
+    <td>Controller:</td><td>70.40</td>
+  </tr>
+  <tr>
+    <td>Table:</td><td>70.60</td>
+  </tr>
+  <tr>
+    <td>In_port:</td><td>70.70</td>
+  </tr>
+</table>
+
+<p>The following Forwarding actions are OPTIONAL:
+<table class="table" style="width:400px;">
+  <tr>
+    <td>Local:</td><td>70.50</td>
+  </tr>
+  <tr>
+    <td>Normal:</td><td>70.80</td>
+  </tr>
+  <tr>
+    <td>Flood:</td><td>70.90</td>
+  </tr>
+  <tr>
+    <td>Multiple Ports:</td><td>70.100</td>
+  </tr>
+  <tr>
+    <td>Enqueue:</td><td>70.110</td>
+  </tr>
+</table>
+
+<p>All the write Actions are OPTIONAL:</br>
+70.120 to 70.230
+
+<p>Action ordering tests are OPTIONAL:</br>
+70.240 and 70.250</p>
+
+<b>Profiles:</b>
+<p>All profiles MUST pass tests 70.10, 70.20, 70.30, 70.40, 70.60, 70.70
