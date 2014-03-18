@@ -1,2 +1,0 @@
-# @author Jonathan Stout
-
