@@ -59,7 +59,7 @@ class ConformanceTextTestResult(_TextTestResult):
     def addError(self, test, err):
         """ """
         _TextTestResult.addError(self, test, err)
-        if not config["publish"] is None:
+        if config["publish"]:
             s = ""
             for l in format_exception(err[0], err[1], err[2]):
                 s += l
@@ -71,7 +71,7 @@ class ConformanceTextTestResult(_TextTestResult):
         or mandatory_failures depending on requirement specified.
         """
         _TextTestResult.addFailure(self, test, err)
-        if not config["publish"]:
+        if config["publish"]:
             s = ""
             for l in format_exception(err[0], err[1], err[2]):
                 s += l
@@ -83,7 +83,7 @@ class ConformanceTextTestResult(_TextTestResult):
         or optional_failures depending on requirement specified.
         """
         _TextTestResult.addSuccess(self, test)
-        if not config["publish"]:
+        if config["publish"]:
             self.saveResult(test, "passed")
 
     def saveResult(self, test, testcase_result, testcase_trace=""):
