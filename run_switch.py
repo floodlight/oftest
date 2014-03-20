@@ -3,6 +3,7 @@
 # Create veth pairs and start up switch daemons
 #
 
+import sys
 import os
 import time
 from subprocess import Popen,PIPE,call,check_call
