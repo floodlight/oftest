@@ -694,6 +694,7 @@ OFPR_BSN_FRAGMENTATION_REQUIRED = 137
 OFPR_BSN_ARP = 139
 OFPR_BSN_DHCP = 140
 OFPR_BSN_DEBUG = 141
+OFPR_BSN_PACKET_OF_DEATH = 142
 
 ofp_packet_in_reason_map = {
     0: 'OFPR_NO_MATCH',
@@ -712,6 +713,7 @@ ofp_packet_in_reason_map = {
     139: 'OFPR_BSN_ARP',
     140: 'OFPR_BSN_DHCP',
     141: 'OFPR_BSN_DEBUG',
+    142: 'OFPR_BSN_PACKET_OF_DEATH',
 }
 
 # Identifiers from group ofp_port
