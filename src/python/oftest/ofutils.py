@@ -10,6 +10,7 @@ import fcntl
 import logging
 
 default_timeout = None # set by oft
+default_negative_timeout = None # set by oft
 
 def gen_xid():
     return random.randrange(1,0xffffffff)
@@ -19,11 +20,9 @@ Wait on a condition variable until the given function returns non-None or a time
 The condition variable must already be acquired.
 The timeout value -1 means use the default timeout.
 There is deliberately no support for an infinite timeout.
-TODO: get the default timeout from configuration
 """
 def timed_wait(cv, fn, timeout=-1):
     if timeout == -1:
-        # TODO make this configurable
         timeout = default_timeout
 
     end_time = time.time() + timeout

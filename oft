@@ -83,7 +83,8 @@ config_default = {
     "relax"              : False,
     "test_params"        : "None",
     "fail_skipped"       : False,
-    "default_timeout"    : 2,
+    "default_timeout"    : 2.0,
+    "default_negative_timeout" : 0.01,
     "minsize"            : 0,
     "random_seed"        : None,
     "disable_ipv6"       : False,
@@ -191,8 +192,10 @@ prefixing them with the '^' character.
     group.add_option("-t", "--test-params", help=test_params_help)
     group.add_option("--fail-skipped", action="store_true",
                       help="Return failure if any test was skipped")
-    group.add_option("--default-timeout", type="int",
+    group.add_option("--default-timeout", type=float,
                       help="Timeout in seconds for most operations")
+    group.add_option("--default-negative-timeout", type=float,
+                      help="Timeout in seconds for negative checks")
     group.add_option("--minsize", type="int",
                       help="Minimum allowable packet size on the dataplane.")
     group.add_option("--random-seed", type="int",
@@ -493,6 +496,7 @@ logging.debug("Configuration: " + str(config))
 logging.info("OF port map: " + str(config["port_map"]))
 
 oftest.ofutils.default_timeout = config["default_timeout"]
+oftest.ofutils.default_negative_timeout = config["default_negative_timeout"]
 oftest.testutils.MINSIZE = config['minsize']
 
 if os.getuid() != 0 and not config["allow_user"]:
