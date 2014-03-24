@@ -593,7 +593,7 @@ def receive_pkt_check(dp, pkt, yes_ports, no_ports, assert_if):
                              "Received packet does not match expected packet " +
                              "on port " + str(ofport))
     if len(no_ports) > 0:
-        time.sleep(oftest.ofutils.negative_timeout)
+        time.sleep(oftest.ofutils.default_negative_timeout)
     for ofport in no_ports:
         logging.debug("Negative check for pkt on port " + str(ofport))
         (rcv_port, rcv_pkt, pkt_time) = dp.poll(
