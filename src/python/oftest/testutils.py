@@ -576,11 +576,6 @@ def receive_pkt_check(dp, pkt, yes_ports, no_ports, assert_if):
     DEPRECATED in favor in verify_packets
     """
 
-    # Wait this long for packets that we don't expect to receive.
-    # 100ms is (rarely) too short for positive tests on slow
-    # switches but is definitely not too short for a negative test.
-    negative_timeout = 0.1
-
     exp_pkt_arg = None
     if oftest.config["relax"]:
         exp_pkt_arg = pkt
@@ -598,7 +593,7 @@ def receive_pkt_check(dp, pkt, yes_ports, no_ports, assert_if):
                              "Received packet does not match expected packet " +
                              "on port " + str(ofport))
     if len(no_ports) > 0:
-        time.sleep(negative_timeout)
+        time.sleep(oftest.ofutils.default_negative_timeout)
     for ofport in no_ports:
         logging.debug("Negative check for pkt on port " + str(ofport))
         (rcv_port, rcv_pkt, pkt_time) = dp.poll(
@@ -1605,7 +1600,7 @@ def verify_no_packet_in(test, data, in_port, controller=None):
 
     # Negative test, need to wait a short amount of time before checking we
     # didn't receive the message.
-    time.sleep(0.5)
+    time.sleep(oftest.ofutils.default_negative_timeout)
 
     # Check every packet_in queued in the controller
     while True:
@@ -1648,7 +1643,10 @@ def verify_no_packet(test, pkt, ofport):
     Check that a particular packet is not received
     """
     logging.debug("Negative check for pkt on port %r", ofport)
-    (rcv_port, rcv_pkt, pkt_time) = test.dataplane.poll(port_number=ofport, exp_pkt=str(pkt), timeout=0.01)
+    (rcv_port, rcv_pkt, pkt_time) = \
+        test.dataplane.poll(
+            port_number=ofport, exp_pkt=str(pkt),
+            timeout=oftest.ofutils.default_negative_timeout)
     test.assertTrue(rcv_pkt == None, "Received packet on %r" % ofport)
 
 def verify_no_other_packets(test):
@@ -1660,7 +1658,7 @@ def verify_no_other_packets(test):
     if oftest.config["relax"]:
         return
     logging.debug("Checking for unexpected packets on all ports")
-    (rcv_port, rcv_pkt, pkt_time) = test.dataplane.poll(timeout=0.01)
+    (rcv_port, rcv_pkt, pkt_time) = test.dataplane.poll(timeout=oftest.ofutils.default_negative_timeout)
     if rcv_pkt != None:
         logging.debug("Received unexpected packet on port %r: %s", rcv_port, format_packet(rcv_pkt))
     test.assertTrue(rcv_pkt == None, "Unexpected packet on port %r" % rcv_port)
