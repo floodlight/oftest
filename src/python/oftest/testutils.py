@@ -1377,7 +1377,6 @@ def get_queue_stats(test, port_no, queue_id):
     return get_stats(test, req)
 
 def verify_flow_stats(test, match, table_id=0xff,
-                      out_port=None,
                       initial=[],
                       pkts=None, bytes=None):
     """
@@ -1387,8 +1386,6 @@ def verify_flow_stats(test, match, table_id=0xff,
     get_flow_stats(). If 'initial' is not given the counters are assumed to
     begin at 0.
     """
-    if out_port == None:
-        out_port = ofp.OFPP_NONE
 
     def accumulate(stats):
         pkts_acc = bytes_acc = 0
@@ -1402,7 +1399,7 @@ def verify_flow_stats(test, match, table_id=0xff,
     # Wait 10s for counters to update
     pkt_diff = byte_diff = None
     for i in range(0, 100):
-        stats = get_flow_stats(test, match, table_id=table_id, out_port=out_port)
+        stats = get_flow_stats(test, match, table_id=table_id)
         pkts_after, bytes_after = accumulate(stats)
         pkt_diff = pkts_after - pkts_before
         byte_diff = bytes_after - bytes_before
