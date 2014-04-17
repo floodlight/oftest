@@ -1014,12 +1014,12 @@ class Grp40No210(base_tests.SimpleDataPlane):
         match3.wildcards = ofp.OFPFW_ALL-ofp.OFPFW_IN_PORT
         match3.in_port = of_ports[0]
         msg3 = message.flow_mod()
-        msg3.out_port = of_ports[2] # ignored by flow add,flow modify 
+        msg3.out_port = ofp.OFPP_NONE # ignored by flow add,flow modify 
         msg3.command = ofp.OFPFC_ADD
         msg3.cookie = random.randint(0,9007199254740992)
         msg3.buffer_id = 0xffffffff
         msg3.hard_timeout = 1
-        msg3.buffer_id = 0xffffffff
+        msg3.flags |= ofp.OFPFF_SEND_FLOW_REM
         msg3.match = match3
         act3 = action.action_output()
         act3.port = of_ports[1]
@@ -1033,11 +1033,8 @@ class Grp40No210(base_tests.SimpleDataPlane):
         logging.info("Verifying that there is no OFPT_FLOW_REMOVED message received")
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_FLOW_REMOVED,
                                                timeout=3)
-        self.assertTrue(response is None, 
-                        'Recieved flow removed message ')
+        self.assertTrue(response, 
+                        'Did not receive the flow removed message')
 
-        # Verify no entries in the table
-        #verify_tablestats(self,expect_active=0)
-        logging.info("Verifying if the flow was removed after the time out")
-        rv=all_stats_get(self)
-        self.assertTrue(rv["flows"]==0, "Flows were not deleted even after the flow timedout")
+        # Verify flow was alive for 1 sec
+        self.assertEqual(response.duration_sec, 1, 'Flow was not alive for 1 sec')
