@@ -365,7 +365,7 @@ class Grp40No70(base_tests.SimpleProtocol):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp40No80 Emergency_Flow_Timeout test")
+        logging.info("Running Grp40No70 Emergency_Flow_Timeout test")
         
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -416,7 +416,7 @@ class Grp40No80(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp40No90 Missing_Modify_Add test")
+        logging.info("Running Grp40No80 Missing_Modify_Add test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -546,7 +546,7 @@ class Grp40No110(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Delete_NonExisting_Flow Grp40No120 test begins")
+        logging.info("Delete_NonExisting_Flow Grp40No110 test begins")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -584,7 +584,7 @@ class Grp40No120(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp40No130 Send_Flow_Rem test ")
+        logging.info("Running Grp40No120 Send_Flow_Rem test ")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -799,7 +799,7 @@ class Grp40No190(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Outport1 Grp40No160 test begins")
+        logging.info("Outport1 Grp40No190 Delete with constraint out_port")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -861,7 +861,7 @@ class Grp40No200(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp40No170 Outport2 test ")
+        logging.info("Running Grp40No200 out_port ignored by add and modify request")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -900,7 +900,7 @@ class Grp40No220(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp40No180 Idle_Timeout test ")
+        logging.info("Running Grp40No220 Idle_Timeout test ")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -945,7 +945,7 @@ class Grp40No230(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Hard_Timeout test ")
+        logging.info("Running Grp40No230 Hard_Timeout test ")
         
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -995,7 +995,7 @@ class Grp40No210(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Flow_Timeout test ")
+        logging.info("Running Grp40No210 Flow_Timeout test ")
         
         of_ports = config["port_map"].keys()
         of_ports.sort()
