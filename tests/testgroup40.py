@@ -416,7 +416,7 @@ class Grp40No80(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp40No90 Missing_Modify_Add test")
+        logging.info("Running Grp40No80 Missing_Modify_Add test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -852,6 +852,75 @@ class Grp40No190(base_tests.SimpleDataPlane):
 	rv=all_stats_get(self)
 	self.assertTrue(rv["flows"]==0,"Switch did not delete the flow")
 
+
+class Grp40No190b(base_tests.SimpleDataPlane):
+    """
+    Configure and connect the primary-controller on the DUT. Insert two
+    identical flows forwarding to two different out_ports. Send an exact
+    match delete request for these flows, but specify only one of the
+    two ports as out_port. check that only the flow with the specified
+    out_port is deleted.
+    """
+
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp40No190b: Delete with constraint out_port")
+
+        ports = config["port_map"].keys()
+        ports.sort()
+        self.assertTrue(len(ports) > 2, "Not enough ports exist for this test.")
+
+        ok = delete_all_flows(self.controller)
+        self.assertEqual(ok, 0, "Could not delete all flows.")
+
+        # Configure flow table with initial flows.
+        # wildcard_all_exectp_ingress returns a simple tcp packet, and a match
+        # with in_port set to ports[0].
+        pkt, match = wildcard_all_except_ingress(self, ports)
+
+        fmod = message.flow_mod()
+        fmod.buffer_id = 0xffffffff
+        fmod.command = ofp.OFPFC_ADD
+        fmod.match = match
+
+        fmod.out_port = ports[1]
+        fmod.priority = 11
+        ok = self.controller.message_send(fmod)
+        self.assertNotEqual(ok, -1, "Error occurred while installing flow mod.")
+
+        fmod.out_port = ports[2]
+        fmod.priority = 12
+        ok = self.controller.message_send(fmod)
+        self.assertNotEqual(ok, -1, "Error occurred while installing flow mod.")
+
+        ok = do_barrier(self.controller)
+        self.assertEqual(ok, 0, "Barrier request failed.")
+
+        # Verify data plane traffic is forwarded correctly.
+        self.dataplane.send(ports[0], str(pkt))
+        valid = [ports[1]]
+        invalid = [ports[0]] + ports[2:]
+        receive_pkt_check(self.dataplane, pkt, valid, invalid, self)
+
+        # Send flow_mod with command set to delete. This will delete the higher
+        # priority rule.
+        dmod = message.flow_mod()
+        dmod.buffer_id = 0xffffffff
+        dmod.command = ofp.OFPFC_DELETE
+        dmod.match = match # Use same match that was used in the first flows.
+        dmod.out_port = ports[1]
+        ok = self.controller.message_send(dmod)
+        self.assertNotEqual(ok, -1, "Error occurred while deleting flow mod.")
+
+        ok = do_barrier(self.controller)
+        self.assertEqual(ok, 0, "Barrier request failed.")
+
+        # Verify data plane traffic is forwarded correctly.
+        self.dataplane.send(ports[0], str(pkt))
+        valid = [ports[2]]
+        invalid = ports[0:2]
+        receive_pkt_check(self.dataplane, pkt, valid, invalid, self)
 
 
 class Grp40No200(base_tests.SimpleDataPlane):
