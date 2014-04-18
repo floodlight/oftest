@@ -198,6 +198,29 @@ class Grp80No50(base_tests.SimpleProtocol):
                          'Response data does not match request data')
 
 
+class Grp80No70(base_tests.SimpleProtocol):
+    """
+    Verify OFPT_FEATURES_REPLY contains complete feature information.
+    """
+
+    @wireshark_capture
+    def runTest(self):
+        logging = get_logger()
+        logging.info("Running Grp80No70: Features Request-Reply")
+        
+        logging.info("Sending features_request.")
+        req = message.features_request()
+        (res, pkt) = self.controller.transact(req)
+        self.assertIsNotNone(res,
+                             "Did not receive response to features_request.")
+        logging.info("Verifying response's essential fields.")
+        self.assertEqual(res.header.type, ofp.OFPT_FEATURES_REPLY,
+                         "Response type was %d, but expected %d.",
+                         res.header.type, ofp.OFPT_FEATURES_REPLY)
+        self.assertEqual(res.header.xid,req.header.xid,
+                         ("Transaction ID of response did not match the "
+                          "transaction ID of the request."))
+
 
 class Grp80No60(base_tests.SimpleProtocol):
     """Verify the body of Features Reply message"""
