@@ -215,8 +215,8 @@ class Grp80No60(base_tests.SimpleProtocol):
                              "Did not receive response to features_request.")
         logging.info("Verifying response's essential fields.")
         self.assertEqual(res.header.type, ofp.OFPT_FEATURES_REPLY,
-                         "Response type was %d, but expected %d.",
-                         res.header.type, ofp.OFPT_FEATURES_REPLY)
+                         "Response type was %d, but expected %d." %
+                         (res.header.type, ofp.OFPT_FEATURES_REPLY))
         self.assertEqual(res.header.xid,req.header.xid,
                          ("Transaction ID of response did not match the "
                           "transaction ID of the request."))
