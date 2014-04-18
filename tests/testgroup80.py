@@ -198,15 +198,15 @@ class Grp80No50(base_tests.SimpleProtocol):
                          'Response data does not match request data')
 
 
-class Grp80No70(base_tests.SimpleProtocol):
+class Grp80No60(base_tests.SimpleProtocol):
     """
-    Verify OFPT_FEATURES_REPLY contains complete feature information.
+    Verify OFPT_FEATURES_REQUEST / REPLY dialogue.
     """
 
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp80No70: Features Request-Reply")
+        logging.info("Running Grp80No60: Features Request-Reply")
         
         logging.info("Sending features_request.")
         req = message.features_request()
@@ -222,13 +222,15 @@ class Grp80No70(base_tests.SimpleProtocol):
                           "transaction ID of the request."))
 
 
-class Grp80No60(base_tests.SimpleProtocol):
-    """Verify the body of Features Reply message"""
+class Grp80No70(base_tests.SimpleProtocol):
+    """
+    Verify OFPT_FEATURES_REPLY contains complete feature information.
+    """
 
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp80No60 Features Reply Body test")
+        logging.info("Running Grp80No70 Features Reply Body test")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
