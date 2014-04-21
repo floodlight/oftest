@@ -88,6 +88,108 @@ class bsn_controller_connection(loxi.OFObject):
         q.text('}')
 
 
+class bsn_debug_counter_desc_stats_entry(loxi.OFObject):
+
+    def __init__(self, counter_id=None, name=None, description=None):
+        if counter_id != None:
+            self.counter_id = counter_id
+        else:
+            self.counter_id = 0
+        if name != None:
+            self.name = name
+        else:
+            self.name = ""
+        if description != None:
+            self.description = description
+        else:
+            self.description = ""
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!Q", self.counter_id))
+        packed.append(struct.pack("!64s", self.name))
+        packed.append(struct.pack("!256s", self.description))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_debug_counter_desc_stats_entry()
+        obj.counter_id = reader.read("!Q")[0]
+        obj.name = reader.read("!64s")[0].rstrip("\x00")
+        obj.description = reader.read("!256s")[0].rstrip("\x00")
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.counter_id != other.counter_id: return False
+        if self.name != other.name: return False
+        if self.description != other.description: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_debug_counter_desc_stats_entry {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("counter_id = ");
+                q.text("%#x" % self.counter_id)
+                q.text(","); q.breakable()
+                q.text("name = ");
+                q.pp(self.name)
+                q.text(","); q.breakable()
+                q.text("description = ");
+                q.pp(self.description)
+            q.breakable()
+        q.text('}')
+
+
+class bsn_debug_counter_stats_entry(loxi.OFObject):
+
+    def __init__(self, counter_id=None, value=None):
+        if counter_id != None:
+            self.counter_id = counter_id
+        else:
+            self.counter_id = 0
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!Q", self.counter_id))
+        packed.append(struct.pack("!Q", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_debug_counter_stats_entry()
+        obj.counter_id = reader.read("!Q")[0]
+        obj.value = reader.read("!Q")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.counter_id != other.counter_id: return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_debug_counter_stats_entry {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("counter_id = ");
+                q.text("%#x" % self.counter_id)
+                q.text(","); q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+
 class bsn_flow_checksum_bucket_stats_entry(loxi.OFObject):
 
     def __init__(self, checksum=None):
@@ -813,6 +915,199 @@ class bsn_vport(loxi.OFObject):
         q.text('}')
 
 
+class bsn_vlan_counter_stats_entry(loxi.OFObject):
+
+    def __init__(self, vlan_vid=None, values=None):
+        if vlan_vid != None:
+            self.vlan_vid = vlan_vid
+        else:
+            self.vlan_vid = 0
+        if values != None:
+            self.values = values
+        else:
+            self.values = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 0
+        packed.append(struct.pack("!H", self.vlan_vid))
+        packed.append('\x00' * 4)
+        packed.append(loxi.generic_util.pack_list(self.values))
+        length = sum([len(x) for x in packed])
+        packed[0] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_vlan_counter_stats_entry()
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length - (0 + 2))
+        obj.vlan_vid = reader.read("!H")[0]
+        reader.skip(4)
+        obj.values = loxi.generic_util.unpack_list(reader, common.uint64.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.vlan_vid != other.vlan_vid: return False
+        if self.values != other.values: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_vlan_counter_stats_entry {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("vlan_vid = ");
+                q.text("%#x" % self.vlan_vid)
+                q.text(","); q.breakable()
+                q.text("values = ");
+                q.pp(self.values)
+            q.breakable()
+        q.text('}')
+
+
+class bsn_vport_l2gre(bsn_vport):
+    type = 1
+
+    def __init__(self, flags=None, port_no=None, local_mac=None, nh_mac=None, src_ip=None, dst_ip=None, dscp=None, ttl=None, vpn=None, if_name=None):
+        if flags != None:
+            self.flags = flags
+        else:
+            self.flags = 0
+        if port_no != None:
+            self.port_no = port_no
+        else:
+            self.port_no = 0
+        if local_mac != None:
+            self.local_mac = local_mac
+        else:
+            self.local_mac = [0,0,0,0,0,0]
+        if nh_mac != None:
+            self.nh_mac = nh_mac
+        else:
+            self.nh_mac = [0,0,0,0,0,0]
+        if src_ip != None:
+            self.src_ip = src_ip
+        else:
+            self.src_ip = 0
+        if dst_ip != None:
+            self.dst_ip = dst_ip
+        else:
+            self.dst_ip = 0
+        if dscp != None:
+            self.dscp = dscp
+        else:
+            self.dscp = 0
+        if ttl != None:
+            self.ttl = ttl
+        else:
+            self.ttl = 0
+        if vpn != None:
+            self.vpn = vpn
+        else:
+            self.vpn = 0
+        if if_name != None:
+            self.if_name = if_name
+        else:
+            self.if_name = ""
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!L", self.flags))
+        packed.append(util.pack_port_no(self.port_no))
+        packed.append(struct.pack("!6B", *self.local_mac))
+        packed.append(struct.pack("!6B", *self.nh_mac))
+        packed.append(struct.pack("!L", self.src_ip))
+        packed.append(struct.pack("!L", self.dst_ip))
+        packed.append(struct.pack("!B", self.dscp))
+        packed.append(struct.pack("!B", self.ttl))
+        packed.append('\x00' * 2)
+        packed.append(struct.pack("!L", self.vpn))
+        packed.append(struct.pack("!16s", self.if_name))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_vport_l2gre()
+        _type = reader.read("!H")[0]
+        assert(_type == 1)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length - (2 + 2))
+        obj.flags = reader.read("!L")[0]
+        obj.port_no = util.unpack_port_no(reader)
+        obj.local_mac = list(reader.read('!6B'))
+        obj.nh_mac = list(reader.read('!6B'))
+        obj.src_ip = reader.read("!L")[0]
+        obj.dst_ip = reader.read("!L")[0]
+        obj.dscp = reader.read("!B")[0]
+        obj.ttl = reader.read("!B")[0]
+        reader.skip(2)
+        obj.vpn = reader.read("!L")[0]
+        obj.if_name = reader.read("!16s")[0].rstrip("\x00")
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.flags != other.flags: return False
+        if self.port_no != other.port_no: return False
+        if self.local_mac != other.local_mac: return False
+        if self.nh_mac != other.nh_mac: return False
+        if self.src_ip != other.src_ip: return False
+        if self.dst_ip != other.dst_ip: return False
+        if self.dscp != other.dscp: return False
+        if self.ttl != other.ttl: return False
+        if self.vpn != other.vpn: return False
+        if self.if_name != other.if_name: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_vport_l2gre {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
+                q.text(","); q.breakable()
+                q.text("port_no = ");
+                q.text(util.pretty_port(self.port_no))
+                q.text(","); q.breakable()
+                q.text("local_mac = ");
+                q.text(util.pretty_mac(self.local_mac))
+                q.text(","); q.breakable()
+                q.text("nh_mac = ");
+                q.text(util.pretty_mac(self.nh_mac))
+                q.text(","); q.breakable()
+                q.text("src_ip = ");
+                q.text(util.pretty_ipv4(self.src_ip))
+                q.text(","); q.breakable()
+                q.text("dst_ip = ");
+                q.text(util.pretty_ipv4(self.dst_ip))
+                q.text(","); q.breakable()
+                q.text("dscp = ");
+                q.text("%#x" % self.dscp)
+                q.text(","); q.breakable()
+                q.text("ttl = ");
+                q.text("%#x" % self.ttl)
+                q.text(","); q.breakable()
+                q.text("vpn = ");
+                q.text("%#x" % self.vpn)
+                q.text(","); q.breakable()
+                q.text("if_name = ");
+                q.pp(self.if_name)
+            q.breakable()
+        q.text('}')
+
+bsn_vport.subtypes[1] = bsn_vport_l2gre
+
 class bsn_vport_q_in_q(bsn_vport):
     type = 0
 
@@ -909,60 +1204,6 @@ class bsn_vport_q_in_q(bsn_vport):
         q.text('}')
 
 bsn_vport.subtypes[0] = bsn_vport_q_in_q
-
-class bsn_vlan_counter_stats_entry(loxi.OFObject):
-
-    def __init__(self, vlan_vid=None, values=None):
-        if vlan_vid != None:
-            self.vlan_vid = vlan_vid
-        else:
-            self.vlan_vid = 0
-        if values != None:
-            self.values = values
-        else:
-            self.values = []
-        return
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!H", 0)) # placeholder for length at index 0
-        packed.append(struct.pack("!H", self.vlan_vid))
-        packed.append('\x00' * 4)
-        packed.append(loxi.generic_util.pack_list(self.values))
-        length = sum([len(x) for x in packed])
-        packed[0] = struct.pack("!H", length)
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(reader):
-        obj = bsn_vlan_counter_stats_entry()
-        _length = reader.read("!H")[0]
-        orig_reader = reader
-        reader = orig_reader.slice(_length - (0 + 2))
-        obj.vlan_vid = reader.read("!H")[0]
-        reader.skip(4)
-        obj.values = loxi.generic_util.unpack_list(reader, common.uint64.unpack)
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.vlan_vid != other.vlan_vid: return False
-        if self.values != other.values: return False
-        return True
-
-    def pretty_print(self, q):
-        q.text("bsn_vlan_counter_stats_entry {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("vlan_vid = ");
-                q.text("%#x" % self.vlan_vid)
-                q.text(","); q.breakable()
-                q.text("values = ");
-                q.pp(self.values)
-            q.breakable()
-        q.text('}')
-
 
 class bucket(loxi.OFObject):
 
