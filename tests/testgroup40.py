@@ -8,6 +8,7 @@ import logging
 
 import unittest
 import random
+import time
 
 from oftest import config
 import oftest.controller as controller
@@ -15,6 +16,7 @@ import oftest.cstruct as ofp
 import oftest.message as message
 import oftest.dataplane as dataplane
 import oftest.action as action
+import oftest.action_list as action_list
 import oftest.parse as parse
 import oftest.base_tests as base_tests
 
@@ -878,22 +880,33 @@ class Grp40No190b(base_tests.SimpleDataPlane):
         ok = delete_all_flows(self.controller)
         self.assertEqual(ok, 0, "Could not delete all flows.")
 
-        # wildcard_all_execpt_ingress returns a simple tcp packet, and a match
-        # with in_port set to ports[0].
-        pkt, match = wildcard_all_except_ingress(self, ports)
+        ok = do_barrier(self.controller)
+        self.assertEqual(ok, 0, "Barrier request failed.")
+
+        # Craft a match with all fields but OFPFW_IN_PORT wildcarded.
+        match = ofp.ofp_match()
+        match.wildcards = ofp.OFPFW_ALL & ~ofp.OFPFW_IN_PORT
+        match.in_port = ports[0]
+        pkt = simple_tcp_packet()
 
         fmod = message.flow_mod()
         fmod.buffer_id = 0xffffffff
         fmod.command = ofp.OFPFC_ADD
         fmod.match = match
 
-        fmod.out_port = ports[1]
-        fmod.priority = 11
+        fmod.actions = action_list.action_list()
+        act = action.action_output()
+        act.port = ports[1]
+        fmod.actions.add(act)
+        fmod.priority = 12
         ok = self.controller.message_send(fmod)
         self.assertNotEqual(ok, -1, "Error occurred while installing flow mod.")
 
-        fmod.out_port = ports[2]
-        fmod.priority = 12
+        fmod.actions = action_list.action_list()
+        act = action.action_output()
+        act.port = ports[2]
+        fmod.actions.add(act)
+        fmod.priority = 11
         ok = self.controller.message_send(fmod)
         self.assertNotEqual(ok, -1, "Error occurred while installing flow mod.")
 
@@ -907,12 +920,12 @@ class Grp40No190b(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane, pkt, valid, invalid, self)
 
         # Send flow_mod with command set to delete. This will delete the
-        # flow that forwards pkt out ports[1].
+        # flow that forwards pkt out to ports[1].
         dmod = message.flow_mod()
         dmod.buffer_id = 0xffffffff
         dmod.command = ofp.OFPFC_DELETE
         dmod.match = match # Use the match that was used above.
-        dmod.out_port = ports[1]
+        dmod.out_port = ports[1] # Add additional match contraint.
         ok = self.controller.message_send(dmod)
         self.assertNotEqual(ok, -1, "Error occurred while deleting flow mod.")
 
