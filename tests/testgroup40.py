@@ -24,7 +24,7 @@ from time import sleep
 from FuncUtils import *
 
 class Grp40No10(base_tests.SimpleDataPlane):
-    """ Verify flow mod overlaps trigger an error message.
+    """Verify that flow mod overlaps trigger an error message.
 
     Verify that if overlap check flag is set in the flow entry and an
     overlapping flow is inserted then an error is generated and switch
@@ -857,7 +857,8 @@ class Grp40No190(base_tests.SimpleDataPlane):
 
 
 class Grp40No190b(base_tests.SimpleDataPlane):
-    """
+    """Check that flow mod delete messages can filter on out_port.
+
     Configure and connect the primary-controller on the DUT. Insert two
     identical flows forwarding to two different out_ports. Send an exact
     match delete request for these flows, but specify only one of the
@@ -877,8 +878,7 @@ class Grp40No190b(base_tests.SimpleDataPlane):
         ok = delete_all_flows(self.controller)
         self.assertEqual(ok, 0, "Could not delete all flows.")
 
-        # Configure flow table with initial flows.
-        # wildcard_all_exectp_ingress returns a simple tcp packet, and a match
+        # wildcard_all_execpt_ingress returns a simple tcp packet, and a match
         # with in_port set to ports[0].
         pkt, match = wildcard_all_except_ingress(self, ports)
 
@@ -902,16 +902,16 @@ class Grp40No190b(base_tests.SimpleDataPlane):
 
         # Verify data plane traffic is forwarded correctly.
         self.dataplane.send(ports[0], str(pkt))
+        invalid = [ports[0], ports[2]]
         valid = [ports[1]]
-        invalid = [ports[0]] + ports[2:]
         receive_pkt_check(self.dataplane, pkt, valid, invalid, self)
 
-        # Send flow_mod with command set to delete. This will delete the higher
-        # priority rule.
+        # Send flow_mod with command set to delete. This will delete the
+        # flow that forwards pkt out ports[1].
         dmod = message.flow_mod()
         dmod.buffer_id = 0xffffffff
         dmod.command = ofp.OFPFC_DELETE
-        dmod.match = match # Use same match that was used in the first flows.
+        dmod.match = match # Use the match that was used above.
         dmod.out_port = ports[1]
         ok = self.controller.message_send(dmod)
         self.assertNotEqual(ok, -1, "Error occurred while deleting flow mod.")
@@ -921,8 +921,8 @@ class Grp40No190b(base_tests.SimpleDataPlane):
 
         # Verify data plane traffic is forwarded correctly.
         self.dataplane.send(ports[0], str(pkt))
+        invalid = [ports[0], ports[1]]
         valid = [ports[2]]
-        invalid = ports[0:2]
         receive_pkt_check(self.dataplane, pkt, valid, invalid, self)
 
 
