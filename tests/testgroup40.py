@@ -24,9 +24,12 @@ from time import sleep
 from FuncUtils import *
 
 class Grp40No10(base_tests.SimpleDataPlane):
-    
-    """Verify that if overlap check flag is set in the flow entry and an overlapping flow is inserted then an error 
-        is generated and switch refuses flow entry"""
+    """ Verify flow mod overlaps trigger an error message.
+
+    Verify that if overlap check flag is set in the flow entry and an
+    overlapping flow is inserted then an error is generated and switch
+    refuses flow entry.
+    """
     
     @wireshark_capture
     def runTest(self):
