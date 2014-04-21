@@ -3041,7 +3041,7 @@ class bsn_virtual_port_create_request(bsn_header):
         if vport != None:
             self.vport = vport
         else:
-            self.vport = common.bsn_vport_q_in_q()
+            self.vport = common.bsn_vport()
         return
 
     def pack(self):
@@ -3072,7 +3072,7 @@ class bsn_virtual_port_create_request(bsn_header):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 15)
-        obj.vport = common.bsn_vport_q_in_q.unpack(reader)
+        obj.vport = common.bsn_vport.unpack(reader)
         return obj
 
     def __eq__(self, other):

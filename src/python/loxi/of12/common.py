@@ -131,6 +131,145 @@ class bsn_vport(loxi.OFObject):
         q.text('}')
 
 
+class bsn_vport_l2gre(bsn_vport):
+    type = 1
+
+    def __init__(self, flags=None, port_no=None, local_mac=None, nh_mac=None, src_ip=None, dst_ip=None, dscp=None, ttl=None, vpn=None, if_name=None):
+        if flags != None:
+            self.flags = flags
+        else:
+            self.flags = 0
+        if port_no != None:
+            self.port_no = port_no
+        else:
+            self.port_no = 0
+        if local_mac != None:
+            self.local_mac = local_mac
+        else:
+            self.local_mac = [0,0,0,0,0,0]
+        if nh_mac != None:
+            self.nh_mac = nh_mac
+        else:
+            self.nh_mac = [0,0,0,0,0,0]
+        if src_ip != None:
+            self.src_ip = src_ip
+        else:
+            self.src_ip = 0
+        if dst_ip != None:
+            self.dst_ip = dst_ip
+        else:
+            self.dst_ip = 0
+        if dscp != None:
+            self.dscp = dscp
+        else:
+            self.dscp = 0
+        if ttl != None:
+            self.ttl = ttl
+        else:
+            self.ttl = 0
+        if vpn != None:
+            self.vpn = vpn
+        else:
+            self.vpn = 0
+        if if_name != None:
+            self.if_name = if_name
+        else:
+            self.if_name = ""
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!L", self.flags))
+        packed.append(util.pack_port_no(self.port_no))
+        packed.append(struct.pack("!6B", *self.local_mac))
+        packed.append(struct.pack("!6B", *self.nh_mac))
+        packed.append(struct.pack("!L", self.src_ip))
+        packed.append(struct.pack("!L", self.dst_ip))
+        packed.append(struct.pack("!B", self.dscp))
+        packed.append(struct.pack("!B", self.ttl))
+        packed.append('\x00' * 2)
+        packed.append(struct.pack("!L", self.vpn))
+        packed.append(struct.pack("!16s", self.if_name))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_vport_l2gre()
+        _type = reader.read("!H")[0]
+        assert(_type == 1)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length - (2 + 2))
+        obj.flags = reader.read("!L")[0]
+        obj.port_no = util.unpack_port_no(reader)
+        obj.local_mac = list(reader.read('!6B'))
+        obj.nh_mac = list(reader.read('!6B'))
+        obj.src_ip = reader.read("!L")[0]
+        obj.dst_ip = reader.read("!L")[0]
+        obj.dscp = reader.read("!B")[0]
+        obj.ttl = reader.read("!B")[0]
+        reader.skip(2)
+        obj.vpn = reader.read("!L")[0]
+        obj.if_name = reader.read("!16s")[0].rstrip("\x00")
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.flags != other.flags: return False
+        if self.port_no != other.port_no: return False
+        if self.local_mac != other.local_mac: return False
+        if self.nh_mac != other.nh_mac: return False
+        if self.src_ip != other.src_ip: return False
+        if self.dst_ip != other.dst_ip: return False
+        if self.dscp != other.dscp: return False
+        if self.ttl != other.ttl: return False
+        if self.vpn != other.vpn: return False
+        if self.if_name != other.if_name: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_vport_l2gre {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
+                q.text(","); q.breakable()
+                q.text("port_no = ");
+                q.text(util.pretty_port(self.port_no))
+                q.text(","); q.breakable()
+                q.text("local_mac = ");
+                q.text(util.pretty_mac(self.local_mac))
+                q.text(","); q.breakable()
+                q.text("nh_mac = ");
+                q.text(util.pretty_mac(self.nh_mac))
+                q.text(","); q.breakable()
+                q.text("src_ip = ");
+                q.text(util.pretty_ipv4(self.src_ip))
+                q.text(","); q.breakable()
+                q.text("dst_ip = ");
+                q.text(util.pretty_ipv4(self.dst_ip))
+                q.text(","); q.breakable()
+                q.text("dscp = ");
+                q.text("%#x" % self.dscp)
+                q.text(","); q.breakable()
+                q.text("ttl = ");
+                q.text("%#x" % self.ttl)
+                q.text(","); q.breakable()
+                q.text("vpn = ");
+                q.text("%#x" % self.vpn)
+                q.text(","); q.breakable()
+                q.text("if_name = ");
+                q.pp(self.if_name)
+            q.breakable()
+        q.text('}')
+
+bsn_vport.subtypes[1] = bsn_vport_l2gre
+
 class bsn_vport_q_in_q(bsn_vport):
     type = 0
 
