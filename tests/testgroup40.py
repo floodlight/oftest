@@ -809,7 +809,7 @@ class Grp40No190(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp40No190b: Delete with constraint out_port")
+        logging.info("Running Grp40No190: Delete with constraint out_port")
 
         ports = config["port_map"].keys()
         ports.sort()
