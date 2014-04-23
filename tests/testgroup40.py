@@ -988,9 +988,7 @@ class Grp40No230(base_tests.SimpleDataPlane):
 
 class Grp40No210(base_tests.SimpleDataPlane):
   
-    """Verify that Flow removed messages are generated as expected
-    Flow removed messages being generated when flag is set, is already tested in the above tests 
-    So here, we test the vice-versa condition"""
+    """Verify that Flow removed messages for timeout is implemented."""
 
     @wireshark_capture
     def runTest(self):
@@ -1005,7 +1003,7 @@ class Grp40No210(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        logging.info("Inserting flow entry with hard_timeout set and send_flow_removed_message flag not set")
+        logging.info("Inserting flow entry with hard_timeout set and send_flow_removed_message flag set")
 	   
         # Insert a flow with hard_timeout = 1 but no Send_Flow_Rem flag set
         pkt = simple_tcp_packet()
@@ -1014,7 +1012,7 @@ class Grp40No210(base_tests.SimpleDataPlane):
         match3.wildcards = ofp.OFPFW_ALL-ofp.OFPFW_IN_PORT
         match3.in_port = of_ports[0]
         msg3 = message.flow_mod()
-        msg3.out_port = ofp.OFPP_NONE # ignored by flow add,flow modify 
+        msg3.out_port = of_ports[1] # ignored by flow add,flow modify 
         msg3.command = ofp.OFPFC_ADD
         msg3.cookie = random.randint(0,9007199254740992)
         msg3.buffer_id = 0xffffffff
@@ -1030,10 +1028,10 @@ class Grp40No210(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         #Verify no flow removed message is generated
-        logging.info("Verifying that there is no OFPT_FLOW_REMOVED message received")
+        logging.info("Verifying that there is OFPT_FLOW_REMOVED message received")
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_FLOW_REMOVED,
                                                timeout=3)
-        self.assertTrue(response, 
+        self.assertTrue(response is not None, 
                         'Did not receive the flow removed message')
 
         # Verify flow was alive for 1 sec
