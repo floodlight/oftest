@@ -34,6 +34,8 @@ class Grp80No10(base_tests.SimpleDataPlane):
         self.controller = controller.Controller(
             host=config["controller_host"],
             port=config["controller_port"])
+        time_out = config["controller_timeout"]
+
         # clean_shutdown should be set to False to force quit app
         self.clean_shutdown = True
         #set initial hello to False
@@ -41,7 +43,7 @@ class Grp80No10(base_tests.SimpleDataPlane):
         self.controller.start()
         #@todo Add an option to wait for a pkt transaction to ensure version
         # compatibilty?
-        self.controller.connect(timeout=20)
+        self.controller.connect(timeout=time_out)
         # By default, respond to echo requests
         self.controller.keep_alive = True
         if not self.controller.active:
@@ -79,6 +81,8 @@ class Grp80No20(base_tests.SimpleDataPlane):
         self.controller = controller.Controller(
             host=config["controller_host"],
             port=config["controller_port"])
+        time_out = config["controller_timeout"]
+
         # clean_shutdown should be set to False to force quit app
         self.clean_shutdown = True
         #set initial hello to False
@@ -86,7 +90,7 @@ class Grp80No20(base_tests.SimpleDataPlane):
         self.controller.start()
         #@todo Add an option to wait for a pkt transaction to ensure version
         # compatibilty?
-        self.controller.connect(timeout=20)
+        self.controller.connect(timeout=time_out)
         # By default, respond to echo requests
         self.controller.keep_alive = True
         if not self.controller.active:

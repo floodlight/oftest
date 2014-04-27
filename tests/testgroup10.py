@@ -130,12 +130,13 @@ class Grp10No30(base_tests.SimpleDataPlane):
         self.controller = controller.Controller(
             host=config["controller_host"],
             port=config["controller_port"])
+        time_out = config["controller_timeout"]
         # clean_shutdown should be set to False to force quit app
         self.clean_shutdown = True
         #set initial hello to False
         self.controller.initial_hello=False
         self.controller.start()
-        self.controller.connect(timeout=20)
+        self.controller.connect(timeout=time_out)
         # By default, respond to echo requests
         self.controller.keep_alive = True
         if not self.controller.active:
@@ -172,6 +173,8 @@ class Grp10No40(base_tests.SimpleProtocol):
         self.controller = controller.Controller(
             host=config["controller_host"],
             port=config["controller_port"])
+        time_out = config["controller_timeout"]
+
         # clean_shutdown should be set to False to force quit app
         self.clean_shutdown = True
         #set initial hello to False
@@ -179,7 +182,7 @@ class Grp10No40(base_tests.SimpleProtocol):
         self.controller.start()
         #@todo Add an option to wait for a pkt transaction to ensure version
         # compatibilty?
-        self.controller.connect(timeout=20)
+        self.controller.connect(timeout=time_out)
         # By default, respond to echo requests
         self.controller.keep_alive = True
         if not self.controller.active:
@@ -219,13 +222,15 @@ class Grp10No50(base_tests.SimpleProtocol):
             host=config["controller_host"],
         # clean_shutdown should be set to False to force quit app
             port=config["controller_port"])
+        time_out = config["controller_timeout"]
+
         self.clean_shutdown = True
         #set initial hello to False
         self.controller.initial_hello=False
         self.controller.start()
         #@todo Add an option to wait for a pkt transaction to ensure version
         # compatibilty?
-        self.controller.connect(timeout=20)
+        self.controller.connect(timeout=time_out)
 
         # By default, respond to echo requests
         self.controller.keep_alive = True
@@ -276,13 +281,15 @@ class Grp10No80(base_tests.SimpleProtocol):
         self.controller = controller.Controller(
             host=config["controller_host"],
             port=config["controller_port"])
+        time_out = config["controller_timeout"]
+
         # clean_shutdown should be set to False to force quit app
         self.clean_shutdown = False
         self.controller.initial_hello=True
         self.controller.start()
         #@todo Add an option to wait for a pkt transaction to ensure version
         # compatibilty?
-        self.controller.connect(timeout=20)
+        self.controller.connect(timeout=time_out)
         # Here, Echo response is set to False, this would trigger connection to drop and hence switch will 
         # start sending Hello messages to start a new connection
         self.controller.keep_alive = False

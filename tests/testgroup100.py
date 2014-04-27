@@ -40,13 +40,15 @@ class Grp100No10(base_tests.SimpleProtocol):
         self.controller = controller.Controller(
             host=config["controller_host"],
             port=config["controller_port"])
+        time_out = config["controller_timeout"]
+
         # clean_shutdown should be set to False to force quit app
         self.clean_shutdown = True
         #set initial hello to False
         self.controller.initial_hello=False
         self.controller.start()
 
-        self.controller.connect(timeout=20)
+        self.controller.connect(timeout=time_out)
         # By default, respond to echo requests
         self.controller.keep_alive = True
         if not self.controller.active:

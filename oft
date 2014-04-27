@@ -156,6 +156,7 @@ config_default = {
     "platform_args"      : None,
     "controller_host"    : "0.0.0.0",
     "controller_port"    : 6633,
+    "controller_timeout" : 20,
     "relax"              : False,
     "test_spec"          : "all",
     "log_file"           : "oft.log",
@@ -288,7 +289,8 @@ def config_setup(cfg_dflt):
                       help="Use --publish with no value")
     parser.add_option("--conformance", type="string", dest="conformance",
                       help="+ separated list of profiles as defined in profiles/conformance.py.")
-
+    parser.add_option("--connection-wait",type="int", dest="controller_timeout",
+                      help="timeout period to wait for switch connection")
     # Might need this if other parsers want command line
     # parser.allow_interspersed_args = False
     (options, args) = parser.parse_args()
