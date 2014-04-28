@@ -49,7 +49,8 @@ class SerialFailover(unittest.TestCase):
         self.controller.start()
         #@todo Add an option to wait for a pkt transaction to ensure version
         # compatibilty?
-        self.controller.connect(timeout=10)
+        time_out = config["controller_timeout"]
+        self.controller.connect(timeout=time_out)
         self.assertTrue(self.controller.active,
                         "Controller startup failed, not active")
         self.assertTrue(self.controller.switch_addr is not None,

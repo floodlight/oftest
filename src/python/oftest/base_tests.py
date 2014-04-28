@@ -34,7 +34,8 @@ class SimpleProtocol(unittest.TestCase):
         self.controller.start()
         #@todo Add an option to wait for a pkt transaction to ensure version
         # compatibilty?
-        self.controller.connect(timeout=20)
+        time_out = config["controller_timeout"]
+        self.controller.connect(timeout=time_out)
 
         # By default, respond to echo requests
         self.controller.keep_alive = True

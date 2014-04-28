@@ -370,7 +370,7 @@ class Grp40No70(base_tests.SimpleProtocol):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp40No80 Emergency_Flow_Timeout test")
+        logging.info("Running Grp40No70 Emergency_Flow_Timeout test")
         
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -551,7 +551,7 @@ class Grp40No110(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Delete_NonExisting_Flow Grp40No120 test begins")
+        logging.info("Delete_NonExisting_Flow Grp40No110 test begins")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -589,7 +589,7 @@ class Grp40No120(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp40No130 Send_Flow_Rem test ")
+        logging.info("Running Grp40No120 Send_Flow_Rem test ")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -884,7 +884,7 @@ class Grp40No200(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp40No170 Outport2 test ")
+        logging.info("Running Grp40No200 out_port ignored by add and modify request")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -923,7 +923,7 @@ class Grp40No220(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Grp40No180 Idle_Timeout test ")
+        logging.info("Running Grp40No220 Idle_Timeout test ")
 
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -968,7 +968,7 @@ class Grp40No230(base_tests.SimpleDataPlane):
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Hard_Timeout test ")
+        logging.info("Running Grp40No230 Hard_Timeout test ")
         
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -1011,14 +1011,12 @@ class Grp40No230(base_tests.SimpleDataPlane):
 
 class Grp40No210(base_tests.SimpleDataPlane):
   
-    """Verify that Flow removed messages are generated as expected
-    Flow removed messages being generated when flag is set, is already tested in the above tests 
-    So here, we test the vice-versa condition"""
+    """Verify that Flow removed messages for timeout is implemented."""
 
     @wireshark_capture
     def runTest(self):
         logging = get_logger()
-        logging.info("Running Flow_Timeout test ")
+        logging.info("Running Grp40No210 Flow_Timeout test ")
         
         of_ports = config["port_map"].keys()
         of_ports.sort()
@@ -1028,7 +1026,7 @@ class Grp40No210(base_tests.SimpleDataPlane):
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
 
-        logging.info("Inserting flow entry with hard_timeout set and send_flow_removed_message flag not set")
+        logging.info("Inserting flow entry with hard_timeout set and send_flow_removed_message flag set")
 	   
         # Insert a flow with hard_timeout = 1 but no Send_Flow_Rem flag set
         pkt = simple_tcp_packet()
@@ -1037,12 +1035,12 @@ class Grp40No210(base_tests.SimpleDataPlane):
         match3.wildcards = ofp.OFPFW_ALL-ofp.OFPFW_IN_PORT
         match3.in_port = of_ports[0]
         msg3 = message.flow_mod()
-        msg3.out_port = of_ports[2] # ignored by flow add,flow modify 
+        msg3.out_port = of_ports[1] # ignored by flow add,flow modify 
         msg3.command = ofp.OFPFC_ADD
         msg3.cookie = random.randint(0,9007199254740992)
         msg3.buffer_id = 0xffffffff
         msg3.hard_timeout = 1
-        msg3.buffer_id = 0xffffffff
+        msg3.flags |= ofp.OFPFF_SEND_FLOW_REM
         msg3.match = match3
         act3 = action.action_output()
         act3.port = of_ports[1]
@@ -1053,14 +1051,11 @@ class Grp40No210(base_tests.SimpleDataPlane):
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
 
         #Verify no flow removed message is generated
-        logging.info("Verifying that there is no OFPT_FLOW_REMOVED message received")
+        logging.info("Verifying that there is OFPT_FLOW_REMOVED message received")
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_FLOW_REMOVED,
                                                timeout=3)
-        self.assertTrue(response is None, 
-                        'Recieved flow removed message ')
+        self.assertTrue(response is not None, 
+                        'Did not receive the flow removed message')
 
-        # Verify no entries in the table
-        #verify_tablestats(self,expect_active=0)
-        logging.info("Verifying if the flow was removed after the time out")
-        rv=all_stats_get(self)
-        self.assertTrue(rv["flows"]==0, "Flows were not deleted even after the flow timedout")
+        # Verify flow was alive for 1 sec
+        self.assertEqual(response.duration_sec, 1, 'Flow was not alive for 1 sec')
