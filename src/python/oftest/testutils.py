@@ -1578,7 +1578,7 @@ def verify_packet_in(test, data, in_port, reason, controller=None):
             # Found a matching message
             break
 
-    test.assertTrue(msg is not None, 'Packet in message not received on port %d' % in_port)
+    test.assertTrue(msg is not None, 'Packet in message not received on port %r' % in_port)
     return msg
 
 def verify_no_packet_in(test, data, in_port, controller=None):
