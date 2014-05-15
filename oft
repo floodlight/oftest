@@ -7,14 +7,13 @@ OpenFlow test framework top level script
 This script is the entry point for running OpenFlow tests using the OFT
 framework. For usage information, see --help or the README.
 
-To add a new command line option, edit both the config_default dictionary and
+To add a new command line option, edit both the CONFIG_DEFAULT dictionary and
 the config_setup function. The option's result will end up in the global
 oftest.config dictionary.
 """
 
 import sys
 import optparse
-from subprocess import Popen,PIPE
 import logging
 import unittest
 import time
@@ -25,12 +24,12 @@ import signal
 import fnmatch
 import copy
 
-root_dir = os.path.dirname(os.path.realpath(__file__))
+ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 
-pydir = os.path.join(root_dir, 'src', 'python')
-if os.path.exists(os.path.join(pydir, 'oftest')):
+PY_SRC_DIR = os.path.join(ROOT_DIR, 'src', 'python')
+if os.path.exists(os.path.join(PY_SRC_DIR, 'oftest')):
     # Running from source tree
-    sys.path.insert(0, pydir)
+    sys.path.insert(0, PY_SRC_DIR)
 
 import oftest
 from oftest import config
@@ -50,9 +49,9 @@ DEBUG_LEVELS = {
     'critical'           : logging.CRITICAL
 }
 
-##@var config_default
+##@var CONFIG_DEFAULT
 # The default configuration dictionary for OFT
-config_default = {
+CONFIG_DEFAULT = {
     # Miscellaneous options
     "list"               : False,
     "list_test_names"    : False,
@@ -69,7 +68,7 @@ config_default = {
     "switch_ip"          : None,  # If not none, actively connect to switch
     "platform"           : "eth",
     "platform_args"      : None,
-    "platform_dir"       : os.path.join(root_dir, "platforms"),
+    "platform_dir"       : os.path.join(ROOT_DIR, "platforms"),
     "interfaces"         : [],
     "openflow_version"   : "1.0",
 
@@ -143,7 +142,7 @@ prefixing them with the '^' character.
                                    option_class=Option)
 
     # Set up default values
-    parser.set_defaults(**config_default)
+    parser.set_defaults(**CONFIG_DEFAULT)
 
     parser.add_option("--list", action="store_true",
                       help="List all tests and exit")
@@ -217,12 +216,12 @@ prefixing them with the '^' character.
     # If --test-dir wasn't given, pick one based on the OpenFlow version
     if options.test_dir == None:
         if options.openflow_version == "1.0":
-            options.test_dir = os.path.join(root_dir, "tests")
+            options.test_dir = os.path.join(ROOT_DIR, "tests")
         else:
-            options.test_dir = os.path.join(root_dir, "tests-" + options.openflow_version)
+            options.test_dir = os.path.join(ROOT_DIR, "tests-" + options.openflow_version)
 
     # Convert options from a Namespace to a plain dictionary
-    config = config_default.copy()
+    config = CONFIG_DEFAULT.copy()
     for key in config.keys():
         config[key] = getattr(options, key)
 
