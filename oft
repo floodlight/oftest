@@ -573,8 +573,12 @@ if __name__ == "__main__":
 
     logging.info("*** TEST RUN START: " + time.asctime())
     if config["xunit"]:
-        import xmlrunner  # fail-fast if module missing
-
+        try:
+            import xmlrunner  # fail-fast if module missing
+        except ImportError as ex:
+            oftest.dataplane_instance.kill()
+            profiler_teardown(profiler)
+            raise ex
         runner = xmlrunner.XMLTestRunner(output=config["xunit_dir"],
                                          outsuffix="",
                                          verbosity=2)
