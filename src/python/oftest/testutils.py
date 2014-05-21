@@ -143,7 +143,7 @@ def simple_tcpv6_packet(pktlen=100,
                         ipv6_fl=0,
                         tcp_sport=1234,
                         tcp_dport=80,
-			tcp_flags="S"):
+                        tcp_flags="S"):
     """
     Return a simple IPv6/TCP packet
 
