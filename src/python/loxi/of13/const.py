@@ -248,6 +248,7 @@ OFP_BSN_PKTIN_FLAG_DEBUG = 64
 OFP_BSN_PKTIN_FLAG_TTL_EXPIRED = 128
 OFP_BSN_PKTIN_FLAG_L3_MISS = 256
 OFP_BSN_PKTIN_FLAG_L3_CPU = 512
+OFP_BSN_PKTIN_FLAG_INGRESS_ACL = 1024
 
 ofp_bsn_pktin_flag_map = {
     1: 'OFP_BSN_PKTIN_FLAG_PDU',
@@ -260,6 +261,7 @@ ofp_bsn_pktin_flag_map = {
     128: 'OFP_BSN_PKTIN_FLAG_TTL_EXPIRED',
     256: 'OFP_BSN_PKTIN_FLAG_L3_MISS',
     512: 'OFP_BSN_PKTIN_FLAG_L3_CPU',
+    1024: 'OFP_BSN_PKTIN_FLAG_INGRESS_ACL',
 }
 
 # Identifiers from group ofp_bsn_port_counter
@@ -289,6 +291,29 @@ ofp_bsn_port_counter_map = {
     9: 'OFP_BSN_PORT_COUNTER_TX_PACKETS_MULTICAST',
     10: 'OFP_BSN_PORT_COUNTER_TX_DROPPED',
     11: 'OFP_BSN_PORT_COUNTER_TX_ERRORS',
+}
+
+# Identifiers from group ofp_bsn_tcp_flag
+OFP_BSN_TCP_FLAG_FIN = 1
+OFP_BSN_TCP_FLAG_SYN = 2
+OFP_BSN_TCP_FLAG_RST = 4
+OFP_BSN_TCP_FLAG_PSH = 8
+OFP_BSN_TCP_FLAG_ACK = 16
+OFP_BSN_TCP_FLAG_URG = 32
+OFP_BSN_TCP_FLAG_ECE = 64
+OFP_BSN_TCP_FLAG_CWR = 128
+OFP_BSN_TCP_FLAG_NS = 256
+
+ofp_bsn_tcp_flag_map = {
+    1: 'OFP_BSN_TCP_FLAG_FIN',
+    2: 'OFP_BSN_TCP_FLAG_SYN',
+    4: 'OFP_BSN_TCP_FLAG_RST',
+    8: 'OFP_BSN_TCP_FLAG_PSH',
+    16: 'OFP_BSN_TCP_FLAG_ACK',
+    32: 'OFP_BSN_TCP_FLAG_URG',
+    64: 'OFP_BSN_TCP_FLAG_ECE',
+    128: 'OFP_BSN_TCP_FLAG_CWR',
+    256: 'OFP_BSN_TCP_FLAG_NS',
 }
 
 # Identifiers from group ofp_bsn_udf_anchor

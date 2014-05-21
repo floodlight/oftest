@@ -187,6 +187,29 @@ ofp_bad_request_code_map = {
     12: 'OFPBRC_BAD_PACKET',
 }
 
+# Identifiers from group ofp_bsn_tcp_flag
+OFP_BSN_TCP_FLAG_FIN = 1
+OFP_BSN_TCP_FLAG_SYN = 2
+OFP_BSN_TCP_FLAG_RST = 4
+OFP_BSN_TCP_FLAG_PSH = 8
+OFP_BSN_TCP_FLAG_ACK = 16
+OFP_BSN_TCP_FLAG_URG = 32
+OFP_BSN_TCP_FLAG_ECE = 64
+OFP_BSN_TCP_FLAG_CWR = 128
+OFP_BSN_TCP_FLAG_NS = 256
+
+ofp_bsn_tcp_flag_map = {
+    1: 'OFP_BSN_TCP_FLAG_FIN',
+    2: 'OFP_BSN_TCP_FLAG_SYN',
+    4: 'OFP_BSN_TCP_FLAG_RST',
+    8: 'OFP_BSN_TCP_FLAG_PSH',
+    16: 'OFP_BSN_TCP_FLAG_ACK',
+    32: 'OFP_BSN_TCP_FLAG_URG',
+    64: 'OFP_BSN_TCP_FLAG_ECE',
+    128: 'OFP_BSN_TCP_FLAG_CWR',
+    256: 'OFP_BSN_TCP_FLAG_NS',
+}
+
 # Identifiers from group ofp_bsn_vport_l2gre_flags
 OF_BSN_VPORT_L2GRE_LOCAL_MAC_IS_VALID = 1
 OF_BSN_VPORT_L2GRE_DSCP_ASSIGN = 2
