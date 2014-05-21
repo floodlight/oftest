@@ -80,6 +80,7 @@ def simple_tcp_packet(pktlen=100,
                       ip_ttl=64,
                       tcp_sport=1234,
                       tcp_dport=80,
+                      tcp_flags="S",
                       ip_ihl=None,
                       ip_options=False
                       ):
@@ -98,7 +99,8 @@ def simple_tcp_packet(pktlen=100,
     @param ip_tos IP ToS
     @param ip_ttl IP TTL
     @param tcp_dport TCP destination port
-    @param ip_sport TCP source port
+    @param tcp_sport TCP source port
+    @param tcp_flags TCP Control flags  	
 
     Generates a simple TCP request.  Users
     shouldn't assume anything about this packet other than that
@@ -113,16 +115,16 @@ def simple_tcp_packet(pktlen=100,
         pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
             scapy.Dot1Q(prio=vlan_pcp, id=dl_vlan_cfi, vlan=vlan_vid)/ \
             scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl)/ \
-            scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+            scapy.TCP(sport=tcp_sport, dport=tcp_dport, flags=tcp_flags)
     else:
         if not ip_options:
             pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl)/ \
-                scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+                scapy.TCP(sport=tcp_sport, dport=tcp_dport, flags=tcp_flags)
         else:
             pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl, options=ip_options)/ \
-                scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+                scapy.TCP(sport=tcp_sport, dport=tcp_dport, flags=tcp_flags)
 
     pkt = pkt/("D" * (pktlen - len(pkt)))
 
@@ -140,7 +142,8 @@ def simple_tcpv6_packet(pktlen=100,
                         ipv6_hlim=64,
                         ipv6_fl=0,
                         tcp_sport=1234,
-                        tcp_dport=80):
+                        tcp_dport=80,
+			tcp_flags="S"):
     """
     Return a simple IPv6/TCP packet
 
@@ -158,6 +161,7 @@ def simple_tcpv6_packet(pktlen=100,
     @param ipv6_fl IPv6 flow label
     @param tcp_dport TCP destination port
     @param tcp_sport TCP source port
+    @param tcp_flags TCP Control flags	
 
     Generates a simple TCP request. Users shouldn't assume anything about this
     packet other than that it is a valid ethernet/IPv6/TCP frame.
@@ -170,7 +174,7 @@ def simple_tcpv6_packet(pktlen=100,
     if dl_vlan_enable or vlan_vid or vlan_pcp:
         pkt /= scapy.Dot1Q(vlan=vlan_vid, prio=vlan_pcp)
     pkt /= scapy.IPv6(src=ipv6_src, dst=ipv6_dst, fl=ipv6_fl, tc=ipv6_tc, hlim=ipv6_hlim)
-    pkt /= scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+    pkt /= scapy.TCP(sport=tcp_sport, dport=tcp_dport, flags=tcp_flags)
     pkt /= ("D" * (pktlen - len(pkt)))
 
     return pkt
