@@ -250,3 +250,12 @@ class ResizeError(FlowChecksumBase):
         do_barrier(self.controller)
         error, _ = self.controller.poll(ofp.OFPT_ERROR)
         self.assertIsInstance(error, ofp.message.error_msg)
+
+class TableChecksumIds(FlowChecksumBase):
+    """
+    Check that each table is represented in the table checksum stats reply
+    """
+    def runTest(self):
+        table_checksum_stats_ids = [x.table_id for x in get_stats(self, ofp.message.bsn_table_checksum_stats_request())]
+        table_stats_ids = [x.table_id for x in get_stats(self, ofp.message.table_stats_request())]
+        self.assertEquals(sorted(table_checksum_stats_ids), sorted(table_stats_ids))
