@@ -247,7 +247,7 @@ class Grp80No70(base_tests.SimpleProtocol):
         self.assertTrue(reply is not None, "Failed to get any reply")
         self.assertEqual(reply.header.type, ofp.OFPT_FEATURES_REPLY,'Response is not Features_reply')
         self.assertEqual(reply.header.xid,request.header.xid,'Transaction id does not match')
-        
+
         supported_actions =[]
         #Grp80No180
         if(reply.actions &1<<ofp.OFPAT_OUTPUT):
@@ -261,6 +261,8 @@ class Grp80No70(base_tests.SimpleProtocol):
         if(reply.actions &1<<ofp.OFPAT_SET_DL_SRC):
             supported_actions.append('OFPAT_SET_DL_SRC')
         if(reply.actions &1<<ofp.OFPAT_SET_DL_DST):
+            supported_actions.append('OFPAT_SET_DL_DST')
+        if(reply.actions &1<<ofp.OFPAT_SET_NW_SRC):
             supported_actions.append('OFPAT_SET_NW_SRC')
         if(reply.actions &1<<ofp.OFPAT_SET_NW_DST):
             supported_actions.append('OFPAT_SET_NW_DST')
