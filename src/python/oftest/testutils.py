@@ -53,6 +53,32 @@ def required_wildcards(parent):
     else:
         return 0
 
+def simple_frag_packets(pktlen=100,
+                        dl_dst='00:01:02:03:04:05:06',
+                        dl_src='00:06:05:04:03:02:01',
+                        ip_src='192.168.2.1',
+                        ip_dst='192.168.2.2',
+                        ip_tos=0,
+                        tcp_sport=1234,
+                        tcp_dport=80
+                ):
+
+            pkts = []
+            frag1 = scapy.Ether(dst=dl_dst, src=dl_src)/ \
+                    scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, id=12345, proto=6, frag=0) / scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+
+            frag2 = scapy.Ether(dst=dl_dst, src=dl_src)/\
+                                    scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, id=12346, proto=6, frag=1) / 'AAAAAAAAAAAAAAAAAAAAAAA'
+
+            frag3 = scapy.Ether(dst=dl_dst, src=dl_src)/\
+                    scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, id=12345, proto=6, frag=2) / 'BBBBBBBBBBBBBBBBB'
+
+            pkts.append(frag1)
+            pkts.append(frag2)
+            pkts.append(frag3)
+
+            return pkts
+
 def simple_tcp_packet(pktlen=100, 
                       dl_dst='00:01:02:03:04:05',
                       dl_src='00:06:07:08:09:0a',
