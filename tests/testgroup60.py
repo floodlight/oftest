@@ -96,6 +96,9 @@ class Grp60No20(base_tests.SimpleDataPlane):
         #Send Packets matching the flow 
         logging.info("Sending 5 packets matching the flow entry")
         num_pkts = 5
+        # +4 bytes include ethernet frame crc. Not all devices count the
+        # crc, so expected byte count may also be
+        # byte_count - (num_packets * 4).
         byte_count = num_pkts*(len(str(pkt))+4)
         for pkt_cnt in range(num_pkts):
             self.dataplane.send(of_ports[0],str(pkt))
