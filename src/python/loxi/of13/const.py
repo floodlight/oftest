@@ -56,6 +56,15 @@ of_bsn_vlan_counter_t_map = {
     3: 'OFP_BSN_VLAN_COUNTER_TX_PACKETS',
 }
 
+# Identifiers from group of_bsn_vrf_counter_t
+OFP_BSN_VRF_COUNTER_BYTES = 0
+OFP_BSN_VRF_COUNTER_PACKETS = 1
+
+of_bsn_vrf_counter_t_map = {
+    0: 'OFP_BSN_VRF_COUNTER_BYTES',
+    1: 'OFP_BSN_VRF_COUNTER_PACKETS',
+}
+
 # Identifiers from group ofp_action_type
 OFPAT_OUTPUT = 0
 OFPAT_COPY_TTL_OUT = 11
@@ -237,6 +246,23 @@ ofp_bsn_controller_role_reason_map = {
     2: 'OFP_BSN_CONTROLLER_ROLE_REASON_EXPERIMENTER',
 }
 
+# Identifiers from group ofp_bsn_loglevel
+OFP_BSN_LOGLEVEL_MSG = 0
+OFP_BSN_LOGLEVEL_ERROR = 1
+OFP_BSN_LOGLEVEL_WARN = 2
+OFP_BSN_LOGLEVEL_INFO = 3
+OFP_BSN_LOGLEVEL_VERBOSE = 4
+OFP_BSN_LOGLEVEL_TRACE = 5
+
+ofp_bsn_loglevel_map = {
+    0: 'OFP_BSN_LOGLEVEL_MSG',
+    1: 'OFP_BSN_LOGLEVEL_ERROR',
+    2: 'OFP_BSN_LOGLEVEL_WARN',
+    3: 'OFP_BSN_LOGLEVEL_INFO',
+    4: 'OFP_BSN_LOGLEVEL_VERBOSE',
+    5: 'OFP_BSN_LOGLEVEL_TRACE',
+}
+
 # Identifiers from group ofp_bsn_pktin_flag
 OFP_BSN_PKTIN_FLAG_PDU = 1
 OFP_BSN_PKTIN_FLAG_NEW_HOST = 2
@@ -277,6 +303,16 @@ OFP_BSN_PORT_COUNTER_TX_PACKETS_BROADCAST = 8
 OFP_BSN_PORT_COUNTER_TX_PACKETS_MULTICAST = 9
 OFP_BSN_PORT_COUNTER_TX_DROPPED = 10
 OFP_BSN_PORT_COUNTER_TX_ERRORS = 11
+OFP_BSN_PORT_COUNTER_RX_RUNTS = 12
+OFP_BSN_PORT_COUNTER_RX_GIANTS = 13
+OFP_BSN_PORT_COUNTER_RX_CRC_ERRORS = 14
+OFP_BSN_PORT_COUNTER_RX_ALIGNMENT_ERRORS = 15
+OFP_BSN_PORT_COUNTER_RX_SYMBOL_ERRORS = 16
+OFP_BSN_PORT_COUNTER_RX_PAUSE_INPUT = 17
+OFP_BSN_PORT_COUNTER_TX_COLLISIONS = 18
+OFP_BSN_PORT_COUNTER_TX_LATE_COLLISIONS = 19
+OFP_BSN_PORT_COUNTER_TX_DEFERRED = 20
+OFP_BSN_PORT_COUNTER_TX_PAUSE_OUTPUT = 21
 
 ofp_bsn_port_counter_map = {
     0: 'OFP_BSN_PORT_COUNTER_RX_BYTES',
@@ -291,6 +327,16 @@ ofp_bsn_port_counter_map = {
     9: 'OFP_BSN_PORT_COUNTER_TX_PACKETS_MULTICAST',
     10: 'OFP_BSN_PORT_COUNTER_TX_DROPPED',
     11: 'OFP_BSN_PORT_COUNTER_TX_ERRORS',
+    12: 'OFP_BSN_PORT_COUNTER_RX_RUNTS',
+    13: 'OFP_BSN_PORT_COUNTER_RX_GIANTS',
+    14: 'OFP_BSN_PORT_COUNTER_RX_CRC_ERRORS',
+    15: 'OFP_BSN_PORT_COUNTER_RX_ALIGNMENT_ERRORS',
+    16: 'OFP_BSN_PORT_COUNTER_RX_SYMBOL_ERRORS',
+    17: 'OFP_BSN_PORT_COUNTER_RX_PAUSE_INPUT',
+    18: 'OFP_BSN_PORT_COUNTER_TX_COLLISIONS',
+    19: 'OFP_BSN_PORT_COUNTER_TX_LATE_COLLISIONS',
+    20: 'OFP_BSN_PORT_COUNTER_TX_DEFERRED',
+    21: 'OFP_BSN_PORT_COUNTER_TX_PAUSE_OUTPUT',
 }
 
 # Identifiers from group ofp_bsn_tcp_flag
@@ -327,15 +373,24 @@ ofp_bsn_udf_anchor_map = {
     2: 'OFP_BSN_UDF_ANCHOR_L4_HEADER_START',
 }
 
+# Identifiers from group ofp_bsn_vlan_counter_constants
+OFP_BSN_VLAN_ALL = 65535
+
+ofp_bsn_vlan_counter_constants_map = {
+    65535: 'OFP_BSN_VLAN_ALL',
+}
+
 # Identifiers from group ofp_bsn_vport_l2gre_flags
 OF_BSN_VPORT_L2GRE_LOCAL_MAC_IS_VALID = 1
 OF_BSN_VPORT_L2GRE_DSCP_ASSIGN = 2
 OF_BSN_VPORT_L2GRE_DSCP_COPY = 4
+OF_BSN_VPORT_L2GRE_LOOPBACK_IS_VALID = 8
 
 ofp_bsn_vport_l2gre_flags_map = {
     1: 'OF_BSN_VPORT_L2GRE_LOCAL_MAC_IS_VALID',
     2: 'OF_BSN_VPORT_L2GRE_DSCP_ASSIGN',
     4: 'OF_BSN_VPORT_L2GRE_DSCP_COPY',
+    8: 'OF_BSN_VPORT_L2GRE_LOOPBACK_IS_VALID',
 }
 
 # Identifiers from group ofp_bsn_vport_q_in_q_untagged
@@ -352,6 +407,13 @@ OF_BSN_VPORT_STATUS_FAILED = 1
 ofp_bsn_vport_status_map = {
     0: 'OF_BSN_VPORT_STATUS_OK',
     1: 'OF_BSN_VPORT_STATUS_FAILED',
+}
+
+# Identifiers from group ofp_bsn_vrf_counter_constants
+OFP_BSN_VRF_ALL = 4294967295
+
+ofp_bsn_vrf_counter_constants_map = {
+    4294967295: 'OFP_BSN_VRF_ALL',
 }
 
 # Identifiers from group ofp_capabilities

@@ -214,11 +214,13 @@ ofp_bsn_tcp_flag_map = {
 OF_BSN_VPORT_L2GRE_LOCAL_MAC_IS_VALID = 1
 OF_BSN_VPORT_L2GRE_DSCP_ASSIGN = 2
 OF_BSN_VPORT_L2GRE_DSCP_COPY = 4
+OF_BSN_VPORT_L2GRE_LOOPBACK_IS_VALID = 8
 
 ofp_bsn_vport_l2gre_flags_map = {
     1: 'OF_BSN_VPORT_L2GRE_LOCAL_MAC_IS_VALID',
     2: 'OF_BSN_VPORT_L2GRE_DSCP_ASSIGN',
     4: 'OF_BSN_VPORT_L2GRE_DSCP_COPY',
+    8: 'OF_BSN_VPORT_L2GRE_LOOPBACK_IS_VALID',
 }
 
 # Identifiers from group ofp_bsn_vport_q_in_q_untagged
