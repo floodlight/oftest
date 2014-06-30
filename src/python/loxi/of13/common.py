@@ -972,7 +972,7 @@ class bsn_vlan_counter_stats_entry(loxi.OFObject):
 class bsn_vport_l2gre(bsn_vport):
     type = 1
 
-    def __init__(self, flags=None, port_no=None, local_mac=None, nh_mac=None, src_ip=None, dst_ip=None, dscp=None, ttl=None, vpn=None, if_name=None):
+    def __init__(self, flags=None, port_no=None, loopback_port_no=None, local_mac=None, nh_mac=None, src_ip=None, dst_ip=None, dscp=None, ttl=None, vpn=None, if_name=None):
         if flags != None:
             self.flags = flags
         else:
@@ -981,6 +981,10 @@ class bsn_vport_l2gre(bsn_vport):
             self.port_no = port_no
         else:
             self.port_no = 0
+        if loopback_port_no != None:
+            self.loopback_port_no = loopback_port_no
+        else:
+            self.loopback_port_no = 0
         if local_mac != None:
             self.local_mac = local_mac
         else:
@@ -1021,6 +1025,7 @@ class bsn_vport_l2gre(bsn_vport):
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
         packed.append(struct.pack("!L", self.flags))
         packed.append(util.pack_port_no(self.port_no))
+        packed.append(util.pack_port_no(self.loopback_port_no))
         packed.append(struct.pack("!6B", *self.local_mac))
         packed.append(struct.pack("!6B", *self.nh_mac))
         packed.append(struct.pack("!L", self.src_ip))
@@ -1044,6 +1049,7 @@ class bsn_vport_l2gre(bsn_vport):
         reader = orig_reader.slice(_length - (2 + 2))
         obj.flags = reader.read("!L")[0]
         obj.port_no = util.unpack_port_no(reader)
+        obj.loopback_port_no = util.unpack_port_no(reader)
         obj.local_mac = list(reader.read('!6B'))
         obj.nh_mac = list(reader.read('!6B'))
         obj.src_ip = reader.read("!L")[0]
@@ -1059,6 +1065,7 @@ class bsn_vport_l2gre(bsn_vport):
         if type(self) != type(other): return False
         if self.flags != other.flags: return False
         if self.port_no != other.port_no: return False
+        if self.loopback_port_no != other.loopback_port_no: return False
         if self.local_mac != other.local_mac: return False
         if self.nh_mac != other.nh_mac: return False
         if self.src_ip != other.src_ip: return False
@@ -1079,6 +1086,9 @@ class bsn_vport_l2gre(bsn_vport):
                 q.text(","); q.breakable()
                 q.text("port_no = ");
                 q.text(util.pretty_port(self.port_no))
+                q.text(","); q.breakable()
+                q.text("loopback_port_no = ");
+                q.text(util.pretty_port(self.loopback_port_no))
                 q.text(","); q.breakable()
                 q.text("local_mac = ");
                 q.text(util.pretty_mac(self.local_mac))
@@ -1204,6 +1214,60 @@ class bsn_vport_q_in_q(bsn_vport):
         q.text('}')
 
 bsn_vport.subtypes[0] = bsn_vport_q_in_q
+
+class bsn_vrf_counter_stats_entry(loxi.OFObject):
+
+    def __init__(self, vrf=None, values=None):
+        if vrf != None:
+            self.vrf = vrf
+        else:
+            self.vrf = 0
+        if values != None:
+            self.values = values
+        else:
+            self.values = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 0
+        packed.append('\x00' * 2)
+        packed.append(struct.pack("!L", self.vrf))
+        packed.append(loxi.generic_util.pack_list(self.values))
+        length = sum([len(x) for x in packed])
+        packed[0] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_vrf_counter_stats_entry()
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length - (0 + 2))
+        reader.skip(2)
+        obj.vrf = reader.read("!L")[0]
+        obj.values = loxi.generic_util.unpack_list(reader, common.uint64.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.vrf != other.vrf: return False
+        if self.values != other.values: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_vrf_counter_stats_entry {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("vrf = ");
+                q.text("%#x" % self.vrf)
+                q.text(","); q.breakable()
+                q.text("values = ");
+                q.pp(self.values)
+            q.breakable()
+        q.text('}')
+
 
 class bucket(loxi.OFObject):
 
