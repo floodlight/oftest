@@ -31,6 +31,32 @@ def make_checksum(hi, lo):
 
 assert make_checksum(0xab, 0xcd) == 0xab0000000000000000000000000000cd
 
+def add_checksum(a, b):
+    return (a + b) % 2**128
+
+def subtract_checksum(a, b):
+    return (a - b) % 2**128
+
+def bucket_index(num_buckets, checksum):
+    """
+    Use the top bits of the checksum to select a bucket index
+    """
+    return checksum >> (128 - int(math.log(num_buckets, 2)))
+
+def add_bucket_checksum(buckets, checksum):
+    """
+    Add the checksum to the correct bucket
+    """
+    index = bucket_index(len(buckets), checksum)
+    buckets[index] = add_checksum(buckets[index], checksum)
+
+def subtract_bucket_checksum(buckets, checksum):
+    """
+    Subtract the checksum from the correct bucket
+    """
+    index = bucket_index(len(buckets), checksum)
+    buckets[index] = subtract_checksum(buckets[index], checksum)
+
 class BaseGenTableTest(base_tests.SimpleProtocol):
     def setUp(self):
         base_tests.SimpleProtocol.setUp(self)
@@ -443,7 +469,7 @@ class TableStats(BaseGenTableTest):
 
         # Add a bunch of entries, spread among the checksum buckets
         for i in range(0, 256):
-            table_checksum ^= make_checksum(i, i*31)
+            table_checksum = add_checksum(table_checksum, make_checksum(i, i*31))
             self.do_add(vlan_vid=i, ipv4=0x12345678, mac=(0, 1, 2, 3, 4, i),
                         checksum=make_checksum(i, i*31))
 
@@ -456,8 +482,8 @@ class TableStats(BaseGenTableTest):
 
         # Modify an entry, changing its checksum
         i = 30
-        table_checksum ^= make_checksum(i, i*31) # subtract old checksum
-        table_checksum ^= make_checksum(i, i*37) # add new checksum
+        table_checksum = subtract_checksum(table_checksum, make_checksum(i, i*31)) # subtract old checksum
+        table_checksum = add_checksum(table_checksum, make_checksum(i, i*37)) # add new checksum
         self.do_add(vlan_vid=i, ipv4=0x12345678, mac=(0, 4, 3, 2, 1, i),
                     checksum=make_checksum(i, i*37))
 
@@ -470,7 +496,7 @@ class TableStats(BaseGenTableTest):
 
         # Delete an entry
         i = 87
-        table_checksum ^= make_checksum(i, i*31)
+        table_checksum = subtract_checksum(table_checksum, make_checksum(i, i*31))
         self.do_delete(vlan_vid=i, ipv4=0x12345678)
 
         do_barrier(self.controller)
@@ -492,15 +518,10 @@ class BucketStats(BaseGenTableTest):
             self.assertEquals(entry.checksum, 0)
 
         buckets = [0] * len(entries)
-        checksum_bits = int(math.log(len(buckets), 2))
-
-        def update_bucket(checksum):
-            index = checksum >> (128 - checksum_bits)
-            buckets[index] ^= checksum
 
         # Add a bunch of entries, spread among the checksum buckets
         for i in range(0, 256):
-            update_bucket(make_checksum(i, i*31))
+            add_bucket_checksum(buckets, make_checksum(i, i*31))
             self.do_add(vlan_vid=i, ipv4=0x12345678, mac=(0, 1, 2, 3, 4, i),
                         checksum=make_checksum(i, i*31))
 
@@ -511,8 +532,8 @@ class BucketStats(BaseGenTableTest):
 
         # Modify an entry, changing its checksum
         i = 30
-        update_bucket(make_checksum(i, i*31)) # subtract old checksum
-        update_bucket(make_checksum(i, i*37)) # add new checksum
+        subtract_bucket_checksum(buckets, make_checksum(i, i*31)) # subtract old checksum
+        add_bucket_checksum(buckets, make_checksum(i, i*37)) # add new checksum
         self.do_add(vlan_vid=i, ipv4=0x12345678, mac=(0, 4, 3, 2, 1, i),
                     checksum=make_checksum(i, i*37))
 
@@ -526,7 +547,7 @@ class BucketStats(BaseGenTableTest):
 
         # Delete an entry
         i = 87
-        update_bucket(make_checksum(i, i*31))
+        subtract_bucket_checksum(buckets, make_checksum(i, i*31))
         self.do_delete(vlan_vid=i, ipv4=0x12345678)
 
         do_barrier(self.controller)
@@ -580,15 +601,13 @@ class SetBucketsSize(BaseGenTableTest):
         buckets32 = [0] * 32
         buckets64 = [0] * 64
 
-        def update_bucket(checksum):
-            buckets32[checksum >> (128 - int(math.log(32, 2)))] ^= checksum
-            buckets64[checksum >> (128 - int(math.log(64, 2)))] ^= checksum
-
         # Add a bunch of entries, spread among the checksum buckets
         for i in range(0, 256):
-            update_bucket(make_checksum(i, i*31))
+            checksum = make_checksum(i, i*31)
+            add_bucket_checksum(buckets32, checksum)
+            add_bucket_checksum(buckets64, checksum)
             self.do_add(vlan_vid=i, ipv4=0x12345678, mac=(0, 1, 2, 3, 4, i),
-                        checksum=make_checksum(i, i*31))
+                        checksum=checksum)
 
         entries = self.do_bucket_stats()
         self.assertEquals(len(entries), 64)
