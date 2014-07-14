@@ -259,10 +259,17 @@ class Grp20No70(base_tests.SimpleDataPlane):
                 act = action.action_output()
                 act.port = dp_port
                 self.assertTrue(msg.actions.add(act), 'Could not add action to msg')
-
+                
                 logging.info("PacketOut to: port " + str(dp_port))
-                rv = self.controller.message_send(msg)
+                rv =self.controller.message_send(msg)
                 self.assertTrue(rv == 0, "Error sending out message")
+                error, _= self.controller.poll(exp_msg=ofp.OFPT_ERROR)
+                if error: 
+                    msg.in_port = ofp.OFPP_CONTROLLER
+                    self.controller.message_send(msg)
+                    error, _ =self.controller.poll(exp_msg=ofp.OFPT_ERROR)
+                    self.assertIsNone(error, "Could Not send packet out message.got OFPT_ERROR")
+                    logging.info("Packet out with in_port OFPP.CONTROLLER")
 
                 exp_pkt_arg = None
                 exp_port = None
