@@ -841,12 +841,12 @@ def verify_flowstats(self,match,byte_count=None,packet_count=None):
         if packet_count != None  and  packet_count != packet_counter: continue
         if byte_count != None  and  byte_count != byte_counter: continue
         break
-
+    counter=[byte_counter,byte_counter+20]
     if packet_count != None :
         self.assertEqual(packet_count, packet_counter, "Expected packet count of {0} recived {1} instead.".format(packet_count, packet_counter))
 
     if byte_count != None :   
-        self.assertEqual(byte_count, byte_counter, "Expected byte count of {0} received {1} instead.".format(byte_count, byte_counter))
+        self.assertIn(byte_count, counter, "Expected byte count of {0} received {1} instead.".format(byte_count, counter))
 
 
 def verify_portstats(self, port,tx_packets=None,rx_packets=None,rx_byte=None,tx_byte=None):

@@ -441,6 +441,13 @@ class Grp90No150(base_tests.SimpleDataPlane):
         pkt = simple_tcp_packet()
         msg.data = str(pkt)
         self.controller.message_send(msg)
+        error, _=self.controller.poll(exp_msg=ofp.OFPT_ERROR)
+        if error:
+            msg.in_port=ofp.OFPP_CONTROLLER
+            self.controller.message_send(msg)
+            error, _ = self.controller.poll(exp_msg=ofp.OFPT_ERROR)
+            self.assertIsNone(error, "Error sending out packet out message.Got OFPT_ERROR")
+            logging.info("Packet Out sent with in_port as OFPP_CONTROLLER")
         receive_pkt_check(self.dataplane,pkt,[of_ports[0]], set(of_ports).difference([of_ports[0]]),self)
 
 class Grp90No160(base_tests.SimpleDataPlane):
