@@ -164,6 +164,7 @@ class Grp70No30(base_tests.SimpleDataPlane):
         #Create a flow mod with action.port = OFPP_ALL
         request = message.flow_mod()
         request.match = match
+        request.buffer_id = 0xffffffff
         request.match.wildcards = ofp.OFPFW_ALL&~ofp.OFPFW_IN_PORT
         act.port = ofp.OFPP_ALL
         request.actions.add(act)
@@ -221,6 +222,7 @@ class Grp70No40(base_tests.SimpleDataPlane):
             #Create a flow mod message
             request = message.flow_mod()
             request.match = match
+            request.buffer_id = 0xffffffff
             act.port = ofp.OFPP_CONTROLLER
             request.actions.add(act)
 
@@ -277,6 +279,7 @@ class Grp70No50(base_tests.SimpleDataPlane):
             #Create flow mod message
             request = message.flow_mod()
             request.match = match
+            request.buffer_id = 0xffffffff
             act.port = ofp.OFPP_LOCAL
             request.actions.add(act)
 
@@ -372,6 +375,7 @@ class Grp70No70(base_tests.SimpleDataPlane):
         # Create a flow mod message
         request = message.flow_mod()
         request.match = match
+        request.buffer_id = 0xffffffff
         act.port = ofp.OFPP_IN_PORT
             
         request.actions.add(act)
@@ -429,6 +433,7 @@ class Grp70No90(base_tests.SimpleDataPlane):
         #Create a flow mod with action.port = OFPP_ALL
         request = message.flow_mod()
         request.match = match
+        request.buffer_id = 0xffffffff
         request.match.wildcards = ofp.OFPFW_ALL&~ofp.OFPFW_IN_PORT
         act.port = ofp.OFPP_FLOOD
         request.actions.add(act)
@@ -470,6 +475,7 @@ class Grp70No110 (base_tests.SimpleDataPlane):
         msg=message.flow_mod()
         msg.command = ofp.OFPFC_ADD
         msg.match=match
+        msg.buffer_id = 0xffffffff
         act=action.action_enqueue()
         act.port=of_ports[1]
         act.queue_id=50
@@ -506,6 +512,7 @@ class Grp70No100(base_tests.SimpleDataPlane):
         # Creating test packet                                                                                                                                        
         pkt = simple_tcp_packet()
         req = message.flow_mod()
+        req.buffer_id = 0xffffffff
         req.match = parse.packet_to_flow_match(pkt)
         req.match.in_port = dataplane_ports[0]
         act = action.action_output()

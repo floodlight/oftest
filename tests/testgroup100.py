@@ -206,8 +206,9 @@ class Grp100No90(base_tests.SimpleDataPlane):
         self.assertTrue(match is not None, "Could not generate flow match from pkt")
         flow_mod_msg = message.flow_mod()
         flow_mod_msg.match = match
+        flow_mod_msg.buffer_id = 0xffffffff
         flow_mod_msg.command = ofp.OFPFC_ADD
-        act=action.action_output()       
+        act=action.action_output()
         act.port = ofp.OFPP_CONTROLLER
         act.max_len = 128
         logging.info("Sending flow_mod message..")
