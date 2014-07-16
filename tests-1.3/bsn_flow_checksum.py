@@ -29,6 +29,32 @@ def shuffled(seq):
     random.shuffle(l)
     return l
 
+def add_checksum(a, b):
+    return (a + b) % 2**64
+
+def subtract_checksum(a, b):
+    return (a - b) % 2**64
+
+def bucket_index(num_buckets, checksum):
+    """
+    Use the top bits of the checksum to select a bucket index
+    """
+    return checksum >> (64 - int(math.log(num_buckets, 2)))
+
+def add_bucket_checksum(buckets, checksum):
+    """
+    Add the checksum to the correct bucket
+    """
+    index = bucket_index(len(buckets), checksum)
+    buckets[index] = add_checksum(buckets[index], checksum)
+
+def subtract_bucket_checksum(buckets, checksum):
+    """
+    Subtract the checksum from the correct bucket
+    """
+    index = bucket_index(len(buckets), checksum)
+    buckets[index] = subtract_checksum(buckets[index], checksum)
+
 class FlowChecksumBase(base_tests.SimpleProtocol):
     """
     Base class that maintains the expected table and bucket checksums
@@ -52,17 +78,14 @@ class FlowChecksumBase(base_tests.SimpleProtocol):
         self.assertEquals(self.get_table_checksum(), self.table_checksum)
         self.assertEquals(self.get_checksum_buckets(), self.checksum_buckets)
 
-    def update_checksums(self, checksum):
-        self.table_checksum ^= checksum
-        checksum_shift = 64 - int(math.log(len(self.checksum_buckets), 2))
-        self.checksum_buckets[checksum >> checksum_shift] ^= checksum
-
     def insert_checksum(self, checksum):
-        self.update_checksums(checksum)
+        self.table_checksum = add_checksum(self.table_checksum, checksum)
+        add_bucket_checksum(self.checksum_buckets, checksum)
         self.all_checksums.append(checksum)
 
     def remove_checksum(self, checksum):
-        self.update_checksums(checksum)
+        self.table_checksum = subtract_checksum(self.table_checksum, checksum)
+        subtract_bucket_checksum(self.checksum_buckets, checksum)
         self.all_checksums.remove(checksum)
 
     def set_buckets_size(self, buckets_size):
@@ -72,10 +95,12 @@ class FlowChecksumBase(base_tests.SimpleProtocol):
         do_barrier(self.controller)
         verify_no_errors(self.controller)
 
+        old_checksums = self.all_checksums
+        self.all_checksums = []
         self.checksum_buckets = [0] * buckets_size
         self.table_checksum = 0
-        for checksum in self.all_checksums:
-            self.update_checksums(checksum)
+        for checksum in old_checksums:
+            self.insert_checksum(checksum)
 
 class FlowChecksum(FlowChecksumBase):
     """
