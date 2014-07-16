@@ -393,6 +393,7 @@ class Grp50No80a(base_tests.SimpleDataPlane):
         match.wildcards = 0xffffc0cf 
         msg = message.flow_mod()
         msg.match = match
+        msg.buffer_id = 0xffffffff
         act = action.action_output()
         act.port = of_ports[1]
         rv = msg.actions.add(act)
@@ -448,6 +449,7 @@ class Grp50No80b(base_tests.SimpleDataPlane):
         match.wildcards = 0xffffffcf
         msg = message.flow_mod()
         msg.match = match
+        msg.buffer_id = 0xffffffff
         act = action.action_output()
         act.port = of_ports[1]
         rv = msg.actions.add(act)
@@ -501,6 +503,7 @@ class Grp50No80c(base_tests.SimpleDataPlane):
         match.wildcards = 0x3fffd9cf
         msg = message.flow_mod()
         msg.match = match
+        msg.buffer_id = 0xffffffff
         act = action.action_output()
         act.port = of_ports[1]
         rv = msg.actions.add(act)
@@ -565,6 +568,7 @@ class Grp50No90a(base_tests.SimpleDataPlane):
         match.wildcards = 0x3ff03fcf
         msg = message.flow_mod()
         msg.match = match
+        msg.buffer_id = 0xffffffff
         act = action.action_output()
         act.port = of_ports[1]
         rv = msg.actions.add(act)
@@ -622,6 +626,7 @@ class Grp50No90b(base_tests.SimpleDataPlane):
         match.wildcards = 0x3fffffcf
         msg = message.flow_mod()
         msg.match = match
+        msg.buffer_id = 0xffffffff
         act = action.action_output()
         act.port = of_ports[1]
         rv = msg.actions.add(act)
@@ -677,6 +682,7 @@ class Grp50No90c(base_tests.SimpleDataPlane):
         match.wildcards = 0x3ff67fcf
         msg = message.flow_mod()
         msg.match = match
+        msg.buffer_id = 0xffffffff
         act = action.action_output()
         act.port = of_ports[1]
         rv = msg.actions.add(act)
@@ -1088,6 +1094,7 @@ class Grp50No150(base_tests.SimpleDataPlane):
         match.wildcards = 0x3ff000cf
         msg = message.flow_mod()
         msg.match = match
+        msg.buffer_id = 0xffffffff
         act = action.action_output()
         act.port = of_ports[1]
         rv = msg.actions.add(act)
