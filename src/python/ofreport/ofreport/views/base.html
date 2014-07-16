@@ -43,12 +43,11 @@
     
     <!-- Equipment Note -->
     <hr size="5" color="black">
-    <h2>{{meta.BrandVendor}} {{meta.ModelNameNumber}} - Profile: {{profile}}</h2>
-    <b>Model                </b> {{meta.Model}}
-    <b>Description          </b> {{meta.Description}}
-    <b>Product-Family:      </b> {{meta.ProductFamily}}<br/>
-    <b>Firmware Revision:   </b> {{meta.FirmwareRevision}}<br/>
-    <b>MAC Address   </b> {{meta.MAC}}<br/>
+    <h2>{{meta.BrandVendor}} {{meta.ProductFamily}} - Profile: {{profile}}</h2>
+    <b>Model Tested:      </b> {{meta.ModelNameNumber}}<br/>
+    <b>Firmware Revision:  </b> {{meta.FirmwareRevision}}<br/>
+    <b>MAC Address          </b> {{meta.MAC}}<br/>
+    <b>Description          </b> {{meta.PortNumbersTypeSpeed}}<br/>
     <!-- Content shared only with vendor. 
     {% if for_web %}
       <b>Architecture:        </b> {{meta.Architecturedescription}}<br/>
