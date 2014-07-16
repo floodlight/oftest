@@ -46,19 +46,24 @@
     <h2>{{meta.BrandVendor}} {{meta.ModelNameNumber}} - Profile: {{profile}}</h2>
     <b>Product-Family:      </b> {{meta.ProductFamily}}<br/>
     <b>Firmware Revision:   </b> {{meta.FirmwareRevision}}<br/>
-    <!-- Content shared only with vendor. -->
+    <b>Switch MAC Address   </b> {{meta.MAC}}<br/>
+    <!-- Content shared only with vendor. 
     {% if for_web %}
       <b>Architecture:        </b> {{meta.Architecturedescription}}<br/>
       <b>Chipset:             </b> {{meta.Chipset}}<br/> 
       <b>Port Description:    </b> {{meta.PortNumbersTypeSpeed}}<br/>
     {% else %}
     {% endif %}
-
-    <h2>Test Tools</h2>
+     -->
+    <h2>Test And Report Tools</h2>
+    <b>Date:                 </b>{{meta.date}}<br/>
     <b>Test Framework:       </b> {{meta.tframework}}<br/>
     <b>Software Version:     </b> {{meta.Software}}<br/>
     <b>Server:               </b> {{meta.server}}<br/>
     <b>Operating system:     </b> {{meta.serveros}}<br/>
+    <b>Report Version:        </b>{{meta.version}}<br/>
+    <b>Report ID:             </b>{{meta.reportid}}<br/>
+    <b>Wireshark Version:     </b>{{meta.wireshark_version}}<br/>
     <br>
 
     {% if for_web %}
