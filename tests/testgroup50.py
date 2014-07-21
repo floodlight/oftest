@@ -212,7 +212,7 @@ class Grp50No40(base_tests.SimpleDataPlane):
         
         #Send Non-matching packet
         logging.info("Sending a non matching packet")
-        pkt2 = simple_eth_packet(dl_dst='AC:81:12:99:47:0F',dl_src ='AC:81:12:99:47:0F',dl_type = 0x88cc)
+        pkt2 = simple_eth_packet(dl_dst='AC:81:12:99:47:0F',dl_src ='AC:81:12:99:47:0E',dl_type = 0x88cc)
         self.dataplane.send(of_ports[0], str(pkt2))
         
         #Verify PacketIn event gets triggered
