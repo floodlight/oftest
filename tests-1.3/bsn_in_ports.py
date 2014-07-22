@@ -14,6 +14,7 @@ import oftest.packet as scapy
 
 from oftest.testutils import *
 
+@nonstandard
 class MatchInPorts128(base_tests.SimpleDataPlane):
     """
     Match on ingress port bitmap
