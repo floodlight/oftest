@@ -968,7 +968,7 @@ class experimenter(message):
     version = 2
     type = 4
 
-    def __init__(self, xid=None, experimenter=None, subtype=None, data=None):
+    def __init__(self, xid=None, experimenter=None, data=None):
         if xid != None:
             self.xid = xid
         else:
@@ -977,10 +977,6 @@ class experimenter(message):
             self.experimenter = experimenter
         else:
             self.experimenter = 0
-        if subtype != None:
-            self.subtype = subtype
-        else:
-            self.subtype = 0
         if data != None:
             self.data = data
         else:
@@ -994,7 +990,6 @@ class experimenter(message):
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!L", self.experimenter))
-        packed.append(struct.pack("!L", self.subtype))
         packed.append(self.data)
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
@@ -1017,7 +1012,6 @@ class experimenter(message):
         reader = orig_reader.slice(_length - (2 + 2))
         obj.xid = reader.read("!L")[0]
         obj.experimenter = reader.read("!L")[0]
-        obj.subtype = reader.read("!L")[0]
         obj.data = str(reader.read_all())
         return obj
 
@@ -1025,7 +1019,6 @@ class experimenter(message):
         if type(self) != type(other): return False
         if self.xid != other.xid: return False
         if self.experimenter != other.experimenter: return False
-        if self.subtype != other.subtype: return False
         if self.data != other.data: return False
         return True
 
@@ -1039,9 +1032,6 @@ class experimenter(message):
                     q.text("%#x" % self.xid)
                 else:
                     q.text('None')
-                q.text(","); q.breakable()
-                q.text("subtype = ");
-                q.text("%#x" % self.subtype)
                 q.text(","); q.breakable()
                 q.text("data = ");
                 q.pp(self.data)
