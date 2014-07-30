@@ -636,15 +636,15 @@ class GroupDescStats(GroupTest):
         self.assertEquals(len(stats), 3)
 
         self.assertEquals(stats[0].group_id, msg0.group_id)
-        self.assertEquals(stats[0].type, msg0.group_type)
+        self.assertEquals(stats[0].group_type, msg0.group_type)
         self.assertEquals(stats[0].buckets, msg0.buckets)
 
         self.assertEquals(stats[1].group_id, msg1.group_id)
-        self.assertEquals(stats[1].type, msg1.group_type)
+        self.assertEquals(stats[1].group_type, msg1.group_type)
         self.assertEquals(stats[1].buckets, msg1.buckets)
 
         self.assertEquals(stats[2].group_id, msg2.group_id)
-        self.assertEquals(stats[2].type, msg2.group_type)
+        self.assertEquals(stats[2].group_type, msg2.group_type)
         self.assertEquals(stats[2].buckets, msg2.buckets)
 
 
