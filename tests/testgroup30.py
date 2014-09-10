@@ -403,6 +403,20 @@ class Grp30No100(base_tests.SimpleDataPlane):
                            str(port_config & ofp.OFPPC_NO_PACKET_IN))        		
                 print port_config
         
+        logging.info("Sending a Simple tcp packet a dataplane port")
+        logging.info("Expecting a packet_in event on the control plane")
+
+        # Send  packet on dataplane port and verify packet_in event gets generated.
+        pkt = simple_tcp_packet()
+        self.dataplane.send(of_ports[0], str(pkt))
+        logging.info("Sending packet to dp port " + str(of_ports[0]) +
+                   ", expecting packet_in on control plane" )
+      
+        (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_PACKET_IN,
+                                               timeout=2)
+        self.assertTrue(response is not None, 
+                               'Packet in event is not sent to the controller')
+        logging.info("Received packet_in from the switch")
 
 		
 
