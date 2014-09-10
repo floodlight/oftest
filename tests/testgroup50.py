@@ -1326,7 +1326,7 @@ class Grp50No210(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane,pkt, [yes_ports], no_ports, self)
        
         logging.info("Sending a non matching packet")
-        pkt = str(simple_tcp_packet())
+        pkt = str(simple_arp_packet(ip_src="192.168.0.10"))
         self.dataplane.send(of_ports[0],pkt)
         #verify Packetin event gets triggered.
         logging.info("Waiting for a packet_in message from the switch")
@@ -1365,7 +1365,7 @@ class Grp50No220(base_tests.SimpleDataPlane):
         receive_pkt_check(self.dataplane,pkt, [yes_ports], no_ports, self)
         
         logging.info("Sending a non matching packet")
-        pkt = str(simple_tcp_packet())
+        pkt = str(simple_arp_packet(ip_dst="192.168.0.10"))
         self.dataplane.send(of_ports[0],pkt)
         #verify Packetin event gets triggered.
         logging.info("Waiting for a packet_in message from the switch")
