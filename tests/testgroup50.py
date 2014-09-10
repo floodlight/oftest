@@ -1325,6 +1325,14 @@ class Grp50No210(base_tests.SimpleDataPlane):
         logging.info("Verifying whether the packet id forwarded to the egress port")
         receive_pkt_check(self.dataplane,pkt, [yes_ports], no_ports, self)
        
+        logging.info("Sending a non matching packet")
+        pkt = str(simple_arp_packet(ip_src="192.168.0.10"))
+        self.dataplane.send(of_ports[0],pkt)
+        #verify Packetin event gets triggered.
+        logging.info("Waiting for a packet_in message from the switch")
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
+        self.assertTrue(response is not None, "PacketIn not received for non-matching packet")
+        logging.info("Packet_in Received")
 
 
 class Grp50No220(base_tests.SimpleDataPlane):
@@ -1355,3 +1363,12 @@ class Grp50No220(base_tests.SimpleDataPlane):
 
         logging.info("Verifying whether the packet id forwarded to the egress port")
         receive_pkt_check(self.dataplane,pkt, [yes_ports], no_ports, self)
+        
+        logging.info("Sending a non matching packet")
+        pkt = str(simple_arp_packet(ip_dst="192.168.0.10"))
+        self.dataplane.send(of_ports[0],pkt)
+        #verify Packetin event gets triggered.
+        logging.info("Waiting for a packet_in message from the switch")
+        (response, raw) = self.controller.poll(ofp.OFPT_PACKET_IN,timeout=4)
+        self.assertTrue(response is not None, "PacketIn not received for non-matching packet")
+        logging.info("Packet_in Received")
