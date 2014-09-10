@@ -66,6 +66,9 @@ class Grp70No10(base_tests.SimpleDataPlane):
         #Sending N packets matching the flow inserted
         for pkt_cnt in range(5):
             self.dataplane.send(of_ports[0],str(pkt))
+        sleep(2)
+        #Verify packet_count is incremented
+        verify_flowstats(self,match=match,packet_count=5)
         
         #Verify packets not recieved on any of the dataplane ports 
         (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(timeout=1,exp_pkt=pkt)
