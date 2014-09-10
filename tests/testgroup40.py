@@ -92,6 +92,8 @@ class Grp40No10(base_tests.SimpleDataPlane):
                                'Error Message code is not overlap')
         logging.info("Flow_mod error received")
 
+        #Verify that only one flow exists
+        verify_tablestats(self,expect_active=1)
 class Grp40No20(base_tests.SimpleDataPlane):
 
     """Verify that without overlap check flag set, Grp40No20overlapping flows can be created."""  
