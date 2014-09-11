@@ -7,14 +7,15 @@ OpenFlow test framework top level script
 This script is the entry point for running OpenFlow tests using the OFT
 framework. For usage information, see --help or the README.
 
-To add a new command line option, edit both the config_default dictionary and
+To add a new command line option, edit both the CONFIG_DEFAULT dictionary and
 the config_setup function. The option's result will end up in the global
 oftest.config dictionary.
 """
 
+from __future__ import print_function
+
 import sys
 import optparse
-from subprocess import Popen,PIPE
 import logging
 import unittest
 import time
@@ -25,12 +26,12 @@ import signal
 import fnmatch
 import copy
 
-root_dir = os.path.dirname(os.path.realpath(__file__))
+ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 
-pydir = os.path.join(root_dir, 'src', 'python')
-if os.path.exists(os.path.join(pydir, 'oftest')):
+PY_SRC_DIR = os.path.join(ROOT_DIR, 'src', 'python')
+if os.path.exists(os.path.join(PY_SRC_DIR, 'oftest')):
     # Running from source tree
-    sys.path.insert(0, pydir)
+    sys.path.insert(0, PY_SRC_DIR)
 
 import oftest
 from oftest import config
@@ -50,9 +51,9 @@ DEBUG_LEVELS = {
     'critical'           : logging.CRITICAL
 }
 
-##@var config_default
+##@var CONFIG_DEFAULT
 # The default configuration dictionary for OFT
-config_default = {
+CONFIG_DEFAULT = {
     # Miscellaneous options
     "list"               : False,
     "list_test_names"    : False,
@@ -69,7 +70,7 @@ config_default = {
     "switch_ip"          : None,  # If not none, actively connect to switch
     "platform"           : "eth",
     "platform_args"      : None,
-    "platform_dir"       : os.path.join(root_dir, "platforms"),
+    "platform_dir"       : os.path.join(ROOT_DIR, "platforms"),
     "interfaces"         : [],
     "openflow_version"   : "1.0",
 
@@ -143,7 +144,7 @@ prefixing them with the '^' character.
                                    option_class=Option)
 
     # Set up default values
-    parser.set_defaults(**config_default)
+    parser.set_defaults(**CONFIG_DEFAULT)
 
     parser.add_option("--list", action="store_true",
                       help="List all tests and exit")
@@ -217,12 +218,12 @@ prefixing them with the '^' character.
     # If --test-dir wasn't given, pick one based on the OpenFlow version
     if options.test_dir == None:
         if options.openflow_version == "1.0":
-            options.test_dir = os.path.join(root_dir, "tests")
+            options.test_dir = os.path.join(ROOT_DIR, "tests")
         else:
-            options.test_dir = os.path.join(root_dir, "tests-" + options.openflow_version)
+            options.test_dir = os.path.join(ROOT_DIR, "tests-" + options.openflow_version)
 
     # Convert options from a Namespace to a plain dictionary
-    config = config_default.copy()
+    config = CONFIG_DEFAULT.copy()
     for key in config.keys():
         config[key] = getattr(options, key)
 
@@ -392,19 +393,8 @@ def prune_tests(test_specs, test_modules, version):
     return result
 
 def die(msg, exit_val=1):
-    print msg
     logging.critical(msg)
     sys.exit(exit_val)
-
-def _space_to(n, str):
-    """
-    Generate a string of spaces to achieve width n given string str
-    If length of str >= n, return one space
-    """
-    spaces = n - len(str)
-    if spaces > 0:
-        return " " * spaces
-    return " "
 
 #
 # Main script
@@ -430,7 +420,7 @@ sys.path.append(config["test_dir"])
 
 test_specs = args
 if config["test_spec"] != "":
-    print >> sys.stderr, "WARNING: The --test-spec option is deprecated"
+    logging.warning("The '--test-spec' option is deprecated.")
     test_specs += config["test_spec"].split(',')
 if config["test_file"] != None:
     with open(config["test_file"], 'r') as f:
@@ -449,52 +439,48 @@ if config["list"]:
     mod_count = 0
     test_count = 0
     all_groups = set()
-    print """\
-Tests are shown grouped by module. If a test is in any groups beyond "standard"
-and its module's group then they are shown in parentheses."""
-    print
-    print """\
+
+    print("""
+Tests are shown grouped by module. If a test is in any groups beyond
+"standard" and its module's group then they are shown in parentheses.
+
 Tests marked with '*' are non-standard and may require vendor extensions or
-special switch configuration. These are not part of the "standard" test group."""
-    print
-    print """\
-Tests marked with '!' are disabled because they are experimental, special-purpose,
-or are too long to be run normally. These are not part of the "standard" test
-group or their module's test group."""
-    print
-    print "Tests marked (TP1) after name take --test-params including:"
-    print "    'vid=N;strip_vlan=bool;add_vlan=bool'"
-    print
-    print "Test List:"
+special switch configuration. These are not part of the "standard" test group.
+
+Tests marked with '!' are disabled because they are experimental,
+special-purpose, or are too long to be run normally. These are not part of
+the "standard" test group or their module's test group.
+
+Tests marked (TP1) after name take --test-params including:
+
+    'vid=N;strip_vlan=bool;add_vlan=bool'
+
+Test List:
+""")
     for (modname, (mod, tests)) in test_modules.items():
         mod_count += 1
         desc = (mod.__doc__ or "No description").strip().split('\n')[0]
-        start_str = "  Module " + mod.__name__ + ": "
-        print start_str + _space_to(22, start_str) + desc
+        print("  Module %13s: %s" % (mod.__name__, desc))
+
         for (testname, test) in tests.items():
-            try:
-                desc = (test.__doc__ or "").strip()
-                desc = desc.split('\n')[0]
-            except:
-                desc = "No description"
+            desc = (test.__doc__ or "No description").strip().split('\n')[0]
+
             groups = set(test._groups) - set(["all", "standard", modname])
             all_groups.update(test._groups)
             if groups:
                 desc = "(%s) %s" % (",".join(groups), desc)
             if hasattr(test, "_versions"):
                 desc = "(%s) %s" % (",".join(sorted(test._versions)), desc)
+
             start_str = " %s%s %s:" % (test._nonstandard and "*" or " ",
                                        test._disabled and "!" or " ",
                                        testname)
-            if len(start_str) > 22:
-                desc = "\n" + _space_to(22, "") + desc
-            print start_str + _space_to(22, start_str) + desc
+            print("  %22s : %s" % (start_str, desc))
             test_count += 1
         print
-    print "%d modules shown with a total of %d tests" % \
-        (mod_count, test_count)
-    print
-    print "Test groups: %s" % (', '.join(sorted(all_groups)))
+    print("'%d' modules shown with a total of '%d' tests\n" %
+          (mod_count, test_count))
+    print("Test groups: %s" % (', '.join(sorted(all_groups))))
 
     sys.exit(0)
 
@@ -504,7 +490,8 @@ test_modules = prune_tests(test_specs, test_modules, config["openflow_version"])
 if config["list_test_names"]:
     for (modname, (mod, tests)) in test_modules.items():
         for (testname, test) in tests.items():
-            print "%s.%s" % (modname, testname)
+            print("%s.%s" % (modname, testname))
+
     sys.exit(0)
 
 # Generate the test suite
@@ -545,8 +532,7 @@ oftest.ofutils.default_negative_timeout = config["default_negative_timeout"]
 oftest.testutils.MINSIZE = config['minsize']
 
 if os.getuid() != 0 and not config["allow_user"]:
-    print "ERROR: Super-user privileges required. Please re-run with " \
-          "sudo or as root."
+    die("Super-user privileges required. Please re-run with sudo or as root.")
     sys.exit(1)
 
 if config["random_seed"] is not None:
@@ -587,12 +573,9 @@ if __name__ == "__main__":
         result = unittest.TextTestRunner(verbosity=2).run(suite)
     oftest.open_logfile('main')
     if oftest.testutils.skipped_test_count > 0:
-        ts = " tests"
-        if oftest.testutils.skipped_test_count == 1:
-            ts = " test"
-        logging.info("Skipped " + str(oftest.testutils.skipped_test_count) + ts)
-        print("Skipped " + str(oftest.testutils.skipped_test_count) + ts)
-    logging.info("*** TEST RUN END  : " + time.asctime())
+        message = "Skipped %d test(s)" % oftest.testutils.skipped_test_count
+        logging.info(message)
+    logging.info("*** TEST RUN END  : %s", time.asctime())
 
     # Shutdown the dataplane
     oftest.dataplane_instance.kill()
