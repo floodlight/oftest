@@ -359,11 +359,8 @@ class Grp80No200(base_tests.SimpleProtocol):
            logging.info ("the switch must send zero-size packet_in message")
         else :
             logging.info("miss_send_len: " + str(reply.miss_send_len))
-        #Grp80No210
-        if reply.flags == 0 :
-            logging.info("OFPC_FRAG_NORMAL:No special handling for fragments.")
         #Grp80No220
-        elif reply.flags == 1 :
+        if reply.flags == 1 :
             logging.info("OFPC_FRAG_DROP:Drop fragments.")
         #Grp80No230
         elif reply.flags == 2 :
@@ -372,6 +369,46 @@ class Grp80No200(base_tests.SimpleProtocol):
         elif reply.flags == 3:
             logging.info("OFPC_FRAG_MASK")
 
+class Grp80No210(base_tests.SimpleDataPlane):
+    
+   def runTest(self):
+        logging = get_logger()
+        logging.info('Running Grp80No210 OFPC_FRAG_NORMAL')
+
+        of_ports = config["port_map"].keys()
+        of_ports.sort()
+        self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
+
+        rc = delete_all_flows(self.controller)
+        self.assertTrue(rc != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        egress_port=of_ports[1]
+        no_ports=set(of_ports).difference([egress_port])
+        yes_ports = of_ports[1]
+
+        #Send get_config_request
+        logging.info("Sending Get Config Request...")
+        request = message.get_config_request()
+        (reply, pkt) = self.controller.transact(request)
+
+        #Verify get_config_reply is recieved
+        logging.info("Expecting GetConfigReply ")
+        self.assertTrue(reply is not None, "Failed to get any reply")
+        self.assertEqual(reply.header.type, ofp.OFPT_GET_CONFIG_REPLY,'Response is not Config Reply')
+        self.assertEqual(reply.header.xid,request.header.xid,'Transaction id does not match')
+        
+        if reply.flags == 0 :
+            logging.info("OFPC_FRAG_NORMAL:No special handling for fragments.")
+
+            logging.info("Installing a flow with match on Ingress port")
+            (pkt, match) = wildcard_all_except_ingress(self, of_ports, priority=0)
+
+            frag_pkts = simple_frag_packets()
+
+            for pkt in frag_pkts:
+                self.dataplane.send(of_ports[0], str(pkt))
+                receive_pkt_check(self.dataplane, pkt,[yes_ports], no_ports, self)
 
 class Grp80No260(base_tests.SimpleProtocol):
 

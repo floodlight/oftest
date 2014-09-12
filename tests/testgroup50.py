@@ -51,7 +51,7 @@ class Grp50No10(base_tests.SimpleDataPlane):
 
         #Insert an All Wildcarded flow.
         wildcard_all(self,of_ports)
-
+        
         #check for different  match fields and verify packet implements the action specified in the flow
         logging.info("Sending packets with different match fields and verifying that all packets match the flow entry")
         pkt1 = simple_tcp_packet(dl_src="00:01:01:01:01:01");
@@ -77,11 +77,14 @@ class Grp50No10(base_tests.SimpleDataPlane):
         pkt6 = simple_tcp_packet(tcp_sport=8080);
         self.dataplane.send(of_ports[0], str(pkt6))
         receive_pkt_check(self.dataplane,pkt6,[yes_ports],no_ports,self)
-              
+        
         pkt7 = simple_tcp_packet(tcp_dport=8081);
         self.dataplane.send(of_ports[0], str(pkt7))
         receive_pkt_check(self.dataplane,pkt7,[yes_ports],no_ports,self)
-
+        
+        pkt8 = simple_udp_packet(udp_sport=8888);
+        self.dataplane.send(of_ports[0], str(pkt8))
+        receive_pkt_check(self.dataplane,pkt8,[yes_ports],no_ports,self)
 
 class Grp50No20(base_tests.SimpleDataPlane):
     
