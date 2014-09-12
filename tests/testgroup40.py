@@ -152,55 +152,29 @@ class Grp40No30(base_tests.SimpleDataPlane):
         #Clear switch state
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
-
-        logging.info("Installing an all wildcarded flow")
         
+
+        #Create a Match on Ingress flow
+        logging.info("Installing a flow entry")
+        (pkt,match) = wildcard_all_except_ingress(self,of_ports)
+       
+        #Send Packets matching the flow 
+        logging.info("Sending 5 packets matching the flow entry")
+        num_pkts = 5 
+        for pkt_cnt in range(num_pkts):
+            self.dataplane.send(of_ports[0],str(pkt))
+            receive_pkt_verify(self,of_ports[1],str(pkt),of_ports[0])
+
+        byte_count = num_pkts*(len(str(pkt)))
+        verify_flowstats(self,match,packet_count=num_pkts,byte_count=byte_count)
         
-        # Create and add flow-1, check on dataplane it is active.
-        (pkt,match) = wildcard_all(self,of_ports)
-
-        # Verify active_entries in table_stats_request =1 
-        #verify_tablestats(self,expect_active=1)
+        logging.info("Packet counter incremented correctly")
         
-        # Send Packet (to increment counters like byte_count and packet_count)
-        logging.info("Sending a matching packet to increase the counters")
-        send_packet(self,pkt,of_ports[0],of_ports[1])
-
-        # Verify Flow counters have incremented 
-        logging.info("Verifying whether the flow counters have increased")
-        stat_req = message.flow_stats_request()
-        stat_req.match = match
-        stat_req.table_id = 0xff
-        stat_req.out_port = ofp.OFPP_NONE
-    
-        for i in range(0,60):
-            logging.info("Sending stats request")
-            response, pkt = self.controller.transact(stat_req,
-                                                     timeout=5)
-            self.assertTrue(response is not None,"No response to stats request")
-            packet_counter = 0
-            byte_counter = 0 
-            sleep(1)
-            
-            for item in response.stats:
-                packet_counter += item.packet_count
-                byte_counter += item.byte_count
-                logging.info("Recieved" + str(item.packet_count) + " packets")
-                logging.info("Received " + str(item.byte_count) + "bytes")
-            
-            if packet_counter == None : continue
-            if byte_counter == None : continue
-            break
-
-        if packet_counter == None :
-            self.assertEqual(packet_count,item.packet_count,"packet_count counter did not increment")
-        if byte_counter == None :   
-            self.assertEqual(byte_count,item.byte_count,"byte_count counter did not increment")
         
         #Send Identical flow 
         logging.info("Installing an identical flow")
-        (pkt1,match1) = wildcard_all(self,of_ports)
-
+        #(pkt1,match1) = wildcard_all(self,of_ports)
+        (pkt,match) = wildcard_all_except_ingress(self,of_ports)
         # Verify active_entries in table_stats_request =1 
         #verify_tablestats(self,expect_active=1)
 
