@@ -610,7 +610,29 @@ class Grp10No120(base_tests.SimpleDataPlane):
         rv = delete_all_flows(self.controller)
         self.assertEqual(rv, 0, "Failed to delete all flows")
         
-        #Insert flow entry with hard_timeout set
+        #Insert flo entry with hard_timeout set to 120
+        pkt_matchingress = simple_tcp_packet()
+        match3 = parse.packet_to_flow_match(pkt_matchingress)
+        self.assertTrue(match3 is not None, "Could not generate flow match from pkt")
+        match3.wildcards = ofp.OFPFW_ALL-ofp.OFPFW_IN_PORT
+        match3.in_port = of_ports[2]
+        msg3 = message.flow_mod()
+        msg3.command = ofp.OFPFC_ADD
+        msg3.match = match3
+        msg3.cookie = random.randint(0,9007199254740992)
+        msg3.buffer_id = 0xffffffff
+        msg3.idle_timeout = 0
+        msg3.hard_timeout = 120
+        msg3.buffer_id = 0xffffffff
+        cookie = msg3.cookie   
+        act3 = action.action_output()
+        act3.port = of_ports[3]
+        self.assertTrue(msg3.actions.add(act3), "could not add action")
+        rv = self.controller.message_send(msg3)
+        self.assertTrue(rv != -1, "Error installing flow mod")
+        self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+
+        #Insert flow entry with hard_timeout set to 15
         pkt = simple_tcp_packet()
         match = parse.packet_to_flow_match(pkt)
         self.assertTrue(match is not None, "Could not generate flow match from pkt")
@@ -687,3 +709,8 @@ class Grp10No120(base_tests.SimpleDataPlane):
         no_ports = set(of_ports)
         receive_pkt_check(self.dataplane,pkt,yes_ports,no_ports,self)
         logging.info("All the standard flows are deleted after time out")
+        self.controller.connect()
+        sleep(2)
+        self.dataplane.send(of_ports[2],str(pkt_matchingress))
+        receive_pkt_verify(self,of_ports[3],str(pkt_matchingress),of_ports[2])
+                        
