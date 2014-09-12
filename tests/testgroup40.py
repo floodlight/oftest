@@ -93,8 +93,12 @@ class Grp40No10(base_tests.SimpleDataPlane):
                                'Error Message code is not overlap')
         logging.info("Flow_mod error received")
 
-        #Verify that active_count is one
-        verify_tablestats(self,expect_active=1) 
+
+        #Verify that only one flow exists
+        verify_tablestats(self,expect_active=1)
+
+
+
 
 class Grp40No20(base_tests.SimpleDataPlane):
 
@@ -932,7 +936,7 @@ class Grp40No220(base_tests.SimpleDataPlane):
         of_ports = config["port_map"].keys()
         of_ports.sort()
         self.assertTrue(len(of_ports) > 1, "Not enough ports for test")
-        
+        pkt_count = 3
         #Clear switch state
         rc = delete_all_flows(self.controller)
         self.assertEqual(rc, 0, "Failed to delete all flows")
@@ -946,10 +950,19 @@ class Grp40No220(base_tests.SimpleDataPlane):
         msg9.buffer_id = 0xffffffff
         msg9.idle_timeout = 2
         msg9.flags |= ofp.OFPFF_SEND_FLOW_REM
+        act3 = action.action_output()
+        act3.port = of_ports[1]
+        self.assertTrue(msg9.actions.add(act3), "could not add action")
+
         rv1 = self.controller.message_send(msg9)
         self.assertTrue(rv1 != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
-
+        pkt = str(simple_tcp_packet())
+        
+        for i in range(pkt_count):
+            self.dataplane.send(of_ports[0],pkt)
+            receive_pkt_verify(self,of_ports[1],pkt,of_ports[0])
+        
         # Verify flow removed message is recieved.
         logging.info("Verifying whether OFPT_FLOW_REMOVED message is received") 
         (response, pkt) = self.controller.poll(exp_msg=ofp.OFPT_FLOW_REMOVED,
@@ -1039,7 +1052,7 @@ class Grp40No210(base_tests.SimpleDataPlane):
         match3.wildcards = ofp.OFPFW_ALL-ofp.OFPFW_IN_PORT
         match3.in_port = of_ports[0]
         msg3 = message.flow_mod()
-        msg3.out_port = of_ports[1] # ignored by flow add,flow modify 
+        #msg3.out_port = of_ports[1] # ignored by flow add,flow modify 
         msg3.command = ofp.OFPFC_ADD
         msg3.cookie = random.randint(0,9007199254740992)
         msg3.buffer_id = 0xffffffff
@@ -1053,6 +1066,10 @@ class Grp40No210(base_tests.SimpleDataPlane):
         rv = self.controller.message_send(msg3)
         self.assertTrue(rv != -1, "Error installing flow mod")
         self.assertEqual(do_barrier(self.controller), 0, "Barrier failed")
+        pkt = str(simple_tcp_packet())
+        #Send data plane traffic
+        self.dataplane.send(of_ports[0],pkt)
+        receive_pkt_verify(self,of_ports[1],pkt,of_ports[0])
 
         #Verify no flow removed message is generated
         logging.info("Verifying that there is OFPT_FLOW_REMOVED message received")
