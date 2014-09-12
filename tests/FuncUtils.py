@@ -834,7 +834,6 @@ def verify_flowstats(self,match,byte_count=None,packet_count=None):
         for item in response.stats:
             packet_counter += item.packet_count
             byte_counter += item.byte_count
-
             logging.info("packet_counter " + str(item.packet_count) + " packets")
             logging.info("byte_counter " + str(item.byte_count) + " bytes")
            
