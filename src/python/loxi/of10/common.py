@@ -132,7 +132,7 @@ class bsn_vport(loxi.OFObject):
 class bsn_vport_l2gre(bsn_vport):
     type = 1
 
-    def __init__(self, flags=None, port_no=None, loopback_port_no=None, local_mac=None, nh_mac=None, src_ip=None, dst_ip=None, dscp=None, ttl=None, vpn=None, if_name=None):
+    def __init__(self, flags=None, port_no=None, loopback_port_no=None, local_mac=None, nh_mac=None, src_ip=None, dst_ip=None, dscp=None, ttl=None, vpn=None, rate_limit=None, if_name=None):
         if flags != None:
             self.flags = flags
         else:
@@ -173,6 +173,10 @@ class bsn_vport_l2gre(bsn_vport):
             self.vpn = vpn
         else:
             self.vpn = 0
+        if rate_limit != None:
+            self.rate_limit = rate_limit
+        else:
+            self.rate_limit = 0
         if if_name != None:
             self.if_name = if_name
         else:
@@ -194,6 +198,7 @@ class bsn_vport_l2gre(bsn_vport):
         packed.append(struct.pack("!B", self.ttl))
         packed.append('\x00' * 2)
         packed.append(struct.pack("!L", self.vpn))
+        packed.append(struct.pack("!L", self.rate_limit))
         packed.append(struct.pack("!16s", self.if_name))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
@@ -218,6 +223,7 @@ class bsn_vport_l2gre(bsn_vport):
         obj.ttl = reader.read("!B")[0]
         reader.skip(2)
         obj.vpn = reader.read("!L")[0]
+        obj.rate_limit = reader.read("!L")[0]
         obj.if_name = reader.read("!16s")[0].rstrip("\x00")
         return obj
 
@@ -233,6 +239,7 @@ class bsn_vport_l2gre(bsn_vport):
         if self.dscp != other.dscp: return False
         if self.ttl != other.ttl: return False
         if self.vpn != other.vpn: return False
+        if self.rate_limit != other.rate_limit: return False
         if self.if_name != other.if_name: return False
         return True
 
@@ -270,6 +277,9 @@ class bsn_vport_l2gre(bsn_vport):
                 q.text(","); q.breakable()
                 q.text("vpn = ");
                 q.text("%#x" % self.vpn)
+                q.text(","); q.breakable()
+                q.text("rate_limit = ");
+                q.text("%#x" % self.rate_limit)
                 q.text(","); q.breakable()
                 q.text("if_name = ");
                 q.pp(self.if_name)
