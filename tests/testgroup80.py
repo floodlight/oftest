@@ -371,7 +371,9 @@ class Grp80No200(base_tests.SimpleProtocol):
 
 class Grp80No210(base_tests.SimpleDataPlane):
     
-   def runTest(self):
+
+    @wireshark_capture
+    def runTest(self):
         logging = get_logger()
         logging.info('Running Grp80No210 OFPC_FRAG_NORMAL')
 
