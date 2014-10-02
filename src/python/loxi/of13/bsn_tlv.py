@@ -255,6 +255,53 @@ class external_gateway_ip(bsn_tlv):
 
 bsn_tlv.subtypes[26] = external_gateway_ip
 
+class external_gateway_mac(bsn_tlv):
+    type = 29
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = [0,0,0,0,0,0]
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!6B", *self.value))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = external_gateway_mac()
+        _type = reader.read("!H")[0]
+        assert(_type == 29)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length - (2 + 2))
+        obj.value = list(reader.read('!6B'))
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("external_gateway_mac {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text(util.pretty_mac(self.value))
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[29] = external_gateway_mac
+
 class external_ip(bsn_tlv):
     type = 23
 
