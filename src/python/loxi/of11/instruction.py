@@ -9,9 +9,10 @@
 import struct
 import loxi
 import const
-import common
 import action
+import message
 import instruction
+import common
 import util
 import loxi.generic_util
 

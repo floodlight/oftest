@@ -9,14 +9,15 @@
 import struct
 import loxi
 import const
-import common
-import action
+import bsn_tlv
+import meter_band
 import instruction
 import oxm
-import action_id
+import common
 import instruction_id
-import meter_band
-import bsn_tlv
+import action
+import message
+import action_id
 import util
 import loxi.generic_util
 
