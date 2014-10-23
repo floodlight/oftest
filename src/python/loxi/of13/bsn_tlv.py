@@ -1328,6 +1328,53 @@ class miss_packets(bsn_tlv):
 
 bsn_tlv.subtypes[13] = miss_packets
 
+class name(bsn_tlv):
+    type = 52
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = ''
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(self.value)
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = name()
+        _type = reader.read("!H")[0]
+        assert(_type == 52)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length - (2 + 2))
+        obj.value = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("name {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.pp(self.value)
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[52] = name
+
 class partner_key(bsn_tlv):
     type = 51
 
