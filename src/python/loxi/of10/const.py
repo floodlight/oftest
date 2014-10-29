@@ -27,10 +27,10 @@ SERIAL_NUM_LEN = 32
 OFPQ_ALL = 4294967295
 OFPQ_MIN_RATE_UNCFG = 65535
 
-# Identifiers from group of_bsn_pdu_slot_num_t
+# Identifiers from group of_bsn_pdu_slot_num
 BSN_PDU_SLOT_NUM_ANY = 255
 
-of_bsn_pdu_slot_num_t_map = {
+of_bsn_pdu_slot_num_map = {
     255: 'BSN_PDU_SLOT_NUM_ANY',
 }
 

@@ -10,6 +10,7 @@ version_names = {
     2: "1.1",
     3: "1.2",
     4: "1.3",
+    5: "1.4",
 }
 
 def protocol(ver):
@@ -19,17 +20,24 @@ def protocol(ver):
     if ver == 1:
         import of10
         return of10
-    elif ver == 2:
+
+    if ver == 2:
         import of11
         return of11
-    elif ver == 3:
+
+    if ver == 3:
         import of12
         return of12
-    elif ver == 4:
+
+    if ver == 4:
         import of13
         return of13
-    else:
-        raise ValueError
+
+    if ver == 5:
+        import of14
+        return of14
+
+    raise ValueError
 
 class ProtocolError(Exception):
     """
