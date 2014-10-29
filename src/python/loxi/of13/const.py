@@ -25,42 +25,42 @@ OFPQ_ALL = 4294967295
 OFPQ_MAX_RATE_UNCFG = 65535
 OFPQ_MIN_RATE_UNCFG = 65535
 
-# Identifiers from group of_bsn_lacp_convergence_status_t
+# Identifiers from group of_bsn_lacp_convergence_status
 LACP_SUCCESS = 0
 LACP_TIMEDOUT = 1
 LACP_OUT_OF_SYNC = 2
 
-of_bsn_lacp_convergence_status_t_map = {
+of_bsn_lacp_convergence_status_map = {
     0: 'LACP_SUCCESS',
     1: 'LACP_TIMEDOUT',
     2: 'LACP_OUT_OF_SYNC',
 }
 
-# Identifiers from group of_bsn_pdu_slot_num_t
+# Identifiers from group of_bsn_pdu_slot_num
 BSN_PDU_SLOT_NUM_ANY = 255
 
-of_bsn_pdu_slot_num_t_map = {
+of_bsn_pdu_slot_num_map = {
     255: 'BSN_PDU_SLOT_NUM_ANY',
 }
 
-# Identifiers from group of_bsn_vlan_counter_t
+# Identifiers from group of_bsn_vlan_counter
 OFP_BSN_VLAN_COUNTER_RX_BYTES = 0
 OFP_BSN_VLAN_COUNTER_RX_PACKETS = 1
 OFP_BSN_VLAN_COUNTER_TX_BYTES = 2
 OFP_BSN_VLAN_COUNTER_TX_PACKETS = 3
 
-of_bsn_vlan_counter_t_map = {
+of_bsn_vlan_counter_map = {
     0: 'OFP_BSN_VLAN_COUNTER_RX_BYTES',
     1: 'OFP_BSN_VLAN_COUNTER_RX_PACKETS',
     2: 'OFP_BSN_VLAN_COUNTER_TX_BYTES',
     3: 'OFP_BSN_VLAN_COUNTER_TX_PACKETS',
 }
 
-# Identifiers from group of_bsn_vrf_counter_t
+# Identifiers from group of_bsn_vrf_counter
 OFP_BSN_VRF_COUNTER_BYTES = 0
 OFP_BSN_VRF_COUNTER_PACKETS = 1
 
-of_bsn_vrf_counter_t_map = {
+of_bsn_vrf_counter_map = {
     0: 'OFP_BSN_VRF_COUNTER_BYTES',
     1: 'OFP_BSN_VRF_COUNTER_PACKETS',
 }
@@ -244,6 +244,27 @@ ofp_bsn_controller_role_reason_map = {
     0: 'OFP_BSN_CONTROLLER_ROLE_REASON_MASTER_REQUEST',
     1: 'OFP_BSN_CONTROLLER_ROLE_REASON_CONFIG',
     2: 'OFP_BSN_CONTROLLER_ROLE_REASON_EXPERIMENTER',
+}
+
+# Identifiers from group ofp_bsn_lacp_state
+OFP_BSN_LACP_STATE_ACTIVITY = 1
+OFP_BSN_LACP_STATE_TIMEOUT = 2
+OFP_BSN_LACP_STATE_AGGREGATION = 4
+OFP_BSN_LACP_STATE_SYNCHRONIZATION = 8
+OFP_BSN_LACP_STATE_COLLECTING = 16
+OFP_BSN_LACP_STATE_DISTRIBUTING = 32
+OFP_BSN_LACP_STATE_DEFAULTED = 64
+OFP_BSN_LACP_STATE_EXPIRED = 128
+
+ofp_bsn_lacp_state_map = {
+    1: 'OFP_BSN_LACP_STATE_ACTIVITY',
+    2: 'OFP_BSN_LACP_STATE_TIMEOUT',
+    4: 'OFP_BSN_LACP_STATE_AGGREGATION',
+    8: 'OFP_BSN_LACP_STATE_SYNCHRONIZATION',
+    16: 'OFP_BSN_LACP_STATE_COLLECTING',
+    32: 'OFP_BSN_LACP_STATE_DISTRIBUTING',
+    64: 'OFP_BSN_LACP_STATE_DEFAULTED',
+    128: 'OFP_BSN_LACP_STATE_EXPIRED',
 }
 
 # Identifiers from group ofp_bsn_loglevel
