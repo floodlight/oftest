@@ -10,6 +10,7 @@ import struct
 import loxi
 import const
 import port_desc_prop
+import bsn_tlv
 import meter_band
 import table_mod_prop
 import instruction
@@ -529,6 +530,1478 @@ class arp_tpa_masked(oxm):
         q.text('}')
 
 oxm.subtypes[2147495688] = arp_tpa_masked
+
+class bsn_egr_port_group_id(oxm):
+    type_len = 200196
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_egr_port_group_id()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 200196)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_egr_port_group_id {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[200196] = bsn_egr_port_group_id
+
+class bsn_egr_port_group_id_masked(oxm):
+    type_len = 200456
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_egr_port_group_id_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 200456)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_egr_port_group_id_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[200456] = bsn_egr_port_group_id_masked
+
+class bsn_in_ports_128(oxm):
+    type_len = 196624
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = set()
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(util.pack_bitmap_128(self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_in_ports_128()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 196624)
+        obj.value = util.unpack_bitmap_128(reader)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_in_ports_128 {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.pp(self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[196624] = bsn_in_ports_128
+
+class bsn_in_ports_128_masked(oxm):
+    type_len = 196896
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = set()
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = set()
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(util.pack_bitmap_128(self.value))
+        packed.append(util.pack_bitmap_128(self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_in_ports_128_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 196896)
+        obj.value = util.unpack_bitmap_128(reader)
+        obj.value_mask = util.unpack_bitmap_128(reader)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_in_ports_128_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.pp(self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.pp(self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[196896] = bsn_in_ports_128_masked
+
+class bsn_l3_interface_class_id(oxm):
+    type_len = 198660
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_l3_interface_class_id()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 198660)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_l3_interface_class_id {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[198660] = bsn_l3_interface_class_id
+
+class bsn_l3_interface_class_id_masked(oxm):
+    type_len = 198920
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_l3_interface_class_id_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 198920)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_l3_interface_class_id_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[198920] = bsn_l3_interface_class_id_masked
+
+class bsn_l3_src_class_id(oxm):
+    type_len = 199172
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_l3_src_class_id()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 199172)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_l3_src_class_id {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[199172] = bsn_l3_src_class_id
+
+class bsn_l3_src_class_id_masked(oxm):
+    type_len = 199432
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_l3_src_class_id_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 199432)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_l3_src_class_id_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[199432] = bsn_l3_src_class_id_masked
+
+class bsn_lag_id(oxm):
+    type_len = 197124
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_lag_id()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 197124)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_lag_id {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[197124] = bsn_lag_id
+
+class bsn_lag_id_masked(oxm):
+    type_len = 197384
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_lag_id_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 197384)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_lag_id_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[197384] = bsn_lag_id_masked
+
+class bsn_tcp_flags(oxm):
+    type_len = 204802
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!H", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_tcp_flags()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 204802)
+        obj.value = reader.read("!H")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_tcp_flags {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[204802] = bsn_tcp_flags
+
+class bsn_tcp_flags_masked(oxm):
+    type_len = 205060
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!H", self.value))
+        packed.append(struct.pack("!H", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_tcp_flags_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 205060)
+        obj.value = reader.read("!H")[0]
+        obj.value_mask = reader.read("!H")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_tcp_flags_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[205060] = bsn_tcp_flags_masked
+
+class bsn_udf0(oxm):
+    type_len = 200708
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_udf0()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 200708)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_udf0 {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[200708] = bsn_udf0
+
+class bsn_udf0_masked(oxm):
+    type_len = 200968
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_udf0_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 200968)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_udf0_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[200968] = bsn_udf0_masked
+
+class bsn_udf1(oxm):
+    type_len = 201220
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_udf1()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 201220)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_udf1 {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[201220] = bsn_udf1
+
+class bsn_udf1_masked(oxm):
+    type_len = 201480
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_udf1_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 201480)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_udf1_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[201480] = bsn_udf1_masked
+
+class bsn_udf2(oxm):
+    type_len = 201732
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_udf2()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 201732)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_udf2 {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[201732] = bsn_udf2
+
+class bsn_udf2_masked(oxm):
+    type_len = 201992
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_udf2_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 201992)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_udf2_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[201992] = bsn_udf2_masked
+
+class bsn_udf3(oxm):
+    type_len = 202244
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_udf3()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 202244)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_udf3 {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[202244] = bsn_udf3
+
+class bsn_udf3_masked(oxm):
+    type_len = 202504
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_udf3_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 202504)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_udf3_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[202504] = bsn_udf3_masked
+
+class bsn_udf4(oxm):
+    type_len = 202756
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_udf4()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 202756)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_udf4 {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[202756] = bsn_udf4
+
+class bsn_udf4_masked(oxm):
+    type_len = 203016
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_udf4_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 203016)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_udf4_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[203016] = bsn_udf4_masked
+
+class bsn_udf5(oxm):
+    type_len = 203268
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_udf5()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 203268)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_udf5 {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[203268] = bsn_udf5
+
+class bsn_udf5_masked(oxm):
+    type_len = 203528
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_udf5_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 203528)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_udf5_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[203528] = bsn_udf5_masked
+
+class bsn_udf6(oxm):
+    type_len = 203780
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_udf6()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 203780)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_udf6 {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[203780] = bsn_udf6
+
+class bsn_udf6_masked(oxm):
+    type_len = 204040
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_udf6_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 204040)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_udf6_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[204040] = bsn_udf6_masked
+
+class bsn_udf7(oxm):
+    type_len = 204292
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_udf7()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 204292)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_udf7 {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[204292] = bsn_udf7
+
+class bsn_udf7_masked(oxm):
+    type_len = 204552
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_udf7_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 204552)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_udf7_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[204552] = bsn_udf7_masked
+
+class bsn_vlan_xlate_port_group_id(oxm):
+    type_len = 205316
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_vlan_xlate_port_group_id()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 205316)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_vlan_xlate_port_group_id {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[205316] = bsn_vlan_xlate_port_group_id
+
+class bsn_vlan_xlate_port_group_id_masked(oxm):
+    type_len = 205576
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_vlan_xlate_port_group_id_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 205576)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_vlan_xlate_port_group_id_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[205576] = bsn_vlan_xlate_port_group_id_masked
+
+class bsn_vrf(oxm):
+    type_len = 197636
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_vrf()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 197636)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_vrf {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[197636] = bsn_vrf
+
+class bsn_vrf_masked(oxm):
+    type_len = 197896
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_vrf_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 197896)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_vrf_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[197896] = bsn_vrf_masked
 
 class eth_dst(oxm):
     type_len = 2147485190
@@ -1910,6 +3383,98 @@ class ipv6_dst_masked(oxm):
 
 oxm.subtypes[2147497760] = ipv6_dst_masked
 
+class ipv6_exthdr(oxm):
+    type_len = 2147503618
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!H", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = ipv6_exthdr()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 2147503618)
+        obj.value = reader.read("!H")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("ipv6_exthdr {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[2147503618] = ipv6_exthdr
+
+class ipv6_exthdr_masked(oxm):
+    type_len = 2147503876
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!H", self.value))
+        packed.append(struct.pack("!H", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = ipv6_exthdr_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 2147503876)
+        obj.value = reader.read("!H")[0]
+        obj.value_mask = reader.read("!H")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("ipv6_exthdr_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[2147503876] = ipv6_exthdr_masked
+
 class ipv6_flabel(oxm):
     type_len = 2147497988
 
@@ -2737,6 +4302,98 @@ class mpls_tc_masked(oxm):
         q.text('}')
 
 oxm.subtypes[2147501826] = mpls_tc_masked
+
+class pbb_uca(oxm):
+    type_len = 2147504641
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!B", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = pbb_uca()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 2147504641)
+        obj.value = reader.read("!B")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("pbb_uca {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[2147504641] = pbb_uca
+
+class pbb_uca_masked(oxm):
+    type_len = 2147504898
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!B", self.value))
+        packed.append(struct.pack("!B", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = pbb_uca_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 2147504898)
+        obj.value = reader.read("!B")[0]
+        obj.value_mask = reader.read("!B")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("pbb_uca_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[2147504898] = pbb_uca_masked
 
 class sctp_dst(oxm):
     type_len = 2147492866
