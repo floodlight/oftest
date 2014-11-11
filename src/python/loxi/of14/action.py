@@ -10,6 +10,7 @@ import struct
 import loxi
 import const
 import port_desc_prop
+import bsn_tlv
 import meter_band
 import table_mod_prop
 import instruction
@@ -253,6 +254,71 @@ class bsn_checksum(bsn):
         q.text('}')
 
 bsn.subtypes[4] = bsn_checksum
+
+class bsn_gentable(bsn):
+    type = 65535
+    experimenter = 6035143
+    subtype = 5
+
+    def __init__(self, table_id=None, key=None):
+        if table_id != None:
+            self.table_id = table_id
+        else:
+            self.table_id = 0
+        if key != None:
+            self.key = key
+        else:
+            self.key = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        packed.append(struct.pack("!L", self.table_id))
+        packed.append(loxi.generic_util.pack_list(self.key))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_gentable()
+        _type = reader.read("!H")[0]
+        assert(_type == 65535)
+        _len = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_len - (2 + 2))
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _subtype = reader.read("!L")[0]
+        assert(_subtype == 5)
+        obj.table_id = reader.read("!L")[0]
+        obj.key = loxi.generic_util.unpack_list(reader, bsn_tlv.bsn_tlv.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.table_id != other.table_id: return False
+        if self.key != other.key: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_gentable {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("table_id = ");
+                q.text("%#x" % self.table_id)
+                q.text(","); q.breakable()
+                q.text("key = ");
+                q.pp(self.key)
+            q.breakable()
+        q.text('}')
+
+bsn.subtypes[5] = bsn_gentable
 
 class bsn_mirror(bsn):
     type = 65535

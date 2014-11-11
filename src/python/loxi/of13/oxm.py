@@ -798,6 +798,98 @@ class bsn_in_ports_128_masked(oxm):
 
 oxm.subtypes[196896] = bsn_in_ports_128_masked
 
+class bsn_l2_cache_hit(oxm):
+    type_len = 205825
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!B", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_l2_cache_hit()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 205825)
+        obj.value = reader.read("!B")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_l2_cache_hit {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[205825] = bsn_l2_cache_hit
+
+class bsn_l2_cache_hit_masked(oxm):
+    type_len = 206082
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!B", self.value))
+        packed.append(struct.pack("!B", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_l2_cache_hit_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 206082)
+        obj.value = reader.read("!B")[0]
+        obj.value_mask = reader.read("!B")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_l2_cache_hit_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[206082] = bsn_l2_cache_hit_masked
+
 class bsn_l3_dst_class_id(oxm):
     type_len = 199684
 
@@ -3557,6 +3649,98 @@ class ipv6_dst_masked(oxm):
         q.text('}')
 
 oxm.subtypes[2147497760] = ipv6_dst_masked
+
+class ipv6_exthdr(oxm):
+    type_len = 2147503618
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!H", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = ipv6_exthdr()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 2147503618)
+        obj.value = reader.read("!H")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("ipv6_exthdr {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[2147503618] = ipv6_exthdr
+
+class ipv6_exthdr_masked(oxm):
+    type_len = 2147503876
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!H", self.value))
+        packed.append(struct.pack("!H", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = ipv6_exthdr_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 2147503876)
+        obj.value = reader.read("!H")[0]
+        obj.value_mask = reader.read("!H")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("ipv6_exthdr_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[2147503876] = ipv6_exthdr_masked
 
 class ipv6_flabel(oxm):
     type_len = 2147497988

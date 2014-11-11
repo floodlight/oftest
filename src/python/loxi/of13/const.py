@@ -296,6 +296,7 @@ OFP_BSN_PKTIN_FLAG_TTL_EXPIRED = 128
 OFP_BSN_PKTIN_FLAG_L3_MISS = 256
 OFP_BSN_PKTIN_FLAG_L3_CPU = 512
 OFP_BSN_PKTIN_FLAG_INGRESS_ACL = 1024
+OFP_BSN_PKTIN_FLAG_SFLOW = 2048
 
 ofp_bsn_pktin_flag_map = {
     1: 'OFP_BSN_PKTIN_FLAG_PDU',
@@ -309,6 +310,7 @@ ofp_bsn_pktin_flag_map = {
     256: 'OFP_BSN_PKTIN_FLAG_L3_MISS',
     512: 'OFP_BSN_PKTIN_FLAG_L3_CPU',
     1024: 'OFP_BSN_PKTIN_FLAG_INGRESS_ACL',
+    2048: 'OFP_BSN_PKTIN_FLAG_SFLOW',
 }
 
 # Identifiers from group ofp_bsn_port_counter
@@ -938,6 +940,7 @@ OFPPF_FIBER = 4096
 OFPPF_AUTONEG = 8192
 OFPPF_PAUSE = 16384
 OFPPF_PAUSE_ASYM = 32768
+OFPPF_BSN_BREAKOUT_CAPABLE = 2147483648
 
 ofp_port_features_map = {
     1: 'OFPPF_10MB_HD',
@@ -956,6 +959,7 @@ ofp_port_features_map = {
     8192: 'OFPPF_AUTONEG',
     16384: 'OFPPF_PAUSE',
     32768: 'OFPPF_PAUSE_ASYM',
+    2147483648: 'OFPPF_BSN_BREAKOUT_CAPABLE',
 }
 
 # Identifiers from group ofp_port_mod_failed_code

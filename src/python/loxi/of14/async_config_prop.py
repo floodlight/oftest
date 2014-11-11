@@ -10,6 +10,7 @@ import struct
 import loxi
 import const
 import port_desc_prop
+import bsn_tlv
 import meter_band
 import table_mod_prop
 import instruction
