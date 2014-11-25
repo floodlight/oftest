@@ -589,7 +589,7 @@ class Controller(Thread):
             klass = None
         elif isinstance(exp_msg, int):
             klass = cfg_ofp.message.message.subtypes[exp_msg]
-        elif issubclass(exp_msg, cfg_ofp.message.message):
+        elif issubclass(exp_msg, loxi.OFObject):
             klass = exp_msg
         else:
             raise ValueError("Unexpected exp_msg argument %r" % exp_msg)
