@@ -9,7 +9,6 @@ import logging
 from oftest import config
 import oftest.base_tests as base_tests
 import ofp
-import loxi.of14 as of14
 
 from oftest.testutils import *
 
@@ -18,17 +17,17 @@ class Commit(base_tests.SimpleProtocol):
     Verify that messages added to a bundle are executed only after a commit
     """
     def runTest(self):
-        request = of14.message.bundle_ctrl_msg(
-            bundle_ctrl_type=of14.OFPBCT_OPEN_REQUEST,
+        request = ofp.message.bundle_ctrl_msg(
+            bundle_ctrl_type=ofp.OFPBCT_OPEN_REQUEST,
             bundle_id=1)
 
         response, _ = self.controller.transact(request)
-        self.assertIsInstance(response, of14.message.bundle_ctrl_msg)
-        self.assertEqual(response.bundle_ctrl_type, of14.OFPBCT_OPEN_REPLY)
+        self.assertIsInstance(response, ofp.message.bundle_ctrl_msg)
+        self.assertEqual(response.bundle_ctrl_type, ofp.OFPBCT_OPEN_REPLY)
         self.assertEqual(response.bundle_id, 1)
 
         for i in xrange(0, 10):
-            request = of14.message.bundle_add_msg(
+            request = ofp.message.bundle_add_msg(
                 xid=i,
                 bundle_id=1,
                 data=ofp.message.echo_request(xid=i).pack())
@@ -38,13 +37,13 @@ class Commit(base_tests.SimpleProtocol):
         msg, _ = self.controller.poll(ofp.message.echo_reply)
         self.assertIsNone(msg)
 
-        request = of14.message.bundle_ctrl_msg(
-            bundle_ctrl_type=of14.OFPBCT_COMMIT_REQUEST,
+        request = ofp.message.bundle_ctrl_msg(
+            bundle_ctrl_type=ofp.OFPBCT_COMMIT_REQUEST,
             bundle_id=1)
 
         response, _ = self.controller.transact(request)
-        self.assertIsInstance(response, of14.message.bundle_ctrl_msg)
-        self.assertEqual(response.bundle_ctrl_type, of14.OFPBCT_COMMIT_REPLY)
+        self.assertIsInstance(response, ofp.message.bundle_ctrl_msg)
+        self.assertEqual(response.bundle_ctrl_type, ofp.OFPBCT_COMMIT_REPLY)
         self.assertEqual(response.bundle_id, 1)
 
         for i in xrange(0, 10):
@@ -57,17 +56,17 @@ class Discard(base_tests.SimpleProtocol):
     Verify that messages in a discarded bundle are not executed
     """
     def runTest(self):
-        request = of14.message.bundle_ctrl_msg(
-            bundle_ctrl_type=of14.OFPBCT_OPEN_REQUEST,
+        request = ofp.message.bundle_ctrl_msg(
+            bundle_ctrl_type=ofp.OFPBCT_OPEN_REQUEST,
             bundle_id=1)
 
         response, _ = self.controller.transact(request)
-        self.assertIsInstance(response, of14.message.bundle_ctrl_msg)
-        self.assertEqual(response.bundle_ctrl_type, of14.OFPBCT_OPEN_REPLY)
+        self.assertIsInstance(response, ofp.message.bundle_ctrl_msg)
+        self.assertEqual(response.bundle_ctrl_type, ofp.OFPBCT_OPEN_REPLY)
         self.assertEqual(response.bundle_id, 1)
 
         for i in xrange(0, 10):
-            request = of14.message.bundle_add_msg(
+            request = ofp.message.bundle_add_msg(
                 xid=i,
                 bundle_id=1,
                 data=ofp.message.echo_request(xid=i).pack())
@@ -77,13 +76,13 @@ class Discard(base_tests.SimpleProtocol):
         msg, _ = self.controller.poll(ofp.message.echo_reply)
         self.assertIsNone(msg)
 
-        request = of14.message.bundle_ctrl_msg(
-            bundle_ctrl_type=of14.OFPBCT_DISCARD_REQUEST,
+        request = ofp.message.bundle_ctrl_msg(
+            bundle_ctrl_type=ofp.OFPBCT_DISCARD_REQUEST,
             bundle_id=1)
 
         response, _ = self.controller.transact(request)
-        self.assertIsInstance(response, of14.message.bundle_ctrl_msg)
-        self.assertEqual(response.bundle_ctrl_type, of14.OFPBCT_DISCARD_REPLY)
+        self.assertIsInstance(response, ofp.message.bundle_ctrl_msg)
+        self.assertEqual(response.bundle_ctrl_type, ofp.OFPBCT_DISCARD_REPLY)
         self.assertEqual(response.bundle_id, 1)
 
         # Make sure the messages aren't executed
@@ -95,17 +94,17 @@ class Disconnect(base_tests.SimpleProtocol):
     Disconnect without explicitly discarding the bundle
     """
     def runTest(self):
-        request = of14.message.bundle_ctrl_msg(
-            bundle_ctrl_type=of14.OFPBCT_OPEN_REQUEST,
+        request = ofp.message.bundle_ctrl_msg(
+            bundle_ctrl_type=ofp.OFPBCT_OPEN_REQUEST,
             bundle_id=1)
 
         response, _ = self.controller.transact(request)
-        self.assertIsInstance(response, of14.message.bundle_ctrl_msg)
-        self.assertEqual(response.bundle_ctrl_type, of14.OFPBCT_OPEN_REPLY)
+        self.assertIsInstance(response, ofp.message.bundle_ctrl_msg)
+        self.assertEqual(response.bundle_ctrl_type, ofp.OFPBCT_OPEN_REPLY)
         self.assertEqual(response.bundle_id, 1)
 
         for i in xrange(0, 10):
-            request = of14.message.bundle_add_msg(
+            request = ofp.message.bundle_add_msg(
                 xid=i,
                 bundle_id=1,
                 data=ofp.message.echo_request(xid=i).pack())
@@ -120,16 +119,16 @@ class TooManyMsgs(base_tests.SimpleProtocol):
     This is tied to the limit in Indigo.
     """
     def runTest(self):
-        request = of14.message.bundle_ctrl_msg(
-            bundle_ctrl_type=of14.OFPBCT_OPEN_REQUEST,
+        request = ofp.message.bundle_ctrl_msg(
+            bundle_ctrl_type=ofp.OFPBCT_OPEN_REQUEST,
             bundle_id=1)
 
         response, _ = self.controller.transact(request)
-        self.assertIsInstance(response, of14.message.bundle_ctrl_msg)
-        self.assertEqual(response.bundle_ctrl_type, of14.OFPBCT_OPEN_REPLY)
+        self.assertIsInstance(response, ofp.message.bundle_ctrl_msg)
+        self.assertEqual(response.bundle_ctrl_type, ofp.OFPBCT_OPEN_REPLY)
         self.assertEqual(response.bundle_id, 1)
 
-        request = of14.message.bundle_add_msg(
+        request = ofp.message.bundle_add_msg(
             xid=0,
             bundle_id=1,
             data=ofp.message.echo_request(xid=0).pack())
@@ -150,7 +149,7 @@ class TooManyMsgs(base_tests.SimpleProtocol):
         do_barrier(self.controller)
         verify_no_errors(self.controller)
 
-        request = of14.message.bundle_add_msg(
+        request = ofp.message.bundle_add_msg(
             xid=1,
             bundle_id=1,
             data=ofp.message.echo_request(xid=1).pack())
@@ -158,7 +157,7 @@ class TooManyMsgs(base_tests.SimpleProtocol):
 
         do_barrier(self.controller)
 
-        msg, _ = self.controller.poll(exp_msg=of14.message.error_msg)
+        msg, _ = self.controller.poll(exp_msg=ofp.message.error_msg)
         self.assertIsNotNone(msg)
 
 class TooManyBytes(base_tests.SimpleProtocol):
@@ -168,19 +167,19 @@ class TooManyBytes(base_tests.SimpleProtocol):
     This is tied to the limit in Indigo.
     """
     def runTest(self):
-        request = of14.message.bundle_ctrl_msg(
-            bundle_ctrl_type=of14.OFPBCT_OPEN_REQUEST,
+        request = ofp.message.bundle_ctrl_msg(
+            bundle_ctrl_type=ofp.OFPBCT_OPEN_REQUEST,
             bundle_id=1)
 
         response, _ = self.controller.transact(request)
-        self.assertIsInstance(response, of14.message.bundle_ctrl_msg)
-        self.assertEqual(response.bundle_ctrl_type, of14.OFPBCT_OPEN_REPLY)
+        self.assertIsInstance(response, ofp.message.bundle_ctrl_msg)
+        self.assertEqual(response.bundle_ctrl_type, ofp.OFPBCT_OPEN_REPLY)
         self.assertEqual(response.bundle_id, 1)
 
         echo_buf = ofp.message.echo_request(xid=0, data="\x00" * 1016).pack()
         self.assertEquals(len(echo_buf), 1024)
 
-        request = of14.message.bundle_add_msg(
+        request = ofp.message.bundle_add_msg(
             xid=0,
             bundle_id=1,
             data=echo_buf)
@@ -204,7 +203,7 @@ class TooManyBytes(base_tests.SimpleProtocol):
         do_barrier(self.controller)
         verify_no_errors(self.controller)
 
-        request = of14.message.bundle_add_msg(
+        request = ofp.message.bundle_add_msg(
             xid=1,
             bundle_id=1,
             data=ofp.message.echo_request(xid=1).pack())
@@ -212,5 +211,5 @@ class TooManyBytes(base_tests.SimpleProtocol):
 
         do_barrier(self.controller)
 
-        msg, _ = self.controller.poll(exp_msg=of14.message.error_msg)
+        msg, _ = self.controller.poll(exp_msg=ofp.message.error_msg)
         self.assertIsNotNone(msg)
