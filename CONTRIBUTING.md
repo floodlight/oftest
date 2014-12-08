@@ -4,7 +4,7 @@ We're always willing to accept good pull requests (PRs). In case you're stuck fo
 
 ## Add Missing Test Cases
 
-We welcome any patch that adds a missing test (or improves an existing one, for that matter). In this regard, while they make for heavy reading, the [OpenFlow Specifications](https://www.opennetworking.org/sdn-resources/onf-specifications/openflow) are likely the best places to start. Once you have an idea of a test you'd like to implement just check the [Adding Your Own Test Cases][#Adding Your Own Test Cases] section below.
+We welcome any patch that adds a missing test (or improves an existing one, for that matter). In this regard, while they make for heavy reading, the [OpenFlow Specifications](https://www.opennetworking.org/sdn-resources/onf-specifications/openflow) are likely the best places to start. Once you have an idea of a test you'd like to implement just check the [Adding Your Own Test Cases](#adding-or-modifying-tests) section below.
 
 ## Bug Fixes
 
