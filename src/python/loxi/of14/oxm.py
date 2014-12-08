@@ -4855,6 +4855,190 @@ class tunnel_id_masked(oxm):
 
 oxm.subtypes[2147503376] = tunnel_id_masked
 
+class tunnel_ipv4_dst(oxm):
+    type_len = 81924
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = tunnel_ipv4_dst()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 81924)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("tunnel_ipv4_dst {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text(util.pretty_ipv4(self.value))
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[81924] = tunnel_ipv4_dst
+
+class tunnel_ipv4_dst_masked(oxm):
+    type_len = 82184
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = tunnel_ipv4_dst_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 82184)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("tunnel_ipv4_dst_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text(util.pretty_ipv4(self.value))
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text(util.pretty_ipv4(self.value_mask))
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[82184] = tunnel_ipv4_dst_masked
+
+class tunnel_ipv4_src(oxm):
+    type_len = 81412
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = tunnel_ipv4_src()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 81412)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("tunnel_ipv4_src {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text(util.pretty_ipv4(self.value))
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[81412] = tunnel_ipv4_src
+
+class tunnel_ipv4_src_masked(oxm):
+    type_len = 81672
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = tunnel_ipv4_src_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 81672)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("tunnel_ipv4_src_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text(util.pretty_ipv4(self.value))
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text(util.pretty_ipv4(self.value_mask))
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[81672] = tunnel_ipv4_src_masked
+
 class udp_dst(oxm):
     type_len = 2147491842
 

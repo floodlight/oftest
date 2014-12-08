@@ -1196,6 +1196,53 @@ class internal_mac(bsn_tlv):
 
 bsn_tlv.subtypes[27] = internal_mac
 
+class interval(bsn_tlv):
+    type = 58
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!L", self.value))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = interval()
+        _type = reader.read("!H")[0]
+        assert(_type == 58)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length - (2 + 2))
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("interval {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[58] = interval
+
 class ipv4(bsn_tlv):
     type = 4
 
@@ -1289,6 +1336,53 @@ class ipv4_dst(bsn_tlv):
         q.text('}')
 
 bsn_tlv.subtypes[35] = ipv4_dst
+
+class ipv4_netmask(bsn_tlv):
+    type = 60
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!L", self.value))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = ipv4_netmask()
+        _type = reader.read("!H")[0]
+        assert(_type == 60)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length - (2 + 2))
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("ipv4_netmask {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text(util.pretty_ipv4(self.value))
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[60] = ipv4_netmask
 
 class ipv4_src(bsn_tlv):
     type = 34
@@ -1994,6 +2088,63 @@ class queue_weight(bsn_tlv):
         q.text('}')
 
 bsn_tlv.subtypes[21] = queue_weight
+
+class reference(bsn_tlv):
+    type = 59
+
+    def __init__(self, table_id=None, key=None):
+        if table_id != None:
+            self.table_id = table_id
+        else:
+            self.table_id = 0
+        if key != None:
+            self.key = key
+        else:
+            self.key = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!H", self.table_id))
+        packed.append(loxi.generic_util.pack_list(self.key))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = reference()
+        _type = reader.read("!H")[0]
+        assert(_type == 59)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length - (2 + 2))
+        obj.table_id = reader.read("!H")[0]
+        obj.key = loxi.generic_util.unpack_list(reader, bsn_tlv.bsn_tlv.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.table_id != other.table_id: return False
+        if self.key != other.key: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("reference {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("table_id = ");
+                q.text("%#x" % self.table_id)
+                q.text(","); q.breakable()
+                q.text("key = ");
+                q.pp(self.key)
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[59] = reference
 
 class reply_packets(bsn_tlv):
     type = 12
