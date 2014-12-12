@@ -89,6 +89,8 @@ def packet_to_flow_match(packet):
         return packet_to_flow_match_v3(packet)
     elif ofp.OFP_VERSION == 4:
         return packet_to_flow_match_v4(packet)
+    elif ofp.OFP_VERSION == 5:
+        return packet_to_flow_match_v5(packet)
     else:
         raise NotImplementedError()
 
@@ -179,6 +181,13 @@ def packet_to_flow_match_v4(packet):
     OpenFlow 1.3 implementation of packet_to_flow_match
     """
     import loxi.of13 as ofp
+    return packet_to_flow_match_oxm(packet, ofp)
+
+def packet_to_flow_match_v5(packet):
+    """
+    OpenFlow 1.3 implementation of packet_to_flow_match
+    """
+    import loxi.of14 as ofp
     return packet_to_flow_match_oxm(packet, ofp)
 
 def packet_to_flow_match_oxm(packet, ofp):
