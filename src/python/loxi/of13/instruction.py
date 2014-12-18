@@ -51,7 +51,7 @@ class instruction(loxi.OFObject):
         obj.type = reader.read("!H")[0]
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         return obj
 
     def __eq__(self, other):
@@ -95,7 +95,7 @@ class apply_actions(instruction):
         assert(_type == 4)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         reader.skip(4)
         obj.actions = loxi.generic_util.unpack_list(reader, action.action.unpack)
         return obj
@@ -155,7 +155,7 @@ class experimenter(instruction):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.experimenter = reader.read("!L")[0]
         obj.data = str(reader.read_all())
         return obj
@@ -214,7 +214,7 @@ class bsn(experimenter):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         obj.subtype = reader.read("!L")[0]
@@ -262,7 +262,7 @@ class bsn_arp_offload(bsn):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
@@ -310,7 +310,7 @@ class bsn_auto_negotiation(bsn):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
@@ -358,7 +358,7 @@ class bsn_deny(bsn):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
@@ -406,7 +406,7 @@ class bsn_dhcp_offload(bsn):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
@@ -454,7 +454,7 @@ class bsn_disable_split_horizon_check(bsn):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
@@ -502,7 +502,7 @@ class bsn_disable_src_mac_check(bsn):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
@@ -550,7 +550,7 @@ class bsn_disable_vlan_counters(bsn):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
@@ -598,7 +598,7 @@ class bsn_packet_of_death(bsn):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
@@ -646,7 +646,7 @@ class bsn_permit(bsn):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
@@ -694,7 +694,7 @@ class bsn_prioritize_pdus(bsn):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
@@ -742,7 +742,7 @@ class bsn_require_vlan_xlate(bsn):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
@@ -790,7 +790,7 @@ class bsn_span_destination(bsn):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
@@ -834,7 +834,7 @@ class clear_actions(instruction):
         assert(_type == 5)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         reader.skip(4)
         return obj
 
@@ -879,7 +879,7 @@ class goto_table(instruction):
         assert(_type == 1)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.table_id = reader.read("!B")[0]
         reader.skip(3)
         return obj
@@ -927,7 +927,7 @@ class meter(instruction):
         assert(_type == 6)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.meter_id = reader.read("!L")[0]
         return obj
 
@@ -975,7 +975,7 @@ class write_actions(instruction):
         assert(_type == 3)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         reader.skip(4)
         obj.actions = loxi.generic_util.unpack_list(reader, action.action.unpack)
         return obj
@@ -1029,7 +1029,7 @@ class write_metadata(instruction):
         assert(_type == 2)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         reader.skip(4)
         obj.metadata = reader.read("!Q")[0]
         obj.metadata_mask = reader.read("!Q")[0]

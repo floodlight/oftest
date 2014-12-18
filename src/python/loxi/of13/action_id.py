@@ -51,7 +51,7 @@ class action_id(loxi.OFObject):
         obj.type = reader.read("!H")[0]
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         return obj
 
     def __eq__(self, other):
@@ -101,7 +101,7 @@ class experimenter(action_id):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.experimenter = reader.read("!L")[0]
         return obj
 
@@ -155,7 +155,7 @@ class bsn(experimenter):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         obj.subtype = reader.read("!L")[0]
@@ -201,7 +201,7 @@ class bsn_checksum(bsn):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
@@ -247,7 +247,7 @@ class bsn_gentable(bsn):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
@@ -293,7 +293,7 @@ class bsn_mirror(bsn):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
@@ -339,7 +339,7 @@ class bsn_set_tunnel_dst(bsn):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
@@ -381,7 +381,7 @@ class copy_ttl_in(action_id):
         assert(_type == 12)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         return obj
 
     def __eq__(self, other):
@@ -419,7 +419,7 @@ class copy_ttl_out(action_id):
         assert(_type == 11)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         return obj
 
     def __eq__(self, other):
@@ -457,7 +457,7 @@ class dec_mpls_ttl(action_id):
         assert(_type == 16)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         return obj
 
     def __eq__(self, other):
@@ -495,7 +495,7 @@ class dec_nw_ttl(action_id):
         assert(_type == 24)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         return obj
 
     def __eq__(self, other):
@@ -533,7 +533,7 @@ class group(action_id):
         assert(_type == 22)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         return obj
 
     def __eq__(self, other):
@@ -585,7 +585,7 @@ class nicira(experimenter):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 8992)
         obj.subtype = reader.read("!H")[0]
@@ -631,7 +631,7 @@ class nicira_dec_ttl(nicira):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 8992)
         _subtype = reader.read("!H")[0]
@@ -673,7 +673,7 @@ class output(action_id):
         assert(_type == 0)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         return obj
 
     def __eq__(self, other):
@@ -711,7 +711,7 @@ class pop_mpls(action_id):
         assert(_type == 20)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         return obj
 
     def __eq__(self, other):
@@ -749,7 +749,7 @@ class pop_pbb(action_id):
         assert(_type == 27)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         return obj
 
     def __eq__(self, other):
@@ -787,7 +787,7 @@ class pop_vlan(action_id):
         assert(_type == 18)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         return obj
 
     def __eq__(self, other):
@@ -825,7 +825,7 @@ class push_mpls(action_id):
         assert(_type == 19)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         return obj
 
     def __eq__(self, other):
@@ -863,7 +863,7 @@ class push_pbb(action_id):
         assert(_type == 26)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         return obj
 
     def __eq__(self, other):
@@ -901,7 +901,7 @@ class push_vlan(action_id):
         assert(_type == 17)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         return obj
 
     def __eq__(self, other):
@@ -939,7 +939,7 @@ class set_field(action_id):
         assert(_type == 25)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         return obj
 
     def __eq__(self, other):
@@ -977,7 +977,7 @@ class set_mpls_ttl(action_id):
         assert(_type == 15)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         return obj
 
     def __eq__(self, other):
@@ -1015,7 +1015,7 @@ class set_nw_ttl(action_id):
         assert(_type == 23)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         return obj
 
     def __eq__(self, other):
@@ -1053,7 +1053,7 @@ class set_queue(action_id):
         assert(_type == 21)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         return obj
 
     def __eq__(self, other):

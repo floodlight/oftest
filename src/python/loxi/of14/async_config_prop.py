@@ -60,7 +60,7 @@ class async_config_prop(loxi.OFObject):
         obj.type = reader.read("!H")[0]
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         return obj
 
     def __eq__(self, other):
@@ -98,7 +98,7 @@ class experimenter_master(async_config_prop):
         assert(_type == 65535)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         return obj
 
     def __eq__(self, other):
@@ -136,7 +136,7 @@ class experimenter_slave(async_config_prop):
         assert(_type == 65534)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         return obj
 
     def __eq__(self, other):
@@ -179,7 +179,7 @@ class flow_removed_master(async_config_prop):
         assert(_type == 5)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.mask = reader.read("!L")[0]
         return obj
 
@@ -226,7 +226,7 @@ class flow_removed_slave(async_config_prop):
         assert(_type == 4)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.mask = reader.read("!L")[0]
         return obj
 
@@ -273,7 +273,7 @@ class packet_in_master(async_config_prop):
         assert(_type == 1)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.mask = reader.read("!L")[0]
         return obj
 
@@ -320,7 +320,7 @@ class packet_in_slave(async_config_prop):
         assert(_type == 0)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.mask = reader.read("!L")[0]
         return obj
 
@@ -367,7 +367,7 @@ class port_status_master(async_config_prop):
         assert(_type == 3)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.mask = reader.read("!L")[0]
         return obj
 
@@ -414,7 +414,7 @@ class port_status_slave(async_config_prop):
         assert(_type == 2)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.mask = reader.read("!L")[0]
         return obj
 
@@ -461,7 +461,7 @@ class requestforward_master(async_config_prop):
         assert(_type == 11)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.mask = reader.read("!L")[0]
         return obj
 
@@ -508,7 +508,7 @@ class requestforward_slave(async_config_prop):
         assert(_type == 10)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.mask = reader.read("!L")[0]
         return obj
 
@@ -555,7 +555,7 @@ class role_status_master(async_config_prop):
         assert(_type == 7)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.mask = reader.read("!L")[0]
         return obj
 
@@ -602,7 +602,7 @@ class role_status_slave(async_config_prop):
         assert(_type == 6)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.mask = reader.read("!L")[0]
         return obj
 
@@ -649,7 +649,7 @@ class table_status_master(async_config_prop):
         assert(_type == 9)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.mask = reader.read("!L")[0]
         return obj
 
@@ -696,7 +696,7 @@ class table_status_slave(async_config_prop):
         assert(_type == 8)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.mask = reader.read("!L")[0]
         return obj
 

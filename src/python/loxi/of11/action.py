@@ -47,7 +47,7 @@ class action(loxi.OFObject):
         obj.type = reader.read("!H")[0]
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         reader.skip(4)
         return obj
 
@@ -103,7 +103,7 @@ class experimenter(action):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.experimenter = reader.read("!L")[0]
         obj.data = str(reader.read_all())
         return obj
@@ -162,7 +162,7 @@ class bsn(experimenter):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         obj.subtype = reader.read("!L")[0]
@@ -214,7 +214,7 @@ class bsn_checksum(bsn):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
@@ -280,7 +280,7 @@ class bsn_mirror(bsn):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
@@ -346,7 +346,7 @@ class bsn_set_tunnel_dst(bsn):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
@@ -393,7 +393,7 @@ class copy_ttl_in(action):
         assert(_type == 12)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         reader.skip(4)
         return obj
 
@@ -433,7 +433,7 @@ class copy_ttl_out(action):
         assert(_type == 11)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         reader.skip(4)
         return obj
 
@@ -473,7 +473,7 @@ class dec_mpls_ttl(action):
         assert(_type == 16)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         reader.skip(4)
         return obj
 
@@ -513,7 +513,7 @@ class dec_nw_ttl(action):
         assert(_type == 24)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         reader.skip(4)
         return obj
 
@@ -557,7 +557,7 @@ class group(action):
         assert(_type == 22)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.group_id = reader.read("!L")[0]
         return obj
 
@@ -615,7 +615,7 @@ class nicira(experimenter):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 8992)
         obj.subtype = reader.read("!H")[0]
@@ -665,7 +665,7 @@ class nicira_dec_ttl(nicira):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         _experimenter = reader.read("!L")[0]
         assert(_experimenter == 8992)
         _subtype = reader.read("!H")[0]
@@ -720,7 +720,7 @@ class output(action):
         assert(_type == 0)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.port = util.unpack_port_no(reader)
         obj.max_len = reader.read("!H")[0]
         reader.skip(6)
@@ -774,7 +774,7 @@ class pop_mpls(action):
         assert(_type == 20)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.ethertype = reader.read("!H")[0]
         reader.skip(2)
         return obj
@@ -818,7 +818,7 @@ class pop_vlan(action):
         assert(_type == 18)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         reader.skip(4)
         return obj
 
@@ -863,7 +863,7 @@ class push_mpls(action):
         assert(_type == 19)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.ethertype = reader.read("!H")[0]
         reader.skip(2)
         return obj
@@ -912,7 +912,7 @@ class push_vlan(action):
         assert(_type == 17)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.ethertype = reader.read("!H")[0]
         reader.skip(2)
         return obj
@@ -961,7 +961,7 @@ class set_dl_dst(action):
         assert(_type == 4)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.dl_addr = list(reader.read('!6B'))
         reader.skip(6)
         return obj
@@ -1010,7 +1010,7 @@ class set_dl_src(action):
         assert(_type == 3)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.dl_addr = list(reader.read('!6B'))
         reader.skip(6)
         return obj
@@ -1058,7 +1058,7 @@ class set_mpls_label(action):
         assert(_type == 13)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.mpls_label = reader.read("!L")[0]
         return obj
 
@@ -1106,7 +1106,7 @@ class set_mpls_tc(action):
         assert(_type == 14)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.mpls_tc = reader.read("!B")[0]
         reader.skip(3)
         return obj
@@ -1155,7 +1155,7 @@ class set_mpls_ttl(action):
         assert(_type == 15)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.mpls_ttl = reader.read("!B")[0]
         reader.skip(3)
         return obj
@@ -1203,7 +1203,7 @@ class set_nw_dst(action):
         assert(_type == 6)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.nw_addr = reader.read("!L")[0]
         return obj
 
@@ -1251,7 +1251,7 @@ class set_nw_ecn(action):
         assert(_type == 8)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.nw_ecn = reader.read("!B")[0]
         reader.skip(3)
         return obj
@@ -1299,7 +1299,7 @@ class set_nw_src(action):
         assert(_type == 5)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.nw_addr = reader.read("!L")[0]
         return obj
 
@@ -1347,7 +1347,7 @@ class set_nw_tos(action):
         assert(_type == 7)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.nw_tos = reader.read("!B")[0]
         reader.skip(3)
         return obj
@@ -1396,7 +1396,7 @@ class set_nw_ttl(action):
         assert(_type == 23)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.nw_ttl = reader.read("!B")[0]
         reader.skip(3)
         return obj
@@ -1444,7 +1444,7 @@ class set_queue(action):
         assert(_type == 21)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.queue_id = reader.read("!L")[0]
         return obj
 
@@ -1492,7 +1492,7 @@ class set_tp_dst(action):
         assert(_type == 10)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.tp_port = reader.read("!H")[0]
         reader.skip(2)
         return obj
@@ -1541,7 +1541,7 @@ class set_tp_src(action):
         assert(_type == 9)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.tp_port = reader.read("!H")[0]
         reader.skip(2)
         return obj
@@ -1590,7 +1590,7 @@ class set_vlan_pcp(action):
         assert(_type == 2)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.vlan_pcp = reader.read("!B")[0]
         reader.skip(3)
         return obj
@@ -1639,7 +1639,7 @@ class set_vlan_vid(action):
         assert(_type == 1)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.vlan_vid = reader.read("!H")[0]
         reader.skip(2)
         return obj

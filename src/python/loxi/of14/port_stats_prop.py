@@ -60,7 +60,7 @@ class port_stats_prop(loxi.OFObject):
         obj.type = reader.read("!H")[0]
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         return obj
 
     def __eq__(self, other):
@@ -119,7 +119,7 @@ class ethernet(port_stats_prop):
         assert(_type == 0)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         reader.skip(4)
         obj.rx_frame_err = reader.read("!Q")[0]
         obj.rx_over_err = reader.read("!Q")[0]
@@ -199,7 +199,7 @@ class experimenter(port_stats_prop):
         assert(_type == 65535)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.experimenter = reader.read("!L")[0]
         obj.exp_type = reader.read("!L")[0]
         obj.experimenter_data = str(reader.read_all())
@@ -304,7 +304,7 @@ class optical(port_stats_prop):
         assert(_type == 1)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         reader.skip(4)
         obj.flags = reader.read("!L")[0]
         obj.tx_freq_lmda = reader.read("!L")[0]

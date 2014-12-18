@@ -60,7 +60,7 @@ class bsn_tlv(loxi.OFObject):
         obj.type = reader.read("!H")[0]
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         return obj
 
     def __eq__(self, other):
@@ -103,7 +103,7 @@ class actor_key(bsn_tlv):
         assert(_type == 44)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!H")[0]
         return obj
 
@@ -150,7 +150,7 @@ class actor_port_num(bsn_tlv):
         assert(_type == 43)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!H")[0]
         return obj
 
@@ -197,7 +197,7 @@ class actor_port_priority(bsn_tlv):
         assert(_type == 42)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!H")[0]
         return obj
 
@@ -244,7 +244,7 @@ class actor_state(bsn_tlv):
         assert(_type == 53)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!B")[0]
         return obj
 
@@ -291,7 +291,7 @@ class actor_system_mac(bsn_tlv):
         assert(_type == 41)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = list(reader.read('!6B'))
         return obj
 
@@ -338,7 +338,7 @@ class actor_system_priority(bsn_tlv):
         assert(_type == 40)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!H")[0]
         return obj
 
@@ -385,7 +385,7 @@ class broadcast_query_timeout(bsn_tlv):
         assert(_type == 10)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!L")[0]
         return obj
 
@@ -405,6 +405,53 @@ class broadcast_query_timeout(bsn_tlv):
         q.text('}')
 
 bsn_tlv.subtypes[10] = broadcast_query_timeout
+
+class bucket(bsn_tlv):
+    type = 64
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(loxi.generic_util.pack_list(self.value))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bucket()
+        _type = reader.read("!H")[0]
+        assert(_type == 64)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.value = loxi.generic_util.unpack_list(reader, bsn_tlv.bsn_tlv.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bucket {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.pp(self.value)
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[64] = bucket
 
 class circuit_id(bsn_tlv):
     type = 14
@@ -432,7 +479,7 @@ class circuit_id(bsn_tlv):
         assert(_type == 14)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = str(reader.read_all())
         return obj
 
@@ -479,7 +526,7 @@ class convergence_status(bsn_tlv):
         assert(_type == 45)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!B")[0]
         return obj
 
@@ -526,7 +573,7 @@ class crc_enabled(bsn_tlv):
         assert(_type == 22)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!B")[0]
         return obj
 
@@ -573,7 +620,7 @@ class data(bsn_tlv):
         assert(_type == 55)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = str(reader.read_all())
         return obj
 
@@ -620,7 +667,7 @@ class eth_dst(bsn_tlv):
         assert(_type == 33)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = list(reader.read('!6B'))
         return obj
 
@@ -667,7 +714,7 @@ class eth_src(bsn_tlv):
         assert(_type == 32)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = list(reader.read('!6B'))
         return obj
 
@@ -714,7 +761,7 @@ class external_gateway_ip(bsn_tlv):
         assert(_type == 26)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!L")[0]
         return obj
 
@@ -761,7 +808,7 @@ class external_gateway_mac(bsn_tlv):
         assert(_type == 29)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = list(reader.read('!6B'))
         return obj
 
@@ -808,7 +855,7 @@ class external_ip(bsn_tlv):
         assert(_type == 23)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!L")[0]
         return obj
 
@@ -855,7 +902,7 @@ class external_mac(bsn_tlv):
         assert(_type == 24)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = list(reader.read('!6B'))
         return obj
 
@@ -902,7 +949,7 @@ class external_netmask(bsn_tlv):
         assert(_type == 25)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!L")[0]
         return obj
 
@@ -949,7 +996,7 @@ class header_size(bsn_tlv):
         assert(_type == 31)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!L")[0]
         return obj
 
@@ -991,7 +1038,7 @@ class idle_notification(bsn_tlv):
         assert(_type == 7)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         return obj
 
     def __eq__(self, other):
@@ -1034,7 +1081,7 @@ class idle_time(bsn_tlv):
         assert(_type == 5)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!Q")[0]
         return obj
 
@@ -1081,7 +1128,7 @@ class idle_timeout(bsn_tlv):
         assert(_type == 8)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!L")[0]
         return obj
 
@@ -1128,7 +1175,7 @@ class internal_gateway_mac(bsn_tlv):
         assert(_type == 28)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = list(reader.read('!6B'))
         return obj
 
@@ -1175,7 +1222,7 @@ class internal_mac(bsn_tlv):
         assert(_type == 27)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = list(reader.read('!6B'))
         return obj
 
@@ -1222,7 +1269,7 @@ class interval(bsn_tlv):
         assert(_type == 58)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!L")[0]
         return obj
 
@@ -1269,7 +1316,7 @@ class ipv4(bsn_tlv):
         assert(_type == 4)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!L")[0]
         return obj
 
@@ -1316,7 +1363,7 @@ class ipv4_dst(bsn_tlv):
         assert(_type == 35)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!L")[0]
         return obj
 
@@ -1363,7 +1410,7 @@ class ipv4_netmask(bsn_tlv):
         assert(_type == 60)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!L")[0]
         return obj
 
@@ -1410,7 +1457,7 @@ class ipv4_src(bsn_tlv):
         assert(_type == 34)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!L")[0]
         return obj
 
@@ -1457,7 +1504,7 @@ class mac(bsn_tlv):
         assert(_type == 1)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = list(reader.read('!6B'))
         return obj
 
@@ -1504,7 +1551,7 @@ class mac_mask(bsn_tlv):
         assert(_type == 56)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = list(reader.read('!6B'))
         return obj
 
@@ -1551,7 +1598,7 @@ class miss_packets(bsn_tlv):
         assert(_type == 13)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!Q")[0]
         return obj
 
@@ -1571,6 +1618,147 @@ class miss_packets(bsn_tlv):
         q.text('}')
 
 bsn_tlv.subtypes[13] = miss_packets
+
+class mpls_control_word(bsn_tlv):
+    type = 62
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!B", self.value))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = mpls_control_word()
+        _type = reader.read("!H")[0]
+        assert(_type == 62)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.value = reader.read("!B")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("mpls_control_word {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[62] = mpls_control_word
+
+class mpls_label(bsn_tlv):
+    type = 61
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!L", self.value))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = mpls_label()
+        _type = reader.read("!H")[0]
+        assert(_type == 61)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("mpls_label {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[61] = mpls_label
+
+class mpls_sequenced(bsn_tlv):
+    type = 63
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!B", self.value))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = mpls_sequenced()
+        _type = reader.read("!H")[0]
+        assert(_type == 63)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.value = reader.read("!B")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("mpls_sequenced {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[63] = mpls_sequenced
 
 class name(bsn_tlv):
     type = 52
@@ -1598,7 +1786,7 @@ class name(bsn_tlv):
         assert(_type == 52)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = str(reader.read_all())
         return obj
 
@@ -1645,7 +1833,7 @@ class partner_key(bsn_tlv):
         assert(_type == 51)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!H")[0]
         return obj
 
@@ -1692,7 +1880,7 @@ class partner_port_num(bsn_tlv):
         assert(_type == 50)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!H")[0]
         return obj
 
@@ -1739,7 +1927,7 @@ class partner_port_priority(bsn_tlv):
         assert(_type == 49)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!H")[0]
         return obj
 
@@ -1786,7 +1974,7 @@ class partner_state(bsn_tlv):
         assert(_type == 54)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!B")[0]
         return obj
 
@@ -1833,7 +2021,7 @@ class partner_system_mac(bsn_tlv):
         assert(_type == 48)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = list(reader.read('!6B'))
         return obj
 
@@ -1880,7 +2068,7 @@ class partner_system_priority(bsn_tlv):
         assert(_type == 47)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!H")[0]
         return obj
 
@@ -1927,7 +2115,7 @@ class port(bsn_tlv):
         assert(_type == 0)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = util.unpack_port_no(reader)
         return obj
 
@@ -1974,7 +2162,7 @@ class priority(bsn_tlv):
         assert(_type == 57)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!L")[0]
         return obj
 
@@ -2021,7 +2209,7 @@ class queue_id(bsn_tlv):
         assert(_type == 20)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!L")[0]
         return obj
 
@@ -2068,7 +2256,7 @@ class queue_weight(bsn_tlv):
         assert(_type == 21)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!L")[0]
         return obj
 
@@ -2120,7 +2308,7 @@ class reference(bsn_tlv):
         assert(_type == 59)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.table_id = reader.read("!H")[0]
         obj.key = loxi.generic_util.unpack_list(reader, bsn_tlv.bsn_tlv.unpack)
         return obj
@@ -2172,7 +2360,7 @@ class reply_packets(bsn_tlv):
         assert(_type == 12)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!Q")[0]
         return obj
 
@@ -2219,7 +2407,7 @@ class request_packets(bsn_tlv):
         assert(_type == 11)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!Q")[0]
         return obj
 
@@ -2266,7 +2454,7 @@ class rx_packets(bsn_tlv):
         assert(_type == 2)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!Q")[0]
         return obj
 
@@ -2313,7 +2501,7 @@ class sampling_rate(bsn_tlv):
         assert(_type == 30)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!L")[0]
         return obj
 
@@ -2360,7 +2548,7 @@ class sub_agent_id(bsn_tlv):
         assert(_type == 38)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!L")[0]
         return obj
 
@@ -2407,7 +2595,7 @@ class tx_bytes(bsn_tlv):
         assert(_type == 39)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!Q")[0]
         return obj
 
@@ -2454,7 +2642,7 @@ class tx_packets(bsn_tlv):
         assert(_type == 3)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!Q")[0]
         return obj
 
@@ -2501,7 +2689,7 @@ class udf_anchor(bsn_tlv):
         assert(_type == 16)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!H")[0]
         return obj
 
@@ -2548,7 +2736,7 @@ class udf_id(bsn_tlv):
         assert(_type == 15)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!H")[0]
         return obj
 
@@ -2595,7 +2783,7 @@ class udf_length(bsn_tlv):
         assert(_type == 18)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!H")[0]
         return obj
 
@@ -2642,7 +2830,7 @@ class udf_offset(bsn_tlv):
         assert(_type == 17)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!H")[0]
         return obj
 
@@ -2689,7 +2877,7 @@ class udp_dst(bsn_tlv):
         assert(_type == 37)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!H")[0]
         return obj
 
@@ -2736,7 +2924,7 @@ class udp_src(bsn_tlv):
         assert(_type == 36)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!H")[0]
         return obj
 
@@ -2783,7 +2971,7 @@ class unicast_query_timeout(bsn_tlv):
         assert(_type == 9)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!L")[0]
         return obj
 
@@ -2830,7 +3018,7 @@ class vlan_vid(bsn_tlv):
         assert(_type == 6)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!H")[0]
         return obj
 
@@ -2877,7 +3065,7 @@ class vrf(bsn_tlv):
         assert(_type == 19)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.value = reader.read("!L")[0]
         return obj
 

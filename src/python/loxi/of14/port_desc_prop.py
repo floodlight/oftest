@@ -60,7 +60,7 @@ class port_desc_prop(loxi.OFObject):
         obj.type = reader.read("!H")[0]
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         return obj
 
     def __eq__(self, other):
@@ -129,7 +129,7 @@ class ethernet(port_desc_prop):
         assert(_type == 0)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         reader.skip(4)
         obj.curr = reader.read("!L")[0]
         obj.advertised = reader.read("!L")[0]
@@ -214,7 +214,7 @@ class experimenter(port_desc_prop):
         assert(_type == 65535)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.experimenter = reader.read("!L")[0]
         obj.exp_type = reader.read("!L")[0]
         return obj
@@ -304,7 +304,7 @@ class optical(port_desc_prop):
         assert(_type == 1)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         reader.skip(4)
         obj.supported = reader.read("!L")[0]
         obj.tx_min_freq_lmda = reader.read("!L")[0]
