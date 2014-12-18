@@ -60,7 +60,7 @@ class table_mod_prop(loxi.OFObject):
         obj.type = reader.read("!H")[0]
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         return obj
 
     def __eq__(self, other):

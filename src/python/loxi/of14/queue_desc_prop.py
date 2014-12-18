@@ -60,7 +60,7 @@ class queue_desc_prop(loxi.OFObject):
         obj.type = reader.read("!H")[0]
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         return obj
 
     def __eq__(self, other):
@@ -115,7 +115,7 @@ class experimenter(queue_desc_prop):
         assert(_type == 65535)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.experimenter = reader.read("!L")[0]
         obj.exp_type = reader.read("!L")[0]
         return obj
@@ -165,7 +165,7 @@ class max_rate(queue_desc_prop):
         assert(_type == 2)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.rate = reader.read("!H")[0]
         reader.skip(2)
         return obj
@@ -214,7 +214,7 @@ class min_rate(queue_desc_prop):
         assert(_type == 1)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.rate = reader.read("!H")[0]
         reader.skip(2)
         return obj

@@ -60,7 +60,7 @@ class role_prop(loxi.OFObject):
         obj.type = reader.read("!H")[0]
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         return obj
 
     def __eq__(self, other):
@@ -115,7 +115,7 @@ class experimenter(role_prop):
         assert(_type == 65535)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.experimenter = reader.read("!L")[0]
         obj.exp_type = reader.read("!L")[0]
         return obj

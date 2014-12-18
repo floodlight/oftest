@@ -113,7 +113,7 @@ class bsn_vport(loxi.OFObject):
         obj.type = reader.read("!H")[0]
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         return obj
 
     def __eq__(self, other):
@@ -212,7 +212,7 @@ class bsn_vport_l2gre(bsn_vport):
         assert(_type == 1)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.flags = reader.read("!L")[0]
         obj.port_no = util.unpack_port_no(reader)
         obj.loopback_port_no = util.unpack_port_no(reader)
@@ -340,7 +340,7 @@ class bsn_vport_q_in_q(bsn_vport):
         assert(_type == 0)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.port_no = reader.read("!L")[0]
         obj.ingress_tpid = reader.read("!H")[0]
         obj.ingress_vlan_id = reader.read("!H")[0]
@@ -460,7 +460,7 @@ class flow_stats_entry(loxi.OFObject):
         obj = flow_stats_entry()
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (0 + 2))
+        reader = orig_reader.slice(_length, 2)
         obj.table_id = reader.read("!B")[0]
         reader.skip(1)
         obj.match = common.match.unpack(reader)
@@ -721,7 +721,7 @@ class packet_queue(loxi.OFObject):
         obj.queue_id = reader.read("!L")[0]
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (4 + 2))
+        reader = orig_reader.slice(_len, 6)
         reader.skip(2)
         obj.properties = loxi.generic_util.unpack_list(reader, common.queue_prop.unpack)
         return obj
@@ -1051,7 +1051,7 @@ class queue_prop(loxi.OFObject):
         obj.type = reader.read("!H")[0]
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         reader.skip(4)
         return obj
 
@@ -1097,7 +1097,7 @@ class queue_prop_min_rate(queue_prop):
         assert(_type == 1)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         reader.skip(4)
         obj.rate = reader.read("!H")[0]
         reader.skip(6)

@@ -236,6 +236,48 @@ class bsn_flow_checksum_bucket_stats_entry(loxi.OFObject):
         q.text('}')
 
 
+class bsn_generic_stats_entry(loxi.OFObject):
+
+    def __init__(self, tlvs=None):
+        if tlvs != None:
+            self.tlvs = tlvs
+        else:
+            self.tlvs = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 0
+        packed.append(loxi.generic_util.pack_list(self.tlvs))
+        length = sum([len(x) for x in packed])
+        packed[0] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_generic_stats_entry()
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 2)
+        obj.tlvs = loxi.generic_util.unpack_list(reader, bsn_tlv.bsn_tlv.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.tlvs != other.tlvs: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_generic_stats_entry {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("tlvs = ");
+                q.pp(self.tlvs)
+            q.breakable()
+        q.text('}')
+
+
 class bsn_gentable_bucket_stats_entry(loxi.OFObject):
 
     def __init__(self, checksum=None):
@@ -310,7 +352,7 @@ class bsn_gentable_desc_stats_entry(loxi.OFObject):
         obj = bsn_gentable_desc_stats_entry()
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (0 + 2))
+        reader = orig_reader.slice(_length, 2)
         obj.table_id = reader.read("!H")[0]
         obj.name = reader.read("!32s")[0].rstrip("\x00")
         obj.buckets_size = reader.read("!L")[0]
@@ -380,7 +422,7 @@ class bsn_gentable_entry_desc_stats_entry(loxi.OFObject):
         obj = bsn_gentable_entry_desc_stats_entry()
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (0 + 2))
+        reader = orig_reader.slice(_length, 2)
         _key_length = reader.read("!H")[0]
         obj.checksum = util.unpack_checksum_128(reader)
         obj.key = loxi.generic_util.unpack_list(reader.slice(_key_length), bsn_tlv.bsn_tlv.unpack)
@@ -440,7 +482,7 @@ class bsn_gentable_entry_stats_entry(loxi.OFObject):
         obj = bsn_gentable_entry_stats_entry()
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (0 + 2))
+        reader = orig_reader.slice(_length, 2)
         _key_length = reader.read("!H")[0]
         obj.key = loxi.generic_util.unpack_list(reader.slice(_key_length), bsn_tlv.bsn_tlv.unpack)
         obj.stats = loxi.generic_util.unpack_list(reader, bsn_tlv.bsn_tlv.unpack)
@@ -770,7 +812,7 @@ class bsn_port_counter_stats_entry(loxi.OFObject):
         obj = bsn_port_counter_stats_entry()
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (0 + 2))
+        reader = orig_reader.slice(_length, 2)
         reader.skip(2)
         obj.port_no = util.unpack_port_no(reader)
         obj.values = loxi.generic_util.unpack_list(reader, common.uint64.unpack)
@@ -908,7 +950,7 @@ class bsn_vport(loxi.OFObject):
         obj.type = reader.read("!H")[0]
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         return obj
 
     def __eq__(self, other):
@@ -953,7 +995,7 @@ class bsn_vlan_counter_stats_entry(loxi.OFObject):
         obj = bsn_vlan_counter_stats_entry()
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (0 + 2))
+        reader = orig_reader.slice(_length, 2)
         obj.vlan_vid = reader.read("!H")[0]
         reader.skip(4)
         obj.values = loxi.generic_util.unpack_list(reader, common.uint64.unpack)
@@ -1061,7 +1103,7 @@ class bsn_vport_l2gre(bsn_vport):
         assert(_type == 1)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.flags = reader.read("!L")[0]
         obj.port_no = util.unpack_port_no(reader)
         obj.loopback_port_no = util.unpack_port_no(reader)
@@ -1189,7 +1231,7 @@ class bsn_vport_q_in_q(bsn_vport):
         assert(_type == 0)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.port_no = reader.read("!L")[0]
         obj.ingress_tpid = reader.read("!H")[0]
         obj.ingress_vlan_id = reader.read("!H")[0]
@@ -1263,7 +1305,7 @@ class bsn_vrf_counter_stats_entry(loxi.OFObject):
         obj = bsn_vrf_counter_stats_entry()
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (0 + 2))
+        reader = orig_reader.slice(_length, 2)
         reader.skip(2)
         obj.vrf = reader.read("!L")[0]
         obj.values = loxi.generic_util.unpack_list(reader, common.uint64.unpack)
@@ -1327,7 +1369,7 @@ class bucket(loxi.OFObject):
         obj = bucket()
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (0 + 2))
+        reader = orig_reader.slice(_len, 2)
         obj.weight = reader.read("!H")[0]
         obj.watch_port = util.unpack_port_no(reader)
         obj.watch_group = reader.read("!L")[0]
@@ -1493,7 +1535,7 @@ class flow_stats_entry(loxi.OFObject):
         obj = flow_stats_entry()
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (0 + 2))
+        reader = orig_reader.slice(_length, 2)
         obj.table_id = reader.read("!B")[0]
         reader.skip(1)
         obj.duration_sec = reader.read("!L")[0]
@@ -1608,7 +1650,7 @@ class group_desc_stats_entry(loxi.OFObject):
         obj = group_desc_stats_entry()
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (0 + 2))
+        reader = orig_reader.slice(_length, 2)
         obj.group_type = reader.read("!B")[0]
         reader.skip(1)
         obj.group_id = reader.read("!L")[0]
@@ -1693,7 +1735,7 @@ class group_stats_entry(loxi.OFObject):
         obj = group_stats_entry()
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (0 + 2))
+        reader = orig_reader.slice(_length, 2)
         reader.skip(2)
         obj.group_id = reader.read("!L")[0]
         obj.ref_count = reader.read("!L")[0]
@@ -1775,7 +1817,7 @@ class hello_elem(loxi.OFObject):
         obj.type = reader.read("!H")[0]
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         return obj
 
     def __eq__(self, other):
@@ -1818,7 +1860,7 @@ class hello_elem_versionbitmap(hello_elem):
         assert(_type == 1)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.bitmaps = loxi.generic_util.unpack_list(reader, common.uint32.unpack)
         return obj
 
@@ -1866,7 +1908,7 @@ class match_v3(loxi.OFObject):
         assert(_type == 1)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.oxm_list = loxi.generic_util.unpack_list(reader, oxm.oxm.unpack)
         orig_reader.skip_align()
         return obj
@@ -1965,7 +2007,7 @@ class meter_config(loxi.OFObject):
         obj = meter_config()
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (0 + 2))
+        reader = orig_reader.slice(_length, 2)
         obj.flags = reader.read("!H")[0]
         obj.meter_id = reader.read("!L")[0]
         obj.entries = loxi.generic_util.unpack_list(reader, meter_band.meter_band.unpack)
@@ -2127,7 +2169,7 @@ class meter_stats(loxi.OFObject):
         obj.meter_id = reader.read("!L")[0]
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (4 + 2))
+        reader = orig_reader.slice(_len, 6)
         reader.skip(6)
         obj.flow_count = reader.read("!L")[0]
         obj.packet_in_count = reader.read("!Q")[0]
@@ -2212,7 +2254,7 @@ class packet_queue(loxi.OFObject):
         obj.port = util.unpack_port_no(reader)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (8 + 2))
+        reader = orig_reader.slice(_len, 10)
         reader.skip(6)
         obj.properties = loxi.generic_util.unpack_list(reader, common.queue_prop.unpack)
         return obj
@@ -2291,7 +2333,7 @@ class port_desc(loxi.OFObject):
         obj.port_no = util.unpack_port_no(reader)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (4 + 2))
+        reader = orig_reader.slice(_length, 6)
         reader.skip(2)
         obj.hw_addr = list(reader.read('!6B'))
         reader.skip(2)
@@ -2415,7 +2457,7 @@ class port_stats_entry(loxi.OFObject):
         obj = port_stats_entry()
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (0 + 2))
+        reader = orig_reader.slice(_length, 2)
         reader.skip(2)
         obj.port_no = util.unpack_port_no(reader)
         obj.duration_sec = reader.read("!L")[0]
@@ -2526,7 +2568,7 @@ class queue_desc(loxi.OFObject):
         obj.queue_id = reader.read("!L")[0]
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (8 + 2))
+        reader = orig_reader.slice(_length, 10)
         reader.skip(6)
         obj.properties = loxi.generic_util.unpack_list(reader, queue_desc_prop.queue_desc_prop.unpack)
         return obj
@@ -2586,7 +2628,7 @@ class queue_prop(loxi.OFObject):
         obj.type = reader.read("!H")[0]
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         reader.skip(4)
         return obj
 
@@ -2644,7 +2686,7 @@ class queue_prop_experimenter(queue_prop):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         reader.skip(4)
         obj.experimenter = reader.read("!L")[0]
         reader.skip(4)
@@ -2697,7 +2739,7 @@ class queue_prop_max_rate(queue_prop):
         assert(_type == 2)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         reader.skip(4)
         obj.rate = reader.read("!H")[0]
         reader.skip(6)
@@ -2748,7 +2790,7 @@ class queue_prop_min_rate(queue_prop):
         assert(_type == 1)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         reader.skip(4)
         obj.rate = reader.read("!H")[0]
         reader.skip(6)
@@ -2829,7 +2871,7 @@ class queue_stats_entry(loxi.OFObject):
         obj = queue_stats_entry()
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (0 + 2))
+        reader = orig_reader.slice(_length, 2)
         reader.skip(6)
         obj.port_no = util.unpack_port_no(reader)
         obj.queue_id = reader.read("!L")[0]
@@ -2913,7 +2955,7 @@ class table_desc(loxi.OFObject):
         obj = table_desc()
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (0 + 2))
+        reader = orig_reader.slice(_length, 2)
         obj.table_id = reader.read("!B")[0]
         reader.skip(1)
         obj.config = reader.read("!L")[0]
@@ -2969,7 +3011,7 @@ class table_feature_prop(loxi.OFObject):
         obj.type = reader.read("!H")[0]
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         return obj
 
     def __eq__(self, other):
@@ -3012,7 +3054,7 @@ class table_feature_prop_apply_actions(table_feature_prop):
         assert(_type == 6)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.action_ids = loxi.generic_util.unpack_list(reader, action_id.action_id.unpack)
         return obj
 
@@ -3059,7 +3101,7 @@ class table_feature_prop_apply_actions_miss(table_feature_prop):
         assert(_type == 7)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.action_ids = loxi.generic_util.unpack_list(reader, action_id.action_id.unpack)
         return obj
 
@@ -3106,7 +3148,7 @@ class table_feature_prop_apply_setfield(table_feature_prop):
         assert(_type == 14)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.oxm_ids = loxi.generic_util.unpack_list(reader, common.uint32.unpack)
         return obj
 
@@ -3153,7 +3195,7 @@ class table_feature_prop_apply_setfield_miss(table_feature_prop):
         assert(_type == 15)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.oxm_ids = loxi.generic_util.unpack_list(reader, common.uint32.unpack)
         return obj
 
@@ -3217,7 +3259,7 @@ class table_feature_prop_experimenter(table_feature_prop):
         assert(_type == 65534)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.experimenter = reader.read("!L")[0]
         obj.subtype = reader.read("!L")[0]
         obj.experimenter_data = str(reader.read_all())
@@ -3288,7 +3330,7 @@ class table_feature_prop_experimenter_miss(table_feature_prop):
         assert(_type == 65535)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.experimenter = reader.read("!L")[0]
         obj.subtype = reader.read("!L")[0]
         obj.experimenter_data = str(reader.read_all())
@@ -3342,7 +3384,7 @@ class table_feature_prop_instructions(table_feature_prop):
         assert(_type == 0)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.instruction_ids = loxi.generic_util.unpack_list(reader, instruction_id.instruction_id.unpack)
         return obj
 
@@ -3389,7 +3431,7 @@ class table_feature_prop_instructions_miss(table_feature_prop):
         assert(_type == 1)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.instruction_ids = loxi.generic_util.unpack_list(reader, instruction_id.instruction_id.unpack)
         return obj
 
@@ -3436,7 +3478,7 @@ class table_feature_prop_match(table_feature_prop):
         assert(_type == 8)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.oxm_ids = loxi.generic_util.unpack_list(reader, common.uint32.unpack)
         return obj
 
@@ -3483,7 +3525,7 @@ class table_feature_prop_next_tables(table_feature_prop):
         assert(_type == 2)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.next_table_ids = loxi.generic_util.unpack_list(reader, common.uint8.unpack)
         return obj
 
@@ -3530,7 +3572,7 @@ class table_feature_prop_next_tables_miss(table_feature_prop):
         assert(_type == 3)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.next_table_ids = loxi.generic_util.unpack_list(reader, common.uint8.unpack)
         return obj
 
@@ -3577,7 +3619,7 @@ class table_feature_prop_table_sync_from(table_feature_prop):
         assert(_type == 16)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.table_ids = loxi.generic_util.unpack_list(reader, common.uint8.unpack)
         return obj
 
@@ -3624,7 +3666,7 @@ class table_feature_prop_wildcards(table_feature_prop):
         assert(_type == 10)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.oxm_ids = loxi.generic_util.unpack_list(reader, common.uint32.unpack)
         return obj
 
@@ -3671,7 +3713,7 @@ class table_feature_prop_write_actions(table_feature_prop):
         assert(_type == 4)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.action_ids = loxi.generic_util.unpack_list(reader, action_id.action_id.unpack)
         return obj
 
@@ -3718,7 +3760,7 @@ class table_feature_prop_write_actions_miss(table_feature_prop):
         assert(_type == 5)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.action_ids = loxi.generic_util.unpack_list(reader, action_id.action_id.unpack)
         return obj
 
@@ -3765,7 +3807,7 @@ class table_feature_prop_write_setfield(table_feature_prop):
         assert(_type == 12)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.oxm_ids = loxi.generic_util.unpack_list(reader, common.uint32.unpack)
         return obj
 
@@ -3812,7 +3854,7 @@ class table_feature_prop_write_setfield_miss(table_feature_prop):
         assert(_type == 13)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.oxm_ids = loxi.generic_util.unpack_list(reader, common.uint32.unpack)
         return obj
 
@@ -3886,7 +3928,7 @@ class table_features(loxi.OFObject):
         obj = table_features()
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (0 + 2))
+        reader = orig_reader.slice(_length, 2)
         obj.table_id = reader.read("!B")[0]
         reader.skip(5)
         obj.name = reader.read("!32s")[0].rstrip("\x00")
@@ -3963,7 +4005,7 @@ class table_mod_prop_eviction(loxi.OFObject):
         assert(_type == 2)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.flags = reader.read("!L")[0]
         return obj
 
@@ -4021,7 +4063,7 @@ class table_mod_prop_experimenter(loxi.OFObject):
         assert(_type == 65535)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.experimenter = reader.read("!L")[0]
         obj.exp_type = reader.read("!L")[0]
         return obj
@@ -4080,7 +4122,7 @@ class table_mod_prop_vacancy(loxi.OFObject):
         assert(_type == 3)
         _length = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_length - (2 + 2))
+        reader = orig_reader.slice(_length, 4)
         obj.vacancy_down = reader.read("!B")[0]
         obj.vacancy_up = reader.read("!B")[0]
         obj.vacancy = reader.read("!B")[0]

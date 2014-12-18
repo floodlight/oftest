@@ -60,7 +60,7 @@ class meter_band(loxi.OFObject):
         obj.type = reader.read("!H")[0]
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         return obj
 
     def __eq__(self, other):
@@ -109,7 +109,7 @@ class drop(meter_band):
         assert(_type == 1)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.rate = reader.read("!L")[0]
         obj.burst_size = reader.read("!L")[0]
         reader.skip(4)
@@ -173,7 +173,7 @@ class dscp_remark(meter_band):
         assert(_type == 2)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.rate = reader.read("!L")[0]
         obj.burst_size = reader.read("!L")[0]
         obj.prec_level = reader.read("!B")[0]
@@ -241,7 +241,7 @@ class experimenter(meter_band):
         assert(_type == 65535)
         _len = reader.read("!H")[0]
         orig_reader = reader
-        reader = orig_reader.slice(_len - (2 + 2))
+        reader = orig_reader.slice(_len, 4)
         obj.rate = reader.read("!L")[0]
         obj.burst_size = reader.read("!L")[0]
         obj.experimenter = reader.read("!L")[0]

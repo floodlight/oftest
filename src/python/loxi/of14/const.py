@@ -1103,6 +1103,7 @@ OFPPF_FIBER = 4096
 OFPPF_AUTONEG = 8192
 OFPPF_PAUSE = 16384
 OFPPF_PAUSE_ASYM = 32768
+OFPPF_BSN_BREAKOUT_CAPABLE = 2147483648
 
 ofp_port_features_map = {
     1: 'OFPPF_10MB_HD',
@@ -1121,6 +1122,7 @@ ofp_port_features_map = {
     8192: 'OFPPF_AUTONEG',
     16384: 'OFPPF_PAUSE',
     32768: 'OFPPF_PAUSE_ASYM',
+    2147483648: 'OFPPF_BSN_BREAKOUT_CAPABLE',
 }
 
 # Identifiers from group ofp_port_mod_failed_code
