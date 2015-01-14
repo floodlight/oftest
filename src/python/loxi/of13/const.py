@@ -284,6 +284,15 @@ ofp_bsn_loglevel_map = {
     5: 'OFP_BSN_LOGLEVEL_TRACE',
 }
 
+# Identifiers from group ofp_bsn_lua_upload_flags
+OFP_BSN_LUA_UPLOAD_MORE = 1
+OFP_BSN_LUA_UPLOAD_FORCE = 2
+
+ofp_bsn_lua_upload_flags_map = {
+    1: 'OFP_BSN_LUA_UPLOAD_MORE',
+    2: 'OFP_BSN_LUA_UPLOAD_FORCE',
+}
+
 # Identifiers from group ofp_bsn_pktin_flag
 OFP_BSN_PKTIN_FLAG_PDU = 1
 OFP_BSN_PKTIN_FLAG_NEW_HOST = 2
