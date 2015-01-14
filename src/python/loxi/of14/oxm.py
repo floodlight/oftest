@@ -715,6 +715,98 @@ class bsn_in_ports_128_masked(oxm):
 
 oxm.subtypes[196896] = bsn_in_ports_128_masked
 
+class bsn_in_ports_512(oxm):
+    type_len = 206400
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = set()
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(util.pack_bitmap_512(self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_in_ports_512()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 206400)
+        obj.value = util.unpack_bitmap_512(reader)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_in_ports_512 {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.pp(self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[206400] = bsn_in_ports_512
+
+class bsn_in_ports_512_masked(oxm):
+    type_len = 206720
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = set()
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = set()
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(util.pack_bitmap_512(self.value))
+        packed.append(util.pack_bitmap_512(self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_in_ports_512_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 206720)
+        obj.value = util.unpack_bitmap_512(reader)
+        obj.value_mask = util.unpack_bitmap_512(reader)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_in_ports_512_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.pp(self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.pp(self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[206720] = bsn_in_ports_512_masked
+
 class bsn_l3_interface_class_id(oxm):
     type_len = 198660
 
