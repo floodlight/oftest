@@ -8,27 +8,11 @@
 
 import struct
 import loxi
-import const
-import port_desc_prop
-import bsn_tlv
-import meter_band
-import table_mod_prop
-import instruction
-import queue_desc_prop
-import oxm
-import bundle_prop
-import common
-import instruction_id
-import action
-import role_prop
-import message
-import queue_stats_prop
-import port_stats_prop
-import port_mod_prop
-import async_config_prop
-import action_id
 import util
 import loxi.generic_util
+
+import sys
+ofp = sys.modules['loxi.of14']
 
 class action_id(loxi.OFObject):
     subtypes = {}

@@ -8,14 +8,11 @@
 
 import struct
 import loxi
-import const
-import action
-import oxm
-import message
-import instruction
-import common
 import util
 import loxi.generic_util
+
+import sys
+ofp = sys.modules['loxi.of12']
 
 class action(loxi.OFObject):
     subtypes = {}
@@ -966,7 +963,7 @@ class set_field(action):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len, 4)
-        obj.field = oxm.oxm.unpack(reader)
+        obj.field = ofp.oxm.oxm.unpack(reader)
         return obj
 
     def __eq__(self, other):

@@ -8,18 +8,11 @@
 
 import struct
 import loxi
-import const
-import bsn_tlv
-import meter_band
-import instruction
-import oxm
-import common
-import instruction_id
-import action
-import message
-import action_id
 import util
 import loxi.generic_util
+
+import sys
+ofp = sys.modules['loxi.of13']
 
 class message(loxi.OFObject):
     subtypes = {}
@@ -383,7 +376,7 @@ class aggregate_stats_request(stats_request):
         if match != None:
             self.match = match
         else:
-            self.match = common.match()
+            self.match = ofp.match()
         return
 
     def pack(self):
@@ -429,7 +422,7 @@ class aggregate_stats_request(stats_request):
         reader.skip(4)
         obj.cookie = reader.read("!Q")[0]
         obj.cookie_mask = reader.read("!Q")[0]
-        obj.match = common.match.unpack(reader)
+        obj.match = ofp.match.unpack(reader)
         return obj
 
     def __eq__(self, other):
@@ -2021,7 +2014,7 @@ class bsn_controller_connections_reply(bsn_header):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 57)
-        obj.connections = loxi.generic_util.unpack_list(reader, common.bsn_controller_connection.unpack)
+        obj.connections = loxi.generic_util.unpack_list(reader, ofp.common.bsn_controller_connection.unpack)
         return obj
 
     def __eq__(self, other):
@@ -2349,7 +2342,7 @@ class bsn_debug_counter_desc_stats_reply(bsn_stats_reply):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 13)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.bsn_debug_counter_desc_stats_entry.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.bsn_debug_counter_desc_stats_entry.unpack)
         return obj
 
     def __eq__(self, other):
@@ -2697,7 +2690,7 @@ class bsn_debug_counter_stats_reply(bsn_stats_reply):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 12)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.bsn_debug_counter_stats_entry.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.bsn_debug_counter_stats_entry.unpack)
         return obj
 
     def __eq__(self, other):
@@ -2863,7 +2856,7 @@ class bsn_flow_checksum_bucket_stats_reply(bsn_stats_reply):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 10)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.bsn_flow_checksum_bucket_stats_entry.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.bsn_flow_checksum_bucket_stats_entry.unpack)
         return obj
 
     def __eq__(self, other):
@@ -3008,7 +3001,7 @@ class bsn_flow_idle(bsn_header):
         if match != None:
             self.match = match
         else:
-            self.match = common.match()
+            self.match = ofp.match()
         return
 
     def pack(self):
@@ -3047,7 +3040,7 @@ class bsn_flow_idle(bsn_header):
         obj.priority = reader.read("!H")[0]
         obj.table_id = reader.read("!B")[0]
         reader.skip(5)
-        obj.match = common.match.unpack(reader)
+        obj.match = ofp.match.unpack(reader)
         return obj
 
     def __eq__(self, other):
@@ -3431,7 +3424,7 @@ class bsn_generic_stats_reply(bsn_stats_reply):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 16)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.bsn_generic_stats_entry.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.bsn_generic_stats_entry.unpack)
         return obj
 
     def __eq__(self, other):
@@ -3525,7 +3518,7 @@ class bsn_generic_stats_request(bsn_stats_request):
         _subtype = reader.read("!L")[0]
         assert(_subtype == 16)
         obj.name = reader.read("!64s")[0].rstrip("\x00")
-        obj.tlvs = loxi.generic_util.unpack_list(reader, bsn_tlv.bsn_tlv.unpack)
+        obj.tlvs = loxi.generic_util.unpack_list(reader, ofp.bsn_tlv.bsn_tlv.unpack)
         return obj
 
     def __eq__(self, other):
@@ -3617,7 +3610,7 @@ class bsn_gentable_bucket_stats_reply(bsn_stats_reply):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 5)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.bsn_gentable_bucket_stats_entry.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.bsn_gentable_bucket_stats_entry.unpack)
         return obj
 
     def __eq__(self, other):
@@ -3981,7 +3974,7 @@ class bsn_gentable_desc_stats_reply(bsn_stats_reply):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 4)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.bsn_gentable_desc_stats_entry.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.bsn_gentable_desc_stats_entry.unpack)
         return obj
 
     def __eq__(self, other):
@@ -4155,8 +4148,8 @@ class bsn_gentable_entry_add(bsn_header):
         obj.table_id = reader.read("!H")[0]
         _key_length = reader.read("!H")[0]
         obj.checksum = util.unpack_checksum_128(reader)
-        obj.key = loxi.generic_util.unpack_list(reader.slice(_key_length), bsn_tlv.bsn_tlv.unpack)
-        obj.value = loxi.generic_util.unpack_list(reader, bsn_tlv.bsn_tlv.unpack)
+        obj.key = loxi.generic_util.unpack_list(reader.slice(_key_length), ofp.bsn_tlv.bsn_tlv.unpack)
+        obj.value = loxi.generic_util.unpack_list(reader, ofp.bsn_tlv.bsn_tlv.unpack)
         return obj
 
     def __eq__(self, other):
@@ -4246,7 +4239,7 @@ class bsn_gentable_entry_delete(bsn_header):
         _subtype = reader.read("!L")[0]
         assert(_subtype == 47)
         obj.table_id = reader.read("!H")[0]
-        obj.key = loxi.generic_util.unpack_list(reader, bsn_tlv.bsn_tlv.unpack)
+        obj.key = loxi.generic_util.unpack_list(reader, ofp.bsn_tlv.bsn_tlv.unpack)
         return obj
 
     def __eq__(self, other):
@@ -4334,7 +4327,7 @@ class bsn_gentable_entry_desc_stats_reply(bsn_stats_reply):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 2)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.bsn_gentable_entry_desc_stats_entry.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.bsn_gentable_entry_desc_stats_entry.unpack)
         return obj
 
     def __eq__(self, other):
@@ -4532,7 +4525,7 @@ class bsn_gentable_entry_stats_reply(bsn_stats_reply):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 3)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.bsn_gentable_entry_stats_entry.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.bsn_gentable_entry_stats_entry.unpack)
         return obj
 
     def __eq__(self, other):
@@ -4814,7 +4807,7 @@ class bsn_gentable_stats_reply(bsn_stats_reply):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 7)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.bsn_gentable_stats_entry.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.bsn_gentable_stats_entry.unpack)
         return obj
 
     def __eq__(self, other):
@@ -4968,7 +4961,7 @@ class bsn_get_interfaces_reply(bsn_header):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 10)
-        obj.interfaces = loxi.generic_util.unpack_list(reader, common.bsn_interface.unpack)
+        obj.interfaces = loxi.generic_util.unpack_list(reader, ofp.common.bsn_interface.unpack)
         return obj
 
     def __eq__(self, other):
@@ -5756,7 +5749,7 @@ class bsn_lacp_stats_reply(bsn_stats_reply):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 1)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.bsn_lacp_stats_entry.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.bsn_lacp_stats_entry.unpack)
         return obj
 
     def __eq__(self, other):
@@ -6786,7 +6779,7 @@ class bsn_port_counter_stats_reply(bsn_stats_reply):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 8)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.bsn_port_counter_stats_entry.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.bsn_port_counter_stats_entry.unpack)
         return obj
 
     def __eq__(self, other):
@@ -7830,7 +7823,7 @@ class bsn_switch_pipeline_stats_reply(bsn_stats_reply):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 6)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.bsn_switch_pipeline_stats_entry.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.bsn_switch_pipeline_stats_entry.unpack)
         return obj
 
     def __eq__(self, other):
@@ -7996,7 +7989,7 @@ class bsn_table_checksum_stats_reply(bsn_stats_reply):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 11)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.bsn_table_checksum_stats_entry.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.bsn_table_checksum_stats_entry.unpack)
         return obj
 
     def __eq__(self, other):
@@ -8421,7 +8414,7 @@ class bsn_virtual_port_create_request(bsn_header):
         if vport != None:
             self.vport = vport
         else:
-            self.vport = common.bsn_vport()
+            self.vport = ofp.bsn_vport()
         return
 
     def pack(self):
@@ -8452,7 +8445,7 @@ class bsn_virtual_port_create_request(bsn_header):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 15)
-        obj.vport = common.bsn_vport.unpack(reader)
+        obj.vport = ofp.bsn_vport.unpack(reader)
         return obj
 
     def __eq__(self, other):
@@ -8680,7 +8673,7 @@ class bsn_vlan_counter_stats_reply(bsn_stats_reply):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 9)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.bsn_vlan_counter_stats_entry.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.bsn_vlan_counter_stats_entry.unpack)
         return obj
 
     def __eq__(self, other):
@@ -8856,7 +8849,7 @@ class bsn_vrf_counter_stats_reply(bsn_stats_reply):
         assert(_experimenter == 6035143)
         _subtype = reader.read("!L")[0]
         assert(_subtype == 15)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.bsn_vrf_counter_stats_entry.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.bsn_vrf_counter_stats_entry.unpack)
         return obj
 
     def __eq__(self, other):
@@ -9609,7 +9602,7 @@ class flow_mod(message):
         if match != None:
             self.match = match
         else:
-            self.match = common.match()
+            self.match = ofp.match()
         if instructions != None:
             self.instructions = instructions
         else:
@@ -9668,8 +9661,8 @@ class flow_mod(message):
         obj.out_group = reader.read("!L")[0]
         obj.flags = reader.read("!H")[0]
         reader.skip(2)
-        obj.match = common.match.unpack(reader)
-        obj.instructions = loxi.generic_util.unpack_list(reader, instruction.instruction.unpack)
+        obj.match = ofp.match.unpack(reader)
+        obj.instructions = loxi.generic_util.unpack_list(reader, ofp.instruction.instruction.unpack)
         return obj
 
     def __eq__(self, other):
@@ -9794,7 +9787,7 @@ class flow_add(flow_mod):
         if match != None:
             self.match = match
         else:
-            self.match = common.match()
+            self.match = ofp.match()
         if instructions != None:
             self.instructions = instructions
         else:
@@ -9849,8 +9842,8 @@ class flow_add(flow_mod):
         obj.out_group = reader.read("!L")[0]
         obj.flags = reader.read("!H")[0]
         reader.skip(2)
-        obj.match = common.match.unpack(reader)
-        obj.instructions = loxi.generic_util.unpack_list(reader, instruction.instruction.unpack)
+        obj.match = ofp.match.unpack(reader)
+        obj.instructions = loxi.generic_util.unpack_list(reader, ofp.instruction.instruction.unpack)
         return obj
 
     def __eq__(self, other):
@@ -9974,7 +9967,7 @@ class flow_delete(flow_mod):
         if match != None:
             self.match = match
         else:
-            self.match = common.match()
+            self.match = ofp.match()
         if instructions != None:
             self.instructions = instructions
         else:
@@ -10029,8 +10022,8 @@ class flow_delete(flow_mod):
         obj.out_group = reader.read("!L")[0]
         obj.flags = reader.read("!H")[0]
         reader.skip(2)
-        obj.match = common.match.unpack(reader)
-        obj.instructions = loxi.generic_util.unpack_list(reader, instruction.instruction.unpack)
+        obj.match = ofp.match.unpack(reader)
+        obj.instructions = loxi.generic_util.unpack_list(reader, ofp.instruction.instruction.unpack)
         return obj
 
     def __eq__(self, other):
@@ -10154,7 +10147,7 @@ class flow_delete_strict(flow_mod):
         if match != None:
             self.match = match
         else:
-            self.match = common.match()
+            self.match = ofp.match()
         if instructions != None:
             self.instructions = instructions
         else:
@@ -10209,8 +10202,8 @@ class flow_delete_strict(flow_mod):
         obj.out_group = reader.read("!L")[0]
         obj.flags = reader.read("!H")[0]
         reader.skip(2)
-        obj.match = common.match.unpack(reader)
-        obj.instructions = loxi.generic_util.unpack_list(reader, instruction.instruction.unpack)
+        obj.match = ofp.match.unpack(reader)
+        obj.instructions = loxi.generic_util.unpack_list(reader, ofp.instruction.instruction.unpack)
         return obj
 
     def __eq__(self, other):
@@ -10412,7 +10405,7 @@ class flow_modify(flow_mod):
         if match != None:
             self.match = match
         else:
-            self.match = common.match()
+            self.match = ofp.match()
         if instructions != None:
             self.instructions = instructions
         else:
@@ -10467,8 +10460,8 @@ class flow_modify(flow_mod):
         obj.out_group = reader.read("!L")[0]
         obj.flags = reader.read("!H")[0]
         reader.skip(2)
-        obj.match = common.match.unpack(reader)
-        obj.instructions = loxi.generic_util.unpack_list(reader, instruction.instruction.unpack)
+        obj.match = ofp.match.unpack(reader)
+        obj.instructions = loxi.generic_util.unpack_list(reader, ofp.instruction.instruction.unpack)
         return obj
 
     def __eq__(self, other):
@@ -10592,7 +10585,7 @@ class flow_modify_strict(flow_mod):
         if match != None:
             self.match = match
         else:
-            self.match = common.match()
+            self.match = ofp.match()
         if instructions != None:
             self.instructions = instructions
         else:
@@ -10647,8 +10640,8 @@ class flow_modify_strict(flow_mod):
         obj.out_group = reader.read("!L")[0]
         obj.flags = reader.read("!H")[0]
         reader.skip(2)
-        obj.match = common.match.unpack(reader)
-        obj.instructions = loxi.generic_util.unpack_list(reader, instruction.instruction.unpack)
+        obj.match = ofp.match.unpack(reader)
+        obj.instructions = loxi.generic_util.unpack_list(reader, ofp.instruction.instruction.unpack)
         return obj
 
     def __eq__(self, other):
@@ -10771,7 +10764,7 @@ class flow_removed(message):
         if match != None:
             self.match = match
         else:
-            self.match = common.match()
+            self.match = ofp.match()
         return
 
     def pack(self):
@@ -10816,7 +10809,7 @@ class flow_removed(message):
         obj.hard_timeout = reader.read("!H")[0]
         obj.packet_count = reader.read("!Q")[0]
         obj.byte_count = reader.read("!Q")[0]
-        obj.match = common.match.unpack(reader)
+        obj.match = ofp.match.unpack(reader)
         return obj
 
     def __eq__(self, other):
@@ -10932,7 +10925,7 @@ class flow_stats_reply(stats_reply):
         assert(_stats_type == 1)
         obj.flags = reader.read("!H")[0]
         reader.skip(4)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.flow_stats_entry.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.flow_stats_entry.unpack)
         return obj
 
     def __eq__(self, other):
@@ -11000,7 +10993,7 @@ class flow_stats_request(stats_request):
         if match != None:
             self.match = match
         else:
-            self.match = common.match()
+            self.match = ofp.match()
         return
 
     def pack(self):
@@ -11046,7 +11039,7 @@ class flow_stats_request(stats_request):
         reader.skip(4)
         obj.cookie = reader.read("!Q")[0]
         obj.cookie_mask = reader.read("!Q")[0]
-        obj.match = common.match.unpack(reader)
+        obj.match = ofp.match.unpack(reader)
         return obj
 
     def __eq__(self, other):
@@ -11289,7 +11282,7 @@ class group_mod(message):
         obj.group_type = reader.read("!B")[0]
         reader.skip(1)
         obj.group_id = reader.read("!L")[0]
-        obj.buckets = loxi.generic_util.unpack_list(reader, common.bucket.unpack)
+        obj.buckets = loxi.generic_util.unpack_list(reader, ofp.common.bucket.unpack)
         return obj
 
     def __eq__(self, other):
@@ -11380,7 +11373,7 @@ class group_add(group_mod):
         obj.group_type = reader.read("!B")[0]
         reader.skip(1)
         obj.group_id = reader.read("!L")[0]
-        obj.buckets = loxi.generic_util.unpack_list(reader, common.bucket.unpack)
+        obj.buckets = loxi.generic_util.unpack_list(reader, ofp.common.bucket.unpack)
         return obj
 
     def __eq__(self, other):
@@ -11470,7 +11463,7 @@ class group_delete(group_mod):
         obj.group_type = reader.read("!B")[0]
         reader.skip(1)
         obj.group_id = reader.read("!L")[0]
-        obj.buckets = loxi.generic_util.unpack_list(reader, common.bucket.unpack)
+        obj.buckets = loxi.generic_util.unpack_list(reader, ofp.common.bucket.unpack)
         return obj
 
     def __eq__(self, other):
@@ -11554,7 +11547,7 @@ class group_desc_stats_reply(stats_reply):
         assert(_stats_type == 7)
         obj.flags = reader.read("!H")[0]
         reader.skip(4)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.group_desc_stats_entry.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.group_desc_stats_entry.unpack)
         return obj
 
     def __eq__(self, other):
@@ -12028,7 +12021,7 @@ class group_modify(group_mod):
         obj.group_type = reader.read("!B")[0]
         reader.skip(1)
         obj.group_id = reader.read("!L")[0]
-        obj.buckets = loxi.generic_util.unpack_list(reader, common.bucket.unpack)
+        obj.buckets = loxi.generic_util.unpack_list(reader, ofp.common.bucket.unpack)
         return obj
 
     def __eq__(self, other):
@@ -12112,7 +12105,7 @@ class group_stats_reply(stats_reply):
         assert(_stats_type == 6)
         obj.flags = reader.read("!H")[0]
         reader.skip(4)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.group_stats_entry.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.group_stats_entry.unpack)
         return obj
 
     def __eq__(self, other):
@@ -12262,7 +12255,7 @@ class hello(message):
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.xid = reader.read("!L")[0]
-        obj.elements = loxi.generic_util.unpack_list(reader, common.hello_elem.unpack)
+        obj.elements = loxi.generic_util.unpack_list(reader, ofp.common.hello_elem.unpack)
         return obj
 
     def __eq__(self, other):
@@ -12416,7 +12409,7 @@ class meter_config_stats_reply(stats_reply):
         assert(_stats_type == 10)
         obj.flags = reader.read("!H")[0]
         reader.skip(4)
-        obj.entries = loxi.generic_util.unpack_list(reader, meter_band.meter_band.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.meter_band.meter_band.unpack)
         return obj
 
     def __eq__(self, other):
@@ -12546,7 +12539,7 @@ class meter_features_stats_reply(stats_reply):
         if features != None:
             self.features = features
         else:
-            self.features = common.meter_features()
+            self.features = ofp.meter_features()
         return
 
     def pack(self):
@@ -12578,7 +12571,7 @@ class meter_features_stats_reply(stats_reply):
         assert(_stats_type == 11)
         obj.flags = reader.read("!H")[0]
         reader.skip(4)
-        obj.features = common.meter_features.unpack(reader)
+        obj.features = ofp.meter_features.unpack(reader)
         return obj
 
     def __eq__(self, other):
@@ -12734,7 +12727,7 @@ class meter_mod(message):
         obj.command = reader.read("!H")[0]
         obj.flags = reader.read("!H")[0]
         obj.meter_id = reader.read("!L")[0]
-        obj.meters = loxi.generic_util.unpack_list(reader, meter_band.meter_band.unpack)
+        obj.meters = loxi.generic_util.unpack_list(reader, ofp.meter_band.meter_band.unpack)
         return obj
 
     def __eq__(self, other):
@@ -12900,7 +12893,7 @@ class meter_stats_reply(stats_reply):
         assert(_stats_type == 9)
         obj.flags = reader.read("!H")[0]
         reader.skip(4)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.meter_stats.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.meter_stats.unpack)
         return obj
 
     def __eq__(self, other):
@@ -13117,7 +13110,7 @@ class packet_in(message):
         if match != None:
             self.match = match
         else:
-            self.match = common.match()
+            self.match = ofp.match()
         if data != None:
             self.data = data
         else:
@@ -13158,7 +13151,7 @@ class packet_in(message):
         obj.reason = reader.read("!B")[0]
         obj.table_id = reader.read("!B")[0]
         obj.cookie = reader.read("!Q")[0]
-        obj.match = common.match.unpack(reader)
+        obj.match = ofp.match.unpack(reader)
         reader.skip(2)
         obj.data = str(reader.read_all())
         return obj
@@ -13270,7 +13263,7 @@ class packet_out(message):
         obj.in_port = util.unpack_port_no(reader)
         _actions_len = reader.read("!H")[0]
         reader.skip(6)
-        obj.actions = loxi.generic_util.unpack_list(reader.slice(_actions_len), action.action.unpack)
+        obj.actions = loxi.generic_util.unpack_list(reader.slice(_actions_len), ofp.action.action.unpack)
         obj.data = str(reader.read_all())
         return obj
 
@@ -13359,7 +13352,7 @@ class port_desc_stats_reply(stats_reply):
         assert(_stats_type == 13)
         obj.flags = reader.read("!H")[0]
         reader.skip(4)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.port_desc.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.port_desc.unpack)
         return obj
 
     def __eq__(self, other):
@@ -13697,7 +13690,7 @@ class port_stats_reply(stats_reply):
         assert(_stats_type == 4)
         obj.flags = reader.read("!H")[0]
         reader.skip(4)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.port_stats_entry.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.port_stats_entry.unpack)
         return obj
 
     def __eq__(self, other):
@@ -13826,7 +13819,7 @@ class port_status(message):
         if desc != None:
             self.desc = desc
         else:
-            self.desc = common.port_desc()
+            self.desc = ofp.port_desc()
         return
 
     def pack(self):
@@ -13855,7 +13848,7 @@ class port_status(message):
         obj.xid = reader.read("!L")[0]
         obj.reason = reader.read("!B")[0]
         reader.skip(7)
-        obj.desc = common.port_desc.unpack(reader)
+        obj.desc = ofp.port_desc.unpack(reader)
         return obj
 
     def __eq__(self, other):
@@ -13931,7 +13924,7 @@ class queue_get_config_reply(message):
         obj.xid = reader.read("!L")[0]
         obj.port = util.unpack_port_no(reader)
         reader.skip(4)
-        obj.queues = loxi.generic_util.unpack_list(reader, common.packet_queue.unpack)
+        obj.queues = loxi.generic_util.unpack_list(reader, ofp.common.packet_queue.unpack)
         return obj
 
     def __eq__(self, other):
@@ -14155,7 +14148,7 @@ class queue_stats_reply(stats_reply):
         assert(_stats_type == 5)
         obj.flags = reader.read("!H")[0]
         reader.skip(4)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.queue_stats_entry.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.queue_stats_entry.unpack)
         return obj
 
     def __eq__(self, other):
@@ -14785,7 +14778,7 @@ class table_features_stats_reply(stats_reply):
         assert(_stats_type == 12)
         obj.flags = reader.read("!H")[0]
         reader.skip(4)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.table_features.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.table_features.unpack)
         return obj
 
     def __eq__(self, other):
@@ -14865,7 +14858,7 @@ class table_features_stats_request(stats_request):
         assert(_stats_type == 12)
         obj.flags = reader.read("!H")[0]
         reader.skip(4)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.table_features.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.table_features.unpack)
         return obj
 
     def __eq__(self, other):
@@ -15099,7 +15092,7 @@ class table_stats_reply(stats_reply):
         assert(_stats_type == 3)
         obj.flags = reader.read("!H")[0]
         reader.skip(4)
-        obj.entries = loxi.generic_util.unpack_list(reader, common.table_stats_entry.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.table_stats_entry.unpack)
         return obj
 
     def __eq__(self, other):
@@ -15208,8 +15201,8 @@ def parse_header(buf):
 
 def parse_message(buf):
     msg_ver, msg_type, msg_len, msg_xid = parse_header(buf)
-    if msg_ver != const.OFP_VERSION and msg_type != const.OFPT_HELLO:
-        raise loxi.ProtocolError("wrong OpenFlow version (expected %d, got %d)" % (const.OFP_VERSION, msg_ver))
+    if msg_ver != ofp.OFP_VERSION and msg_type != ofp.OFPT_HELLO:
+        raise loxi.ProtocolError("wrong OpenFlow version (expected %d, got %d)" % (ofp.OFP_VERSION, msg_ver))
     if len(buf) != msg_len:
         raise loxi.ProtocolError("incorrect message size")
     return message.unpack(loxi.generic_util.OFReader(buf))

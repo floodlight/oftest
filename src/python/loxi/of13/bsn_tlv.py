@@ -8,18 +8,11 @@
 
 import struct
 import loxi
-import const
-import bsn_tlv
-import meter_band
-import instruction
-import oxm
-import common
-import instruction_id
-import action
-import message
-import action_id
 import util
 import loxi.generic_util
+
+import sys
+ofp = sys.modules['loxi.of13']
 
 class bsn_tlv(loxi.OFObject):
     subtypes = {}
@@ -424,7 +417,7 @@ class bucket(bsn_tlv):
         _length = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
-        obj.value = loxi.generic_util.unpack_list(reader, bsn_tlv.bsn_tlv.unpack)
+        obj.value = loxi.generic_util.unpack_list(reader, ofp.bsn_tlv.bsn_tlv.unpack)
         return obj
 
     def __eq__(self, other):
@@ -2489,7 +2482,7 @@ class reference(bsn_tlv):
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.table_id = reader.read("!H")[0]
-        obj.key = loxi.generic_util.unpack_list(reader, bsn_tlv.bsn_tlv.unpack)
+        obj.key = loxi.generic_util.unpack_list(reader, ofp.bsn_tlv.bsn_tlv.unpack)
         return obj
 
     def __eq__(self, other):
@@ -2606,6 +2599,53 @@ class request_packets(bsn_tlv):
         q.text('}')
 
 bsn_tlv.subtypes[11] = request_packets
+
+class rx_bytes(bsn_tlv):
+    type = 71
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!Q", self.value))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = rx_bytes()
+        _type = reader.read("!H")[0]
+        assert(_type == 71)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.value = reader.read("!Q")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("rx_bytes {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[71] = rx_bytes
 
 class rx_packets(bsn_tlv):
     type = 2
