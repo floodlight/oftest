@@ -8,18 +8,11 @@
 
 import struct
 import loxi
-import const
-import bsn_tlv
-import meter_band
-import instruction
-import oxm
-import common
-import instruction_id
-import action
-import message
-import action_id
 import util
 import loxi.generic_util
+
+import sys
+ofp = sys.modules['loxi.of13']
 
 class action_id(loxi.OFObject):
     subtypes = {}

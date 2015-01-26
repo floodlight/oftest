@@ -8,12 +8,11 @@
 
 import struct
 import loxi
-import const
-import action
-import message
-import common
 import util
 import loxi.generic_util
+
+import sys
+ofp = sys.modules['loxi.of10']
 
 class bsn_interface(loxi.OFObject):
 
@@ -396,7 +395,7 @@ class flow_stats_entry(loxi.OFObject):
         if match != None:
             self.match = match
         else:
-            self.match = common.match()
+            self.match = ofp.match()
         if duration_sec != None:
             self.duration_sec = duration_sec
         else:
@@ -463,7 +462,7 @@ class flow_stats_entry(loxi.OFObject):
         reader = orig_reader.slice(_length, 2)
         obj.table_id = reader.read("!B")[0]
         reader.skip(1)
-        obj.match = common.match.unpack(reader)
+        obj.match = ofp.match.unpack(reader)
         obj.duration_sec = reader.read("!L")[0]
         obj.duration_nsec = reader.read("!L")[0]
         obj.priority = reader.read("!H")[0]
@@ -473,7 +472,7 @@ class flow_stats_entry(loxi.OFObject):
         obj.cookie = reader.read("!Q")[0]
         obj.packet_count = reader.read("!Q")[0]
         obj.byte_count = reader.read("!Q")[0]
-        obj.actions = loxi.generic_util.unpack_list(reader, action.action.unpack)
+        obj.actions = loxi.generic_util.unpack_list(reader, ofp.action.action.unpack)
         return obj
 
     def __eq__(self, other):
@@ -723,7 +722,7 @@ class packet_queue(loxi.OFObject):
         orig_reader = reader
         reader = orig_reader.slice(_len, 6)
         reader.skip(2)
-        obj.properties = loxi.generic_util.unpack_list(reader, common.queue_prop.unpack)
+        obj.properties = loxi.generic_util.unpack_list(reader, ofp.common.queue_prop.unpack)
         return obj
 
     def __eq__(self, other):

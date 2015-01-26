@@ -8,13 +8,11 @@
 
 import struct
 import loxi
-import const
-import action
-import message
-import instruction
-import common
 import util
 import loxi.generic_util
+
+import sys
+ofp = sys.modules['loxi.of11']
 
 class bsn_interface(loxi.OFObject):
 
@@ -430,7 +428,7 @@ class bucket(loxi.OFObject):
         obj.watch_port = util.unpack_port_no(reader)
         obj.watch_group = reader.read("!L")[0]
         reader.skip(4)
-        obj.actions = loxi.generic_util.unpack_list(reader, action.action.unpack)
+        obj.actions = loxi.generic_util.unpack_list(reader, ofp.action.action.unpack)
         return obj
 
     def __eq__(self, other):
@@ -549,7 +547,7 @@ class flow_stats_entry(loxi.OFObject):
         if match != None:
             self.match = match
         else:
-            self.match = common.match()
+            self.match = ofp.match()
         if instructions != None:
             self.instructions = instructions
         else:
@@ -593,8 +591,8 @@ class flow_stats_entry(loxi.OFObject):
         obj.cookie = reader.read("!Q")[0]
         obj.packet_count = reader.read("!Q")[0]
         obj.byte_count = reader.read("!Q")[0]
-        obj.match = common.match.unpack(reader)
-        obj.instructions = loxi.generic_util.unpack_list(reader, instruction.instruction.unpack)
+        obj.match = ofp.match.unpack(reader)
+        obj.instructions = loxi.generic_util.unpack_list(reader, ofp.instruction.instruction.unpack)
         return obj
 
     def __eq__(self, other):
@@ -690,7 +688,7 @@ class group_desc_stats_entry(loxi.OFObject):
         obj.group_type = reader.read("!B")[0]
         reader.skip(1)
         obj.group_id = reader.read("!L")[0]
-        obj.buckets = loxi.generic_util.unpack_list(reader, common.bucket.unpack)
+        obj.buckets = loxi.generic_util.unpack_list(reader, ofp.common.bucket.unpack)
         return obj
 
     def __eq__(self, other):
@@ -768,7 +766,7 @@ class group_stats_entry(loxi.OFObject):
         reader.skip(4)
         obj.packet_count = reader.read("!Q")[0]
         obj.byte_count = reader.read("!Q")[0]
-        obj.bucket_stats = loxi.generic_util.unpack_list(reader, common.bucket_counter.unpack)
+        obj.bucket_stats = loxi.generic_util.unpack_list(reader, ofp.common.bucket_counter.unpack)
         return obj
 
     def __eq__(self, other):
@@ -1084,7 +1082,7 @@ class packet_queue(loxi.OFObject):
         orig_reader = reader
         reader = orig_reader.slice(_len, 6)
         reader.skip(2)
-        obj.properties = loxi.generic_util.unpack_list(reader, common.queue_prop.unpack)
+        obj.properties = loxi.generic_util.unpack_list(reader, ofp.common.queue_prop.unpack)
         return obj
 
     def __eq__(self, other):

@@ -8,18 +8,11 @@
 
 import struct
 import loxi
-import const
-import bsn_tlv
-import meter_band
-import instruction
-import oxm
-import common
-import instruction_id
-import action
-import message
-import action_id
 import util
 import loxi.generic_util
+
+import sys
+ofp = sys.modules['loxi.of13']
 
 class action(loxi.OFObject):
     subtypes = {}
@@ -287,7 +280,7 @@ class bsn_gentable(bsn):
         _subtype = reader.read("!L")[0]
         assert(_subtype == 5)
         obj.table_id = reader.read("!L")[0]
-        obj.key = loxi.generic_util.unpack_list(reader, bsn_tlv.bsn_tlv.unpack)
+        obj.key = loxi.generic_util.unpack_list(reader, ofp.bsn_tlv.bsn_tlv.unpack)
         return obj
 
     def __eq__(self, other):
@@ -1124,7 +1117,7 @@ class set_field(action):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len, 4)
-        obj.field = oxm.oxm.unpack(reader)
+        obj.field = ofp.oxm.oxm.unpack(reader)
         return obj
 
     def __eq__(self, other):
