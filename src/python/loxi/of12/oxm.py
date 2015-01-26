@@ -8,14 +8,11 @@
 
 import struct
 import loxi
-import const
-import action
-import oxm
-import message
-import instruction
-import common
 import util
 import loxi.generic_util
+
+import sys
+ofp = sys.modules['loxi.of12']
 
 class oxm(loxi.OFObject):
     subtypes = {}

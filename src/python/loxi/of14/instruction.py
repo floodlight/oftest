@@ -8,27 +8,11 @@
 
 import struct
 import loxi
-import const
-import port_desc_prop
-import bsn_tlv
-import meter_band
-import table_mod_prop
-import instruction
-import queue_desc_prop
-import oxm
-import bundle_prop
-import common
-import instruction_id
-import action
-import role_prop
-import message
-import queue_stats_prop
-import port_stats_prop
-import port_mod_prop
-import async_config_prop
-import action_id
 import util
 import loxi.generic_util
+
+import sys
+ofp = sys.modules['loxi.of14']
 
 class instruction(loxi.OFObject):
     subtypes = {}
@@ -106,7 +90,7 @@ class apply_actions(instruction):
         orig_reader = reader
         reader = orig_reader.slice(_len, 4)
         reader.skip(4)
-        obj.actions = loxi.generic_util.unpack_list(reader, action.action.unpack)
+        obj.actions = loxi.generic_util.unpack_list(reader, ofp.action.action.unpack)
         return obj
 
     def __eq__(self, other):
@@ -938,7 +922,7 @@ class write_actions(instruction):
         orig_reader = reader
         reader = orig_reader.slice(_len, 4)
         reader.skip(4)
-        obj.actions = loxi.generic_util.unpack_list(reader, action.action.unpack)
+        obj.actions = loxi.generic_util.unpack_list(reader, ofp.action.action.unpack)
         return obj
 
     def __eq__(self, other):

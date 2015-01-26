@@ -8,27 +8,11 @@
 
 import struct
 import loxi
-import const
-import port_desc_prop
-import bsn_tlv
-import meter_band
-import table_mod_prop
-import instruction
-import queue_desc_prop
-import oxm
-import bundle_prop
-import common
-import instruction_id
-import action
-import role_prop
-import message
-import queue_stats_prop
-import port_stats_prop
-import port_mod_prop
-import async_config_prop
-import action_id
 import util
 import loxi.generic_util
+
+import sys
+ofp = sys.modules['loxi.of14']
 
 class action(loxi.OFObject):
     subtypes = {}
@@ -296,7 +280,7 @@ class bsn_gentable(bsn):
         _subtype = reader.read("!L")[0]
         assert(_subtype == 5)
         obj.table_id = reader.read("!L")[0]
-        obj.key = loxi.generic_util.unpack_list(reader, bsn_tlv.bsn_tlv.unpack)
+        obj.key = loxi.generic_util.unpack_list(reader, ofp.bsn_tlv.bsn_tlv.unpack)
         return obj
 
     def __eq__(self, other):
@@ -1133,7 +1117,7 @@ class set_field(action):
         _len = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_len, 4)
-        obj.field = oxm.oxm.unpack(reader)
+        obj.field = ofp.oxm.oxm.unpack(reader)
         return obj
 
     def __eq__(self, other):
