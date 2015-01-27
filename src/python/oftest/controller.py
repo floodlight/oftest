@@ -160,26 +160,15 @@ class Controller(Thread):
         if self.passive:
             self.logger.info("Create/listen at " + self.host + ":" +
                              str(self.port))
-            try:
-                ai = socket.getaddrinfo(self.host, self.port, socket.AF_UNSPEC,
-                                        socket.SOCK_STREAM, 0,
-                                        socket.AI_PASSIVE)
-            except:
-                raise Exception("Could not get address info for " + 
-                                self.host + ":" + str(self.port))
-
-            try:
-                # Use first returned addrinfo
-                (family, socktype, proto, name, sockaddr) = ai[0]
-                self.listen_socket = socket.socket(family, socktype)
-                self.listen_socket.setsockopt(socket.SOL_SOCKET,
-                                              socket.SO_REUSEADDR, 1)
-                self.listen_socket.bind(sockaddr)
-                self.listen_socket.listen(LISTEN_QUEUE_SIZE)
-            except Exception as e:
-                raise Exception("Could not set up socket for " + 
-                                self.host + ":" + str(self.port) + ': ' +
-                                str(e))
+            ai = socket.getaddrinfo(self.host, self.port, socket.AF_UNSPEC,
+                                    socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
+            # Use first returned addrinfo
+            (family, socktype, proto, name, sockaddr) = ai[0]
+            self.listen_socket = socket.socket(family, socktype)
+            self.listen_socket.setsockopt(socket.SOL_SOCKET,
+                                          socket.SO_REUSEADDR, 1)
+            self.listen_socket.bind(sockaddr)
+            self.listen_socket.listen(LISTEN_QUEUE_SIZE)
 
     def filter_packet(self, rawmsg, hdr):
         """
