@@ -587,7 +587,7 @@ def receive_pkt_check(dp, pkt, yes_ports, no_ports, assert_if):
     for ofport in yes_ports:
         logging.debug("Checking for pkt on port " + str(ofport))
         (rcv_port, rcv_pkt, pkt_time) = dp.poll(
-            port_number=ofport, exp_pkt=exp_pkt_arg)
+            port_number=ofport, timeout=1, exp_pkt=exp_pkt_arg)
         assert_if.assertTrue(rcv_pkt is not None, 
                              "Did not receive pkt on " + str(ofport))
         if not oftest.dataplane.match_exp_pkt(pkt, rcv_pkt):
