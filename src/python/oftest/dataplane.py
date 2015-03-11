@@ -129,7 +129,10 @@ class DataPlanePortPcap:
         return (pkt[:], timestamp)
 
     def send(self, packet):
-        return self.pcap.inject(packet, len(packet))
+        if hasattr(self.pcap, "inject"):
+            return self.pcap.inject(packet, len(packet))
+        else:
+           return self.pcap.sendpacket(packet)
 
     def down(self):
         pass
