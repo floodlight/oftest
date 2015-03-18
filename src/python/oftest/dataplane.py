@@ -27,6 +27,9 @@ import ofutils
 import netutils
 from pcap_writer import PcapWriter
 
+if "linux" in sys.platform:
+    import afpacket
+
 have_pypcap = False
 try:
     import pcap
@@ -66,6 +69,7 @@ class DataPlanePort:
         self.interface_name = interface_name
         self.socket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW,
                                     socket.htons(self.ETH_P_ALL))
+        afpacket.enable_auxdata(self.socket)
         self.socket.bind((interface_name, 0))
         netutils.set_promisc(self.socket, interface_name)
         self.socket.settimeout(self.RCV_TIMEOUT)
@@ -85,7 +89,7 @@ class DataPlanePort:
         Receive a packet from this port.
         @retval (packet data, timestamp)
         """
-        pkt = self.socket.recv(self.RCV_SIZE_DEFAULT)
+        pkt = afpacket.recv(self.socket, self.RCV_SIZE_DEFAULT)
         return (pkt, time.time())
 
     def send(self, packet):
@@ -191,7 +195,6 @@ class DataPlane(Thread):
         elif have_pypcap:
             self.dppclass = DataPlanePortPcap
         else:
-            self.logger.warning("Missing pypcap, VLAN tests may fail. See README for installation instructions.")
             self.dppclass = DataPlanePort
 
         self.start()
