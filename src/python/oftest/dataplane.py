@@ -29,15 +29,8 @@ from pcap_writer import PcapWriter
 
 if "linux" in sys.platform:
     import afpacket
-
-have_pypcap = False
-try:
+else:
     import pcap
-    if hasattr(pcap, "pcap"):
-        # the incompatible pylibpcap library masquerades as pcap
-        have_pypcap = True
-except:
-    pass
 
 def match_exp_pkt(exp_pkt, pkt):
     """
@@ -53,7 +46,7 @@ def match_exp_pkt(exp_pkt, pkt):
     return e == p
 
 
-class DataPlanePort:
+class DataPlanePortLinux:
     """
     Uses raw sockets to capture and send packets on a network interface.
     """
@@ -115,10 +108,8 @@ class DataPlanePort:
 
 class DataPlanePortPcap:
     """
-    Alternate port implementation using libpcap. This is required for recent
-    versions of Linux (such as Linux 3.2 included in Ubuntu 12.04) which
-    offload the VLAN tag, so it isn't in the data returned from a read on a raw
-    socket. libpcap understands how to read the VLAN tag from the kernel.
+    Alternate port implementation using libpcap. This is used by non-Linux
+    operating systems.
     """
 
     def __init__(self, interface_name, port_number):
@@ -192,10 +183,10 @@ class DataPlane(Thread):
         #
         if "dataplane" in self.config and "portclass" in self.config["dataplane"]:
             self.dppclass = self.config["dataplane"]["portclass"]
-        elif have_pypcap:
-            self.dppclass = DataPlanePortPcap
+        elif "linux" in sys.platform:
+            self.dppclass = DataPlanePortLinux
         else:
-            self.dppclass = DataPlanePort
+            self.dppclass = DataPlanePortPcap
 
         self.start()
 
