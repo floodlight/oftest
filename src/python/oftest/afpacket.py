@@ -98,11 +98,11 @@ def recv(sk, bufsize):
     # only control message.
     assert msghdr.msg_controllen >= sizeof(struct_cmsghdr)
 
-    cmsghdr = struct_cmsghdr.from_buffer(ctrl_buf)
+    cmsghdr = struct_cmsghdr.from_buffer(ctrl_buf) # pylint: disable=no-member
     assert cmsghdr.cmsg_level == SOL_PACKET
     assert cmsghdr.cmsg_type == PACKET_AUXDATA
 
-    auxdata = struct_tpacket_auxdata.from_buffer(ctrl_buf, sizeof(struct_cmsghdr))
+    auxdata = struct_tpacket_auxdata.from_buffer(ctrl_buf, sizeof(struct_cmsghdr)) # pylint: disable=no-member
 
     if auxdata.tp_vlan_tci != 0 or auxdata.tp_status & TP_STATUS_VLAN_VALID:
         # Insert VLAN tag
