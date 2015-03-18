@@ -64,7 +64,6 @@ The following software is required to run OFTest:
 
  * Python 2.7
  * Scapy
- * pypcap (optional - VLAN tests will fail without this)
  * tcpdump (optional - Scapy will complain if it's missing)
  * Doxygen and doxypy (optional - for documentation generation)
  * PyLint (optional - for source checking)
