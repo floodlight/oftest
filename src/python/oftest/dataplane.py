@@ -60,10 +60,9 @@ class DataPlanePortLinux:
         @param interface_name The name of the physical interface like eth1
         """
         self.interface_name = interface_name
-        self.socket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW,
-                                    socket.htons(self.ETH_P_ALL))
+        self.socket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, 0)
         afpacket.enable_auxdata(self.socket)
-        self.socket.bind((interface_name, 0))
+        self.socket.bind((interface_name, self.ETH_P_ALL))
         netutils.set_promisc(self.socket, interface_name)
         self.socket.settimeout(self.RCV_TIMEOUT)
 
