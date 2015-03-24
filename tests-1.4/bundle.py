@@ -213,3 +213,50 @@ class TooManyBytes(base_tests.SimpleProtocol):
 
         msg, _ = self.controller.poll(exp_msg=ofp.message.error_msg)
         self.assertIsNotNone(msg)
+
+class Barrier(base_tests.SimpleProtocol):
+    """
+    Verify that barriers are allowed in a bundle
+    """
+    def runTest(self):
+        request = ofp.message.bundle_ctrl_msg(
+            bundle_ctrl_type=ofp.OFPBCT_OPEN_REQUEST,
+            bundle_id=1)
+
+        response, _ = self.controller.transact(request)
+        self.assertIsInstance(response, ofp.message.bundle_ctrl_msg)
+        self.assertEqual(response.bundle_ctrl_type, ofp.OFPBCT_OPEN_REPLY)
+        self.assertEqual(response.bundle_id, 1)
+
+        request = ofp.message.bundle_add_msg(
+            xid=1,
+            bundle_id=1,
+            data=ofp.message.flow_stats_request(xid=1).pack())
+        self.controller.message_send(request)
+
+        request = ofp.message.bundle_add_msg(
+            xid=2,
+            bundle_id=1,
+            data=ofp.message.barrier_request(xid=2).pack())
+        self.controller.message_send(request)
+
+        # Make sure the messages aren't executed
+        msg, _ = self.controller.poll(ofp.message.echo_reply)
+        self.assertIsNone(msg)
+
+        request = ofp.message.bundle_ctrl_msg(
+            bundle_ctrl_type=ofp.OFPBCT_COMMIT_REQUEST,
+            bundle_id=1)
+
+        response, _ = self.controller.transact(request)
+        self.assertIsInstance(response, ofp.message.bundle_ctrl_msg)
+        self.assertEqual(response.bundle_ctrl_type, ofp.OFPBCT_COMMIT_REPLY)
+        self.assertEqual(response.bundle_id, 1)
+
+        response, _ = self.controller.poll(ofp.message.flow_stats_reply)
+        self.assertIsNotNone(response)
+        self.assertEquals(response.xid, 1)
+
+        response, _ = self.controller.poll(ofp.message.barrier_reply)
+        self.assertIsNotNone(response)
+        self.assertEquals(response.xid, 2)
