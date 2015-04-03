@@ -498,8 +498,8 @@ if config["list_test_names"]:
 #@todo Decide if multiple suites are ever needed
 suite = unittest.TestSuite()
 
-for (modname, (mod, tests)) in test_modules.items():
-    for (testname, test) in tests.items():
+for (modname, (mod, tests)) in sorted(test_modules.items()):
+    for (testname, test) in sorted(tests.items()):
         suite.addTest(test())
 
 # Allow platforms to import each other
