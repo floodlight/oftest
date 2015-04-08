@@ -301,6 +301,9 @@ class AllPortStats(base_tests.SimpleDataPlane):
         return flow_mod_msg
 
     def runTest(self):
+        delete_all_flows(self.controller)
+        do_barrier(self.controller)
+
         # TODO: set from command-line parameter
         test_timeout = 60
 
