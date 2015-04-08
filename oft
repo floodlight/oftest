@@ -92,6 +92,7 @@ CONFIG_DEFAULT = {
     "minsize"            : 0,
     "random_seed"        : None,
     "disable_ipv6"       : False,
+    "random_order"       : False,
 
     # Other configuration
     "port_map"           : {},
@@ -209,6 +210,8 @@ prefixing them with the '^' character.
                       help="Random number generator seed")
     group.add_option("--disable-ipv6", action="store_true",
                       help="Disable IPv6 tests")
+    group.add_option("--random-order", action="store_true",
+                      help="Randomize order of tests")
     parser.add_option_group(group)
 
     # Might need this if other parsers want command line
@@ -498,9 +501,16 @@ if config["list_test_names"]:
 #@todo Decide if multiple suites are ever needed
 suite = unittest.TestSuite()
 
-for (modname, (mod, tests)) in test_modules.items():
-    for (testname, test) in tests.items():
-        suite.addTest(test())
+sorted_tests = []
+for (modname, (mod, tests)) in sorted(test_modules.items()):
+    for (testname, test) in sorted(tests.items()):
+        sorted_tests.append(test)
+
+if config["random_order"]:
+    random.shuffle(sorted_tests)
+
+for test in sorted_tests:
+    suite.addTest(test())
 
 # Allow platforms to import each other
 sys.path.append(config["platform_dir"])
