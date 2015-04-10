@@ -60,16 +60,8 @@ def sendPacket(obj, pkt, ingress_port, egress_port, test_timeout):
                     'Response packet does not match send packet')
 
 def getStats(obj, port):
-    stat_req = ofp.message.port_stats_request()
-    stat_req.port_no = port
-
-    logging.info("Sending stats request")
-    response, pkt = obj.controller.transact(stat_req, timeout=2)
-    obj.assertTrue(response is not None, 
-                    "No response to stats request")
-    obj.assertTrue(len(response.entries) == 1,
-                    "Did not receive port stats reply")
-    for item in response.entries:
+    entries = get_port_stats(obj, port)
+    for item in entries:
         logging.info("Sent " + str(item.tx_packets) + " packets")
         packet_sent = item.tx_packets
         packet_recv = item.rx_packets
@@ -77,17 +69,9 @@ def getStats(obj, port):
     return packet_sent, packet_recv
 
 def getAllStats(obj):
-    stat_req = ofp.message.port_stats_request()
-    stat_req.port_no = ofp.OFPP_NONE
-
-    logging.info("Sending all port stats request")
-    response, pkt = obj.controller.transact(stat_req, timeout=2)
-    obj.assertTrue(response is not None, 
-                    "No response to stats request")
-    obj.assertTrue(len(response.entries) >= 3,
-                    "Did not receive all port stats reply")
+    entries = get_port_stats(obj, ofp.OFPP_NONE)
     stats = {}
-    for item in response.entries:
+    for item in entries:
         stats[ item.port_no ] = ( item.tx_packets, item.rx_packets )
     return stats
 

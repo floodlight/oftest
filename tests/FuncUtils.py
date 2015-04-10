@@ -412,10 +412,7 @@ def get_flowstats(self,match):
 def get_portstats(self,port_num):
 
 # Return all the port counters in the form a tuple 
-    port_stats_req = ofp.message.port_stats_request()
-    port_stats_req.port_no = port_num  
-    response,pkt = self.controller.transact(port_stats_req)
-    self.assertTrue(response is not None,"No response received for port stats request") 
+    entries = get_port_stats(self, port_num)
     rx_pkts=0
     tx_pkts=0
     rx_byts=0
@@ -431,7 +428,7 @@ def get_portstats(self,port_num):
     tx_err=0
 
 
-    for obj in response.entries:
+    for obj in entries:
         rx_pkts += obj.rx_packets
         tx_pkts += obj.tx_packets
         rx_byts += obj.rx_bytes
