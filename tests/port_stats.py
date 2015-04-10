@@ -110,10 +110,10 @@ def verifyStats(obj, port, test_timeout, packet_sent, packet_recv):
             sent = item.tx_packets
             recv = item.rx_packets
             logging.info("Sent " + str(item.tx_packets) + " packets")
-            if item.tx_packets == packet_sent:
+            if item.tx_packets >= packet_sent:
                 all_packets_sent = 1
             logging.info("Received " + str(item.rx_packets) + " packets")
-            if item.rx_packets == packet_recv:
+            if item.rx_packets >= packet_recv:
                 all_packets_received = 1
 
         if all_packets_received and all_packets_sent:
