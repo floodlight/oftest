@@ -83,3 +83,4 @@ class FlowExpire(base_tests.SimpleDataPlane):
         self.assertEqual(match, response.match,
                          'Flow table entry does not match')
         
+        sleep(1)

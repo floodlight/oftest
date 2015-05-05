@@ -628,6 +628,8 @@ class IdleTimeout(base_tests.SimpleDataPlane):
         self.assertEqual(1, response.duration_sec,
                          'Flow was not alive for 1 sec')
 
+        sleep(1)
+
 
 class Outport2(base_tests.SimpleDataPlane):
 
@@ -710,6 +712,8 @@ class HardTimeout(base_tests.SimpleDataPlane):
         self.assertEqual(1, response.duration_sec,
                          'Flow was not alive for 1 sec')
 
+        sleep(1)
+
 
 class FlowTimeout(base_tests.SimpleDataPlane):
   
@@ -760,6 +764,8 @@ class FlowTimeout(base_tests.SimpleDataPlane):
 
         # Verify no entries in the table
         verify_tablestats(self,expect_active=0)
+
+        sleep(1)
 
 
 
