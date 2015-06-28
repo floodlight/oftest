@@ -46,10 +46,14 @@ class LoadBarrier(base_tests.SimpleProtocol):
     def runTest(self):
         # Set up flow to send from port 1 to port 2 and copy to CPU
         # Test parameter gives LB port base (assumes consecutive)
+        
+        ##-- dictionary containing the ingress port to egress port mapping
+        ingress_to_egress_port_dict = self.create_dict()
+        
         lb_port = test_param_get('lb_port', default=1)
         barrier_count = test_param_get('barrier_count', 
                                        default=10)
-
+        egress_port = ingress_to_egress_port_dict[lb_port]
         # Set controller to filter packet ins
         self.controller.filter_packet_in = True
         self.controller.pkt_in_filter_limit = 10
@@ -59,7 +63,7 @@ class LoadBarrier(base_tests.SimpleProtocol):
         match.wildcards &= ~ofp.OFPFW_IN_PORT
         match.in_port = lb_port
         act = ofp.action.output()
-        act.port = lb_port + 1
+        act.port = egress_port
 
         request = ofp.message.flow_add()
         request.match = match
@@ -81,11 +85,11 @@ class LoadBarrier(base_tests.SimpleProtocol):
         msg.data = str(pkt)
         msg.buffer_id = 0xffffffff
         act = ofp.action.output()
-        act.port = lb_port + 1
+        act.port = egress_port
         msg.actions.append(act)
         logging.info("Sleeping before starting storm")
         time.sleep(1) # Root causing issue with fast disconnects
-        logging.info("Sending packet out to %d" % (lb_port + 1))
+        logging.info("Sending packet out to %d" % (egress_port))
         self.controller.message_send(msg)
 
         for idx in range(0, barrier_count):
@@ -96,6 +100,40 @@ class LoadBarrier(base_tests.SimpleProtocol):
         # Clear the flow table when done
         logging.debug("Deleting all flows from switch")
         delete_all_flows(self.controller)
+        
+    def create_dict(self):
+        """
+        Openflow test case LoadBarrier works on a general assumption that if
+        packet is ingressing through port with ifindex x at the controller,
+        then the packet egresses through x+1 from the controller. What if x+1
+        is not a part of openflow configuration, So we need to find an appropriate
+        egress port corresponding to the ingress port, which is nothing but any 
+        of the ports that are part of the openflow configuration.  
+        
+        This function simply takes the ingress port list, shuffles it and prepares
+        an egress port list. Then it prepares a dictionary in which key is a port 
+        in ingress_port_list and its corresponding values is an element in the 
+        egress_port_list. Now this dictionary is returned to the function which calls it.  
+        """
+        
+        ##-- fetching the list of ports
+        ingress_port_list = config["port_map"].keys()
+        
+        ##-- calculating no of ports
+        no_of_ports = len(ingress_port_list)
+        
+        ##-- if no of ports are 4 then
+        ##-- rearranged_index_list is [1,2,3,0]
+        ##-- Index is shifted to one position right in a circular manner
+        rearranged_index_list = [(index+1)%no_of_ports for index in range(no_of_ports)]
+        
+        ##-- Shuffling the list as per the index list formed above
+        egress_port_list = [ingress_port_list[index] for index in rearranged_index_list]
+        
+        ##-- mapping ingress to egress ports
+        ingress_to_egress_port_dict = {k:v for k,v in zip(ingress_port_list,egress_port_list)}
+        
+        return ingress_to_egress_port_dict    
 
 class PacketInLoad(base_tests.SimpleDataPlane):
     """
