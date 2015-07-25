@@ -172,8 +172,14 @@ class PacketInExact(base_tests.SimpleDataPlane):
 
         parsed_pkt = simple_tcp_packet()
         pkt = str(parsed_pkt)
-        match = packet_to_flow_match(self, parsed_pkt)
-        match.vlan_vid = 1
+
+        #  NOTE: interally the switch adds a VLAN so the match needs to be with an explicit VLAN
+        parsed_vlan_pkt = simple_tcp_packet(dl_vlan_enable=True, 
+                            vlan_vid=ofdpa_utils.DEFAULT_VLAN, 
+                            vlan_pcp=0,
+                            pktlen=104) # 4 less than we started with, because the way simple_tcp calc's length
+        match = packet_to_flow_match(self, parsed_vlan_pkt)
+        vlan_pkt = str(parsed_vlan_pkt)
 
         request = ofp.message.flow_add(
             table_id=ofdpa_utils.ACL_TABLE.table_id,
@@ -195,10 +201,11 @@ class PacketInExact(base_tests.SimpleDataPlane):
         for of_port in config["port_map"].keys():
             logging.info("PacketInExact test, port %d", of_port)
             self.dataplane.send(of_port, pkt)
-            verify_packet_in(self, pkt, of_port, ofp.OFPR_ACTION)
+            verify_packet_in(self, vlan_pkt, of_port, ofp.OFPR_ACTION)
             verify_packets(self, pkt, [])
 
 class PacketInWildcard(base_tests.SimpleDataPlane):
+        #  NOTE: interally the switch adds a VLAN so the match needs to be with an explicit VLAN
     """
     Test packet in function for a match-all flow
 
@@ -208,10 +215,21 @@ class PacketInWildcard(base_tests.SimpleDataPlane):
     def runTest(self):
         delete_all_flows(self.controller)
 
+        # required for OF-DPA to not drop packets
+        ofdpa_utils.installDefaultVlan(self.controller)
+
         pkt = str(simple_tcp_packet())
 
+        #  NOTE: interally the switch adds a VLAN so the match needs to be with an explicit VLAN
+        parsed_vlan_pkt = simple_tcp_packet(dl_vlan_enable=True, 
+                            vlan_vid=ofdpa_utils.DEFAULT_VLAN, 
+                            vlan_pcp=0,
+                            pktlen=104) # 4 less than we started with, because the way simple_tcp calc's length
+        vlan_pkt = str(parsed_vlan_pkt)
+
+
         request = ofp.message.flow_add(
-            table_id=test_param_get("table", 0),
+            table_id=ofdpa_utils.ACL_TABLE.table_id,
             cookie=42,
             instructions=[
                 ofp.instruction.apply_actions(
@@ -229,7 +247,7 @@ class PacketInWildcard(base_tests.SimpleDataPlane):
         for of_port in config["port_map"].keys():
             logging.info("PacketInWildcard test, port %d", of_port)
             self.dataplane.send(of_port, pkt)
-            verify_packet_in(self, pkt, of_port, ofp.OFPR_ACTION)
+            verify_packet_in(self, vlan_pkt, of_port, ofp.OFPR_ACTION)
             verify_packets(self, pkt, [])
 
 class PacketInMiss(base_tests.SimpleDataPlane):
@@ -242,11 +260,21 @@ class PacketInMiss(base_tests.SimpleDataPlane):
     def runTest(self):
         delete_all_flows(self.controller)
 
+        # required for OF-DPA to not drop packets
+        ofdpa_utils.installDefaultVlan(self.controller)
+
         parsed_pkt = simple_tcp_packet()
         pkt = str(parsed_pkt)
 
+        #  NOTE: interally the switch adds a VLAN so the match needs to be with an explicit VLAN
+        parsed_vlan_pkt = simple_tcp_packet(dl_vlan_enable=True, 
+                            vlan_vid=ofdpa_utils.DEFAULT_VLAN, 
+                            vlan_pcp=0,
+                            pktlen=104) # 4 less than we started with, because the way simple_tcp calc's length
+        vlan_pkt = str(parsed_vlan_pkt)
+
         request = ofp.message.flow_add(
-            table_id=test_param_get("table", 0),
+            table_id=ofdpa_utils.ACL_TABLE.table_id,
             cookie=42,
             instructions=[
                 ofp.instruction.apply_actions(
@@ -264,7 +292,7 @@ class PacketInMiss(base_tests.SimpleDataPlane):
         for of_port in config["port_map"].keys():
             logging.info("PacketInMiss test, port %d", of_port)
             self.dataplane.send(of_port, pkt)
-            verify_packet_in(self, pkt, of_port, ofp.OFPR_NO_MATCH)
+            verify_packet_in(self, vlan_pkt, of_port, ofp.OFPR_NO_MATCH)
             verify_packets(self, pkt, [])
 
 class PacketOut(base_tests.SimpleDataPlane):
