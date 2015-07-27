@@ -21,6 +21,8 @@ def macAddrToHexList(mac):
     """ Takes '00:11:22:33:44:ff' and returns [ 0x00, 0x11, 0x22, 0x33, 0x44, 0xff] """
     return map(int,mac.split(':'),[16]*6)
 
+    
+
 @group('ipv6_fwd')
 class IPv6_Untagged_Unicast(base_tests.SimpleDataPlane):
     """
@@ -35,6 +37,12 @@ class IPv6_Untagged_Unicast(base_tests.SimpleDataPlane):
     Then test from all ports to all ports
 
     """
+    def send_log_check(self, log_msg, of_msg):
+        logging.info(log_msg)
+        self.controller.message_send(of_msg)
+        do_barrier(self.controller)
+        verify_no_errors(self.controller)
+
     def runTest(self):
         router_mac = '00:11:22:33:44:55'
         dst_ip = 'fe80::2420:52ff:fe8f:5190'        
@@ -45,52 +53,13 @@ class IPv6_Untagged_Unicast(base_tests.SimpleDataPlane):
         delete_all_flows(self.controller)
         delete_all_groups(self.controller)
 
-        #pdb.set_trace()
-        l3_group_id = ofdpa_utils.makeGroupID("L3 Unicast",1)
-        l2_group_id = ofdpa_utils.makeGroupID("L2 Interface",(dst_vlan<<16) + 1)  # bits 27:16 of the local_id are the vlan (!?)
-
         # OF-DPA requires vlans to function
         ofdpa_utils.installDefaultVlan(self.controller)
         ofdpa_utils.enableVlanOnPort(self.controller, dst_vlan)
 
 
-        # Create the L2 interface group entry
+        # Create an L2 and L3 nterface group entry for each port
         #   Note that the port here is temp; will be reset in the testing loop
-        group_msg = ofp.message.group_add(
-            group_type=ofp.OFPGT_ALL,
-            group_id=l2_group_id,
-            buckets=[
-            ofp.bucket(
-                actions=[
-                    ofp.action.pop_vlan(),
-                    ofp.action.output(ports[0])  # set port now, but inner loop will change
-                    ])
-            ])
-
-        logging.info("Creating IPv6 L2 interface group")
-        self.controller.message_send(group_msg)
-        do_barrier(self.controller)
-        verify_no_errors(self.controller)
-
-
-        # Create the L3 unicast group entry
-        group_msg = ofp.message.group_add(
-            group_type=ofp.OFPGT_ALL,
-            group_id=l3_group_id,  
-            buckets=[
-            ofp.bucket(
-                actions=[
-                    ofp.action.group(l2_group_id),  # chain to L2 group
-                    ofp.action.set_field( ofp.oxm.eth_dst( macAddrToHexList(dst_mac))),
-                    ofp.action.set_field( ofp.oxm.eth_src( macAddrToHexList(router_mac))),
-                    ofp.action.set_field( ofp.oxm.vlan_vid( dst_vlan)),
-                    ])
-            ])
-
-        logging.info("Creating IPv6 Unicast group")
-        self.controller.message_send(group_msg)
-        do_barrier(self.controller)
-        verify_no_errors(self.controller)
 
         # Insert a rule in the MAC termination table to send to Unicast router table
         #   Must match on dst mac and ethertype; other fields are optional
@@ -99,7 +68,7 @@ class IPv6_Untagged_Unicast(base_tests.SimpleDataPlane):
             ofp.oxm.eth_type(0x86dd)    # ethertype = IPv6
             ])
 
-        request = ofp.message.flow_add(
+        self.send_log_check( "Inserting IPv6 MacTermination rule", ofp.message.flow_add(
             table_id = ofdpa_utils.MACTERM_TABLE.table_id,
             cookie=55,
             match=macterm_match,
@@ -107,34 +76,13 @@ class IPv6_Untagged_Unicast(base_tests.SimpleDataPlane):
                     ofp.instruction.goto_table(ofdpa_utils.UNICAST_ROUTING_TABLE.table_id)
                 ],
             buffer_id=ofp.OFP_NO_BUFFER,
-            priority=1000)
+            priority=1000))
 
-        logging.info("Inserting IPv6 MacTermination rule")
-        self.controller.message_send(request)
-        do_barrier(self.controller)
-        verify_no_errors(self.controller)
-
-        # Insert a rule into the Unicast Routing table to forward this packet
+        # Store the match for the unicast match below
         unicast_match = ofp.match([
-            ofp.oxm.eth_type(0x86dd),    # ethertype = IPv6
-            ofp.oxm.ipv6_dst(parse_ipv6(dst_ip)),
-             ])
-
-        request = ofp.message.flow_add(
-            table_id = ofdpa_utils.UNICAST_ROUTING_TABLE.table_id,
-            cookie=66,
-            match=unicast_match,
-            instructions=[
-                    ofp.instruction.goto_table(ofdpa_utils.ACL_TABLE.table_id),
-                    ofp.instruction.write_actions([ofp.action.group(l3_group_id)])
-                ],
-            buffer_id=ofp.OFP_NO_BUFFER,
-            priority=1000)
-
-        logging.info("Inserting IPv6 MacTermination rule")
-        self.controller.message_send(request)
-        do_barrier(self.controller)
-        verify_no_errors(self.controller)
+              ofp.oxm.eth_type(0x86dd),    # ethertype = IPv6
+              ofp.oxm.ipv6_dst(parse_ipv6(dst_ip)),
+              ])
 
         # Generate the test and expected packets
         parsed_pkt = testutils12.simple_ipv6_packet()
@@ -149,19 +97,48 @@ class IPv6_Untagged_Unicast(base_tests.SimpleDataPlane):
                ) 
         expected_pkt = str(parsed_expected_pkt)
 
-        for out_port in ports:
-            msg = ofp.message.group_modify(
-                    group_type=ofp.OFPGT_ALL,
-                    group_id=l2_group_id,
-                    buckets=[
-                        ofp.action.pop_vlan(),
-                        ofp.bucket(actions=[ofp.action.output(out_port)])
-                        ])
 
-            self.controller.message_send(msg)
-            logging.info("Changing output port for group %d to %d" % (l2_group_id, out_port))
-            do_barrier(self.controller)
-            verify_no_errors(self.controller)
+        first_time = True
+        for out_port in ports:
+            l2_group_id = ofdpa_utils.makeGroupID("L2 Interface",(dst_vlan<<16) + out_port)  # bits 27:16 of the local_id are the vlan (!?)
+            l3_group_id = ofdpa_utils.makeGroupID("L3 Unicast",out_port)
+            self.send_log_check("Creating IPv6 L2 interface group for port %d" % out_port, ofp.message.group_add(
+                group_type=ofp.OFPGT_ALL,
+                group_id=l2_group_id,
+                buckets=[
+                ofp.bucket(
+                    actions=[
+                        ofp.action.pop_vlan(),
+                        ofp.action.output(out_port)
+                        ])
+                ]))
+
+            # Create the L3 unicast group entry
+            self.send_log_check("Creating IPv6 Unicast group for %d" % out_port, ofp.message.group_add(
+                group_type=ofp.OFPGT_ALL,
+                group_id=l3_group_id,  
+                buckets=[
+                ofp.bucket(
+                    actions=[
+                        ofp.action.group(l2_group_id),  # chain to last L2 group; doesn't matter; will fix in test loop
+                        ofp.action.set_field( ofp.oxm.eth_dst( macAddrToHexList(dst_mac))),
+                        ofp.action.set_field( ofp.oxm.eth_src( macAddrToHexList(router_mac))),
+                        ofp.action.set_field( ofp.oxm.vlan_vid( dst_vlan)),
+                        ])
+                ]))
+
+            self.send_log_check("Modifying IPv6 route rule to output to port %d" % out_port, ofp.message.flow_modify(
+                table_id = ofdpa_utils.UNICAST_ROUTING_TABLE.table_id,
+                cookie=66,
+                match=unicast_match,
+                instructions=[
+                        ofp.instruction.goto_table(ofdpa_utils.ACL_TABLE.table_id),
+                        # set the l3_group_id to correspond to out_port's buckets
+                        ofp.instruction.write_actions([
+                            ofp.action.group(ofdpa_utils.makeGroupID("L3 Unicast",out_port))]) 
+                    ],
+                buffer_id=ofp.OFP_NO_BUFFER,
+                priority=1000))
 
             for in_port in ports:
                 if in_port == out_port:
@@ -169,3 +146,4 @@ class IPv6_Untagged_Unicast(base_tests.SimpleDataPlane):
                 logging.info("IPv6_Untagged_Unicast test, ports %d to %d", in_port, out_port)
                 self.dataplane.send(in_port, pkt)
                 verify_packets(self, expected_pkt, [out_port])
+            
