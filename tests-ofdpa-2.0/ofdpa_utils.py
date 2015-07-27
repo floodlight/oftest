@@ -30,40 +30,17 @@ ACL_TABLE               = table(60, "ACL Policy Table")
 
 DEFAULT_VLAN = 1
 
-
-def installDefaultVlan(controller, vlan=DEFAULT_VLAN, priority=0, port=ofp.OFPP_ALL):
-    """ Insert a rule that maps all untagged traffic to vlan $vlan
-
-    In OFDPA, table 10 (the vlan table) requires that all traffic be
-    mapped to an internal vlan else the packets be dropped.  This sets
-    up a default vlan mapping for all traffic.
-
-    With OF-DPA, before you can insert a 'untagged to X' rule on a
-    port, you must first insert a 'X --> X' rule for the same port.
-
-    Further, the 'X --> X' rule must set ofp.OFPVID_PRESENT even
-    though 'X' is non-zero.
-
-    The 'controller' variable is self.controller from a test
-    """
-    # OFDPA seems to be dumb and wants each port set individually
+def enableVlanOnPort(controller, vlan, port=ofp.OFPP_ALL, priority=0):
     if port == ofp.OFPP_ALL:
         ports = sorted(config["port_map"].keys())
     else:
         ports = [port]
-
     for port in ports:
         tagged_match = ofp.match([
                 ofp.oxm.in_port(port),
                 ofp.oxm.vlan_vid(vlan | ofp.OFPVID_PRESENT)
                 ])
 
-        untagged_match = ofp.match([
-                ofp.oxm.in_port(port),
-                ofp.oxm.vlan_vid(0)
-                ])
-
-        # first install the rule that allows this vlan tagged
         request = ofp.message.flow_add(
             table_id = VLAN_TABLE.table_id,
             cookie = 0xdead,
@@ -79,10 +56,42 @@ def installDefaultVlan(controller, vlan=DEFAULT_VLAN, priority=0, port=ofp.OFPP_
             buffer_id = ofp.OFP_NO_BUFFER,
             priority = priority)
 
-        logging.info("Inserting access vlan rule allowing vlan %d on port %d" % (vlan, port))
+        logging.info("Inserting vlan rule allowing tagged vlan %d on port %d" % (vlan, port))
         controller.message_send(request)
         do_barrier(controller)
+        verify_no_errors(controller)
 
+
+def installDefaultVlan(controller, vlan=DEFAULT_VLAN, port=ofp.OFPP_ALL, priority=0):
+    """ Insert a rule that maps all untagged traffic to vlan $vlan
+
+    In OFDPA, table 10 (the vlan table) requires that all traffic be
+    mapped to an internal vlan else the packets be dropped.  This function
+    sets up a default vlan mapping all untagged traffic to an internal VLAN.
+
+    With OF-DPA, before you can insert a 'untagged to X' rule on a
+    port, you must first insert a 'X --> X' rule for the same port.
+
+    Further, the 'X --> X' rule must set ofp.OFPVID_PRESENT even
+    though 'X' is non-zero.
+
+    The 'controller' variable is self.controller from a test
+    """
+    # OFDPA seems to be dumb and wants each port set individually
+    #       Can't set all ports by using OFPP_ALL
+    if port == ofp.OFPP_ALL:
+        ports = sorted(config["port_map"].keys())
+    else:
+        ports = [port]
+
+    for port in ports:
+        # enable this vlan on this port before we can map untagged packets to the vlan
+        enableVlanOnPort(controller, vlan, port)
+
+        untagged_match = ofp.match([
+                ofp.oxm.in_port(port),
+                ofp.oxm.vlan_vid(0)
+                ])
 
         request = ofp.message.flow_add(
             table_id = VLAN_TABLE.table_id,
@@ -102,3 +111,40 @@ def installDefaultVlan(controller, vlan=DEFAULT_VLAN, priority=0, port=ofp.OFPP_
         logging.info("Inserting default vlan sending all untagged traffic to vlan %d on port %d" % (vlan, port))
         controller.message_send(request)
         do_barrier(controller)
+        verify_no_errors(controller)
+
+
+_group_types = {
+    "L2 Interface": 0,
+    "L2 Rewrite" : 1,
+    "L3 Unicast" : 2,
+    "L2 Multicast" : 3,
+    "L2 Flood" : 4,
+    "L3 Interface" : 5,
+    "L3 Multicast": 6,
+    "L3 ECMP": 7,
+    "L2 Data Center Overlay": 8,
+    "MPLS Label" : 9,
+    "MPLS Forwarding" :10,
+    "L2 Unfiltered Interface": 11,
+    "L2 Loopback": 12,
+}
+
+
+def makeGroupID(groupType, local_id):
+    """ Group IDs in OF-DPA have rich meaning
+
+    @param groupType is a key in _group_types
+    @param local_id is an integer 0<= local_id < 2**27,
+        but it may have more semantic meaning depending on the
+        groupType
+
+
+    Read Section 4.3 of the OF-DPA manual on groups for 
+    details
+    """
+    if groupType not in _group_types:
+        raise KeyError("%s not a valid OF-DPA group type" % groupType)
+    if local_id < 0 or local_id >=134217728:
+        raise ValueError("local_id %d must be  0<= local_id < 2**27" % local_id)
+    return (_group_types[groupType] << 28) + local_id
