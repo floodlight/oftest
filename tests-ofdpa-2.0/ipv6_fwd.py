@@ -12,6 +12,7 @@ from oftest import config
 import oftest.base_tests as base_tests
 import ofp
 import ofdpa_utils
+import oftest.dataplane
 from oftest.parse import parse_ipv6
 
 from oftest.testutils import *
@@ -148,6 +149,7 @@ class IPv6_Untagged_Unicast(base_tests.SimpleDataPlane):
                     continue
                 # Generate the test and expected packets
                 parsed_pkt = testutils12.simple_ipv6_packet(
+                    ip_src = in_iface.dst_ip,
                     ip_dst = out_iface.dst_ip,
                     dl_dst = in_iface.mac)
                 pkt = str(parsed_pkt)
@@ -155,14 +157,18 @@ class IPv6_Untagged_Unicast(base_tests.SimpleDataPlane):
                 parsed_expected_pkt = testutils12.simple_ipv6_packet(
                        dl_src = out_iface.mac,
                        dl_dst = out_iface.dst_mac,
+                       ip_src = in_iface.dst_ip,
                        ip_dst = out_iface.dst_ip,
+                       ip_ttl = 63,
 #               dl_vlan_enable=True,
 #               vlan_vid=ofdpa_utils.DEFAULT_VLAN,
 #               vlan_pcp=0,
 #               pktlen=104 # 4 less than we started with, because the way simple_tcp calc's length
                        ) 
                 expected_pkt = str(parsed_expected_pkt)
-                logging.info("IPv6_Untagged_Unicast test, iface %d to %d", ifaces[in_iface], ifaces[out_iface])
+                logging.info("IPv6_Untagged_Unicast test, sending iface %d to %d", ifaces[in_iface], ifaces[out_iface])
+                #logging.info("Expecting packet: %s" % parsed_expected_pkt.show2())
                 self.dataplane.send(in_iface.port, pkt)
+                oftest.dataplane.MATCH_VERBOSE=True
                 verify_packets(self, expected_pkt, [out_iface.port])
             
