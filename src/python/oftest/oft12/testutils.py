@@ -238,6 +238,7 @@ def simple_ipv6_packet(pktlen=100,
                       ip_src='fe80::2420:52ff:fe8f:5189',
                       ip_dst='fe80::2420:52ff:fe8f:5190',
                       ip_tos=0,
+                      ip_ttl=64,
                       tcp_sport=0,
                       tcp_dport=0, 
                       EH = False, 
@@ -265,11 +266,11 @@ def simple_ipv6_packet(pktlen=100,
     if (dl_vlan_enable):
         pkt = Ether(dst=dl_dst, src=dl_src)/ \
             Dot1Q(prio=dl_vlan_pcp, id=dl_vlan_cfi, vlan=dl_vlan)/ \
-            IPv6(src=ip_src, dst=ip_dst)
+            IPv6(src=ip_src, dst=ip_dst, hlim=ip_ttl)
 
     else:
         pkt = Ether(dst=dl_dst, src=dl_src)/ \
-            IPv6(src=ip_src, dst=ip_dst)
+            IPv6(src=ip_src, dst=ip_dst, hlim=ip_ttl)
 
     # Add IPv6 Extension Headers 
     if EH:
