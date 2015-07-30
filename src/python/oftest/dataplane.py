@@ -32,6 +32,8 @@ if "linux" in sys.platform:
 else:
     import pcap
 
+MATCH_VERBOSE=False
+
 def match_exp_pkt(exp_pkt, pkt):
     """
     Compare the string value of pkt with the string value of exp_pkt,
@@ -43,6 +45,13 @@ def match_exp_pkt(exp_pkt, pkt):
     p = str(pkt)
     if len(e) < 60:
         p = p[:len(e)]
+    if MATCH_VERBOSE and e != p:
+        i = 0
+        for i in range(0, min(len(e), len(p))):
+            if e[i] != p[i]:
+                break
+        logging.info("Ignoring packet that doesn't match on byte %d: expected is \'%s\' got \'%s\'" 
+                    % (i, hex(ord(e[i])), hex(ord(p[i]))))
     return e == p
 
 
