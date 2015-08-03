@@ -48,11 +48,11 @@ class IPv6_Untagged_Unicast(base_tests.SimpleDataPlane):
 
     """
     def create_interface(self, iface):
-        l2_group_id = ofdpa_utils.makeGroupID("L2 Interface",(iface.vlan<<16) + iface.port)  # bits 27:16 of the local_id are the vlan (!?)
-        l3_group_id = ofdpa_utils.makeGroupID("L3 Unicast",iface.port)
+        iface.l2_group_id = ofdpa_utils.makeGroupID("L2 Interface",(iface.vlan<<16) + iface.port)  # bits 27:16 of the local_id are the vlan (!?)
+        iface.l3_group_id = ofdpa_utils.makeGroupID("L3 Unicast",iface.port)
         self.send_log_check("Creating IPv6 L2 interface group for port %d" % iface.port, ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
-            group_id=l2_group_id,
+            group_id=iface.l2_group_id,
             buckets=[
             ofp.bucket(
                 actions=[
@@ -81,11 +81,11 @@ class IPv6_Untagged_Unicast(base_tests.SimpleDataPlane):
         # Create the L3 unicast group entry
         self.send_log_check("Creating IPv6 Unicast group for %d" % iface.port, ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
-            group_id=l3_group_id,  
+            group_id=iface.l3_group_id,  
             buckets=[
             ofp.bucket(
                 actions=[
-                    ofp.action.group(l2_group_id),  # chain to last L2 group; doesn't matter; will fix in test loop
+                    ofp.action.group(iface.l2_group_id),  # chain to this interface's L2 group, per OF-DPA spec
                     ofp.action.set_field( ofp.oxm.eth_dst( macAddrToHexList(iface.dst_mac))),
                     ofp.action.set_field( ofp.oxm.eth_src( macAddrToHexList(iface.mac))),
                     ofp.action.set_field( ofp.oxm.vlan_vid( iface.vlan)),
@@ -124,24 +124,39 @@ class IPv6_Untagged_Unicast(base_tests.SimpleDataPlane):
 
     def runTest(self):
         ports = sorted(config["port_map"].keys())
+        # FIXME test to make sure we have at least 6 ports
 
         delete_all_flows(self.controller)
-        delete_all_groups(self.controller)
+        delete_all_groups(self.controller)   # FIXME this fails to recursively delete groups
         do_barrier(self.controller)
 
-        ifaces = {
+
+        ifaces = dict()
+
+        # FIXME hack around potentially missing/non-contiguous ports
+        if 1 in ports:
             # mac,vlan,port, dst_mac, dst_ip
-            L3Iface('00:11:11:11:11:11', 1, 1, '00:11:11:11:11:ff', 'fe80::1111'): 1,
-            L3Iface('00:22:22:22:22:22', 2, 2, '00:22:22:22:22:ff', 'fe80::2222'): 2,
-            L3Iface('00:33:33:33:33:33', 3, 3, '00:33:33:33:33:ff', 'fe80::3333'): 3,
-            L3Iface('00:44:44:44:44:44', 4, 4, '00:44:44:44:44:ff', 'fe80::4444'): 4,
-            L3Iface('00:55:55:55:55:55', 5, 5, '00:55:55:55:55:ff', 'fe80::5555'): 5,
-            L3Iface('00:66:66:66:66:66', 6, 6, '00:66:66:66:66:ff', 'fe80::6666'): 6,
-        }
+            ifaces[L3Iface('00:11:11:11:11:11', 1, 1, '00:11:11:11:11:ff', 'fe80::1111')] = 1
+
+        if 2 in ports:
+            ifaces[L3Iface('00:22:22:22:22:22', 2, 2, '00:22:22:22:22:ff', 'fe80::2222')] = 2
+        
+        if 3 in ports:
+            ifaces[L3Iface('00:33:33:33:33:33', 3, 3, '00:33:33:33:33:ff', 'fe80::3333')] = 3
+
+        if 4 in ports:
+            ifaces[L3Iface('00:44:44:44:44:44', 4, 4, '00:44:44:44:44:ff', 'fe80::4444')] = 4
+
+        if 5 in ports:
+            ifaces[L3Iface('00:55:55:55:55:55', 5, 5, '00:55:55:55:55:ff', 'fe80::5555')] = 5
+
+        if 6 in ports:
+            ifaces[L3Iface('00:66:66:66:66:66', 6, 6, '00:66:66:66:66:ff', 'fe80::6666')] = 6
 
         for iface in ifaces:
             self.create_interface(iface)
 
+        # Store the match for the unicast match below
         # test sending from every inteface to every other interface
         for in_iface in sorted(ifaces):
             for out_iface in sorted(ifaces):
@@ -172,3 +187,113 @@ class IPv6_Untagged_Unicast(base_tests.SimpleDataPlane):
                 oftest.dataplane.MATCH_VERBOSE=True
                 verify_packets(self, expected_pkt, [out_iface.port])
             
+
+            
+@group('ipv6_fwd')
+class IPv6_Untagged_ECMP(IPv6_Untagged_Unicast):
+    """
+    Test routing function for an IPv6 IP packet with ECMP
+
+    Send packets from first port and receive packets on any of second, third, forth ports
+
+    Need to insert rules into:
+    1) Ecmp group actions in the group table
+    2) Vlan table to map packet to a vlan
+    3) Mac Term table to send router's mac packets to the routing table
+    4) the actual routing rule in the unicast routing table
+
+    Then test from all ports to all ports
+
+    """
+        
+
+    def runTest(self):
+        ports = sorted(config["port_map"].keys())
+
+        # FIXME test to make sure we have at least 6 ports
+
+        delete_all_flows(self.controller)
+        delete_all_groups(self.controller)
+        do_barrier(self.controller)
+
+
+        ifaces = [
+            # mac,vlan,port, dst_mac, dst_ip
+            L3Iface('00:11:11:11:11:11', 1, 1, '00:11:11:11:11:ff', 'fe80::1111'),
+            L3Iface('00:22:22:22:22:22', 2, 2, '00:22:22:22:22:ff', 'fe80::2222'),
+            L3Iface('00:33:33:33:33:33', 3, 3, '00:33:33:33:33:ff', 'fe80::3333'),
+            L3Iface('00:44:44:44:44:44', 4, 4, '00:44:44:44:44:ff', 'fe80::4444'),
+            #L3Iface('00:55:55:55:55:55', 5, 5, '00:55:55:55:55:ff', 'fe80::5555'),
+            #L3Iface('00:66:66:66:66:66', 6, 6, '00:66:66:66:66:ff', 'fe80::6666'),
+        ]
+
+        for iface in ifaces:
+            self.create_interface(iface)
+
+        ecmp_dst_ip = 'fe80::eeee'  # stuff sent to this address should be split
+                                    # across the other interfaces
+        ecmp_dst_prefix = 'fe80::ee00'
+        ecmp_dst_mask = ':'.join(['ffff'] * 7) + ":ff00" # "ff:ff:ff:...:ff:00"
+        logging.info("ECMP prefix is %s/%s" % (ecmp_dst_prefix, ecmp_dst_mask))
+
+        ecmp_group_id = ofdpa_utils.makeGroupID("L3 ECMP", 1)
+        self.send_log_check("Creating L3 ECMP group", ofp.message.group_add(
+            group_type=ofp.OFPGT_SELECT,
+            group_id = ecmp_group_id,
+            buckets = 
+                # make a list of the group ID's for ports 2-4
+                map( (lambda iface : ofp.bucket( actions = [ofp.action.group(iface.l3_group_id) ] )),
+                    ifaces[1:])
+            ))
+
+        self.send_log_check("Adding IPv6 route rule to ECMP output to ports 2-4" , ofp.message.flow_add(
+                    table_id = ofdpa_utils.UNICAST_ROUTING_TABLE.table_id,
+                    cookie=77,
+                    match=  ofp.match([
+                              ofp.oxm.eth_type(0x86dd),    # ethertype = IPv6
+                              ofp.oxm.ipv6_dst_masked(parse_ipv6(ecmp_dst_prefix), parse_ipv6(ecmp_dst_mask)),
+                              ]),
+                    instructions=[
+                        ofp.instruction.goto_table(ofdpa_utils.ACL_TABLE.table_id),
+                        ofp.instruction.write_actions([
+                                ofp.action.group(ecmp_group_id)
+                                ])
+                        ],
+                    buffer_id=ofp.OFP_NO_BUFFER,
+                    priority=1000))
+        
+        for iface in ifaces[1:]:
+            iface.count = 0
+
+        # test sending lots of packets from iface 0 to ifaces 1-3
+        maxPackets = 20
+        for src in range(maxPackets):
+            ip_src = 'fe80::01:%.4d' % src  # give each packet a unique source
+            parsed_pkt = testutils12.simple_ipv6_packet(
+                ip_src = ip_src,
+                ip_dst = ecmp_dst_ip,
+                dl_dst = ifaces[0].mac)
+            pkt = str(parsed_pkt)
+
+            logging.info("IPv6_Untagged_ECMP test, sending from iface %d to ECMP group", ifaces[0])
+            self.dataplane.send(ifaces[0].port, pkt)
+            found = False
+            for iface in ifaces[1:]:
+                logging.debug("Checking for ECMP pkt on port %d", iface.port)
+                (rcv_port, rcv_pkt, pkt_time) = self.dataplane.poll(port_number=iface.port)
+                if rcv_pkt is not None:
+                    parsed_rcv = oftest.parse.packet_to_flow_match(rcv_pkt)
+                    if rcv_pkt.dl_dst == iface.dst_mac and \
+                                rcv_pkt.dl_src == iface.mac and \
+                                rcv_pkt.ip_dst == ecmp_dst_ip and \
+                                rcv_pkt.hlim == 63:         # was TTL decremented?
+                        found = True
+                        iface.count += 1
+                        break
+
+            test.assertTrue(found != None, "Did not receive pkt on Any ECMP interface")
+            # now make sure each interface got at least one packet; this is statistical so could fail if
+            # max packets is not high enough
+            for iface in ifaces[1:]:
+                test.assertTrue(iface.count > 0, "L3 interface %d did not receive any packets" % iface.port)
+

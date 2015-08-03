@@ -46,12 +46,12 @@ def enableVlanOnPort(controller, vlan, port=ofp.OFPP_ALL, priority=0):
             cookie = 0xdead,
             match = tagged_match,
             instructions = [
+                ofp.instruction.goto_table(MACTERM_TABLE.table_id),
                 ofp.instruction.apply_actions(
                     actions=[
-#                        ofp.action.push_vlan(ethertype=0x8100), # DO NOT PUT THIS FOR OF-DPA
-                        ofp.action.set_field(ofp.oxm.vlan_vid(vlan))
+                        ofp.action.push_vlan(ethertype=0x8100), # DO NOT PUT THIS FOR OF-DPA 2.0 EA1 - seems to not matter for EA2
+                        ofp.action.set_field(ofp.oxm.vlan_vid( ofp.OFPVID_PRESENT | vlan))
                     ]),
-                ofp.instruction.goto_table(MACTERM_TABLE.table_id)   
                     ],
             buffer_id = ofp.OFP_NO_BUFFER,
             priority = priority)
