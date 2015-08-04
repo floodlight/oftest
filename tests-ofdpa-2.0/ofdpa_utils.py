@@ -47,11 +47,11 @@ def enableVlanOnPort(controller, vlan, port=ofp.OFPP_ALL, priority=0):
             match = tagged_match,
             instructions = [
                 ofp.instruction.goto_table(MACTERM_TABLE.table_id),
-                ofp.instruction.apply_actions(
-                    actions=[
-                        ofp.action.push_vlan(ethertype=0x8100), # DO NOT PUT THIS FOR OF-DPA 2.0 EA1 - seems to not matter for EA2
-                        ofp.action.set_field(ofp.oxm.vlan_vid( ofp.OFPVID_PRESENT | vlan))
-                    ]),
+#                 ofp.instruction.apply_actions(
+#                     actions=[
+#                         ofp.action.push_vlan(ethertype=0x8100), # DO NOT PUT THIS FOR OF-DPA 2.0 EA1 - seems to not matter for EA2
+#                         ofp.action.set_field(ofp.oxm.vlan_vid( ofp.OFPVID_PRESENT | vlan))
+#                     ]),
                     ],
             buffer_id = ofp.OFP_NO_BUFFER,
             priority = priority)
@@ -90,7 +90,8 @@ def installDefaultVlan(controller, vlan=DEFAULT_VLAN, port=ofp.OFPP_ALL, priorit
 
         untagged_match = ofp.match([
                 ofp.oxm.in_port(port),
-                ofp.oxm.vlan_vid(0)
+                # OFDPA 2.0 says untagged is vlan_id=0, mask=ofp.OFPVID_PRESENT
+                ofp.oxm.vlan_vid_masked(0,ofp.OFPVID_PRESENT)    # WTF OFDPA 2.0EA2 -- really!?
                 ])
 
         request = ofp.message.flow_add(
@@ -100,7 +101,7 @@ def installDefaultVlan(controller, vlan=DEFAULT_VLAN, port=ofp.OFPP_ALL, priorit
             instructions = [
                 ofp.instruction.apply_actions(
                     actions=[
-#                        ofp.action.push_vlan(ethertype=0x8100),
+                        #ofp.action.push_vlan(ethertype=0x8100),
                         ofp.action.set_field(ofp.oxm.vlan_vid(ofp.OFPVID_PRESENT | vlan))
                     ]),
                 ofp.instruction.goto_table(MACTERM_TABLE.table_id)   
@@ -148,3 +149,7 @@ def makeGroupID(groupType, local_id):
     if local_id < 0 or local_id >=134217728:
         raise ValueError("local_id %d must be  0<= local_id < 2**27" % local_id)
     return (_group_types[groupType] << 28) + local_id
+
+
+def delete_all_recursive_groups(controller):
+    pass
