@@ -33,7 +33,6 @@ class L3Iface(object):
         self.dst_ip = dst_ip
 
 
-@group('ipv6_fwd')
 class IPv6_Untagged_Unicast(base_tests.SimpleDataPlane):
     """
     Test routing function for an IPv6 IP packet
@@ -192,7 +191,6 @@ class IPv6_Untagged_Unicast(base_tests.SimpleDataPlane):
             
 
             
-@group('ipv6_fwd')
 class IPv6_Tagged_Unicast(IPv6_Untagged_Unicast):
     def runTest(self):
         ports = sorted(config["port_map"].keys())
@@ -261,7 +259,6 @@ class IPv6_Tagged_Unicast(IPv6_Untagged_Unicast):
                 verify_packets(self, expected_pkt, [out_iface.port])
 
 
-@group('ipv6_fwd')
 class IPv6_Untagged_ECMP(IPv6_Untagged_Unicast):
     """
     Test routing function for an IPv6 IP packet with ECMP
