@@ -259,6 +259,29 @@ ofp_bsn_controller_role_reason_map = {
     2: 'OFP_BSN_CONTROLLER_ROLE_REASON_EXPERIMENTER',
 }
 
+# Identifiers from group ofp_bsn_decap
+OFP_BSN_DECAP_VXLAN = 0
+OFP_BSN_DECAP_ERSPAN = 1
+OFP_BSN_DECAP_L2_GRE = 2
+OFP_BSN_DECAP_NVGRE = 3
+OFP_BSN_DECAP_CAPWAP = 4
+OFP_BSN_DECAP_L2_MPLS = 5
+OFP_BSN_DECAP_L3_GRE = 6
+OFP_BSN_DECAP_GTP = 7
+OFP_BSN_DECAP_L3_MPLS = 8
+
+ofp_bsn_decap_map = {
+    0: 'OFP_BSN_DECAP_VXLAN',
+    1: 'OFP_BSN_DECAP_ERSPAN',
+    2: 'OFP_BSN_DECAP_L2_GRE',
+    3: 'OFP_BSN_DECAP_NVGRE',
+    4: 'OFP_BSN_DECAP_CAPWAP',
+    5: 'OFP_BSN_DECAP_L2_MPLS',
+    6: 'OFP_BSN_DECAP_L3_GRE',
+    7: 'OFP_BSN_DECAP_GTP',
+    8: 'OFP_BSN_DECAP_L3_MPLS',
+}
+
 # Identifiers from group ofp_bsn_lacp_state
 OFP_BSN_LACP_STATE_ACTIVITY = 1
 OFP_BSN_LACP_STATE_TIMEOUT = 2
@@ -398,6 +421,24 @@ ofp_bsn_port_counter_map = {
     25: 'OFP_BSN_PORT_COUNTER_RX_OVERFLOW_ERRORS',
     26: 'OFP_BSN_PORT_COUNTER_TX_CARRIER_ERRORS',
     27: 'OFP_BSN_PORT_COUNTER_RX_PACKETS_BAD_VLAN',
+}
+
+# Identifiers from group ofp_bsn_port_vxlan_mode
+OFP_BSN_PORT_VXLAN_RECIRCULATION_ENABLE = 0
+OFP_BSN_PORT_VXLAN_TERMINATION_ENABLE = 1
+
+ofp_bsn_port_vxlan_mode_map = {
+    0: 'OFP_BSN_PORT_VXLAN_RECIRCULATION_ENABLE',
+    1: 'OFP_BSN_PORT_VXLAN_TERMINATION_ENABLE',
+}
+
+# Identifiers from group ofp_bsn_rate_unit
+OFP_BSN_RATE_UNIT_PPS = 0
+OFP_BSN_RATE_UNIT_KBITPS = 1
+
+ofp_bsn_rate_unit_map = {
+    0: 'OFP_BSN_RATE_UNIT_PPS',
+    1: 'OFP_BSN_RATE_UNIT_KBITPS',
 }
 
 # Identifiers from group ofp_bsn_tcp_flag
