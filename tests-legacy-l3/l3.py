@@ -32,26 +32,30 @@ class BasicL3Test(base_tests.DataPlaneOnly):
     """
     
     # port # --> L3 interface mapping
-#     Interfaces = {
-#         1 : "172.31.1.1",
-#         2 : "172.31.2.1",
-#         3 : "172.31.3.1",
-#         4 : "172.31.4.1"
-#     }
     Interfaces = {
-         1 : "169.254.0.10",
-         2 : "169.254.0.10",
-         3 : "169.254.0.10",
-         4 : "169.254.0.10"
+#         1 : "169.254.0.10",
+#         2 : "169.254.0.10",
+#         3 : "169.254.0.10",
+#         4 : "169.254.0.10",
+         1 : "172.31.1.1",
+         2 : "172.31.2.1",
+         3 : "172.31.3.1",
+         4 : "172.31.4.1",
+         5 : "172.31.5.1",
+         6 : "172.31.6.1",
     }
 
-    def pkt_smart_cmp(self, expected=None, recv=None):
+
+    def pkt_smart_cmp(self, expected=None, recv=None, ttl=True):
         """
         @param expected  an Ether() object from scapy
         @param recv  an Ether() object from scapy
         @return boolean true iff the relevant fields of 
             the packet match, e.g., ignoring IP.ID
-            IP.chksum, and if there are weird trailers
+            IP.chksum, IP.ttl and if there are weird trailers
+            NOTE: ignoring IP.ttl seems weird, but routers are 
+                non-standard for whether they decrement ttl for
+                ICMP echo packets to the ingress interface
             (including checksum) match between the two packets
         """
         if expected is None or recv is None:
@@ -68,6 +72,9 @@ class BasicL3Test(base_tests.DataPlaneOnly):
             del ip2.id
             del ip1.chksum
             del ip2.chksum
+            if not ttl:
+                del ip1.ttl
+                del ip2.ttl
         return str(p1)[:ip1.len] == str(p2)[:ip2.len]
 
 
@@ -83,6 +90,9 @@ class BasicL3Test(base_tests.DataPlaneOnly):
 class PingInterfacesL3(BasicL3Test):
 
     def runTest(self):
+        self.pingAllInterfaces()
+
+    def pingAllInterfaces(self):
         ports = config["port_map"].keys()
         ports.sort()
         for port in ports : 
@@ -130,7 +140,7 @@ class PingInterfacesL3(BasicL3Test):
                                     ip_src = dst_ip,
                                     eth_dst = src_mac,
                                     eth_src = dst_mac,
-                                    ip_ttl = 63,
+                                    ip_ttl = 64,
                                     icmp_type = 0,       # type = echo reply
                                     icmp_code = 0        # echo reply
                                     )
