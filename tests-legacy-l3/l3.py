@@ -88,11 +88,48 @@ class BasicL3Test(base_tests.DataPlaneOnly):
 
 
 class PingInterfacesL3(BasicL3Test):
+    def arpForMac(self,
+                src_mac = None,
+                src_ip = None,
+                dst_ip = None, 
+                port = None,
+                maxtimeout=3):
+        """
+            Send out ARP requests for the given dst_ip
+        """
+        if src_mac == None or src_ip == None or \
+                dst_ip == None or port == None:
+            raise "Missing args for arpForMac()"
+        arp = testutils.simple_arp_packet(
+                                eth_src = src_mac,
+                                hw_snd = src_mac,
+                                ip_snd = src_ip, 
+                                ip_tgt = dst_ip)
+
+        logging.info("ARP request packet for %s out port %d " % 
+                    ( dst_ip, port))
+        logging.debug("Data: " + str(arp).encode('hex'))
+        self.dataplane.send(port, str(arp))
+        arp_found = False
+        start_time = time.time()
+        while not arp_found:
+            timeout = (start_time + maxtimeout) - time.time()  # timeout after 3ish seconds total
+            if timeout <= 0:
+                logging.error("Timeout on ARP reply for port %d" % port)
+                self.fail("Timeout on ARP for port %d" % port)
+            (rcv_port, pkt, t)  = self.dataplane.poll(port_number = port, timeout = timeout)
+            if pkt is not None:       # if is none, then we will loop and immediately timeout
+                parsed_pkt = scapy.Ether(pkt)
+                if (parsed_pkt is not None and 
+                        type(parsed_pkt.payload) == scapy.ARP and
+                        parsed_pkt.payload.op ==  2):        # 2 == reply
+                    arp_found = True
+                    dst_mac = parsed_pkt.payload.hwsrc
+                    logging.info("Learned via ARP: MAC %s neighbor to port %d" %
+                            ( dst_mac, port))
+                    return dst_mac
 
     def runTest(self):
-        self.pingAllInterfaces()
-
-    def pingAllInterfaces(self):
         ports = config["port_map"].keys()
         ports.sort()
         for port in ports : 
@@ -103,40 +140,19 @@ class PingInterfacesL3(BasicL3Test):
             src_ip = self.same_slash24_subnet(dst_ip)
             src_mac = "00:11:22:33:44:%2d" % port
             # first arp for the interface
-            arp = testutils.simple_arp_packet(
-                                    eth_src = src_mac,
-                                    hw_snd = src_mac,
-                                    ip_snd = src_ip, 
-                                    ip_tgt = dst_ip)
-
-            logging.info("ARP request packet for %s out port %d " % 
-                        ( dst_ip, port))
-            logging.debug("Data: " + str(arp).encode('hex'))
-            self.dataplane.send(port, str(arp))
-            arp_found = False
-            start_time = time.time()
-            dst_mac = None
-            while not arp_found:
-                timeout = (start_time + 3) - time.time()  # timeout after 3 seconds total
-                if timeout <= 0:
-                    logging.error("Timeout on ARP reply for port %d" % port)
-                    self.fail("Timeout on ARP for port %d" % port)
-                (rcv_port, pkt, t)  = self.dataplane.poll(port_number = port, timeout = timeout)
-                if pkt is not None:       # if is none, then we will loop and immediately timeout
-                    parsed_pkt = scapy.Ether(pkt)
-                    if (parsed_pkt is not None and 
-                            type(parsed_pkt.payload) == scapy.ARP and
-                            parsed_pkt.payload.op ==  2):        # 2 == reply
-                        arp_found = True
-                        dst_mac = parsed_pkt.payload.hwsrc
-                        logging.info("Learned via ARP: MAC %s neighbor to port %d" %
-                                ( dst_mac, port))
-            ping = testutils.simple_icmp_packet(ip_dst = dst_ip,  # request
+            dst_mac = self.arpForMac(
+                            src_mac=src_mac,
+                            src_ip=src_ip,
+                            dst_ip=dst_ip,
+                            port=port)
+            ping = testutils.simple_icmp_packet(        # request
+                                    ip_dst = dst_ip,  
                                     ip_src = src_ip,
                                     eth_dst = dst_mac,
                                     eth_src = src_mac
                                     )
-            pong = testutils.simple_icmp_packet(ip_dst = src_ip,   # reply
+            pong = testutils.simple_icmp_packet(        # reply
+                                    ip_dst = src_ip,   
                                     ip_src = dst_ip,
                                     eth_dst = src_mac,
                                     eth_src = dst_mac,
