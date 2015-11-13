@@ -60,7 +60,7 @@ class BasicL3Test(base_tests.DataPlaneOnly):
         p2 = scapy.Ether(str(recv))
         if p1.type != p2.type:
             return False    # not same ethertype
-        pdb.set_trace()
+        #pdb.set_trace()
         if p1.type == 0x0800:   # if IP, remove ID, chksum
             ip1 = p1.payload
             ip2 = p2.payload
@@ -226,8 +226,8 @@ class PingAllHosts(BasicL3Test):
                                     eth_src = src_mac
                                     )
             recv_ping = testutils.simple_icmp_packet(        # reply
-                                    ip_dst = src_ip,   
-                                    ip_src = dst_ip,
+                                    ip_dst = dst_ip,   
+                                    ip_src = src_ip,
                                     eth_dst = dst_mac,
                                     eth_src = egress_gateway_mac,
                                     ip_ttl = 63
