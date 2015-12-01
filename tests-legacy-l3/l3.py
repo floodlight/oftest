@@ -60,6 +60,10 @@ class BasicL3Test(base_tests.DataPlaneOnly):
         p2 = scapy.Ether(str(recv))
         if p1.type != p2.type:
             return False    # not same ethertype
+        if p1.src != p2.src:
+            return False
+        if p1.dst != p2.dst:
+            return False
         #pdb.set_trace()
         if p1.type == 0x0800:   # if IP, remove ID, chksum
             ip1 = p1.payload
