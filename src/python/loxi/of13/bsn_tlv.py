@@ -3439,6 +3439,53 @@ class set_loopback_mode(bsn_tlv):
 
 bsn_tlv.subtypes[74] = set_loopback_mode
 
+class status(bsn_tlv):
+    type = 97
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!B", self.value))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = status()
+        _type = reader.read("!H")[0]
+        assert(_type == 97)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.value = reader.read("!B")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("status {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[97] = status
+
 class strip_mpls_l2_on_ingress(bsn_tlv):
     type = 75
 
@@ -4210,6 +4257,53 @@ class unknown_multicast_rate(bsn_tlv):
         q.text('}')
 
 bsn_tlv.subtypes[92] = unknown_multicast_rate
+
+class use_packet_state(bsn_tlv):
+    type = 96
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!B", self.value))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = use_packet_state()
+        _type = reader.read("!H")[0]
+        assert(_type == 96)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.value = reader.read("!B")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("use_packet_state {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[96] = use_packet_state
 
 class vlan_pcp(bsn_tlv):
     type = 72
