@@ -3560,6 +3560,8 @@ class echo_request(message):
 message.subtypes[2] = echo_request
 
 class experimenter_error_msg(error_msg):
+    subtypes = {}
+
     version = 3
     type = 1
     err_type = 65535
@@ -3599,6 +3601,11 @@ class experimenter_error_msg(error_msg):
 
     @staticmethod
     def unpack(reader):
+        subtype, = reader.peek('!L', 12)
+        subclass = experimenter_error_msg.subtypes.get(subtype)
+        if subclass:
+            return subclass.unpack(reader)
+
         obj = experimenter_error_msg()
         _version = reader.read("!B")[0]
         assert(_version == 3)
@@ -3636,9 +3643,6 @@ class experimenter_error_msg(error_msg):
                 q.text(","); q.breakable()
                 q.text("subtype = ");
                 q.text("%#x" % self.subtype)
-                q.text(","); q.breakable()
-                q.text("experimenter = ");
-                q.text("%#x" % self.experimenter)
                 q.text(","); q.breakable()
                 q.text("data = ");
                 q.pp(self.data)
