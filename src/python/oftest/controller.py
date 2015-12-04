@@ -294,7 +294,9 @@ class Controller(Thread):
                         type_str = "unknown"
                         code_str = "unknown"
                     self.logger.warn("Received error message: xid=%d type=%s (%d) code=%s (%d)",
-                                     hdr_xid, type_str, msg.err_type, code_str, msg.code)
+                                     hdr_xid, type_str, msg.err_type, code_str, msg.code if code_str != "unknown" else -1)
+                    if isinstance(msg, ofp.message.bsn_error):
+                        self.logger.warn("BSN error, msg '%s'", msg.err_msg)
 
                 # Now check for message handlers; preference is given to
                 # handlers for a specific packet
