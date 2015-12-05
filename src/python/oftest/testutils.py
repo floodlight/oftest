@@ -1689,7 +1689,12 @@ def verify_packets(test, pkt, ofports):
 def verify_no_errors(ctrl):
     error, _ = ctrl.poll(ofp.OFPT_ERROR, 0)
     if error:
-        raise AssertionError("unexpected error type=%d code=%d" % (error.err_type, error.code))
+        if error.version >= 3 and isinstance(error, ofp.message.bsn_error):
+            raise AssertionError("unexpected error type=%d msg=%s" %
+                                 (error.err_type, error.err_msg))
+        else:
+            raise AssertionError("unexpected error type=%d code=%d" %
+                                 (error.err_type, error.code))
 
 def verify_capability(test, capability):
     """
