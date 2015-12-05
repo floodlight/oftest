@@ -295,7 +295,7 @@ class Controller(Thread):
                         code_str = "unknown"
                     self.logger.warn("Received error message: xid=%d type=%s (%d) code=%s (%d)",
                                      hdr_xid, type_str, msg.err_type, code_str, msg.code if code_str != "unknown" else -1)
-                    if isinstance(msg, ofp.message.bsn_error):
+                    if msg.version >= 3 and isinstance(msg, ofp.message.bsn_error):
                         self.logger.warn("BSN error, msg '%s'", msg.err_msg)
 
                 # Now check for message handlers; preference is given to
