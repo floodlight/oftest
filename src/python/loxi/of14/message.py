@@ -687,15 +687,11 @@ class async_get_request(message):
     version = 5
     type = 26
 
-    def __init__(self, xid=None, properties=None):
+    def __init__(self, xid=None):
         if xid != None:
             self.xid = xid
         else:
             self.xid = None
-        if properties != None:
-            self.properties = properties
-        else:
-            self.properties = []
         return
 
     def pack(self):
@@ -704,7 +700,6 @@ class async_get_request(message):
         packed.append(struct.pack("!B", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
-        packed.append(loxi.generic_util.pack_list(self.properties))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -720,13 +715,11 @@ class async_get_request(message):
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.xid = reader.read("!L")[0]
-        obj.properties = loxi.generic_util.unpack_list(reader, ofp.async_config_prop.async_config_prop.unpack)
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
         if self.xid != other.xid: return False
-        if self.properties != other.properties: return False
         return True
 
     def pretty_print(self, q):
@@ -739,9 +732,6 @@ class async_get_request(message):
                     q.text("%#x" % self.xid)
                 else:
                     q.text('None')
-                q.text(","); q.breakable()
-                q.text("properties = ");
-                q.pp(self.properties)
             q.breakable()
         q.text('}')
 
@@ -3728,6 +3718,88 @@ class bsn_generic_async(bsn_header):
         q.text('}')
 
 bsn_header.subtypes[68] = bsn_generic_async
+
+class bsn_generic_command(bsn_header):
+    version = 5
+    type = 4
+    experimenter = 6035143
+    subtype = 71
+
+    def __init__(self, xid=None, name=None, tlvs=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if name != None:
+            self.name = name
+        else:
+            self.name = ""
+        if tlvs != None:
+            self.tlvs = tlvs
+        else:
+            self.tlvs = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        packed.append(struct.pack("!64s", self.name))
+        packed.append(loxi.generic_util.pack_list(self.tlvs))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_generic_command()
+        _version = reader.read("!B")[0]
+        assert(_version == 5)
+        _type = reader.read("!B")[0]
+        assert(_type == 4)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _subtype = reader.read("!L")[0]
+        assert(_subtype == 71)
+        obj.name = reader.read("!64s")[0].rstrip("\x00")
+        obj.tlvs = loxi.generic_util.unpack_list(reader, ofp.bsn_tlv.bsn_tlv.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.name != other.name: return False
+        if self.tlvs != other.tlvs: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_generic_command {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("name = ");
+                q.pp(self.name)
+                q.text(","); q.breakable()
+                q.text("tlvs = ");
+                q.pp(self.tlvs)
+            q.breakable()
+        q.text('}')
+
+bsn_header.subtypes[71] = bsn_generic_command
 
 class bsn_generic_stats_reply(bsn_stats_reply):
     version = 5
