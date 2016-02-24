@@ -904,6 +904,52 @@ class bsn_table_checksum_stats_entry(loxi.OFObject):
         q.text('}')
 
 
+class bsn_tlv_vlan_mac_list(loxi.OFObject):
+    type = 98
+
+    def __init__(self, key=None):
+        if key != None:
+            self.key = key
+        else:
+            self.key = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(loxi.generic_util.pack_list(self.key))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_tlv_vlan_mac_list()
+        _type = reader.read("!H")[0]
+        assert(_type == 98)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.key = loxi.generic_util.unpack_list(reader, ofp.common.bsn_vlan_mac.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.key != other.key: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_tlv_vlan_mac_list {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("key = ");
+                q.pp(self.key)
+            q.breakable()
+        q.text('}')
+
+
 class bsn_vport(loxi.OFObject):
     subtypes = {}
 
@@ -1001,6 +1047,52 @@ class bsn_vlan_counter_stats_entry(loxi.OFObject):
                 q.text(","); q.breakable()
                 q.text("values = ");
                 q.pp(self.values)
+            q.breakable()
+        q.text('}')
+
+
+class bsn_vlan_mac(loxi.OFObject):
+
+    def __init__(self, vlan_vid=None, mac=None):
+        if vlan_vid != None:
+            self.vlan_vid = vlan_vid
+        else:
+            self.vlan_vid = 0
+        if mac != None:
+            self.mac = mac
+        else:
+            self.mac = [0,0,0,0,0,0]
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.vlan_vid))
+        packed.append(struct.pack("!6B", *self.mac))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_vlan_mac()
+        obj.vlan_vid = reader.read("!H")[0]
+        obj.mac = list(reader.read('!6B'))
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.vlan_vid != other.vlan_vid: return False
+        if self.mac != other.mac: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_vlan_mac {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("vlan_vid = ");
+                q.text("%#x" % self.vlan_vid)
+                q.text(","); q.breakable()
+                q.text("mac = ");
+                q.text(util.pretty_mac(self.mac))
             q.breakable()
         q.text('}')
 
@@ -3029,6 +3121,7 @@ class table_feature_prop_apply_actions(table_feature_prop):
         packed.append(loxi.generic_util.pack_list(self.action_ids))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
+        packed.append(loxi.generic_util.pad_to(8, length))
         return ''.join(packed)
 
     @staticmethod
@@ -3040,6 +3133,7 @@ class table_feature_prop_apply_actions(table_feature_prop):
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.action_ids = loxi.generic_util.unpack_list(reader, ofp.action_id.action_id.unpack)
+        orig_reader.skip_align()
         return obj
 
     def __eq__(self, other):
@@ -3076,6 +3170,7 @@ class table_feature_prop_apply_actions_miss(table_feature_prop):
         packed.append(loxi.generic_util.pack_list(self.action_ids))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
+        packed.append(loxi.generic_util.pad_to(8, length))
         return ''.join(packed)
 
     @staticmethod
@@ -3087,6 +3182,7 @@ class table_feature_prop_apply_actions_miss(table_feature_prop):
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.action_ids = loxi.generic_util.unpack_list(reader, ofp.action_id.action_id.unpack)
+        orig_reader.skip_align()
         return obj
 
     def __eq__(self, other):
@@ -3123,6 +3219,7 @@ class table_feature_prop_apply_setfield(table_feature_prop):
         packed.append(loxi.generic_util.pack_list(self.oxm_ids))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
+        packed.append(loxi.generic_util.pad_to(8, length))
         return ''.join(packed)
 
     @staticmethod
@@ -3134,6 +3231,7 @@ class table_feature_prop_apply_setfield(table_feature_prop):
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.oxm_ids = loxi.generic_util.unpack_list(reader, ofp.common.uint32.unpack)
+        orig_reader.skip_align()
         return obj
 
     def __eq__(self, other):
@@ -3170,6 +3268,7 @@ class table_feature_prop_apply_setfield_miss(table_feature_prop):
         packed.append(loxi.generic_util.pack_list(self.oxm_ids))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
+        packed.append(loxi.generic_util.pad_to(8, length))
         return ''.join(packed)
 
     @staticmethod
@@ -3181,6 +3280,7 @@ class table_feature_prop_apply_setfield_miss(table_feature_prop):
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.oxm_ids = loxi.generic_util.unpack_list(reader, ofp.common.uint32.unpack)
+        orig_reader.skip_align()
         return obj
 
     def __eq__(self, other):
@@ -3229,6 +3329,7 @@ class table_feature_prop_experimenter(table_feature_prop):
         packed.append(self.experimenter_data)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
+        packed.append(loxi.generic_util.pad_to(8, length))
         return ''.join(packed)
 
     @staticmethod
@@ -3247,6 +3348,7 @@ class table_feature_prop_experimenter(table_feature_prop):
         obj.experimenter = reader.read("!L")[0]
         obj.subtype = reader.read("!L")[0]
         obj.experimenter_data = str(reader.read_all())
+        orig_reader.skip_align()
         return obj
 
     def __eq__(self, other):
@@ -3300,6 +3402,7 @@ class table_feature_prop_experimenter_miss(table_feature_prop):
         packed.append(self.experimenter_data)
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
+        packed.append(loxi.generic_util.pad_to(8, length))
         return ''.join(packed)
 
     @staticmethod
@@ -3318,6 +3421,7 @@ class table_feature_prop_experimenter_miss(table_feature_prop):
         obj.experimenter = reader.read("!L")[0]
         obj.subtype = reader.read("!L")[0]
         obj.experimenter_data = str(reader.read_all())
+        orig_reader.skip_align()
         return obj
 
     def __eq__(self, other):
@@ -3359,6 +3463,7 @@ class table_feature_prop_instructions(table_feature_prop):
         packed.append(loxi.generic_util.pack_list(self.instruction_ids))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
+        packed.append(loxi.generic_util.pad_to(8, length))
         return ''.join(packed)
 
     @staticmethod
@@ -3370,6 +3475,7 @@ class table_feature_prop_instructions(table_feature_prop):
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.instruction_ids = loxi.generic_util.unpack_list(reader, ofp.instruction_id.instruction_id.unpack)
+        orig_reader.skip_align()
         return obj
 
     def __eq__(self, other):
@@ -3406,6 +3512,7 @@ class table_feature_prop_instructions_miss(table_feature_prop):
         packed.append(loxi.generic_util.pack_list(self.instruction_ids))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
+        packed.append(loxi.generic_util.pad_to(8, length))
         return ''.join(packed)
 
     @staticmethod
@@ -3417,6 +3524,7 @@ class table_feature_prop_instructions_miss(table_feature_prop):
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.instruction_ids = loxi.generic_util.unpack_list(reader, ofp.instruction_id.instruction_id.unpack)
+        orig_reader.skip_align()
         return obj
 
     def __eq__(self, other):
@@ -3453,6 +3561,7 @@ class table_feature_prop_match(table_feature_prop):
         packed.append(loxi.generic_util.pack_list(self.oxm_ids))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
+        packed.append(loxi.generic_util.pad_to(8, length))
         return ''.join(packed)
 
     @staticmethod
@@ -3464,6 +3573,7 @@ class table_feature_prop_match(table_feature_prop):
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.oxm_ids = loxi.generic_util.unpack_list(reader, ofp.common.uint32.unpack)
+        orig_reader.skip_align()
         return obj
 
     def __eq__(self, other):
@@ -3500,6 +3610,7 @@ class table_feature_prop_next_tables(table_feature_prop):
         packed.append(loxi.generic_util.pack_list(self.next_table_ids))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
+        packed.append(loxi.generic_util.pad_to(8, length))
         return ''.join(packed)
 
     @staticmethod
@@ -3511,6 +3622,7 @@ class table_feature_prop_next_tables(table_feature_prop):
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.next_table_ids = loxi.generic_util.unpack_list(reader, ofp.common.uint8.unpack)
+        orig_reader.skip_align()
         return obj
 
     def __eq__(self, other):
@@ -3547,6 +3659,7 @@ class table_feature_prop_next_tables_miss(table_feature_prop):
         packed.append(loxi.generic_util.pack_list(self.next_table_ids))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
+        packed.append(loxi.generic_util.pad_to(8, length))
         return ''.join(packed)
 
     @staticmethod
@@ -3558,6 +3671,7 @@ class table_feature_prop_next_tables_miss(table_feature_prop):
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.next_table_ids = loxi.generic_util.unpack_list(reader, ofp.common.uint8.unpack)
+        orig_reader.skip_align()
         return obj
 
     def __eq__(self, other):
@@ -3594,6 +3708,7 @@ class table_feature_prop_table_sync_from(table_feature_prop):
         packed.append(loxi.generic_util.pack_list(self.table_ids))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
+        packed.append(loxi.generic_util.pad_to(8, length))
         return ''.join(packed)
 
     @staticmethod
@@ -3605,6 +3720,7 @@ class table_feature_prop_table_sync_from(table_feature_prop):
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.table_ids = loxi.generic_util.unpack_list(reader, ofp.common.uint8.unpack)
+        orig_reader.skip_align()
         return obj
 
     def __eq__(self, other):
@@ -3641,6 +3757,7 @@ class table_feature_prop_wildcards(table_feature_prop):
         packed.append(loxi.generic_util.pack_list(self.oxm_ids))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
+        packed.append(loxi.generic_util.pad_to(8, length))
         return ''.join(packed)
 
     @staticmethod
@@ -3652,6 +3769,7 @@ class table_feature_prop_wildcards(table_feature_prop):
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.oxm_ids = loxi.generic_util.unpack_list(reader, ofp.common.uint32.unpack)
+        orig_reader.skip_align()
         return obj
 
     def __eq__(self, other):
@@ -3688,6 +3806,7 @@ class table_feature_prop_write_actions(table_feature_prop):
         packed.append(loxi.generic_util.pack_list(self.action_ids))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
+        packed.append(loxi.generic_util.pad_to(8, length))
         return ''.join(packed)
 
     @staticmethod
@@ -3699,6 +3818,7 @@ class table_feature_prop_write_actions(table_feature_prop):
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.action_ids = loxi.generic_util.unpack_list(reader, ofp.action_id.action_id.unpack)
+        orig_reader.skip_align()
         return obj
 
     def __eq__(self, other):
@@ -3735,6 +3855,7 @@ class table_feature_prop_write_actions_miss(table_feature_prop):
         packed.append(loxi.generic_util.pack_list(self.action_ids))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
+        packed.append(loxi.generic_util.pad_to(8, length))
         return ''.join(packed)
 
     @staticmethod
@@ -3746,6 +3867,7 @@ class table_feature_prop_write_actions_miss(table_feature_prop):
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.action_ids = loxi.generic_util.unpack_list(reader, ofp.action_id.action_id.unpack)
+        orig_reader.skip_align()
         return obj
 
     def __eq__(self, other):
@@ -3782,6 +3904,7 @@ class table_feature_prop_write_setfield(table_feature_prop):
         packed.append(loxi.generic_util.pack_list(self.oxm_ids))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
+        packed.append(loxi.generic_util.pad_to(8, length))
         return ''.join(packed)
 
     @staticmethod
@@ -3793,6 +3916,7 @@ class table_feature_prop_write_setfield(table_feature_prop):
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.oxm_ids = loxi.generic_util.unpack_list(reader, ofp.common.uint32.unpack)
+        orig_reader.skip_align()
         return obj
 
     def __eq__(self, other):
@@ -3829,6 +3953,7 @@ class table_feature_prop_write_setfield_miss(table_feature_prop):
         packed.append(loxi.generic_util.pack_list(self.oxm_ids))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
+        packed.append(loxi.generic_util.pad_to(8, length))
         return ''.join(packed)
 
     @staticmethod
@@ -3840,6 +3965,7 @@ class table_feature_prop_write_setfield_miss(table_feature_prop):
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.oxm_ids = loxi.generic_util.unpack_list(reader, ofp.common.uint32.unpack)
+        orig_reader.skip_align()
         return obj
 
     def __eq__(self, other):

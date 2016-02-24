@@ -591,35 +591,11 @@ class async_get_request(message):
     version = 4
     type = 26
 
-    def __init__(self, xid=None, packet_in_mask_equal_master=None, packet_in_mask_slave=None, port_status_mask_equal_master=None, port_status_mask_slave=None, flow_removed_mask_equal_master=None, flow_removed_mask_slave=None):
+    def __init__(self, xid=None):
         if xid != None:
             self.xid = xid
         else:
             self.xid = None
-        if packet_in_mask_equal_master != None:
-            self.packet_in_mask_equal_master = packet_in_mask_equal_master
-        else:
-            self.packet_in_mask_equal_master = 0
-        if packet_in_mask_slave != None:
-            self.packet_in_mask_slave = packet_in_mask_slave
-        else:
-            self.packet_in_mask_slave = 0
-        if port_status_mask_equal_master != None:
-            self.port_status_mask_equal_master = port_status_mask_equal_master
-        else:
-            self.port_status_mask_equal_master = 0
-        if port_status_mask_slave != None:
-            self.port_status_mask_slave = port_status_mask_slave
-        else:
-            self.port_status_mask_slave = 0
-        if flow_removed_mask_equal_master != None:
-            self.flow_removed_mask_equal_master = flow_removed_mask_equal_master
-        else:
-            self.flow_removed_mask_equal_master = 0
-        if flow_removed_mask_slave != None:
-            self.flow_removed_mask_slave = flow_removed_mask_slave
-        else:
-            self.flow_removed_mask_slave = 0
         return
 
     def pack(self):
@@ -628,12 +604,6 @@ class async_get_request(message):
         packed.append(struct.pack("!B", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
-        packed.append(struct.pack("!L", self.packet_in_mask_equal_master))
-        packed.append(struct.pack("!L", self.packet_in_mask_slave))
-        packed.append(struct.pack("!L", self.port_status_mask_equal_master))
-        packed.append(struct.pack("!L", self.port_status_mask_slave))
-        packed.append(struct.pack("!L", self.flow_removed_mask_equal_master))
-        packed.append(struct.pack("!L", self.flow_removed_mask_slave))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -649,23 +619,11 @@ class async_get_request(message):
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.xid = reader.read("!L")[0]
-        obj.packet_in_mask_equal_master = reader.read("!L")[0]
-        obj.packet_in_mask_slave = reader.read("!L")[0]
-        obj.port_status_mask_equal_master = reader.read("!L")[0]
-        obj.port_status_mask_slave = reader.read("!L")[0]
-        obj.flow_removed_mask_equal_master = reader.read("!L")[0]
-        obj.flow_removed_mask_slave = reader.read("!L")[0]
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
         if self.xid != other.xid: return False
-        if self.packet_in_mask_equal_master != other.packet_in_mask_equal_master: return False
-        if self.packet_in_mask_slave != other.packet_in_mask_slave: return False
-        if self.port_status_mask_equal_master != other.port_status_mask_equal_master: return False
-        if self.port_status_mask_slave != other.port_status_mask_slave: return False
-        if self.flow_removed_mask_equal_master != other.flow_removed_mask_equal_master: return False
-        if self.flow_removed_mask_slave != other.flow_removed_mask_slave: return False
         return True
 
     def pretty_print(self, q):
@@ -678,24 +636,6 @@ class async_get_request(message):
                     q.text("%#x" % self.xid)
                 else:
                     q.text('None')
-                q.text(","); q.breakable()
-                q.text("packet_in_mask_equal_master = ");
-                q.text("%#x" % self.packet_in_mask_equal_master)
-                q.text(","); q.breakable()
-                q.text("packet_in_mask_slave = ");
-                q.text("%#x" % self.packet_in_mask_slave)
-                q.text(","); q.breakable()
-                q.text("port_status_mask_equal_master = ");
-                q.text("%#x" % self.port_status_mask_equal_master)
-                q.text(","); q.breakable()
-                q.text("port_status_mask_slave = ");
-                q.text("%#x" % self.port_status_mask_slave)
-                q.text(","); q.breakable()
-                q.text("flow_removed_mask_equal_master = ");
-                q.text("%#x" % self.flow_removed_mask_equal_master)
-                q.text(","); q.breakable()
-                q.text("flow_removed_mask_slave = ");
-                q.text("%#x" % self.flow_removed_mask_slave)
             q.breakable()
         q.text('}')
 
