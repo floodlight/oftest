@@ -904,52 +904,6 @@ class bsn_table_checksum_stats_entry(loxi.OFObject):
         q.text('}')
 
 
-class bsn_tlv_vlan_mac_list(loxi.OFObject):
-    type = 98
-
-    def __init__(self, key=None):
-        if key != None:
-            self.key = key
-        else:
-            self.key = []
-        return
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!H", self.type))
-        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
-        packed.append(loxi.generic_util.pack_list(self.key))
-        length = sum([len(x) for x in packed])
-        packed[1] = struct.pack("!H", length)
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(reader):
-        obj = bsn_tlv_vlan_mac_list()
-        _type = reader.read("!H")[0]
-        assert(_type == 98)
-        _length = reader.read("!H")[0]
-        orig_reader = reader
-        reader = orig_reader.slice(_length, 4)
-        obj.key = loxi.generic_util.unpack_list(reader, ofp.common.bsn_vlan_mac.unpack)
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.key != other.key: return False
-        return True
-
-    def pretty_print(self, q):
-        q.text("bsn_tlv_vlan_mac_list {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("key = ");
-                q.pp(self.key)
-            q.breakable()
-        q.text('}')
-
-
 class bsn_vport(loxi.OFObject):
     subtypes = {}
 

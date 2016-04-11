@@ -4853,6 +4853,53 @@ class udp_src(bsn_tlv):
 
 bsn_tlv.subtypes[36] = udp_src
 
+class uint64_list(bsn_tlv):
+    type = 119
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(loxi.generic_util.pack_list(self.value))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = uint64_list()
+        _type = reader.read("!H")[0]
+        assert(_type == 119)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.value = loxi.generic_util.unpack_list(reader, ofp.common.uint64.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("uint64_list {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.pp(self.value)
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[119] = uint64_list
+
 class unicast_query_timeout(bsn_tlv):
     type = 9
 
@@ -5172,6 +5219,53 @@ class vfp_class_id(bsn_tlv):
         q.text('}')
 
 bsn_tlv.subtypes[107] = vfp_class_id
+
+class vlan_mac_list(bsn_tlv):
+    type = 98
+
+    def __init__(self, key=None):
+        if key != None:
+            self.key = key
+        else:
+            self.key = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(loxi.generic_util.pack_list(self.key))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = vlan_mac_list()
+        _type = reader.read("!H")[0]
+        assert(_type == 98)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.key = loxi.generic_util.unpack_list(reader, ofp.common.bsn_vlan_mac.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.key != other.key: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("vlan_mac_list {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("key = ");
+                q.pp(self.key)
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[98] = vlan_mac_list
 
 class vlan_pcp(bsn_tlv):
     type = 72
