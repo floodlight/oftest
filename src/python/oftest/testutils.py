@@ -802,7 +802,7 @@ def flow_msg_install(parent, request, clear_table_override=None):
 
 def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=None,
                               vlan_vid=-1, pkt=None, exp_pkt=None,
-                              action_list=None, send_reps=10):
+                              action_list=None):
     """
     Flow match test on single TCP packet
     @param egr_ports A single port or list of ports
@@ -827,17 +827,16 @@ def flow_match_test_port_pair(parent, ing_port, egr_ports, wildcards=None,
 
     flow_msg_install(parent, request)
 
-    logging.debug("Send " + str(send_reps) +  " packet: " + str(ing_port) + " to " + 
+    logging.debug("Send packet: " + str(ing_port) + " to " + 
                         str(egr_ports))
-    for i in range(send_reps):
-        parent.dataplane.send(ing_port, str(pkt))
+    parent.dataplane.send(ing_port, str(pkt))
 
-        exp_ports = [ing_port if port == ofp.OFPP_IN_PORT else port for port in egr_ports]
-        verify_packets(parent, exp_pkt, exp_ports)
+    exp_ports = [ing_port if port == ofp.OFPP_IN_PORT else port for port in egr_ports]
+    verify_packets(parent, exp_pkt, exp_ports)
 
 def flow_match_test_pktout(parent, ing_port, egr_ports,
                            vlan_vid=-1, pkt=None, exp_pkt=None,
-                           action_list=None, send_reps=10):
+                           action_list=None):
     """
     Packet-out test on single TCP packet
     @param egr_ports A single port or list of ports
@@ -868,11 +867,10 @@ def flow_match_test_pktout(parent, ing_port, egr_ports,
             msg.actions.append(act)
 
     logging.debug(msg.show())
-    for i in range(send_reps):
-        parent.controller.message_send(msg)
+    parent.controller.message_send(msg)
 
-        exp_ports = [ing_port if port == ofp.OFPP_IN_PORT else port for port in egr_ports]
-        verify_packets(parent, exp_pkt, exp_ports)
+    exp_ports = [ing_port if port == ofp.OFPP_IN_PORT else port for port in egr_ports]
+    verify_packets(parent, exp_pkt, exp_ports)
 
 def get_egr_list(parent, of_ports, how_many, exclude_list=[]):
     """
@@ -900,7 +898,7 @@ def get_egr_list(parent, of_ports, how_many, exclude_list=[]):
     
 def flow_match_test(parent, port_map, wildcards=None, vlan_vid=-1, pkt=None, 
                     exp_pkt=None, action_list=None,
-                    max_test=0, egr_count=1, ing_port=False, send_reps=10):
+                    max_test=0, egr_count=1, ing_port=False):
     """
     Run flow_match_test_port_pair on all port pairs and packet-out
 
@@ -936,7 +934,7 @@ def flow_match_test(parent, port_map, wildcards=None, vlan_vid=-1, pkt=None,
         flow_match_test_port_pair(parent, ingress_port, egr_ports, 
                                   wildcards=wildcards, vlan_vid=vlan_vid, 
                                   pkt=pkt, exp_pkt=exp_pkt,
-                                  action_list=action_list, send_reps=send_reps)
+                                  action_list=action_list)
         test_count += 1
         if (max_test > 0) and (test_count > max_test):
             logging.info("Ran " + str(test_count) + " tests; exiting")
@@ -953,7 +951,7 @@ def flow_match_test(parent, port_map, wildcards=None, vlan_vid=-1, pkt=None,
     flow_match_test_pktout(parent, ingress_port, egr_ports,
                            vlan_vid=vlan_vid,
                            pkt=pkt, exp_pkt=exp_pkt,
-                           action_list=action_list, send_reps=send_reps)
+                           action_list=action_list)
 
 def test_param_get(key, default=None):
     """
