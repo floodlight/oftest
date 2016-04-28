@@ -160,10 +160,14 @@ class Controller(Thread):
         if self.passive:
             self.logger.info("Create/listen at " + self.host + ":" +
                              str(self.port))
-            self.listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            ai = socket.getaddrinfo(self.host, self.port, socket.AF_UNSPEC,
+                                    socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
+            # Use first returned addrinfo
+            (family, socktype, proto, name, sockaddr) = ai[0]
+            self.listen_socket = socket.socket(family, socktype)
             self.listen_socket.setsockopt(socket.SOL_SOCKET,
                                           socket.SO_REUSEADDR, 1)
-            self.listen_socket.bind((self.host, self.port))
+            self.listen_socket.bind(sockaddr)
             self.listen_socket.listen(LISTEN_QUEUE_SIZE)
 
     def filter_packet(self, rawmsg, hdr):
@@ -229,25 +233,14 @@ class Controller(Thread):
             #if self.filter_packet(rawmsg, hdr):
             #    continue
 
-            # Check that supported version on switch is as least as recent as
-            # the configured Openflow version in oftests
-            self.logger.debug("Msg in: version %d type %s (%d) len %d xid %d",
-                              hdr_version,
-                              cfg_ofp.ofp_type_map.get(hdr_type, "unknown"), hdr_type,
-                              hdr_length, hdr_version)
-            if hdr_version < cfg_ofp.OFP_VERSION:
-                self.logger.error("Switch only supports up to OpenFlow version %d (OFTest version is %d)",
-                                  hdr_version, cfg_ofp.OFP_VERSION)
-                print "Switch only supports up to OpenFlow version %d (OFTest version is %d)" % \
-                    (hdr_version, cfg_ofp.OFP_VERSION)
-                self.disconnect()
-                return
-
             msg = ofp.message.parse_message(rawmsg)
             if not msg:
                 self.parse_errors += 1
                 self.logger.warn("Could not parse message")
                 continue
+
+            self.logger.debug("Msg in: version %d class %s len %d xid %d",
+                              hdr_version, type(msg).__name__, hdr_length, hdr_xid)
 
             with self.sync:
                 # Check if transaction is waiting
@@ -266,7 +259,7 @@ class Controller(Thread):
                         rep = ofp.message.echo_reply()
                         rep.xid = hdr_xid
                         # Ignoring additional data
-                        self.message_send(rep.pack())
+                        self.message_send(rep)
                         continue
 
                 # Generalize to counters for all packet types?
@@ -274,7 +267,8 @@ class Controller(Thread):
                     self.packet_in_count += 1
 
                 # Log error messages
-                if hdr_type == ofp.OFPT_ERROR:
+                if isinstance(msg, ofp.message.error_msg):
+                    #pylint: disable=E1103
                     if msg.err_type in ofp.ofp_error_type_map:
                         type_str = ofp.ofp_error_type_map[msg.err_type]
                         if msg.err_type == ofp.OFPET_HELLO_FAILED:
@@ -300,7 +294,9 @@ class Controller(Thread):
                         type_str = "unknown"
                         code_str = "unknown"
                     self.logger.warn("Received error message: xid=%d type=%s (%d) code=%s (%d)",
-                                     hdr_xid, type_str, msg.err_type, code_str, msg.code)
+                                     hdr_xid, type_str, msg.err_type, code_str, msg.code if code_str != "unknown" else -1)
+                    if msg.version >= 3 and isinstance(msg, ofp.message.bsn_error):
+                        self.logger.warn("BSN error, msg '%s'", msg.err_msg)
 
                 # Now check for message handlers; preference is given to
                 # handlers for a specific packet
@@ -311,9 +307,6 @@ class Controller(Thread):
                     handled = self.handlers["all"](self, msg, rawmsg)
 
                 if not handled: # Not handled, enqueue
-                    self.logger.debug("Enqueuing pkt type %s (%d)",
-                                      ofp.ofp_type_map.get(hdr_type, "unknown"),
-                                      hdr_type)
                     with self.packets_cv:
                         if len(self.packets) >= self.max_pkts:
                             self.packets.pop(0)
@@ -597,34 +590,26 @@ class Controller(Thread):
         If an error occurs, (None, None) is returned
         """
 
-        exp_msg_str = "unspecified"
-        if exp_msg is not None:
-            exp_msg_str = cfg_ofp.ofp_type_map.get(exp_msg, "unknown (%d)" %
-                                               exp_msg)
-
-        if exp_msg is not None:
-            self.logger.debug("Poll for %s", exp_msg_str)
+        if exp_msg is None:
+            self.logger.warn("DEPRECATED polling for any message class")
+            klass = None
+        elif isinstance(exp_msg, int):
+            klass = cfg_ofp.message.message.subtypes[exp_msg]
+        elif issubclass(exp_msg, loxi.OFObject):
+            klass = exp_msg
         else:
-            self.logger.debug("Poll for any OF message")
+            raise ValueError("Unexpected exp_msg argument %r" % exp_msg)
+
+        self.logger.debug("Polling for %s", klass.__name__)
 
         # Take the packet from the queue
         def grab():
-            if len(self.packets) > 0:
-                if exp_msg is None:
-                    self.logger.debug("Looking for any packet")
-                    (msg, pkt) = self.packets.pop(0)
-                    return (msg, pkt)
-                else:
-                    self.logger.debug("Looking for %s", exp_msg_str)
-                    for i in range(len(self.packets)):
-                        msg = self.packets[i][0]
-                        msg_str = cfg_ofp.ofp_type_map.get(msg.type, "unknown (%d)" % msg.type)
-                        self.logger.debug("Checking packets[%d] %s) against %s", i, msg_str, exp_msg_str)
-                        if msg.type == exp_msg:
-                            (msg, pkt) = self.packets.pop(i)
-                            return (msg, pkt)
+            for i, (msg, pkt) in enumerate(self.packets):
+                if klass is None or isinstance(msg, klass):
+                    self.logger.debug("Got %s message", msg.__class__.__name__)
+                    return self.packets.pop(i)
             # Not found
-            self.logger.debug("Packet not in queue")
+            self.logger.debug("%s message not in queue", klass.__name__)
             return None
 
         with self.packets_cv:
@@ -632,7 +617,6 @@ class Controller(Thread):
 
         if ret != None:
             (msg, pkt) = ret
-            self.logger.debug("Got message %s" % str(msg))
             return (msg, pkt)
         else:
             return (None, None)
@@ -661,7 +645,7 @@ class Controller(Thread):
 
             self.xid = msg.xid
             self.xid_response = None
-            self.message_send(msg.pack())
+            self.message_send(msg)
 
             self.logger.debug("Waiting for transaction %d" % msg.xid)
             ofutils.timed_wait(self.xid_cv, lambda: self.xid_response, timeout=timeout)
@@ -687,21 +671,14 @@ class Controller(Thread):
         if not self.switch_socket:
             # Sending a string indicates the message is ready to go
             raise Exception("no socket")
-        #@todo If not string, try to pack
-        if type(msg) != type(""):
-            if msg.xid == None:
-                msg.xid = ofutils.gen_xid()
-            outpkt = msg.pack()
-        else:
-            outpkt = msg
 
-        msg_version, msg_type, msg_len, msg_xid = struct.unpack_from("!BBHL", outpkt)
-        self.logger.debug("Msg out: buf len %d. hdr.type %s. hdr.len %d hdr.version %d hdr.xid %d",
-                          len(outpkt),
-                          cfg_ofp.ofp_type_map.get(msg_type, "unknown (%d)" % msg_type),
-                          msg_len,
-                          msg_version,
-                          msg_xid)
+        if msg.xid == None:
+            msg.xid = ofutils.gen_xid()
+
+        outpkt = msg.pack()
+
+        self.logger.debug("Msg out: version %d class %s len %d xid %d",
+                          msg.version, type(msg).__name__, len(outpkt), msg.xid)
 
         with self.tx_lock:
             if self.switch_socket.sendall(outpkt) is not None:

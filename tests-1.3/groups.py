@@ -32,8 +32,7 @@ class GroupAdd(GroupTest):
     def runTest(self):
         port1, = openflow_ports(1)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=0,
             buckets=[
@@ -58,8 +57,7 @@ class GroupAddMaxID(GroupTest):
     def runTest(self):
         port1, = openflow_ports(1)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=ofp.OFPG_MAX,
             buckets=[
@@ -82,8 +80,7 @@ class GroupAddInvalidAction(GroupTest):
     """
 
     def runTest(self):
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=0,
             buckets=[
@@ -102,8 +99,7 @@ class GroupAddExisting(GroupTest):
     def runTest(self):
         port1, port2, = openflow_ports(2)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=0,
             buckets=[
@@ -112,8 +108,7 @@ class GroupAddExisting(GroupTest):
         self.controller.message_send(msg)
         do_barrier(self.controller)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=0,
             buckets=[
@@ -132,8 +127,7 @@ class GroupAddInvalidID(GroupTest):
     def runTest(self):
         port1, = openflow_ports(1)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=ofp.OFPG_ALL,
             buckets=[
@@ -152,8 +146,7 @@ class GroupAddMinimumInvalidID(GroupTest):
     def runTest(self):
         port1, = openflow_ports(1)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=ofp.OFPG_MAX+1,
             buckets=[
@@ -172,8 +165,7 @@ class GroupModify(GroupTest):
     def runTest(self):
         port1, port2, = openflow_ports(2)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=0,
             buckets=[
@@ -182,8 +174,7 @@ class GroupModify(GroupTest):
         self.controller.message_send(msg)
         do_barrier(self.controller)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_MODIFY,
+        msg = ofp.message.group_modify(
             group_type=ofp.OFPGT_ALL,
             group_id=0,
             buckets=[
@@ -208,8 +199,7 @@ class GroupModifyNonexisting(GroupTest):
     def runTest(self):
         port1, = openflow_ports(1)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_MODIFY,
+        msg = ofp.message.group_modify(
             group_type=ofp.OFPGT_ALL,
             group_id=0,
             buckets=[
@@ -228,8 +218,7 @@ class GroupModifyLoop(GroupTest):
     def runTest(self):
         port1, = openflow_ports(1)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=0,
             buckets=[
@@ -238,8 +227,7 @@ class GroupModifyLoop(GroupTest):
         self.controller.message_send(msg)
         do_barrier(self.controller)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=1,
             buckets=[
@@ -248,8 +236,7 @@ class GroupModifyLoop(GroupTest):
         self.controller.message_send(msg)
         do_barrier(self.controller)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=2,
             buckets=[
@@ -258,8 +245,7 @@ class GroupModifyLoop(GroupTest):
         self.controller.message_send(msg)
         do_barrier(self.controller)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_MODIFY,
+        msg = ofp.message.group_modify(
             group_type=ofp.OFPGT_ALL,
             group_id=0,
             buckets=[
@@ -278,8 +264,7 @@ class GroupModifyInvalidID(GroupTest):
     def runTest(self):
         port1, = openflow_ports(1)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=ofp.OFPG_ALL,
             buckets=[
@@ -298,8 +283,7 @@ class GroupModifyEmpty(GroupTest):
     def runTest(self):
         port1, = openflow_ports(1)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=0,
             buckets=[
@@ -308,8 +292,7 @@ class GroupModifyEmpty(GroupTest):
         self.controller.message_send(msg)
         do_barrier(self.controller)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_MODIFY,
+        msg = ofp.message.group_modify(
             group_type=ofp.OFPGT_ALL,
             group_id=0,
             buckets=[])
@@ -333,8 +316,7 @@ class GroupDeleteExisting(GroupTest):
     def runTest(self):
         port1, = openflow_ports(1)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=0,
             buckets=[
@@ -343,9 +325,7 @@ class GroupDeleteExisting(GroupTest):
         self.controller.message_send(msg)
         do_barrier(self.controller)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_DELETE,
-            group_id=0)
+        msg = ofp.message.group_delete(group_id=0)
 
         self.controller.message_send(msg)
         do_barrier(self.controller)
@@ -360,9 +340,7 @@ class GroupDeleteNonexisting(GroupTest):
     """
 
     def runTest(self):
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_DELETE,
-            group_id=0)
+        msg = ofp.message.group_delete(group_id=0)
 
         self.controller.message_send(msg)
         do_barrier(self.controller)
@@ -377,8 +355,7 @@ class GroupDeleteAll(GroupTest):
     def runTest(self):
         port1, = openflow_ports(1)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=0,
             buckets=[
@@ -387,8 +364,7 @@ class GroupDeleteAll(GroupTest):
         self.controller.message_send(msg)
         do_barrier(self.controller)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=1,
             buckets=[
@@ -397,9 +373,7 @@ class GroupDeleteAll(GroupTest):
         self.controller.message_send(msg)
         do_barrier(self.controller)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_DELETE,
-            group_id=ofp.OFPG_ALL)
+        msg = ofp.message.group_delete(group_id=ofp.OFPG_ALL)
 
         self.controller.message_send(msg)
         do_barrier(self.controller)
@@ -416,8 +390,7 @@ class GroupAddAllWeight(GroupTest):
     def runTest(self):
         port1, port2, = openflow_ports(2)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=0,
             buckets=[
@@ -437,8 +410,7 @@ class GroupAddIndirectWeight(GroupTest):
     def runTest(self):
         port1, = openflow_ports(1)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_INDIRECT,
             group_id=0,
             buckets=[
@@ -457,8 +429,7 @@ class GroupAddIndirectBuckets(GroupTest):
     def runTest(self):
         port1, port2, = openflow_ports(2)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_INDIRECT,
             group_id=0,
             buckets=[
@@ -478,8 +449,7 @@ class GroupAddSelectNoWeight(GroupTest):
     def runTest(self):
         port1, port2, = openflow_ports(2)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_SELECT,
             group_id=0,
             buckets=[
@@ -499,8 +469,7 @@ class GroupStats(GroupTest):
     def runTest(self):
         port1, port2, = openflow_ports(2)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=10,
             buckets=[
@@ -544,8 +513,7 @@ class GroupStatsAll(GroupTest):
     def runTest(self):
         port1, port2, = openflow_ports(2)
 
-        msg0 = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg0 = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=0,
             buckets=[
@@ -559,8 +527,7 @@ class GroupStatsAll(GroupTest):
         self.controller.message_send(msg0)
         do_barrier(self.controller)
 
-        msg1 = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg1 = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=1,
             buckets=[
@@ -600,8 +567,7 @@ class GroupDescStats(GroupTest):
     def runTest(self):
         port1, port2, port3, = openflow_ports(3)
 
-        msg0 = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg0 = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=0,
             buckets=[
@@ -618,8 +584,7 @@ class GroupDescStats(GroupTest):
         self.controller.message_send(msg0)
         do_barrier(self.controller)
 
-        msg1 = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg1 = ofp.message.group_add(
             group_type=ofp.OFPGT_SELECT,
             group_id=1,
             buckets=[
@@ -642,8 +607,7 @@ class GroupDescStats(GroupTest):
         self.controller.message_send(msg1)
         do_barrier(self.controller)
 
-        msg2 = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg2 = ofp.message.group_add(
             group_type=ofp.OFPGT_FF,
             group_id=2,
             buckets=[
@@ -672,15 +636,15 @@ class GroupDescStats(GroupTest):
         self.assertEquals(len(stats), 3)
 
         self.assertEquals(stats[0].group_id, msg0.group_id)
-        self.assertEquals(stats[0].type, msg0.group_type)
+        self.assertEquals(stats[0].group_type, msg0.group_type)
         self.assertEquals(stats[0].buckets, msg0.buckets)
 
         self.assertEquals(stats[1].group_id, msg1.group_id)
-        self.assertEquals(stats[1].type, msg1.group_type)
+        self.assertEquals(stats[1].group_type, msg1.group_type)
         self.assertEquals(stats[1].buckets, msg1.buckets)
 
         self.assertEquals(stats[2].group_id, msg2.group_id)
-        self.assertEquals(stats[2].type, msg2.group_type)
+        self.assertEquals(stats[2].group_type, msg2.group_type)
         self.assertEquals(stats[2].buckets, msg2.buckets)
 
 
@@ -692,8 +656,7 @@ class GroupFlowSelect(GroupTest):
     def runTest(self):
         port1, = openflow_ports(1)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=1,
             buckets=[])
@@ -701,8 +664,7 @@ class GroupFlowSelect(GroupTest):
         self.controller.message_send(msg)
         do_barrier(self.controller)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_ALL,
             group_id=2,
             buckets=[])
@@ -780,8 +742,7 @@ class SelectFwdEmpty(GroupTest):
     def runTest(self):
         port1, port2 = openflow_ports(2)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_SELECT,
             group_id=1,
             buckets=[])
@@ -813,8 +774,7 @@ class SelectFwdSingle(GroupTest):
     def runTest(self):
         port1, port2 = openflow_ports(2)
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_SELECT,
             group_id=1,
             buckets=[
@@ -849,8 +809,7 @@ class SelectFwdSpread(GroupTest):
         port1, port2, port3, port4 = openflow_ports(num_out_ports + 1)
         out_ports = [port2, port3, port4]
 
-        msg = ofp.message.group_mod(
-            command=ofp.OFPGC_ADD,
+        msg = ofp.message.group_add(
             group_type=ofp.OFPGT_SELECT,
             group_id=1,
             buckets=[

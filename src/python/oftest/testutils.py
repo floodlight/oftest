@@ -55,8 +55,7 @@ def delete_all_groups(ctrl):
     """
 
     logging.info("Deleting all groups")
-    msg = ofp.message.group_mod(
-        command=ofp.OFPGC_DELETE, group_id=ofp.OFPG_ALL)
+    msg = ofp.message.group_delete(group_id=ofp.OFPG_ALL)
     ctrl.message_send(msg)
     do_barrier(ctrl)
 
@@ -81,6 +80,7 @@ def simple_tcp_packet(pktlen=100,
                       ip_ttl=64,
                       tcp_sport=1234,
                       tcp_dport=80,
+                      tcp_flags="S",
                       ip_ihl=None,
                       ip_options=False
                       ):
@@ -99,7 +99,8 @@ def simple_tcp_packet(pktlen=100,
     @param ip_tos IP ToS
     @param ip_ttl IP TTL
     @param tcp_dport TCP destination port
-    @param ip_sport TCP source port
+    @param tcp_sport TCP source port
+    @param tcp_flags TCP Control flags  	
 
     Generates a simple TCP request.  Users
     shouldn't assume anything about this packet other than that
@@ -114,16 +115,16 @@ def simple_tcp_packet(pktlen=100,
         pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
             scapy.Dot1Q(prio=vlan_pcp, id=dl_vlan_cfi, vlan=vlan_vid)/ \
             scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl)/ \
-            scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+            scapy.TCP(sport=tcp_sport, dport=tcp_dport, flags=tcp_flags)
     else:
         if not ip_options:
             pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl)/ \
-                scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+                scapy.TCP(sport=tcp_sport, dport=tcp_dport, flags=tcp_flags)
         else:
             pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
                 scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl, options=ip_options)/ \
-                scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+                scapy.TCP(sport=tcp_sport, dport=tcp_dport, flags=tcp_flags)
 
     pkt = pkt/("D" * (pktlen - len(pkt)))
 
@@ -141,7 +142,8 @@ def simple_tcpv6_packet(pktlen=100,
                         ipv6_hlim=64,
                         ipv6_fl=0,
                         tcp_sport=1234,
-                        tcp_dport=80):
+                        tcp_dport=80,
+                        tcp_flags="S"):
     """
     Return a simple IPv6/TCP packet
 
@@ -159,6 +161,7 @@ def simple_tcpv6_packet(pktlen=100,
     @param ipv6_fl IPv6 flow label
     @param tcp_dport TCP destination port
     @param tcp_sport TCP source port
+    @param tcp_flags TCP Control flags	
 
     Generates a simple TCP request. Users shouldn't assume anything about this
     packet other than that it is a valid ethernet/IPv6/TCP frame.
@@ -171,7 +174,7 @@ def simple_tcpv6_packet(pktlen=100,
     if dl_vlan_enable or vlan_vid or vlan_pcp:
         pkt /= scapy.Dot1Q(vlan=vlan_vid, prio=vlan_pcp)
     pkt /= scapy.IPv6(src=ipv6_src, dst=ipv6_dst, fl=ipv6_fl, tc=ipv6_tc, hlim=ipv6_hlim)
-    pkt /= scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+    pkt /= scapy.TCP(sport=tcp_sport, dport=tcp_dport, flags=tcp_flags)
     pkt /= ("D" * (pktlen - len(pkt)))
 
     return pkt
@@ -293,9 +296,10 @@ def simple_icmp_packet(pktlen=60,
                       ip_dst='192.168.0.2',
                       ip_tos=0,
                       ip_ttl=64,
+                      ip_id=1,  
                       icmp_type=8,
-                      icmp_code=0
-                      ):
+                      icmp_code=0,
+                      icmp_data=''):
     """
     Return a simple ICMP packet
 
@@ -310,8 +314,10 @@ def simple_icmp_packet(pktlen=60,
     @param ip_dst IP destination
     @param ip_tos IP ToS
     @param ip_ttl IP TTL
+    @param ip_id IP Identification
     @param icmp_type ICMP type
     @param icmp_code ICMP code
+    @param icmp_data ICMP data
 
     Generates a simple ICMP ECHO REQUEST.  Users
     shouldn't assume anything about this packet other than that
@@ -324,12 +330,12 @@ def simple_icmp_packet(pktlen=60,
     if (dl_vlan_enable):
         pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
             scapy.Dot1Q(prio=vlan_pcp, id=0, vlan=vlan_vid)/ \
-            scapy.IP(src=ip_src, dst=ip_dst, ttl=ip_ttl, tos=ip_tos)/ \
-            scapy.ICMP(type=icmp_type, code=icmp_code)
+            scapy.IP(src=ip_src, dst=ip_dst, ttl=ip_ttl, tos=ip_tos, id=ip_id)/ \
+            scapy.ICMP(type=icmp_type, code=icmp_code)/ icmp_data
     else:
         pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
-            scapy.IP(src=ip_src, dst=ip_dst, ttl=ip_ttl, tos=ip_tos)/ \
-            scapy.ICMP(type=icmp_type, code=icmp_code)
+            scapy.IP(src=ip_src, dst=ip_dst, ttl=ip_ttl, tos=ip_tos, id=ip_id)/ \
+            scapy.ICMP(type=icmp_type, code=icmp_code)/ icmp_data
 
     pkt = pkt/("0" * (pktlen - len(pkt)))
 
@@ -385,6 +391,8 @@ def simple_icmpv6_packet(pktlen=100,
 def simple_arp_packet(pktlen=60, 
                       eth_dst='ff:ff:ff:ff:ff:ff',
                       eth_src='00:06:07:08:09:0a',
+                      vlan_vid=0,
+                      vlan_pcp=0,
                       arp_op=1,
                       ip_snd='192.168.0.1',
                       ip_tgt='192.168.0.2',
@@ -412,10 +420,12 @@ def simple_arp_packet(pktlen=60,
     if MINSIZE > pktlen:
         pktlen = MINSIZE
 
-    pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
-          scapy.ARP(hwsrc=hw_snd, hwdst=hw_tgt, pdst=ip_tgt, psrc=ip_snd, op=arp_op)
+    pkt = scapy.Ether(dst=eth_dst, src=eth_src)
+    if vlan_vid or vlan_pcp:
+        pkt /= scapy.Dot1Q(vlan=vlan_vid, prio=vlan_pcp)
+    pkt /= scapy.ARP(hwsrc=hw_snd, hwdst=hw_tgt, pdst=ip_tgt, psrc=ip_snd, op=arp_op)
 
-    pkt = pkt/("0" * (pktlen - len(pkt)))
+    pkt = pkt/("\0" * (pktlen - len(pkt)))
 
     return pkt
 
@@ -570,11 +580,6 @@ def receive_pkt_check(dp, pkt, yes_ports, no_ports, assert_if):
     DEPRECATED in favor in verify_packets
     """
 
-    # Wait this long for packets that we don't expect to receive.
-    # 100ms is (rarely) too short for positive tests on slow
-    # switches but is definitely not too short for a negative test.
-    negative_timeout = 0.1
-
     exp_pkt_arg = None
     if oftest.config["relax"]:
         exp_pkt_arg = pkt
@@ -592,7 +597,7 @@ def receive_pkt_check(dp, pkt, yes_ports, no_ports, assert_if):
                              "Received packet does not match expected packet " +
                              "on port " + str(ofport))
     if len(no_ports) > 0:
-        time.sleep(negative_timeout)
+        time.sleep(oftest.ofutils.default_negative_timeout)
     for ofport in no_ports:
         logging.debug("Negative check for pkt on port " + str(ofport))
         (rcv_port, rcv_pkt, pkt_time) = dp.poll(
@@ -1378,7 +1383,6 @@ def get_queue_stats(test, port_no, queue_id):
     return get_stats(test, req)
 
 def verify_flow_stats(test, match, table_id=0xff,
-                      out_port=None,
                       initial=[],
                       pkts=None, bytes=None):
     """
@@ -1388,8 +1392,6 @@ def verify_flow_stats(test, match, table_id=0xff,
     get_flow_stats(). If 'initial' is not given the counters are assumed to
     begin at 0.
     """
-    if out_port == None:
-        out_port = ofp.OFPP_NONE
 
     def accumulate(stats):
         pkts_acc = bytes_acc = 0
@@ -1403,7 +1405,7 @@ def verify_flow_stats(test, match, table_id=0xff,
     # Wait 10s for counters to update
     pkt_diff = byte_diff = None
     for i in range(0, 100):
-        stats = get_flow_stats(test, match, table_id=table_id, out_port=out_port)
+        stats = get_flow_stats(test, match, table_id=table_id)
         pkts_after, bytes_after = accumulate(stats)
         pkt_diff = pkts_after - pkts_before
         byte_diff = bytes_after - bytes_before
@@ -1451,23 +1453,25 @@ def verify_port_stats(test, port,
         rx_pkts_diff = rx_pkts_after - rx_pkts_before
         tx_bytes_diff = tx_bytes_after - tx_bytes_before
         rx_bytes_diff = rx_bytes_after - rx_bytes_before
-        if (tx_pkts == None or tx_pkts == tx_pkts_diff) and \
-           (rx_pkts == None or rx_pkts == rx_pkts_diff) and \
+        if (tx_pkts == None or tx_pkts <= tx_pkts_diff) and \
+           (rx_pkts == None or rx_pkts <= rx_pkts_diff) and \
            (tx_bytes == None or tx_bytes <= tx_bytes_diff) and \
            (rx_bytes == None or rx_bytes <= rx_bytes_diff):
             break
         time.sleep(0.1)
 
     if (tx_pkts != None):
-        test.assertEqual(tx_pkts,tx_pkts_diff,"Port TX packet counter is not updated correctly (expected increase of %d, got increase of %d)" % (tx_pkts, tx_pkts_diff))
+        test.assertGreaterEqual(tx_pkts_diff, tx_pkts,
+            "Port TX packet counter is not updated correctly (expected increase of %d, got increase of %d)" % (tx_pkts, tx_pkts_diff))
     if (rx_pkts != None):
-        test.assertEqual(rx_pkts,rx_pkts_diff,"Port RX packet counter is not updated correctly (expected increase of %d, got increase of %d)" % (rx_pkts, rx_pkts_diff))
+        test.assertGreaterEqual(rx_pkts_diff, rx_pkts,
+            "Port RX packet counter is not updated correctly (expected increase of %d, got increase of %d)" % (rx_pkts, rx_pkts_diff))
     if (tx_bytes != None):
-        test.assertTrue(tx_bytes_diff >= tx_bytes and tx_bytes_diff <= tx_bytes*1.1,
-                        "Port TX byte counter is not updated correctly (expected increase of %d, got increase of %d)" % (tx_bytes, tx_bytes_diff))
+        test.assertGreaterEqual(tx_bytes_diff, tx_bytes,
+            "Port TX byte counter is not updated correctly (expected increase of %d, got increase of %d)" % (tx_bytes, tx_bytes_diff))
     if (rx_bytes != None):
-        test.assertTrue(rx_bytes_diff >= rx_bytes and rx_bytes_diff <= rx_bytes*1.1,
-                        "Port RX byte counter is not updated correctly (expected increase of %d, got increase of %d)" % (rx_bytes, rx_bytes_diff))
+        test.assertGreaterEqual(rx_bytes_diff, rx_bytes,
+            "Port RX byte counter is not updated correctly (expected increase of %d, got increase of %d)" % (rx_bytes, rx_bytes_diff))
 
 def verify_queue_stats(test, port_no, queue_id,
                        initial=[],
@@ -1582,7 +1586,7 @@ def verify_packet_in(test, data, in_port, reason, controller=None):
             # Found a matching message
             break
 
-    test.assertTrue(msg is not None, 'Packet in message not received on port %d' % in_port)
+    test.assertTrue(msg is not None, 'Packet in message not received on port %r' % in_port)
     return msg
 
 def verify_no_packet_in(test, data, in_port, controller=None):
@@ -1601,7 +1605,7 @@ def verify_no_packet_in(test, data, in_port, controller=None):
 
     # Negative test, need to wait a short amount of time before checking we
     # didn't receive the message.
-    time.sleep(0.5)
+    time.sleep(oftest.ofutils.default_negative_timeout)
 
     # Check every packet_in queued in the controller
     while True:
@@ -1644,7 +1648,10 @@ def verify_no_packet(test, pkt, ofport):
     Check that a particular packet is not received
     """
     logging.debug("Negative check for pkt on port %r", ofport)
-    (rcv_port, rcv_pkt, pkt_time) = test.dataplane.poll(port_number=ofport, exp_pkt=str(pkt), timeout=0.01)
+    (rcv_port, rcv_pkt, pkt_time) = \
+        test.dataplane.poll(
+            port_number=ofport, exp_pkt=str(pkt),
+            timeout=oftest.ofutils.default_negative_timeout)
     test.assertTrue(rcv_pkt == None, "Received packet on %r" % ofport)
 
 def verify_no_other_packets(test):
@@ -1656,7 +1663,7 @@ def verify_no_other_packets(test):
     if oftest.config["relax"]:
         return
     logging.debug("Checking for unexpected packets on all ports")
-    (rcv_port, rcv_pkt, pkt_time) = test.dataplane.poll(timeout=0.01)
+    (rcv_port, rcv_pkt, pkt_time) = test.dataplane.poll(timeout=oftest.ofutils.default_negative_timeout)
     if rcv_pkt != None:
         logging.debug("Received unexpected packet on port %r: %s", rcv_port, format_packet(rcv_pkt))
     test.assertTrue(rcv_pkt == None, "Unexpected packet on port %r" % rcv_port)
@@ -1684,6 +1691,73 @@ def verify_packets(test, pkt, ofports):
 def verify_no_errors(ctrl):
     error, _ = ctrl.poll(ofp.OFPT_ERROR, 0)
     if error:
-        raise AssertionError("unexpected error type=%d code=%d" % (error.err_type, error.code))
+        if error.version >= 3 and isinstance(error, ofp.message.bsn_error):
+            raise AssertionError("unexpected error type=%d msg=%s" %
+                                 (error.err_type, error.err_msg))
+        else:
+            raise AssertionError("unexpected error type=%d code=%d" %
+                                 (error.err_type, error.code))
+
+def verify_capability(test, capability):
+    """
+    Return True if DUT supports the specified capability.
+
+    @param test Instance of base_tests.SimpleProtocol
+    @param capability One of ofp_capabilities.
+    """
+    logging.info("Verifing that capability code is valid.")
+    test.assertIn(capability, ofp.const.ofp_capabilities_map,
+                  "Capability code %d does not exist." % capability)
+    capability_str = ofp.const.ofp_capabilities_map[capability]
+    
+    logging.info(("Sending features_request to test if capability "
+                  "%s is supported."), capability_str)
+    req = ofp.message.features_request()
+    res, raw = test.controller.transact(req)
+    test.assertIsNotNone(res, "Did not receive a response from the DUT.")
+    test.assertEqual(res.type, ofp.OFPT_FEATURES_REPLY,
+                     ("Unexpected packet type %d received in response to "
+                      "OFPT_FEATURES_REQUEST") % res.type)
+    logging.info("Received features_reply.")
+    
+    if (res.capabilities & capability) > 0:
+        logging.info("Switch capabilities bitmask claims to support %s",
+                     capability_str)
+        return True, res.capabilities
+    else:
+        logging.info("Capabilities bitmask does not support %s.",
+                     capability_str)
+        return False, res.capabilities
+
+def verify_configuration_flag(test, flag):
+    """
+    Return True if DUT supports specified configuration flag.
+
+    @param test Instance of base_tests.SimpleProtocol
+    @param flag One of ofp_config_flags.
+    @returns (supported, flags) Bool if flag is set and flag values.
+    """
+    logging.info("Verifing that flag is valid.")
+    test.assertIn(flag, ofp.const.ofp_config_flags_map,
+                  "flag  %s does not exist." % flag)
+    flag_str = ofp.const.ofp_config_flags_map[flag]
+
+    logging.info("Sending OFPT_GET_CONFIG_REQUEST.")    
+    req = ofp.message.get_config_request()
+    rv = test.controller.message_send(req)
+    test.assertNotEqual(rv, -1, "Not able to send get_config_request.")
+
+    logging.info("Expecting OFPT_GET_CONFIG_REPLY ")
+    (res, pkt) = test.controller.poll(exp_msg=ofp.OFPT_GET_CONFIG_REPLY,
+                                      timeout=2)
+    test.assertIsNotNone(res, "Did not receive OFPT_GET_CONFIG_REPLY")
+    logging.info("Received OFPT_GET_CONFIG_REPLY ")
+
+    if res.flags == flag:
+        logging.info("%s flag is set.", flag_str)
+        return True, res.flags
+    else:
+        logging.info("%s flag is not set.", flag_str)
+        return False, res.flags
 
 __all__ = list(set(locals()) - _import_blacklist)

@@ -25,10 +25,10 @@ OFPQ_ALL = 4294967295
 OFPQ_MIN_RATE_UNCFG = 65535
 OFPQ_MAX_RATE_UNCFG = 65535
 
-# Identifiers from group of_bsn_pdu_slot_num_t
+# Identifiers from group of_bsn_pdu_slot_num
 BSN_PDU_SLOT_NUM_ANY = 255
 
-of_bsn_pdu_slot_num_t_map = {
+of_bsn_pdu_slot_num_map = {
     255: 'BSN_PDU_SLOT_NUM_ANY',
 }
 
@@ -185,6 +185,44 @@ ofp_bad_request_code_map = {
     10: 'OFPBRC_IS_SLAVE',
     11: 'OFPBRC_BAD_PORT',
     12: 'OFPBRC_BAD_PACKET',
+}
+
+# Identifiers from group ofp_bsn_tcp_flag
+OFP_BSN_TCP_FLAG_FIN = 1
+OFP_BSN_TCP_FLAG_SYN = 2
+OFP_BSN_TCP_FLAG_RST = 4
+OFP_BSN_TCP_FLAG_PSH = 8
+OFP_BSN_TCP_FLAG_ACK = 16
+OFP_BSN_TCP_FLAG_URG = 32
+OFP_BSN_TCP_FLAG_ECE = 64
+OFP_BSN_TCP_FLAG_CWR = 128
+OFP_BSN_TCP_FLAG_NS = 256
+
+ofp_bsn_tcp_flag_map = {
+    1: 'OFP_BSN_TCP_FLAG_FIN',
+    2: 'OFP_BSN_TCP_FLAG_SYN',
+    4: 'OFP_BSN_TCP_FLAG_RST',
+    8: 'OFP_BSN_TCP_FLAG_PSH',
+    16: 'OFP_BSN_TCP_FLAG_ACK',
+    32: 'OFP_BSN_TCP_FLAG_URG',
+    64: 'OFP_BSN_TCP_FLAG_ECE',
+    128: 'OFP_BSN_TCP_FLAG_CWR',
+    256: 'OFP_BSN_TCP_FLAG_NS',
+}
+
+# Identifiers from group ofp_bsn_vport_l2gre_flags
+OF_BSN_VPORT_L2GRE_LOCAL_MAC_IS_VALID = 1
+OF_BSN_VPORT_L2GRE_DSCP_ASSIGN = 2
+OF_BSN_VPORT_L2GRE_DSCP_COPY = 4
+OF_BSN_VPORT_L2GRE_LOOPBACK_IS_VALID = 8
+OF_BSN_VPORT_L2GRE_RATE_LIMIT_IS_VALID = 16
+
+ofp_bsn_vport_l2gre_flags_map = {
+    1: 'OF_BSN_VPORT_L2GRE_LOCAL_MAC_IS_VALID',
+    2: 'OF_BSN_VPORT_L2GRE_DSCP_ASSIGN',
+    4: 'OF_BSN_VPORT_L2GRE_DSCP_COPY',
+    8: 'OF_BSN_VPORT_L2GRE_LOOPBACK_IS_VALID',
+    16: 'OF_BSN_VPORT_L2GRE_RATE_LIMIT_IS_VALID',
 }
 
 # Identifiers from group ofp_bsn_vport_q_in_q_untagged

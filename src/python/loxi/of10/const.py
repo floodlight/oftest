@@ -27,10 +27,10 @@ SERIAL_NUM_LEN = 32
 OFPQ_ALL = 4294967295
 OFPQ_MIN_RATE_UNCFG = 65535
 
-# Identifiers from group of_bsn_pdu_slot_num_t
+# Identifiers from group of_bsn_pdu_slot_num
 BSN_PDU_SLOT_NUM_ANY = 255
 
-of_bsn_pdu_slot_num_t_map = {
+of_bsn_pdu_slot_num_map = {
     255: 'BSN_PDU_SLOT_NUM_ANY',
 }
 
@@ -109,6 +109,21 @@ ofp_bad_request_code_map = {
     6: 'OFPBRC_BAD_LEN',
     7: 'OFPBRC_BUFFER_EMPTY',
     8: 'OFPBRC_BUFFER_UNKNOWN',
+}
+
+# Identifiers from group ofp_bsn_vport_l2gre_flags
+OF_BSN_VPORT_L2GRE_LOCAL_MAC_IS_VALID = 1
+OF_BSN_VPORT_L2GRE_DSCP_ASSIGN = 2
+OF_BSN_VPORT_L2GRE_DSCP_COPY = 4
+OF_BSN_VPORT_L2GRE_LOOPBACK_IS_VALID = 8
+OF_BSN_VPORT_L2GRE_RATE_LIMIT_IS_VALID = 16
+
+ofp_bsn_vport_l2gre_flags_map = {
+    1: 'OF_BSN_VPORT_L2GRE_LOCAL_MAC_IS_VALID',
+    2: 'OF_BSN_VPORT_L2GRE_DSCP_ASSIGN',
+    4: 'OF_BSN_VPORT_L2GRE_DSCP_COPY',
+    8: 'OF_BSN_VPORT_L2GRE_LOOPBACK_IS_VALID',
+    16: 'OF_BSN_VPORT_L2GRE_RATE_LIMIT_IS_VALID',
 }
 
 # Identifiers from group ofp_bsn_vport_q_in_q_untagged
