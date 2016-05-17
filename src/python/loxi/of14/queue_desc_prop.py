@@ -122,6 +122,117 @@ class experimenter(queue_desc_prop):
 
 queue_desc_prop.subtypes[65535] = experimenter
 
+class bsn(experimenter):
+    subtypes = {}
+
+    type = 65535
+    experimenter = 6035143
+
+    def __init__(self, exp_type=None):
+        if exp_type != None:
+            self.exp_type = exp_type
+        else:
+            self.exp_type = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.exp_type))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        subtype, = reader.peek('!L', 8)
+        subclass = bsn.subtypes.get(subtype)
+        if subclass:
+            return subclass.unpack(reader)
+
+        obj = bsn()
+        _type = reader.read("!H")[0]
+        assert(_type == 65535)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        obj.exp_type = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.exp_type != other.exp_type: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+            q.breakable()
+        q.text('}')
+
+experimenter.subtypes[6035143] = bsn
+
+class bsn_queue_name(bsn):
+    type = 65535
+    experimenter = 6035143
+    exp_type = 0
+
+    def __init__(self, name=None):
+        if name != None:
+            self.name = name
+        else:
+            self.name = ''
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.exp_type))
+        packed.append(self.name)
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_queue_name()
+        _type = reader.read("!H")[0]
+        assert(_type == 65535)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _exp_type = reader.read("!L")[0]
+        assert(_exp_type == 0)
+        obj.name = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.name != other.name: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_queue_name {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("name = ");
+                q.pp(self.name)
+            q.breakable()
+        q.text('}')
+
+bsn.subtypes[0] = bsn_queue_name
+
 class max_rate(queue_desc_prop):
     type = 2
 
