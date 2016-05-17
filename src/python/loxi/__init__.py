@@ -11,6 +11,7 @@ version_names = {
     3: "1.2",
     4: "1.3",
     5: "1.4",
+    6: "1.5",
 }
 
 def protocol(ver):
@@ -36,6 +37,10 @@ def protocol(ver):
     if ver == 5:
         import of14
         return of14
+
+    if ver == 6:
+        import of15
+        return of15
 
     raise ValueError
 
