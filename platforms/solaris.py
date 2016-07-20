@@ -5,6 +5,7 @@ This platform uses Solaris dlpi python interface.
 """
 import sys
 import time
+import argparse
 
 if "sunos" in sys.platform:
     import dlpi
@@ -76,13 +77,25 @@ class DataPlanePortSolaris:
         pass
 
 
-# Update this dictionary to suit your environment.
-solaris_port_map = {
-    21 : "net2",
-    22 : "net3",
-    23 : "net4",
-    24 : "net5"
-}
+if not "--platform-args" in " ".join(sys.argv):
+    # Update this dictionary to suit your environment.
+    solaris_port_map = {
+        21 : "net1",
+        22 : "net2",
+        23 : "net3",
+        24 : "net4"
+    }
+else:
+    ap = argparse.ArgumentParser("solaris")
+    ap.add_argument("--platform-args")
+    (ops, rest) = ap.parse_known_args()
+    solaris_port_map = {}
+    ports = ops.platform_args.split(",")
+    for ps in ports:
+        (p, vpi) = ps.split("@")
+        solaris_port_map[int(p)] = vpi
+
+
 
 def platform_config_update(config):
     """
@@ -91,7 +104,13 @@ def platform_config_update(config):
     @param config The configuration dictionary to use/update
     """
     global solaris_port_map
-    config["port_map"] = solaris_port_map.copy()
+    port_map = {}
+    for (ofport, interface) in config["interfaces"]:
+        port_map[ofport] = interface
+    if not port_map:
+        port_map= solaris_port_map
+
+    config["port_map"] = port_map.copy()
     config["caps_table_idx"] = 0
     config["dataplane"] = {"portclass": DataPlanePortSolaris}
     config["allow_user"] = True
