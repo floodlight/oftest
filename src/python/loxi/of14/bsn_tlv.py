@@ -2406,6 +2406,63 @@ class ipv6(bsn_tlv):
 
 bsn_tlv.subtypes[84] = ipv6
 
+class ipv6_prefix(bsn_tlv):
+    type = 122
+
+    def __init__(self, value=None, prefix_length=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        if prefix_length != None:
+            self.prefix_length = prefix_length
+        else:
+            self.prefix_length = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!16s", self.value))
+        packed.append(struct.pack("!B", self.prefix_length))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = ipv6_prefix()
+        _type = reader.read("!H")[0]
+        assert(_type == 122)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.value = reader.read('!16s')[0]
+        obj.prefix_length = reader.read("!B")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.prefix_length != other.prefix_length: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("ipv6_prefix {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.pp(self.value)
+                q.text(","); q.breakable()
+                q.text("prefix_length = ");
+                q.text("%#x" % self.prefix_length)
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[122] = ipv6_prefix
+
 class known_multicast_rate(bsn_tlv):
     type = 91
 
@@ -2951,6 +3008,44 @@ class name(bsn_tlv):
         q.text('}')
 
 bsn_tlv.subtypes[52] = name
+
+class ndp_offload(bsn_tlv):
+    type = 123
+
+    def __init__(self):
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = ndp_offload()
+        _type = reader.read("!H")[0]
+        assert(_type == 123)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("ndp_offload {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[123] = ndp_offload
 
 class negate(bsn_tlv):
     type = 83
