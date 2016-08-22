@@ -1813,6 +1813,53 @@ class icmp_type(bsn_tlv):
 
 bsn_tlv.subtypes[68] = icmp_type
 
+class icmpv6_chksum(bsn_tlv):
+    type = 125
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!H", self.value))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = icmpv6_chksum()
+        _type = reader.read("!H")[0]
+        assert(_type == 125)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.value = reader.read("!H")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("icmpv6_chksum {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[125] = icmpv6_chksum
+
 class idle_notification(bsn_tlv):
     type = 7
 
@@ -2406,6 +2453,53 @@ class ipv6(bsn_tlv):
 
 bsn_tlv.subtypes[84] = ipv6
 
+class ipv6_dst(bsn_tlv):
+    type = 127
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!16s", self.value))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = ipv6_dst()
+        _type = reader.read("!H")[0]
+        assert(_type == 127)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.value = reader.read('!16s')[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("ipv6_dst {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.pp(self.value)
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[127] = ipv6_dst
+
 class ipv6_prefix(bsn_tlv):
     type = 122
 
@@ -2462,6 +2556,53 @@ class ipv6_prefix(bsn_tlv):
         q.text('}')
 
 bsn_tlv.subtypes[122] = ipv6_prefix
+
+class ipv6_src(bsn_tlv):
+    type = 126
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!16s", self.value))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = ipv6_src()
+        _type = reader.read("!H")[0]
+        assert(_type == 126)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.value = reader.read('!16s')[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("ipv6_src {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.pp(self.value)
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[126] = ipv6_src
 
 class known_multicast_rate(bsn_tlv):
     type = 91
@@ -3046,6 +3187,44 @@ class ndp_offload(bsn_tlv):
         q.text('}')
 
 bsn_tlv.subtypes[123] = ndp_offload
+
+class ndp_static(bsn_tlv):
+    type = 124
+
+    def __init__(self):
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = ndp_static()
+        _type = reader.read("!H")[0]
+        assert(_type == 124)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("ndp_static {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[124] = ndp_static
 
 class negate(bsn_tlv):
     type = 83
