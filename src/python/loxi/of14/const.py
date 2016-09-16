@@ -393,6 +393,15 @@ ofp_bsn_decap_map = {
     8: 'OFP_BSN_DECAP_L3_MPLS',
 }
 
+# Identifiers from group ofp_bsn_hash_select_flags
+OFP_BSN_HASH_SELECT_SRC_IP = 1
+OFP_BSN_HASH_SELECT_DST_IP = 2
+
+ofp_bsn_hash_select_flags_map = {
+    1: 'OFP_BSN_HASH_SELECT_SRC_IP',
+    2: 'OFP_BSN_HASH_SELECT_DST_IP',
+}
+
 # Identifiers from group ofp_bsn_lacp_state
 OFP_BSN_LACP_STATE_ACTIVITY = 1
 OFP_BSN_LACP_STATE_TIMEOUT = 2
@@ -1216,6 +1225,29 @@ ofp_optical_port_features_map = {
     2: 'OFPOPF_TX_TUNE',
     4: 'OFPOPF_TX_PWR',
     8: 'OFPOPF_USE_FREQ',
+}
+
+# Identifiers from group ofp_ovs_tcp_flag
+OFP_OVS_TCP_FLAG_FIN = 1
+OFP_OVS_TCP_FLAG_SYN = 2
+OFP_OVS_TCP_FLAG_RST = 4
+OFP_OVS_TCP_FLAG_PSH = 8
+OFP_OVS_TCP_FLAG_ACK = 16
+OFP_OVS_TCP_FLAG_URG = 32
+OFP_OVS_TCP_FLAG_ECE = 64
+OFP_OVS_TCP_FLAG_CWR = 128
+OFP_OVS_TCP_FLAG_NS = 256
+
+ofp_ovs_tcp_flag_map = {
+    1: 'OFP_OVS_TCP_FLAG_FIN',
+    2: 'OFP_OVS_TCP_FLAG_SYN',
+    4: 'OFP_OVS_TCP_FLAG_RST',
+    8: 'OFP_OVS_TCP_FLAG_PSH',
+    16: 'OFP_OVS_TCP_FLAG_ACK',
+    32: 'OFP_OVS_TCP_FLAG_URG',
+    64: 'OFP_OVS_TCP_FLAG_ECE',
+    128: 'OFP_OVS_TCP_FLAG_CWR',
+    256: 'OFP_OVS_TCP_FLAG_NS',
 }
 
 # Identifiers from group ofp_oxm_class
