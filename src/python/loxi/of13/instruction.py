@@ -613,6 +613,61 @@ class bsn_disable_vlan_counters(bsn):
 
 bsn.subtypes[9] = bsn_disable_vlan_counters
 
+class bsn_hash_select(bsn):
+    type = 65535
+    experimenter = 6035143
+    subtype = 15
+
+    def __init__(self, flags=None):
+        if flags != None:
+            self.flags = flags
+        else:
+            self.flags = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for len at index 1
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        packed.append(struct.pack("!L", self.flags))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_hash_select()
+        _type = reader.read("!H")[0]
+        assert(_type == 65535)
+        _len = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_len, 4)
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _subtype = reader.read("!L")[0]
+        assert(_subtype == 15)
+        obj.flags = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.flags != other.flags: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_hash_select {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
+            q.breakable()
+        q.text('}')
+
+bsn.subtypes[15] = bsn_hash_select
+
 class bsn_internal_priority(bsn):
     type = 65535
     experimenter = 6035143

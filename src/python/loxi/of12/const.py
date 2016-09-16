@@ -506,6 +506,29 @@ ofp_match_type_map = {
     1: 'OFPMT_OXM',
 }
 
+# Identifiers from group ofp_ovs_tcp_flag
+OFP_OVS_TCP_FLAG_FIN = 1
+OFP_OVS_TCP_FLAG_SYN = 2
+OFP_OVS_TCP_FLAG_RST = 4
+OFP_OVS_TCP_FLAG_PSH = 8
+OFP_OVS_TCP_FLAG_ACK = 16
+OFP_OVS_TCP_FLAG_URG = 32
+OFP_OVS_TCP_FLAG_ECE = 64
+OFP_OVS_TCP_FLAG_CWR = 128
+OFP_OVS_TCP_FLAG_NS = 256
+
+ofp_ovs_tcp_flag_map = {
+    1: 'OFP_OVS_TCP_FLAG_FIN',
+    2: 'OFP_OVS_TCP_FLAG_SYN',
+    4: 'OFP_OVS_TCP_FLAG_RST',
+    8: 'OFP_OVS_TCP_FLAG_PSH',
+    16: 'OFP_OVS_TCP_FLAG_ACK',
+    32: 'OFP_OVS_TCP_FLAG_URG',
+    64: 'OFP_OVS_TCP_FLAG_ECE',
+    128: 'OFP_OVS_TCP_FLAG_CWR',
+    256: 'OFP_OVS_TCP_FLAG_NS',
+}
+
 # Identifiers from group ofp_oxm_class
 OFPXMC_NXM_0 = 0
 OFPXMC_NXM_1 = 1
