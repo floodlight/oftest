@@ -513,22 +513,23 @@ def simple_vxlan_packet(pktlen=300,
                         ip_id=1,
                         udp_sport=1234,
                         udp_dport=4789,
-                        with_udp_chksum=True,
+                        udp_chksum=True,
                         ip_ihl=None,
                         ip_options=False,
                         vxlan_reserved1=0x000000,
                         vxlan_vni = 0xaba,
                         vxlan_reserved2=0x00,
-                        inner_frame = None):
+                        inner_frame=None):
     """
     Return a simple dataplane VXLAN packet
     Supports a few parameters:
-    @param len Length of packet in bytes w/o CRC
+    @param pktlen Length of packet in bytes w/o CRC
     @param eth_dst Destination MAC
     @param eth_src Source MAC
     @param dl_vlan_enable True if the packet is with vlan, False otherwise
     @param vlan_vid VLAN ID
     @param vlan_pcp VLAN priority
+    @param dl_vlan_cfi VLAN cfi bit
     @param ip_src IP source
     @param ip_dst IP destination
     @param ip_tos IP ToS
@@ -536,6 +537,9 @@ def simple_vxlan_packet(pktlen=300,
     @param ip_id IP Identification
     @param udp_sport UDP source port
     @param udp_dport UDP dest port (IANA) = 4789 (VxLAN)
+    @param udp_chksum True if UDP checksum needs to be calculated, False otherwise
+    @param ip_ihl IP header length
+    @param ip_options IP Options if valid, False otherwise
     @param vxlan_reserved1 reserved field (3B)
     @param vxlan_vni VXLAN Network Identifier
     @param vxlan_reserved2 reserved field (1B)
@@ -550,9 +554,10 @@ def simple_vxlan_packet(pktlen=300,
     if MINSIZE > pktlen:
         pktlen = MINSIZE
 
-    if with_udp_chksum:
+    if udp_chksum:
         udp_hdr = scapy.UDP(sport=udp_sport, dport=udp_dport)
     else:
+        #Set the UDP checksum to Zero
         udp_hdr = scapy.UDP(sport=udp_sport, dport=udp_dport, chksum=0)
 
     # Note Dot1Q.id is really CFI
