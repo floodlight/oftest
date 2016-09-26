@@ -7,6 +7,8 @@
 from scapy.packet import *
 from scapy.fields import *
 from scapy.all import * # Otherwise failing at the UDP reference below
+from scapy.layers.l2 import Ether
+from scapy.layers.inet import UDP
 
 class ThreeBytesField(X3BytesField, ByteField):
     def i2repr(self, pkt, x):
