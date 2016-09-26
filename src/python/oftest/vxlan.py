@@ -1,6 +1,9 @@
 # Virtual eXtensible Local Area Network (VXLAN)
 # https://tools.ietf.org/html/draft-mahalingam-dutt-dcops-vxlan-06
 
+#Taken from https://github.com/secdev/scapy/tree/master/scapy/layers/vxlan.py
+#License Info: GNU GENERAL PUBLIC LICENSE
+
 from scapy.packet import *
 from scapy.fields import *
 from scapy.all import * # Otherwise failing at the UDP reference below
