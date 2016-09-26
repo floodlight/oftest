@@ -499,6 +499,92 @@ def qinq_tcp_packet(pktlen=100,
 
     return pkt
 
+def simple_vxlan_packet(pktlen=300,
+                        eth_dst='00:01:02:03:04:05',
+                        eth_src='00:06:07:08:09:0a',
+                        dl_vlan_enable=False,
+                        vlan_vid=0,
+                        vlan_pcp=0,
+                        dl_vlan_cfi=0,
+                        ip_src='192.168.0.1',
+                        ip_dst='192.168.0.2',
+                        ip_tos=0,
+                        ip_ttl=64,
+                        ip_id=1,
+                        udp_sport=1234,
+                        udp_dport=4789,
+                        udp_chksum=True,
+                        ip_ihl=None,
+                        ip_options=False,
+                        vxlan_reserved1=0x000000,
+                        vxlan_vni = 0xaba,
+                        vxlan_reserved2=0x00,
+                        inner_frame=None):
+    """
+    Return a simple dataplane VXLAN packet
+    Supports a few parameters:
+    @param pktlen Length of packet in bytes w/o CRC
+    @param eth_dst Destination MAC
+    @param eth_src Source MAC
+    @param dl_vlan_enable True if the packet is with vlan, False otherwise
+    @param vlan_vid VLAN ID
+    @param vlan_pcp VLAN priority
+    @param dl_vlan_cfi VLAN cfi bit
+    @param ip_src IP source
+    @param ip_dst IP destination
+    @param ip_tos IP ToS
+    @param ip_ttl IP TTL
+    @param ip_id IP Identification
+    @param udp_sport UDP source port
+    @param udp_dport UDP dest port (IANA) = 4789 (VxLAN)
+    @param udp_chksum True if UDP checksum needs to be calculated, False otherwise
+    @param ip_ihl IP header length
+    @param ip_options IP Options if valid, False otherwise
+    @param vxlan_reserved1 reserved field (3B)
+    @param vxlan_vni VXLAN Network Identifier
+    @param vxlan_reserved2 reserved field (1B)
+    @param inner_frame The inner Ethernet frame
+    Generates a simple VXLAN packet. Users shouldn't assume anything about
+    this packet other than that it is a valid ethernet/IP/UDP/VXLAN frame.
+    """
+    if scapy.VXLAN is None:
+        logging.error("A VXLAN packet was requested but VXLAN is not supported.")
+        return None
+
+    if MINSIZE > pktlen:
+        pktlen = MINSIZE
+
+    if udp_chksum:
+        udp_hdr = scapy.UDP(sport=udp_sport, dport=udp_dport)
+    else:
+        #Set the UDP checksum to Zero
+        udp_hdr = scapy.UDP(sport=udp_sport, dport=udp_dport, chksum=0)
+
+    # Note Dot1Q.id is really CFI
+    if (dl_vlan_enable):
+        pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
+            scapy.Dot1Q(prio=vlan_pcp, id=dl_vlan_cfi, vlan=vlan_vid)/ \
+            scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, id=ip_id, ihl=ip_ihl)/ \
+            udp_hdr
+    else:
+        if not ip_options:
+            pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
+                scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, id=ip_id, ihl=ip_ihl)/ \
+                udp_hdr
+        else:
+            pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
+                scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, id=ip_id, ihl=ip_ihl, options=ip_options)/ \
+                udp_hdr
+
+    pkt = pkt/scapy.VXLAN(vni = vxlan_vni, reserved1 = vxlan_reserved1, reserved2 = vxlan_reserved2)
+
+    if inner_frame:
+        pkt = pkt/inner_frame
+    else:
+        pkt = pkt/simple_tcp_packet(pktlen = pktlen - len(pkt))
+
+    return pkt
+
 def do_barrier(ctrl, timeout=-1):
     """
     Do a barrier command

@@ -33,3 +33,13 @@ if not config["disable_ipv6"]:
     IPv6 = scapy.layers.inet6.IPv6
     ICMPv6Unknown = scapy.layers.inet6.ICMPv6Unknown
     ICMPv6EchoRequest = scapy.layers.inet6.ICMPv6EchoRequest
+
+import scapy.config as scapy_config
+if 'vxlan' in scapy_config.Conf.load_layers:
+    # pylint: disable=no-name-in-module, import-error
+    import scapy.layers.vxlan
+    # pylint: disable=no-member
+    VXLAN = scapy.layers.vxlan.VXLAN
+else:
+    from oftest import vxlan
+    VXLAN = vxlan.VXLAN
