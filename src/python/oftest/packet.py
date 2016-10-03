@@ -33,3 +33,13 @@ if not config["disable_ipv6"]:
     IPv6 = scapy.layers.inet6.IPv6
     ICMPv6Unknown = scapy.layers.inet6.ICMPv6Unknown
     ICMPv6EchoRequest = scapy.layers.inet6.ICMPv6EchoRequest
+    ICMPv6EchoReply = scapy.layers.inet6.ICMPv6EchoReply
+    ICMPv6ND_RA = scapy.layers.inet6.ICMPv6ND_RA
+    ICMPv6ND_NS = scapy.layers.inet6.ICMPv6ND_NS
+    ICMPv6ND_NA = scapy.layers.inet6.ICMPv6ND_NA
+    ICMPv6ND_RS = scapy.layers.inet6.ICMPv6ND_RS
+    ICMPv6NDOptSrcLLAddr = scapy.layers.inet6.ICMPv6NDOptSrcLLAddr
+    ICMPv6NDOptDstLLAddr = scapy.layers.inet6.ICMPv6NDOptDstLLAddr
+    ICMPv6NDOptPrefixInfo = scapy.layers.inet6.ICMPv6NDOptPrefixInfo
+    ICMPv6DestUnreach = scapy.layers.inet6.ICMPv6DestUnreach
+    ICMPv6TimeExceeded = scapy.layers.inet6.ICMPv6TimeExceeded
