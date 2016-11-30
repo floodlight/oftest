@@ -1159,6 +1159,98 @@ class bsn_inner_vlan_vid_masked(oxm):
 
 oxm.subtypes[209156] = bsn_inner_vlan_vid_masked
 
+class bsn_ip_fragmentation(oxm):
+    type_len = 209921
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!B", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_ip_fragmentation()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 209921)
+        obj.value = reader.read("!B")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_ip_fragmentation {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[209921] = bsn_ip_fragmentation
+
+class bsn_ip_fragmentation_masked(oxm):
+    type_len = 210178
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!B", self.value))
+        packed.append(struct.pack("!B", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_ip_fragmentation_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 210178)
+        obj.value = reader.read("!B")[0]
+        obj.value_mask = reader.read("!B")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_ip_fragmentation_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[210178] = bsn_ip_fragmentation_masked
+
 class bsn_l2_cache_hit(oxm):
     type_len = 205825
 
@@ -4046,7 +4138,7 @@ class ipv6_dst(oxm):
             with q.indent(2):
                 q.breakable()
                 q.text("value = ");
-                q.pp(self.value)
+                q.text(util.pretty_ipv6(self.value))
             q.breakable()
         q.text('}')
 
@@ -4094,10 +4186,10 @@ class ipv6_dst_masked(oxm):
             with q.indent(2):
                 q.breakable()
                 q.text("value = ");
-                q.pp(self.value)
+                q.text(util.pretty_ipv6(self.value))
                 q.text(","); q.breakable()
                 q.text("value_mask = ");
-                q.pp(self.value_mask)
+                q.text(util.pretty_ipv6(self.value_mask))
             q.breakable()
         q.text('}')
 
@@ -4414,7 +4506,7 @@ class ipv6_nd_target(oxm):
             with q.indent(2):
                 q.breakable()
                 q.text("value = ");
-                q.pp(self.value)
+                q.text(util.pretty_ipv6(self.value))
             q.breakable()
         q.text('}')
 
@@ -4462,10 +4554,10 @@ class ipv6_nd_target_masked(oxm):
             with q.indent(2):
                 q.breakable()
                 q.text("value = ");
-                q.pp(self.value)
+                q.text(util.pretty_ipv6(self.value))
                 q.text(","); q.breakable()
                 q.text("value_mask = ");
-                q.pp(self.value_mask)
+                q.text(util.pretty_ipv6(self.value_mask))
             q.breakable()
         q.text('}')
 
@@ -4598,7 +4690,7 @@ class ipv6_src(oxm):
             with q.indent(2):
                 q.breakable()
                 q.text("value = ");
-                q.pp(self.value)
+                q.text(util.pretty_ipv6(self.value))
             q.breakable()
         q.text('}')
 
@@ -4646,10 +4738,10 @@ class ipv6_src_masked(oxm):
             with q.indent(2):
                 q.breakable()
                 q.text("value = ");
-                q.pp(self.value)
+                q.text(util.pretty_ipv6(self.value))
                 q.text(","); q.breakable()
                 q.text("value_mask = ");
-                q.pp(self.value_mask)
+                q.text(util.pretty_ipv6(self.value_mask))
             q.breakable()
         q.text('}')
 
