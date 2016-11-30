@@ -364,6 +364,23 @@ ofp_bsn_decap_map = {
     8: 'OFP_BSN_DECAP_L3_MPLS',
 }
 
+# Identifiers from group ofp_bsn_enhanced_hash_type
+OFP_BSN_ENHANCED_HASH_L2 = 1
+OFP_BSN_ENHANCED_HASH_L3 = 2
+OFP_BSN_ENHANCED_HASH_L2GRE = 4
+OFP_BSN_ENHANCED_HASH_MPLS = 8
+OFP_BSN_ENHANCED_HASH_GTP = 16
+OFP_BSN_ENHANCED_HASH_SYMMETRIC = 32
+
+ofp_bsn_enhanced_hash_type_map = {
+    1: 'OFP_BSN_ENHANCED_HASH_L2',
+    2: 'OFP_BSN_ENHANCED_HASH_L3',
+    4: 'OFP_BSN_ENHANCED_HASH_L2GRE',
+    8: 'OFP_BSN_ENHANCED_HASH_MPLS',
+    16: 'OFP_BSN_ENHANCED_HASH_GTP',
+    32: 'OFP_BSN_ENHANCED_HASH_SYMMETRIC',
+}
+
 # Identifiers from group ofp_bsn_hash_select_flags
 OFP_BSN_HASH_SELECT_SRC_IP = 1
 OFP_BSN_HASH_SELECT_DST_IP = 2
@@ -441,6 +458,7 @@ OFP_BSN_PKTIN_FLAG_VXLAN_SIP_MISS = 65536
 OFP_BSN_PKTIN_FLAG_MC_RESERVED = 131072
 OFP_BSN_PKTIN_FLAG_ANALYTICS = 262144
 OFP_BSN_PKTIN_FLAG_ICMPV6 = 524288
+OFP_BSN_PKTIN_FLAG_INGRESS_ACL_LOCAL = 1048576
 
 ofp_bsn_pktin_flag_map = {
     1: 'OFP_BSN_PKTIN_FLAG_PDU',
@@ -463,6 +481,7 @@ ofp_bsn_pktin_flag_map = {
     131072: 'OFP_BSN_PKTIN_FLAG_MC_RESERVED',
     262144: 'OFP_BSN_PKTIN_FLAG_ANALYTICS',
     524288: 'OFP_BSN_PKTIN_FLAG_ICMPV6',
+    1048576: 'OFP_BSN_PKTIN_FLAG_INGRESS_ACL_LOCAL',
 }
 
 # Identifiers from group ofp_bsn_port_counter
@@ -582,6 +601,19 @@ ofp_bsn_port_counter_map = {
     55: 'OFP_BSN_PORT_COUNTER_TX_PFC_FRAME_PRIORITY_7',
 }
 
+# Identifiers from group ofp_bsn_port_usage
+OFP_BSN_PORT_UNUSED = 0
+OFP_BSN_PORT_TRANSMIT_ONLY = 1
+OFP_BSN_PORT_RECEIVE_ONLY = 2
+OFP_BSN_PORT_BIDIRECTION = 3
+
+ofp_bsn_port_usage_map = {
+    0: 'OFP_BSN_PORT_UNUSED',
+    1: 'OFP_BSN_PORT_TRANSMIT_ONLY',
+    2: 'OFP_BSN_PORT_RECEIVE_ONLY',
+    3: 'OFP_BSN_PORT_BIDIRECTION',
+}
+
 # Identifiers from group ofp_bsn_port_vxlan_mode
 OFP_BSN_PORT_VXLAN_RECIRCULATION_ENABLE = 0
 OFP_BSN_PORT_VXLAN_TERMINATION_ENABLE = 1
@@ -630,6 +662,13 @@ ofp_bsn_tcp_flag_map = {
     64: 'OFP_BSN_TCP_FLAG_ECE',
     128: 'OFP_BSN_TCP_FLAG_CWR',
     256: 'OFP_BSN_TCP_FLAG_NS',
+}
+
+# Identifiers from group ofp_bsn_tunnel_type
+OFP_BSN_TUNNEL_L2GRE = 1
+
+ofp_bsn_tunnel_type_map = {
+    1: 'OFP_BSN_TUNNEL_L2GRE',
 }
 
 # Identifiers from group ofp_bsn_udf_anchor
