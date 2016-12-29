@@ -9,6 +9,7 @@ import logging
 from oftest import config
 import oftest.base_tests as base_tests
 import ofp
+import loxi.pp
 
 from oftest.testutils import *
 
@@ -50,6 +51,56 @@ class Commit(base_tests.SimpleProtocol):
             response, _ = self.controller.poll(ofp.message.echo_reply)
             self.assertIsNotNone(response)
             self.assertEquals(response.xid, i)
+
+class CommitReply(base_tests.SimpleProtocol):
+    """
+    Verify that the commit reply is sent after responses to the bundled messages
+    """
+    def runTest(self):
+        request = ofp.message.bundle_ctrl_msg(
+            bundle_ctrl_type=ofp.OFPBCT_OPEN_REQUEST,
+            bundle_id=1)
+
+        response, _ = self.controller.transact(request)
+        self.assertIsInstance(response, ofp.message.bundle_ctrl_msg)
+        self.assertEqual(response.bundle_ctrl_type, ofp.OFPBCT_OPEN_REPLY)
+        self.assertEqual(response.bundle_id, 1)
+
+        request = ofp.message.bundle_add_msg(
+            xid=1,
+            bundle_id=1,
+            data=ofp.message.echo_request(xid=1).pack())
+        self.controller.message_send(request)
+
+        request = ofp.message.bundle_ctrl_msg(
+            bundle_ctrl_type=ofp.OFPBCT_COMMIT_REQUEST,
+            bundle_id=1)
+        self.controller.message_send(request)
+
+        # Receive all messages
+        msgs = []
+        while True:
+            msg, _ = self.controller.poll(ofp.message.message)
+            if msg:
+                msgs.append(msg)
+            else:
+                break
+
+        def find_index(fn):
+            for i, msg in enumerate(msgs):
+                if fn(msg):
+                    return i
+            return None
+
+        for msg in msgs:
+            logging.debug(loxi.pp.pp(msg))
+
+        echo_idx = find_index(lambda msg: isinstance(msg, ofp.message.echo_reply))
+        commit_reply_idx = find_index(lambda msg: isinstance(msg, ofp.message.bundle_ctrl_msg))
+
+        self.assertIsNotNone(echo_idx, "Echo reply not received")
+        self.assertIsNotNone(commit_reply_idx, "Commit reply not received")
+        self.assertLess(echo_idx, commit_reply_idx, "Commit reply received before echo reply")
 
 class Discard(base_tests.SimpleProtocol):
     """
