@@ -1371,11 +1371,11 @@ class bucket(loxi.OFObject):
         if watch_port != None:
             self.watch_port = watch_port
         else:
-            self.watch_port = 0
+            self.watch_port = ofp.OFPP_ANY
         if watch_group != None:
             self.watch_group = watch_group
         else:
-            self.watch_group = 0
+            self.watch_group = ofp.OFPG_ANY
         if actions != None:
             self.actions = actions
         else:
