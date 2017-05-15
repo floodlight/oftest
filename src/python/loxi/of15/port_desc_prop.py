@@ -12,7 +12,7 @@ import util
 import loxi.generic_util
 
 import sys
-ofp = sys.modules['loxi.of14']
+ofp = sys.modules['loxi.of15']
 
 class port_desc_prop(loxi.OFObject):
     subtypes = {}
@@ -66,11 +66,15 @@ class experimenter(port_desc_prop):
 
     type = 65535
 
-    def __init__(self, experimenter=None):
+    def __init__(self, experimenter=None, exp_type=None):
         if experimenter != None:
             self.experimenter = experimenter
         else:
             self.experimenter = 0
+        if exp_type != None:
+            self.exp_type = exp_type
+        else:
+            self.exp_type = 0
         return
 
     def pack(self):
@@ -78,6 +82,7 @@ class experimenter(port_desc_prop):
         packed.append(struct.pack("!H", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
         packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.exp_type))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -96,11 +101,13 @@ class experimenter(port_desc_prop):
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.experimenter = reader.read("!L")[0]
+        obj.exp_type = reader.read("!L")[0]
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
         if self.experimenter != other.experimenter: return False
+        if self.exp_type != other.exp_type: return False
         return True
 
     def pretty_print(self, q):
@@ -108,6 +115,8 @@ class experimenter(port_desc_prop):
         with q.group():
             with q.indent(2):
                 q.breakable()
+                q.text("exp_type = ");
+                q.text("%#x" % self.exp_type)
             q.breakable()
         q.text('}')
 

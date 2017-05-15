@@ -12,12 +12,12 @@ import util
 import loxi.generic_util
 
 import sys
-ofp = sys.modules['loxi.of13']
+ofp = sys.modules['loxi.of15']
 
 class message(loxi.OFObject):
     subtypes = {}
 
-    version = 4
+    version = 6
 
     def __init__(self, type=None, xid=None):
         if type != None:
@@ -49,7 +49,7 @@ class message(loxi.OFObject):
 
         obj = message()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         obj.type = reader.read("!B")[0]
         _length = reader.read("!H")[0]
         orig_reader = reader
@@ -80,7 +80,7 @@ class message(loxi.OFObject):
 class stats_reply(message):
     subtypes = {}
 
-    version = 4
+    version = 6
     type = 19
 
     def __init__(self, xid=None, stats_type=None, flags=None):
@@ -120,7 +120,7 @@ class stats_reply(message):
 
         obj = stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -158,11 +158,11 @@ class stats_reply(message):
 message.subtypes[19] = stats_reply
 
 class aggregate_stats_reply(stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 2
 
-    def __init__(self, xid=None, flags=None, packet_count=None, byte_count=None, flow_count=None):
+    def __init__(self, xid=None, flags=None, stats=None):
         if xid != None:
             self.xid = xid
         else:
@@ -171,18 +171,10 @@ class aggregate_stats_reply(stats_reply):
             self.flags = flags
         else:
             self.flags = 0
-        if packet_count != None:
-            self.packet_count = packet_count
+        if stats != None:
+            self.stats = stats
         else:
-            self.packet_count = 0
-        if byte_count != None:
-            self.byte_count = byte_count
-        else:
-            self.byte_count = 0
-        if flow_count != None:
-            self.flow_count = flow_count
-        else:
-            self.flow_count = 0
+            self.stats = ofp.stat()
         return
 
     def pack(self):
@@ -194,10 +186,7 @@ class aggregate_stats_reply(stats_reply):
         packed.append(struct.pack("!H", self.stats_type))
         packed.append(struct.pack("!H", self.flags))
         packed.append('\x00' * 4)
-        packed.append(struct.pack("!Q", self.packet_count))
-        packed.append(struct.pack("!Q", self.byte_count))
-        packed.append(struct.pack("!L", self.flow_count))
-        packed.append('\x00' * 4)
+        packed.append(self.stats.pack())
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -206,7 +195,7 @@ class aggregate_stats_reply(stats_reply):
     def unpack(reader):
         obj = aggregate_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -217,19 +206,14 @@ class aggregate_stats_reply(stats_reply):
         assert(_stats_type == 2)
         obj.flags = reader.read("!H")[0]
         reader.skip(4)
-        obj.packet_count = reader.read("!Q")[0]
-        obj.byte_count = reader.read("!Q")[0]
-        obj.flow_count = reader.read("!L")[0]
-        reader.skip(4)
+        obj.stats = ofp.stat.unpack(reader)
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
         if self.xid != other.xid: return False
         if self.flags != other.flags: return False
-        if self.packet_count != other.packet_count: return False
-        if self.byte_count != other.byte_count: return False
-        if self.flow_count != other.flow_count: return False
+        if self.stats != other.stats: return False
         return True
 
     def pretty_print(self, q):
@@ -246,14 +230,8 @@ class aggregate_stats_reply(stats_reply):
                 q.text("flags = ");
                 q.text("%#x" % self.flags)
                 q.text(","); q.breakable()
-                q.text("packet_count = ");
-                q.text("%#x" % self.packet_count)
-                q.text(","); q.breakable()
-                q.text("byte_count = ");
-                q.text("%#x" % self.byte_count)
-                q.text(","); q.breakable()
-                q.text("flow_count = ");
-                q.text("%#x" % self.flow_count)
+                q.text("stats = ");
+                q.pp(self.stats)
             q.breakable()
         q.text('}')
 
@@ -262,7 +240,7 @@ stats_reply.subtypes[2] = aggregate_stats_reply
 class stats_request(message):
     subtypes = {}
 
-    version = 4
+    version = 6
     type = 18
 
     def __init__(self, xid=None, stats_type=None, flags=None):
@@ -302,7 +280,7 @@ class stats_request(message):
 
         obj = stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -340,7 +318,7 @@ class stats_request(message):
 message.subtypes[18] = stats_request
 
 class aggregate_stats_request(stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 2
 
@@ -404,7 +382,7 @@ class aggregate_stats_request(stats_request):
     def unpack(reader):
         obj = aggregate_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -473,352 +451,10 @@ class aggregate_stats_request(stats_request):
 
 stats_request.subtypes[2] = aggregate_stats_request
 
-class async_get_reply(message):
-    version = 4
-    type = 27
-
-    def __init__(self, xid=None, packet_in_mask_equal_master=None, packet_in_mask_slave=None, port_status_mask_equal_master=None, port_status_mask_slave=None, flow_removed_mask_equal_master=None, flow_removed_mask_slave=None):
-        if xid != None:
-            self.xid = xid
-        else:
-            self.xid = None
-        if packet_in_mask_equal_master != None:
-            self.packet_in_mask_equal_master = packet_in_mask_equal_master
-        else:
-            self.packet_in_mask_equal_master = 0
-        if packet_in_mask_slave != None:
-            self.packet_in_mask_slave = packet_in_mask_slave
-        else:
-            self.packet_in_mask_slave = 0
-        if port_status_mask_equal_master != None:
-            self.port_status_mask_equal_master = port_status_mask_equal_master
-        else:
-            self.port_status_mask_equal_master = 0
-        if port_status_mask_slave != None:
-            self.port_status_mask_slave = port_status_mask_slave
-        else:
-            self.port_status_mask_slave = 0
-        if flow_removed_mask_equal_master != None:
-            self.flow_removed_mask_equal_master = flow_removed_mask_equal_master
-        else:
-            self.flow_removed_mask_equal_master = 0
-        if flow_removed_mask_slave != None:
-            self.flow_removed_mask_slave = flow_removed_mask_slave
-        else:
-            self.flow_removed_mask_slave = 0
-        return
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!B", self.version))
-        packed.append(struct.pack("!B", self.type))
-        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
-        packed.append(struct.pack("!L", self.xid))
-        packed.append(struct.pack("!L", self.packet_in_mask_equal_master))
-        packed.append(struct.pack("!L", self.packet_in_mask_slave))
-        packed.append(struct.pack("!L", self.port_status_mask_equal_master))
-        packed.append(struct.pack("!L", self.port_status_mask_slave))
-        packed.append(struct.pack("!L", self.flow_removed_mask_equal_master))
-        packed.append(struct.pack("!L", self.flow_removed_mask_slave))
-        length = sum([len(x) for x in packed])
-        packed[2] = struct.pack("!H", length)
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(reader):
-        obj = async_get_reply()
-        _version = reader.read("!B")[0]
-        assert(_version == 4)
-        _type = reader.read("!B")[0]
-        assert(_type == 27)
-        _length = reader.read("!H")[0]
-        orig_reader = reader
-        reader = orig_reader.slice(_length, 4)
-        obj.xid = reader.read("!L")[0]
-        obj.packet_in_mask_equal_master = reader.read("!L")[0]
-        obj.packet_in_mask_slave = reader.read("!L")[0]
-        obj.port_status_mask_equal_master = reader.read("!L")[0]
-        obj.port_status_mask_slave = reader.read("!L")[0]
-        obj.flow_removed_mask_equal_master = reader.read("!L")[0]
-        obj.flow_removed_mask_slave = reader.read("!L")[0]
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.xid != other.xid: return False
-        if self.packet_in_mask_equal_master != other.packet_in_mask_equal_master: return False
-        if self.packet_in_mask_slave != other.packet_in_mask_slave: return False
-        if self.port_status_mask_equal_master != other.port_status_mask_equal_master: return False
-        if self.port_status_mask_slave != other.port_status_mask_slave: return False
-        if self.flow_removed_mask_equal_master != other.flow_removed_mask_equal_master: return False
-        if self.flow_removed_mask_slave != other.flow_removed_mask_slave: return False
-        return True
-
-    def pretty_print(self, q):
-        q.text("async_get_reply {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("xid = ");
-                if self.xid != None:
-                    q.text("%#x" % self.xid)
-                else:
-                    q.text('None')
-                q.text(","); q.breakable()
-                q.text("packet_in_mask_equal_master = ");
-                q.text("%#x" % self.packet_in_mask_equal_master)
-                q.text(","); q.breakable()
-                q.text("packet_in_mask_slave = ");
-                q.text("%#x" % self.packet_in_mask_slave)
-                q.text(","); q.breakable()
-                q.text("port_status_mask_equal_master = ");
-                q.text("%#x" % self.port_status_mask_equal_master)
-                q.text(","); q.breakable()
-                q.text("port_status_mask_slave = ");
-                q.text("%#x" % self.port_status_mask_slave)
-                q.text(","); q.breakable()
-                q.text("flow_removed_mask_equal_master = ");
-                q.text("%#x" % self.flow_removed_mask_equal_master)
-                q.text(","); q.breakable()
-                q.text("flow_removed_mask_slave = ");
-                q.text("%#x" % self.flow_removed_mask_slave)
-            q.breakable()
-        q.text('}')
-
-message.subtypes[27] = async_get_reply
-
-class async_get_request(message):
-    version = 4
-    type = 26
-
-    def __init__(self, xid=None, packet_in_mask_equal_master=None, packet_in_mask_slave=None, port_status_mask_equal_master=None, port_status_mask_slave=None, flow_removed_mask_equal_master=None, flow_removed_mask_slave=None):
-        if xid != None:
-            self.xid = xid
-        else:
-            self.xid = None
-        if packet_in_mask_equal_master != None:
-            self.packet_in_mask_equal_master = packet_in_mask_equal_master
-        else:
-            self.packet_in_mask_equal_master = 0
-        if packet_in_mask_slave != None:
-            self.packet_in_mask_slave = packet_in_mask_slave
-        else:
-            self.packet_in_mask_slave = 0
-        if port_status_mask_equal_master != None:
-            self.port_status_mask_equal_master = port_status_mask_equal_master
-        else:
-            self.port_status_mask_equal_master = 0
-        if port_status_mask_slave != None:
-            self.port_status_mask_slave = port_status_mask_slave
-        else:
-            self.port_status_mask_slave = 0
-        if flow_removed_mask_equal_master != None:
-            self.flow_removed_mask_equal_master = flow_removed_mask_equal_master
-        else:
-            self.flow_removed_mask_equal_master = 0
-        if flow_removed_mask_slave != None:
-            self.flow_removed_mask_slave = flow_removed_mask_slave
-        else:
-            self.flow_removed_mask_slave = 0
-        return
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!B", self.version))
-        packed.append(struct.pack("!B", self.type))
-        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
-        packed.append(struct.pack("!L", self.xid))
-        packed.append(struct.pack("!L", self.packet_in_mask_equal_master))
-        packed.append(struct.pack("!L", self.packet_in_mask_slave))
-        packed.append(struct.pack("!L", self.port_status_mask_equal_master))
-        packed.append(struct.pack("!L", self.port_status_mask_slave))
-        packed.append(struct.pack("!L", self.flow_removed_mask_equal_master))
-        packed.append(struct.pack("!L", self.flow_removed_mask_slave))
-        length = sum([len(x) for x in packed])
-        packed[2] = struct.pack("!H", length)
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(reader):
-        obj = async_get_request()
-        _version = reader.read("!B")[0]
-        assert(_version == 4)
-        _type = reader.read("!B")[0]
-        assert(_type == 26)
-        _length = reader.read("!H")[0]
-        orig_reader = reader
-        reader = orig_reader.slice(_length, 4)
-        obj.xid = reader.read("!L")[0]
-        obj.packet_in_mask_equal_master = reader.read("!L")[0]
-        obj.packet_in_mask_slave = reader.read("!L")[0]
-        obj.port_status_mask_equal_master = reader.read("!L")[0]
-        obj.port_status_mask_slave = reader.read("!L")[0]
-        obj.flow_removed_mask_equal_master = reader.read("!L")[0]
-        obj.flow_removed_mask_slave = reader.read("!L")[0]
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.xid != other.xid: return False
-        if self.packet_in_mask_equal_master != other.packet_in_mask_equal_master: return False
-        if self.packet_in_mask_slave != other.packet_in_mask_slave: return False
-        if self.port_status_mask_equal_master != other.port_status_mask_equal_master: return False
-        if self.port_status_mask_slave != other.port_status_mask_slave: return False
-        if self.flow_removed_mask_equal_master != other.flow_removed_mask_equal_master: return False
-        if self.flow_removed_mask_slave != other.flow_removed_mask_slave: return False
-        return True
-
-    def pretty_print(self, q):
-        q.text("async_get_request {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("xid = ");
-                if self.xid != None:
-                    q.text("%#x" % self.xid)
-                else:
-                    q.text('None')
-                q.text(","); q.breakable()
-                q.text("packet_in_mask_equal_master = ");
-                q.text("%#x" % self.packet_in_mask_equal_master)
-                q.text(","); q.breakable()
-                q.text("packet_in_mask_slave = ");
-                q.text("%#x" % self.packet_in_mask_slave)
-                q.text(","); q.breakable()
-                q.text("port_status_mask_equal_master = ");
-                q.text("%#x" % self.port_status_mask_equal_master)
-                q.text(","); q.breakable()
-                q.text("port_status_mask_slave = ");
-                q.text("%#x" % self.port_status_mask_slave)
-                q.text(","); q.breakable()
-                q.text("flow_removed_mask_equal_master = ");
-                q.text("%#x" % self.flow_removed_mask_equal_master)
-                q.text(","); q.breakable()
-                q.text("flow_removed_mask_slave = ");
-                q.text("%#x" % self.flow_removed_mask_slave)
-            q.breakable()
-        q.text('}')
-
-message.subtypes[26] = async_get_request
-
-class async_set(message):
-    version = 4
-    type = 28
-
-    def __init__(self, xid=None, packet_in_mask_equal_master=None, packet_in_mask_slave=None, port_status_mask_equal_master=None, port_status_mask_slave=None, flow_removed_mask_equal_master=None, flow_removed_mask_slave=None):
-        if xid != None:
-            self.xid = xid
-        else:
-            self.xid = None
-        if packet_in_mask_equal_master != None:
-            self.packet_in_mask_equal_master = packet_in_mask_equal_master
-        else:
-            self.packet_in_mask_equal_master = 0
-        if packet_in_mask_slave != None:
-            self.packet_in_mask_slave = packet_in_mask_slave
-        else:
-            self.packet_in_mask_slave = 0
-        if port_status_mask_equal_master != None:
-            self.port_status_mask_equal_master = port_status_mask_equal_master
-        else:
-            self.port_status_mask_equal_master = 0
-        if port_status_mask_slave != None:
-            self.port_status_mask_slave = port_status_mask_slave
-        else:
-            self.port_status_mask_slave = 0
-        if flow_removed_mask_equal_master != None:
-            self.flow_removed_mask_equal_master = flow_removed_mask_equal_master
-        else:
-            self.flow_removed_mask_equal_master = 0
-        if flow_removed_mask_slave != None:
-            self.flow_removed_mask_slave = flow_removed_mask_slave
-        else:
-            self.flow_removed_mask_slave = 0
-        return
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!B", self.version))
-        packed.append(struct.pack("!B", self.type))
-        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
-        packed.append(struct.pack("!L", self.xid))
-        packed.append(struct.pack("!L", self.packet_in_mask_equal_master))
-        packed.append(struct.pack("!L", self.packet_in_mask_slave))
-        packed.append(struct.pack("!L", self.port_status_mask_equal_master))
-        packed.append(struct.pack("!L", self.port_status_mask_slave))
-        packed.append(struct.pack("!L", self.flow_removed_mask_equal_master))
-        packed.append(struct.pack("!L", self.flow_removed_mask_slave))
-        length = sum([len(x) for x in packed])
-        packed[2] = struct.pack("!H", length)
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(reader):
-        obj = async_set()
-        _version = reader.read("!B")[0]
-        assert(_version == 4)
-        _type = reader.read("!B")[0]
-        assert(_type == 28)
-        _length = reader.read("!H")[0]
-        orig_reader = reader
-        reader = orig_reader.slice(_length, 4)
-        obj.xid = reader.read("!L")[0]
-        obj.packet_in_mask_equal_master = reader.read("!L")[0]
-        obj.packet_in_mask_slave = reader.read("!L")[0]
-        obj.port_status_mask_equal_master = reader.read("!L")[0]
-        obj.port_status_mask_slave = reader.read("!L")[0]
-        obj.flow_removed_mask_equal_master = reader.read("!L")[0]
-        obj.flow_removed_mask_slave = reader.read("!L")[0]
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.xid != other.xid: return False
-        if self.packet_in_mask_equal_master != other.packet_in_mask_equal_master: return False
-        if self.packet_in_mask_slave != other.packet_in_mask_slave: return False
-        if self.port_status_mask_equal_master != other.port_status_mask_equal_master: return False
-        if self.port_status_mask_slave != other.port_status_mask_slave: return False
-        if self.flow_removed_mask_equal_master != other.flow_removed_mask_equal_master: return False
-        if self.flow_removed_mask_slave != other.flow_removed_mask_slave: return False
-        return True
-
-    def pretty_print(self, q):
-        q.text("async_set {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("xid = ");
-                if self.xid != None:
-                    q.text("%#x" % self.xid)
-                else:
-                    q.text('None')
-                q.text(","); q.breakable()
-                q.text("packet_in_mask_equal_master = ");
-                q.text("%#x" % self.packet_in_mask_equal_master)
-                q.text(","); q.breakable()
-                q.text("packet_in_mask_slave = ");
-                q.text("%#x" % self.packet_in_mask_slave)
-                q.text(","); q.breakable()
-                q.text("port_status_mask_equal_master = ");
-                q.text("%#x" % self.port_status_mask_equal_master)
-                q.text(","); q.breakable()
-                q.text("port_status_mask_slave = ");
-                q.text("%#x" % self.port_status_mask_slave)
-                q.text(","); q.breakable()
-                q.text("flow_removed_mask_equal_master = ");
-                q.text("%#x" % self.flow_removed_mask_equal_master)
-                q.text(","); q.breakable()
-                q.text("flow_removed_mask_slave = ");
-                q.text("%#x" % self.flow_removed_mask_slave)
-            q.breakable()
-        q.text('}')
-
-message.subtypes[28] = async_set
-
 class error_msg(message):
     subtypes = {}
 
-    version = 4
+    version = 6
     type = 1
 
     def __init__(self, xid=None, err_type=None):
@@ -852,7 +488,7 @@ class error_msg(message):
 
         obj = error_msg()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 1)
         _length = reader.read("!H")[0]
@@ -883,8 +519,278 @@ class error_msg(message):
 
 message.subtypes[1] = error_msg
 
+class async_config_failed_error_msg(error_msg):
+    version = 6
+    type = 1
+    err_type = 15
+
+    def __init__(self, xid=None, code=None, data=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if code != None:
+            self.code = code
+        else:
+            self.code = 0
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.err_type))
+        packed.append(struct.pack("!H", self.code))
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = async_config_failed_error_msg()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 1)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        _err_type = reader.read("!H")[0]
+        assert(_err_type == 15)
+        obj.code = reader.read("!H")[0]
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.code != other.code: return False
+        if self.data != other.data: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("async_config_failed_error_msg {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("code = ");
+                q.text("%#x" % self.code)
+                q.text(","); q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
+            q.breakable()
+        q.text('}')
+
+error_msg.subtypes[15] = async_config_failed_error_msg
+
+class async_get_reply(message):
+    version = 6
+    type = 27
+
+    def __init__(self, xid=None, properties=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if properties != None:
+            self.properties = properties
+        else:
+            self.properties = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(loxi.generic_util.pack_list(self.properties))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = async_get_reply()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 27)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        obj.properties = loxi.generic_util.unpack_list(reader, ofp.async_config_prop.async_config_prop.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.properties != other.properties: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("async_get_reply {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("properties = ");
+                q.pp(self.properties)
+            q.breakable()
+        q.text('}')
+
+message.subtypes[27] = async_get_reply
+
+class async_get_request(message):
+    version = 6
+    type = 26
+
+    def __init__(self, xid=None, properties=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if properties != None:
+            self.properties = properties
+        else:
+            self.properties = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(loxi.generic_util.pack_list(self.properties))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = async_get_request()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 26)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        obj.properties = loxi.generic_util.unpack_list(reader, ofp.async_config_prop.async_config_prop.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.properties != other.properties: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("async_get_request {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("properties = ");
+                q.pp(self.properties)
+            q.breakable()
+        q.text('}')
+
+message.subtypes[26] = async_get_request
+
+class async_set(message):
+    version = 6
+    type = 28
+
+    def __init__(self, xid=None, properties=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if properties != None:
+            self.properties = properties
+        else:
+            self.properties = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(loxi.generic_util.pack_list(self.properties))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = async_set()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 28)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        obj.properties = loxi.generic_util.unpack_list(reader, ofp.async_config_prop.async_config_prop.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.properties != other.properties: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("async_set {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("properties = ");
+                q.pp(self.properties)
+            q.breakable()
+        q.text('}')
+
+message.subtypes[28] = async_set
+
 class bad_action_error_msg(error_msg):
-    version = 4
+    version = 6
     type = 1
     err_type = 2
 
@@ -920,7 +826,7 @@ class bad_action_error_msg(error_msg):
     def unpack(reader):
         obj = bad_action_error_msg()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 1)
         _length = reader.read("!H")[0]
@@ -962,7 +868,7 @@ class bad_action_error_msg(error_msg):
 error_msg.subtypes[2] = bad_action_error_msg
 
 class bad_instruction_error_msg(error_msg):
-    version = 4
+    version = 6
     type = 1
     err_type = 3
 
@@ -998,7 +904,7 @@ class bad_instruction_error_msg(error_msg):
     def unpack(reader):
         obj = bad_instruction_error_msg()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 1)
         _length = reader.read("!H")[0]
@@ -1040,7 +946,7 @@ class bad_instruction_error_msg(error_msg):
 error_msg.subtypes[3] = bad_instruction_error_msg
 
 class bad_match_error_msg(error_msg):
-    version = 4
+    version = 6
     type = 1
     err_type = 4
 
@@ -1076,7 +982,7 @@ class bad_match_error_msg(error_msg):
     def unpack(reader):
         obj = bad_match_error_msg()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 1)
         _length = reader.read("!H")[0]
@@ -1117,8 +1023,86 @@ class bad_match_error_msg(error_msg):
 
 error_msg.subtypes[4] = bad_match_error_msg
 
+class bad_property_error_msg(error_msg):
+    version = 6
+    type = 1
+    err_type = 14
+
+    def __init__(self, xid=None, code=None, data=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if code != None:
+            self.code = code
+        else:
+            self.code = 0
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.err_type))
+        packed.append(struct.pack("!H", self.code))
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bad_property_error_msg()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 1)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        _err_type = reader.read("!H")[0]
+        assert(_err_type == 14)
+        obj.code = reader.read("!H")[0]
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.code != other.code: return False
+        if self.data != other.data: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bad_property_error_msg {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("code = ");
+                q.text("%#x" % self.code)
+                q.text(","); q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
+            q.breakable()
+        q.text('}')
+
+error_msg.subtypes[14] = bad_property_error_msg
+
 class bad_request_error_msg(error_msg):
-    version = 4
+    version = 6
     type = 1
     err_type = 1
 
@@ -1154,7 +1138,7 @@ class bad_request_error_msg(error_msg):
     def unpack(reader):
         obj = bad_request_error_msg()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 1)
         _length = reader.read("!H")[0]
@@ -1196,7 +1180,7 @@ class bad_request_error_msg(error_msg):
 error_msg.subtypes[1] = bad_request_error_msg
 
 class barrier_reply(message):
-    version = 4
+    version = 6
     type = 21
 
     def __init__(self, xid=None):
@@ -1220,7 +1204,7 @@ class barrier_reply(message):
     def unpack(reader):
         obj = barrier_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 21)
         _length = reader.read("!H")[0]
@@ -1250,7 +1234,7 @@ class barrier_reply(message):
 message.subtypes[21] = barrier_reply
 
 class barrier_request(message):
-    version = 4
+    version = 6
     type = 20
 
     def __init__(self, xid=None):
@@ -1274,7 +1258,7 @@ class barrier_request(message):
     def unpack(reader):
         obj = barrier_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 20)
         _length = reader.read("!H")[0]
@@ -1306,7 +1290,7 @@ message.subtypes[20] = barrier_request
 class experimenter(message):
     subtypes = {}
 
-    version = 4
+    version = 6
     type = 4
 
     def __init__(self, xid=None, experimenter=None, subtype=None, data=None):
@@ -1350,7 +1334,7 @@ class experimenter(message):
 
         obj = experimenter()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -1394,7 +1378,7 @@ message.subtypes[4] = experimenter
 class bsn_header(experimenter):
     subtypes = {}
 
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
 
@@ -1430,7 +1414,7 @@ class bsn_header(experimenter):
 
         obj = bsn_header()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -1464,7 +1448,7 @@ class bsn_header(experimenter):
 experimenter.subtypes[6035143] = bsn_header
 
 class bsn_arp_idle(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 60
@@ -1503,7 +1487,7 @@ class bsn_arp_idle(bsn_header):
     def unpack(reader):
         obj = bsn_arp_idle()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -1550,7 +1534,7 @@ bsn_header.subtypes[60] = bsn_arp_idle
 class experimenter_error_msg(error_msg):
     subtypes = {}
 
-    version = 4
+    version = 6
     type = 1
     err_type = 65535
 
@@ -1596,7 +1580,7 @@ class experimenter_error_msg(error_msg):
 
         obj = experimenter_error_msg()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 1)
         _length = reader.read("!H")[0]
@@ -1642,7 +1626,7 @@ error_msg.subtypes[65535] = experimenter_error_msg
 class bsn_base_error(experimenter_error_msg):
     subtypes = {}
 
-    version = 4
+    version = 6
     type = 1
     err_type = 65535
     experimenter = 6035143
@@ -1690,7 +1674,7 @@ class bsn_base_error(experimenter_error_msg):
 
         obj = bsn_base_error()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 1)
         _length = reader.read("!H")[0]
@@ -1736,7 +1720,7 @@ class bsn_base_error(experimenter_error_msg):
 experimenter_error_msg.subtypes[6035143] = bsn_base_error
 
 class bsn_bw_clear_data_reply(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 22
@@ -1769,7 +1753,7 @@ class bsn_bw_clear_data_reply(bsn_header):
     def unpack(reader):
         obj = bsn_bw_clear_data_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -1808,7 +1792,7 @@ class bsn_bw_clear_data_reply(bsn_header):
 bsn_header.subtypes[22] = bsn_bw_clear_data_reply
 
 class bsn_bw_clear_data_request(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 21
@@ -1836,7 +1820,7 @@ class bsn_bw_clear_data_request(bsn_header):
     def unpack(reader):
         obj = bsn_bw_clear_data_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -1870,7 +1854,7 @@ class bsn_bw_clear_data_request(bsn_header):
 bsn_header.subtypes[21] = bsn_bw_clear_data_request
 
 class bsn_bw_enable_get_reply(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 20
@@ -1903,7 +1887,7 @@ class bsn_bw_enable_get_reply(bsn_header):
     def unpack(reader):
         obj = bsn_bw_enable_get_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -1942,7 +1926,7 @@ class bsn_bw_enable_get_reply(bsn_header):
 bsn_header.subtypes[20] = bsn_bw_enable_get_reply
 
 class bsn_bw_enable_get_request(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 19
@@ -1970,7 +1954,7 @@ class bsn_bw_enable_get_request(bsn_header):
     def unpack(reader):
         obj = bsn_bw_enable_get_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -2004,7 +1988,7 @@ class bsn_bw_enable_get_request(bsn_header):
 bsn_header.subtypes[19] = bsn_bw_enable_get_request
 
 class bsn_bw_enable_set_reply(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 23
@@ -2042,7 +2026,7 @@ class bsn_bw_enable_set_reply(bsn_header):
     def unpack(reader):
         obj = bsn_bw_enable_set_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -2086,7 +2070,7 @@ class bsn_bw_enable_set_reply(bsn_header):
 bsn_header.subtypes[23] = bsn_bw_enable_set_reply
 
 class bsn_bw_enable_set_request(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 18
@@ -2119,7 +2103,7 @@ class bsn_bw_enable_set_request(bsn_header):
     def unpack(reader):
         obj = bsn_bw_enable_set_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -2158,7 +2142,7 @@ class bsn_bw_enable_set_request(bsn_header):
 bsn_header.subtypes[18] = bsn_bw_enable_set_request
 
 class bsn_controller_connections_reply(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 57
@@ -2191,7 +2175,7 @@ class bsn_controller_connections_reply(bsn_header):
     def unpack(reader):
         obj = bsn_controller_connections_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -2230,7 +2214,7 @@ class bsn_controller_connections_reply(bsn_header):
 bsn_header.subtypes[57] = bsn_controller_connections_reply
 
 class bsn_controller_connections_request(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 56
@@ -2258,7 +2242,7 @@ class bsn_controller_connections_request(bsn_header):
     def unpack(reader):
         obj = bsn_controller_connections_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -2294,7 +2278,7 @@ bsn_header.subtypes[56] = bsn_controller_connections_request
 class experimenter_stats_reply(stats_reply):
     subtypes = {}
 
-    version = 4
+    version = 6
     type = 19
     stats_type = 65535
 
@@ -2341,7 +2325,7 @@ class experimenter_stats_reply(stats_reply):
 
         obj = experimenter_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -2388,7 +2372,7 @@ stats_reply.subtypes[65535] = experimenter_stats_reply
 class bsn_stats_reply(experimenter_stats_reply):
     subtypes = {}
 
-    version = 4
+    version = 6
     type = 19
     stats_type = 65535
     experimenter = 6035143
@@ -2432,7 +2416,7 @@ class bsn_stats_reply(experimenter_stats_reply):
 
         obj = bsn_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -2474,7 +2458,7 @@ class bsn_stats_reply(experimenter_stats_reply):
 experimenter_stats_reply.subtypes[6035143] = bsn_stats_reply
 
 class bsn_debug_counter_desc_stats_reply(bsn_stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 65535
     experimenter = 6035143
@@ -2515,7 +2499,7 @@ class bsn_debug_counter_desc_stats_reply(bsn_stats_reply):
     def unpack(reader):
         obj = bsn_debug_counter_desc_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -2564,7 +2548,7 @@ bsn_stats_reply.subtypes[13] = bsn_debug_counter_desc_stats_reply
 class experimenter_stats_request(stats_request):
     subtypes = {}
 
-    version = 4
+    version = 6
     type = 18
     stats_type = 65535
 
@@ -2611,7 +2595,7 @@ class experimenter_stats_request(stats_request):
 
         obj = experimenter_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -2658,7 +2642,7 @@ stats_request.subtypes[65535] = experimenter_stats_request
 class bsn_stats_request(experimenter_stats_request):
     subtypes = {}
 
-    version = 4
+    version = 6
     type = 18
     stats_type = 65535
     experimenter = 6035143
@@ -2702,7 +2686,7 @@ class bsn_stats_request(experimenter_stats_request):
 
         obj = bsn_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -2744,7 +2728,7 @@ class bsn_stats_request(experimenter_stats_request):
 experimenter_stats_request.subtypes[6035143] = bsn_stats_request
 
 class bsn_debug_counter_desc_stats_request(bsn_stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 65535
     experimenter = 6035143
@@ -2780,7 +2764,7 @@ class bsn_debug_counter_desc_stats_request(bsn_stats_request):
     def unpack(reader):
         obj = bsn_debug_counter_desc_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -2822,7 +2806,7 @@ class bsn_debug_counter_desc_stats_request(bsn_stats_request):
 bsn_stats_request.subtypes[13] = bsn_debug_counter_desc_stats_request
 
 class bsn_debug_counter_stats_reply(bsn_stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 65535
     experimenter = 6035143
@@ -2863,7 +2847,7 @@ class bsn_debug_counter_stats_reply(bsn_stats_reply):
     def unpack(reader):
         obj = bsn_debug_counter_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -2910,7 +2894,7 @@ class bsn_debug_counter_stats_reply(bsn_stats_reply):
 bsn_stats_reply.subtypes[12] = bsn_debug_counter_stats_reply
 
 class bsn_debug_counter_stats_request(bsn_stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 65535
     experimenter = 6035143
@@ -2946,7 +2930,7 @@ class bsn_debug_counter_stats_request(bsn_stats_request):
     def unpack(reader):
         obj = bsn_debug_counter_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -2988,7 +2972,7 @@ class bsn_debug_counter_stats_request(bsn_stats_request):
 bsn_stats_request.subtypes[12] = bsn_debug_counter_stats_request
 
 class bsn_error(bsn_base_error):
-    version = 4
+    version = 6
     type = 1
     err_type = 65535
     subtype = 1
@@ -3028,7 +3012,7 @@ class bsn_error(bsn_base_error):
     def unpack(reader):
         obj = bsn_error()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 1)
         _length = reader.read("!H")[0]
@@ -3074,7 +3058,7 @@ class bsn_error(bsn_base_error):
 bsn_base_error.subtypes[1] = bsn_error
 
 class bsn_flow_checksum_bucket_stats_reply(bsn_stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 65535
     experimenter = 6035143
@@ -3115,7 +3099,7 @@ class bsn_flow_checksum_bucket_stats_reply(bsn_stats_reply):
     def unpack(reader):
         obj = bsn_flow_checksum_bucket_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -3162,7 +3146,7 @@ class bsn_flow_checksum_bucket_stats_reply(bsn_stats_reply):
 bsn_stats_reply.subtypes[10] = bsn_flow_checksum_bucket_stats_reply
 
 class bsn_flow_checksum_bucket_stats_request(bsn_stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 65535
     experimenter = 6035143
@@ -3203,7 +3187,7 @@ class bsn_flow_checksum_bucket_stats_request(bsn_stats_request):
     def unpack(reader):
         obj = bsn_flow_checksum_bucket_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -3250,7 +3234,7 @@ class bsn_flow_checksum_bucket_stats_request(bsn_stats_request):
 bsn_stats_request.subtypes[10] = bsn_flow_checksum_bucket_stats_request
 
 class bsn_flow_idle(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 40
@@ -3299,7 +3283,7 @@ class bsn_flow_idle(bsn_header):
     def unpack(reader):
         obj = bsn_flow_idle()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -3354,7 +3338,7 @@ class bsn_flow_idle(bsn_header):
 bsn_header.subtypes[40] = bsn_flow_idle
 
 class bsn_flow_idle_enable_get_reply(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 39
@@ -3387,7 +3371,7 @@ class bsn_flow_idle_enable_get_reply(bsn_header):
     def unpack(reader):
         obj = bsn_flow_idle_enable_get_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -3426,7 +3410,7 @@ class bsn_flow_idle_enable_get_reply(bsn_header):
 bsn_header.subtypes[39] = bsn_flow_idle_enable_get_reply
 
 class bsn_flow_idle_enable_get_request(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 38
@@ -3454,7 +3438,7 @@ class bsn_flow_idle_enable_get_request(bsn_header):
     def unpack(reader):
         obj = bsn_flow_idle_enable_get_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -3488,7 +3472,7 @@ class bsn_flow_idle_enable_get_request(bsn_header):
 bsn_header.subtypes[38] = bsn_flow_idle_enable_get_request
 
 class bsn_flow_idle_enable_set_reply(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 37
@@ -3526,7 +3510,7 @@ class bsn_flow_idle_enable_set_reply(bsn_header):
     def unpack(reader):
         obj = bsn_flow_idle_enable_set_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -3570,7 +3554,7 @@ class bsn_flow_idle_enable_set_reply(bsn_header):
 bsn_header.subtypes[37] = bsn_flow_idle_enable_set_reply
 
 class bsn_flow_idle_enable_set_request(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 36
@@ -3603,7 +3587,7 @@ class bsn_flow_idle_enable_set_request(bsn_header):
     def unpack(reader):
         obj = bsn_flow_idle_enable_set_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -3641,8 +3625,172 @@ class bsn_flow_idle_enable_set_request(bsn_header):
 
 bsn_header.subtypes[36] = bsn_flow_idle_enable_set_request
 
+class bsn_generic_async(bsn_header):
+    version = 6
+    type = 4
+    experimenter = 6035143
+    subtype = 68
+
+    def __init__(self, xid=None, name=None, tlvs=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if name != None:
+            self.name = name
+        else:
+            self.name = ""
+        if tlvs != None:
+            self.tlvs = tlvs
+        else:
+            self.tlvs = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        packed.append(struct.pack("!64s", self.name))
+        packed.append(loxi.generic_util.pack_list(self.tlvs))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_generic_async()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 4)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _subtype = reader.read("!L")[0]
+        assert(_subtype == 68)
+        obj.name = reader.read("!64s")[0].rstrip("\x00")
+        obj.tlvs = loxi.generic_util.unpack_list(reader, ofp.bsn_tlv.bsn_tlv.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.name != other.name: return False
+        if self.tlvs != other.tlvs: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_generic_async {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("name = ");
+                q.pp(self.name)
+                q.text(","); q.breakable()
+                q.text("tlvs = ");
+                q.pp(self.tlvs)
+            q.breakable()
+        q.text('}')
+
+bsn_header.subtypes[68] = bsn_generic_async
+
+class bsn_generic_command(bsn_header):
+    version = 6
+    type = 4
+    experimenter = 6035143
+    subtype = 71
+
+    def __init__(self, xid=None, name=None, tlvs=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if name != None:
+            self.name = name
+        else:
+            self.name = ""
+        if tlvs != None:
+            self.tlvs = tlvs
+        else:
+            self.tlvs = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        packed.append(struct.pack("!64s", self.name))
+        packed.append(loxi.generic_util.pack_list(self.tlvs))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_generic_command()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 4)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _subtype = reader.read("!L")[0]
+        assert(_subtype == 71)
+        obj.name = reader.read("!64s")[0].rstrip("\x00")
+        obj.tlvs = loxi.generic_util.unpack_list(reader, ofp.bsn_tlv.bsn_tlv.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.name != other.name: return False
+        if self.tlvs != other.tlvs: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_generic_command {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("name = ");
+                q.pp(self.name)
+                q.text(","); q.breakable()
+                q.text("tlvs = ");
+                q.pp(self.tlvs)
+            q.breakable()
+        q.text('}')
+
+bsn_header.subtypes[71] = bsn_generic_command
+
 class bsn_generic_stats_reply(bsn_stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 65535
     experimenter = 6035143
@@ -3683,7 +3831,7 @@ class bsn_generic_stats_reply(bsn_stats_reply):
     def unpack(reader):
         obj = bsn_generic_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -3730,7 +3878,7 @@ class bsn_generic_stats_reply(bsn_stats_reply):
 bsn_stats_reply.subtypes[16] = bsn_generic_stats_reply
 
 class bsn_generic_stats_request(bsn_stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 65535
     experimenter = 6035143
@@ -3776,7 +3924,7 @@ class bsn_generic_stats_request(bsn_stats_request):
     def unpack(reader):
         obj = bsn_generic_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -3828,7 +3976,7 @@ class bsn_generic_stats_request(bsn_stats_request):
 bsn_stats_request.subtypes[16] = bsn_generic_stats_request
 
 class bsn_gentable_bucket_stats_reply(bsn_stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 65535
     experimenter = 6035143
@@ -3869,7 +4017,7 @@ class bsn_gentable_bucket_stats_reply(bsn_stats_reply):
     def unpack(reader):
         obj = bsn_gentable_bucket_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -3916,7 +4064,7 @@ class bsn_gentable_bucket_stats_reply(bsn_stats_reply):
 bsn_stats_reply.subtypes[5] = bsn_gentable_bucket_stats_reply
 
 class bsn_gentable_bucket_stats_request(bsn_stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 65535
     experimenter = 6035143
@@ -3957,7 +4105,7 @@ class bsn_gentable_bucket_stats_request(bsn_stats_request):
     def unpack(reader):
         obj = bsn_gentable_bucket_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -4004,7 +4152,7 @@ class bsn_gentable_bucket_stats_request(bsn_stats_request):
 bsn_stats_request.subtypes[5] = bsn_gentable_bucket_stats_request
 
 class bsn_gentable_clear_reply(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 49
@@ -4048,7 +4196,7 @@ class bsn_gentable_clear_reply(bsn_header):
     def unpack(reader):
         obj = bsn_gentable_clear_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -4098,7 +4246,7 @@ class bsn_gentable_clear_reply(bsn_header):
 bsn_header.subtypes[49] = bsn_gentable_clear_reply
 
 class bsn_gentable_clear_request(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 48
@@ -4142,7 +4290,7 @@ class bsn_gentable_clear_request(bsn_header):
     def unpack(reader):
         obj = bsn_gentable_clear_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -4192,7 +4340,7 @@ class bsn_gentable_clear_request(bsn_header):
 bsn_header.subtypes[48] = bsn_gentable_clear_request
 
 class bsn_gentable_desc_stats_reply(bsn_stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 65535
     experimenter = 6035143
@@ -4233,7 +4381,7 @@ class bsn_gentable_desc_stats_reply(bsn_stats_reply):
     def unpack(reader):
         obj = bsn_gentable_desc_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -4280,7 +4428,7 @@ class bsn_gentable_desc_stats_reply(bsn_stats_reply):
 bsn_stats_reply.subtypes[4] = bsn_gentable_desc_stats_reply
 
 class bsn_gentable_desc_stats_request(bsn_stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 65535
     experimenter = 6035143
@@ -4316,7 +4464,7 @@ class bsn_gentable_desc_stats_request(bsn_stats_request):
     def unpack(reader):
         obj = bsn_gentable_desc_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -4358,7 +4506,7 @@ class bsn_gentable_desc_stats_request(bsn_stats_request):
 bsn_stats_request.subtypes[4] = bsn_gentable_desc_stats_request
 
 class bsn_gentable_entry_add(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 46
@@ -4408,7 +4556,7 @@ class bsn_gentable_entry_add(bsn_header):
     def unpack(reader):
         obj = bsn_gentable_entry_add()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -4463,7 +4611,7 @@ class bsn_gentable_entry_add(bsn_header):
 bsn_header.subtypes[46] = bsn_gentable_entry_add
 
 class bsn_gentable_entry_delete(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 47
@@ -4501,7 +4649,7 @@ class bsn_gentable_entry_delete(bsn_header):
     def unpack(reader):
         obj = bsn_gentable_entry_delete()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -4545,7 +4693,7 @@ class bsn_gentable_entry_delete(bsn_header):
 bsn_header.subtypes[47] = bsn_gentable_entry_delete
 
 class bsn_gentable_entry_desc_stats_reply(bsn_stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 65535
     experimenter = 6035143
@@ -4586,7 +4734,7 @@ class bsn_gentable_entry_desc_stats_reply(bsn_stats_reply):
     def unpack(reader):
         obj = bsn_gentable_entry_desc_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -4633,7 +4781,7 @@ class bsn_gentable_entry_desc_stats_reply(bsn_stats_reply):
 bsn_stats_reply.subtypes[2] = bsn_gentable_entry_desc_stats_reply
 
 class bsn_gentable_entry_desc_stats_request(bsn_stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 65535
     experimenter = 6035143
@@ -4685,7 +4833,7 @@ class bsn_gentable_entry_desc_stats_request(bsn_stats_request):
     def unpack(reader):
         obj = bsn_gentable_entry_desc_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -4743,7 +4891,7 @@ class bsn_gentable_entry_desc_stats_request(bsn_stats_request):
 bsn_stats_request.subtypes[2] = bsn_gentable_entry_desc_stats_request
 
 class bsn_gentable_entry_stats_reply(bsn_stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 65535
     experimenter = 6035143
@@ -4784,7 +4932,7 @@ class bsn_gentable_entry_stats_reply(bsn_stats_reply):
     def unpack(reader):
         obj = bsn_gentable_entry_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -4831,7 +4979,7 @@ class bsn_gentable_entry_stats_reply(bsn_stats_reply):
 bsn_stats_reply.subtypes[3] = bsn_gentable_entry_stats_reply
 
 class bsn_gentable_entry_stats_request(bsn_stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 65535
     experimenter = 6035143
@@ -4883,7 +5031,7 @@ class bsn_gentable_entry_stats_request(bsn_stats_request):
     def unpack(reader):
         obj = bsn_gentable_entry_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -4941,7 +5089,7 @@ class bsn_gentable_entry_stats_request(bsn_stats_request):
 bsn_stats_request.subtypes[3] = bsn_gentable_entry_stats_request
 
 class bsn_gentable_error(bsn_base_error):
-    version = 4
+    version = 6
     type = 1
     err_type = 65535
     subtype = 2
@@ -4991,7 +5139,7 @@ class bsn_gentable_error(bsn_base_error):
     def unpack(reader):
         obj = bsn_gentable_error()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 1)
         _length = reader.read("!H")[0]
@@ -5047,7 +5195,7 @@ class bsn_gentable_error(bsn_base_error):
 bsn_base_error.subtypes[2] = bsn_gentable_error
 
 class bsn_gentable_set_buckets_size(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 50
@@ -5086,7 +5234,7 @@ class bsn_gentable_set_buckets_size(bsn_header):
     def unpack(reader):
         obj = bsn_gentable_set_buckets_size()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -5131,7 +5279,7 @@ class bsn_gentable_set_buckets_size(bsn_header):
 bsn_header.subtypes[50] = bsn_gentable_set_buckets_size
 
 class bsn_gentable_stats_reply(bsn_stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 65535
     experimenter = 6035143
@@ -5172,7 +5320,7 @@ class bsn_gentable_stats_reply(bsn_stats_reply):
     def unpack(reader):
         obj = bsn_gentable_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -5219,7 +5367,7 @@ class bsn_gentable_stats_reply(bsn_stats_reply):
 bsn_stats_reply.subtypes[7] = bsn_gentable_stats_reply
 
 class bsn_gentable_stats_request(bsn_stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 65535
     experimenter = 6035143
@@ -5255,7 +5403,7 @@ class bsn_gentable_stats_request(bsn_stats_request):
     def unpack(reader):
         obj = bsn_gentable_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -5297,7 +5445,7 @@ class bsn_gentable_stats_request(bsn_stats_request):
 bsn_stats_request.subtypes[7] = bsn_gentable_stats_request
 
 class bsn_get_interfaces_reply(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 10
@@ -5330,7 +5478,7 @@ class bsn_get_interfaces_reply(bsn_header):
     def unpack(reader):
         obj = bsn_get_interfaces_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -5369,7 +5517,7 @@ class bsn_get_interfaces_reply(bsn_header):
 bsn_header.subtypes[10] = bsn_get_interfaces_reply
 
 class bsn_get_interfaces_request(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 9
@@ -5397,7 +5545,7 @@ class bsn_get_interfaces_request(bsn_header):
     def unpack(reader):
         obj = bsn_get_interfaces_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -5431,7 +5579,7 @@ class bsn_get_interfaces_request(bsn_header):
 bsn_header.subtypes[9] = bsn_get_interfaces_request
 
 class bsn_get_mirroring_reply(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 5
@@ -5465,7 +5613,7 @@ class bsn_get_mirroring_reply(bsn_header):
     def unpack(reader):
         obj = bsn_get_mirroring_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -5505,7 +5653,7 @@ class bsn_get_mirroring_reply(bsn_header):
 bsn_header.subtypes[5] = bsn_get_mirroring_reply
 
 class bsn_get_mirroring_request(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 4
@@ -5539,7 +5687,7 @@ class bsn_get_mirroring_request(bsn_header):
     def unpack(reader):
         obj = bsn_get_mirroring_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -5579,7 +5727,7 @@ class bsn_get_mirroring_request(bsn_header):
 bsn_header.subtypes[4] = bsn_get_mirroring_request
 
 class bsn_get_switch_pipeline_reply(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 52
@@ -5612,7 +5760,7 @@ class bsn_get_switch_pipeline_reply(bsn_header):
     def unpack(reader):
         obj = bsn_get_switch_pipeline_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -5651,7 +5799,7 @@ class bsn_get_switch_pipeline_reply(bsn_header):
 bsn_header.subtypes[52] = bsn_get_switch_pipeline_reply
 
 class bsn_get_switch_pipeline_request(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 51
@@ -5679,7 +5827,7 @@ class bsn_get_switch_pipeline_request(bsn_header):
     def unpack(reader):
         obj = bsn_get_switch_pipeline_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -5713,7 +5861,7 @@ class bsn_get_switch_pipeline_request(bsn_header):
 bsn_header.subtypes[51] = bsn_get_switch_pipeline_request
 
 class bsn_image_desc_stats_reply(bsn_stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 65535
     experimenter = 6035143
@@ -5759,7 +5907,7 @@ class bsn_image_desc_stats_reply(bsn_stats_reply):
     def unpack(reader):
         obj = bsn_image_desc_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -5811,7 +5959,7 @@ class bsn_image_desc_stats_reply(bsn_stats_reply):
 bsn_stats_reply.subtypes[14] = bsn_image_desc_stats_reply
 
 class bsn_image_desc_stats_request(bsn_stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 65535
     experimenter = 6035143
@@ -5847,7 +5995,7 @@ class bsn_image_desc_stats_request(bsn_stats_request):
     def unpack(reader):
         obj = bsn_image_desc_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -5889,7 +6037,7 @@ class bsn_image_desc_stats_request(bsn_stats_request):
 bsn_stats_request.subtypes[14] = bsn_image_desc_stats_request
 
 class bsn_lacp_convergence_notif(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 43
@@ -5978,7 +6126,7 @@ class bsn_lacp_convergence_notif(bsn_header):
     def unpack(reader):
         obj = bsn_lacp_convergence_notif()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -6073,7 +6221,7 @@ class bsn_lacp_convergence_notif(bsn_header):
 bsn_header.subtypes[43] = bsn_lacp_convergence_notif
 
 class bsn_lacp_stats_reply(bsn_stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 65535
     experimenter = 6035143
@@ -6114,7 +6262,7 @@ class bsn_lacp_stats_reply(bsn_stats_reply):
     def unpack(reader):
         obj = bsn_lacp_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -6161,7 +6309,7 @@ class bsn_lacp_stats_reply(bsn_stats_reply):
 bsn_stats_reply.subtypes[1] = bsn_lacp_stats_reply
 
 class bsn_lacp_stats_request(bsn_stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 65535
     experimenter = 6035143
@@ -6197,7 +6345,7 @@ class bsn_lacp_stats_request(bsn_stats_request):
     def unpack(reader):
         obj = bsn_lacp_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -6239,7 +6387,7 @@ class bsn_lacp_stats_request(bsn_stats_request):
 bsn_stats_request.subtypes[1] = bsn_lacp_stats_request
 
 class bsn_log(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 63
@@ -6277,7 +6425,7 @@ class bsn_log(bsn_header):
     def unpack(reader):
         obj = bsn_log()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -6321,7 +6469,7 @@ class bsn_log(bsn_header):
 bsn_header.subtypes[63] = bsn_log
 
 class bsn_lua_command_reply(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 66
@@ -6354,7 +6502,7 @@ class bsn_lua_command_reply(bsn_header):
     def unpack(reader):
         obj = bsn_lua_command_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -6393,7 +6541,7 @@ class bsn_lua_command_reply(bsn_header):
 bsn_header.subtypes[66] = bsn_lua_command_reply
 
 class bsn_lua_command_request(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 65
@@ -6426,7 +6574,7 @@ class bsn_lua_command_request(bsn_header):
     def unpack(reader):
         obj = bsn_lua_command_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -6465,7 +6613,7 @@ class bsn_lua_command_request(bsn_header):
 bsn_header.subtypes[65] = bsn_lua_command_request
 
 class bsn_lua_notification(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 67
@@ -6498,7 +6646,7 @@ class bsn_lua_notification(bsn_header):
     def unpack(reader):
         obj = bsn_lua_notification()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -6537,7 +6685,7 @@ class bsn_lua_notification(bsn_header):
 bsn_header.subtypes[67] = bsn_lua_notification
 
 class bsn_lua_upload(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 64
@@ -6580,7 +6728,7 @@ class bsn_lua_upload(bsn_header):
     def unpack(reader):
         obj = bsn_lua_upload()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -6629,7 +6777,7 @@ class bsn_lua_upload(bsn_header):
 bsn_header.subtypes[64] = bsn_lua_upload
 
 class bsn_pdu_rx_reply(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 34
@@ -6672,7 +6820,7 @@ class bsn_pdu_rx_reply(bsn_header):
     def unpack(reader):
         obj = bsn_pdu_rx_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -6721,7 +6869,7 @@ class bsn_pdu_rx_reply(bsn_header):
 bsn_header.subtypes[34] = bsn_pdu_rx_reply
 
 class bsn_pdu_rx_request(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 33
@@ -6770,7 +6918,7 @@ class bsn_pdu_rx_request(bsn_header):
     def unpack(reader):
         obj = bsn_pdu_rx_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -6825,7 +6973,7 @@ class bsn_pdu_rx_request(bsn_header):
 bsn_header.subtypes[33] = bsn_pdu_rx_request
 
 class bsn_pdu_rx_timeout(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 35
@@ -6863,7 +7011,7 @@ class bsn_pdu_rx_timeout(bsn_header):
     def unpack(reader):
         obj = bsn_pdu_rx_timeout()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -6907,7 +7055,7 @@ class bsn_pdu_rx_timeout(bsn_header):
 bsn_header.subtypes[35] = bsn_pdu_rx_timeout
 
 class bsn_pdu_tx_reply(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 32
@@ -6950,7 +7098,7 @@ class bsn_pdu_tx_reply(bsn_header):
     def unpack(reader):
         obj = bsn_pdu_tx_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -6999,7 +7147,7 @@ class bsn_pdu_tx_reply(bsn_header):
 bsn_header.subtypes[32] = bsn_pdu_tx_reply
 
 class bsn_pdu_tx_request(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 31
@@ -7048,7 +7196,7 @@ class bsn_pdu_tx_request(bsn_header):
     def unpack(reader):
         obj = bsn_pdu_tx_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -7103,7 +7251,7 @@ class bsn_pdu_tx_request(bsn_header):
 bsn_header.subtypes[31] = bsn_pdu_tx_request
 
 class bsn_port_counter_stats_reply(bsn_stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 65535
     experimenter = 6035143
@@ -7144,7 +7292,7 @@ class bsn_port_counter_stats_reply(bsn_stats_reply):
     def unpack(reader):
         obj = bsn_port_counter_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -7191,7 +7339,7 @@ class bsn_port_counter_stats_reply(bsn_stats_reply):
 bsn_stats_reply.subtypes[8] = bsn_port_counter_stats_reply
 
 class bsn_port_counter_stats_request(bsn_stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 65535
     experimenter = 6035143
@@ -7232,7 +7380,7 @@ class bsn_port_counter_stats_request(bsn_stats_request):
     def unpack(reader):
         obj = bsn_port_counter_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -7278,102 +7426,8 @@ class bsn_port_counter_stats_request(bsn_stats_request):
 
 bsn_stats_request.subtypes[8] = bsn_port_counter_stats_request
 
-class bsn_role_status(bsn_header):
-    version = 4
-    type = 4
-    experimenter = 6035143
-    subtype = 55
-
-    def __init__(self, xid=None, role=None, reason=None, generation_id=None):
-        if xid != None:
-            self.xid = xid
-        else:
-            self.xid = None
-        if role != None:
-            self.role = role
-        else:
-            self.role = 0
-        if reason != None:
-            self.reason = reason
-        else:
-            self.reason = 0
-        if generation_id != None:
-            self.generation_id = generation_id
-        else:
-            self.generation_id = 0
-        return
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!B", self.version))
-        packed.append(struct.pack("!B", self.type))
-        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
-        packed.append(struct.pack("!L", self.xid))
-        packed.append(struct.pack("!L", self.experimenter))
-        packed.append(struct.pack("!L", self.subtype))
-        packed.append(struct.pack("!L", self.role))
-        packed.append(struct.pack("!B", self.reason))
-        packed.append('\x00' * 3)
-        packed.append(struct.pack("!Q", self.generation_id))
-        length = sum([len(x) for x in packed])
-        packed[2] = struct.pack("!H", length)
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(reader):
-        obj = bsn_role_status()
-        _version = reader.read("!B")[0]
-        assert(_version == 4)
-        _type = reader.read("!B")[0]
-        assert(_type == 4)
-        _length = reader.read("!H")[0]
-        orig_reader = reader
-        reader = orig_reader.slice(_length, 4)
-        obj.xid = reader.read("!L")[0]
-        _experimenter = reader.read("!L")[0]
-        assert(_experimenter == 6035143)
-        _subtype = reader.read("!L")[0]
-        assert(_subtype == 55)
-        obj.role = reader.read("!L")[0]
-        obj.reason = reader.read("!B")[0]
-        reader.skip(3)
-        obj.generation_id = reader.read("!Q")[0]
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.xid != other.xid: return False
-        if self.role != other.role: return False
-        if self.reason != other.reason: return False
-        if self.generation_id != other.generation_id: return False
-        return True
-
-    def pretty_print(self, q):
-        q.text("bsn_role_status {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("xid = ");
-                if self.xid != None:
-                    q.text("%#x" % self.xid)
-                else:
-                    q.text('None')
-                q.text(","); q.breakable()
-                q.text("role = ");
-                q.text("%#x" % self.role)
-                q.text(","); q.breakable()
-                q.text("reason = ");
-                q.text("%#x" % self.reason)
-                q.text(","); q.breakable()
-                q.text("generation_id = ");
-                q.text("%#x" % self.generation_id)
-            q.breakable()
-        q.text('}')
-
-bsn_header.subtypes[55] = bsn_role_status
-
 class bsn_set_aux_cxns_reply(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 59
@@ -7411,7 +7465,7 @@ class bsn_set_aux_cxns_reply(bsn_header):
     def unpack(reader):
         obj = bsn_set_aux_cxns_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -7455,7 +7509,7 @@ class bsn_set_aux_cxns_reply(bsn_header):
 bsn_header.subtypes[59] = bsn_set_aux_cxns_reply
 
 class bsn_set_aux_cxns_request(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 58
@@ -7488,7 +7542,7 @@ class bsn_set_aux_cxns_request(bsn_header):
     def unpack(reader):
         obj = bsn_set_aux_cxns_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -7527,7 +7581,7 @@ class bsn_set_aux_cxns_request(bsn_header):
 bsn_header.subtypes[58] = bsn_set_aux_cxns_request
 
 class bsn_set_lacp_reply(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 42
@@ -7565,7 +7619,7 @@ class bsn_set_lacp_reply(bsn_header):
     def unpack(reader):
         obj = bsn_set_lacp_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -7609,7 +7663,7 @@ class bsn_set_lacp_reply(bsn_header):
 bsn_header.subtypes[42] = bsn_set_lacp_reply
 
 class bsn_set_lacp_request(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 41
@@ -7673,7 +7727,7 @@ class bsn_set_lacp_request(bsn_header):
     def unpack(reader):
         obj = bsn_set_lacp_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -7743,7 +7797,7 @@ class bsn_set_lacp_request(bsn_header):
 bsn_header.subtypes[41] = bsn_set_lacp_request
 
 class bsn_set_mirroring(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 3
@@ -7777,7 +7831,7 @@ class bsn_set_mirroring(bsn_header):
     def unpack(reader):
         obj = bsn_set_mirroring()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -7817,7 +7871,7 @@ class bsn_set_mirroring(bsn_header):
 bsn_header.subtypes[3] = bsn_set_mirroring
 
 class bsn_set_pktin_suppression_reply(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 25
@@ -7850,7 +7904,7 @@ class bsn_set_pktin_suppression_reply(bsn_header):
     def unpack(reader):
         obj = bsn_set_pktin_suppression_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -7889,7 +7943,7 @@ class bsn_set_pktin_suppression_reply(bsn_header):
 bsn_header.subtypes[25] = bsn_set_pktin_suppression_reply
 
 class bsn_set_pktin_suppression_request(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 11
@@ -7943,7 +7997,7 @@ class bsn_set_pktin_suppression_request(bsn_header):
     def unpack(reader):
         obj = bsn_set_pktin_suppression_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -8003,7 +8057,7 @@ class bsn_set_pktin_suppression_request(bsn_header):
 bsn_header.subtypes[11] = bsn_set_pktin_suppression_request
 
 class bsn_set_switch_pipeline_reply(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 54
@@ -8036,7 +8090,7 @@ class bsn_set_switch_pipeline_reply(bsn_header):
     def unpack(reader):
         obj = bsn_set_switch_pipeline_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -8075,7 +8129,7 @@ class bsn_set_switch_pipeline_reply(bsn_header):
 bsn_header.subtypes[54] = bsn_set_switch_pipeline_reply
 
 class bsn_set_switch_pipeline_request(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 53
@@ -8108,7 +8162,7 @@ class bsn_set_switch_pipeline_request(bsn_header):
     def unpack(reader):
         obj = bsn_set_switch_pipeline_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -8147,7 +8201,7 @@ class bsn_set_switch_pipeline_request(bsn_header):
 bsn_header.subtypes[53] = bsn_set_switch_pipeline_request
 
 class bsn_switch_pipeline_stats_reply(bsn_stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 65535
     experimenter = 6035143
@@ -8188,7 +8242,7 @@ class bsn_switch_pipeline_stats_reply(bsn_stats_reply):
     def unpack(reader):
         obj = bsn_switch_pipeline_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -8235,7 +8289,7 @@ class bsn_switch_pipeline_stats_reply(bsn_stats_reply):
 bsn_stats_reply.subtypes[6] = bsn_switch_pipeline_stats_reply
 
 class bsn_switch_pipeline_stats_request(bsn_stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 65535
     experimenter = 6035143
@@ -8271,7 +8325,7 @@ class bsn_switch_pipeline_stats_request(bsn_stats_request):
     def unpack(reader):
         obj = bsn_switch_pipeline_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -8313,7 +8367,7 @@ class bsn_switch_pipeline_stats_request(bsn_stats_request):
 bsn_stats_request.subtypes[6] = bsn_switch_pipeline_stats_request
 
 class bsn_table_checksum_stats_reply(bsn_stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 65535
     experimenter = 6035143
@@ -8354,7 +8408,7 @@ class bsn_table_checksum_stats_reply(bsn_stats_reply):
     def unpack(reader):
         obj = bsn_table_checksum_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -8401,7 +8455,7 @@ class bsn_table_checksum_stats_reply(bsn_stats_reply):
 bsn_stats_reply.subtypes[11] = bsn_table_checksum_stats_reply
 
 class bsn_table_checksum_stats_request(bsn_stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 65535
     experimenter = 6035143
@@ -8437,7 +8491,7 @@ class bsn_table_checksum_stats_request(bsn_stats_request):
     def unpack(reader):
         obj = bsn_table_checksum_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -8479,7 +8533,7 @@ class bsn_table_checksum_stats_request(bsn_stats_request):
 bsn_stats_request.subtypes[11] = bsn_table_checksum_stats_request
 
 class bsn_table_set_buckets_size(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 61
@@ -8519,7 +8573,7 @@ class bsn_table_set_buckets_size(bsn_header):
     def unpack(reader):
         obj = bsn_table_set_buckets_size()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -8564,8 +8618,70 @@ class bsn_table_set_buckets_size(bsn_header):
 
 bsn_header.subtypes[61] = bsn_table_set_buckets_size
 
+class bsn_takeover(bsn_header):
+    version = 6
+    type = 4
+    experimenter = 6035143
+    subtype = 69
+
+    def __init__(self, xid=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.subtype))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_takeover()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 4)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _subtype = reader.read("!L")[0]
+        assert(_subtype == 69)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_takeover {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+            q.breakable()
+        q.text('}')
+
+bsn_header.subtypes[69] = bsn_takeover
+
 class bsn_time_reply(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 45
@@ -8598,7 +8714,7 @@ class bsn_time_reply(bsn_header):
     def unpack(reader):
         obj = bsn_time_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -8637,7 +8753,7 @@ class bsn_time_reply(bsn_header):
 bsn_header.subtypes[45] = bsn_time_reply
 
 class bsn_time_request(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 44
@@ -8665,7 +8781,7 @@ class bsn_time_request(bsn_header):
     def unpack(reader):
         obj = bsn_time_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -8699,7 +8815,7 @@ class bsn_time_request(bsn_header):
 bsn_header.subtypes[44] = bsn_time_request
 
 class bsn_virtual_port_create_reply(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 16
@@ -8737,7 +8853,7 @@ class bsn_virtual_port_create_reply(bsn_header):
     def unpack(reader):
         obj = bsn_virtual_port_create_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -8781,7 +8897,7 @@ class bsn_virtual_port_create_reply(bsn_header):
 bsn_header.subtypes[16] = bsn_virtual_port_create_reply
 
 class bsn_virtual_port_create_request(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 15
@@ -8814,7 +8930,7 @@ class bsn_virtual_port_create_request(bsn_header):
     def unpack(reader):
         obj = bsn_virtual_port_create_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -8853,7 +8969,7 @@ class bsn_virtual_port_create_request(bsn_header):
 bsn_header.subtypes[15] = bsn_virtual_port_create_request
 
 class bsn_virtual_port_remove_reply(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 26
@@ -8886,7 +9002,7 @@ class bsn_virtual_port_remove_reply(bsn_header):
     def unpack(reader):
         obj = bsn_virtual_port_remove_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -8925,7 +9041,7 @@ class bsn_virtual_port_remove_reply(bsn_header):
 bsn_header.subtypes[26] = bsn_virtual_port_remove_reply
 
 class bsn_virtual_port_remove_request(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 17
@@ -8958,7 +9074,7 @@ class bsn_virtual_port_remove_request(bsn_header):
     def unpack(reader):
         obj = bsn_virtual_port_remove_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -8997,7 +9113,7 @@ class bsn_virtual_port_remove_request(bsn_header):
 bsn_header.subtypes[17] = bsn_virtual_port_remove_request
 
 class bsn_vlan_counter_clear(bsn_header):
-    version = 4
+    version = 6
     type = 4
     experimenter = 6035143
     subtype = 70
@@ -9030,7 +9146,7 @@ class bsn_vlan_counter_clear(bsn_header):
     def unpack(reader):
         obj = bsn_vlan_counter_clear()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -9069,7 +9185,7 @@ class bsn_vlan_counter_clear(bsn_header):
 bsn_header.subtypes[70] = bsn_vlan_counter_clear
 
 class bsn_vlan_counter_stats_reply(bsn_stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 65535
     experimenter = 6035143
@@ -9110,7 +9226,7 @@ class bsn_vlan_counter_stats_reply(bsn_stats_reply):
     def unpack(reader):
         obj = bsn_vlan_counter_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -9157,7 +9273,7 @@ class bsn_vlan_counter_stats_reply(bsn_stats_reply):
 bsn_stats_reply.subtypes[9] = bsn_vlan_counter_stats_reply
 
 class bsn_vlan_counter_stats_request(bsn_stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 65535
     experimenter = 6035143
@@ -9198,7 +9314,7 @@ class bsn_vlan_counter_stats_request(bsn_stats_request):
     def unpack(reader):
         obj = bsn_vlan_counter_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -9245,7 +9361,7 @@ class bsn_vlan_counter_stats_request(bsn_stats_request):
 bsn_stats_request.subtypes[9] = bsn_vlan_counter_stats_request
 
 class bsn_vrf_counter_stats_reply(bsn_stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 65535
     experimenter = 6035143
@@ -9286,7 +9402,7 @@ class bsn_vrf_counter_stats_reply(bsn_stats_reply):
     def unpack(reader):
         obj = bsn_vrf_counter_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -9333,7 +9449,7 @@ class bsn_vrf_counter_stats_reply(bsn_stats_reply):
 bsn_stats_reply.subtypes[15] = bsn_vrf_counter_stats_reply
 
 class bsn_vrf_counter_stats_request(bsn_stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 65535
     experimenter = 6035143
@@ -9374,7 +9490,7 @@ class bsn_vrf_counter_stats_request(bsn_stats_request):
     def unpack(reader):
         obj = bsn_vrf_counter_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -9420,8 +9536,674 @@ class bsn_vrf_counter_stats_request(bsn_stats_request):
 
 bsn_stats_request.subtypes[15] = bsn_vrf_counter_stats_request
 
+class bundle_add_msg(message):
+    version = 6
+    type = 34
+
+    def __init__(self, xid=None, bundle_id=None, flags=None, message=None, properties=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if bundle_id != None:
+            self.bundle_id = bundle_id
+        else:
+            self.bundle_id = 0
+        if flags != None:
+            self.flags = flags
+        else:
+            self.flags = 0
+        if message != None:
+            self.message = message
+        else:
+            self.message = loxi.unimplemented('init of_header_t')
+        if properties != None:
+            self.properties = properties
+        else:
+            self.properties = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!L", self.bundle_id))
+        packed.append('\x00' * 1)
+        packed.append(struct.pack("!H", self.flags))
+        packed.append(loxi.unimplemented('pack of_header_t'))
+        packed.append(loxi.generic_util.pack_list(self.properties))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bundle_add_msg()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 34)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        obj.bundle_id = reader.read("!L")[0]
+        reader.skip(1)
+        obj.flags = reader.read("!H")[0]
+        obj.message = loxi.unimplemented('unpack of_header_t')
+        obj.properties = loxi.generic_util.unpack_list(reader, ofp.bundle_prop.bundle_prop.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.bundle_id != other.bundle_id: return False
+        if self.flags != other.flags: return False
+        if self.message != other.message: return False
+        if self.properties != other.properties: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bundle_add_msg {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("bundle_id = ");
+                q.text("%#x" % self.bundle_id)
+                q.text(","); q.breakable()
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
+                q.text(","); q.breakable()
+                q.text("message = ");
+                q.pp(self.message)
+                q.text(","); q.breakable()
+                q.text("properties = ");
+                q.pp(self.properties)
+            q.breakable()
+        q.text('}')
+
+message.subtypes[34] = bundle_add_msg
+
+class bundle_ctrl_msg(message):
+    version = 6
+    type = 33
+
+    def __init__(self, xid=None, bundle_id=None, bundle_ctrl_type=None, flags=None, properties=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if bundle_id != None:
+            self.bundle_id = bundle_id
+        else:
+            self.bundle_id = 0
+        if bundle_ctrl_type != None:
+            self.bundle_ctrl_type = bundle_ctrl_type
+        else:
+            self.bundle_ctrl_type = 0
+        if flags != None:
+            self.flags = flags
+        else:
+            self.flags = 0
+        if properties != None:
+            self.properties = properties
+        else:
+            self.properties = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!L", self.bundle_id))
+        packed.append(struct.pack("!H", self.bundle_ctrl_type))
+        packed.append(struct.pack("!H", self.flags))
+        packed.append(loxi.generic_util.pack_list(self.properties))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bundle_ctrl_msg()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 33)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        obj.bundle_id = reader.read("!L")[0]
+        obj.bundle_ctrl_type = reader.read("!H")[0]
+        obj.flags = reader.read("!H")[0]
+        obj.properties = loxi.generic_util.unpack_list(reader, ofp.bundle_prop.bundle_prop.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.bundle_id != other.bundle_id: return False
+        if self.bundle_ctrl_type != other.bundle_ctrl_type: return False
+        if self.flags != other.flags: return False
+        if self.properties != other.properties: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bundle_ctrl_msg {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("bundle_id = ");
+                q.text("%#x" % self.bundle_id)
+                q.text(","); q.breakable()
+                q.text("bundle_ctrl_type = ");
+                q.text("%#x" % self.bundle_ctrl_type)
+                q.text(","); q.breakable()
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
+                q.text(","); q.breakable()
+                q.text("properties = ");
+                q.pp(self.properties)
+            q.breakable()
+        q.text('}')
+
+message.subtypes[33] = bundle_ctrl_msg
+
+class bundle_failed_error_msg(error_msg):
+    version = 6
+    type = 1
+    err_type = 17
+
+    def __init__(self, xid=None, code=None, data=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if code != None:
+            self.code = code
+        else:
+            self.code = 0
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.err_type))
+        packed.append(struct.pack("!H", self.code))
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bundle_failed_error_msg()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 1)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        _err_type = reader.read("!H")[0]
+        assert(_err_type == 17)
+        obj.code = reader.read("!H")[0]
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.code != other.code: return False
+        if self.data != other.data: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bundle_failed_error_msg {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("code = ");
+                q.text("%#x" % self.code)
+                q.text(","); q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
+            q.breakable()
+        q.text('}')
+
+error_msg.subtypes[17] = bundle_failed_error_msg
+
+class bundle_features_stats_reply(stats_reply):
+    version = 6
+    type = 19
+    stats_type = 19
+
+    def __init__(self, xid=None, flags=None, capabilities=None, properties=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if flags != None:
+            self.flags = flags
+        else:
+            self.flags = 0
+        if capabilities != None:
+            self.capabilities = capabilities
+        else:
+            self.capabilities = 0
+        if properties != None:
+            self.properties = properties
+        else:
+            self.properties = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.stats_type))
+        packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
+        packed.append(struct.pack("!L", self.capabilities))
+        packed.append('\x00' * 6)
+        packed.append(loxi.generic_util.pack_list(self.properties))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bundle_features_stats_reply()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 19)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        _stats_type = reader.read("!H")[0]
+        assert(_stats_type == 19)
+        obj.flags = reader.read("!H")[0]
+        reader.skip(4)
+        obj.capabilities = reader.read("!L")[0]
+        reader.skip(6)
+        obj.properties = loxi.generic_util.unpack_list(reader, ofp.common.bundle_features_prop.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.flags != other.flags: return False
+        if self.capabilities != other.capabilities: return False
+        if self.properties != other.properties: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bundle_features_stats_reply {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
+                q.text(","); q.breakable()
+                q.text("capabilities = ");
+                q.text("%#x" % self.capabilities)
+                q.text(","); q.breakable()
+                q.text("properties = ");
+                q.pp(self.properties)
+            q.breakable()
+        q.text('}')
+
+stats_reply.subtypes[19] = bundle_features_stats_reply
+
+class bundle_features_stats_request(stats_request):
+    version = 6
+    type = 18
+    stats_type = 19
+
+    def __init__(self, xid=None, flags=None, feature_request_flags=None, properties=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if flags != None:
+            self.flags = flags
+        else:
+            self.flags = 0
+        if feature_request_flags != None:
+            self.feature_request_flags = feature_request_flags
+        else:
+            self.feature_request_flags = 0
+        if properties != None:
+            self.properties = properties
+        else:
+            self.properties = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.stats_type))
+        packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
+        packed.append(struct.pack("!L", self.feature_request_flags))
+        packed.append('\x00' * 4)
+        packed.append(loxi.generic_util.pack_list(self.properties))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bundle_features_stats_request()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 18)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        _stats_type = reader.read("!H")[0]
+        assert(_stats_type == 19)
+        obj.flags = reader.read("!H")[0]
+        reader.skip(4)
+        obj.feature_request_flags = reader.read("!L")[0]
+        reader.skip(4)
+        obj.properties = loxi.generic_util.unpack_list(reader, ofp.common.bundle_features_prop.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.flags != other.flags: return False
+        if self.feature_request_flags != other.feature_request_flags: return False
+        if self.properties != other.properties: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bundle_features_stats_request {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
+                q.text(","); q.breakable()
+                q.text("feature_request_flags = ");
+                q.text("%#x" % self.feature_request_flags)
+                q.text(","); q.breakable()
+                q.text("properties = ");
+                q.pp(self.properties)
+            q.breakable()
+        q.text('}')
+
+stats_request.subtypes[19] = bundle_features_stats_request
+
+class controller_status(message):
+    version = 6
+    type = 35
+
+    def __init__(self, xid=None, entry=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if entry != None:
+            self.entry = entry
+        else:
+            self.entry = loxi.unimplemented('init of_controller_status_entry_t')
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(loxi.unimplemented('pack of_controller_status_entry_t'))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = controller_status()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 35)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        obj.entry = loxi.unimplemented('unpack of_controller_status_entry_t')
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.entry != other.entry: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("controller_status {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("entry = ");
+                q.pp(self.entry)
+            q.breakable()
+        q.text('}')
+
+message.subtypes[35] = controller_status
+
+class controller_status_stats_reply(stats_reply):
+    version = 6
+    type = 19
+    stats_type = 18
+
+    def __init__(self, xid=None, flags=None, controller_status=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if flags != None:
+            self.flags = flags
+        else:
+            self.flags = 0
+        if controller_status != None:
+            self.controller_status = controller_status
+        else:
+            self.controller_status = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.stats_type))
+        packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
+        packed.append(loxi.generic_util.pack_list(self.controller_status))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = controller_status_stats_reply()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 19)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        _stats_type = reader.read("!H")[0]
+        assert(_stats_type == 18)
+        obj.flags = reader.read("!H")[0]
+        reader.skip(4)
+        obj.controller_status = loxi.generic_util.unpack_list(reader, ofp.common.controller_status_entry.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.flags != other.flags: return False
+        if self.controller_status != other.controller_status: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("controller_status_stats_reply {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
+                q.text(","); q.breakable()
+                q.text("controller_status = ");
+                q.pp(self.controller_status)
+            q.breakable()
+        q.text('}')
+
+stats_reply.subtypes[18] = controller_status_stats_reply
+
+class controller_status_stats_request(stats_request):
+    version = 6
+    type = 18
+    stats_type = 18
+
+    def __init__(self, xid=None, flags=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if flags != None:
+            self.flags = flags
+        else:
+            self.flags = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.stats_type))
+        packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = controller_status_stats_request()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 18)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        _stats_type = reader.read("!H")[0]
+        assert(_stats_type == 18)
+        obj.flags = reader.read("!H")[0]
+        reader.skip(4)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.flags != other.flags: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("controller_status_stats_request {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
+            q.breakable()
+        q.text('}')
+
+stats_request.subtypes[18] = controller_status_stats_request
+
 class desc_stats_reply(stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 0
 
@@ -9478,7 +10260,7 @@ class desc_stats_reply(stats_reply):
     def unpack(reader):
         obj = desc_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -9541,7 +10323,7 @@ class desc_stats_reply(stats_reply):
 stats_reply.subtypes[0] = desc_stats_reply
 
 class desc_stats_request(stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 0
 
@@ -9573,7 +10355,7 @@ class desc_stats_request(stats_request):
     def unpack(reader):
         obj = desc_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -9611,7 +10393,7 @@ class desc_stats_request(stats_request):
 stats_request.subtypes[0] = desc_stats_request
 
 class echo_reply(message):
-    version = 4
+    version = 6
     type = 3
 
     def __init__(self, xid=None, data=None):
@@ -9640,7 +10422,7 @@ class echo_reply(message):
     def unpack(reader):
         obj = echo_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 3)
         _length = reader.read("!H")[0]
@@ -9675,7 +10457,7 @@ class echo_reply(message):
 message.subtypes[3] = echo_reply
 
 class echo_request(message):
-    version = 4
+    version = 6
     type = 2
 
     def __init__(self, xid=None, data=None):
@@ -9704,7 +10486,7 @@ class echo_request(message):
     def unpack(reader):
         obj = echo_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 2)
         _length = reader.read("!H")[0]
@@ -9739,7 +10521,7 @@ class echo_request(message):
 message.subtypes[2] = echo_request
 
 class features_reply(message):
-    version = 4
+    version = 6
     type = 6
 
     def __init__(self, xid=None, datapath_id=None, n_buffers=None, n_tables=None, auxiliary_id=None, capabilities=None, reserved=None):
@@ -9794,7 +10576,7 @@ class features_reply(message):
     def unpack(reader):
         obj = features_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 6)
         _length = reader.read("!H")[0]
@@ -9855,7 +10637,7 @@ class features_reply(message):
 message.subtypes[6] = features_reply
 
 class features_request(message):
-    version = 4
+    version = 6
     type = 5
 
     def __init__(self, xid=None):
@@ -9879,7 +10661,7 @@ class features_request(message):
     def unpack(reader):
         obj = features_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 5)
         _length = reader.read("!H")[0]
@@ -9911,10 +10693,10 @@ message.subtypes[5] = features_request
 class flow_mod(message):
     subtypes = {}
 
-    version = 4
+    version = 6
     type = 14
 
-    def __init__(self, xid=None, cookie=None, cookie_mask=None, table_id=None, _command=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, out_group=None, flags=None, match=None, instructions=None):
+    def __init__(self, xid=None, cookie=None, cookie_mask=None, table_id=None, _command=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, out_group=None, flags=None, importance=None, match=None, instructions=None):
         if xid != None:
             self.xid = xid
         else:
@@ -9963,6 +10745,10 @@ class flow_mod(message):
             self.flags = flags
         else:
             self.flags = 0
+        if importance != None:
+            self.importance = importance
+        else:
+            self.importance = 0
         if match != None:
             self.match = match
         else:
@@ -9990,7 +10776,7 @@ class flow_mod(message):
         packed.append(util.pack_port_no(self.out_port))
         packed.append(struct.pack("!L", self.out_group))
         packed.append(struct.pack("!H", self.flags))
-        packed.append('\x00' * 2)
+        packed.append(struct.pack("!H", self.importance))
         packed.append(self.match.pack())
         packed.append(loxi.generic_util.pack_list(self.instructions))
         length = sum([len(x) for x in packed])
@@ -10006,7 +10792,7 @@ class flow_mod(message):
 
         obj = flow_mod()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 14)
         _length = reader.read("!H")[0]
@@ -10024,7 +10810,7 @@ class flow_mod(message):
         obj.out_port = util.unpack_port_no(reader)
         obj.out_group = reader.read("!L")[0]
         obj.flags = reader.read("!H")[0]
-        reader.skip(2)
+        obj.importance = reader.read("!H")[0]
         obj.match = ofp.match.unpack(reader)
         obj.instructions = loxi.generic_util.unpack_list(reader, ofp.instruction.instruction.unpack)
         return obj
@@ -10043,6 +10829,7 @@ class flow_mod(message):
         if self.out_port != other.out_port: return False
         if self.out_group != other.out_group: return False
         if self.flags != other.flags: return False
+        if self.importance != other.importance: return False
         if self.match != other.match: return False
         if self.instructions != other.instructions: return False
         return True
@@ -10088,6 +10875,9 @@ class flow_mod(message):
                 q.text("flags = ");
                 q.text("%#x" % self.flags)
                 q.text(","); q.breakable()
+                q.text("importance = ");
+                q.text("%#x" % self.importance)
+                q.text(","); q.breakable()
                 q.text("match = ");
                 q.pp(self.match)
                 q.text(","); q.breakable()
@@ -10099,11 +10889,11 @@ class flow_mod(message):
 message.subtypes[14] = flow_mod
 
 class flow_add(flow_mod):
-    version = 4
+    version = 6
     type = 14
     _command = 0
 
-    def __init__(self, xid=None, cookie=None, cookie_mask=None, table_id=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, out_group=None, flags=None, match=None, instructions=None):
+    def __init__(self, xid=None, cookie=None, cookie_mask=None, table_id=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, out_group=None, flags=None, importance=None, match=None, instructions=None):
         if xid != None:
             self.xid = xid
         else:
@@ -10148,6 +10938,10 @@ class flow_add(flow_mod):
             self.flags = flags
         else:
             self.flags = 0
+        if importance != None:
+            self.importance = importance
+        else:
+            self.importance = 0
         if match != None:
             self.match = match
         else:
@@ -10175,7 +10969,7 @@ class flow_add(flow_mod):
         packed.append(util.pack_port_no(self.out_port))
         packed.append(struct.pack("!L", self.out_group))
         packed.append(struct.pack("!H", self.flags))
-        packed.append('\x00' * 2)
+        packed.append(struct.pack("!H", self.importance))
         packed.append(self.match.pack())
         packed.append(loxi.generic_util.pack_list(self.instructions))
         length = sum([len(x) for x in packed])
@@ -10186,7 +10980,7 @@ class flow_add(flow_mod):
     def unpack(reader):
         obj = flow_add()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 14)
         _length = reader.read("!H")[0]
@@ -10205,7 +10999,7 @@ class flow_add(flow_mod):
         obj.out_port = util.unpack_port_no(reader)
         obj.out_group = reader.read("!L")[0]
         obj.flags = reader.read("!H")[0]
-        reader.skip(2)
+        obj.importance = reader.read("!H")[0]
         obj.match = ofp.match.unpack(reader)
         obj.instructions = loxi.generic_util.unpack_list(reader, ofp.instruction.instruction.unpack)
         return obj
@@ -10223,6 +11017,7 @@ class flow_add(flow_mod):
         if self.out_port != other.out_port: return False
         if self.out_group != other.out_group: return False
         if self.flags != other.flags: return False
+        if self.importance != other.importance: return False
         if self.match != other.match: return False
         if self.instructions != other.instructions: return False
         return True
@@ -10268,6 +11063,9 @@ class flow_add(flow_mod):
                 q.text("flags = ");
                 q.text("%#x" % self.flags)
                 q.text(","); q.breakable()
+                q.text("importance = ");
+                q.text("%#x" % self.importance)
+                q.text(","); q.breakable()
                 q.text("match = ");
                 q.pp(self.match)
                 q.text(","); q.breakable()
@@ -10279,11 +11077,11 @@ class flow_add(flow_mod):
 flow_mod.subtypes[0] = flow_add
 
 class flow_delete(flow_mod):
-    version = 4
+    version = 6
     type = 14
     _command = 3
 
-    def __init__(self, xid=None, cookie=None, cookie_mask=None, table_id=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, out_group=None, flags=None, match=None, instructions=None):
+    def __init__(self, xid=None, cookie=None, cookie_mask=None, table_id=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, out_group=None, flags=None, importance=None, match=None, instructions=None):
         if xid != None:
             self.xid = xid
         else:
@@ -10328,6 +11126,10 @@ class flow_delete(flow_mod):
             self.flags = flags
         else:
             self.flags = 0
+        if importance != None:
+            self.importance = importance
+        else:
+            self.importance = 0
         if match != None:
             self.match = match
         else:
@@ -10355,7 +11157,7 @@ class flow_delete(flow_mod):
         packed.append(util.pack_port_no(self.out_port))
         packed.append(struct.pack("!L", self.out_group))
         packed.append(struct.pack("!H", self.flags))
-        packed.append('\x00' * 2)
+        packed.append(struct.pack("!H", self.importance))
         packed.append(self.match.pack())
         packed.append(loxi.generic_util.pack_list(self.instructions))
         length = sum([len(x) for x in packed])
@@ -10366,7 +11168,7 @@ class flow_delete(flow_mod):
     def unpack(reader):
         obj = flow_delete()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 14)
         _length = reader.read("!H")[0]
@@ -10385,7 +11187,7 @@ class flow_delete(flow_mod):
         obj.out_port = util.unpack_port_no(reader)
         obj.out_group = reader.read("!L")[0]
         obj.flags = reader.read("!H")[0]
-        reader.skip(2)
+        obj.importance = reader.read("!H")[0]
         obj.match = ofp.match.unpack(reader)
         obj.instructions = loxi.generic_util.unpack_list(reader, ofp.instruction.instruction.unpack)
         return obj
@@ -10403,6 +11205,7 @@ class flow_delete(flow_mod):
         if self.out_port != other.out_port: return False
         if self.out_group != other.out_group: return False
         if self.flags != other.flags: return False
+        if self.importance != other.importance: return False
         if self.match != other.match: return False
         if self.instructions != other.instructions: return False
         return True
@@ -10448,6 +11251,9 @@ class flow_delete(flow_mod):
                 q.text("flags = ");
                 q.text("%#x" % self.flags)
                 q.text(","); q.breakable()
+                q.text("importance = ");
+                q.text("%#x" % self.importance)
+                q.text(","); q.breakable()
                 q.text("match = ");
                 q.pp(self.match)
                 q.text(","); q.breakable()
@@ -10459,11 +11265,11 @@ class flow_delete(flow_mod):
 flow_mod.subtypes[3] = flow_delete
 
 class flow_delete_strict(flow_mod):
-    version = 4
+    version = 6
     type = 14
     _command = 4
 
-    def __init__(self, xid=None, cookie=None, cookie_mask=None, table_id=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, out_group=None, flags=None, match=None, instructions=None):
+    def __init__(self, xid=None, cookie=None, cookie_mask=None, table_id=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, out_group=None, flags=None, importance=None, match=None, instructions=None):
         if xid != None:
             self.xid = xid
         else:
@@ -10508,6 +11314,10 @@ class flow_delete_strict(flow_mod):
             self.flags = flags
         else:
             self.flags = 0
+        if importance != None:
+            self.importance = importance
+        else:
+            self.importance = 0
         if match != None:
             self.match = match
         else:
@@ -10535,7 +11345,7 @@ class flow_delete_strict(flow_mod):
         packed.append(util.pack_port_no(self.out_port))
         packed.append(struct.pack("!L", self.out_group))
         packed.append(struct.pack("!H", self.flags))
-        packed.append('\x00' * 2)
+        packed.append(struct.pack("!H", self.importance))
         packed.append(self.match.pack())
         packed.append(loxi.generic_util.pack_list(self.instructions))
         length = sum([len(x) for x in packed])
@@ -10546,7 +11356,7 @@ class flow_delete_strict(flow_mod):
     def unpack(reader):
         obj = flow_delete_strict()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 14)
         _length = reader.read("!H")[0]
@@ -10565,7 +11375,7 @@ class flow_delete_strict(flow_mod):
         obj.out_port = util.unpack_port_no(reader)
         obj.out_group = reader.read("!L")[0]
         obj.flags = reader.read("!H")[0]
-        reader.skip(2)
+        obj.importance = reader.read("!H")[0]
         obj.match = ofp.match.unpack(reader)
         obj.instructions = loxi.generic_util.unpack_list(reader, ofp.instruction.instruction.unpack)
         return obj
@@ -10583,6 +11393,7 @@ class flow_delete_strict(flow_mod):
         if self.out_port != other.out_port: return False
         if self.out_group != other.out_group: return False
         if self.flags != other.flags: return False
+        if self.importance != other.importance: return False
         if self.match != other.match: return False
         if self.instructions != other.instructions: return False
         return True
@@ -10628,6 +11439,9 @@ class flow_delete_strict(flow_mod):
                 q.text("flags = ");
                 q.text("%#x" % self.flags)
                 q.text(","); q.breakable()
+                q.text("importance = ");
+                q.text("%#x" % self.importance)
+                q.text(","); q.breakable()
                 q.text("match = ");
                 q.pp(self.match)
                 q.text(","); q.breakable()
@@ -10638,8 +11452,222 @@ class flow_delete_strict(flow_mod):
 
 flow_mod.subtypes[4] = flow_delete_strict
 
+class flow_lightweight_stats_reply(stats_reply):
+    version = 6
+    type = 19
+    stats_type = 17
+
+    def __init__(self, xid=None, flags=None, entries=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if flags != None:
+            self.flags = flags
+        else:
+            self.flags = 0
+        if entries != None:
+            self.entries = entries
+        else:
+            self.entries = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.stats_type))
+        packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
+        packed.append(loxi.generic_util.pack_list(self.entries))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = flow_lightweight_stats_reply()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 19)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        _stats_type = reader.read("!H")[0]
+        assert(_stats_type == 17)
+        obj.flags = reader.read("!H")[0]
+        reader.skip(4)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.flow_lightweight_stats_entry.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.flags != other.flags: return False
+        if self.entries != other.entries: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("flow_lightweight_stats_reply {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
+                q.text(","); q.breakable()
+                q.text("entries = ");
+                q.pp(self.entries)
+            q.breakable()
+        q.text('}')
+
+stats_reply.subtypes[17] = flow_lightweight_stats_reply
+
+class flow_lightweight_stats_request(stats_request):
+    version = 6
+    type = 18
+    stats_type = 17
+
+    def __init__(self, xid=None, flags=None, table_id=None, out_port=None, out_group=None, cookie=None, cookie_mask=None, match=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if flags != None:
+            self.flags = flags
+        else:
+            self.flags = 0
+        if table_id != None:
+            self.table_id = table_id
+        else:
+            self.table_id = 0
+        if out_port != None:
+            self.out_port = out_port
+        else:
+            self.out_port = 0
+        if out_group != None:
+            self.out_group = out_group
+        else:
+            self.out_group = 0
+        if cookie != None:
+            self.cookie = cookie
+        else:
+            self.cookie = 0
+        if cookie_mask != None:
+            self.cookie_mask = cookie_mask
+        else:
+            self.cookie_mask = 0
+        if match != None:
+            self.match = match
+        else:
+            self.match = ofp.match()
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.stats_type))
+        packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
+        packed.append(struct.pack("!B", self.table_id))
+        packed.append('\x00' * 3)
+        packed.append(util.pack_port_no(self.out_port))
+        packed.append(struct.pack("!L", self.out_group))
+        packed.append('\x00' * 4)
+        packed.append(struct.pack("!Q", self.cookie))
+        packed.append(struct.pack("!Q", self.cookie_mask))
+        packed.append(self.match.pack())
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = flow_lightweight_stats_request()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 18)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        _stats_type = reader.read("!H")[0]
+        assert(_stats_type == 17)
+        obj.flags = reader.read("!H")[0]
+        reader.skip(4)
+        obj.table_id = reader.read("!B")[0]
+        reader.skip(3)
+        obj.out_port = util.unpack_port_no(reader)
+        obj.out_group = reader.read("!L")[0]
+        reader.skip(4)
+        obj.cookie = reader.read("!Q")[0]
+        obj.cookie_mask = reader.read("!Q")[0]
+        obj.match = ofp.match.unpack(reader)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.flags != other.flags: return False
+        if self.table_id != other.table_id: return False
+        if self.out_port != other.out_port: return False
+        if self.out_group != other.out_group: return False
+        if self.cookie != other.cookie: return False
+        if self.cookie_mask != other.cookie_mask: return False
+        if self.match != other.match: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("flow_lightweight_stats_request {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
+                q.text(","); q.breakable()
+                q.text("table_id = ");
+                q.text("%#x" % self.table_id)
+                q.text(","); q.breakable()
+                q.text("out_port = ");
+                q.text(util.pretty_port(self.out_port))
+                q.text(","); q.breakable()
+                q.text("out_group = ");
+                q.text("%#x" % self.out_group)
+                q.text(","); q.breakable()
+                q.text("cookie = ");
+                q.text("%#x" % self.cookie)
+                q.text(","); q.breakable()
+                q.text("cookie_mask = ");
+                q.text("%#x" % self.cookie_mask)
+                q.text(","); q.breakable()
+                q.text("match = ");
+                q.pp(self.match)
+            q.breakable()
+        q.text('}')
+
+stats_request.subtypes[17] = flow_lightweight_stats_request
+
 class flow_mod_failed_error_msg(error_msg):
-    version = 4
+    version = 6
     type = 1
     err_type = 5
 
@@ -10675,7 +11703,7 @@ class flow_mod_failed_error_msg(error_msg):
     def unpack(reader):
         obj = flow_mod_failed_error_msg()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 1)
         _length = reader.read("!H")[0]
@@ -10717,11 +11745,11 @@ class flow_mod_failed_error_msg(error_msg):
 error_msg.subtypes[5] = flow_mod_failed_error_msg
 
 class flow_modify(flow_mod):
-    version = 4
+    version = 6
     type = 14
     _command = 1
 
-    def __init__(self, xid=None, cookie=None, cookie_mask=None, table_id=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, out_group=None, flags=None, match=None, instructions=None):
+    def __init__(self, xid=None, cookie=None, cookie_mask=None, table_id=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, out_group=None, flags=None, importance=None, match=None, instructions=None):
         if xid != None:
             self.xid = xid
         else:
@@ -10766,6 +11794,10 @@ class flow_modify(flow_mod):
             self.flags = flags
         else:
             self.flags = 0
+        if importance != None:
+            self.importance = importance
+        else:
+            self.importance = 0
         if match != None:
             self.match = match
         else:
@@ -10793,7 +11825,7 @@ class flow_modify(flow_mod):
         packed.append(util.pack_port_no(self.out_port))
         packed.append(struct.pack("!L", self.out_group))
         packed.append(struct.pack("!H", self.flags))
-        packed.append('\x00' * 2)
+        packed.append(struct.pack("!H", self.importance))
         packed.append(self.match.pack())
         packed.append(loxi.generic_util.pack_list(self.instructions))
         length = sum([len(x) for x in packed])
@@ -10804,7 +11836,7 @@ class flow_modify(flow_mod):
     def unpack(reader):
         obj = flow_modify()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 14)
         _length = reader.read("!H")[0]
@@ -10823,7 +11855,7 @@ class flow_modify(flow_mod):
         obj.out_port = util.unpack_port_no(reader)
         obj.out_group = reader.read("!L")[0]
         obj.flags = reader.read("!H")[0]
-        reader.skip(2)
+        obj.importance = reader.read("!H")[0]
         obj.match = ofp.match.unpack(reader)
         obj.instructions = loxi.generic_util.unpack_list(reader, ofp.instruction.instruction.unpack)
         return obj
@@ -10841,6 +11873,7 @@ class flow_modify(flow_mod):
         if self.out_port != other.out_port: return False
         if self.out_group != other.out_group: return False
         if self.flags != other.flags: return False
+        if self.importance != other.importance: return False
         if self.match != other.match: return False
         if self.instructions != other.instructions: return False
         return True
@@ -10886,6 +11919,9 @@ class flow_modify(flow_mod):
                 q.text("flags = ");
                 q.text("%#x" % self.flags)
                 q.text(","); q.breakable()
+                q.text("importance = ");
+                q.text("%#x" % self.importance)
+                q.text(","); q.breakable()
                 q.text("match = ");
                 q.pp(self.match)
                 q.text(","); q.breakable()
@@ -10897,11 +11933,11 @@ class flow_modify(flow_mod):
 flow_mod.subtypes[1] = flow_modify
 
 class flow_modify_strict(flow_mod):
-    version = 4
+    version = 6
     type = 14
     _command = 2
 
-    def __init__(self, xid=None, cookie=None, cookie_mask=None, table_id=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, out_group=None, flags=None, match=None, instructions=None):
+    def __init__(self, xid=None, cookie=None, cookie_mask=None, table_id=None, idle_timeout=None, hard_timeout=None, priority=None, buffer_id=None, out_port=None, out_group=None, flags=None, importance=None, match=None, instructions=None):
         if xid != None:
             self.xid = xid
         else:
@@ -10946,6 +11982,10 @@ class flow_modify_strict(flow_mod):
             self.flags = flags
         else:
             self.flags = 0
+        if importance != None:
+            self.importance = importance
+        else:
+            self.importance = 0
         if match != None:
             self.match = match
         else:
@@ -10973,7 +12013,7 @@ class flow_modify_strict(flow_mod):
         packed.append(util.pack_port_no(self.out_port))
         packed.append(struct.pack("!L", self.out_group))
         packed.append(struct.pack("!H", self.flags))
-        packed.append('\x00' * 2)
+        packed.append(struct.pack("!H", self.importance))
         packed.append(self.match.pack())
         packed.append(loxi.generic_util.pack_list(self.instructions))
         length = sum([len(x) for x in packed])
@@ -10984,7 +12024,7 @@ class flow_modify_strict(flow_mod):
     def unpack(reader):
         obj = flow_modify_strict()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 14)
         _length = reader.read("!H")[0]
@@ -11003,7 +12043,7 @@ class flow_modify_strict(flow_mod):
         obj.out_port = util.unpack_port_no(reader)
         obj.out_group = reader.read("!L")[0]
         obj.flags = reader.read("!H")[0]
-        reader.skip(2)
+        obj.importance = reader.read("!H")[0]
         obj.match = ofp.match.unpack(reader)
         obj.instructions = loxi.generic_util.unpack_list(reader, ofp.instruction.instruction.unpack)
         return obj
@@ -11021,6 +12061,7 @@ class flow_modify_strict(flow_mod):
         if self.out_port != other.out_port: return False
         if self.out_group != other.out_group: return False
         if self.flags != other.flags: return False
+        if self.importance != other.importance: return False
         if self.match != other.match: return False
         if self.instructions != other.instructions: return False
         return True
@@ -11066,6 +12107,9 @@ class flow_modify_strict(flow_mod):
                 q.text("flags = ");
                 q.text("%#x" % self.flags)
                 q.text(","); q.breakable()
+                q.text("importance = ");
+                q.text("%#x" % self.importance)
+                q.text(","); q.breakable()
                 q.text("match = ");
                 q.pp(self.match)
                 q.text(","); q.breakable()
@@ -11076,59 +12120,24 @@ class flow_modify_strict(flow_mod):
 
 flow_mod.subtypes[2] = flow_modify_strict
 
-class flow_removed(message):
-    version = 4
-    type = 11
+class flow_monitor_failed_error_msg(error_msg):
+    version = 6
+    type = 1
+    err_type = 16
 
-    def __init__(self, xid=None, cookie=None, priority=None, reason=None, table_id=None, duration_sec=None, duration_nsec=None, idle_timeout=None, hard_timeout=None, packet_count=None, byte_count=None, match=None):
+    def __init__(self, xid=None, code=None, data=None):
         if xid != None:
             self.xid = xid
         else:
             self.xid = None
-        if cookie != None:
-            self.cookie = cookie
+        if code != None:
+            self.code = code
         else:
-            self.cookie = 0
-        if priority != None:
-            self.priority = priority
+            self.code = 0
+        if data != None:
+            self.data = data
         else:
-            self.priority = 0
-        if reason != None:
-            self.reason = reason
-        else:
-            self.reason = 0
-        if table_id != None:
-            self.table_id = table_id
-        else:
-            self.table_id = 0
-        if duration_sec != None:
-            self.duration_sec = duration_sec
-        else:
-            self.duration_sec = 0
-        if duration_nsec != None:
-            self.duration_nsec = duration_nsec
-        else:
-            self.duration_nsec = 0
-        if idle_timeout != None:
-            self.idle_timeout = idle_timeout
-        else:
-            self.idle_timeout = 0
-        if hard_timeout != None:
-            self.hard_timeout = hard_timeout
-        else:
-            self.hard_timeout = 0
-        if packet_count != None:
-            self.packet_count = packet_count
-        else:
-            self.packet_count = 0
-        if byte_count != None:
-            self.byte_count = byte_count
-        else:
-            self.byte_count = 0
-        if match != None:
-            self.match = match
-        else:
-            self.match = ofp.match()
+            self.data = ''
         return
 
     def pack(self):
@@ -11137,17 +12146,275 @@ class flow_removed(message):
         packed.append(struct.pack("!B", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
-        packed.append(struct.pack("!Q", self.cookie))
-        packed.append(struct.pack("!H", self.priority))
-        packed.append(struct.pack("!B", self.reason))
+        packed.append(struct.pack("!H", self.err_type))
+        packed.append(struct.pack("!H", self.code))
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = flow_monitor_failed_error_msg()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 1)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        _err_type = reader.read("!H")[0]
+        assert(_err_type == 16)
+        obj.code = reader.read("!H")[0]
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.code != other.code: return False
+        if self.data != other.data: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("flow_monitor_failed_error_msg {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("code = ");
+                q.text("%#x" % self.code)
+                q.text(","); q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
+            q.breakable()
+        q.text('}')
+
+error_msg.subtypes[16] = flow_monitor_failed_error_msg
+
+class flow_monitor_reply(stats_reply):
+    version = 6
+    type = 19
+    stats_type = 16
+
+    def __init__(self, xid=None, flags=None, entries=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if flags != None:
+            self.flags = flags
+        else:
+            self.flags = 0
+        if entries != None:
+            self.entries = entries
+        else:
+            self.entries = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.stats_type))
+        packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
+        packed.append(loxi.generic_util.pack_list(self.entries))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = flow_monitor_reply()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 19)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        _stats_type = reader.read("!H")[0]
+        assert(_stats_type == 16)
+        obj.flags = reader.read("!H")[0]
+        reader.skip(4)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.flow_monitor_reply_entry.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.flags != other.flags: return False
+        if self.entries != other.entries: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("flow_monitor_reply {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
+                q.text(","); q.breakable()
+                q.text("entries = ");
+                q.pp(self.entries)
+            q.breakable()
+        q.text('}')
+
+stats_reply.subtypes[16] = flow_monitor_reply
+
+class flow_monitor_request(stats_request):
+    version = 6
+    type = 18
+    stats_type = 16
+
+    def __init__(self, xid=None, flags=None, entries=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if flags != None:
+            self.flags = flags
+        else:
+            self.flags = 0
+        if entries != None:
+            self.entries = entries
+        else:
+            self.entries = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.stats_type))
+        packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
+        packed.append(loxi.generic_util.pack_list(self.entries))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = flow_monitor_request()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 18)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        _stats_type = reader.read("!H")[0]
+        assert(_stats_type == 16)
+        obj.flags = reader.read("!H")[0]
+        reader.skip(4)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.flow_monitor_entry.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.flags != other.flags: return False
+        if self.entries != other.entries: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("flow_monitor_request {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
+                q.text(","); q.breakable()
+                q.text("entries = ");
+                q.pp(self.entries)
+            q.breakable()
+        q.text('}')
+
+stats_request.subtypes[16] = flow_monitor_request
+
+class flow_removed(message):
+    version = 6
+    type = 11
+
+    def __init__(self, xid=None, table_id=None, reason=None, priority=None, idle_timeout=None, hard_timeout=None, cookie=None, match=None, stats=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if table_id != None:
+            self.table_id = table_id
+        else:
+            self.table_id = 0
+        if reason != None:
+            self.reason = reason
+        else:
+            self.reason = 0
+        if priority != None:
+            self.priority = priority
+        else:
+            self.priority = 0
+        if idle_timeout != None:
+            self.idle_timeout = idle_timeout
+        else:
+            self.idle_timeout = 0
+        if hard_timeout != None:
+            self.hard_timeout = hard_timeout
+        else:
+            self.hard_timeout = 0
+        if cookie != None:
+            self.cookie = cookie
+        else:
+            self.cookie = 0
+        if match != None:
+            self.match = match
+        else:
+            self.match = ofp.match()
+        if stats != None:
+            self.stats = stats
+        else:
+            self.stats = ofp.stat()
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!B", self.table_id))
-        packed.append(struct.pack("!L", self.duration_sec))
-        packed.append(struct.pack("!L", self.duration_nsec))
+        packed.append(struct.pack("!B", self.reason))
+        packed.append(struct.pack("!H", self.priority))
         packed.append(struct.pack("!H", self.idle_timeout))
         packed.append(struct.pack("!H", self.hard_timeout))
-        packed.append(struct.pack("!Q", self.packet_count))
-        packed.append(struct.pack("!Q", self.byte_count))
+        packed.append(struct.pack("!Q", self.cookie))
         packed.append(self.match.pack())
+        packed.append(self.stats.pack())
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -11156,40 +12423,34 @@ class flow_removed(message):
     def unpack(reader):
         obj = flow_removed()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 11)
         _length = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.xid = reader.read("!L")[0]
-        obj.cookie = reader.read("!Q")[0]
-        obj.priority = reader.read("!H")[0]
-        obj.reason = reader.read("!B")[0]
         obj.table_id = reader.read("!B")[0]
-        obj.duration_sec = reader.read("!L")[0]
-        obj.duration_nsec = reader.read("!L")[0]
+        obj.reason = reader.read("!B")[0]
+        obj.priority = reader.read("!H")[0]
         obj.idle_timeout = reader.read("!H")[0]
         obj.hard_timeout = reader.read("!H")[0]
-        obj.packet_count = reader.read("!Q")[0]
-        obj.byte_count = reader.read("!Q")[0]
+        obj.cookie = reader.read("!Q")[0]
         obj.match = ofp.match.unpack(reader)
+        obj.stats = ofp.stat.unpack(reader)
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
         if self.xid != other.xid: return False
-        if self.cookie != other.cookie: return False
-        if self.priority != other.priority: return False
-        if self.reason != other.reason: return False
         if self.table_id != other.table_id: return False
-        if self.duration_sec != other.duration_sec: return False
-        if self.duration_nsec != other.duration_nsec: return False
+        if self.reason != other.reason: return False
+        if self.priority != other.priority: return False
         if self.idle_timeout != other.idle_timeout: return False
         if self.hard_timeout != other.hard_timeout: return False
-        if self.packet_count != other.packet_count: return False
-        if self.byte_count != other.byte_count: return False
+        if self.cookie != other.cookie: return False
         if self.match != other.match: return False
+        if self.stats != other.stats: return False
         return True
 
     def pretty_print(self, q):
@@ -11203,23 +12464,14 @@ class flow_removed(message):
                 else:
                     q.text('None')
                 q.text(","); q.breakable()
-                q.text("cookie = ");
-                q.text("%#x" % self.cookie)
-                q.text(","); q.breakable()
-                q.text("priority = ");
-                q.text("%#x" % self.priority)
+                q.text("table_id = ");
+                q.text("%#x" % self.table_id)
                 q.text(","); q.breakable()
                 q.text("reason = ");
                 q.text("%#x" % self.reason)
                 q.text(","); q.breakable()
-                q.text("table_id = ");
-                q.text("%#x" % self.table_id)
-                q.text(","); q.breakable()
-                q.text("duration_sec = ");
-                q.text("%#x" % self.duration_sec)
-                q.text(","); q.breakable()
-                q.text("duration_nsec = ");
-                q.text("%#x" % self.duration_nsec)
+                q.text("priority = ");
+                q.text("%#x" % self.priority)
                 q.text(","); q.breakable()
                 q.text("idle_timeout = ");
                 q.text("%#x" % self.idle_timeout)
@@ -11227,21 +12479,21 @@ class flow_removed(message):
                 q.text("hard_timeout = ");
                 q.text("%#x" % self.hard_timeout)
                 q.text(","); q.breakable()
-                q.text("packet_count = ");
-                q.text("%#x" % self.packet_count)
-                q.text(","); q.breakable()
-                q.text("byte_count = ");
-                q.text("%#x" % self.byte_count)
+                q.text("cookie = ");
+                q.text("%#x" % self.cookie)
                 q.text(","); q.breakable()
                 q.text("match = ");
                 q.pp(self.match)
+                q.text(","); q.breakable()
+                q.text("stats = ");
+                q.pp(self.stats)
             q.breakable()
         q.text('}')
 
 message.subtypes[11] = flow_removed
 
 class flow_stats_reply(stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 1
 
@@ -11278,7 +12530,7 @@ class flow_stats_reply(stats_reply):
     def unpack(reader):
         obj = flow_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -11321,7 +12573,7 @@ class flow_stats_reply(stats_reply):
 stats_reply.subtypes[1] = flow_stats_reply
 
 class flow_stats_request(stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 1
 
@@ -11385,7 +12637,7 @@ class flow_stats_request(stats_request):
     def unpack(reader):
         obj = flow_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -11455,7 +12707,7 @@ class flow_stats_request(stats_request):
 stats_request.subtypes[1] = flow_stats_request
 
 class get_config_reply(message):
-    version = 4
+    version = 6
     type = 8
 
     def __init__(self, xid=None, flags=None, miss_send_len=None):
@@ -11489,7 +12741,7 @@ class get_config_reply(message):
     def unpack(reader):
         obj = get_config_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 8)
         _length = reader.read("!H")[0]
@@ -11529,7 +12781,7 @@ class get_config_reply(message):
 message.subtypes[8] = get_config_reply
 
 class get_config_request(message):
-    version = 4
+    version = 6
     type = 7
 
     def __init__(self, xid=None):
@@ -11553,7 +12805,7 @@ class get_config_request(message):
     def unpack(reader):
         obj = get_config_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 7)
         _length = reader.read("!H")[0]
@@ -11585,10 +12837,10 @@ message.subtypes[7] = get_config_request
 class group_mod(message):
     subtypes = {}
 
-    version = 4
+    version = 6
     type = 15
 
-    def __init__(self, xid=None, command=None, group_type=None, group_id=None, buckets=None):
+    def __init__(self, xid=None, command=None, group_type=None, group_id=None, command_bucket_id=None, buckets=None, properties=None):
         if xid != None:
             self.xid = xid
         else:
@@ -11605,10 +12857,18 @@ class group_mod(message):
             self.group_id = group_id
         else:
             self.group_id = 0
+        if command_bucket_id != None:
+            self.command_bucket_id = command_bucket_id
+        else:
+            self.command_bucket_id = 0
         if buckets != None:
             self.buckets = buckets
         else:
             self.buckets = []
+        if properties != None:
+            self.properties = properties
+        else:
+            self.properties = []
         return
 
     def pack(self):
@@ -11621,7 +12881,12 @@ class group_mod(message):
         packed.append(struct.pack("!B", self.group_type))
         packed.append('\x00' * 1)
         packed.append(struct.pack("!L", self.group_id))
+        packed.append(struct.pack("!H", 0)) # placeholder for bucket_array_len at index 8
+        packed.append('\x00' * 2)
+        packed.append(struct.pack("!L", self.command_bucket_id))
         packed.append(loxi.generic_util.pack_list(self.buckets))
+        packed[8] = struct.pack("!H", len(packed[-1]))
+        packed.append(loxi.generic_util.pack_list(self.properties))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -11635,7 +12900,7 @@ class group_mod(message):
 
         obj = group_mod()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 15)
         _length = reader.read("!H")[0]
@@ -11646,7 +12911,11 @@ class group_mod(message):
         obj.group_type = reader.read("!B")[0]
         reader.skip(1)
         obj.group_id = reader.read("!L")[0]
-        obj.buckets = loxi.generic_util.unpack_list(reader, ofp.common.bucket.unpack)
+        _bucket_array_len = reader.read("!H")[0]
+        reader.skip(2)
+        obj.command_bucket_id = reader.read("!L")[0]
+        obj.buckets = loxi.generic_util.unpack_list(reader.slice(_bucket_array_len), ofp.common.bucket.unpack)
+        obj.properties = loxi.generic_util.unpack_list(reader, ofp.common.group_prop.unpack)
         return obj
 
     def __eq__(self, other):
@@ -11655,7 +12924,9 @@ class group_mod(message):
         if self.command != other.command: return False
         if self.group_type != other.group_type: return False
         if self.group_id != other.group_id: return False
+        if self.command_bucket_id != other.command_bucket_id: return False
         if self.buckets != other.buckets: return False
+        if self.properties != other.properties: return False
         return True
 
     def pretty_print(self, q):
@@ -11675,19 +12946,25 @@ class group_mod(message):
                 q.text("group_id = ");
                 q.text("%#x" % self.group_id)
                 q.text(","); q.breakable()
+                q.text("command_bucket_id = ");
+                q.text("%#x" % self.command_bucket_id)
+                q.text(","); q.breakable()
                 q.text("buckets = ");
                 q.pp(self.buckets)
+                q.text(","); q.breakable()
+                q.text("properties = ");
+                q.pp(self.properties)
             q.breakable()
         q.text('}')
 
 message.subtypes[15] = group_mod
 
 class group_add(group_mod):
-    version = 4
+    version = 6
     type = 15
     command = 0
 
-    def __init__(self, xid=None, group_type=None, group_id=None, buckets=None):
+    def __init__(self, xid=None, group_type=None, group_id=None, command_bucket_id=None, buckets=None, properties=None):
         if xid != None:
             self.xid = xid
         else:
@@ -11700,10 +12977,18 @@ class group_add(group_mod):
             self.group_id = group_id
         else:
             self.group_id = 0
+        if command_bucket_id != None:
+            self.command_bucket_id = command_bucket_id
+        else:
+            self.command_bucket_id = 0
         if buckets != None:
             self.buckets = buckets
         else:
             self.buckets = []
+        if properties != None:
+            self.properties = properties
+        else:
+            self.properties = []
         return
 
     def pack(self):
@@ -11716,7 +13001,12 @@ class group_add(group_mod):
         packed.append(struct.pack("!B", self.group_type))
         packed.append('\x00' * 1)
         packed.append(struct.pack("!L", self.group_id))
+        packed.append(struct.pack("!H", 0)) # placeholder for bucket_array_len at index 8
+        packed.append('\x00' * 2)
+        packed.append(struct.pack("!L", self.command_bucket_id))
         packed.append(loxi.generic_util.pack_list(self.buckets))
+        packed[8] = struct.pack("!H", len(packed[-1]))
+        packed.append(loxi.generic_util.pack_list(self.properties))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -11725,7 +13015,7 @@ class group_add(group_mod):
     def unpack(reader):
         obj = group_add()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 15)
         _length = reader.read("!H")[0]
@@ -11737,7 +13027,11 @@ class group_add(group_mod):
         obj.group_type = reader.read("!B")[0]
         reader.skip(1)
         obj.group_id = reader.read("!L")[0]
-        obj.buckets = loxi.generic_util.unpack_list(reader, ofp.common.bucket.unpack)
+        _bucket_array_len = reader.read("!H")[0]
+        reader.skip(2)
+        obj.command_bucket_id = reader.read("!L")[0]
+        obj.buckets = loxi.generic_util.unpack_list(reader.slice(_bucket_array_len), ofp.common.bucket.unpack)
+        obj.properties = loxi.generic_util.unpack_list(reader, ofp.common.group_prop.unpack)
         return obj
 
     def __eq__(self, other):
@@ -11745,7 +13039,9 @@ class group_add(group_mod):
         if self.xid != other.xid: return False
         if self.group_type != other.group_type: return False
         if self.group_id != other.group_id: return False
+        if self.command_bucket_id != other.command_bucket_id: return False
         if self.buckets != other.buckets: return False
+        if self.properties != other.properties: return False
         return True
 
     def pretty_print(self, q):
@@ -11765,19 +13061,25 @@ class group_add(group_mod):
                 q.text("group_id = ");
                 q.text("%#x" % self.group_id)
                 q.text(","); q.breakable()
+                q.text("command_bucket_id = ");
+                q.text("%#x" % self.command_bucket_id)
+                q.text(","); q.breakable()
                 q.text("buckets = ");
                 q.pp(self.buckets)
+                q.text(","); q.breakable()
+                q.text("properties = ");
+                q.pp(self.properties)
             q.breakable()
         q.text('}')
 
 group_mod.subtypes[0] = group_add
 
 class group_delete(group_mod):
-    version = 4
+    version = 6
     type = 15
     command = 2
 
-    def __init__(self, xid=None, group_type=None, group_id=None, buckets=None):
+    def __init__(self, xid=None, group_type=None, group_id=None, command_bucket_id=None, buckets=None, properties=None):
         if xid != None:
             self.xid = xid
         else:
@@ -11790,10 +13092,18 @@ class group_delete(group_mod):
             self.group_id = group_id
         else:
             self.group_id = 0
+        if command_bucket_id != None:
+            self.command_bucket_id = command_bucket_id
+        else:
+            self.command_bucket_id = 0
         if buckets != None:
             self.buckets = buckets
         else:
             self.buckets = []
+        if properties != None:
+            self.properties = properties
+        else:
+            self.properties = []
         return
 
     def pack(self):
@@ -11806,7 +13116,12 @@ class group_delete(group_mod):
         packed.append(struct.pack("!B", self.group_type))
         packed.append('\x00' * 1)
         packed.append(struct.pack("!L", self.group_id))
+        packed.append(struct.pack("!H", 0)) # placeholder for bucket_array_len at index 8
+        packed.append('\x00' * 2)
+        packed.append(struct.pack("!L", self.command_bucket_id))
         packed.append(loxi.generic_util.pack_list(self.buckets))
+        packed[8] = struct.pack("!H", len(packed[-1]))
+        packed.append(loxi.generic_util.pack_list(self.properties))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -11815,7 +13130,7 @@ class group_delete(group_mod):
     def unpack(reader):
         obj = group_delete()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 15)
         _length = reader.read("!H")[0]
@@ -11827,7 +13142,11 @@ class group_delete(group_mod):
         obj.group_type = reader.read("!B")[0]
         reader.skip(1)
         obj.group_id = reader.read("!L")[0]
-        obj.buckets = loxi.generic_util.unpack_list(reader, ofp.common.bucket.unpack)
+        _bucket_array_len = reader.read("!H")[0]
+        reader.skip(2)
+        obj.command_bucket_id = reader.read("!L")[0]
+        obj.buckets = loxi.generic_util.unpack_list(reader.slice(_bucket_array_len), ofp.common.bucket.unpack)
+        obj.properties = loxi.generic_util.unpack_list(reader, ofp.common.group_prop.unpack)
         return obj
 
     def __eq__(self, other):
@@ -11835,7 +13154,9 @@ class group_delete(group_mod):
         if self.xid != other.xid: return False
         if self.group_type != other.group_type: return False
         if self.group_id != other.group_id: return False
+        if self.command_bucket_id != other.command_bucket_id: return False
         if self.buckets != other.buckets: return False
+        if self.properties != other.properties: return False
         return True
 
     def pretty_print(self, q):
@@ -11855,15 +13176,21 @@ class group_delete(group_mod):
                 q.text("group_id = ");
                 q.text("%#x" % self.group_id)
                 q.text(","); q.breakable()
+                q.text("command_bucket_id = ");
+                q.text("%#x" % self.command_bucket_id)
+                q.text(","); q.breakable()
                 q.text("buckets = ");
                 q.pp(self.buckets)
+                q.text(","); q.breakable()
+                q.text("properties = ");
+                q.pp(self.properties)
             q.breakable()
         q.text('}')
 
 group_mod.subtypes[2] = group_delete
 
 class group_desc_stats_reply(stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 7
 
@@ -11900,7 +13227,7 @@ class group_desc_stats_reply(stats_reply):
     def unpack(reader):
         obj = group_desc_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -11943,11 +13270,11 @@ class group_desc_stats_reply(stats_reply):
 stats_reply.subtypes[7] = group_desc_stats_reply
 
 class group_desc_stats_request(stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 7
 
-    def __init__(self, xid=None, flags=None):
+    def __init__(self, xid=None, flags=None, group_id=None):
         if xid != None:
             self.xid = xid
         else:
@@ -11956,6 +13283,10 @@ class group_desc_stats_request(stats_request):
             self.flags = flags
         else:
             self.flags = 0
+        if group_id != None:
+            self.group_id = group_id
+        else:
+            self.group_id = 0
         return
 
     def pack(self):
@@ -11967,6 +13298,8 @@ class group_desc_stats_request(stats_request):
         packed.append(struct.pack("!H", self.stats_type))
         packed.append(struct.pack("!H", self.flags))
         packed.append('\x00' * 4)
+        packed.append(struct.pack("!L", self.group_id))
+        packed.append('\x00' * 4)
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -11975,7 +13308,7 @@ class group_desc_stats_request(stats_request):
     def unpack(reader):
         obj = group_desc_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -11986,12 +13319,15 @@ class group_desc_stats_request(stats_request):
         assert(_stats_type == 7)
         obj.flags = reader.read("!H")[0]
         reader.skip(4)
+        obj.group_id = reader.read("!L")[0]
+        reader.skip(4)
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
         if self.xid != other.xid: return False
         if self.flags != other.flags: return False
+        if self.group_id != other.group_id: return False
         return True
 
     def pretty_print(self, q):
@@ -12007,13 +13343,16 @@ class group_desc_stats_request(stats_request):
                 q.text(","); q.breakable()
                 q.text("flags = ");
                 q.text("%#x" % self.flags)
+                q.text(","); q.breakable()
+                q.text("group_id = ");
+                q.text("%#x" % self.group_id)
             q.breakable()
         q.text('}')
 
 stats_request.subtypes[7] = group_desc_stats_request
 
 class group_features_stats_reply(stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 8
 
@@ -12095,7 +13434,7 @@ class group_features_stats_reply(stats_reply):
     def unpack(reader):
         obj = group_features_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -12183,7 +13522,7 @@ class group_features_stats_reply(stats_reply):
 stats_reply.subtypes[8] = group_features_stats_reply
 
 class group_features_stats_request(stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 8
 
@@ -12215,7 +13554,7 @@ class group_features_stats_request(stats_request):
     def unpack(reader):
         obj = group_features_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -12252,8 +13591,123 @@ class group_features_stats_request(stats_request):
 
 stats_request.subtypes[8] = group_features_stats_request
 
+class group_insert_bucket(group_mod):
+    version = 6
+    type = 15
+    command = 3
+
+    def __init__(self, xid=None, group_type=None, group_id=None, command_bucket_id=None, buckets=None, properties=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if group_type != None:
+            self.group_type = group_type
+        else:
+            self.group_type = 0
+        if group_id != None:
+            self.group_id = group_id
+        else:
+            self.group_id = 0
+        if command_bucket_id != None:
+            self.command_bucket_id = command_bucket_id
+        else:
+            self.command_bucket_id = 0
+        if buckets != None:
+            self.buckets = buckets
+        else:
+            self.buckets = []
+        if properties != None:
+            self.properties = properties
+        else:
+            self.properties = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.command))
+        packed.append(struct.pack("!B", self.group_type))
+        packed.append('\x00' * 1)
+        packed.append(struct.pack("!L", self.group_id))
+        packed.append(struct.pack("!H", 0)) # placeholder for bucket_array_len at index 8
+        packed.append('\x00' * 2)
+        packed.append(struct.pack("!L", self.command_bucket_id))
+        packed.append(loxi.generic_util.pack_list(self.buckets))
+        packed[8] = struct.pack("!H", len(packed[-1]))
+        packed.append(loxi.generic_util.pack_list(self.properties))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = group_insert_bucket()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 15)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        _command = reader.read("!H")[0]
+        assert(_command == 3)
+        obj.group_type = reader.read("!B")[0]
+        reader.skip(1)
+        obj.group_id = reader.read("!L")[0]
+        _bucket_array_len = reader.read("!H")[0]
+        reader.skip(2)
+        obj.command_bucket_id = reader.read("!L")[0]
+        obj.buckets = loxi.generic_util.unpack_list(reader.slice(_bucket_array_len), ofp.common.bucket.unpack)
+        obj.properties = loxi.generic_util.unpack_list(reader, ofp.common.group_prop.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.group_type != other.group_type: return False
+        if self.group_id != other.group_id: return False
+        if self.command_bucket_id != other.command_bucket_id: return False
+        if self.buckets != other.buckets: return False
+        if self.properties != other.properties: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("group_insert_bucket {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("group_type = ");
+                q.text("%#x" % self.group_type)
+                q.text(","); q.breakable()
+                q.text("group_id = ");
+                q.text("%#x" % self.group_id)
+                q.text(","); q.breakable()
+                q.text("command_bucket_id = ");
+                q.text("%#x" % self.command_bucket_id)
+                q.text(","); q.breakable()
+                q.text("buckets = ");
+                q.pp(self.buckets)
+                q.text(","); q.breakable()
+                q.text("properties = ");
+                q.pp(self.properties)
+            q.breakable()
+        q.text('}')
+
+group_mod.subtypes[3] = group_insert_bucket
+
 class group_mod_failed_error_msg(error_msg):
-    version = 4
+    version = 6
     type = 1
     err_type = 6
 
@@ -12289,7 +13743,7 @@ class group_mod_failed_error_msg(error_msg):
     def unpack(reader):
         obj = group_mod_failed_error_msg()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 1)
         _length = reader.read("!H")[0]
@@ -12331,11 +13785,11 @@ class group_mod_failed_error_msg(error_msg):
 error_msg.subtypes[6] = group_mod_failed_error_msg
 
 class group_modify(group_mod):
-    version = 4
+    version = 6
     type = 15
     command = 1
 
-    def __init__(self, xid=None, group_type=None, group_id=None, buckets=None):
+    def __init__(self, xid=None, group_type=None, group_id=None, command_bucket_id=None, buckets=None, properties=None):
         if xid != None:
             self.xid = xid
         else:
@@ -12348,10 +13802,18 @@ class group_modify(group_mod):
             self.group_id = group_id
         else:
             self.group_id = 0
+        if command_bucket_id != None:
+            self.command_bucket_id = command_bucket_id
+        else:
+            self.command_bucket_id = 0
         if buckets != None:
             self.buckets = buckets
         else:
             self.buckets = []
+        if properties != None:
+            self.properties = properties
+        else:
+            self.properties = []
         return
 
     def pack(self):
@@ -12364,7 +13826,12 @@ class group_modify(group_mod):
         packed.append(struct.pack("!B", self.group_type))
         packed.append('\x00' * 1)
         packed.append(struct.pack("!L", self.group_id))
+        packed.append(struct.pack("!H", 0)) # placeholder for bucket_array_len at index 8
+        packed.append('\x00' * 2)
+        packed.append(struct.pack("!L", self.command_bucket_id))
         packed.append(loxi.generic_util.pack_list(self.buckets))
+        packed[8] = struct.pack("!H", len(packed[-1]))
+        packed.append(loxi.generic_util.pack_list(self.properties))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -12373,7 +13840,7 @@ class group_modify(group_mod):
     def unpack(reader):
         obj = group_modify()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 15)
         _length = reader.read("!H")[0]
@@ -12385,7 +13852,11 @@ class group_modify(group_mod):
         obj.group_type = reader.read("!B")[0]
         reader.skip(1)
         obj.group_id = reader.read("!L")[0]
-        obj.buckets = loxi.generic_util.unpack_list(reader, ofp.common.bucket.unpack)
+        _bucket_array_len = reader.read("!H")[0]
+        reader.skip(2)
+        obj.command_bucket_id = reader.read("!L")[0]
+        obj.buckets = loxi.generic_util.unpack_list(reader.slice(_bucket_array_len), ofp.common.bucket.unpack)
+        obj.properties = loxi.generic_util.unpack_list(reader, ofp.common.group_prop.unpack)
         return obj
 
     def __eq__(self, other):
@@ -12393,7 +13864,9 @@ class group_modify(group_mod):
         if self.xid != other.xid: return False
         if self.group_type != other.group_type: return False
         if self.group_id != other.group_id: return False
+        if self.command_bucket_id != other.command_bucket_id: return False
         if self.buckets != other.buckets: return False
+        if self.properties != other.properties: return False
         return True
 
     def pretty_print(self, q):
@@ -12413,15 +13886,136 @@ class group_modify(group_mod):
                 q.text("group_id = ");
                 q.text("%#x" % self.group_id)
                 q.text(","); q.breakable()
+                q.text("command_bucket_id = ");
+                q.text("%#x" % self.command_bucket_id)
+                q.text(","); q.breakable()
                 q.text("buckets = ");
                 q.pp(self.buckets)
+                q.text(","); q.breakable()
+                q.text("properties = ");
+                q.pp(self.properties)
             q.breakable()
         q.text('}')
 
 group_mod.subtypes[1] = group_modify
 
+class group_remove_bucket(group_mod):
+    version = 6
+    type = 15
+    command = 5
+
+    def __init__(self, xid=None, group_type=None, group_id=None, command_bucket_id=None, buckets=None, properties=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if group_type != None:
+            self.group_type = group_type
+        else:
+            self.group_type = 0
+        if group_id != None:
+            self.group_id = group_id
+        else:
+            self.group_id = 0
+        if command_bucket_id != None:
+            self.command_bucket_id = command_bucket_id
+        else:
+            self.command_bucket_id = 0
+        if buckets != None:
+            self.buckets = buckets
+        else:
+            self.buckets = []
+        if properties != None:
+            self.properties = properties
+        else:
+            self.properties = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.command))
+        packed.append(struct.pack("!B", self.group_type))
+        packed.append('\x00' * 1)
+        packed.append(struct.pack("!L", self.group_id))
+        packed.append(struct.pack("!H", 0)) # placeholder for bucket_array_len at index 8
+        packed.append('\x00' * 2)
+        packed.append(struct.pack("!L", self.command_bucket_id))
+        packed.append(loxi.generic_util.pack_list(self.buckets))
+        packed[8] = struct.pack("!H", len(packed[-1]))
+        packed.append(loxi.generic_util.pack_list(self.properties))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = group_remove_bucket()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 15)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        _command = reader.read("!H")[0]
+        assert(_command == 5)
+        obj.group_type = reader.read("!B")[0]
+        reader.skip(1)
+        obj.group_id = reader.read("!L")[0]
+        _bucket_array_len = reader.read("!H")[0]
+        reader.skip(2)
+        obj.command_bucket_id = reader.read("!L")[0]
+        obj.buckets = loxi.generic_util.unpack_list(reader.slice(_bucket_array_len), ofp.common.bucket.unpack)
+        obj.properties = loxi.generic_util.unpack_list(reader, ofp.common.group_prop.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.group_type != other.group_type: return False
+        if self.group_id != other.group_id: return False
+        if self.command_bucket_id != other.command_bucket_id: return False
+        if self.buckets != other.buckets: return False
+        if self.properties != other.properties: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("group_remove_bucket {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("group_type = ");
+                q.text("%#x" % self.group_type)
+                q.text(","); q.breakable()
+                q.text("group_id = ");
+                q.text("%#x" % self.group_id)
+                q.text(","); q.breakable()
+                q.text("command_bucket_id = ");
+                q.text("%#x" % self.command_bucket_id)
+                q.text(","); q.breakable()
+                q.text("buckets = ");
+                q.pp(self.buckets)
+                q.text(","); q.breakable()
+                q.text("properties = ");
+                q.pp(self.properties)
+            q.breakable()
+        q.text('}')
+
+group_mod.subtypes[5] = group_remove_bucket
+
 class group_stats_reply(stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 6
 
@@ -12458,7 +14052,7 @@ class group_stats_reply(stats_reply):
     def unpack(reader):
         obj = group_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -12501,7 +14095,7 @@ class group_stats_reply(stats_reply):
 stats_reply.subtypes[6] = group_stats_reply
 
 class group_stats_request(stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 6
 
@@ -12539,7 +14133,7 @@ class group_stats_request(stats_request):
     def unpack(reader):
         obj = group_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -12583,7 +14177,7 @@ class group_stats_request(stats_request):
 stats_request.subtypes[6] = group_stats_request
 
 class hello(message):
-    version = 4
+    version = 6
     type = 0
 
     def __init__(self, xid=None, elements=None):
@@ -12612,7 +14206,7 @@ class hello(message):
     def unpack(reader):
         obj = hello()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 0)
         _length = reader.read("!H")[0]
@@ -12647,7 +14241,7 @@ class hello(message):
 message.subtypes[0] = hello
 
 class hello_failed_error_msg(error_msg):
-    version = 4
+    version = 6
     type = 1
     err_type = 0
 
@@ -12683,7 +14277,7 @@ class hello_failed_error_msg(error_msg):
     def unpack(reader):
         obj = hello_failed_error_msg()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 1)
         _length = reader.read("!H")[0]
@@ -12725,7 +14319,7 @@ class hello_failed_error_msg(error_msg):
 error_msg.subtypes[0] = hello_failed_error_msg
 
 class meter_config_stats_reply(stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 10
 
@@ -12762,7 +14356,7 @@ class meter_config_stats_reply(stats_reply):
     def unpack(reader):
         obj = meter_config_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -12805,7 +14399,7 @@ class meter_config_stats_reply(stats_reply):
 stats_reply.subtypes[10] = meter_config_stats_reply
 
 class meter_config_stats_request(stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 10
 
@@ -12843,7 +14437,7 @@ class meter_config_stats_request(stats_request):
     def unpack(reader):
         obj = meter_config_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -12887,7 +14481,7 @@ class meter_config_stats_request(stats_request):
 stats_request.subtypes[10] = meter_config_stats_request
 
 class meter_features_stats_reply(stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 11
 
@@ -12924,7 +14518,7 @@ class meter_features_stats_reply(stats_reply):
     def unpack(reader):
         obj = meter_features_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -12967,7 +14561,7 @@ class meter_features_stats_reply(stats_reply):
 stats_reply.subtypes[11] = meter_features_stats_reply
 
 class meter_features_stats_request(stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 11
 
@@ -12999,7 +14593,7 @@ class meter_features_stats_request(stats_request):
     def unpack(reader):
         obj = meter_features_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -13037,10 +14631,10 @@ class meter_features_stats_request(stats_request):
 stats_request.subtypes[11] = meter_features_stats_request
 
 class meter_mod(message):
-    version = 4
+    version = 6
     type = 29
 
-    def __init__(self, xid=None, command=None, flags=None, meter_id=None, meters=None):
+    def __init__(self, xid=None, command=None, flags=None, meter_id=None, bands=None):
         if xid != None:
             self.xid = xid
         else:
@@ -13057,10 +14651,10 @@ class meter_mod(message):
             self.meter_id = meter_id
         else:
             self.meter_id = 0
-        if meters != None:
-            self.meters = meters
+        if bands != None:
+            self.bands = bands
         else:
-            self.meters = []
+            self.bands = []
         return
 
     def pack(self):
@@ -13072,7 +14666,7 @@ class meter_mod(message):
         packed.append(struct.pack("!H", self.command))
         packed.append(struct.pack("!H", self.flags))
         packed.append(struct.pack("!L", self.meter_id))
-        packed.append(loxi.generic_util.pack_list(self.meters))
+        packed.append(loxi.generic_util.pack_list(self.bands))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -13081,7 +14675,7 @@ class meter_mod(message):
     def unpack(reader):
         obj = meter_mod()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 29)
         _length = reader.read("!H")[0]
@@ -13091,7 +14685,7 @@ class meter_mod(message):
         obj.command = reader.read("!H")[0]
         obj.flags = reader.read("!H")[0]
         obj.meter_id = reader.read("!L")[0]
-        obj.meters = loxi.generic_util.unpack_list(reader, ofp.meter_band.meter_band.unpack)
+        obj.bands = loxi.generic_util.unpack_list(reader, ofp.meter_band.meter_band.unpack)
         return obj
 
     def __eq__(self, other):
@@ -13100,7 +14694,7 @@ class meter_mod(message):
         if self.command != other.command: return False
         if self.flags != other.flags: return False
         if self.meter_id != other.meter_id: return False
-        if self.meters != other.meters: return False
+        if self.bands != other.bands: return False
         return True
 
     def pretty_print(self, q):
@@ -13123,15 +14717,15 @@ class meter_mod(message):
                 q.text("meter_id = ");
                 q.text("%#x" % self.meter_id)
                 q.text(","); q.breakable()
-                q.text("meters = ");
-                q.pp(self.meters)
+                q.text("bands = ");
+                q.pp(self.bands)
             q.breakable()
         q.text('}')
 
 message.subtypes[29] = meter_mod
 
 class meter_mod_failed_error_msg(error_msg):
-    version = 4
+    version = 6
     type = 1
     err_type = 12
 
@@ -13167,7 +14761,7 @@ class meter_mod_failed_error_msg(error_msg):
     def unpack(reader):
         obj = meter_mod_failed_error_msg()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 1)
         _length = reader.read("!H")[0]
@@ -13209,7 +14803,7 @@ class meter_mod_failed_error_msg(error_msg):
 error_msg.subtypes[12] = meter_mod_failed_error_msg
 
 class meter_stats_reply(stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 9
 
@@ -13246,7 +14840,7 @@ class meter_stats_reply(stats_reply):
     def unpack(reader):
         obj = meter_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -13289,7 +14883,7 @@ class meter_stats_reply(stats_reply):
 stats_reply.subtypes[9] = meter_stats_reply
 
 class meter_stats_request(stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 9
 
@@ -13327,7 +14921,7 @@ class meter_stats_request(stats_request):
     def unpack(reader):
         obj = meter_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -13373,7 +14967,7 @@ stats_request.subtypes[9] = meter_stats_request
 class nicira_header(experimenter):
     subtypes = {}
 
-    version = 4
+    version = 6
     type = 4
     experimenter = 8992
 
@@ -13409,7 +15003,7 @@ class nicira_header(experimenter):
 
         obj = nicira_header()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 4)
         _length = reader.read("!H")[0]
@@ -13443,7 +15037,7 @@ class nicira_header(experimenter):
 experimenter.subtypes[8992] = nicira_header
 
 class packet_in(message):
-    version = 4
+    version = 6
     type = 10
 
     def __init__(self, xid=None, buffer_id=None, total_len=None, reason=None, table_id=None, cookie=None, match=None, data=None):
@@ -13503,7 +15097,7 @@ class packet_in(message):
     def unpack(reader):
         obj = packet_in()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 10)
         _length = reader.read("!H")[0]
@@ -13569,10 +15163,10 @@ class packet_in(message):
 message.subtypes[10] = packet_in
 
 class packet_out(message):
-    version = 4
+    version = 6
     type = 13
 
-    def __init__(self, xid=None, buffer_id=None, in_port=None, actions=None, data=None):
+    def __init__(self, xid=None, buffer_id=None, match=None, actions=None, data=None):
         if xid != None:
             self.xid = xid
         else:
@@ -13581,10 +15175,10 @@ class packet_out(message):
             self.buffer_id = buffer_id
         else:
             self.buffer_id = 0
-        if in_port != None:
-            self.in_port = in_port
+        if match != None:
+            self.match = match
         else:
-            self.in_port = 0
+            self.match = ofp.match()
         if actions != None:
             self.actions = actions
         else:
@@ -13602,11 +15196,11 @@ class packet_out(message):
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!L", self.buffer_id))
-        packed.append(util.pack_port_no(self.in_port))
-        packed.append(struct.pack("!H", 0)) # placeholder for actions_len at index 6
-        packed.append('\x00' * 6)
+        packed.append(struct.pack("!H", 0)) # placeholder for actions_len at index 5
+        packed.append('\x00' * 2)
+        packed.append(self.match.pack())
         packed.append(loxi.generic_util.pack_list(self.actions))
-        packed[6] = struct.pack("!H", len(packed[-1]))
+        packed[5] = struct.pack("!H", len(packed[-1]))
         packed.append(self.data)
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
@@ -13616,7 +15210,7 @@ class packet_out(message):
     def unpack(reader):
         obj = packet_out()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 13)
         _length = reader.read("!H")[0]
@@ -13624,9 +15218,9 @@ class packet_out(message):
         reader = orig_reader.slice(_length, 4)
         obj.xid = reader.read("!L")[0]
         obj.buffer_id = reader.read("!L")[0]
-        obj.in_port = util.unpack_port_no(reader)
         _actions_len = reader.read("!H")[0]
-        reader.skip(6)
+        reader.skip(2)
+        obj.match = ofp.match.unpack(reader)
         obj.actions = loxi.generic_util.unpack_list(reader.slice(_actions_len), ofp.action.action.unpack)
         obj.data = str(reader.read_all())
         return obj
@@ -13635,7 +15229,7 @@ class packet_out(message):
         if type(self) != type(other): return False
         if self.xid != other.xid: return False
         if self.buffer_id != other.buffer_id: return False
-        if self.in_port != other.in_port: return False
+        if self.match != other.match: return False
         if self.actions != other.actions: return False
         if self.data != other.data: return False
         return True
@@ -13654,8 +15248,8 @@ class packet_out(message):
                 q.text("buffer_id = ");
                 q.text("%#x" % self.buffer_id)
                 q.text(","); q.breakable()
-                q.text("in_port = ");
-                q.text(util.pretty_port(self.in_port))
+                q.text("match = ");
+                q.pp(self.match)
                 q.text(","); q.breakable()
                 q.text("actions = ");
                 q.pp(self.actions)
@@ -13668,7 +15262,7 @@ class packet_out(message):
 message.subtypes[13] = packet_out
 
 class port_desc_stats_reply(stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 13
 
@@ -13705,7 +15299,7 @@ class port_desc_stats_reply(stats_reply):
     def unpack(reader):
         obj = port_desc_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -13748,11 +15342,11 @@ class port_desc_stats_reply(stats_reply):
 stats_reply.subtypes[13] = port_desc_stats_reply
 
 class port_desc_stats_request(stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 13
 
-    def __init__(self, xid=None, flags=None):
+    def __init__(self, xid=None, flags=None, port_no=None):
         if xid != None:
             self.xid = xid
         else:
@@ -13761,6 +15355,10 @@ class port_desc_stats_request(stats_request):
             self.flags = flags
         else:
             self.flags = 0
+        if port_no != None:
+            self.port_no = port_no
+        else:
+            self.port_no = 0
         return
 
     def pack(self):
@@ -13772,6 +15370,8 @@ class port_desc_stats_request(stats_request):
         packed.append(struct.pack("!H", self.stats_type))
         packed.append(struct.pack("!H", self.flags))
         packed.append('\x00' * 4)
+        packed.append(util.pack_port_no(self.port_no))
+        packed.append('\x00' * 4)
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -13780,7 +15380,7 @@ class port_desc_stats_request(stats_request):
     def unpack(reader):
         obj = port_desc_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -13791,12 +15391,15 @@ class port_desc_stats_request(stats_request):
         assert(_stats_type == 13)
         obj.flags = reader.read("!H")[0]
         reader.skip(4)
+        obj.port_no = util.unpack_port_no(reader)
+        reader.skip(4)
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
         if self.xid != other.xid: return False
         if self.flags != other.flags: return False
+        if self.port_no != other.port_no: return False
         return True
 
     def pretty_print(self, q):
@@ -13812,16 +15415,19 @@ class port_desc_stats_request(stats_request):
                 q.text(","); q.breakable()
                 q.text("flags = ");
                 q.text("%#x" % self.flags)
+                q.text(","); q.breakable()
+                q.text("port_no = ");
+                q.text(util.pretty_port(self.port_no))
             q.breakable()
         q.text('}')
 
 stats_request.subtypes[13] = port_desc_stats_request
 
 class port_mod(message):
-    version = 4
+    version = 6
     type = 16
 
-    def __init__(self, xid=None, port_no=None, hw_addr=None, config=None, mask=None, advertise=None):
+    def __init__(self, xid=None, port_no=None, hw_addr=None, config=None, mask=None, properties=None):
         if xid != None:
             self.xid = xid
         else:
@@ -13842,10 +15448,10 @@ class port_mod(message):
             self.mask = mask
         else:
             self.mask = 0
-        if advertise != None:
-            self.advertise = advertise
+        if properties != None:
+            self.properties = properties
         else:
-            self.advertise = 0
+            self.properties = []
         return
 
     def pack(self):
@@ -13860,8 +15466,7 @@ class port_mod(message):
         packed.append('\x00' * 2)
         packed.append(struct.pack("!L", self.config))
         packed.append(struct.pack("!L", self.mask))
-        packed.append(struct.pack("!L", self.advertise))
-        packed.append('\x00' * 4)
+        packed.append(loxi.generic_util.pack_list(self.properties))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -13870,7 +15475,7 @@ class port_mod(message):
     def unpack(reader):
         obj = port_mod()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 16)
         _length = reader.read("!H")[0]
@@ -13883,8 +15488,7 @@ class port_mod(message):
         reader.skip(2)
         obj.config = reader.read("!L")[0]
         obj.mask = reader.read("!L")[0]
-        obj.advertise = reader.read("!L")[0]
-        reader.skip(4)
+        obj.properties = loxi.generic_util.unpack_list(reader, ofp.port_mod_prop.port_mod_prop.unpack)
         return obj
 
     def __eq__(self, other):
@@ -13894,7 +15498,7 @@ class port_mod(message):
         if self.hw_addr != other.hw_addr: return False
         if self.config != other.config: return False
         if self.mask != other.mask: return False
-        if self.advertise != other.advertise: return False
+        if self.properties != other.properties: return False
         return True
 
     def pretty_print(self, q):
@@ -13920,15 +15524,15 @@ class port_mod(message):
                 q.text("mask = ");
                 q.text("%#x" % self.mask)
                 q.text(","); q.breakable()
-                q.text("advertise = ");
-                q.text("%#x" % self.advertise)
+                q.text("properties = ");
+                q.pp(self.properties)
             q.breakable()
         q.text('}')
 
 message.subtypes[16] = port_mod
 
 class port_mod_failed_error_msg(error_msg):
-    version = 4
+    version = 6
     type = 1
     err_type = 7
 
@@ -13964,7 +15568,7 @@ class port_mod_failed_error_msg(error_msg):
     def unpack(reader):
         obj = port_mod_failed_error_msg()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 1)
         _length = reader.read("!H")[0]
@@ -14006,7 +15610,7 @@ class port_mod_failed_error_msg(error_msg):
 error_msg.subtypes[7] = port_mod_failed_error_msg
 
 class port_stats_reply(stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 4
 
@@ -14043,7 +15647,7 @@ class port_stats_reply(stats_reply):
     def unpack(reader):
         obj = port_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -14086,7 +15690,7 @@ class port_stats_reply(stats_reply):
 stats_reply.subtypes[4] = port_stats_reply
 
 class port_stats_request(stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 4
 
@@ -14124,7 +15728,7 @@ class port_stats_request(stats_request):
     def unpack(reader):
         obj = port_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -14168,7 +15772,7 @@ class port_stats_request(stats_request):
 stats_request.subtypes[4] = port_stats_request
 
 class port_status(message):
-    version = 4
+    version = 6
     type = 12
 
     def __init__(self, xid=None, reason=None, desc=None):
@@ -14203,7 +15807,7 @@ class port_status(message):
     def unpack(reader):
         obj = port_status()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 12)
         _length = reader.read("!H")[0]
@@ -14243,23 +15847,24 @@ class port_status(message):
 
 message.subtypes[12] = port_status
 
-class queue_get_config_reply(message):
-    version = 4
-    type = 23
+class queue_desc_stats_reply(stats_reply):
+    version = 6
+    type = 19
+    stats_type = 15
 
-    def __init__(self, xid=None, port=None, queues=None):
+    def __init__(self, xid=None, flags=None, entries=None):
         if xid != None:
             self.xid = xid
         else:
             self.xid = None
-        if port != None:
-            self.port = port
+        if flags != None:
+            self.flags = flags
         else:
-            self.port = 0
-        if queues != None:
-            self.queues = queues
+            self.flags = 0
+        if entries != None:
+            self.entries = entries
         else:
-            self.queues = []
+            self.entries = []
         return
 
     def pack(self):
@@ -14268,38 +15873,41 @@ class queue_get_config_reply(message):
         packed.append(struct.pack("!B", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
-        packed.append(util.pack_port_no(self.port))
+        packed.append(struct.pack("!H", self.stats_type))
+        packed.append(struct.pack("!H", self.flags))
         packed.append('\x00' * 4)
-        packed.append(loxi.generic_util.pack_list(self.queues))
+        packed.append(loxi.generic_util.pack_list(self.entries))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
 
     @staticmethod
     def unpack(reader):
-        obj = queue_get_config_reply()
+        obj = queue_desc_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
-        assert(_type == 23)
+        assert(_type == 19)
         _length = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.xid = reader.read("!L")[0]
-        obj.port = util.unpack_port_no(reader)
+        _stats_type = reader.read("!H")[0]
+        assert(_stats_type == 15)
+        obj.flags = reader.read("!H")[0]
         reader.skip(4)
-        obj.queues = loxi.generic_util.unpack_list(reader, ofp.common.packet_queue.unpack)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.queue_desc.unpack)
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
         if self.xid != other.xid: return False
-        if self.port != other.port: return False
-        if self.queues != other.queues: return False
+        if self.flags != other.flags: return False
+        if self.entries != other.entries: return False
         return True
 
     def pretty_print(self, q):
-        q.text("queue_get_config_reply {")
+        q.text("queue_desc_stats_reply {")
         with q.group():
             with q.indent(2):
                 q.breakable()
@@ -14309,29 +15917,38 @@ class queue_get_config_reply(message):
                 else:
                     q.text('None')
                 q.text(","); q.breakable()
-                q.text("port = ");
-                q.text(util.pretty_port(self.port))
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
                 q.text(","); q.breakable()
-                q.text("queues = ");
-                q.pp(self.queues)
+                q.text("entries = ");
+                q.pp(self.entries)
             q.breakable()
         q.text('}')
 
-message.subtypes[23] = queue_get_config_reply
+stats_reply.subtypes[15] = queue_desc_stats_reply
 
-class queue_get_config_request(message):
-    version = 4
-    type = 22
+class queue_desc_stats_request(stats_request):
+    version = 6
+    type = 18
+    stats_type = 15
 
-    def __init__(self, xid=None, port=None):
+    def __init__(self, xid=None, flags=None, port_no=None, queue_id=None):
         if xid != None:
             self.xid = xid
         else:
             self.xid = None
-        if port != None:
-            self.port = port
+        if flags != None:
+            self.flags = flags
         else:
-            self.port = 0
+            self.flags = 0
+        if port_no != None:
+            self.port_no = port_no
+        else:
+            self.port_no = 0
+        if queue_id != None:
+            self.queue_id = queue_id
+        else:
+            self.queue_id = 0
         return
 
     def pack(self):
@@ -14340,35 +15957,44 @@ class queue_get_config_request(message):
         packed.append(struct.pack("!B", self.type))
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
-        packed.append(util.pack_port_no(self.port))
+        packed.append(struct.pack("!H", self.stats_type))
+        packed.append(struct.pack("!H", self.flags))
         packed.append('\x00' * 4)
+        packed.append(util.pack_port_no(self.port_no))
+        packed.append(struct.pack("!L", self.queue_id))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
 
     @staticmethod
     def unpack(reader):
-        obj = queue_get_config_request()
+        obj = queue_desc_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
-        assert(_type == 22)
+        assert(_type == 18)
         _length = reader.read("!H")[0]
         orig_reader = reader
         reader = orig_reader.slice(_length, 4)
         obj.xid = reader.read("!L")[0]
-        obj.port = util.unpack_port_no(reader)
+        _stats_type = reader.read("!H")[0]
+        assert(_stats_type == 15)
+        obj.flags = reader.read("!H")[0]
         reader.skip(4)
+        obj.port_no = util.unpack_port_no(reader)
+        obj.queue_id = reader.read("!L")[0]
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
         if self.xid != other.xid: return False
-        if self.port != other.port: return False
+        if self.flags != other.flags: return False
+        if self.port_no != other.port_no: return False
+        if self.queue_id != other.queue_id: return False
         return True
 
     def pretty_print(self, q):
-        q.text("queue_get_config_request {")
+        q.text("queue_desc_stats_request {")
         with q.group():
             with q.indent(2):
                 q.breakable()
@@ -14378,15 +16004,21 @@ class queue_get_config_request(message):
                 else:
                     q.text('None')
                 q.text(","); q.breakable()
-                q.text("port = ");
-                q.text(util.pretty_port(self.port))
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
+                q.text(","); q.breakable()
+                q.text("port_no = ");
+                q.text(util.pretty_port(self.port_no))
+                q.text(","); q.breakable()
+                q.text("queue_id = ");
+                q.text("%#x" % self.queue_id)
             q.breakable()
         q.text('}')
 
-message.subtypes[22] = queue_get_config_request
+stats_request.subtypes[15] = queue_desc_stats_request
 
 class queue_op_failed_error_msg(error_msg):
-    version = 4
+    version = 6
     type = 1
     err_type = 9
 
@@ -14422,7 +16054,7 @@ class queue_op_failed_error_msg(error_msg):
     def unpack(reader):
         obj = queue_op_failed_error_msg()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 1)
         _length = reader.read("!H")[0]
@@ -14464,7 +16096,7 @@ class queue_op_failed_error_msg(error_msg):
 error_msg.subtypes[9] = queue_op_failed_error_msg
 
 class queue_stats_reply(stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 5
 
@@ -14501,7 +16133,7 @@ class queue_stats_reply(stats_reply):
     def unpack(reader):
         obj = queue_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -14544,7 +16176,7 @@ class queue_stats_reply(stats_reply):
 stats_reply.subtypes[5] = queue_stats_reply
 
 class queue_stats_request(stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 5
 
@@ -14586,7 +16218,7 @@ class queue_stats_request(stats_request):
     def unpack(reader):
         obj = queue_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -14633,11 +16265,75 @@ class queue_stats_request(stats_request):
 
 stats_request.subtypes[5] = queue_stats_request
 
+class requestforward(message):
+    version = 6
+    type = 32
+
+    def __init__(self, xid=None, request=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if request != None:
+            self.request = request
+        else:
+            self.request = loxi.unimplemented('init of_header_t')
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(loxi.unimplemented('pack of_header_t'))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = requestforward()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 32)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        obj.request = loxi.unimplemented('unpack of_header_t')
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.request != other.request: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("requestforward {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("request = ");
+                q.pp(self.request)
+            q.breakable()
+        q.text('}')
+
+message.subtypes[32] = requestforward
+
 class role_reply(message):
-    version = 4
+    version = 6
     type = 25
 
-    def __init__(self, xid=None, role=None, generation_id=None):
+    def __init__(self, xid=None, role=None, short_id=None, generation_id=None):
         if xid != None:
             self.xid = xid
         else:
@@ -14646,6 +16342,10 @@ class role_reply(message):
             self.role = role
         else:
             self.role = 0
+        if short_id != None:
+            self.short_id = short_id
+        else:
+            self.short_id = 0
         if generation_id != None:
             self.generation_id = generation_id
         else:
@@ -14659,7 +16359,8 @@ class role_reply(message):
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!L", self.role))
-        packed.append('\x00' * 4)
+        packed.append(struct.pack("!H", self.short_id))
+        packed.append('\x00' * 2)
         packed.append(struct.pack("!Q", self.generation_id))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
@@ -14669,7 +16370,7 @@ class role_reply(message):
     def unpack(reader):
         obj = role_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 25)
         _length = reader.read("!H")[0]
@@ -14677,7 +16378,8 @@ class role_reply(message):
         reader = orig_reader.slice(_length, 4)
         obj.xid = reader.read("!L")[0]
         obj.role = reader.read("!L")[0]
-        reader.skip(4)
+        obj.short_id = reader.read("!H")[0]
+        reader.skip(2)
         obj.generation_id = reader.read("!Q")[0]
         return obj
 
@@ -14685,6 +16387,7 @@ class role_reply(message):
         if type(self) != type(other): return False
         if self.xid != other.xid: return False
         if self.role != other.role: return False
+        if self.short_id != other.short_id: return False
         if self.generation_id != other.generation_id: return False
         return True
 
@@ -14702,6 +16405,9 @@ class role_reply(message):
                 q.text("role = ");
                 q.text("%#x" % self.role)
                 q.text(","); q.breakable()
+                q.text("short_id = ");
+                q.text("%#x" % self.short_id)
+                q.text(","); q.breakable()
                 q.text("generation_id = ");
                 q.text("%#x" % self.generation_id)
             q.breakable()
@@ -14710,10 +16416,10 @@ class role_reply(message):
 message.subtypes[25] = role_reply
 
 class role_request(message):
-    version = 4
+    version = 6
     type = 24
 
-    def __init__(self, xid=None, role=None, generation_id=None):
+    def __init__(self, xid=None, role=None, short_id=None, generation_id=None):
         if xid != None:
             self.xid = xid
         else:
@@ -14722,6 +16428,10 @@ class role_request(message):
             self.role = role
         else:
             self.role = 0
+        if short_id != None:
+            self.short_id = short_id
+        else:
+            self.short_id = 0
         if generation_id != None:
             self.generation_id = generation_id
         else:
@@ -14735,7 +16445,8 @@ class role_request(message):
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
         packed.append(struct.pack("!L", self.xid))
         packed.append(struct.pack("!L", self.role))
-        packed.append('\x00' * 4)
+        packed.append(struct.pack("!H", self.short_id))
+        packed.append('\x00' * 2)
         packed.append(struct.pack("!Q", self.generation_id))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
@@ -14745,7 +16456,7 @@ class role_request(message):
     def unpack(reader):
         obj = role_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 24)
         _length = reader.read("!H")[0]
@@ -14753,7 +16464,8 @@ class role_request(message):
         reader = orig_reader.slice(_length, 4)
         obj.xid = reader.read("!L")[0]
         obj.role = reader.read("!L")[0]
-        reader.skip(4)
+        obj.short_id = reader.read("!H")[0]
+        reader.skip(2)
         obj.generation_id = reader.read("!Q")[0]
         return obj
 
@@ -14761,6 +16473,7 @@ class role_request(message):
         if type(self) != type(other): return False
         if self.xid != other.xid: return False
         if self.role != other.role: return False
+        if self.short_id != other.short_id: return False
         if self.generation_id != other.generation_id: return False
         return True
 
@@ -14778,6 +16491,9 @@ class role_request(message):
                 q.text("role = ");
                 q.text("%#x" % self.role)
                 q.text(","); q.breakable()
+                q.text("short_id = ");
+                q.text("%#x" % self.short_id)
+                q.text(","); q.breakable()
                 q.text("generation_id = ");
                 q.text("%#x" % self.generation_id)
             q.breakable()
@@ -14786,7 +16502,7 @@ class role_request(message):
 message.subtypes[24] = role_request
 
 class role_request_failed_error_msg(error_msg):
-    version = 4
+    version = 6
     type = 1
     err_type = 11
 
@@ -14822,7 +16538,7 @@ class role_request_failed_error_msg(error_msg):
     def unpack(reader):
         obj = role_request_failed_error_msg()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 1)
         _length = reader.read("!H")[0]
@@ -14863,8 +16579,104 @@ class role_request_failed_error_msg(error_msg):
 
 error_msg.subtypes[11] = role_request_failed_error_msg
 
+class role_status(message):
+    version = 6
+    type = 30
+
+    def __init__(self, xid=None, role=None, reason=None, generation_id=None, properties=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if role != None:
+            self.role = role
+        else:
+            self.role = 0
+        if reason != None:
+            self.reason = reason
+        else:
+            self.reason = 0
+        if generation_id != None:
+            self.generation_id = generation_id
+        else:
+            self.generation_id = 0
+        if properties != None:
+            self.properties = properties
+        else:
+            self.properties = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!L", self.role))
+        packed.append(struct.pack("!B", self.reason))
+        packed.append('\x00' * 3)
+        packed.append(struct.pack("!Q", self.generation_id))
+        packed.append(loxi.generic_util.pack_list(self.properties))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = role_status()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 30)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        obj.role = reader.read("!L")[0]
+        obj.reason = reader.read("!B")[0]
+        reader.skip(3)
+        obj.generation_id = reader.read("!Q")[0]
+        obj.properties = loxi.generic_util.unpack_list(reader, ofp.role_prop.role_prop.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.role != other.role: return False
+        if self.reason != other.reason: return False
+        if self.generation_id != other.generation_id: return False
+        if self.properties != other.properties: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("role_status {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("role = ");
+                q.text("%#x" % self.role)
+                q.text(","); q.breakable()
+                q.text("reason = ");
+                q.text("%#x" % self.reason)
+                q.text(","); q.breakable()
+                q.text("generation_id = ");
+                q.text("%#x" % self.generation_id)
+                q.text(","); q.breakable()
+                q.text("properties = ");
+                q.pp(self.properties)
+            q.breakable()
+        q.text('}')
+
+message.subtypes[30] = role_status
+
 class set_config(message):
-    version = 4
+    version = 6
     type = 9
 
     def __init__(self, xid=None, flags=None, miss_send_len=None):
@@ -14898,7 +16710,7 @@ class set_config(message):
     def unpack(reader):
         obj = set_config()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 9)
         _length = reader.read("!H")[0]
@@ -14938,7 +16750,7 @@ class set_config(message):
 message.subtypes[9] = set_config
 
 class switch_config_failed_error_msg(error_msg):
-    version = 4
+    version = 6
     type = 1
     err_type = 10
 
@@ -14974,7 +16786,7 @@ class switch_config_failed_error_msg(error_msg):
     def unpack(reader):
         obj = switch_config_failed_error_msg()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 1)
         _length = reader.read("!H")[0]
@@ -15015,8 +16827,158 @@ class switch_config_failed_error_msg(error_msg):
 
 error_msg.subtypes[10] = switch_config_failed_error_msg
 
+class table_desc_stats_reply(stats_reply):
+    version = 6
+    type = 19
+    stats_type = 14
+
+    def __init__(self, xid=None, flags=None, entries=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if flags != None:
+            self.flags = flags
+        else:
+            self.flags = 0
+        if entries != None:
+            self.entries = entries
+        else:
+            self.entries = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.stats_type))
+        packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
+        packed.append(loxi.generic_util.pack_list(self.entries))
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = table_desc_stats_reply()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 19)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        _stats_type = reader.read("!H")[0]
+        assert(_stats_type == 14)
+        obj.flags = reader.read("!H")[0]
+        reader.skip(4)
+        obj.entries = loxi.generic_util.unpack_list(reader, ofp.common.table_desc.unpack)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.flags != other.flags: return False
+        if self.entries != other.entries: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("table_desc_stats_reply {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
+                q.text(","); q.breakable()
+                q.text("entries = ");
+                q.pp(self.entries)
+            q.breakable()
+        q.text('}')
+
+stats_reply.subtypes[14] = table_desc_stats_reply
+
+class table_desc_stats_request(stats_request):
+    version = 6
+    type = 18
+    stats_type = 14
+
+    def __init__(self, xid=None, flags=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if flags != None:
+            self.flags = flags
+        else:
+            self.flags = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.stats_type))
+        packed.append(struct.pack("!H", self.flags))
+        packed.append('\x00' * 4)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = table_desc_stats_request()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 18)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        _stats_type = reader.read("!H")[0]
+        assert(_stats_type == 14)
+        obj.flags = reader.read("!H")[0]
+        reader.skip(4)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.flags != other.flags: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("table_desc_stats_request {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("flags = ");
+                q.text("%#x" % self.flags)
+            q.breakable()
+        q.text('}')
+
+stats_request.subtypes[14] = table_desc_stats_request
+
 class table_features_failed_error_msg(error_msg):
-    version = 4
+    version = 6
     type = 1
     err_type = 13
 
@@ -15052,7 +17014,7 @@ class table_features_failed_error_msg(error_msg):
     def unpack(reader):
         obj = table_features_failed_error_msg()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 1)
         _length = reader.read("!H")[0]
@@ -15094,7 +17056,7 @@ class table_features_failed_error_msg(error_msg):
 error_msg.subtypes[13] = table_features_failed_error_msg
 
 class table_features_stats_reply(stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 12
 
@@ -15131,7 +17093,7 @@ class table_features_stats_reply(stats_reply):
     def unpack(reader):
         obj = table_features_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -15174,7 +17136,7 @@ class table_features_stats_reply(stats_reply):
 stats_reply.subtypes[12] = table_features_stats_reply
 
 class table_features_stats_request(stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 12
 
@@ -15211,7 +17173,7 @@ class table_features_stats_request(stats_request):
     def unpack(reader):
         obj = table_features_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -15254,10 +17216,10 @@ class table_features_stats_request(stats_request):
 stats_request.subtypes[12] = table_features_stats_request
 
 class table_mod(message):
-    version = 4
+    version = 6
     type = 17
 
-    def __init__(self, xid=None, table_id=None, config=None):
+    def __init__(self, xid=None, table_id=None, config=None, properties=None):
         if xid != None:
             self.xid = xid
         else:
@@ -15270,6 +17232,10 @@ class table_mod(message):
             self.config = config
         else:
             self.config = 0
+        if properties != None:
+            self.properties = properties
+        else:
+            self.properties = []
         return
 
     def pack(self):
@@ -15281,6 +17247,7 @@ class table_mod(message):
         packed.append(struct.pack("!B", self.table_id))
         packed.append('\x00' * 3)
         packed.append(struct.pack("!L", self.config))
+        packed.append(loxi.generic_util.pack_list(self.properties))
         length = sum([len(x) for x in packed])
         packed[2] = struct.pack("!H", length)
         return ''.join(packed)
@@ -15289,7 +17256,7 @@ class table_mod(message):
     def unpack(reader):
         obj = table_mod()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 17)
         _length = reader.read("!H")[0]
@@ -15299,6 +17266,7 @@ class table_mod(message):
         obj.table_id = reader.read("!B")[0]
         reader.skip(3)
         obj.config = reader.read("!L")[0]
+        obj.properties = loxi.generic_util.unpack_list(reader, ofp.table_mod_prop.table_mod_prop.unpack)
         return obj
 
     def __eq__(self, other):
@@ -15306,6 +17274,7 @@ class table_mod(message):
         if self.xid != other.xid: return False
         if self.table_id != other.table_id: return False
         if self.config != other.config: return False
+        if self.properties != other.properties: return False
         return True
 
     def pretty_print(self, q):
@@ -15324,13 +17293,16 @@ class table_mod(message):
                 q.text(","); q.breakable()
                 q.text("config = ");
                 q.text("%#x" % self.config)
+                q.text(","); q.breakable()
+                q.text("properties = ");
+                q.pp(self.properties)
             q.breakable()
         q.text('}')
 
 message.subtypes[17] = table_mod
 
 class table_mod_failed_error_msg(error_msg):
-    version = 4
+    version = 6
     type = 1
     err_type = 8
 
@@ -15366,7 +17338,7 @@ class table_mod_failed_error_msg(error_msg):
     def unpack(reader):
         obj = table_mod_failed_error_msg()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 1)
         _length = reader.read("!H")[0]
@@ -15408,7 +17380,7 @@ class table_mod_failed_error_msg(error_msg):
 error_msg.subtypes[8] = table_mod_failed_error_msg
 
 class table_stats_reply(stats_reply):
-    version = 4
+    version = 6
     type = 19
     stats_type = 3
 
@@ -15445,7 +17417,7 @@ class table_stats_reply(stats_reply):
     def unpack(reader):
         obj = table_stats_reply()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 19)
         _length = reader.read("!H")[0]
@@ -15488,7 +17460,7 @@ class table_stats_reply(stats_reply):
 stats_reply.subtypes[3] = table_stats_reply
 
 class table_stats_request(stats_request):
-    version = 4
+    version = 6
     type = 18
     stats_type = 3
 
@@ -15520,7 +17492,7 @@ class table_stats_request(stats_request):
     def unpack(reader):
         obj = table_stats_request()
         _version = reader.read("!B")[0]
-        assert(_version == 4)
+        assert(_version == 6)
         _type = reader.read("!B")[0]
         assert(_type == 18)
         _length = reader.read("!H")[0]
@@ -15556,6 +17528,82 @@ class table_stats_request(stats_request):
         q.text('}')
 
 stats_request.subtypes[3] = table_stats_request
+
+class table_status(message):
+    version = 6
+    type = 31
+
+    def __init__(self, xid=None, reason=None, table=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if reason != None:
+            self.reason = reason
+        else:
+            self.reason = 0
+        if table != None:
+            self.table = table
+        else:
+            self.table = ofp.table_desc()
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!B", self.reason))
+        packed.append('\x00' * 7)
+        packed.append(self.table.pack())
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = table_status()
+        _version = reader.read("!B")[0]
+        assert(_version == 6)
+        _type = reader.read("!B")[0]
+        assert(_type == 31)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        obj.reason = reader.read("!B")[0]
+        reader.skip(7)
+        obj.table = ofp.table_desc.unpack(reader)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.reason != other.reason: return False
+        if self.table != other.table: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("table_status {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("reason = ");
+                q.text("%#x" % self.reason)
+                q.text(","); q.breakable()
+                q.text("table = ");
+                q.pp(self.table)
+            q.breakable()
+        q.text('}')
+
+message.subtypes[31] = table_status
 
 
 def parse_header(buf):

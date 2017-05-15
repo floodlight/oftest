@@ -12,7 +12,7 @@ import util
 import loxi.generic_util
 
 import sys
-ofp = sys.modules['loxi.of14']
+ofp = sys.modules['loxi.of15']
 
 class bsn_tlv(loxi.OFObject):
     subtypes = {}
