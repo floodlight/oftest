@@ -5110,6 +5110,112 @@ class bsn_gentable_entry_stats_request(bsn_stats_request):
 
 bsn_stats_request.subtypes[3] = bsn_gentable_entry_stats_request
 
+class bsn_gentable_error(bsn_base_error):
+    version = 5
+    type = 1
+    err_type = 65535
+    subtype = 2
+    experimenter = 6035143
+
+    def __init__(self, xid=None, error_code=None, table_id=None, err_msg=None, data=None):
+        if xid != None:
+            self.xid = xid
+        else:
+            self.xid = None
+        if error_code != None:
+            self.error_code = error_code
+        else:
+            self.error_code = 0
+        if table_id != None:
+            self.table_id = table_id
+        else:
+            self.table_id = 0
+        if err_msg != None:
+            self.err_msg = err_msg
+        else:
+            self.err_msg = ""
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!B", self.version))
+        packed.append(struct.pack("!B", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 2
+        packed.append(struct.pack("!L", self.xid))
+        packed.append(struct.pack("!H", self.err_type))
+        packed.append(struct.pack("!H", self.subtype))
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!H", self.error_code))
+        packed.append(struct.pack("!H", self.table_id))
+        packed.append(struct.pack("!256s", self.err_msg))
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[2] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_gentable_error()
+        _version = reader.read("!B")[0]
+        assert(_version == 5)
+        _type = reader.read("!B")[0]
+        assert(_type == 1)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.xid = reader.read("!L")[0]
+        _err_type = reader.read("!H")[0]
+        assert(_err_type == 65535)
+        _subtype = reader.read("!H")[0]
+        assert(_subtype == 2)
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        obj.error_code = reader.read("!H")[0]
+        obj.table_id = reader.read("!H")[0]
+        obj.err_msg = reader.read("!256s")[0].rstrip("\x00")
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.xid != other.xid: return False
+        if self.error_code != other.error_code: return False
+        if self.table_id != other.table_id: return False
+        if self.err_msg != other.err_msg: return False
+        if self.data != other.data: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_gentable_error {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("xid = ");
+                if self.xid != None:
+                    q.text("%#x" % self.xid)
+                else:
+                    q.text('None')
+                q.text(","); q.breakable()
+                q.text("error_code = ");
+                q.text("%#x" % self.error_code)
+                q.text(","); q.breakable()
+                q.text("table_id = ");
+                q.text("%#x" % self.table_id)
+                q.text(","); q.breakable()
+                q.text("err_msg = ");
+                q.pp(self.err_msg)
+                q.text(","); q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
+            q.breakable()
+        q.text('}')
+
+bsn_base_error.subtypes[2] = bsn_gentable_error
+
 class bsn_gentable_set_buckets_size(bsn_header):
     version = 5
     type = 4
