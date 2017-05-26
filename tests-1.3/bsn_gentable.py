@@ -650,14 +650,14 @@ class SetBucketsSizeError(BaseGenTableTest):
         do_barrier(self.controller)
 
         error, _ = self.controller.poll(ofp.OFPT_ERROR, 0)
-        self.assertIsInstance(error, ofp.message.bsn_error)
+        self.assertIsInstance(error, ofp.message.bsn_gentable_error)
 
         # Non power of 2 buckets size
         self.do_set_buckets_size(7)
         do_barrier(self.controller)
 
         error, _ = self.controller.poll(ofp.OFPT_ERROR, 0)
-        self.assertIsInstance(error, ofp.message.bsn_error)
+        self.assertIsInstance(error, ofp.message.bsn_gentable_error)
 
 class AddError(BaseGenTableTest):
     """
@@ -669,7 +669,7 @@ class AddError(BaseGenTableTest):
         do_barrier(self.controller)
 
         error, _ = self.controller.poll(ofp.OFPT_ERROR, 0)
-        self.assertIsInstance(error, ofp.message.bsn_error)
+        self.assertIsInstance(error, ofp.message.bsn_gentable_error)
 
         self.assertEquals(len(self.do_entry_desc_stats()), 0)
 
@@ -678,7 +678,7 @@ class AddError(BaseGenTableTest):
         do_barrier(self.controller)
 
         error, _ = self.controller.poll(ofp.OFPT_ERROR, 0)
-        self.assertIsInstance(error, ofp.message.bsn_error)
+        self.assertIsInstance(error, ofp.message.bsn_gentable_error)
 
         self.assertEquals(len(self.do_entry_desc_stats()), 0)
 
@@ -700,7 +700,7 @@ class ModifyError(BaseGenTableTest):
         do_barrier(self.controller)
 
         error, _ = self.controller.poll(ofp.OFPT_ERROR, 0)
-        self.assertIsInstance(error, ofp.message.bsn_error)
+        self.assertIsInstance(error, ofp.message.bsn_gentable_error)
 
         # Check that the table wasn't modified
         new_entries = self.do_entry_desc_stats()
@@ -740,7 +740,7 @@ class DeleteFailureError(BaseGenTableTest):
         do_barrier(self.controller)
 
         error, _ = self.controller.poll(ofp.OFPT_ERROR, 0)
-        self.assertIsInstance(error, ofp.message.bsn_error)
+        self.assertIsInstance(error, ofp.message.bsn_gentable_error)
 
         # Check that the table wasn't modified
         new_entries = self.do_entry_desc_stats()
