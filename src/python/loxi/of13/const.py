@@ -467,6 +467,13 @@ ofp_bsn_lacp_state_map = {
     128: 'OFP_BSN_LACP_STATE_EXPIRED',
 }
 
+# Identifiers from group ofp_bsn_lag_flag
+OFP_BSN_LAG_FLAG_AUTO_RECOVERY = 1
+
+ofp_bsn_lag_flag_map = {
+    1: 'OFP_BSN_LAG_FLAG_AUTO_RECOVERY',
+}
+
 # Identifiers from group ofp_bsn_loglevel
 OFP_BSN_LOGLEVEL_MSG = 0
 OFP_BSN_LOGLEVEL_ERROR = 1
@@ -718,6 +725,17 @@ ofp_bsn_rate_unit_map = {
     1: 'OFP_BSN_RATE_UNIT_KBITPS',
 }
 
+# Identifiers from group ofp_bsn_routing_param
+OFP_BSN_ROUTING_PARAM_OSPF_UCAST = 1
+OFP_BSN_ROUTING_PARAM_OSPF_MCAST = 2
+OFP_BSN_ROUTING_PARAM_ARP_FRR = 3
+
+ofp_bsn_routing_param_map = {
+    1: 'OFP_BSN_ROUTING_PARAM_OSPF_UCAST',
+    2: 'OFP_BSN_ROUTING_PARAM_OSPF_MCAST',
+    3: 'OFP_BSN_ROUTING_PARAM_ARP_FRR',
+}
+
 # Identifiers from group ofp_bsn_status
 OFP_BSN_STATUS_DISABLE = 0
 OFP_BSN_STATUS_ENABLE = 1
@@ -725,6 +743,17 @@ OFP_BSN_STATUS_ENABLE = 1
 ofp_bsn_status_map = {
     0: 'OFP_BSN_STATUS_DISABLE',
     1: 'OFP_BSN_STATUS_ENABLE',
+}
+
+# Identifiers from group ofp_bsn_strip_vlan
+OFP_BSN_STRIP_VLAN_FIRST = 1
+OFP_BSN_STRIP_VLAN_SECOND = 2
+OFP_BSN_STRIP_VLAN_THIRD = 4
+
+ofp_bsn_strip_vlan_map = {
+    1: 'OFP_BSN_STRIP_VLAN_FIRST',
+    2: 'OFP_BSN_STRIP_VLAN_SECOND',
+    4: 'OFP_BSN_STRIP_VLAN_THIRD',
 }
 
 # Identifiers from group ofp_bsn_tcp_flag

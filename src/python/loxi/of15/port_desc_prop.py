@@ -363,6 +363,81 @@ class bsn_generation_id(bsn):
 
 bsn.subtypes[1] = bsn_generation_id
 
+class bsn_misc_capabilities(bsn):
+    type = 65535
+    experimenter = 6035143
+    exp_type = 5
+
+    def __init__(self, current=None, available=None, supported=None):
+        if current != None:
+            self.current = current
+        else:
+            self.current = 0
+        if available != None:
+            self.available = available
+        else:
+            self.available = 0
+        if supported != None:
+            self.supported = supported
+        else:
+            self.supported = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.exp_type))
+        packed.append(struct.pack("!Q", self.current))
+        packed.append(struct.pack("!Q", self.available))
+        packed.append(struct.pack("!Q", self.supported))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_misc_capabilities()
+        _type = reader.read("!H")[0]
+        assert(_type == 65535)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _exp_type = reader.read("!L")[0]
+        assert(_exp_type == 5)
+        obj.current = reader.read("!Q")[0]
+        obj.available = reader.read("!Q")[0]
+        obj.supported = reader.read("!Q")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.current != other.current: return False
+        if self.available != other.available: return False
+        if self.supported != other.supported: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_misc_capabilities {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("current = ");
+                q.text("%#x" % self.current)
+                q.text(","); q.breakable()
+                q.text("available = ");
+                q.text("%#x" % self.available)
+                q.text(","); q.breakable()
+                q.text("supported = ");
+                q.text("%#x" % self.supported)
+            q.breakable()
+        q.text('}')
+
+bsn.subtypes[5] = bsn_misc_capabilities
+
 class bsn_speed_capabilities(bsn):
     type = 65535
     experimenter = 6035143
