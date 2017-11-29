@@ -2539,6 +2539,1018 @@ class bsn_vrf_masked(oxm):
 
 oxm.subtypes[197896] = bsn_vrf_masked
 
+class conn_tracking_ipv6_dst(oxm):
+    type_len = 128528
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!16s", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_ipv6_dst()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 128528)
+        obj.value = reader.read('!16s')[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_ipv6_dst {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text(util.pretty_ipv6(self.value))
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[128528] = conn_tracking_ipv6_dst
+
+class conn_tracking_ipv6_dst_masked(oxm):
+    type_len = 128800
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!16s", self.value))
+        packed.append(struct.pack("!16s", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_ipv6_dst_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 128800)
+        obj.value = reader.read('!16s')[0]
+        obj.value_mask = reader.read('!16s')[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_ipv6_dst_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text(util.pretty_ipv6(self.value))
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text(util.pretty_ipv6(self.value_mask))
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[128800] = conn_tracking_ipv6_dst_masked
+
+class conn_tracking_ipv6_src(oxm):
+    type_len = 128016
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!16s", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_ipv6_src()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 128016)
+        obj.value = reader.read('!16s')[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_ipv6_src {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text(util.pretty_ipv6(self.value))
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[128016] = conn_tracking_ipv6_src
+
+class conn_tracking_ipv6_src_masked(oxm):
+    type_len = 128288
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!16s", self.value))
+        packed.append(struct.pack("!16s", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_ipv6_src_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 128288)
+        obj.value = reader.read('!16s')[0]
+        obj.value_mask = reader.read('!16s')[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_ipv6_src_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text(util.pretty_ipv6(self.value))
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text(util.pretty_ipv6(self.value_mask))
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[128288] = conn_tracking_ipv6_src_masked
+
+class conn_tracking_label(oxm):
+    type_len = 120848
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = loxi.unimplemented('init uint128_t')
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(loxi.unimplemented('pack uint128_t'))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_label()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 120848)
+        obj.value = loxi.unimplemented('unpack uint128_t')
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_label {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[120848] = conn_tracking_label
+
+class conn_tracking_label_masked(oxm):
+    type_len = 121120
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = loxi.unimplemented('init uint128_t')
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = loxi.unimplemented('init uint128_t')
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(loxi.unimplemented('pack uint128_t'))
+        packed.append(loxi.unimplemented('pack uint128_t'))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_label_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 121120)
+        obj.value = loxi.unimplemented('unpack uint128_t')
+        obj.value_mask = loxi.unimplemented('unpack uint128_t')
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_label_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[121120] = conn_tracking_label_masked
+
+class conn_tracking_mark(oxm):
+    type_len = 120324
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_mark()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 120324)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_mark {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[120324] = conn_tracking_mark
+
+class conn_tracking_mark_masked(oxm):
+    type_len = 120584
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_mark_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 120584)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_mark_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[120584] = conn_tracking_mark_masked
+
+class conn_tracking_nw_dst(oxm):
+    type_len = 127492
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_nw_dst()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 127492)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_nw_dst {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[127492] = conn_tracking_nw_dst
+
+class conn_tracking_nw_dst_masked(oxm):
+    type_len = 127752
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_nw_dst_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 127752)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_nw_dst_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[127752] = conn_tracking_nw_dst_masked
+
+class conn_tracking_nw_proto(oxm):
+    type_len = 126465
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!B", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_nw_proto()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 126465)
+        obj.value = reader.read("!B")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_nw_proto {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[126465] = conn_tracking_nw_proto
+
+class conn_tracking_nw_proto_masked(oxm):
+    type_len = 126722
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!B", self.value))
+        packed.append(struct.pack("!B", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_nw_proto_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 126722)
+        obj.value = reader.read("!B")[0]
+        obj.value_mask = reader.read("!B")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_nw_proto_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[126722] = conn_tracking_nw_proto_masked
+
+class conn_tracking_nw_src(oxm):
+    type_len = 126980
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_nw_src()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 126980)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_nw_src {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[126980] = conn_tracking_nw_src
+
+class conn_tracking_nw_src_masked(oxm):
+    type_len = 127240
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_nw_src_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 127240)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_nw_src_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[127240] = conn_tracking_nw_src_masked
+
+class conn_tracking_state(oxm):
+    type_len = 119300
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_state()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 119300)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_state {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[119300] = conn_tracking_state
+
+class conn_tracking_state_masked(oxm):
+    type_len = 119560
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!L", self.value))
+        packed.append(struct.pack("!L", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_state_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 119560)
+        obj.value = reader.read("!L")[0]
+        obj.value_mask = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_state_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[119560] = conn_tracking_state_masked
+
+class conn_tracking_tp_dst(oxm):
+    type_len = 129538
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!H", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_tp_dst()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 129538)
+        obj.value = reader.read("!H")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_tp_dst {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[129538] = conn_tracking_tp_dst
+
+class conn_tracking_tp_dst_masked(oxm):
+    type_len = 129796
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!H", self.value))
+        packed.append(struct.pack("!H", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_tp_dst_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 129796)
+        obj.value = reader.read("!H")[0]
+        obj.value_mask = reader.read("!H")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_tp_dst_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[129796] = conn_tracking_tp_dst_masked
+
+class conn_tracking_tp_src(oxm):
+    type_len = 129026
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!H", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_tp_src()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 129026)
+        obj.value = reader.read("!H")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_tp_src {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[129026] = conn_tracking_tp_src
+
+class conn_tracking_tp_src_masked(oxm):
+    type_len = 129284
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!H", self.value))
+        packed.append(struct.pack("!H", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_tp_src_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 129284)
+        obj.value = reader.read("!H")[0]
+        obj.value_mask = reader.read("!H")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_tp_src_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[129284] = conn_tracking_tp_src_masked
+
+class conn_tracking_zone(oxm):
+    type_len = 119810
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!H", self.value))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_zone()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 119810)
+        obj.value = reader.read("!H")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_zone {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[119810] = conn_tracking_zone
+
+class conn_tracking_zone_masked(oxm):
+    type_len = 120068
+
+    def __init__(self, value=None, value_mask=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        if value_mask != None:
+            self.value_mask = value_mask
+        else:
+            self.value_mask = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!L", self.type_len))
+        packed.append(struct.pack("!H", self.value))
+        packed.append(struct.pack("!H", self.value_mask))
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = conn_tracking_zone_masked()
+        _type_len = reader.read("!L")[0]
+        assert(_type_len == 120068)
+        obj.value = reader.read("!H")[0]
+        obj.value_mask = reader.read("!H")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        if self.value_mask != other.value_mask: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("conn_tracking_zone_masked {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+                q.text(","); q.breakable()
+                q.text("value_mask = ");
+                q.text("%#x" % self.value_mask)
+            q.breakable()
+        q.text('}')
+
+oxm.subtypes[120068] = conn_tracking_zone_masked
+
 class eth_dst(oxm):
     type_len = 2147485190
 
