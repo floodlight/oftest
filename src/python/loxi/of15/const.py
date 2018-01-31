@@ -807,6 +807,17 @@ ofp_bsn_port_vxlan_mode_map = {
     1: 'OFP_BSN_PORT_VXLAN_TERMINATION_ENABLE',
 }
 
+# Identifiers from group ofp_bsn_push_vlan
+OFP_BSN_PUSH_VLAN_UNTAGGED = 1
+OFP_BSN_PUSH_VLAN_SINGLE_TAGGED = 2
+OFP_BSN_PUSH_VLAN_DOUBLE_TAGGED = 4
+
+ofp_bsn_push_vlan_map = {
+    1: 'OFP_BSN_PUSH_VLAN_UNTAGGED',
+    2: 'OFP_BSN_PUSH_VLAN_SINGLE_TAGGED',
+    4: 'OFP_BSN_PUSH_VLAN_DOUBLE_TAGGED',
+}
+
 # Identifiers from group ofp_bsn_rate_unit
 OFP_BSN_RATE_UNIT_PPS = 0
 OFP_BSN_RATE_UNIT_KBITPS = 1

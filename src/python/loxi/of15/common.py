@@ -3226,7 +3226,7 @@ class oxs_byte_count(oxs):
     def pack(self):
         packed = []
         packed.append(struct.pack("!L", self.type_len))
-        packed.append(struct.pack("!H", self.value))
+        packed.append(struct.pack("!Q", self.value))
         return ''.join(packed)
 
     @staticmethod
@@ -3234,7 +3234,7 @@ class oxs_byte_count(oxs):
         obj = oxs_byte_count()
         _type_len = reader.read("!L")[0]
         assert(_type_len == 2147616776)
-        obj.value = reader.read("!H")[0]
+        obj.value = reader.read("!Q")[0]
         return obj
 
     def __eq__(self, other):
@@ -3267,7 +3267,7 @@ class oxs_duration(oxs):
     def pack(self):
         packed = []
         packed.append(struct.pack("!L", self.type_len))
-        packed.append(struct.pack("!H", self.value))
+        packed.append(struct.pack("!Q", self.value))
         return ''.join(packed)
 
     @staticmethod
@@ -3275,7 +3275,7 @@ class oxs_duration(oxs):
         obj = oxs_duration()
         _type_len = reader.read("!L")[0]
         assert(_type_len == 2147614728)
-        obj.value = reader.read("!H")[0]
+        obj.value = reader.read("!Q")[0]
         return obj
 
     def __eq__(self, other):
@@ -3308,7 +3308,7 @@ class oxs_flow_count(oxs):
     def pack(self):
         packed = []
         packed.append(struct.pack("!L", self.type_len))
-        packed.append(struct.pack("!H", self.value))
+        packed.append(struct.pack("!L", self.value))
         return ''.join(packed)
 
     @staticmethod
@@ -3316,7 +3316,7 @@ class oxs_flow_count(oxs):
         obj = oxs_flow_count()
         _type_len = reader.read("!L")[0]
         assert(_type_len == 2147615748)
-        obj.value = reader.read("!H")[0]
+        obj.value = reader.read("!L")[0]
         return obj
 
     def __eq__(self, other):
@@ -3349,7 +3349,7 @@ class oxs_idle_time(oxs):
     def pack(self):
         packed = []
         packed.append(struct.pack("!L", self.type_len))
-        packed.append(struct.pack("!H", self.value))
+        packed.append(struct.pack("!Q", self.value))
         return ''.join(packed)
 
     @staticmethod
@@ -3357,7 +3357,7 @@ class oxs_idle_time(oxs):
         obj = oxs_idle_time()
         _type_len = reader.read("!L")[0]
         assert(_type_len == 2147615240)
-        obj.value = reader.read("!H")[0]
+        obj.value = reader.read("!Q")[0]
         return obj
 
     def __eq__(self, other):
@@ -3390,7 +3390,7 @@ class oxs_packet_count(oxs):
     def pack(self):
         packed = []
         packed.append(struct.pack("!L", self.type_len))
-        packed.append(struct.pack("!H", self.value))
+        packed.append(struct.pack("!Q", self.value))
         return ''.join(packed)
 
     @staticmethod
@@ -3398,7 +3398,7 @@ class oxs_packet_count(oxs):
         obj = oxs_packet_count()
         _type_len = reader.read("!L")[0]
         assert(_type_len == 2147616264)
-        obj.value = reader.read("!H")[0]
+        obj.value = reader.read("!Q")[0]
         return obj
 
     def __eq__(self, other):
