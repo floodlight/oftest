@@ -487,6 +487,13 @@ ofp_bsn_enhanced_hash_type_map = {
     32: 'OFP_BSN_ENHANCED_HASH_SYMMETRIC',
 }
 
+# Identifiers from group ofp_bsn_fabric_port_role
+OFP_BSN_FABRIC_PORT_ROLE_PARTITIONED_SPINE = 1
+
+ofp_bsn_fabric_port_role_map = {
+    1: 'OFP_BSN_FABRIC_PORT_ROLE_PARTITIONED_SPINE',
+}
+
 # Identifiers from group ofp_bsn_forward_error_correction_type
 OFP_BSN_FORWARD_ERROR_CORRECTION_DEFAULT = 0
 OFP_BSN_FORWARD_ERROR_CORRECTION_ENABLE = 1
@@ -918,6 +925,15 @@ ofp_bsn_udf_anchor_map = {
     0: 'OFP_BSN_UDF_ANCHOR_PACKET_START',
     1: 'OFP_BSN_UDF_ANCHOR_L3_HEADER_START',
     2: 'OFP_BSN_UDF_ANCHOR_L4_HEADER_START',
+}
+
+# Identifiers from group ofp_bsn_upgrade
+OFP_BSN_UPGRADE_INVALID = 0
+OFP_BSN_UPGRADE_IN_PROGRESS = 1
+
+ofp_bsn_upgrade_map = {
+    0: 'OFP_BSN_UPGRADE_INVALID',
+    1: 'OFP_BSN_UPGRADE_IN_PROGRESS',
 }
 
 # Identifiers from group ofp_bsn_vlan_counter_constants
