@@ -5,8 +5,17 @@ platform == veth_inject
 
 ###############################################################################
 #
-# This platform assumes the loopback configuration file is specified
-# on the command line. 
+# This platform assumes the loopback configuration file
+# and the interface name to openflow port number configuration file
+# are specified on the command line.
+# Both files are expected to be in yaml format.
+# The intent is to generate port_map dictionary, whose keys are
+# openflow port numbers and whose values are interface names.
+# Packets written to a specific interface will be seen on the corresponding
+# openflow port.
+# The loopback connections in the loopback configuration file are assumed
+# to be unique; i.e. if interfaceA is connected to interfaceB, there is no
+# configuration stating interfaceB is connected to interfaceA.
 #
 ###############################################################################
 
@@ -14,7 +23,7 @@ import sys
 import os
 import argparse
 import subprocess
-import json
+import yaml
 
 # The loopback port specification is passed via the "--platform-args"
 # option to OFTest. 
@@ -27,60 +36,74 @@ ap.add_argument("--platform-args")
 (ops, rest) = ap.parse_known_args()
 
 ###############################################################################
-# --platform-args=cfgfile[,reverse]
+# --platform-args=<loopback-cfgfile>,<ifname2ofport-cfgfile>
 
 """
-sample config file specifying loopback connections between the given interfaces
-{
-   "ethernet29": "ethernet30",
-   "ethernet19": "ethernet20",
-   "ethernet21": "ethernet22",
-   "ethernet15": "ethernet16",
-   "ethernet23": "ethernet24",
-   "ethernet31": "ethernet32",
-   "ethernet25": "ethernet26",
-   "ethernet11": "ethernet12",
-   "ethernet27": "ethernet28",
-   "ethernet13": "ethernet14",
-   "ethernet9": "ethernet10",
-   "ethernet3": "ethernet4",
-   "ethernet1": "ethernet2",
-   "ethernet7": "ethernet8",
-   "ethernet5": "ethernet6",
-   "ethernet17": "ethernet18"
-}
+sample config file specifying loopback connections ;
+note no duplicate loopback configuration
+ethernet11: ethernet12
+ethernet9: ethernet10
+ethernet3: ethernet4
+ethernet1: ethernet2
+ethernet7: ethernet8
+ethernet5: ethernet6
+
+sample config file specifying ifname2ofport mapping ;
+each interface appearing as a key in the loopback configuration
+must have a corresponding entry in the ifname2ofport mapping
+ethernet1 : 1
+ethernet2 : 2
+ethernet3 : 3
+ethernet4 : 4
+ethernet5 : 5
+ethernet6 : 6
+ethernet7 : 7
+ethernet8 : 8
+ethernet9 : 9
+ethernet10 : 10
+ethernet11 : 11
+ethernet12 : 12
 """
 
 args = ops.platform_args.split(",")
-# 1 arg: cfg file
-# 2 or more args: cfg file, 'reverse' keyword, rest ignored
-if len(args) == 0:
-    raise Exception("No config file specified")
-if len(args) == 1:
-    cfgfile = args[0]
-    reverse = False
-else:
-    cfgfile = args[0]
-    reverse = (args[1] == 'reverse')
+# first arg: loopback cfg file
+# second arg: ifname to ofport number mapping cfg file
+if len(args) != 2:
+    raise Exception("Expecting <loopback-cfgfile>,<ifname2ofport-cfgfile>")
+lbcfgfile = args[0]
+if2numcfgfile = args[1]
 
-# read config file
-if os.path.isfile(cfgfile):
-    with open(cfgfile) as f:
-        cfg = json.load(f)
+# read config files
+if os.path.isfile(lbcfgfile):
+    print(lbcfgfile)
+    with open(lbcfgfile) as f:
+        lbcfg = yaml.load(f)
 else:
-    cfg = {}
+    lbcfg = {}
+if os.path.isfile(if2numcfgfile):
+    print(if2numcfgfile)
+    with open(if2numcfgfile) as f:
+        if2numcfg = yaml.load(f)
+else:
+    if2numcfg = {}
 
-# set up injection ports based on keys or values
-basename = 'ethernet'
-# 'reverse' swaps key with value
-if reverse:
-    port_map = { int(v[len(basename):]):
-                 'vet'+k[len(basename):].encode('ascii','ignore')+'j'
-                 for k,v in cfg.iteritems() if v.startswith(basename)}
-else:
-    port_map = { int(k[len(basename):]):
-                 'vet'+v[len(basename):].encode('ascii','ignore')+'j'
-                 for k,v in cfg.iteritems() if k.startswith(basename)}
+# lbcfg sanity check: keys and values should have no overlap
+if set(lbcfg.keys()) != ( set(lbcfg.keys()) - set(lbcfg.values()) ):
+    raise Exception("Loopback configuration keys and values overlap")
+
+# set up injection ports
+# keys are mapped from interface name to ofport number
+# values are mapped from interface name to veth injection port name
+def inj_port(x):
+    basename = 'ethernet'
+    if x.startswith(basename):
+        return 'vet' + x[len(basename):].replace('/', ',') + 'j'
+    else:
+        raise Exception("Injection port name does not start with '%s'"
+                        % basename)
+
+port_map = { if2numcfg[k]: inj_port(v)
+             for k,v in lbcfg.iteritems() if k in if2numcfg }
     
 print port_map
 
