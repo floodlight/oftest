@@ -243,6 +243,61 @@ class bsn_breakout(bsn):
 
 bsn.subtypes[3] = bsn_breakout
 
+class bsn_ethtool(bsn):
+    type = 65535
+    experimenter = 6035143
+    exp_type = 6
+
+    def __init__(self, data=None):
+        if data != None:
+            self.data = data
+        else:
+            self.data = ''
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.exp_type))
+        packed.append(self.data)
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_ethtool()
+        _type = reader.read("!H")[0]
+        assert(_type == 65535)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _exp_type = reader.read("!L")[0]
+        assert(_exp_type == 6)
+        obj.data = str(reader.read_all())
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.data != other.data: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_ethtool {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("data = ");
+                q.pp(self.data)
+            q.breakable()
+        q.text('}')
+
+bsn.subtypes[6] = bsn_ethtool
+
 class bsn_forward_error_correction(bsn):
     type = 65535
     experimenter = 6035143

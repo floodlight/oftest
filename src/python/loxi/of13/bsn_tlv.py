@@ -6785,6 +6785,53 @@ class udp_src(bsn_tlv):
 
 bsn_tlv.subtypes[36] = udp_src
 
+class uint32(bsn_tlv):
+    type = 167
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!L", self.value))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = uint32()
+        _type = reader.read("!H")[0]
+        assert(_type == 167)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.value = reader.read("!L")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("uint32 {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[167] = uint32
+
 class uint64_list(bsn_tlv):
     type = 119
 
@@ -7151,6 +7198,44 @@ class use_packet_state(bsn_tlv):
         q.text('}')
 
 bsn_tlv.subtypes[96] = use_packet_state
+
+class user_configured(bsn_tlv):
+    type = 166
+
+    def __init__(self):
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = user_configured()
+        _type = reader.read("!H")[0]
+        assert(_type == 166)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("user_configured {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[166] = user_configured
 
 class vfi(bsn_tlv):
     type = 99
