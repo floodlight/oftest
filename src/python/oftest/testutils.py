@@ -1775,7 +1775,7 @@ def verify_packets(test, pkt, ofports):
 def verify_no_errors(ctrl):
     error, _ = ctrl.poll(ofp.OFPT_ERROR, 0)
     if error:
-        if error.version >= 3 and isinstance(error, ofp.message.bsn_error):
+        if error.version >= 3 and isinstance(error, ofp.message.bsn_base_error):
             raise AssertionError("unexpected error type=%d msg=%s" %
                                  (error.err_type, error.err_msg))
         else:
