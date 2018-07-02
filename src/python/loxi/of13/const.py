@@ -343,6 +343,34 @@ ofp_bsn_auto_negotiation_type_map = {
     2: 'OFP_BSN_AUTO_NEGOTIATION_DISABLE',
 }
 
+# Identifiers from group ofp_bsn_bfd_endpoint
+OFP_BSN_BFD_UNUSED = 0
+OFP_BSN_BFD_MICRO = 1
+OFP_BSN_BFD_1_HOP = 2
+OFP_BSN_BFD_MULTI_HOP = 3
+
+ofp_bsn_bfd_endpoint_map = {
+    0: 'OFP_BSN_BFD_UNUSED',
+    1: 'OFP_BSN_BFD_MICRO',
+    2: 'OFP_BSN_BFD_1_HOP',
+    3: 'OFP_BSN_BFD_MULTI_HOP',
+}
+
+# Identifiers from group ofp_bsn_bfd_endpoint_state
+OFP_BSN_BFD_ENDPOINT_STATE_ADMINDOWN = 0
+OFP_BSN_BFD_ENDPOINT_STATE_DOWN = 1
+OFP_BSN_BFD_ENDPOINT_STATE_INIT = 2
+OFP_BSN_BFD_ENDPOINT_STATE_UP = 3
+OFP_BSN_BFD_ENDPOINT_SESSION_ERROR = 4
+
+ofp_bsn_bfd_endpoint_state_map = {
+    0: 'OFP_BSN_BFD_ENDPOINT_STATE_ADMINDOWN',
+    1: 'OFP_BSN_BFD_ENDPOINT_STATE_DOWN',
+    2: 'OFP_BSN_BFD_ENDPOINT_STATE_INIT',
+    3: 'OFP_BSN_BFD_ENDPOINT_STATE_UP',
+    4: 'OFP_BSN_BFD_ENDPOINT_SESSION_ERROR',
+}
+
 # Identifiers from group ofp_bsn_controller_connection_state
 OFP_BSN_CONTROLLER_CONNECTION_STATE_DISCONNECTED = 0
 OFP_BSN_CONTROLLER_CONNECTION_STATE_CONNECTED = 1
@@ -384,6 +412,17 @@ ofp_bsn_decap_map = {
     6: 'OFP_BSN_DECAP_L3_GRE',
     7: 'OFP_BSN_DECAP_GTP',
     8: 'OFP_BSN_DECAP_L3_MPLS',
+}
+
+# Identifiers from group ofp_bsn_encap
+OFP_BSN_ENCAP_UNUSED = 0
+OFP_BSN_ENCAP_IPV4_UDP = 1
+OFP_BSN_ENCAP_IPV6_UDP = 2
+
+ofp_bsn_encap_map = {
+    0: 'OFP_BSN_ENCAP_UNUSED',
+    1: 'OFP_BSN_ENCAP_IPV4_UDP',
+    2: 'OFP_BSN_ENCAP_IPV6_UDP',
 }
 
 # Identifiers from group ofp_bsn_enhanced_hash_type
@@ -453,6 +492,15 @@ ofp_bsn_hash_select_flags_map = {
     2: 'OFP_BSN_HASH_SELECT_DST_IP',
 }
 
+# Identifiers from group ofp_bsn_ip_tunnel_type
+OFP_BSN_IP_TUNNEL_TYPE_NONE = 0
+OFP_BSN_IP_TUNNEL_TYPE_PIM = 1
+
+ofp_bsn_ip_tunnel_type_map = {
+    0: 'OFP_BSN_IP_TUNNEL_TYPE_NONE',
+    1: 'OFP_BSN_IP_TUNNEL_TYPE_PIM',
+}
+
 # Identifiers from group ofp_bsn_lacp_state
 OFP_BSN_LACP_STATE_ACTIVITY = 1
 OFP_BSN_LACP_STATE_TIMEOUT = 2
@@ -520,6 +568,17 @@ ofp_bsn_lua_upload_flags_map = {
     2: 'OFP_BSN_LUA_UPLOAD_FORCE',
 }
 
+# Identifiers from group ofp_bsn_multicast_packet
+OFP_BSN_MULTICAST_PACKET_NONE = 0
+OFP_BSN_MULTICAST_PACKET_PIM_HELLO = 1
+OFP_BSN_MULTICAST_PACKET_PIM_JOIN_PRUNE = 2
+
+ofp_bsn_multicast_packet_map = {
+    0: 'OFP_BSN_MULTICAST_PACKET_NONE',
+    1: 'OFP_BSN_MULTICAST_PACKET_PIM_HELLO',
+    2: 'OFP_BSN_MULTICAST_PACKET_PIM_JOIN_PRUNE',
+}
+
 # Identifiers from group ofp_bsn_pktin_flag
 OFP_BSN_PKTIN_FLAG_PDU = 1
 OFP_BSN_PKTIN_FLAG_NEW_HOST = 2
@@ -542,6 +601,8 @@ OFP_BSN_PKTIN_FLAG_MC_RESERVED = 131072
 OFP_BSN_PKTIN_FLAG_ANALYTICS = 262144
 OFP_BSN_PKTIN_FLAG_ICMPV6 = 524288
 OFP_BSN_PKTIN_FLAG_INGRESS_ACL_LOCAL = 1048576
+OFP_BSN_PKTIN_FLAG_IPMC_MISS = 2097152
+OFP_BSN_PKTIN_FLAG_IPMC_RPF_FAILED = 4194304
 
 ofp_bsn_pktin_flag_map = {
     1: 'OFP_BSN_PKTIN_FLAG_PDU',
@@ -565,6 +626,8 @@ ofp_bsn_pktin_flag_map = {
     262144: 'OFP_BSN_PKTIN_FLAG_ANALYTICS',
     524288: 'OFP_BSN_PKTIN_FLAG_ICMPV6',
     1048576: 'OFP_BSN_PKTIN_FLAG_INGRESS_ACL_LOCAL',
+    2097152: 'OFP_BSN_PKTIN_FLAG_IPMC_MISS',
+    4194304: 'OFP_BSN_PKTIN_FLAG_IPMC_RPF_FAILED',
 }
 
 # Identifiers from group ofp_bsn_port_counter

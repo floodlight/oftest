@@ -169,6 +169,121 @@ class bsn(experimenter):
 
 experimenter.subtypes[6035143] = bsn
 
+class bsn_alarm(bsn):
+    type = 65535
+    experimenter = 6035143
+    exp_type = 8
+
+    def __init__(self, alarm_set=None, high=None, high_warn=None, low=None, low_warn=None, alarm_type=None, unit=None):
+        if alarm_set != None:
+            self.alarm_set = alarm_set
+        else:
+            self.alarm_set = 0
+        if high != None:
+            self.high = high
+        else:
+            self.high = 0
+        if high_warn != None:
+            self.high_warn = high_warn
+        else:
+            self.high_warn = 0
+        if low != None:
+            self.low = low
+        else:
+            self.low = 0
+        if low_warn != None:
+            self.low_warn = low_warn
+        else:
+            self.low_warn = 0
+        if alarm_type != None:
+            self.alarm_type = alarm_type
+        else:
+            self.alarm_type = 0
+        if unit != None:
+            self.unit = unit
+        else:
+            self.unit = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.exp_type))
+        packed.append(struct.pack("!B", self.alarm_set))
+        packed.append(struct.pack("!L", self.high))
+        packed.append(struct.pack("!L", self.high_warn))
+        packed.append(struct.pack("!L", self.low))
+        packed.append(struct.pack("!L", self.low_warn))
+        packed.append(struct.pack("!B", self.alarm_type))
+        packed.append(struct.pack("!B", self.unit))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_alarm()
+        _type = reader.read("!H")[0]
+        assert(_type == 65535)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _exp_type = reader.read("!L")[0]
+        assert(_exp_type == 8)
+        obj.alarm_set = reader.read("!B")[0]
+        obj.high = reader.read("!L")[0]
+        obj.high_warn = reader.read("!L")[0]
+        obj.low = reader.read("!L")[0]
+        obj.low_warn = reader.read("!L")[0]
+        obj.alarm_type = reader.read("!B")[0]
+        obj.unit = reader.read("!B")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.alarm_set != other.alarm_set: return False
+        if self.high != other.high: return False
+        if self.high_warn != other.high_warn: return False
+        if self.low != other.low: return False
+        if self.low_warn != other.low_warn: return False
+        if self.alarm_type != other.alarm_type: return False
+        if self.unit != other.unit: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_alarm {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("alarm_set = ");
+                q.text("%#x" % self.alarm_set)
+                q.text(","); q.breakable()
+                q.text("high = ");
+                q.text("%#x" % self.high)
+                q.text(","); q.breakable()
+                q.text("high_warn = ");
+                q.text("%#x" % self.high_warn)
+                q.text(","); q.breakable()
+                q.text("low = ");
+                q.text("%#x" % self.low)
+                q.text(","); q.breakable()
+                q.text("low_warn = ");
+                q.text("%#x" % self.low_warn)
+                q.text(","); q.breakable()
+                q.text("alarm_type = ");
+                q.text("%#x" % self.alarm_type)
+                q.text(","); q.breakable()
+                q.text("unit = ");
+                q.text("%#x" % self.unit)
+            q.breakable()
+        q.text('}')
+
+bsn.subtypes[8] = bsn_alarm
+
 class bsn_breakout(bsn):
     type = 65535
     experimenter = 6035143
@@ -234,16 +349,36 @@ class bsn_breakout(bsn):
 
 bsn.subtypes[3] = bsn_breakout
 
-class bsn_ethtool(bsn):
+class bsn_diag(bsn):
     type = 65535
     experimenter = 6035143
-    exp_type = 6
+    exp_type = 7
 
-    def __init__(self, data=None):
-        if data != None:
-            self.data = data
+    def __init__(self, laser_bias_curr=None, laser_output_power=None, laser_receiver_power_type=None, laser_receiver_power=None, module_temp=None, module_voltage=None):
+        if laser_bias_curr != None:
+            self.laser_bias_curr = laser_bias_curr
         else:
-            self.data = ''
+            self.laser_bias_curr = ofp.bsn_unit()
+        if laser_output_power != None:
+            self.laser_output_power = laser_output_power
+        else:
+            self.laser_output_power = ofp.bsn_unit()
+        if laser_receiver_power_type != None:
+            self.laser_receiver_power_type = laser_receiver_power_type
+        else:
+            self.laser_receiver_power_type = 0
+        if laser_receiver_power != None:
+            self.laser_receiver_power = laser_receiver_power
+        else:
+            self.laser_receiver_power = ofp.bsn_unit()
+        if module_temp != None:
+            self.module_temp = module_temp
+        else:
+            self.module_temp = ofp.bsn_unit()
+        if module_voltage != None:
+            self.module_voltage = module_voltage
+        else:
+            self.module_voltage = ofp.bsn_unit()
         return
 
     def pack(self):
@@ -252,7 +387,187 @@ class bsn_ethtool(bsn):
         packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
         packed.append(struct.pack("!L", self.experimenter))
         packed.append(struct.pack("!L", self.exp_type))
-        packed.append(self.data)
+        packed.append(self.laser_bias_curr.pack())
+        packed.append(self.laser_output_power.pack())
+        packed.append(struct.pack("!B", self.laser_receiver_power_type))
+        packed.append(self.laser_receiver_power.pack())
+        packed.append(self.module_temp.pack())
+        packed.append(self.module_voltage.pack())
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_diag()
+        _type = reader.read("!H")[0]
+        assert(_type == 65535)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _exp_type = reader.read("!L")[0]
+        assert(_exp_type == 7)
+        obj.laser_bias_curr = ofp.bsn_unit.unpack(reader)
+        obj.laser_output_power = ofp.bsn_unit.unpack(reader)
+        obj.laser_receiver_power_type = reader.read("!B")[0]
+        obj.laser_receiver_power = ofp.bsn_unit.unpack(reader)
+        obj.module_temp = ofp.bsn_unit.unpack(reader)
+        obj.module_voltage = ofp.bsn_unit.unpack(reader)
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.laser_bias_curr != other.laser_bias_curr: return False
+        if self.laser_output_power != other.laser_output_power: return False
+        if self.laser_receiver_power_type != other.laser_receiver_power_type: return False
+        if self.laser_receiver_power != other.laser_receiver_power: return False
+        if self.module_temp != other.module_temp: return False
+        if self.module_voltage != other.module_voltage: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_diag {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("laser_bias_curr = ");
+                q.pp(self.laser_bias_curr)
+                q.text(","); q.breakable()
+                q.text("laser_output_power = ");
+                q.pp(self.laser_output_power)
+                q.text(","); q.breakable()
+                q.text("laser_receiver_power_type = ");
+                q.text("%#x" % self.laser_receiver_power_type)
+                q.text(","); q.breakable()
+                q.text("laser_receiver_power = ");
+                q.pp(self.laser_receiver_power)
+                q.text(","); q.breakable()
+                q.text("module_temp = ");
+                q.pp(self.module_temp)
+                q.text(","); q.breakable()
+                q.text("module_voltage = ");
+                q.pp(self.module_voltage)
+            q.breakable()
+        q.text('}')
+
+bsn.subtypes[7] = bsn_diag
+
+class bsn_ethtool(bsn):
+    type = 65535
+    experimenter = 6035143
+    exp_type = 6
+
+    def __init__(self, identifier=None, extidentifier=None, connector=None, transdata=None, encoding=None, br_nominal=None, rateidentifier=None, length_SMF_KM=None, length_SMF=None, length_50_um=None, length_625_um=None, length_copper=None, length_OM3=None, vendor_name_lo=None, vendor_name_hi=None, vendor_oui=None, vendor_pn_lo=None, vendor_pn_hi=None, vendor_rev=None, more_properties=None):
+        if identifier != None:
+            self.identifier = identifier
+        else:
+            self.identifier = 0
+        if extidentifier != None:
+            self.extidentifier = extidentifier
+        else:
+            self.extidentifier = 0
+        if connector != None:
+            self.connector = connector
+        else:
+            self.connector = 0
+        if transdata != None:
+            self.transdata = transdata
+        else:
+            self.transdata = ofp.bsn_module_eeprom_transceiver()
+        if encoding != None:
+            self.encoding = encoding
+        else:
+            self.encoding = 0
+        if br_nominal != None:
+            self.br_nominal = br_nominal
+        else:
+            self.br_nominal = ofp.bsn_unit()
+        if rateidentifier != None:
+            self.rateidentifier = rateidentifier
+        else:
+            self.rateidentifier = 0
+        if length_SMF_KM != None:
+            self.length_SMF_KM = length_SMF_KM
+        else:
+            self.length_SMF_KM = ofp.bsn_unit()
+        if length_SMF != None:
+            self.length_SMF = length_SMF
+        else:
+            self.length_SMF = ofp.bsn_unit()
+        if length_50_um != None:
+            self.length_50_um = length_50_um
+        else:
+            self.length_50_um = ofp.bsn_unit()
+        if length_625_um != None:
+            self.length_625_um = length_625_um
+        else:
+            self.length_625_um = ofp.bsn_unit()
+        if length_copper != None:
+            self.length_copper = length_copper
+        else:
+            self.length_copper = ofp.bsn_unit()
+        if length_OM3 != None:
+            self.length_OM3 = length_OM3
+        else:
+            self.length_OM3 = ofp.bsn_unit()
+        if vendor_name_lo != None:
+            self.vendor_name_lo = vendor_name_lo
+        else:
+            self.vendor_name_lo = 0
+        if vendor_name_hi != None:
+            self.vendor_name_hi = vendor_name_hi
+        else:
+            self.vendor_name_hi = 0
+        if vendor_oui != None:
+            self.vendor_oui = vendor_oui
+        else:
+            self.vendor_oui = 0
+        if vendor_pn_lo != None:
+            self.vendor_pn_lo = vendor_pn_lo
+        else:
+            self.vendor_pn_lo = 0
+        if vendor_pn_hi != None:
+            self.vendor_pn_hi = vendor_pn_hi
+        else:
+            self.vendor_pn_hi = 0
+        if vendor_rev != None:
+            self.vendor_rev = vendor_rev
+        else:
+            self.vendor_rev = 0
+        if more_properties != None:
+            self.more_properties = more_properties
+        else:
+            self.more_properties = []
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.exp_type))
+        packed.append(struct.pack("!B", self.identifier))
+        packed.append(struct.pack("!B", self.extidentifier))
+        packed.append(struct.pack("!B", self.connector))
+        packed.append(self.transdata.pack())
+        packed.append(struct.pack("!B", self.encoding))
+        packed.append(self.br_nominal.pack())
+        packed.append(struct.pack("!B", self.rateidentifier))
+        packed.append(self.length_SMF_KM.pack())
+        packed.append(self.length_SMF.pack())
+        packed.append(self.length_50_um.pack())
+        packed.append(self.length_625_um.pack())
+        packed.append(self.length_copper.pack())
+        packed.append(self.length_OM3.pack())
+        packed.append(struct.pack("!Q", self.vendor_name_lo))
+        packed.append(struct.pack("!Q", self.vendor_name_hi))
+        packed.append(struct.pack("!L", self.vendor_oui))
+        packed.append(struct.pack("!Q", self.vendor_pn_lo))
+        packed.append(struct.pack("!Q", self.vendor_pn_hi))
+        packed.append(struct.pack("!L", self.vendor_rev))
+        packed.append(loxi.generic_util.pack_list(self.more_properties))
         length = sum([len(x) for x in packed])
         packed[1] = struct.pack("!H", length)
         return ''.join(packed)
@@ -269,12 +584,50 @@ class bsn_ethtool(bsn):
         assert(_experimenter == 6035143)
         _exp_type = reader.read("!L")[0]
         assert(_exp_type == 6)
-        obj.data = str(reader.read_all())
+        obj.identifier = reader.read("!B")[0]
+        obj.extidentifier = reader.read("!B")[0]
+        obj.connector = reader.read("!B")[0]
+        obj.transdata = ofp.bsn_module_eeprom_transceiver.unpack(reader)
+        obj.encoding = reader.read("!B")[0]
+        obj.br_nominal = ofp.bsn_unit.unpack(reader)
+        obj.rateidentifier = reader.read("!B")[0]
+        obj.length_SMF_KM = ofp.bsn_unit.unpack(reader)
+        obj.length_SMF = ofp.bsn_unit.unpack(reader)
+        obj.length_50_um = ofp.bsn_unit.unpack(reader)
+        obj.length_625_um = ofp.bsn_unit.unpack(reader)
+        obj.length_copper = ofp.bsn_unit.unpack(reader)
+        obj.length_OM3 = ofp.bsn_unit.unpack(reader)
+        obj.vendor_name_lo = reader.read("!Q")[0]
+        obj.vendor_name_hi = reader.read("!Q")[0]
+        obj.vendor_oui = reader.read("!L")[0]
+        obj.vendor_pn_lo = reader.read("!Q")[0]
+        obj.vendor_pn_hi = reader.read("!Q")[0]
+        obj.vendor_rev = reader.read("!L")[0]
+        obj.more_properties = loxi.generic_util.unpack_list(reader, ofp.port_desc_prop.port_desc_prop.unpack)
         return obj
 
     def __eq__(self, other):
         if type(self) != type(other): return False
-        if self.data != other.data: return False
+        if self.identifier != other.identifier: return False
+        if self.extidentifier != other.extidentifier: return False
+        if self.connector != other.connector: return False
+        if self.transdata != other.transdata: return False
+        if self.encoding != other.encoding: return False
+        if self.br_nominal != other.br_nominal: return False
+        if self.rateidentifier != other.rateidentifier: return False
+        if self.length_SMF_KM != other.length_SMF_KM: return False
+        if self.length_SMF != other.length_SMF: return False
+        if self.length_50_um != other.length_50_um: return False
+        if self.length_625_um != other.length_625_um: return False
+        if self.length_copper != other.length_copper: return False
+        if self.length_OM3 != other.length_OM3: return False
+        if self.vendor_name_lo != other.vendor_name_lo: return False
+        if self.vendor_name_hi != other.vendor_name_hi: return False
+        if self.vendor_oui != other.vendor_oui: return False
+        if self.vendor_pn_lo != other.vendor_pn_lo: return False
+        if self.vendor_pn_hi != other.vendor_pn_hi: return False
+        if self.vendor_rev != other.vendor_rev: return False
+        if self.more_properties != other.more_properties: return False
         return True
 
     def pretty_print(self, q):
@@ -282,8 +635,65 @@ class bsn_ethtool(bsn):
         with q.group():
             with q.indent(2):
                 q.breakable()
-                q.text("data = ");
-                q.pp(self.data)
+                q.text("identifier = ");
+                q.text("%#x" % self.identifier)
+                q.text(","); q.breakable()
+                q.text("extidentifier = ");
+                q.text("%#x" % self.extidentifier)
+                q.text(","); q.breakable()
+                q.text("connector = ");
+                q.text("%#x" % self.connector)
+                q.text(","); q.breakable()
+                q.text("transdata = ");
+                q.pp(self.transdata)
+                q.text(","); q.breakable()
+                q.text("encoding = ");
+                q.text("%#x" % self.encoding)
+                q.text(","); q.breakable()
+                q.text("br_nominal = ");
+                q.pp(self.br_nominal)
+                q.text(","); q.breakable()
+                q.text("rateidentifier = ");
+                q.text("%#x" % self.rateidentifier)
+                q.text(","); q.breakable()
+                q.text("length_SMF_KM = ");
+                q.pp(self.length_SMF_KM)
+                q.text(","); q.breakable()
+                q.text("length_SMF = ");
+                q.pp(self.length_SMF)
+                q.text(","); q.breakable()
+                q.text("length_50_um = ");
+                q.pp(self.length_50_um)
+                q.text(","); q.breakable()
+                q.text("length_625_um = ");
+                q.pp(self.length_625_um)
+                q.text(","); q.breakable()
+                q.text("length_copper = ");
+                q.pp(self.length_copper)
+                q.text(","); q.breakable()
+                q.text("length_OM3 = ");
+                q.pp(self.length_OM3)
+                q.text(","); q.breakable()
+                q.text("vendor_name_lo = ");
+                q.text("%#x" % self.vendor_name_lo)
+                q.text(","); q.breakable()
+                q.text("vendor_name_hi = ");
+                q.text("%#x" % self.vendor_name_hi)
+                q.text(","); q.breakable()
+                q.text("vendor_oui = ");
+                q.text("%#x" % self.vendor_oui)
+                q.text(","); q.breakable()
+                q.text("vendor_pn_lo = ");
+                q.text("%#x" % self.vendor_pn_lo)
+                q.text(","); q.breakable()
+                q.text("vendor_pn_hi = ");
+                q.text("%#x" % self.vendor_pn_hi)
+                q.text(","); q.breakable()
+                q.text("vendor_rev = ");
+                q.text("%#x" % self.vendor_rev)
+                q.text(","); q.breakable()
+                q.text("more_properties = ");
+                q.pp(self.more_properties)
             q.breakable()
         q.text('}')
 
