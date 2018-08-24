@@ -105,7 +105,8 @@ def inj_port(x):
 port_map = { if2numcfg[k]: inj_port(v)
              for k,v in lbcfg.iteritems() if k in if2numcfg }
     
-print port_map
+port_map1 = { if2numcfg[k]: if2numcfg[v]
+             for k, v in lbcfg.iteritems() if k in if2numcfg }
 
 def platform_config_update(config):
     """
@@ -119,3 +120,5 @@ def platform_config_update(config):
     config["port_map"] = port_map.copy()
     config["caps_table_idx"] = 0
     config['allow_user'] = True
+    config['loopback'] = True
+    config["port_map1"] = port_map1.copy()
