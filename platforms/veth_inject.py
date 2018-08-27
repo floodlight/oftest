@@ -104,8 +104,15 @@ def inj_port(x):
 
 port_map = { if2numcfg[k]: inj_port(v)
              for k,v in lbcfg.iteritems() if k in if2numcfg }
-    
+ 
+print "Port to injection port mapping:"
 print port_map
+
+loopback_port_map = { if2numcfg[k]: if2numcfg[v]
+             for k, v in lbcfg.iteritems() if k in if2numcfg }
+
+print "Loopback port connections:"
+print loopback_port_map
 
 def platform_config_update(config):
     """
@@ -119,3 +126,4 @@ def platform_config_update(config):
     config["port_map"] = port_map.copy()
     config["caps_table_idx"] = 0
     config['allow_user'] = True
+    config["loopback_port_map"] = loopback_port_map.copy()
