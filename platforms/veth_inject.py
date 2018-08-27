@@ -105,7 +105,7 @@ def inj_port(x):
 port_map = { if2numcfg[k]: inj_port(v)
              for k,v in lbcfg.iteritems() if k in if2numcfg }
  
-print "Port to Tapping port mapping:"
+print "Port to injection port mapping:"
 print port_map
 
 loopback_port_map = { if2numcfg[k]: if2numcfg[v]
