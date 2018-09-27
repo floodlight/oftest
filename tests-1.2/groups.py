@@ -388,7 +388,7 @@ class GroupModInvalidID(GroupTest):
 
         self.send_ctrl_exp_error(group_mod_msg, 'group mod',
                                  ofp.OFPET_GROUP_MOD_FAILED,
-                                 ofp.OFPGMFC_INVALID_GROUP)
+                                 ofp.OFPGMFC_UNKNOWN_GROUP)
 
 
 
