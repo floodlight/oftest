@@ -2037,6 +2037,7 @@ class DirectBadPacketBase(base_tests.SimpleDataPlane):
         request2.match = self.createMatch()
         request2.match.wildcards &= ~ofp.OFPFW_IN_PORT
         request2.match.in_port = ingress_port
+        request2.buffer_id = 0xffffffff
 
         request2.priority = 0
         act = ofp.action.output()

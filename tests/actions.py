@@ -148,6 +148,7 @@ class ForwardAll(base_tests.SimpleDataPlane):
 
         #Create a flow mod with action.port = OFPP_ALL
         request = ofp.message.flow_add()
+        request.buffer_id = 0xffffffff
         request.match = match
         request.match.wildcards = ofp.OFPFW_ALL&~ofp.OFPFW_IN_PORT
         act.port = ofp.OFPP_ALL
@@ -199,6 +200,7 @@ class ForwardController(base_tests.SimpleDataPlane):
             
             #Create a flow mod message
             request = ofp.message.flow_add()
+            request.buffer_id = 0xffffffff
             request.match = match
             act.port = ofp.OFPP_CONTROLLER
             request.actions.append(act)
@@ -248,6 +250,7 @@ class ForwardLocal(base_tests.SimpleDataPlane):
             match.in_port = ingress_port
             #Create flow mod message
             request = ofp.message.flow_add()
+            request.buffer_id = 0xffffffff
             request.match = match
             act.port = ofp.OFPP_LOCAL
             request.actions.append(act)
@@ -296,6 +299,7 @@ class ForwardFlood(base_tests.SimpleDataPlane):
 
         #Create a flow mod with action.port = OFPP_ALL
         request = ofp.message.flow_add()
+        request.buffer_id = 0xffffffff
         request.match = match
         request.match.wildcards = ofp.OFPFW_ALL&~ofp.OFPFW_IN_PORT
         act.port = ofp.OFPP_FLOOD
@@ -345,6 +349,7 @@ class ForwardInport(base_tests.SimpleDataPlane):
 
         # Create a flow mod message
         request = ofp.message.flow_add()
+        request.buffer_id = 0xffffffff
         request.match = match
         act.port = ofp.OFPP_IN_PORT
             
