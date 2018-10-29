@@ -560,6 +560,6 @@ class AsyncConfigGet(base_tests.SimpleProtocol):
         response, _ = self.controller.transact(ofp.message.async_get_request())
         self.assertTrue(response != None, "No response to get async config request")
         logging.info(response.show())
-        self.assertEquals(response.packet_in_mask_equal_master & 0x07, 0x07)
+        self.assertEquals(response.packet_in_mask_equal_master & 0x07, 0x03)
         self.assertEquals(response.port_status_mask_equal_master & 0x07, 0x07)
         self.assertEquals(response.flow_removed_mask_equal_master & 0x0f, 0x0f)
