@@ -431,6 +431,7 @@ class DeleteEmerFlow(base_tests.SimpleProtocol):
         request = ofp.message.flow_add()
         request.match = match
         request.flags = request.flags|ofp.OFPFF_EMERG|ofp.OFPFF_SEND_FLOW_REM
+        request.buffer_id = 0xffffffff
         act = ofp.action.output()
         act.port = of_ports[1]
         request.actions.append(act)

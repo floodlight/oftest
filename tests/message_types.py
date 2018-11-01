@@ -443,6 +443,7 @@ class PacketInBodyAction(base_tests.SimpleDataPlane):
 
         #Insert a flow entry with action output to controller 
         request = ofp.message.flow_add()
+        request.buffer_id = 0xffffffff
         request.match = match
         act = ofp.action.output()
         act.port = ofp.OFPP_CONTROLLER

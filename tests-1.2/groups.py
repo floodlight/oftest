@@ -38,8 +38,8 @@ def create_group_mod_msg(command = ofp.OFPGC_ADD, type = ofp.OFPGT_ALL,
 
 
 
-# XXX Zoltan: watch_port/_group off ?
-def create_bucket(weight = 0, watch_port = 0, watch_group = 0, actions=[]):
+def create_bucket(actions, weight = 0, watch_port = 4294967295,
+                  watch_group = 4294967295):
     b = ofp.bucket()
     b.weight = weight
     b.watch_port = watch_port
@@ -183,7 +183,7 @@ class GroupAdd(GroupTest):
 
         group_add_msg = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 0, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 1)
             ])
         ])
@@ -202,7 +202,7 @@ class GroupAddInvalidAction(GroupTest):
 
         group_add_msg = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 0, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= ofp.OFPP_ANY)
             ])
         ])
@@ -223,7 +223,7 @@ class GroupAddExisting(GroupTest):
 
         group_add_msg = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 0, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 1)
             ])
         ])
@@ -232,7 +232,7 @@ class GroupAddExisting(GroupTest):
 
         group_mod_msg2 = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 0, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 1)
             ])
         ])
@@ -253,7 +253,7 @@ class GroupAddInvalidID(GroupTest):
 
         group_add_msg = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = ofp.OFPG_ALL, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 1)
             ])
         ])
@@ -274,7 +274,7 @@ class GroupMod(GroupTest):
 
         group_add_msg = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 0, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 1)
             ])
         ])
@@ -283,7 +283,7 @@ class GroupMod(GroupTest):
 
         group_mod_msg = \
         create_group_mod_msg(ofp.OFPGC_MODIFY, ofp.OFPGT_ALL, group_id = 0, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 1)
             ])
         ])
@@ -302,7 +302,7 @@ class GroupModNonexisting(GroupTest):
 
         group_add_msg = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 0, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 1)
             ])
         ])
@@ -311,7 +311,7 @@ class GroupModNonexisting(GroupTest):
 
         group_mod_msg = \
         create_group_mod_msg(ofp.OFPGC_MODIFY, ofp.OFPGT_ALL, group_id = 1, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 1)
             ])
         ])
@@ -332,7 +332,7 @@ class GroupModLoop(GroupTest):
 
         group_add_msg1 = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 0, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 1)
             ])
         ])
@@ -341,7 +341,7 @@ class GroupModLoop(GroupTest):
 
         group_add_msg2 = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 1, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_GROUP, group_id= 0)
             ])
         ])
@@ -350,7 +350,7 @@ class GroupModLoop(GroupTest):
 
         group_add_msg3 = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 2, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_GROUP, group_id= 0)
             ])
         ])
@@ -360,7 +360,7 @@ class GroupModLoop(GroupTest):
 
         group_mod_msg = \
         create_group_mod_msg(ofp.OFPGC_MODIFY, ofp.OFPGT_ALL, group_id = 0, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_GROUP, group_id= 2)
             ])
         ])
@@ -381,14 +381,14 @@ class GroupModInvalidID(GroupTest):
 
         group_mod_msg = \
         create_group_mod_msg(ofp.OFPGC_MODIFY, ofp.OFPGT_ALL, group_id = ofp.OFPG_ALL, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 1)
             ])
         ])
 
         self.send_ctrl_exp_error(group_mod_msg, 'group mod',
                                  ofp.OFPET_GROUP_MOD_FAILED,
-                                 ofp.OFPGMFC_INVALID_GROUP)
+                                 ofp.OFPGMFC_UNKNOWN_GROUP)
 
 
 
@@ -402,7 +402,7 @@ class GroupModEmpty(GroupTest):
 
         group_add_msg = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 0, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 1)
             ])
         ])
@@ -427,7 +427,7 @@ class GroupDelExisting(GroupTest):
 
         group_add_msg = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 10, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 1)
             ])
         ])
@@ -455,7 +455,7 @@ class GroupDelNonexisting(GroupTest):
 
         group_add_msg = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 0, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 1)
             ])
         ])
@@ -480,7 +480,7 @@ class GroupDelAll(GroupTest):
 
         group_add_msg1 = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 1, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 1)
             ])
         ])
@@ -489,7 +489,7 @@ class GroupDelAll(GroupTest):
 
         group_add_msg2 = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 2, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 1)
             ])
         ])
@@ -519,12 +519,12 @@ class GroupAddAllWeight(GroupTest):
 
         group_add_msg = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 0, buckets = [
-            create_bucket(1, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 2)
-            ]),
-            create_bucket(2, 0, 0, [
+            ], weight=1),
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 2)
-            ])
+            ], weight=2)
         ])
 
         self.send_ctrl_exp_error(group_add_msg, 'group add',
@@ -543,9 +543,9 @@ class GroupAddIndirectWeight(GroupTest):
 
         group_add_msg = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_INDIRECT, group_id = 0, buckets = [
-            create_bucket(1, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 2)
-            ])
+            ], weight = 1)
         ])
 
         self.send_ctrl_exp_error(group_add_msg, 'group add',
@@ -564,10 +564,10 @@ class GroupAddIndirectBuckets(GroupTest):
 
         group_add_msg = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_INDIRECT, group_id = 0, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 2)
             ]),
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 2)
             ])
         ])
@@ -588,10 +588,10 @@ class GroupAddSelectNoWeight(GroupTest):
 
         group_add_msg = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_SELECT, group_id = 0, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 2)
             ]),
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action= ofp.OFPAT_OUTPUT, port= 2)
             ])
         ])
@@ -652,7 +652,7 @@ class GroupProcSimple(GroupTest):
 
         group_add_msg = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 1, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 2000),
                 create_action(action = ofp.OFPAT_OUTPUT, port = 2)
             ])
@@ -687,7 +687,7 @@ class GroupProcMod(GroupTest):
 
         group_add_msg = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 1, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 2000),
                 create_action(action = ofp.OFPAT_OUTPUT, port = 2)
             ])
@@ -697,7 +697,7 @@ class GroupProcMod(GroupTest):
 
         group_mod_msg = \
         create_group_mod_msg(ofp.OFPGC_MODIFY, ofp.OFPGT_ALL, group_id = 1, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 3000),
                 create_action(action = ofp.OFPAT_OUTPUT, port = 2)
             ])
@@ -732,7 +732,7 @@ class GroupProcChain(GroupTest):
 
         group_add_msg2 = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 2, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 2000),
                 create_action(action = ofp.OFPAT_OUTPUT, port = 2)
             ])
@@ -742,7 +742,7 @@ class GroupProcChain(GroupTest):
 
         group_add_msg1 = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 1, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action = ofp.OFPAT_GROUP, group_id = 2),
             ])
         ])
@@ -779,15 +779,15 @@ class GroupProcAll(GroupTest):
 
         group_add_msg = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 1, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 2000),
                 create_action(action = ofp.OFPAT_OUTPUT, port = 2)
             ]),
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 3000),
                 create_action(action = ofp.OFPAT_OUTPUT, port = 3)
             ]),
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 4000),
                 create_action(action = ofp.OFPAT_OUTPUT, port = 4)
             ])
@@ -825,7 +825,7 @@ class GroupProcAllChain(GroupTest):
 
         group_add_msg2 = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 2, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 2000),
                 create_action(action = ofp.OFPAT_OUTPUT, port = 2)
             ])
@@ -835,11 +835,11 @@ class GroupProcAllChain(GroupTest):
 
         group_add_msg3 = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 3, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 3000),
                 create_action(action = ofp.OFPAT_OUTPUT, port = 3)
             ]),
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 4000),
                 create_action(action = ofp.OFPAT_OUTPUT, port = 4)
             ])
@@ -849,10 +849,10 @@ class GroupProcAllChain(GroupTest):
 
         group_add_msg1 = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 1, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action = ofp.OFPAT_GROUP, group_id = 2),
             ]),
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action = ofp.OFPAT_GROUP, group_id = 3),
             ])
         ])
@@ -890,7 +890,7 @@ class GroupProcIndirect(GroupTest):
 
         group_add_msg = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_INDIRECT, group_id = 1, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 2000),
                 create_action(action = ofp.OFPAT_OUTPUT, port = 2)
             ])
@@ -925,18 +925,18 @@ class GroupProcSelect(GroupTest):
 
         group_add_msg = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_SELECT, group_id = 1, buckets = [
-            create_bucket(1, 0, 0, [
+            create_bucket([
                 create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 2000),
                 create_action(action = ofp.OFPAT_OUTPUT, port = 2)
-            ]),
-            create_bucket(1, 0, 0, [
+            ], weight = 1),
+            create_bucket([
                 create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 3000),
                 create_action(action = ofp.OFPAT_OUTPUT, port = 3)
-            ]),
-            create_bucket(1, 0, 0, [
+            ], weight = 1),
+            create_bucket([
                 create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 4000),
                 create_action(action = ofp.OFPAT_OUTPUT, port = 4)
-            ])
+            ], weight = 1)
         ])
 
         self.send_ctrl_exp_noerror(group_add_msg, 'group add')
@@ -992,11 +992,11 @@ class GroupStats(GroupTest):
         
         group_add_msg = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 10, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 2000),
                 create_action(action = ofp.OFPAT_OUTPUT, port = 2)
             ]),
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 3000),
                 create_action(action = ofp.OFPAT_OUTPUT, port = 3)
             ])
@@ -1046,11 +1046,11 @@ class GroupStatsAll(GroupTest):
 
         group_add_msg1 = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 10, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 2000),
                 create_action(action = ofp.OFPAT_OUTPUT, port = 2)
             ]),
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 3000),
                 create_action(action = ofp.OFPAT_OUTPUT, port = 3)
             ])
@@ -1060,11 +1060,11 @@ class GroupStatsAll(GroupTest):
 
         group_add_msg2 = \
         create_group_mod_msg(ofp.OFPGC_ADD, ofp.OFPGT_ALL, group_id = 20, buckets = [
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 2000),
                 create_action(action = ofp.OFPAT_OUTPUT, port = 2)
             ]),
-            create_bucket(0, 0, 0, [
+            create_bucket([
                 create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 3000),
                 create_action(action = ofp.OFPAT_OUTPUT, port = 3)
             ])
@@ -1134,15 +1134,15 @@ class GroupDescStats(GroupTest):
     def runTest(self):
         self.clear_switch()
 
-        b1 = create_bucket(0, 0, 0, [
+        b1 = create_bucket([
                  create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 2000),
                  create_action(action = ofp.OFPAT_OUTPUT, port = 2)
             ])
-        b2 =  create_bucket(0, 0, 0, [
+        b2 =  create_bucket([
                   create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 3000),
                   create_action(action = ofp.OFPAT_OUTPUT, port = 3)
             ])
-        b3 = create_bucket(0, 0, 0, [
+        b3 = create_bucket([
                  create_action(action = ofp.OFPAT_SET_FIELD, tcp_sport = 4000),
                  create_action(action = ofp.OFPAT_OUTPUT, port = 4)
             ])

@@ -2037,6 +2037,7 @@ class DirectBadPacketBase(base_tests.SimpleDataPlane):
         request2.match = self.createMatch()
         request2.match.wildcards &= ~ofp.OFPFW_IN_PORT
         request2.match.in_port = ingress_port
+        request2.buffer_id = 0xffffffff
 
         request2.priority = 0
         act = ofp.action.output()
@@ -2546,12 +2547,12 @@ class DirectLlcPackets(DirectBadPacketBase):
         )
         testPacket("LLC - SNAP - Max -1 bogus payload",
             scapy.LLC(dsap=0xaa, ssap=0xaa, ctrl=0x03)/ \
-                scapy.SNAP(OUI=0x000000, code=0x3) / ("S" * (1500 - 3 - 5 - 1)),
+                scapy.SNAP(OUI=0x000000, code=0x1234) / ("S" * (1500 - 3 - 5 - 1)),
             IS_SNAP_NOT_IP,
         )
         testPacket("LLC - SNAP - Max bogus payload",
             scapy.LLC(dsap=0xaa, ssap=0xaa, ctrl=0x03)/ \
-                scapy.SNAP(OUI=0x000000, code=0x3) / ("S" * (1500 - 3 - 5)),
+                scapy.SNAP(OUI=0x000000, code=0x1234) / ("S" * (1500 - 3 - 5)),
             IS_SNAP_NOT_IP,
         )
         testPacket("LLC - SNAP - IP - TCP",
