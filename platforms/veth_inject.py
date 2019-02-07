@@ -97,7 +97,7 @@ if set(lbcfg.keys()) != ( set(lbcfg.keys()) - set(lbcfg.values()) ):
 def inj_port(x):
     basename = 'ethernet'
     if x.startswith(basename):
-        return 'vet' + x[len(basename):].replace('/', ',') + 'j'
+        return 'vet' + x[len(basename):].replace('/', ',').replace(':', '#') + 'j'
     else:
         raise Exception("Injection port name does not start with '%s'"
                         % basename)
