@@ -352,8 +352,17 @@ def simple_icmpv6_packet(pktlen=100,
                          ipv6_tc=0,
                          ipv6_hlim=64,
                          ipv6_fl=0,
-                         icmp_type=8,
-                         icmp_code=0):
+                         icmp_type=128,
+                         icmp_code=0,
+                         icmp_data='',
+                         prefix_opt = False,
+                         has_ll = False,
+                         ll_addr = '66:6f:df:2d:7c:9c',
+                         ipv6_prefix='fd00:141:64:1::',
+                         R_bit = 0,
+                         S_bit = 0,
+                         target = '::'
+                         ):
     """
     Return a simple ICMPv6 packet
 
@@ -371,10 +380,26 @@ def simple_icmpv6_packet(pktlen=100,
     @param ipv6_fl IPv6 flow label
     @param icmp_type ICMP type
     @param icmp_code ICMP code
+    @param prefix_opt True if prefix_info option is to be added
+    @param has_ll True if link layer address option is to be added
+    @param ll_addr Link layer address to be added for NS, NA, RS, or RA
+    @param ipv6_prefix ipv6 prefix to be added for RA prefix info option
+    @param R_bit R bit setting for NS or NA
+    @param S_bit S bit setting for NS or NA
+    @param target Target for NS or NA
 
-    Generates a simple ICMP ECHO REQUEST. Users shouldn't assume anything
+    Generates a simple ICMPv6 ECHO REQUEST. Users shouldn't assume anything
     about this packet other than that it is a valid ethernet/IPv6/ICMP frame.
     """
+
+    TYPE_DEST_UNREACH = 1
+    TYPE_TIME_EXCEED = 3
+    TYPE_ECHO_REQ = 128
+    TYPE_ECHO_REPLY = 129
+    TYPE_RS = 133
+    TYPE_RA = 134
+    TYPE_NS = 135
+    TYPE_NA = 136
 
     if MINSIZE > pktlen:
         pktlen = MINSIZE
@@ -383,7 +408,46 @@ def simple_icmpv6_packet(pktlen=100,
     if dl_vlan_enable or vlan_vid or vlan_pcp:
         pkt /= scapy.Dot1Q(vlan=vlan_vid, prio=vlan_pcp)
     pkt /= scapy.IPv6(src=ipv6_src, dst=ipv6_dst, fl=ipv6_fl, tc=ipv6_tc, hlim=ipv6_hlim)
-    pkt /= scapy.ICMPv6Unknown(type=icmp_type, code=icmp_code)
+
+    if icmp_type == TYPE_RA:
+        pkt /= scapy.ICMPv6ND_RA(chlim = 255, H=0L, M=0L, O=1L, routerlifetime=1800, P=0L, retranstimer=0, prf=0L, res=0L)
+        if prefix_opt:
+            # advertise prefix specified by ipv6_prefix
+            pkt /= \
+            scapy.ICMPv6NDOptPrefixInfo(A=1L, res2=0, res1=0L, L=1L, len=4, prefix=ipv6_prefix, R=0L, validlifetime=1814400, prefixlen=64, preferredlifetime=604800, type=3)
+        if has_ll:
+            pkt /= \
+            scapy.ICMPv6NDOptSrcLLAddr(type=1, len=1, lladdr=ll_addr)
+    elif icmp_type == TYPE_NS:
+        pkt /= scapy.ICMPv6ND_NS(R=R_bit, S=S_bit, O=0, res=0, tgt=target)
+        if has_ll:
+            pkt /= \
+            scapy.ICMPv6NDOptSrcLLAddr(type=1, len=1, lladdr=ll_addr)
+    elif icmp_type == TYPE_NA:
+        pkt /= scapy.ICMPv6ND_NA(R=R_bit, S=S_bit, O=1, res=0, tgt=target)
+        if has_ll:
+            pkt /= \
+            scapy.ICMPv6NDOptDstLLAddr(type=2, len=1, lladdr=ll_addr)
+    elif icmp_type == TYPE_RS:
+        pkt /= scapy.ICMPv6ND_RS(res=0)
+        if has_ll:
+            pkt /= \
+            scapy.ICMPv6NDOptSrcLLAddr(type=1, len=1, lladdr=ll_addr)
+    elif icmp_type == TYPE_ECHO_REQ:
+        pkt /= scapy.ICMPv6EchoRequest()
+        pkt /= icmp_data
+    elif icmp_type == TYPE_ECHO_REPLY:
+        pkt /= scapy.ICMPv6EchoReply()
+        pkt /= icmp_data
+    elif icmp_type == TYPE_DEST_UNREACH:
+        pkt /= scapy.ICMPv6DestUnreach(type=icmp_type, code=icmp_code)
+        pkt /= icmp_data
+    elif icmp_type == TYPE_TIME_EXCEED:
+        pkt /= scapy.ICMPv6TimeExceeded(type=icmp_type, code=icmp_code)
+        pkt /= icmp_data
+    else :
+        pkt /= scapy.ICMPv6Unknown(type=icmp_type, code=icmp_code)
+
     pkt /= ("D" * (pktlen - len(pkt)))
 
     return pkt
