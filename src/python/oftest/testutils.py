@@ -452,7 +452,7 @@ def simple_icmpv6_packet(pktlen=100,
 
     return pkt
 
-def simple_arp_packet(pktlen=60, 
+def simple_arp_packet(pktlen=68, 
                       eth_dst='ff:ff:ff:ff:ff:ff',
                       eth_src='00:06:07:08:09:0a',
                       vlan_vid=0,
