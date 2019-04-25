@@ -904,52 +904,6 @@ class bsn_table_checksum_stats_entry(loxi.OFObject):
         q.text('}')
 
 
-class bsn_unit(loxi.OFObject):
-
-    def __init__(self, value=None, unit=None):
-        if value != None:
-            self.value = value
-        else:
-            self.value = 0
-        if unit != None:
-            self.unit = unit
-        else:
-            self.unit = 0
-        return
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!L", self.value))
-        packed.append(struct.pack("!B", self.unit))
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(reader):
-        obj = bsn_unit()
-        obj.value = reader.read("!L")[0]
-        obj.unit = reader.read("!B")[0]
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.value != other.value: return False
-        if self.unit != other.unit: return False
-        return True
-
-    def pretty_print(self, q):
-        q.text("bsn_unit {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("value = ");
-                q.text("%#x" % self.value)
-                q.text(","); q.breakable()
-                q.text("unit = ");
-                q.text("%#x" % self.unit)
-            q.breakable()
-        q.text('}')
-
-
 class bsn_vport(loxi.OFObject):
     subtypes = {}
 
@@ -2451,42 +2405,6 @@ class port_desc(loxi.OFObject):
                 q.text(","); q.breakable()
                 q.text("properties = ");
                 q.pp(self.properties)
-            q.breakable()
-        q.text('}')
-
-
-class _bsn_module_eeprom_transceiver(loxi.OFObject):
-
-    def __init__(self, codes=None):
-        if codes != None:
-            self.codes = codes
-        else:
-            self.codes = 0
-        return
-
-    def pack(self):
-        packed = []
-        packed.append(struct.pack("!Q", self.codes))
-        return ''.join(packed)
-
-    @staticmethod
-    def unpack(reader):
-        obj = _bsn_module_eeprom_transceiver()
-        obj.codes = reader.read("!Q")[0]
-        return obj
-
-    def __eq__(self, other):
-        if type(self) != type(other): return False
-        if self.codes != other.codes: return False
-        return True
-
-    def pretty_print(self, q):
-        q.text("_bsn_module_eeprom_transceiver {")
-        with q.group():
-            with q.indent(2):
-                q.breakable()
-                q.text("codes = ");
-                q.text("%#x" % self.codes)
             q.breakable()
         q.text('}')
 
