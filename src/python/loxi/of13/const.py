@@ -928,9 +928,11 @@ ofp_bsn_tcp_flag_map = {
 
 # Identifiers from group ofp_bsn_tunnel_type
 OFP_BSN_TUNNEL_L2GRE = 1
+OFP_BSN_TUNNEL_VXLAN = 2
 
 ofp_bsn_tunnel_type_map = {
     1: 'OFP_BSN_TUNNEL_L2GRE',
+    2: 'OFP_BSN_TUNNEL_VXLAN',
 }
 
 # Identifiers from group ofp_bsn_udf_anchor
