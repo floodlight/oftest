@@ -289,6 +289,91 @@ class bsn_driver_info_json(bsn):
 
 bsn.subtypes[7] = bsn_driver_info_json
 
+class bsn_extended_capabilities(bsn):
+    type = 65535
+    experimenter = 6035143
+    exp_type = 8
+
+    def __init__(self, configurability=None, conflict=None, reserved1=None, reserved2=None):
+        if configurability != None:
+            self.configurability = configurability
+        else:
+            self.configurability = 0
+        if conflict != None:
+            self.conflict = conflict
+        else:
+            self.conflict = 0
+        if reserved1 != None:
+            self.reserved1 = reserved1
+        else:
+            self.reserved1 = 0
+        if reserved2 != None:
+            self.reserved2 = reserved2
+        else:
+            self.reserved2 = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!L", self.experimenter))
+        packed.append(struct.pack("!L", self.exp_type))
+        packed.append(struct.pack("!Q", self.configurability))
+        packed.append(struct.pack("!Q", self.conflict))
+        packed.append(struct.pack("!Q", self.reserved1))
+        packed.append(struct.pack("!Q", self.reserved2))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = bsn_extended_capabilities()
+        _type = reader.read("!H")[0]
+        assert(_type == 65535)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        _experimenter = reader.read("!L")[0]
+        assert(_experimenter == 6035143)
+        _exp_type = reader.read("!L")[0]
+        assert(_exp_type == 8)
+        obj.configurability = reader.read("!Q")[0]
+        obj.conflict = reader.read("!Q")[0]
+        obj.reserved1 = reader.read("!Q")[0]
+        obj.reserved2 = reader.read("!Q")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.configurability != other.configurability: return False
+        if self.conflict != other.conflict: return False
+        if self.reserved1 != other.reserved1: return False
+        if self.reserved2 != other.reserved2: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("bsn_extended_capabilities {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("configurability = ");
+                q.text("%#x" % self.configurability)
+                q.text(","); q.breakable()
+                q.text("conflict = ");
+                q.text("%#x" % self.conflict)
+                q.text(","); q.breakable()
+                q.text("reserved1 = ");
+                q.text("%#x" % self.reserved1)
+                q.text(","); q.breakable()
+                q.text("reserved2 = ");
+                q.text("%#x" % self.reserved2)
+            q.breakable()
+        q.text('}')
+
+bsn.subtypes[8] = bsn_extended_capabilities
+
 class bsn_forward_error_correction(bsn):
     type = 65535
     experimenter = 6035143
