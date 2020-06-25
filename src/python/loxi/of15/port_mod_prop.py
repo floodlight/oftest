@@ -8,7 +8,7 @@
 
 import struct
 import loxi
-import util
+from . import util
 import loxi.generic_util
 
 import sys

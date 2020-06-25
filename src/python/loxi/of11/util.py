@@ -6,11 +6,7 @@
 # Do not modify
 
 import struct
-import loxi
-import const
-import common
-import action
-import instruction
+from . import const
 
 def pretty_mac(mac):
     return ':'.join(["%02x" % x for x in mac])
@@ -44,7 +40,7 @@ def pretty_wildcards(v):
     return pretty_flags(v, flag_names)
 
 def pretty_port(v):
-    named_ports = [(k,v2) for (k,v2) in const.__dict__.iteritems() if k.startswith('OFPP_')]
+    named_ports = [(k,v2) for (k,v2) in const.__dict__.items() if k.startswith('OFPP_')]
     for (k, v2) in named_ports:
         if v == v2:
             return k
@@ -104,7 +100,7 @@ def pack_bitmap_512(value):
     words = [0] * 8
     for v in value:
         assert v < 512
-        words[7-v/64] |= 1 << (v % 64)
+        words[7-int(v/64)] |= 1 << (v % 64)
     return struct.pack("!8Q", *words)
 
 def unpack_bitmap_512(reader):
