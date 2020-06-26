@@ -65,11 +65,18 @@ ethernet11 : 11
 ethernet12 : 12
 """
 
+knet=False
 args = ops.platform_args.split(",")
 # first arg: loopback cfg file
 # second arg: ifname to ofport number mapping cfg file
 if len(args) != 2:
-    raise Exception("Expecting <loopback-cfgfile>,<ifname2ofport-cfgfile>")
+    if len(args) == 3:
+        if args[2] != "knet":
+            raise Exception("Expecting <loopback-cfgfile>,<ifname2ofport-cfgfile>,knet")
+        else:
+            knet=True
+    else:
+        raise Exception("Expecting <loopback-cfgfile>,<ifname2ofport-cfgfile>[,knet]")
 lbcfgfile = args[0]
 if2numcfgfile = args[1]
 
@@ -94,15 +101,18 @@ if set(lbcfg.keys()) != ( set(lbcfg.keys()) - set(lbcfg.values()) ):
 # set up injection ports
 # keys are mapped from interface name to ofport number
 # values are mapped from interface name to veth injection port name
-def inj_port(x):
+def inj_port(x,knet=False):
     basename = 'ethernet'
     if x.startswith(basename):
-        return 'vet' + x[len(basename):].replace('/', ',').replace(':', '#') + 'j'
+        if knet:
+            return 'ket' + x[len(basename):].replace('/', ',').replace(':', '#') + 'j'
+        else:
+            return 'vet' + x[len(basename):].replace('/', ',').replace(':', '#') + 'j'
     else:
         raise Exception("Injection port name does not start with '%s'"
                         % basename)
 
-port_map = { if2numcfg[k]: inj_port(v)
+port_map = { if2numcfg[k]: inj_port(v,knet=knet)
              for k,v in lbcfg.iteritems() if k in if2numcfg }
  
 print "Port to injection port mapping:"
