@@ -105,7 +105,8 @@ def inj_port(x,knet=False):
     basename = 'ethernet'
     if x.startswith(basename):
         if knet:
-            return 'ket' + x[len(basename):].replace('/', ',').replace(':', '#') + 'j'
+            # return 'ket' + x[len(basename):].replace('/', ',').replace(':', '#') + 'j'
+            return x
         else:
             return 'vet' + x[len(basename):].replace('/', ',').replace(':', '#') + 'j'
     else:
