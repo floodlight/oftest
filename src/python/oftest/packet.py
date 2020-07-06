@@ -12,6 +12,7 @@ try:
     import scapy.route
     import scapy.layers.l2
     import scapy.layers.inet
+    import scapy.layers.sctp
     if not config["disable_ipv6"]:
         import scapy.route6
         import scapy.layers.inet6
@@ -28,6 +29,7 @@ ARP = scapy.layers.inet.ARP
 TCP = scapy.layers.inet.TCP
 UDP = scapy.layers.inet.UDP
 ICMP = scapy.layers.inet.ICMP
+SCTP = scapy.layers.sctp.SCTP
 
 if not config["disable_ipv6"]:
     IPv6 = scapy.layers.inet6.IPv6
