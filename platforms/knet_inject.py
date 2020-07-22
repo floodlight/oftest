@@ -65,18 +65,11 @@ ethernet11 : 11
 ethernet12 : 12
 """
 
-knet=False
 args = ops.platform_args.split(",")
 # first arg: loopback cfg file
 # second arg: ifname to ofport number mapping cfg file
 if len(args) != 2:
-    if len(args) == 3:
-        if args[2] != "knet":
-            raise Exception("Expecting <loopback-cfgfile>,<ifname2ofport-cfgfile>,knet")
-        else:
-            knet=True
-    else:
-        raise Exception("Expecting <loopback-cfgfile>,<ifname2ofport-cfgfile>[,knet]")
+    raise Exception("Expecting <loopback-cfgfile>,<ifname2ofport-cfgfile>")
 lbcfgfile = args[0]
 if2numcfgfile = args[1]
 
@@ -104,7 +97,7 @@ if set(lbcfg.keys()) != ( set(lbcfg.keys()) - set(lbcfg.values()) ):
 def inj_port(x):
     basename = 'ethernet'
     if x.startswith(basename):
-        return x
+        return basename + x[len(basename):].replace('/', '-').replace(':', '_')
     else:
         raise Exception("Injection port name does not start with '%s'"
                         % basename)
