@@ -28,6 +28,11 @@ import copy
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 
+LOXI_SRC_DIR = os.path.join(ROOT_DIR,
+                            'submodules', 'loxigen-artifacts', 'pyloxi')
+if os.path.exists(os.path.join(LOXI_SRC_DIR, 'loxi')):
+    # Running from source tree
+    sys.path.insert(0, LOXI_SRC_DIR)
 PY_SRC_DIR = os.path.join(ROOT_DIR, 'src', 'python')
 if os.path.exists(os.path.join(PY_SRC_DIR, 'oftest')):
     # Running from source tree
