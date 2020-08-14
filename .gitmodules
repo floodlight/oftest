@@ -1,0 +1,3 @@
+[submodule "submodules/loxigen-artifacts"]
+	path = submodules/loxigen-artifacts
+	url = git@github.com:floodlight/loxigen-artifacts
