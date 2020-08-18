@@ -414,6 +414,15 @@ ofp_bad_request_code_map = {
     18: 'OFPBRC_UNKNOWN',
 }
 
+# Identifiers from group ofp_bsn_admin_state
+OFP_BSN_ADMIN_STATE_DISABLED = 0
+OFP_BSN_ADMIN_STATE_ENABLED = 1
+
+ofp_bsn_admin_state_map = {
+    0: 'OFP_BSN_ADMIN_STATE_DISABLED',
+    1: 'OFP_BSN_ADMIN_STATE_ENABLED',
+}
+
 # Identifiers from group ofp_bsn_anchor
 OFP_BSN_ANCHOR_PACKET_START = 0
 OFP_BSN_ANCHOR_L3_HEADER_START = 1
