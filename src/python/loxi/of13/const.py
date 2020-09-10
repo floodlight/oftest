@@ -543,6 +543,15 @@ ofp_bsn_hash_select_flags_map = {
     2: 'OFP_BSN_HASH_SELECT_DST_IP',
 }
 
+# Identifiers from group ofp_bsn_ip_fragmentation
+OFP_BSN_IP_FRAGMENTATION_PRESENT = 1
+OFP_BSN_IP_FRAGMENTATION_NOT_PRESENT = 2
+
+ofp_bsn_ip_fragmentation_map = {
+    1: 'OFP_BSN_IP_FRAGMENTATION_PRESENT',
+    2: 'OFP_BSN_IP_FRAGMENTATION_NOT_PRESENT',
+}
+
 # Identifiers from group ofp_bsn_ip_tunnel_type
 OFP_BSN_IP_TUNNEL_TYPE_NONE = 0
 OFP_BSN_IP_TUNNEL_TYPE_PIM = 1
