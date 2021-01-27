@@ -9,7 +9,8 @@ the VLAN tag if it was offloaded.
 """
 
 import os
-import socket, errno
+import socket
+import errno
 import struct
 from ctypes import *
 
@@ -58,6 +59,8 @@ recvmsg = libc.recvmsg
 recvmsg.argtypes = [c_int, POINTER(struct_msghdr), c_int]
 recvmsg.retype = c_int
 
+# the above recvmsg uses libc c function call,
+# to get the errno, use external libc errno global variable, __errno_location
 get_errno_loc = libc.__errno_location
 get_errno_loc.restype = POINTER(c_int)
 
@@ -95,9 +98,13 @@ def recv(sk, bufsize):
 
     rv = recvmsg(sk.fileno(), byref(msghdr), 0)
     if rv == -1:
+        # when recvmsg return -1, it could be caused by the corresponding
+        # interface is down, raise the exception to caller
+        # other errors will be treated as runtime errors
         e = get_errno_loc()[0]
         if e == errno.ENETDOWN:
-            raise OSError(2, "Connection Down", sk.fileno())
+            # raise exception with socket number
+            raise OSError(errno.ENETDOWN, "Connection Down", sk.fileno())
     if rv < 0:
         raise RuntimeError("recvmsg failed: rv=%d", rv)
 

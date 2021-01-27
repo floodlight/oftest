@@ -16,7 +16,7 @@ for filters should include a callback or a counter
 
 import sys
 import os
-import socket, errno
+import socket
 import time
 import select
 import logging
@@ -81,10 +81,7 @@ class DataPlanePortLinux:
         Receive a packet from this port.
         @retval (packet data, timestamp)
         """
-        try:
-            pkt = afpacket.recv(self.socket, self.RCV_SIZE_DEFAULT)
-        except:
-            return (None, None)
+        pkt = afpacket.recv(self.socket, self.RCV_SIZE_DEFAULT)
         return (pkt, time.time())
 
     def send(self, packet):
@@ -212,8 +209,10 @@ class DataPlane(Thread):
                         continue
                     else:
                         # Enqueue packet
-                        pkt, timestamp = port.recv()
-                        if pkt == None:
+                        try:
+                            pkt, timestamp = port.recv()
+                        except OSError as e:
+                            # the afpacket.py will assert except raising OSError if e.errno is ENETDOWN 
                             # remove socket from sel_in
                             self.port_del(port.interface_name, port._port_number)
                             continue
