@@ -8,7 +8,8 @@ use ctypes to call it. The recv function exported by this module reconstructs
 the VLAN tag if it was offloaded.
 """
 
-import socket
+import os
+import socket, errno
 import struct
 from ctypes import *
 
@@ -57,6 +58,9 @@ recvmsg = libc.recvmsg
 recvmsg.argtypes = [c_int, POINTER(struct_msghdr), c_int]
 recvmsg.retype = c_int
 
+get_errno_loc = libc.__errno_location
+get_errno_loc.restype = POINTER(c_int)
+
 def enable_auxdata(sk):
     """
     Ask the kernel to return the VLAN tag in a control message
@@ -90,6 +94,10 @@ def recv(sk, bufsize):
     msghdr.msg_flags = 0
 
     rv = recvmsg(sk.fileno(), byref(msghdr), 0)
+    if rv == -1:
+        e = get_errno_loc()[0]
+        if e == errno.ENETDOWN:
+            raise OSError(2, "Connection Down", sk.fileno())
     if rv < 0:
         raise RuntimeError("recvmsg failed: rv=%d", rv)
 

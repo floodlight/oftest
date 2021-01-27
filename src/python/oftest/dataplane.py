@@ -16,7 +16,7 @@ for filters should include a callback or a counter
 
 import sys
 import os
-import socket
+import socket, errno
 import time
 import select
 import logging
@@ -81,7 +81,10 @@ class DataPlanePortLinux:
         Receive a packet from this port.
         @retval (packet data, timestamp)
         """
-        pkt = afpacket.recv(self.socket, self.RCV_SIZE_DEFAULT)
+        try:
+            pkt = afpacket.recv(self.socket, self.RCV_SIZE_DEFAULT)
+        except:
+            return (None, None)
         return (pkt, time.time())
 
     def send(self, packet):
@@ -210,6 +213,11 @@ class DataPlane(Thread):
                     else:
                         # Enqueue packet
                         pkt, timestamp = port.recv()
+                        if pkt == None:
+                            # remove socket from sel_in
+                            self.port_del(port.interface_name, port._port_number)
+                            continue
+
                         port_number = port._port_number
                         self.logger.debug("Pkt len %d in on port %d",
                                           len(pkt), port_number)
@@ -235,6 +243,16 @@ class DataPlane(Thread):
         self.ports[port_number] = self.dppclass(interface_name, port_number)
         self.ports[port_number]._port_number = port_number
         self.packet_queues[port_number] = []
+        # Need to wake up event loop to change the sockets being selected on.
+        self.waker.notify()
+
+    def port_del(self, interface_name, port_number):
+        """
+        Del a port from the dataplane
+        @param interface_name The name of the physical interface like eth1
+        @param port_number The port number used to refer to the port
+        """
+        del self.ports[port_number]
         # Need to wake up event loop to change the sockets being selected on.
         self.waker.notify()
 
