@@ -97,16 +97,16 @@ def recv(sk, bufsize):
     msghdr.msg_flags = 0
 
     rv = recvmsg(sk.fileno(), byref(msghdr), 0)
-    if rv == -1:
-        # when recvmsg return -1, it could be caused by the corresponding
-        # interface is down, raise the exception to caller
-        # other errors will be treated as runtime errors
+    if rv < 0:
+        # when recvmsg return negative, it could be caused by the corresponding
+        # interface down, raise the ENETDOWN exception to caller.
+        # Other errors will be treated as runtime errors
         e = get_errno_loc()[0]
         if e == errno.ENETDOWN:
             # raise exception with socket number
             raise OSError(errno.ENETDOWN, "Connection Down", sk.fileno())
-    if rv < 0:
-        raise RuntimeError("recvmsg failed: rv=%d", rv)
+        else:
+            raise RuntimeError("recvmsg failed: rv=%d", rv)
 
     # The kernel only delivers control messages we ask for. We
     # only enabled PACKET_AUXDATA, so we can assume it's the
