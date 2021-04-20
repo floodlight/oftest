@@ -51,7 +51,7 @@ def initialize_table_config(ctrl, logger):
     @param ctrl The controller object for the test
     """
     logger.info("Initializing all table configs")
-    request = ofp.message.table_mod()  
+    request = ofp.message.table_mod()
     request.config = ofp.OFPTC_TABLE_MISS_CONTROLLER
     rv = 0
     for table_id in [0, 1, 2, 3, 4, 5, 6, 7]:
@@ -93,7 +93,7 @@ def delete_all_groups(ctrl, logger):
     @param ctrl The controller object for the test
     @param logger Logging object
     """
-    
+
     logger.info("Deleting all groups")
     msg = ofp.message.group_mod()
     msg.group_id = ofp.OFPG_ALL
@@ -103,7 +103,7 @@ def delete_all_groups(ctrl, logger):
 
 def clear_port_config(parent, port, logger):
     """
-    Clear the port configuration 
+    Clear the port configuration
 
     @param parent Object implementing controller and assert equal
     @param logger Logging object
@@ -115,7 +115,7 @@ def clear_port_config(parent, port, logger):
 def simple_tcp_packet(dl_dst='00:01:02:03:04:05',
                       dl_src='00:06:07:08:09:0a',
                       vlan_tags=[],  # {type,vid,pcp,cfi}  TODO type
-                      mpls_tags=[],  # {type,label,tc,ttl} TODO type 
+                      mpls_tags=[],  # {type,label,tc,ttl} TODO type
                       ip_src='192.168.0.1',
                       ip_dst='192.168.0.2',
                       ip_tos=0,
@@ -135,7 +135,7 @@ def simple_tcp_packet(dl_dst='00:01:02:03:04:05',
             dot1q.prio = tag['pcp']
         if 'cfi' in tag:
             dot1q.id = tag['cfi']
-        pkt = pkt / dot1q 
+        pkt = pkt / dot1q
         if 'type' in tag:
             if vlans_num == 0:
                 pkt[Ether].setfieldval('type', tag['type'])
@@ -164,7 +164,7 @@ def simple_tcp_packet(dl_dst='00:01:02:03:04:05',
 
     pkt = pkt / IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl) \
               / TCP(sport=tcp_sport, dport=tcp_dport)
-    
+
     pkt = pkt / ("D" * payload_len)
 
     return pkt
@@ -172,7 +172,7 @@ def simple_tcp_packet(dl_dst='00:01:02:03:04:05',
 def simple_icmp_packet(dl_dst='00:01:02:03:04:05',
                        dl_src='00:06:07:08:09:0a',
                        vlan_tags=[],  # {type,vid,pcp,cfi}  TODO type
-                       mpls_tags=[],  # {type,label,tc,ttl} TODO type 
+                       mpls_tags=[],  # {type,label,tc,ttl} TODO type
                        ip_src='192.168.0.1',
                        ip_dst='192.168.0.2',
                        ip_tos=0,
@@ -194,7 +194,7 @@ def simple_icmp_packet(dl_dst='00:01:02:03:04:05',
             dot1q.prio = tag['pcp']
         if 'cfi' in tag:
             dot1q.id = tag['cfi']
-        pkt = pkt / dot1q 
+        pkt = pkt / dot1q
         if 'type' in tag:
             if vlans_num == 0:
                 pkt[Ether].setfieldval('type', tag['type'])
@@ -228,7 +228,7 @@ def simple_icmp_packet(dl_dst='00:01:02:03:04:05',
 
     return pkt
 
-def simple_ipv6_packet(pktlen=100, 
+def simple_ipv6_packet(pktlen=100,
                       dl_dst='00:01:02:03:04:05',
                       dl_src='00:06:07:08:09:0a',
                       dl_vlan_enable=False,
@@ -239,13 +239,13 @@ def simple_ipv6_packet(pktlen=100,
                       ip_dst='fe80::2420:52ff:fe8f:5190',
                       ip_tos=0,
                       tcp_sport=0,
-                      tcp_dport=0, 
-                      EH = False, 
+                      tcp_dport=0,
+                      EH = False,
                       EHpkt = IPv6ExtHdrDestOpt()
                       ):
 
     """
-    Return a simple IPv6 packet 
+    Return a simple IPv6 packet
 
     Supports a few parameters:
     @param len Length of packet in bytes w/o CRC
@@ -271,7 +271,7 @@ def simple_ipv6_packet(pktlen=100,
         pkt = Ether(dst=dl_dst, src=dl_src)/ \
             IPv6(src=ip_src, dst=ip_dst)
 
-    # Add IPv6 Extension Headers 
+    # Add IPv6 Extension Headers
     if EH:
         pkt = pkt / EHpkt
 
@@ -283,7 +283,7 @@ def simple_ipv6_packet(pktlen=100,
 
     return pkt
 
-def simple_icmpv6_packet(pktlen=100, 
+def simple_icmpv6_packet(pktlen=100,
                       dl_dst='00:01:02:03:04:05',
                       dl_src='00:06:07:08:09:0a',
                       dl_vlan_enable=False,
@@ -294,15 +294,15 @@ def simple_icmpv6_packet(pktlen=100,
                       ip_dst='fe80::2420:52ff:fe8f:5190',
                       ip_tos=0,
                       tcp_sport=0,
-                      tcp_dport=0, 
-                      EH = False, 
+                      tcp_dport=0,
+                      EH = False,
                       EHpkt = IPv6ExtHdrDestOpt(),
                       route_adv = False,
                       sll_enabled = False
                       ):
 
     """
-    Return a simple dataplane ICMPv6 packet 
+    Return a simple dataplane ICMPv6 packet
 
     Supports a few parameters:
     @param len Length of packet in bytes w/o CRC
@@ -316,7 +316,7 @@ def simple_icmpv6_packet(pktlen=100,
     @param ip_tos IP ToS
     @param tcp_dport TCP destination port
     @param ip_sport TCP source port
-    
+
     """
     if (dl_vlan_enable):
         pkt = Ether(dst=dl_dst, src=dl_src)/ \
@@ -326,9 +326,9 @@ def simple_icmpv6_packet(pktlen=100,
     else:
         pkt = Ether(dst=dl_dst, src=dl_src)/ \
             IPv6(src=ip_src, dst=ip_dst)
-            
-            
-    # Add IPv6 Extension Headers 
+
+
+    # Add IPv6 Extension Headers
     if EH:
         pkt = pkt / EHpkt
 
@@ -376,7 +376,7 @@ def port_config_get(controller, port_no, logger):
         if reply.ports[idx].port_no == port_no:
             return (reply.ports[idx].hw_addr, reply.ports[idx].config,
                     reply.ports[idx].advertised)
-    
+
     logger.warn("Did not find port number for port config")
     return None, None, None
 
@@ -420,7 +420,7 @@ def receive_pkt_check(dataplane, pkt, yes_ports, no_ports, assert_if, logger):
         logger.debug("Checking for pkt on port " + str(ofport))
         (_, rcv_pkt, _) = dataplane.poll(
             port_number=ofport, timeout=1)
-        assert_if.assertTrue(rcv_pkt is not None, 
+        assert_if.assertTrue(rcv_pkt is not None,
                              "Did not receive pkt on " + str(ofport))
         assert_if.assertEqual(str(pkt), str(rcv_pkt),
                               "Response packet does not match send packet " +
@@ -430,7 +430,7 @@ def receive_pkt_check(dataplane, pkt, yes_ports, no_ports, assert_if, logger):
         logger.debug("Negative check for pkt on port " + str(ofport))
         (_, rcv_pkt, _) = dataplane.poll(
             port_number=ofport, timeout=1)
-        assert_if.assertTrue(rcv_pkt is None, 
+        assert_if.assertTrue(rcv_pkt is None,
                              "Unexpected pkt on port " + str(ofport))
 
 
@@ -451,7 +451,7 @@ def pkt_verify(parent, rcv_pkt, exp_pkt):
         logging.debug(tmpout.getvalue())
     parent.assertEqual(str(exp_pkt), str(rcv_pkt),
                        "Packet match error")
-    
+
     return rcv_pkt
 
 def receive_pkt_verify(parent, egr_port, exp_pkt):
@@ -475,7 +475,7 @@ def receive_pkt_verify(parent, egr_port, exp_pkt):
 
     parent.assertTrue(rcv_pkt is not None,
                       "Did not receive packet port " + str(egr_port))
-    logging.debug("Packet len " + str(len(rcv_pkt)) + " in on " + 
+    logging.debug("Packet len " + str(len(rcv_pkt)) + " in on " +
                     str(rcv_port))
 
     return pkt_verify(parent, rcv_pkt, exp_pkt)
@@ -519,8 +519,8 @@ def match_verify(parent, req_match, res_match):
                        'Match failed: dl_vlan: ' + str(req_match.dl_vlan) +
                        " != " + str(res_match.dl_vlan))
     parent.assertEqual(req_match.dl_vlan_pcp, res_match.dl_vlan_pcp,
-                       'Match failed: dl_vlan_pcp: ' + 
-                       str(req_match.dl_vlan_pcp) + " != " + 
+                       'Match failed: dl_vlan_pcp: ' +
+                       str(req_match.dl_vlan_pcp) + " != " +
                        str(res_match.dl_vlan_pcp))
     parent.assertEqual(req_match.dl_type, res_match.dl_type,
                        'Match failed: dl_type: ' + str(req_match.dl_type) +
@@ -545,11 +545,11 @@ def match_verify(parent, req_match, res_match):
             and ((req_match.nw_proto == TCP_PROTOCOL)
                  or (req_match.nw_proto == UDP_PROTOCOL))):
             parent.assertEqual(req_match.tp_src, res_match.tp_src,
-                               'Match failed: tp_src: ' + 
+                               'Match failed: tp_src: ' +
                                str(req_match.tp_src) +
                                " != " + str(res_match.tp_src))
             parent.assertEqual(req_match.tp_dst, res_match.tp_dst,
-                               'Match failed: tp_dst: ' + 
+                               'Match failed: tp_dst: ' +
                                str(req_match.tp_dst) +
                                " != " + str(res_match.tp_dst))
 
@@ -577,39 +577,39 @@ def flow_removed_verify(parent, request=None, pkt_count=-1, byte_count=-1):
 
     if (req_match.wildcards != 0):
         parent.assertEqual(request.priority, response.priority,
-                           'Flow remove prio mismatch: ' + 
-                           str(request.priority) + " != " + 
+                           'Flow remove prio mismatch: ' +
+                           str(request.priority) + " != " +
                            str(response.priority))
         parent.assertEqual(response.reason, ofp.OFPRR_HARD_TIMEOUT,
                            'Flow remove reason is not HARD TIMEOUT:' +
                            str(response.reason))
         if pkt_count >= 0:
             parent.assertEqual(response.packet_count, pkt_count,
-                               'Flow removed failed, packet count: ' + 
+                               'Flow removed failed, packet count: ' +
                                str(response.packet_count) + " != " +
                                str(pkt_count))
         if byte_count >= 0:
             parent.assertEqual(response.byte_count, byte_count,
-                               'Flow removed failed, byte count: ' + 
-                               str(response.byte_count) + " != " + 
+                               'Flow removed failed, byte count: ' +
+                               str(response.byte_count) + " != " +
                                str(byte_count))
-def flow_msg_create(parent, pkt, ing_port=0, match_fields=None, instruction_list=None, 
-                    action_list=None,wildcards=0, egr_port=None, 
+def flow_msg_create(parent, pkt, ing_port=0, match_fields=None, instruction_list=None,
+                    action_list=None,wildcards=0, egr_port=None,
                     egr_queue=None, table_id=0, check_expire=False):
     """
     Multi-purpose flow_mod creation utility
 
-    Match on packet with given wildcards.  
+    Match on packet with given wildcards.
     See flow_match_test for other parameter descriptoins
-   
+
     if egr_queue is set
              append an out_queue ofp.action to egr_queue to the actions_list
-    else if egr_port is set:  
+    else if egr_port is set:
              append an output ofp.action to egr_port to the actions_list
-    if the instruction_list is empty, 
+    if the instruction_list is empty,
         append an APPLY ofp.instruction to it
     Add the action_list to the first write or apply ofp.instruction
-    
+
     @param egr_queue if not None, make the output an enqueue ofp.action
     @param table_id Table ID for writing a flow_mod
     """
@@ -618,21 +618,21 @@ def flow_msg_create(parent, pkt, ing_port=0, match_fields=None, instruction_list
         match_fields = parse.packet_to_flow_match(pkt)
     parent.assertTrue(match_fields is not None, "Flow match from pkt failed")
     in_port = ofp.oxm.in_port(ing_port)
-    match_fields.oxm_list.append(in_port) 
+    match_fields.oxm_list.append(in_port)
     request = ofp.message.flow_add()
     request.match= match_fields
     request.buffer_id = 0xffffffff
     request.table_id = table_id
-    
+
     if check_expire:
         request.flags |= ofp.OFPFF_SEND_FLOW_REM
-        request.hard_timeout = 1    
-    
+        request.hard_timeout = 1
+
     if action_list is None:
         action_list = []
     if instruction_list is None:
         instruction_list = []
-    
+
     # Set up output/enqueue ofp.action if directed
     if egr_queue is not None:
         parent.assertTrue(egr_port is not None, "Egress port not set")
@@ -644,9 +644,9 @@ def flow_msg_create(parent, pkt, ing_port=0, match_fields=None, instruction_list
         act = ofp.action.output()
         act.port = egr_port
         action_list.append(act)
-        
+
     inst = None
-    if len(instruction_list) == 0: 
+    if len(instruction_list) == 0:
         inst = ofp.instruction.apply_actions()
         instruction_list.append(inst)
     else:
@@ -661,7 +661,7 @@ def flow_msg_create(parent, pkt, ing_port=0, match_fields=None, instruction_list
 
     # add all the instrutions to the flow_mod
     request.instructions += instruction_list
- 
+
     logging.debug(request.show())
     return request
 
@@ -715,7 +715,7 @@ def error_verify(parent, exp_type, exp_code):
                        str(exp_code) + " != " +
                        str(response.code))
 
-def flow_match_test_port_pair(parent, ing_port, egr_port, match=None, 
+def flow_match_test_port_pair(parent, ing_port, egr_port, match=None,
                               wildcards=0, mask=None,
                               dl_vlan=-1, pkt=None, exp_pkt=None,
                               apply_action_list=None, check_expire=False):
@@ -750,7 +750,7 @@ def flow_match_test_port_pair(parent, ing_port, egr_port, match=None,
         match.nw_src = match.nw_src ^ match.nw_src_mask
         match.nw_dst = match.nw_dst ^ match.nw_dst_mask
 
-    request = flow_msg_create(parent, pkt, ing_port=ing_port, 
+    request = flow_msg_create(parent, pkt, ing_port=ing_port,
                               match=match,
                               wildcards=wildcards, egr_port=egr_port,
                               action_list=apply_action_list)
@@ -798,7 +798,7 @@ def flow_match_test(parent, port_map, match=None, wildcards=0,
             if egr_idx == ing_idx:
                 continue
             egress_port = of_ports[egr_idx]
-            flow_match_test_port_pair(parent, ingress_port, egress_port, 
+            flow_match_test_port_pair(parent, ingress_port, egress_port,
                                       match=match, wildcards=wildcards,
                                       dl_vlan=dl_vlan, mask=mask,
                                       pkt=pkt, exp_pkt=exp_pkt,
@@ -1071,7 +1071,7 @@ def action_generate(parent, field_to_mod, mod_field_vals):
 
     return act
 
-def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={}, 
+def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
                      mod_fields={}, check_test_params=False):
     """
     Set up the ingress and expected packet and ofp.action list for a test
@@ -1161,7 +1161,7 @@ def pkt_action_setup(parent, start_field_vals={}, mod_field_vals={},
     expected_pkt = simple_tcp_packet(**base_pkt_params)
 
     return (ingress_pkt, expected_pkt, new_actions)
-        
+
 def wildcard_all_set(match):
     match.wildcards = ofp.OFPFW_ALL
     match.nw_dst_mask = 0xffffffff
@@ -1248,29 +1248,29 @@ def simple_tcp_packet_w_mpls(
     shouldn't assume anything about this packet other than that
     it is a valid ethernet/IP/TCP frame.
     """
-    
+
     mpls_tags = []
-    
+
     if mpls_label_ext >= 0:
         mpls_tags.append({'type': mpls_type, 'label': mpls_label_ext, 'tc': mpls_tc_ext, 'ttl': mpls_ttl_ext})
-        
+
     if mpls_label >= 0:
         mpls_tags.append({'type': mpls_type, 'label': mpls_label, 'tc': mpls_tc, 'ttl': mpls_ttl})
-        
+
     if mpls_label_int >= 0:
         mpls_tags.append({'type': mpls_type, 'label': mpls_label_int, 'tc': mpls_tc_int, 'ttl': mpls_ttl_int})
-    
+
     pkt = simple_tcp_packet(dl_dst=dl_dst,
                             dl_src=dl_src,
                             mpls_tags=mpls_tags,
                             ip_src=ip_src,
                             ip_dst=ip_dst,
-                            ip_tos=ip_tos,  
+                            ip_tos=ip_tos,
                             ip_ttl=ip_ttl,
                             tcp_sport=tcp_sport,
                             tcp_dport=tcp_dport)
     return pkt
-    
+
 def flow_match_test_port_pair_mpls(parent, ing_port, egr_port, wildcards=0,
                                    mpls_type=0x8847,
                                    mpls_label=-1, mpls_tc=0,mpls_ttl=64,
