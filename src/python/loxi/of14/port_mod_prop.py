@@ -102,7 +102,8 @@ class ethernet(port_mod_prop):
             with q.indent(2):
                 q.breakable()
                 q.text("advertise = ");
-                q.text("%#x" % self.advertise)
+                value_name_map = {1: 'OFPPF_10MB_HD', 2: 'OFPPF_10MB_FD', 4: 'OFPPF_100MB_HD', 8: 'OFPPF_100MB_FD', 16: 'OFPPF_1GB_HD', 32: 'OFPPF_1GB_FD', 64: 'OFPPF_10GB_FD', 128: 'OFPPF_40GB_FD', 256: 'OFPPF_100GB_FD', 512: 'OFPPF_1TB_FD', 1024: 'OFPPF_OTHER', 2048: 'OFPPF_COPPER', 4096: 'OFPPF_FIBER', 8192: 'OFPPF_AUTONEG', 16384: 'OFPPF_PAUSE', 32768: 'OFPPF_PAUSE_ASYM', 2147483648: 'OFPPF_BSN_BREAKOUT_CAPABLE'}
+                q.text(util.pretty_flags(self.advertise, value_name_map.values()))
             q.breakable()
         q.text('}')
 

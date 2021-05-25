@@ -662,7 +662,8 @@ class bsn_hash_select(bsn):
             with q.indent(2):
                 q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFP_BSN_HASH_SELECT_SRC_IP', 2: 'OFP_BSN_HASH_SELECT_DST_IP'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
             q.breakable()
         q.text('}')
 

@@ -738,6 +738,17 @@ ofp_bsn_lua_upload_flags_map = {
     2: 'OFP_BSN_LUA_UPLOAD_FORCE',
 }
 
+# Identifiers from group ofp_bsn_metadata
+OFP_BSN_METADATA_UNKNOWN = 0
+OFP_BSN_METADATA_POLICY_ID = 1
+OFP_BSN_METADATA_FILTER_ID = 2
+
+ofp_bsn_metadata_map = {
+    0: 'OFP_BSN_METADATA_UNKNOWN',
+    1: 'OFP_BSN_METADATA_POLICY_ID',
+    2: 'OFP_BSN_METADATA_FILTER_ID',
+}
+
 # Identifiers from group ofp_bsn_misc_capabilities
 OFP_BSN_MISC_CAP_FEC = 1
 
@@ -756,6 +767,17 @@ ofp_bsn_multicast_packet_map = {
     1: 'OFP_BSN_MULTICAST_PACKET_PIM_HELLO',
     2: 'OFP_BSN_MULTICAST_PACKET_PIM_JOIN_PRUNE',
     3: 'OFP_BSN_MULTICAST_PACKET_PIM_ASSERT',
+}
+
+# Identifiers from group ofp_bsn_packet_field
+OFP_BSN_PACKET_FIELD_UNKNOWN = 0
+OFP_BSN_PACKET_FIELD_OUTER_VLAN_TAG_1 = 1
+OFP_BSN_PACKET_FIELD_OUTER_VLAN_TAG_2 = 2
+
+ofp_bsn_packet_field_map = {
+    0: 'OFP_BSN_PACKET_FIELD_UNKNOWN',
+    1: 'OFP_BSN_PACKET_FIELD_OUTER_VLAN_TAG_1',
+    2: 'OFP_BSN_PACKET_FIELD_OUTER_VLAN_TAG_2',
 }
 
 # Identifiers from group ofp_bsn_pktin_flag
@@ -784,6 +806,8 @@ OFP_BSN_PKTIN_FLAG_IPMC_MISS = 2097152
 OFP_BSN_PKTIN_FLAG_IPMC_RPF_FAILED = 4194304
 OFP_BSN_PKTIN_FLAG_BFD_SLOWPATH = 8388608
 OFP_BSN_PKTIN_FLAG_SFLOW_EGRESS = 16777216
+OFP_BSN_PKTIN_FLAG_DHCPV6 = 33554432
+OFP_BSN_PKTIN_FLAG_IP_HELPER = 67108864
 
 ofp_bsn_pktin_flag_map = {
     1: 'OFP_BSN_PKTIN_FLAG_PDU',
@@ -811,6 +835,8 @@ ofp_bsn_pktin_flag_map = {
     4194304: 'OFP_BSN_PKTIN_FLAG_IPMC_RPF_FAILED',
     8388608: 'OFP_BSN_PKTIN_FLAG_BFD_SLOWPATH',
     16777216: 'OFP_BSN_PKTIN_FLAG_SFLOW_EGRESS',
+    33554432: 'OFP_BSN_PKTIN_FLAG_DHCPV6',
+    67108864: 'OFP_BSN_PKTIN_FLAG_IP_HELPER',
 }
 
 # Identifiers from group ofp_bsn_port_counter

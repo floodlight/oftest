@@ -68,13 +68,21 @@ class bsn_controller_connection(loxi.OFObject):
             with q.indent(2):
                 q.breakable()
                 q.text("state = ");
-                q.text("%#x" % self.state)
+                value_name_map = {0: 'OFP_BSN_CONTROLLER_CONNECTION_STATE_DISCONNECTED', 1: 'OFP_BSN_CONTROLLER_CONNECTION_STATE_CONNECTED'}
+                if self.state in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.state], self.state))
+                else:
+                    q.text("%#x" % self.state)
                 q.text(","); q.breakable()
                 q.text("auxiliary_id = ");
                 q.text("%#x" % self.auxiliary_id)
                 q.text(","); q.breakable()
                 q.text("role = ");
-                q.text("%#x" % self.role)
+                value_name_map = {0: 'OFPCR_ROLE_NOCHANGE', 1: 'OFPCR_ROLE_EQUAL', 2: 'OFPCR_ROLE_MASTER', 3: 'OFPCR_ROLE_SLAVE'}
+                if self.role in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.role], self.role))
+                else:
+                    q.text("%#x" % self.role)
                 q.text(","); q.breakable()
                 q.text("uri = ");
                 q.pp(self.uri)
@@ -1171,7 +1179,8 @@ class bsn_vport_l2gre(bsn_vport):
             with q.indent(2):
                 q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OF_BSN_VPORT_L2GRE_LOCAL_MAC_IS_VALID', 2: 'OF_BSN_VPORT_L2GRE_DSCP_ASSIGN', 4: 'OF_BSN_VPORT_L2GRE_DSCP_COPY', 8: 'OF_BSN_VPORT_L2GRE_LOOPBACK_IS_VALID', 16: 'OF_BSN_VPORT_L2GRE_RATE_LIMIT_IS_VALID'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("port_no = ");
                 q.text(util.pretty_port(self.port_no))
@@ -1415,7 +1424,11 @@ class bucket(loxi.OFObject):
             with q.indent(2):
                 q.breakable()
                 q.text("bucket_id = ");
-                q.text("%#x" % self.bucket_id)
+                value_name_map = {4294967040: 'OFPG_BUCKET_MAX', 4294967293: 'OFPG_BUCKET_FIRST', 4294967294: 'OFPG_BUCKET_LAST', 4294967295: 'OFPG_BUCKET_ALL'}
+                if self.bucket_id in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.bucket_id], self.bucket_id))
+                else:
+                    q.text("%#x" % self.bucket_id)
                 q.text(","); q.breakable()
                 q.text("actions = ");
                 q.pp(self.actions)
@@ -1716,13 +1729,25 @@ class controller_status_entry(loxi.OFObject):
                 q.text("%#x" % self.short_id)
                 q.text(","); q.breakable()
                 q.text("role = ");
-                q.text("%#x" % self.role)
+                value_name_map = {0: 'OFPCR_ROLE_NOCHANGE', 1: 'OFPCR_ROLE_EQUAL', 2: 'OFPCR_ROLE_MASTER', 3: 'OFPCR_ROLE_SLAVE'}
+                if self.role in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.role], self.role))
+                else:
+                    q.text("%#x" % self.role)
                 q.text(","); q.breakable()
                 q.text("reason = ");
-                q.text("%#x" % self.reason)
+                value_name_map = {0: 'OFPCSR_REQUEST', 1: 'OFPCSR_CHANNEL_STATUS', 2: 'OFPCSR_ROLE', 3: 'OFPCSR_CONTROLLER_ADDED', 4: 'OFPCSR_CONTROLLER_REMOVED', 5: 'OFPCSR_SHORT_ID', 6: 'OFPCSR_EXPERIMENTER'}
+                if self.reason in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.reason], self.reason))
+                else:
+                    q.text("%#x" % self.reason)
                 q.text(","); q.breakable()
                 q.text("channel_status = ");
-                q.text("%#x" % self.channel_status)
+                value_name_map = {0: 'OFPCT_STATUS_UP', 1: 'OFPCT_STATUS_DOWN'}
+                if self.channel_status in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.channel_status], self.channel_status))
+                else:
+                    q.text("%#x" % self.channel_status)
                 q.text(","); q.breakable()
                 q.text("properties = ");
                 q.pp(self.properties)
@@ -1847,7 +1872,11 @@ class flow_lightweight_stats_entry(loxi.OFObject):
                 q.text("%#x" % self.table_id)
                 q.text(","); q.breakable()
                 q.text("reason = ");
-                q.text("%#x" % self.reason)
+                value_name_map = {0: 'OFPFSR_STATS_REQUEST', 1: 'OFPFSR_STAT_TRIGGER'}
+                if self.reason in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.reason], self.reason))
+                else:
+                    q.text("%#x" % self.reason)
                 q.text(","); q.breakable()
                 q.text("priority = ");
                 q.text("%#x" % self.priority)
@@ -1943,13 +1972,18 @@ class flow_monitor_entry(loxi.OFObject):
                 q.text("%#x" % self.out_group)
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFPFMF_INITIAL', 2: 'OFPFMF_ADD', 4: 'OFPFMF_REMOVED', 8: 'OFPFMF_MODIFY', 16: 'OFPFMF_INSTRUCTIONS', 32: 'OFPFMF_NO_ABBREV', 64: 'OFPFMF_ONLY_OWN'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("table_id = ");
                 q.text("%#x" % self.table_id)
                 q.text(","); q.breakable()
                 q.text("command = ");
-                q.text("%#x" % self.command)
+                value_name_map = {0: 'OFPFMC_ADD', 1: 'OFPFMC_MODIFY', 2: 'OFPFMC_DELETE'}
+                if self.command in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.command], self.command))
+                else:
+                    q.text("%#x" % self.command)
                 q.text(","); q.breakable()
                 q.text("match = ");
                 q.pp(self.match)
@@ -1994,7 +2028,11 @@ class flow_monitor_reply_entry(loxi.OFObject):
             with q.indent(2):
                 q.breakable()
                 q.text("event = ");
-                q.text("%#x" % self.event)
+                value_name_map = {0: 'OFPFME_INITIAL', 1: 'OFPFME_ADDED', 2: 'OFPFME_REMOVED', 3: 'OFPFME_MODIFIED', 4: 'OFPFME_ABBREV', 5: 'OFPFME_PAUSED', 6: 'OFPFME_RESUMED'}
+                if self.event in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.event], self.event))
+                else:
+                    q.text("%#x" % self.event)
             q.breakable()
         q.text('}')
 
@@ -2115,7 +2153,8 @@ class flow_stats_entry(loxi.OFObject):
                 q.text("%#x" % self.hard_timeout)
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFPFF_SEND_FLOW_REM', 2: 'OFPFF_CHECK_OVERLAP', 4: 'OFPFF_RESET_COUNTS', 8: 'OFPFF_NO_PKT_COUNTS', 16: 'OFPFF_NO_BYT_COUNTS', 128: 'OFPFF_BSN_SEND_IDLE'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("importance = ");
                 q.text("%#x" % self.importance)
@@ -2451,7 +2490,11 @@ class group_desc_stats_entry(loxi.OFObject):
             with q.indent(2):
                 q.breakable()
                 q.text("group_type = ");
-                q.text("%#x" % self.group_type)
+                value_name_map = {0: 'OFPGT_ALL', 1: 'OFPGT_SELECT', 2: 'OFPGT_INDIRECT', 3: 'OFPGT_FF'}
+                if self.group_type in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.group_type], self.group_type))
+                else:
+                    q.text("%#x" % self.group_type)
                 q.text(","); q.breakable()
                 q.text("group_id = ");
                 q.text("%#x" % self.group_id)
@@ -2967,7 +3010,8 @@ class meter_config(loxi.OFObject):
             with q.indent(2):
                 q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFPMF_KBPS', 2: 'OFPMF_PKTPS', 4: 'OFPMF_BURST', 8: 'OFPMF_STATS'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("meter_id = ");
                 q.text("%#x" % self.meter_id)
@@ -3567,10 +3611,12 @@ class port_desc(loxi.OFObject):
                 q.pp(self.name)
                 q.text(","); q.breakable()
                 q.text("config = ");
-                q.text("%#x" % self.config)
+                value_name_map = {1: 'OFPPC_PORT_DOWN', 4: 'OFPPC_NO_RECV', 32: 'OFPPC_NO_FWD', 64: 'OFPPC_NO_PACKET_IN', 2147483648: 'OFPPC_BSN_MIRROR_DEST'}
+                q.text(util.pretty_flags(self.config, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("state = ");
-                q.text("%#x" % self.state)
+                value_name_map = {1: 'OFPPS_LINK_DOWN', 2: 'OFPPS_BLOCKED', 4: 'OFPPS_LIVE'}
+                q.text(util.pretty_flags(self.state, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("properties = ");
                 q.pp(self.properties)
@@ -4320,7 +4366,8 @@ class table_desc(loxi.OFObject):
                 q.text("%#x" % self.table_id)
                 q.text(","); q.breakable()
                 q.text("config = ");
-                q.text("%#x" % self.config)
+                value_name_map = {3: 'OFPTC_DEPRECATED_MASK', 4: 'OFPTC_EVICTION', 8: 'OFPTC_VACANCY_EVENTS'}
+                q.text(util.pretty_flags(self.config, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("properties = ");
                 q.pp(self.properties)
@@ -5532,10 +5579,15 @@ class table_features(loxi.OFObject):
                 q.text("%#x" % self.table_id)
                 q.text(","); q.breakable()
                 q.text("command = ");
-                q.text("%#x" % self.command)
+                value_name_map = {0: 'OFPTFC_REPLACE', 1: 'OFPTFC_MODIFY', 2: 'OFPTFC_ENABLE', 3: 'OFPTFC_DISABLE'}
+                if self.command in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.command], self.command))
+                else:
+                    q.text("%#x" % self.command)
                 q.text(","); q.breakable()
                 q.text("features = ");
-                q.text("%#x" % self.features)
+                value_name_map = {1: 'OFPTFF_INGRESS_TABLE', 2: 'OFPTFF_EGRESS_TABLE', 16: 'OFPTFF_FIRST_EGRESS'}
+                q.text(util.pretty_flags(self.features, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("name = ");
                 q.pp(self.name)
@@ -5547,7 +5599,8 @@ class table_features(loxi.OFObject):
                 q.text("%#x" % self.metadata_write)
                 q.text(","); q.breakable()
                 q.text("capabilities = ");
-                q.text("%#x" % self.capabilities)
+                value_name_map = {3: 'OFPTC_DEPRECATED_MASK', 4: 'OFPTC_EVICTION', 8: 'OFPTC_VACANCY_EVENTS'}
+                q.text(util.pretty_flags(self.capabilities, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("max_entries = ");
                 q.text("%#x" % self.max_entries)

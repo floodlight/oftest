@@ -249,7 +249,8 @@ class bsn_vport_l2gre(bsn_vport):
             with q.indent(2):
                 q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OF_BSN_VPORT_L2GRE_LOCAL_MAC_IS_VALID', 2: 'OF_BSN_VPORT_L2GRE_DSCP_ASSIGN', 4: 'OF_BSN_VPORT_L2GRE_DSCP_COPY', 8: 'OF_BSN_VPORT_L2GRE_LOOPBACK_IS_VALID', 16: 'OF_BSN_VPORT_L2GRE_RATE_LIMIT_IS_VALID'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("port_no = ");
                 q.text(util.pretty_port(self.port_no))
@@ -841,22 +842,28 @@ class port_desc(loxi.OFObject):
                 q.pp(self.name)
                 q.text(","); q.breakable()
                 q.text("config = ");
-                q.text("%#x" % self.config)
+                value_name_map = {1: 'OFPPC_PORT_DOWN', 2: 'OFPPC_NO_STP', 4: 'OFPPC_NO_RECV', 8: 'OFPPC_NO_RECV_STP', 16: 'OFPPC_NO_FLOOD', 32: 'OFPPC_NO_FWD', 64: 'OFPPC_NO_PACKET_IN', 2147483648: 'OFPPC_BSN_MIRROR_DEST'}
+                q.text(util.pretty_flags(self.config, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("state = ");
-                q.text("%#x" % self.state)
+                value_name_map = {1: 'OFPPS_LINK_DOWN', 0: 'OFPPS_STP_LISTEN', 256: 'OFPPS_STP_LEARN', 512: 'OFPPS_STP_FORWARD', 768: 'OFPPS_STP_MASK'}
+                q.text(util.pretty_flags(self.state, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("curr = ");
-                q.text("%#x" % self.curr)
+                value_name_map = {1: 'OFPPF_10MB_HD', 2: 'OFPPF_10MB_FD', 4: 'OFPPF_100MB_HD', 8: 'OFPPF_100MB_FD', 16: 'OFPPF_1GB_HD', 32: 'OFPPF_1GB_FD', 64: 'OFPPF_10GB_FD', 128: 'OFPPF_COPPER', 256: 'OFPPF_FIBER', 512: 'OFPPF_AUTONEG', 1024: 'OFPPF_PAUSE', 2048: 'OFPPF_PAUSE_ASYM'}
+                q.text(util.pretty_flags(self.curr, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("advertised = ");
-                q.text("%#x" % self.advertised)
+                value_name_map = {1: 'OFPPF_10MB_HD', 2: 'OFPPF_10MB_FD', 4: 'OFPPF_100MB_HD', 8: 'OFPPF_100MB_FD', 16: 'OFPPF_1GB_HD', 32: 'OFPPF_1GB_FD', 64: 'OFPPF_10GB_FD', 128: 'OFPPF_COPPER', 256: 'OFPPF_FIBER', 512: 'OFPPF_AUTONEG', 1024: 'OFPPF_PAUSE', 2048: 'OFPPF_PAUSE_ASYM'}
+                q.text(util.pretty_flags(self.advertised, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("supported = ");
-                q.text("%#x" % self.supported)
+                value_name_map = {1: 'OFPPF_10MB_HD', 2: 'OFPPF_10MB_FD', 4: 'OFPPF_100MB_HD', 8: 'OFPPF_100MB_FD', 16: 'OFPPF_1GB_HD', 32: 'OFPPF_1GB_FD', 64: 'OFPPF_10GB_FD', 128: 'OFPPF_COPPER', 256: 'OFPPF_FIBER', 512: 'OFPPF_AUTONEG', 1024: 'OFPPF_PAUSE', 2048: 'OFPPF_PAUSE_ASYM'}
+                q.text(util.pretty_flags(self.supported, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("peer = ");
-                q.text("%#x" % self.peer)
+                value_name_map = {1: 'OFPPF_10MB_HD', 2: 'OFPPF_10MB_FD', 4: 'OFPPF_100MB_HD', 8: 'OFPPF_100MB_FD', 16: 'OFPPF_1GB_HD', 32: 'OFPPF_1GB_FD', 64: 'OFPPF_10GB_FD', 128: 'OFPPF_COPPER', 256: 'OFPPF_FIBER', 512: 'OFPPF_AUTONEG', 1024: 'OFPPF_PAUSE', 2048: 'OFPPF_PAUSE_ASYM'}
+                q.text(util.pretty_flags(self.peer, value_name_map.values()))
             q.breakable()
         q.text('}')
 

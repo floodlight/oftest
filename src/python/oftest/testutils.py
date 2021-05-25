@@ -491,7 +491,7 @@ def simple_icmpv6_packet(pktlen=100,
             pkt /= \
             scapy.ICMPv6NDOptSrcLLAddr(type=1, len=1, lladdr=ll_addr)
     elif icmp_type == TYPE_NS:
-        pkt /= scapy.ICMPv6ND_NS(R=R_bit, S=S_bit, O=0, res=0, tgt=target)
+        pkt /= scapy.ICMPv6ND_NS(type=icmp_type, code=icmp_code, res=0, tgt=target)
         if has_ll:
             pkt /= \
             scapy.ICMPv6NDOptSrcLLAddr(type=1, len=1, lladdr=ll_addr)

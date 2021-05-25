@@ -102,7 +102,8 @@ class eviction(table_mod_prop):
             with q.indent(2):
                 q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFPTMPEF_OTHER', 2: 'OFPTMPEF_IMPORTANCE', 4: 'OFPTMPEF_LIFETIME'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
             q.breakable()
         q.text('}')
 

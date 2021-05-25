@@ -151,7 +151,8 @@ class stats_reply(message):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFPSF_REPLY_MORE'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
             q.breakable()
         q.text('}')
 
@@ -244,7 +245,8 @@ class aggregate_stats_reply(stats_reply):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFPSF_REPLY_MORE'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("packet_count = ");
                 q.text("%#x" % self.packet_count)
@@ -333,7 +335,8 @@ class stats_request(message):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
             q.breakable()
         q.text('}')
 
@@ -449,7 +452,8 @@ class aggregate_stats_request(stats_request):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("table_id = ");
                 q.text("%#x" % self.table_id)
@@ -610,7 +614,11 @@ class bad_action_error_msg(error_msg):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("code = ");
-                q.text("%#x" % self.code)
+                value_name_map = {0: 'OFPBAC_BAD_TYPE', 1: 'OFPBAC_BAD_LEN', 2: 'OFPBAC_BAD_EXPERIMENTER', 3: 'OFPBAC_BAD_EXPERIMENTER_TYPE', 4: 'OFPBAC_BAD_OUT_PORT', 5: 'OFPBAC_BAD_ARGUMENT', 6: 'OFPBAC_EPERM', 7: 'OFPBAC_TOO_MANY', 8: 'OFPBAC_BAD_QUEUE', 9: 'OFPBAC_BAD_OUT_GROUP', 10: 'OFPBAC_MATCH_INCONSISTENT', 11: 'OFPBAC_UNSUPPORTED_ORDER', 12: 'OFPBAC_BAD_TAG'}
+                if self.code in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.code], self.code))
+                else:
+                    q.text("%#x" % self.code)
                 q.text(","); q.breakable()
                 q.text("data = ");
                 q.pp(self.data)
@@ -688,7 +696,11 @@ class bad_instruction_error_msg(error_msg):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("code = ");
-                q.text("%#x" % self.code)
+                value_name_map = {0: 'OFPBIC_UNKNOWN_INST', 1: 'OFPBIC_UNSUP_INST', 2: 'OFPBIC_BAD_TABLE_ID', 3: 'OFPBIC_UNSUP_METADATA', 4: 'OFPBIC_UNSUP_METADATA_MASK', 5: 'OFPBIC_UNSUP_EXP_INST'}
+                if self.code in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.code], self.code))
+                else:
+                    q.text("%#x" % self.code)
                 q.text(","); q.breakable()
                 q.text("data = ");
                 q.pp(self.data)
@@ -766,7 +778,11 @@ class bad_match_error_msg(error_msg):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("code = ");
-                q.text("%#x" % self.code)
+                value_name_map = {0: 'OFPBMC_BAD_TYPE', 1: 'OFPBMC_BAD_LEN', 2: 'OFPBMC_BAD_TAG', 3: 'OFPBMC_BAD_DL_ADDR_MASK', 4: 'OFPBMC_BAD_NW_ADDR_MASK', 5: 'OFPBMC_BAD_WILDCARDS', 6: 'OFPBMC_BAD_FIELD', 7: 'OFPBMC_BAD_VALUE'}
+                if self.code in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.code], self.code))
+                else:
+                    q.text("%#x" % self.code)
                 q.text(","); q.breakable()
                 q.text("data = ");
                 q.pp(self.data)
@@ -844,7 +860,11 @@ class bad_request_error_msg(error_msg):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("code = ");
-                q.text("%#x" % self.code)
+                value_name_map = {0: 'OFPBRC_BAD_VERSION', 1: 'OFPBRC_BAD_TYPE', 2: 'OFPBRC_BAD_STAT', 3: 'OFPBRC_BAD_EXPERIMENTER', 4: 'OFPBRC_BAD_SUBTYPE', 5: 'OFPBRC_EPERM', 6: 'OFPBRC_BAD_LEN', 7: 'OFPBRC_BUFFER_EMPTY', 8: 'OFPBRC_BUFFER_UNKNOWN', 9: 'OFPBRC_BAD_TABLE_ID'}
+                if self.code in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.code], self.code))
+                else:
+                    q.text("%#x" % self.code)
                 q.text(","); q.breakable()
                 q.text("data = ");
                 q.pp(self.data)
@@ -2636,7 +2656,8 @@ class experimenter_stats_reply(stats_reply):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFPSF_REPLY_MORE'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("data = ");
                 q.pp(self.data)
@@ -2727,7 +2748,8 @@ class bsn_stats_reply(experimenter_stats_reply):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFPSF_REPLY_MORE'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
             q.breakable()
         q.text('}')
 
@@ -2820,7 +2842,8 @@ class experimenter_stats_request(stats_request):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("data = ");
                 q.pp(self.data)
@@ -2911,7 +2934,8 @@ class bsn_stats_request(experimenter_stats_request):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
             q.breakable()
         q.text('}')
 
@@ -3314,7 +3338,8 @@ class desc_stats_reply(stats_reply):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFPSF_REPLY_MORE'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("mfr_desc = ");
                 q.pp(self.mfr_desc)
@@ -3399,7 +3424,8 @@ class desc_stats_request(stats_request):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
             q.breakable()
         q.text('}')
 
@@ -3637,7 +3663,8 @@ class features_reply(message):
                 q.text("%#x" % self.n_tables)
                 q.text(","); q.breakable()
                 q.text("capabilities = ");
-                q.text("%#x" % self.capabilities)
+                value_name_map = {1: 'OFPC_FLOW_STATS', 2: 'OFPC_TABLE_STATS', 4: 'OFPC_PORT_STATS', 8: 'OFPC_GROUP_STATS', 32: 'OFPC_IP_REASM', 64: 'OFPC_QUEUE_STATS', 128: 'OFPC_ARP_MATCH_IP'}
+                q.text(util.pretty_flags(self.capabilities, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("reserved = ");
                 q.text("%#x" % self.reserved)
@@ -3881,7 +3908,8 @@ class flow_mod(message):
                 q.text("%#x" % self.out_group)
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFPFF_SEND_FLOW_REM', 2: 'OFPFF_CHECK_OVERLAP'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("match = ");
                 q.pp(self.match)
@@ -4061,7 +4089,8 @@ class flow_add(flow_mod):
                 q.text("%#x" % self.out_group)
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFPFF_SEND_FLOW_REM', 2: 'OFPFF_CHECK_OVERLAP'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("match = ");
                 q.pp(self.match)
@@ -4241,7 +4270,8 @@ class flow_delete(flow_mod):
                 q.text("%#x" % self.out_group)
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFPFF_SEND_FLOW_REM', 2: 'OFPFF_CHECK_OVERLAP'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("match = ");
                 q.pp(self.match)
@@ -4421,7 +4451,8 @@ class flow_delete_strict(flow_mod):
                 q.text("%#x" % self.out_group)
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFPFF_SEND_FLOW_REM', 2: 'OFPFF_CHECK_OVERLAP'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("match = ");
                 q.pp(self.match)
@@ -4502,7 +4533,11 @@ class flow_mod_failed_error_msg(error_msg):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("code = ");
-                q.text("%#x" % self.code)
+                value_name_map = {0: 'OFPFMFC_UNKNOWN', 1: 'OFPFMFC_TABLE_FULL', 2: 'OFPFMFC_BAD_TABLE_ID', 3: 'OFPFMFC_OVERLAP', 4: 'OFPFMFC_EPERM', 5: 'OFPFMFC_BAD_TIMEOUT', 6: 'OFPFMFC_BAD_COMMAND'}
+                if self.code in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.code], self.code))
+                else:
+                    q.text("%#x" % self.code)
                 q.text(","); q.breakable()
                 q.text("data = ");
                 q.pp(self.data)
@@ -4679,7 +4714,8 @@ class flow_modify(flow_mod):
                 q.text("%#x" % self.out_group)
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFPFF_SEND_FLOW_REM', 2: 'OFPFF_CHECK_OVERLAP'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("match = ");
                 q.pp(self.match)
@@ -4859,7 +4895,8 @@ class flow_modify_strict(flow_mod):
                 q.text("%#x" % self.out_group)
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFPFF_SEND_FLOW_REM', 2: 'OFPFF_CHECK_OVERLAP'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("match = ");
                 q.pp(self.match)
@@ -5000,7 +5037,11 @@ class flow_removed(message):
                 q.text("%#x" % self.priority)
                 q.text(","); q.breakable()
                 q.text("reason = ");
-                q.text("%#x" % self.reason)
+                value_name_map = {0: 'OFPRR_IDLE_TIMEOUT', 1: 'OFPRR_HARD_TIMEOUT', 2: 'OFPRR_DELETE', 3: 'OFPRR_GROUP_DELETE'}
+                if self.reason in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.reason], self.reason))
+                else:
+                    q.text("%#x" % self.reason)
                 q.text(","); q.breakable()
                 q.text("table_id = ");
                 q.text("%#x" % self.table_id)
@@ -5098,7 +5139,8 @@ class flow_stats_reply(stats_reply):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFPSF_REPLY_MORE'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("entries = ");
                 q.pp(self.entries)
@@ -5217,7 +5259,8 @@ class flow_stats_request(stats_request):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("table_id = ");
                 q.text("%#x" % self.table_id)
@@ -5306,7 +5349,8 @@ class get_config_reply(message):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {0: 'OFPC_FRAG_NORMAL', 1: 'OFPC_FRAG_DROP', 2: 'OFPC_FRAG_REASM', 3: 'OFPC_FRAG_MASK', 4: 'OFPC_INVALID_TTL_TO_CONTROLLER'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("miss_send_len = ");
                 q.text("%#x" % self.miss_send_len)
@@ -5457,7 +5501,11 @@ class group_mod(message):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("group_type = ");
-                q.text("%#x" % self.group_type)
+                value_name_map = {0: 'OFPGT_ALL', 1: 'OFPGT_SELECT', 2: 'OFPGT_INDIRECT', 3: 'OFPGT_FF'}
+                if self.group_type in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.group_type], self.group_type))
+                else:
+                    q.text("%#x" % self.group_type)
                 q.text(","); q.breakable()
                 q.text("group_id = ");
                 q.text("%#x" % self.group_id)
@@ -5547,7 +5595,11 @@ class group_add(group_mod):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("group_type = ");
-                q.text("%#x" % self.group_type)
+                value_name_map = {0: 'OFPGT_ALL', 1: 'OFPGT_SELECT', 2: 'OFPGT_INDIRECT', 3: 'OFPGT_FF'}
+                if self.group_type in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.group_type], self.group_type))
+                else:
+                    q.text("%#x" % self.group_type)
                 q.text(","); q.breakable()
                 q.text("group_id = ");
                 q.text("%#x" % self.group_id)
@@ -5637,7 +5689,11 @@ class group_delete(group_mod):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("group_type = ");
-                q.text("%#x" % self.group_type)
+                value_name_map = {0: 'OFPGT_ALL', 1: 'OFPGT_SELECT', 2: 'OFPGT_INDIRECT', 3: 'OFPGT_FF'}
+                if self.group_type in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.group_type], self.group_type))
+                else:
+                    q.text("%#x" % self.group_type)
                 q.text(","); q.breakable()
                 q.text("group_id = ");
                 q.text("%#x" % self.group_id)
@@ -5720,7 +5776,8 @@ class group_desc_stats_reply(stats_reply):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFPSF_REPLY_MORE'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("entries = ");
                 q.pp(self.entries)
@@ -5793,7 +5850,8 @@ class group_desc_stats_request(stats_request):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
             q.breakable()
         q.text('}')
 
@@ -5868,7 +5926,11 @@ class group_mod_failed_error_msg(error_msg):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("code = ");
-                q.text("%#x" % self.code)
+                value_name_map = {0: 'OFPGMFC_GROUP_EXISTS', 1: 'OFPGMFC_INVALID_GROUP', 2: 'OFPGMFC_WEIGHT_UNSUPPORTED', 3: 'OFPGMFC_OUT_OF_GROUPS', 4: 'OFPGMFC_OUT_OF_BUCKETS', 5: 'OFPGMFC_CHAINING_UNSUPPORTED', 6: 'OFPGMFC_WATCH_UNSUPPORTED', 7: 'OFPGMFC_LOOP', 8: 'OFPGMFC_UNKNOWN_GROUP'}
+                if self.code in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.code], self.code))
+                else:
+                    q.text("%#x" % self.code)
                 q.text(","); q.breakable()
                 q.text("data = ");
                 q.pp(self.data)
@@ -5955,7 +6017,11 @@ class group_modify(group_mod):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("group_type = ");
-                q.text("%#x" % self.group_type)
+                value_name_map = {0: 'OFPGT_ALL', 1: 'OFPGT_SELECT', 2: 'OFPGT_INDIRECT', 3: 'OFPGT_FF'}
+                if self.group_type in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.group_type], self.group_type))
+                else:
+                    q.text("%#x" % self.group_type)
                 q.text(","); q.breakable()
                 q.text("group_id = ");
                 q.text("%#x" % self.group_id)
@@ -6038,7 +6104,8 @@ class group_stats_reply(stats_reply):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFPSF_REPLY_MORE'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("entries = ");
                 q.pp(self.entries)
@@ -6120,7 +6187,8 @@ class group_stats_request(stats_request):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("group_id = ");
                 q.text("%#x" % self.group_id)
@@ -6252,7 +6320,11 @@ class hello_failed_error_msg(error_msg):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("code = ");
-                q.text("%#x" % self.code)
+                value_name_map = {0: 'OFPHFC_INCOMPATIBLE', 1: 'OFPHFC_EPERM'}
+                if self.code in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.code], self.code))
+                else:
+                    q.text("%#x" % self.code)
                 q.text(","); q.breakable()
                 q.text("data = ");
                 q.pp(self.data)
@@ -6654,10 +6726,12 @@ class port_mod(message):
                 q.text(util.pretty_mac(self.hw_addr))
                 q.text(","); q.breakable()
                 q.text("config = ");
-                q.text("%#x" % self.config)
+                value_name_map = {1: 'OFPPC_PORT_DOWN', 4: 'OFPPC_NO_RECV', 32: 'OFPPC_NO_FWD', 64: 'OFPPC_NO_PACKET_IN', 2147483648: 'OFPPC_BSN_MIRROR_DEST'}
+                q.text(util.pretty_flags(self.config, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("mask = ");
-                q.text("%#x" % self.mask)
+                value_name_map = {1: 'OFPPC_PORT_DOWN', 4: 'OFPPC_NO_RECV', 32: 'OFPPC_NO_FWD', 64: 'OFPPC_NO_PACKET_IN', 2147483648: 'OFPPC_BSN_MIRROR_DEST'}
+                q.text(util.pretty_flags(self.mask, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("advertise = ");
                 q.text("%#x" % self.advertise)
@@ -6735,7 +6809,11 @@ class port_mod_failed_error_msg(error_msg):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("code = ");
-                q.text("%#x" % self.code)
+                value_name_map = {0: 'OFPPMFC_BAD_PORT', 1: 'OFPPMFC_BAD_HW_ADDR', 2: 'OFPPMFC_BAD_CONFIG', 3: 'OFPPMFC_BAD_ADVERTISE'}
+                if self.code in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.code], self.code))
+                else:
+                    q.text("%#x" % self.code)
                 q.text(","); q.breakable()
                 q.text("data = ");
                 q.pp(self.data)
@@ -6815,7 +6893,8 @@ class port_stats_reply(stats_reply):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFPSF_REPLY_MORE'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("entries = ");
                 q.pp(self.entries)
@@ -6897,7 +6976,8 @@ class port_stats_request(stats_request):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("port_no = ");
                 q.text(util.pretty_port(self.port_no))
@@ -6973,7 +7053,11 @@ class port_status(message):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("reason = ");
-                q.text("%#x" % self.reason)
+                value_name_map = {0: 'OFPPR_ADD', 1: 'OFPPR_DELETE', 2: 'OFPPR_MODIFY'}
+                if self.reason in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.reason], self.reason))
+                else:
+                    q.text("%#x" % self.reason)
                 q.text(","); q.breakable()
                 q.text("desc = ");
                 q.pp(self.desc)
@@ -7193,7 +7277,11 @@ class queue_op_failed_error_msg(error_msg):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("code = ");
-                q.text("%#x" % self.code)
+                value_name_map = {0: 'OFPQOFC_BAD_PORT', 1: 'OFPQOFC_BAD_QUEUE', 2: 'OFPQOFC_EPERM'}
+                if self.code in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.code], self.code))
+                else:
+                    q.text("%#x" % self.code)
                 q.text(","); q.breakable()
                 q.text("data = ");
                 q.pp(self.data)
@@ -7273,7 +7361,8 @@ class queue_stats_reply(stats_reply):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFPSF_REPLY_MORE'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("entries = ");
                 q.pp(self.entries)
@@ -7360,7 +7449,8 @@ class queue_stats_request(stats_request):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("port_no = ");
                 q.text(util.pretty_port(self.port_no))
@@ -7437,7 +7527,8 @@ class set_config(message):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {0: 'OFPC_FRAG_NORMAL', 1: 'OFPC_FRAG_DROP', 2: 'OFPC_FRAG_REASM', 3: 'OFPC_FRAG_MASK', 4: 'OFPC_INVALID_TTL_TO_CONTROLLER'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("miss_send_len = ");
                 q.text("%#x" % self.miss_send_len)
@@ -7515,7 +7606,11 @@ class switch_config_failed_error_msg(error_msg):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("code = ");
-                q.text("%#x" % self.code)
+                value_name_map = {0: 'OFPSCFC_BAD_FLAGS', 1: 'OFPSCFC_BAD_LEN'}
+                if self.code in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.code], self.code))
+                else:
+                    q.text("%#x" % self.code)
                 q.text(","); q.breakable()
                 q.text("data = ");
                 q.pp(self.data)
@@ -7669,7 +7764,11 @@ class table_mod_failed_error_msg(error_msg):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("code = ");
-                q.text("%#x" % self.code)
+                value_name_map = {0: 'OFPTMFC_BAD_TABLE', 1: 'OFPTMFC_BAD_CONFIG'}
+                if self.code in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.code], self.code))
+                else:
+                    q.text("%#x" % self.code)
                 q.text(","); q.breakable()
                 q.text("data = ");
                 q.pp(self.data)
@@ -7749,7 +7848,8 @@ class table_stats_reply(stats_reply):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {1: 'OFPSF_REPLY_MORE'}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
                 q.text(","); q.breakable()
                 q.text("entries = ");
                 q.pp(self.entries)
@@ -7822,7 +7922,8 @@ class table_stats_request(stats_request):
                     q.text('None')
                 q.text(","); q.breakable()
                 q.text("flags = ");
-                q.text("%#x" % self.flags)
+                value_name_map = {}
+                q.text(util.pretty_flags(self.flags, value_name_map.values()))
             q.breakable()
         q.text('}')
 
