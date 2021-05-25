@@ -430,7 +430,11 @@ class bsn_forward_error_correction(bsn):
             with q.indent(2):
                 q.breakable()
                 q.text("configured = ");
-                q.text("%#x" % self.configured)
+                value_name_map = {0: 'OFP_BSN_FEC_CONFIG_STATE_UNSET', 1: 'OFP_BSN_FEC_CONFIG_STATE_ENABLED', 2: 'OFP_BSN_FEC_CONFIG_STATE_DISABLED'}
+                if self.configured in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.configured], self.configured))
+                else:
+                    q.text("%#x" % self.configured)
                 q.text(","); q.breakable()
                 q.text("enabled = ");
                 q.text("%#x" % self.enabled)
