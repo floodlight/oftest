@@ -61,6 +61,57 @@ class bsn_tlv(loxi.OFObject):
         q.text('}')
 
 
+class action_state(bsn_tlv):
+    type = 226
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!H", self.value))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = action_state()
+        _type = reader.read("!H")[0]
+        assert(_type == 226)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.value = reader.read("!H")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("action_state {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                value_name_map = {0: 'OFP_BSN_ACTION_STATE_COMPLETED', 1: 'OFP_BSN_ACTION_STATE_ACTIVE', 2: 'OFP_BSN_ACTION_STATE_WAITING'}
+                if self.value in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.value], self.value))
+                else:
+                    q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[226] = action_state
+
 class active(bsn_tlv):
     type = 192
 
@@ -4804,12 +4855,63 @@ class lag_options(bsn_tlv):
             with q.indent(2):
                 q.breakable()
                 q.text("flags = ");
-                value_name_map = {1: 'OFP_BSN_LAG_FLAG_AUTO_RECOVERY'}
+                value_name_map = {1: 'OFP_BSN_LAG_FLAG_AUTO_RECOVERY', 2: 'OFP_BSN_LAG_FLAG_ADD_PEER_ON_EMPTY'}
                 q.text(util.pretty_flags(self.flags, value_name_map.values()))
             q.breakable()
         q.text('}')
 
 bsn_tlv.subtypes[160] = lag_options
+
+class lag_type(bsn_tlv):
+    type = 227
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!H", self.value))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = lag_type()
+        _type = reader.read("!H")[0]
+        assert(_type == 227)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.value = reader.read("!H")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("lag_type {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                value_name_map = {0: 'OFP_BSN_LAG_TYPE_OTHER', 1: 'OFP_BSN_LAG_TYPE_PEER', 2: 'OFP_BSN_LAG_TYPE_SPINE'}
+                if self.value in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.value], self.value))
+                else:
+                    q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[227] = lag_type
 
 class lcore(bsn_tlv):
     type = 209
@@ -8647,6 +8749,57 @@ class sub_agent_id(bsn_tlv):
         q.text('}')
 
 bsn_tlv.subtypes[38] = sub_agent_id
+
+class swl_feature(bsn_tlv):
+    type = 228
+
+    def __init__(self, value=None):
+        if value != None:
+            self.value = value
+        else:
+            self.value = 0
+        return
+
+    def pack(self):
+        packed = []
+        packed.append(struct.pack("!H", self.type))
+        packed.append(struct.pack("!H", 0)) # placeholder for length at index 1
+        packed.append(struct.pack("!H", self.value))
+        length = sum([len(x) for x in packed])
+        packed[1] = struct.pack("!H", length)
+        return ''.join(packed)
+
+    @staticmethod
+    def unpack(reader):
+        obj = swl_feature()
+        _type = reader.read("!H")[0]
+        assert(_type == 228)
+        _length = reader.read("!H")[0]
+        orig_reader = reader
+        reader = orig_reader.slice(_length, 4)
+        obj.value = reader.read("!H")[0]
+        return obj
+
+    def __eq__(self, other):
+        if type(self) != type(other): return False
+        if self.value != other.value: return False
+        return True
+
+    def pretty_print(self, q):
+        q.text("swl_feature {")
+        with q.group():
+            with q.indent(2):
+                q.breakable()
+                q.text("value = ");
+                value_name_map = {0: 'OFP_BSN_SWL_FEATURE_ALLOW_PEER_TO_EDGE_UNICAST', 1: 'OFP_BSN_SWL_FEATURE_DROP_DUPLICATE_L3CPU', 2: 'OFP_BSN_SWL_FEATURE_COUNT'}
+                if self.value in value_name_map:
+                    q.text("%s(%d)" % (value_name_map[self.value], self.value))
+                else:
+                    q.text("%#x" % self.value)
+            q.breakable()
+        q.text('}')
+
+bsn_tlv.subtypes[228] = swl_feature
 
 class tcp_dst(bsn_tlv):
     type = 66
