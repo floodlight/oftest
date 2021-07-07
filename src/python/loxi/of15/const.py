@@ -414,6 +414,17 @@ ofp_bad_request_code_map = {
     18: 'OFPBRC_UNKNOWN',
 }
 
+# Identifiers from group ofp_bsn_action_state
+OFP_BSN_ACTION_STATE_COMPLETED = 0
+OFP_BSN_ACTION_STATE_ACTIVE = 1
+OFP_BSN_ACTION_STATE_WAITING = 2
+
+ofp_bsn_action_state_map = {
+    0: 'OFP_BSN_ACTION_STATE_COMPLETED',
+    1: 'OFP_BSN_ACTION_STATE_ACTIVE',
+    2: 'OFP_BSN_ACTION_STATE_WAITING',
+}
+
 # Identifiers from group ofp_bsn_admin_state
 OFP_BSN_ADMIN_STATE_DISABLED = 0
 OFP_BSN_ADMIN_STATE_ENABLED = 1
@@ -555,10 +566,16 @@ ofp_bsn_enhanced_hash_type_map = {
 # Identifiers from group ofp_bsn_extended_capabilities
 OFP_BSN_EXT_CAP_AN = 1
 OFP_BSN_EXT_CAP_FEC = 2
+OFP_BSN_EXT_CAP_FEC_FIRE_CODE = 4
+OFP_BSN_EXT_CAP_FEC_REED_SOLOMAN = 8
+OFP_BSN_EXT_CAP_FEC_REED_SOLOMAN544 = 16
 
 ofp_bsn_extended_capabilities_map = {
     1: 'OFP_BSN_EXT_CAP_AN',
     2: 'OFP_BSN_EXT_CAP_FEC',
+    4: 'OFP_BSN_EXT_CAP_FEC_FIRE_CODE',
+    8: 'OFP_BSN_EXT_CAP_FEC_REED_SOLOMAN',
+    16: 'OFP_BSN_EXT_CAP_FEC_REED_SOLOMAN544',
 }
 
 # Identifiers from group ofp_bsn_fabric_port_role
@@ -694,9 +711,22 @@ ofp_bsn_lacp_state_map = {
 
 # Identifiers from group ofp_bsn_lag_flag
 OFP_BSN_LAG_FLAG_AUTO_RECOVERY = 1
+OFP_BSN_LAG_FLAG_ADD_PEER_ON_EMPTY = 2
 
 ofp_bsn_lag_flag_map = {
     1: 'OFP_BSN_LAG_FLAG_AUTO_RECOVERY',
+    2: 'OFP_BSN_LAG_FLAG_ADD_PEER_ON_EMPTY',
+}
+
+# Identifiers from group ofp_bsn_lag_type
+OFP_BSN_LAG_TYPE_OTHER = 0
+OFP_BSN_LAG_TYPE_PEER = 1
+OFP_BSN_LAG_TYPE_SPINE = 2
+
+ofp_bsn_lag_type_map = {
+    0: 'OFP_BSN_LAG_TYPE_OTHER',
+    1: 'OFP_BSN_LAG_TYPE_PEER',
+    2: 'OFP_BSN_LAG_TYPE_SPINE',
 }
 
 # Identifiers from group ofp_bsn_loglevel
@@ -751,9 +781,15 @@ ofp_bsn_metadata_map = {
 
 # Identifiers from group ofp_bsn_misc_capabilities
 OFP_BSN_MISC_CAP_FEC = 1
+OFP_BSN_MISC_CAP_FEC_FIRE_CODE = 2
+OFP_BSN_MISC_CAP_FEC_REED_SOLOMAN = 4
+OFP_BSN_MISC_CAP_FEC_REED_SOLOMAN544 = 8
 
 ofp_bsn_misc_capabilities_map = {
     1: 'OFP_BSN_MISC_CAP_FEC',
+    2: 'OFP_BSN_MISC_CAP_FEC_FIRE_CODE',
+    4: 'OFP_BSN_MISC_CAP_FEC_REED_SOLOMAN',
+    8: 'OFP_BSN_MISC_CAP_FEC_REED_SOLOMAN544',
 }
 
 # Identifiers from group ofp_bsn_multicast_packet
@@ -1133,6 +1169,17 @@ ofp_bsn_strip_vlan_map = {
     1: 'OFP_BSN_STRIP_VLAN_FIRST',
     2: 'OFP_BSN_STRIP_VLAN_SECOND',
     4: 'OFP_BSN_STRIP_VLAN_THIRD',
+}
+
+# Identifiers from group ofp_bsn_swl_feature
+OFP_BSN_SWL_FEATURE_ALLOW_PEER_TO_EDGE_UNICAST = 0
+OFP_BSN_SWL_FEATURE_DROP_DUPLICATE_L3CPU = 1
+OFP_BSN_SWL_FEATURE_COUNT = 2
+
+ofp_bsn_swl_feature_map = {
+    0: 'OFP_BSN_SWL_FEATURE_ALLOW_PEER_TO_EDGE_UNICAST',
+    1: 'OFP_BSN_SWL_FEATURE_DROP_DUPLICATE_L3CPU',
+    2: 'OFP_BSN_SWL_FEATURE_COUNT',
 }
 
 # Identifiers from group ofp_bsn_tcp_flag
