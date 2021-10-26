@@ -2,6 +2,11 @@ OFTest OpenFlow Testing Framework
 
 ---
 
+Update October 2021: this repository is forked from floodlight/oftest.
+It is closed for better tracking/control of branches.
+
+---
+
 # Introduction
 
 OFTest is a Python based OpenFlow switch test framework and collection of test cases. It is based on unittest, which is included in the standard Python distribution.
