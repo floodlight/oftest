@@ -209,7 +209,14 @@ class DataPlane(Thread):
                         continue
                     else:
                         # Enqueue packet
-                        pkt, timestamp = port.recv()
+                        try:
+                            pkt, timestamp = port.recv()
+                        except OSError as e:
+                            # the afpacket.py will assert except raising OSError if e.errno is ENETDOWN 
+                            # remove socket from sel_in
+                            self.port_del(port.interface_name, port._port_number)
+                            continue
+
                         port_number = port._port_number
                         self.logger.debug("Pkt len %d in on port %d",
                                           len(pkt), port_number)
@@ -235,6 +242,16 @@ class DataPlane(Thread):
         self.ports[port_number] = self.dppclass(interface_name, port_number)
         self.ports[port_number]._port_number = port_number
         self.packet_queues[port_number] = []
+        # Need to wake up event loop to change the sockets being selected on.
+        self.waker.notify()
+
+    def port_del(self, interface_name, port_number):
+        """
+        Del a port from the dataplane
+        @param interface_name The name of the physical interface like eth1
+        @param port_number The port number used to refer to the port
+        """
+        del self.ports[port_number]
         # Need to wake up event loop to change the sockets being selected on.
         self.waker.notify()
 

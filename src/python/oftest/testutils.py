@@ -128,6 +128,7 @@ def simple_sctp_packet(pktlen=100,
 
     return pkt
 
+
 def simple_tcp_packet(pktlen=100,
                       eth_dst='00:01:02:03:04:05',
                       eth_src='00:06:07:08:09:0a',
@@ -143,8 +144,8 @@ def simple_tcp_packet(pktlen=100,
                       tcp_dport=80,
                       tcp_flags="S",
                       ip_ihl=None,
-                      ip_options=False
-                      ):
+                      ip_options=False,
+                      fragment_length=None):
     """
     Return a simple dataplane TCP packet
 
@@ -188,6 +189,16 @@ def simple_tcp_packet(pktlen=100,
                 scapy.TCP(sport=tcp_sport, dport=tcp_dport, flags=tcp_flags)
 
     pkt = pkt/("D" * (pktlen - len(pkt)))
+
+    if (fragment_length):
+        eth_pkt = scapy.Ether(dst=eth_dst, src=eth_src)
+        ip_pkt = scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl)/ \
+                 scapy.TCP(sport=tcp_sport, dport=tcp_dport, flags=tcp_flags)
+        ip_pkt = ip_pkt/("D" * (pktlen - len(ip_pkt)))
+        frag_pkt_list = scapy.IP.fragment(ip_pkt, fragment_length)
+        pkt = []
+        for frag_pkt in frag_pkt_list:
+            pkt.append(eth_pkt/ frag_pkt)
 
     return pkt
 
@@ -480,7 +491,7 @@ def simple_icmpv6_packet(pktlen=100,
             pkt /= \
             scapy.ICMPv6NDOptSrcLLAddr(type=1, len=1, lladdr=ll_addr)
     elif icmp_type == TYPE_NS:
-        pkt /= scapy.ICMPv6ND_NS(R=R_bit, S=S_bit, O=0, res=0, tgt=target)
+        pkt /= scapy.ICMPv6ND_NS(type=icmp_type, code=icmp_code, res=0, tgt=target)
         if has_ll:
             pkt /= \
             scapy.ICMPv6NDOptSrcLLAddr(type=1, len=1, lladdr=ll_addr)
@@ -577,6 +588,8 @@ def qinq_tcp_packet(pktlen=100,
                     vlan_vid=10,
                     vlan_pcp=0,
                     dl_vlan_cfi=0,
+                    ctag_outer_vlan_vid=None,
+                    ctag_inner_vlan_vid=None,
                     ip_src='192.168.0.1',
                     ip_dst='192.168.0.2',
                     ip_tos=0,
@@ -613,12 +626,28 @@ def qinq_tcp_packet(pktlen=100,
     if MINSIZE > pktlen:
         pktlen = MINSIZE
 
-    # Note Dot1Q.id is really CFI
-    pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
-          scapy.Dot1Q(prio=dl_vlan_pcp_outer, id=dl_vlan_cfi_outer, vlan=dl_vlan_outer)/ \
-          scapy.Dot1Q(prio=vlan_pcp, id=dl_vlan_cfi, vlan=vlan_vid)/ \
-          scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl)/ \
-          scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+    if ctag_outer_vlan_vid and ctag_inner_vlan_vid:
+        pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
+              scapy.Dot1Q(prio=dl_vlan_pcp_outer, id=dl_vlan_cfi_outer, vlan=dl_vlan_outer)/ \
+              scapy.Dot1Q(prio=vlan_pcp, id=dl_vlan_cfi, vlan=vlan_vid)/ \
+              scapy.Dot1Q(prio=vlan_pcp, id=dl_vlan_cfi, vlan=ctag_outer_vlan_vid)/ \
+              scapy.Dot1Q(prio=vlan_pcp, id=dl_vlan_cfi, vlan=ctag_inner_vlan_vid)/ \
+              scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl)/ \
+              scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+    elif ctag_outer_vlan_vid :
+        pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
+              scapy.Dot1Q(prio=dl_vlan_pcp_outer, id=dl_vlan_cfi_outer, vlan=dl_vlan_outer)/ \
+              scapy.Dot1Q(prio=vlan_pcp, id=dl_vlan_cfi, vlan=vlan_vid)/ \
+              scapy.Dot1Q(prio=vlan_pcp, id=dl_vlan_cfi, vlan=ctag_outer_vlan_vid)/ \
+              scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl)/ \
+              scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+    else :
+        # Note Dot1Q.id is really CFI
+        pkt = scapy.Ether(dst=eth_dst, src=eth_src)/ \
+              scapy.Dot1Q(prio=dl_vlan_pcp_outer, id=dl_vlan_cfi_outer, vlan=dl_vlan_outer)/ \
+              scapy.Dot1Q(prio=vlan_pcp, id=dl_vlan_cfi, vlan=vlan_vid)/ \
+              scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl)/ \
+              scapy.TCP(sport=tcp_sport, dport=tcp_dport)
 
     pkt = pkt/("D" * (pktlen - len(pkt)))
 
@@ -707,6 +736,50 @@ def simple_vxlan_packet(pktlen=300,
         pkt = pkt/inner_frame
     else:
         pkt = pkt/simple_tcp_packet(pktlen = pktlen - len(pkt))
+
+    return pkt
+
+def tagged_tcp_packet(pktlen=100,
+                    eth_dst='00:01:02:03:04:05',
+                    eth_src='00:06:07:08:09:0a',
+                    tag1=None, tag1_pcp=0, tag1_cfi=0,
+                    tag2=None, tag2_pcp=0, tag2_cfi=0,
+                    tag3=None, tag3_pcp=0, tag3_cfi=0,
+                    tag4=None, tag4_pcp=0, tag4_cfi=0,
+                    tag5=None, tag5_pcp=0, tag5_cfi=0,
+                    tag6=None, tag6_pcp=0, tag6_cfi=0,
+                    ip_src='192.168.0.1',
+                    ip_dst='192.168.0.2',
+                    ip_tos=0,
+                    ip_ttl=64,
+                    tcp_sport=1234,
+                    tcp_dport=80,
+                    ip_ihl=None,
+                    ip_options=False
+                    ):
+
+    if MINSIZE > pktlen:
+        pktlen = MINSIZE
+
+    pkt = scapy.Ether(dst=eth_dst, src=eth_src)
+    if tag1:
+        pkt = pkt/ scapy.Dot1Q(prio=tag1_pcp, id=tag1_cfi, vlan=tag1)
+    if tag2:
+        pkt = pkt/ scapy.Dot1Q(prio=tag2_pcp, id=tag2_cfi, vlan=tag2)
+    if tag3:
+        pkt = pkt/ scapy.Dot1Q(prio=tag3_pcp, id=tag3_cfi, vlan=tag3)
+    if tag4:
+        pkt = pkt/ scapy.Dot1Q(prio=tag4_pcp, id=tag4_cfi, vlan=tag4)
+    if tag5:
+        pkt = pkt/ scapy.Dot1Q(prio=tag5_pcp, id=tag5_cfi, vlan=tag5)
+    if tag6:
+        pkt = pkt/ scapy.Dot1Q(prio=tag6_pcp, id=tag6_cfi, vlan=tag6)
+
+    pkt = pkt/ \
+          scapy.IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl, ihl=ip_ihl)/ \
+          scapy.TCP(sport=tcp_sport, dport=tcp_dport)
+
+    pkt = pkt/("D" * (pktlen - len(pkt)))
 
     return pkt
 
