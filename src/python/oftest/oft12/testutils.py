@@ -228,6 +228,62 @@ def simple_icmp_packet(dl_dst='00:01:02:03:04:05',
 
     return pkt
 
+def simple_ip_packet(dl_dst='00:01:02:03:04:05',
+                      dl_src='00:06:07:08:09:0a',
+                      vlan_tags=[],  # {type,vid,pcp,cfi}  TODO type
+                      mpls_tags=[],  # {type,label,tc,ttl} TODO type
+                      ip_src='192.168.0.1',
+                      ip_dst='192.168.0.2',
+                      ip_tos=0,
+                      ip_ttl=64,
+                      tcp_sport=1234,
+                      tcp_dport=80,
+                      payload_len = 46):
+    pkt = Ether(dst=dl_dst, src=dl_src)
+
+    vlans_num = 0
+    while len(vlan_tags):
+        tag = vlan_tags.pop(0)
+        dot1q = Dot1Q()
+        if 'vid' in tag:
+            dot1q.vlan = tag['vid']
+        if 'pcp' in tag:
+            dot1q.prio = tag['pcp']
+        if 'cfi' in tag:
+            dot1q.id = tag['cfi']
+        pkt = pkt / dot1q
+        if 'type' in tag:
+            if vlans_num == 0:
+                pkt[Ether].setfieldval('type', tag['type'])
+            else:
+                pkt[Dot1Q:vlans_num].setfieldval('type', tag['type'])
+        vlans_num+=1
+
+    mplss_num = 0
+    while len(mpls_tags):
+        tag = mpls_tags.pop(0)
+        mpls = MPLS()
+        if 'label' in tag:
+            mpls.label = tag['label']
+        if 'tc' in tag:
+            mpls.cos = tag['tc']
+        if 'ttl' in tag:
+            mpls.ttl = tag['ttl']
+        pkt = pkt / mpls
+        if 'type' in tag:
+            if mplss_num == 0:
+                if vlans_num == 0:
+                    pkt[Ether].setfieldval('type', tag['type'])
+                else:
+                    pkt[Dot1Q:vlans_num].setfieldval('type', tag['type'])
+        mplss_num+=1
+
+    pkt = pkt / IP(src=ip_src, dst=ip_dst, tos=ip_tos, ttl=ip_ttl) \
+              / TCP(sport=tcp_sport, dport=tcp_dport)
+
+    pkt = pkt / ("D" * payload_len)
+
+    return pkt
 def simple_ipv6_packet(pktlen=100,
                       dl_dst='00:01:02:03:04:05',
                       dl_src='00:06:07:08:09:0a',
