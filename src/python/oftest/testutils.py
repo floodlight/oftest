@@ -565,7 +565,7 @@ def simple_arp_packet(pktlen=68,
 
     return pkt
 
-def simple_eth_packet(pktlen=60,
+def simple_eth_packet(pktlen=68,
                       eth_dst='00:01:02:03:04:05',
                       eth_src='00:06:07:08:09:0a',
                       eth_type=0x88cc):
