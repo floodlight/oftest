@@ -40,6 +40,7 @@ class FlowExpire(base_tests.SimpleDataPlane):
         pkt = simple_tcp_packet()
         match = packet_to_flow_match(self, pkt)
         match.wildcards &= ~ofp.OFPFW_IN_PORT
+        match.wildcards |= ofp.OFPFW_DL_VLAN_PCP
         self.assertTrue(match is not None, 
                         "Could not generate flow match from pkt")
         act = ofp.action.output()
