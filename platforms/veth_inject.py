@@ -24,6 +24,7 @@ import os
 import argparse
 import subprocess
 import yaml
+from compat import yaml_load
 
 # The loopback port specification is passed via the "--platform-args"
 # option to OFTest. 
@@ -77,13 +78,13 @@ if2numcfgfile = args[1]
 if os.path.isfile(lbcfgfile):
     print(lbcfgfile)
     with open(lbcfgfile) as f:
-        lbcfg = yaml.load(f)
+        lbcfg = yaml_load(f)
 else:
     lbcfg = {}
 if os.path.isfile(if2numcfgfile):
     print(if2numcfgfile)
     with open(if2numcfgfile) as f:
-        if2numcfg = yaml.load(f)
+        if2numcfg = yaml_load(f)
 else:
     if2numcfg = {}
 

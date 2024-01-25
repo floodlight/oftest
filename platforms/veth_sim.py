@@ -11,6 +11,7 @@ import os
 import sys
 import argparse
 import yaml
+from compat import yaml_load
 
 if not "--platform-args" in " ".join(sys.argv):
     raise Exception("--platform-args must be specified")
@@ -43,13 +44,13 @@ vethcfg = {}
 if os.path.isfile(vethcfgfile):
     print(vethcfgfile)
     with open(vethcfgfile) as f:
-        vethcfg = yaml.load(f)
+        vethcfg = yaml_load(f)
 
 if2numcfg = {}
 if os.path.isfile(if2numcfgfile):
     print(if2numcfgfile)
     with open(if2numcfgfile) as f:
-        if2numcfg = yaml.load(f)
+        if2numcfg = yaml_load(f)
 
 port_map = { int(v) : vethcfg[k]
              for k, v in if2numcfg.items() if k in vethcfg}
