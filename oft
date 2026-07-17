@@ -329,7 +329,7 @@ def load_test_modules(config):
                     mod = sys.modules[modname]
                 else:
                     mod = imp.load_module(modname, *imp.find_module(modname, [root]))
-            except:
+            except Exception:
                 logging.warning("Could not import file " + filename)
                 raise
 
@@ -523,13 +523,13 @@ logging.info("Importing platform: " + platform_name)
 platform_mod = None
 try:
     platform_mod = imp.load_module(platform_name, *imp.find_module(platform_name, [config["platform_dir"]]))
-except:
+except Exception:
     logging.warn("Failed to import " + platform_name + " platform module")
     raise
 
 try:
     platform_mod.platform_config_update(config)
-except:
+except Exception:
     logging.warn("Could not run platform host configuration")
     raise
 
